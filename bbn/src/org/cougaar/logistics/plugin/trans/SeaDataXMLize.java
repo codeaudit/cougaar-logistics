@@ -113,10 +113,12 @@ public class SeaDataXMLize extends GenericDataXMLize {
     LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
       asset.resolvePG (LowFidelityAssetPG.class);
     
-    if (currentLowFiAssetPG != null)
+    if (currentLowFiAssetPG != null) {
       return currentLowFiAssetPG.getCCCDim().getIsContainer();
-    else
+    }
+    else {
       return asset instanceof Container;
+    }
   }
 
   /** 

@@ -138,10 +138,10 @@ public class GreatCircle {
       double ph13 = (d * b);
       double ph14 = (e * a);
       double ph15 = (ph13 - ph14);
-      double ph16 = (- ph15);
+      //      double ph16 = (- ph15);
       double ph17 = (ph0 * ph9);
       double ph18 = (a * ph12);
-      double ph19 = (ph18 + ph17);
+      //      double ph19 = (ph18 + ph17);
       double ph20 = (- ph15);
       double ph21 = (ph0 * ph9);
       double ph22 = (a * ph12);

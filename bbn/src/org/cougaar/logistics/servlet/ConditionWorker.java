@@ -120,13 +120,15 @@ public class ConditionWorker
 	HttpURLConnection myConnection = (HttpURLConnection) myURL.openConnection();
 	try {
 	  if (myConnection.getResponseCode () != HttpURLConnection.HTTP_OK) {
-	    if (myConnection.getResponseCode () == HttpURLConnection.HTTP_NOT_FOUND)
+	    if (myConnection.getResponseCode () == HttpURLConnection.HTTP_NOT_FOUND) {
 	      support.getLog().info (support.getAgentIdentifier()+ 
 				     " - servlet not at agent.  Got NOT FOUND code reading from URL " + myURL);
-	    else
+	    }
+	    else {
 	      support.getLog().error (support.getAgentIdentifier()+ 
 				      " - got error reading from URL " + myURL + " code was " + 
 				      myConnection.getResponseCode());
+	    }
 	  }
 	  else {
 	    // throws an FileNotFoundExcep if no servlet at that agent
@@ -136,12 +138,14 @@ public class ConditionWorker
 
 	    try {
 	      ConditionData settingData = (ConditionData)ois.readObject();
-	      if (settingData.wasSet())
+	      if (settingData.wasSet()) {
 		validAgents.add (agentName);
-	      else
+	      }
+	      else {
 		support.getLog().info (support.getAgentIdentifier()+ 
 				       " - Could not set " + 
 				       conditionSupport.getConditionName() + " on agent " + agentName);
+	      }
 	    } catch (Exception e) { 
 	      support.getLog().error ("Got exception " + e, e);
 	    } finally {

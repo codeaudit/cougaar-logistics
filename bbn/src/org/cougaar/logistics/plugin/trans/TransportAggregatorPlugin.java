@@ -144,7 +144,6 @@ public class TransportAggregatorPlugin extends VishnuAggregatorPlugin {
     double prefval = pref.getScoringFunction().getBest ().getValue();
     String prefstr = "" + prefval;
     String type = "" + pref.getAspectType ();
-    String value = "" + prefval;
     boolean isDate = false;
     switch (pref.getAspectType ()) {
     case AspectType.START_TIME: 
@@ -172,10 +171,12 @@ public class TransportAggregatorPlugin extends VishnuAggregatorPlugin {
       double startValue = start.getValue ();
       double endValue   = end.getValue ();
 
-      if (isDate)
+      if (isDate) {
 	logger.info ("<" + new Date ((long) (startValue)) + "-" + new Date ((long) (endValue)) + "> "); 
-      else
+      }
+      else {
 	logger.info ("<" + startValue + "-" + endValue + "> "); 
+      }
     }
     logger.info ("");
   }

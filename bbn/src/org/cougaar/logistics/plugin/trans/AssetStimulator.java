@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2002 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -95,7 +95,7 @@ import java.util.Date;
  * </pre>
  */
 public class AssetStimulator extends UTILPluginAdapter
-    implements UTILAssetListener {
+  implements UTILAssetListener {
 
   /** Add the filter for all organizations... */
   public void setupFilters () {
@@ -108,7 +108,7 @@ public class AssetStimulator extends UTILPluginAdapter
   }
 
   public boolean interestingAsset (Asset a) {
-	return (a instanceof PhysicalAsset);
+    return (a instanceof PhysicalAsset);
   }
   
   /**
@@ -143,22 +143,22 @@ public class AssetStimulator extends UTILPluginAdapter
     JLabel label2 = new JLabel("Click add to add a new truck. Click change to change the item id of the first physical asset.");
 
     ActionListener myGLMListener = new ActionListener () {
-		public void actionPerformed(ActionEvent e) {
-		  String lnfName = e.getActionCommand();
+	public void actionPerformed(ActionEvent e) {
+	  String lnfName = e.getActionCommand();
 
-		  if (lnfName.equals("Add Asset"))
-			addAsset ();
-		  else
-			changeAsset ();
-		}
-	  };
+	  if (lnfName.equals("Add Asset"))
+	    addAsset ();
+	  else
+	    changeAsset ();
+	}
+      };
 	
     button.addActionListener(myGLMListener);
     button2.addActionListener(myGLMListener);
 
     panel.add(button);
     panel.add(button2);
-	frame.getRootPane().setDefaultButton(button); // hitting return sends the tasks
+    frame.getRootPane().setDefaultButton(button); // hitting return sends the tasks
 
     frame.getContentPane().add("Center", panel);
     frame.getContentPane().add("South", label);
@@ -168,44 +168,41 @@ public class AssetStimulator extends UTILPluginAdapter
   }
 
   void addAsset () {
-	try {
-	  blackboard.openTransaction();
+    try {
+      blackboard.openTransaction();
 
-	  Collection collection = myAssetCallback.getSubscription ().getCollection();
+      Collection collection = myAssetCallback.getSubscription ().getCollection();
 		
-	  Object first = collection.iterator ().next ();
-	  Asset firstAsset = (Asset) collection.iterator ().next ();
-	  publishAdd (makeNewAsset (getLDMService().getLDM(), "RAILCAR_68DODX", "brandNewAsset"));
-	} catch (Exception exc) {
-	  error("Could not make asset.");
-	  error(exc.getMessage());
-	  exc.printStackTrace();
-	}
-	finally{
-	  blackboard.closeTransactionDontReset();
-	}
+      publishAdd (makeNewAsset (getLDMService().getLDM(), "RAILCAR_68DODX", "brandNewAsset"));
+    } catch (Exception exc) {
+      error("Could not make asset.");
+      error(exc.getMessage());
+      exc.printStackTrace();
+    }
+    finally{
+      blackboard.closeTransactionDontReset();
+    }
   }
 
   void changeAsset () {
-	try {
-	  blackboard.openTransaction();
+    try {
+      blackboard.openTransaction();
 
-	  Collection collection = myAssetCallback.getSubscription ().getCollection();
+      Collection collection = myAssetCallback.getSubscription ().getCollection();
 		
-	  Object first = collection.iterator ().next ();
-	  Asset firstAsset = (Asset) collection.iterator ().next ();
-	  ((NewItemIdentificationPG)firstAsset.getItemIdentificationPG()).setItemIdentification (
-																 firstAsset.getItemIdentificationPG ().getItemIdentification () + 
-																  "_changed");
-	  publishChange (firstAsset);
-	} catch (Exception exc) {
-	  error("Could not change asset.");
-	  error(exc.getMessage());
-	  exc.printStackTrace();
-	}
-	finally{
-	  blackboard.closeTransactionDontReset();
-	}
+      Asset firstAsset = (Asset) collection.iterator ().next ();
+      ((NewItemIdentificationPG)firstAsset.getItemIdentificationPG()).setItemIdentification (
+											     firstAsset.getItemIdentificationPG ().getItemIdentification () + 
+											     "_changed");
+      publishChange (firstAsset);
+    } catch (Exception exc) {
+      error("Could not change asset.");
+      error(exc.getMessage());
+      exc.printStackTrace();
+    }
+    finally{
+      blackboard.closeTransactionDontReset();
+    }
   }
 
   protected Asset makeNewAsset (LDMServesPlugin ldm, String prototype, String id) {

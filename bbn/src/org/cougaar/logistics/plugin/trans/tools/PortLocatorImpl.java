@@ -140,11 +140,9 @@ public class PortLocatorImpl extends LocatorImpl {
     } else if (asset instanceof AggregateAsset) {
       //      route = getGreatCircleRoute(origin, destination); 
       Asset subAsset = ((AggregateAsset) asset).getAsset ();
-
-      if (subAsset instanceof GLMAsset)
-	isAmmo = isAmmo ((GLMAsset) subAsset);
-      else
-	isAmmo = false; // don't know what it is -- it must not be ammo
+      
+      // if not ammo, don't know what it is -- it must not be ammo
+      isAmmo = (subAsset instanceof GLMAsset) ? isAmmo ((GLMAsset) subAsset) : false; 
 	
       //      logger.warn ("PortLocatorImpl - got great circle route from " + origin + " to " + destination);
     } else {

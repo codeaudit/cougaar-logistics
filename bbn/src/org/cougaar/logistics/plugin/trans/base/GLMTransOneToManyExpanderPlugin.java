@@ -141,11 +141,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     super.localSetup();
 
     try {
-      if (getMyParams ().hasParam ("ExpandAggregates"))
-	myExpandAggregates = getMyParams().getBooleanParam("ExpandAggregates");
-      else
-	myExpandAggregates = true;
-    } catch (Exception e) {}
+      myExpandAggregates = (getMyParams ().hasParam ("ExpandAggregates")) ?
+	getMyParams().getBooleanParam("ExpandAggregates") :
+	true;
+    } catch (Exception e) { warn ("got really unexpected exception " + e); }
 
     glmPrepHelper = new GLMPrepPhrase (logger);
     glmPrefHelper = new GLMPreference (logger);
@@ -359,10 +358,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     long currentTime = getAlarmService().currentTimeMillis();
     long level6Day = ((Integer)level6Horizon.getValue()).longValue();
     long level2Day = ((Integer)level2Horizon.getValue()).longValue();
-    if (bestTime < currentTime + level6Day*MILLIS_PER_DAY)
+    if (bestTime < currentTime + level6Day*MILLIS_PER_DAY) {
       return LEVEL_6_MODE;
-    else if (bestTime < currentTime + level2Day*MILLIS_PER_DAY)
+    }
+    else if (bestTime < currentTime + level2Day*MILLIS_PER_DAY) {
       return LEVEL_2_MODE;
+    }
     // DONT_PROCESS_MODE is not currently supported
     //    return DONT_PROCESS_MODE;
     return LEVEL_2_MODE;
@@ -387,27 +388,34 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
       switch (ccc.charAt(1)) {
       case '0': // non-air
-	if (ccc.charAt(0) == 'R')
+	if (ccc.charAt(0) == 'R') {
 	  categories[4].add(asset);
-	else
-	  categories[0].add(asset); break;
+	} else {
+	  categories[0].add(asset); 
+	}
+	break;
       case '1': // outsized
-	if (ccc.charAt(0) == 'R')
+	if (ccc.charAt(0) == 'R') {
 	  categories[5].add(asset);
-	else
-	  categories[1].add(asset); break;
+	} else {
+	  categories[1].add(asset); 
+	} 
+	break;
       case '2': // oversized
-	if (ccc.charAt(0) == 'R')
+	if (ccc.charAt(0) == 'R') {
 	  categories[6].add(asset);
-	else
-	  categories[2].add(asset); break;
+	} else {
+	  categories[2].add(asset); 
+	}
+	break;
       default: // bulk or unknown
-	if (asset instanceof Container)
+	if (asset instanceof Container) {
 	  categories[8].add (asset);
-	else if (ccc.charAt(0) == 'R')
+	} else if (ccc.charAt(0) == 'R') {
 	  categories[7].add(asset);
-	else
+	} else {
 	  categories[3].add(asset);
+	}
 	break;
       }
     }
@@ -484,10 +492,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     case '2': // oversized
       return "Oversized" + suffix;
     default: // bulk or unknown
-      if (cccd.getIsContainer())
+      if (cccd.getIsContainer()) {
 	return "Container" + suffix;
-      else
+      }
+      else {
 	return "Bulk" + suffix;
+      }
     }
   }
 
@@ -553,7 +563,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     // it's a person...
     else if (asset instanceof AssetGroup) {
       AssetGroup group = (AssetGroup) asset;
-      Vector assetList = ((AssetGroup)asset).getAssets();
+      Vector assetList = group.getAssets();
       for (int i = 0; i < assetList.size(); i++) {
 	Asset subasset = (Asset)assetList.elementAt(i);
 	if (subasset instanceof AggregateAsset) {
@@ -584,11 +594,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * @param physicalPG to set with their aggregate dimensions
    **/
   protected CargoCatCodeDimensionPG setDimensions (Task parentTask, NewPhysicalPG physicalPG, Collection realAssets) {
-    double length = 0.0;
-    double width  = 0.0;
     double area   = 0.0;
     double volume = 0.0;
-    double height = 0.0;
     double mass   = 0.0;
 
     Object firstItem = realAssets.iterator().next();
@@ -607,12 +614,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       String ccc = getCategory(baseAsset);
 	
       if (itemPhysicalPG == null) {
-	if (!baseAsset.hasPersonPG())
+	if (!baseAsset.hasPersonPG()) {
 	  warn (".setDimensions - asset " + firstItem + 
 		"'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
-	else if (isDebugEnabled ())
+	}
+	else if (isDebugEnabled ()) {
 	  debug (".setDimensions - NOTE : asset " + firstItem + 
 		 "'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
+	}
       }
       else {
 	long quantity = aggAsset.getQuantity();
@@ -724,20 +733,23 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       if (isDebugEnabled())
 	debug (".addToDimension old " + new String(pgCCC) + " additional ccc " + ccc);
 
-      if (cccArray[0] != pgCCC[0])
+      if (cccArray[0] != pgCCC[0]) {
 	newCCC[0]='X';
-      else 
+      } else {
 	newCCC[0]=pgCCC[0];
+      }
 
-      if (cccArray[1] != pgCCC[1])
+      if (cccArray[1] != pgCCC[1]) {
 	newCCC[1]='X';
-      else 
+      } else {
 	newCCC[1]=pgCCC[1];
+      }
 
-      if (cccArray[2] != pgCCC[2])
+      if (cccArray[2] != pgCCC[2]) {
 	newCCC[2]='X';
-      else 
+      } else {
 	newCCC[2]=pgCCC[2];
+      }
 
       whichCCCDimPG.setCargoCatCode(new String(newCCC));
     }

@@ -60,11 +60,15 @@ import org.w3c.dom.Element;
  * <p>
  */
 public class TranscomDataXMLize extends CustomDataXMLize {
-  public TranscomDataXMLize (boolean direct, Logger logger) {
+  public TranscomDataXMLize (boolean direct, Logger logger, String GLOBAL_AIR_ID, String GLOBAL_SEA_ID, String NULL_ASSET_ID) {
     super (direct, logger);
     glmPrepHelper = new GLMPrepPhrase (logger);
     glmPrefHelper = new GLMPreference (logger);
     measureHelper = new GLMMeasure    (logger);
+
+    this.GLOBAL_AIR_ID = GLOBAL_AIR_ID;
+    this.GLOBAL_SEA_ID = GLOBAL_SEA_ID;
+    this.NULL_ASSET_ID = NULL_ASSET_ID;
   }
   
   public boolean interestingTask(Task t) {
@@ -80,6 +84,9 @@ public class TranscomDataXMLize extends CustomDataXMLize {
    *
    * Uses statics for asset names from TranscomVishnuPlugin.
    * These are settable by properties.
+   *
+   * NOTE : field names should match those in .dff file
+   *
    * @param object node representing asset
    * @param taskOrAsset asset being translated
    * @return true if should add object to list of new objects
@@ -109,9 +116,9 @@ public class TranscomDataXMLize extends CustomDataXMLize {
       logger.debug ("TranscomDataXMLize.processAsset - created resource " + object);
 	
     // ignore all but global air, sea, and nomenclature
-    return (type.startsWith (TranscomVishnuPlugin.GLOBAL_AIR_ID) ||
-	    type.startsWith (TranscomVishnuPlugin.GLOBAL_SEA_ID) ||
-	    type.startsWith (TranscomVishnuPlugin.NULL_ASSET_ID));
+    return (type.startsWith (GLOBAL_AIR_ID) ||
+	    type.startsWith (GLOBAL_SEA_ID) ||
+	    type.startsWith (NULL_ASSET_ID));
   }
 
   /** 
@@ -156,6 +163,8 @@ public class TranscomDataXMLize extends CustomDataXMLize {
    *
    * Adds departure, arrival, from, to, name, type, and isPerson fields.
    * 
+   * NOTE : field names should match those in .dff file
+   *
    * @param object node representing task
    * @param taskOrAsset task being translated
    * @return true if should add object to list of new objects
@@ -240,6 +249,10 @@ public class TranscomDataXMLize extends CustomDataXMLize {
   }
   
   protected boolean isPerson (GLMAsset asset) {	return asset.hasPersonPG ();  }
+
+  protected String GLOBAL_AIR_ID;
+  protected String GLOBAL_SEA_ID;
+  protected String NULL_ASSET_ID;
 
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMPreference glmPrefHelper;

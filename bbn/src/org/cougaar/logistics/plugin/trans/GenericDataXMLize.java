@@ -43,7 +43,7 @@ public class GenericDataXMLize extends TranscomDataXMLize {
     System.getProperty ("GenericDataXMLize.warnAboutMissingSpeed", "false").equals("true");
 
   public GenericDataXMLize (boolean direct, Logger logger) {
-    super (direct, logger);
+    super (direct, logger, null, null, null);
   }
 
   /** 

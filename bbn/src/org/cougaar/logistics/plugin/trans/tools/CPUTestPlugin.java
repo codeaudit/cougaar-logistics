@@ -130,10 +130,11 @@ public class CPUTestPlugin extends ServiceUserPluginBase {
       conditionService.getConditionByName(CPU_CONDITION_NAME);
     if (cpu != null) {
 
-      if (alwaysHigh)
+      if (alwaysHigh) {
 	cpu.setValue(cpuValues[cpuValues.length-1]);
-      else
+      } else {
 	cpu.setValue(cpuValues[cpuStep]);
+      }
 
       if (logger.isInfoEnabled()) 
 	logger.info("Setting cpu = " + cpu.getValue());

@@ -115,10 +115,12 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     super.localSetup();
 
     try {
-      if (getMyParams().hasParam ("bestDateBackoff"))
+      if (getMyParams().hasParam ("bestDateBackoff")) {
 	bestDateBackoff = getMyParams().getLongParam("bestDateBackoff");
-      else
+      }
+      else {
 	bestDateBackoff = ONE_HOUR; 
+      }
     } catch (Exception e) { warn ("got really unexpected exception " + e); }
 
     if (isDebugEnabled())
@@ -162,18 +164,17 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     return glmPrepHelper.hasPrepNamed(t, GLMTransConst.SequentialSchedule);
   }
 
-  /*** AssetListener ***/
-  /** only interested in airports/seaports */
+  /** 
+   * Implemented for AssetListener interface<br>
+   * only interested in airports/seaports 
+   */
   public boolean interestingAsset (Asset asset) {
-    try {
-      boolean retval = asset instanceof TransportationNode;
-      if (isDebugEnabled())
-	debug (".interestingAsset : " + ((retval) ? "interested in " : "ignoring ") +
-	       asset);
-	  
-      return retval;
-    } catch (Exception e) {}
-    return false;
+    boolean retval = asset instanceof TransportationNode;
+    if (isDebugEnabled())
+      debug (".interestingAsset : " + ((retval) ? "interested in " : "ignoring ") +
+	     asset);
+    
+    return retval;
   }
   
   /*** Organization Listener ***/
@@ -296,12 +297,14 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     Object asset = locator.getAssetAtGeolocCode (destinationGeoloc.getGeolocCode());
 
     if (isDebugEnabled()) {
-      if (asset == null)
+      if (asset == null) {
 	debug(".needsTheater - Theater move needed, since TO location <" + destinationGeoloc + 
 	      "> is not a " + type () + " among these " + type () +"s : " + locator.knownGeolocCodes ());
-      else
+      }
+      else {
 	debug(".needsTheater - no Theater move needed, since TO location <" + destinationGeoloc + 
 	      "> is a " + type () + " (" + asset + ").");
+      }
     }
   
     // if the destination is not an airbase/seaport, add a theater ground move leg
@@ -397,12 +400,14 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     Object airport = locator.getAssetAtGeolocCode (geoloc);
 	
     if (isDebugEnabled()) {
-      if (airport == null)
+      if (airport == null) {
 	debug(".needsCONUS - CONUS move needed, since from <" + geoloc + 
 	      "> is not a " + type () + " among these " + type () + "s : " + locator.knownGeolocCodes ());
-      else
+      }
+      else {
 	debug(".needsCONUS - no CONUS move needed, since from " + sourceGeoloc + 
 	      " is a " + type () + " (" + airport + ").");
+      }
     }
 
     // if the source is not an airbase, add a conus ground move leg to the airbase
@@ -803,11 +808,11 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   }
 
   /** 
-   * Uses locator
+   * Uses locator to get POD
    **/
   Location getPOD (Task task) {
-    Location POD =locator.getNearestLocation(glmPrepHelper.getToLocation(task));
     /*
+    Location POD =locator.getNearestLocation(glmPrepHelper.getToLocation(task));
     System.out.println ("SeqGlobalAir.getPOD - chose POD " + POD + 
 			" nearest to " + glmPrepHelper.getToLocation(task) + " from among " +
 			((LocatorImpl)locator).myLocations);

@@ -181,10 +181,12 @@ public class GroundTransportAllocatorPlugin extends TransportAllocatorPlugin {
    * </pre>
    **/
   public Asset findAsset(Task t){
-    if (isSelf (t))
+    if (isSelf (t)) {
       return t.getDirectObject();
-    else 
+    }
+    else {
       return super.findAsset (t);
+    }
   }
 
   /** 

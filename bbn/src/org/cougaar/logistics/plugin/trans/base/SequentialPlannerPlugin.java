@@ -369,10 +369,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     
   public boolean interestingNotification(Task t) { 
     if (isDebugEnabled()) {
-      if (interestingTask (t))
+      if (interestingTask (t)) {
 	debug(getName()+": noticing expansion I made of " + t.getUID() + " changed.");
-      else
+      }
+      else {
 	debug(getName()+": ignoring expansion made by GLMTransTranscomExpander of " + t.getUID());
+      }
     }
     return interestingTask (t); 
   }

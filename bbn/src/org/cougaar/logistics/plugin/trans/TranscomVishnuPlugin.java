@@ -39,6 +39,30 @@ import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.util.TimeSpan;
 
 public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
+  public void localSetup() {     
+    super.localSetup();
+
+    try {
+      if (getMyParams().hasParam ("GlobalAirRole"))
+	GLOBAL_AIR_ID = getMyParams().getStringParam("GlobalAirRole");
+      else
+	GLOBAL_AIR_ID = "AirTransportationProvider";
+
+      if (getMyParams().hasParam ("GlobalSeaRole"))
+	GLOBAL_SEA_ID = getMyParams().getStringParam("GlobalSeaRole");
+      else
+	GLOBAL_SEA_ID = "SeaTransportationProvider";
+
+      if (getMyParams().hasParam ("NullAssetRole"))
+	NULL_ASSET_ID = getMyParams().getStringParam("NullAssetRole");
+      else
+	NULL_ASSET_ID = "NullNomen";
+
+    } catch(Exception e) {
+      warn ("got really unexpected exception " + e);
+    } 
+  }
+
   /**
    * Sort through assets to make sure we have the proper subordinates.
    *
@@ -113,7 +137,7 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
 
   /** use the TranscomDataXMLize XMLizer */
   protected XMLizer createXMLizer (boolean direct) {
-    return new TranscomDataXMLize (direct, logger);
+    return new TranscomDataXMLize (direct, logger, GLOBAL_AIR_ID, GLOBAL_SEA_ID, NULL_ASSET_ID);
   }
 
   /**
@@ -145,9 +169,9 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       error (" - ERROR - missing expected asset " + NULL_ASSET_ID);
   }
 
-  public static final String GLOBAL_AIR_ID = System.getProperty("TRANSCOM.GlobalAir","AirTransportationProvider");
-  public static final String GLOBAL_SEA_ID = System.getProperty("TRANSCOM.GlobalSea","SeaTransportationProvider");
-  public static final String NULL_ASSET_ID = System.getProperty("TRANSCOM.NullAsset","NullNomen");
+  protected String GLOBAL_AIR_ID;
+  protected String GLOBAL_SEA_ID;
+  protected String NULL_ASSET_ID;
   
   boolean globalAirReport = false;
   boolean globalSeaReport = false;

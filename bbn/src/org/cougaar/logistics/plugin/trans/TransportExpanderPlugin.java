@@ -106,7 +106,6 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
    * @return true if the tasks verb is TRANSPORT, false otherwise
    */
   public boolean interestingTask(Task task){
-    boolean hasPrepo = prepHelper.hasPrepNamed (task, "PREPO");
     boolean hasStratTrans = false;
       
     if (prepHelper.hasPrepNamed (task, "OFTYPE")) {
@@ -136,10 +135,12 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     if (isDebugEnabled() && val && (task.getDirectObject () instanceof AssetGroup))
       debug (".interested in task with asset group? " + task.getUID ());
 
-    if (isDebugEnabled() && !val)
+    if (isDebugEnabled() && !val) {
       debug (".interestingTask - IGNORING      " + task.getUID ());
-    else if (isDebugEnabled())
+    }
+    else if (isDebugEnabled()) {
       debug (".interestingTask - interested in " + task.getUID ());
+    }
 
     if ((task.getDirectObject () instanceof AggregateAsset) &&
 	(((AggregateAsset) task.getDirectObject ()).getQuantity () == 0)) {
@@ -431,8 +432,6 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     PhysicalPG originalPhysicalPG = itemProto.getPhysicalPG ();
 
-    int idSuffix=1;
-
     // keep making subtasks
     while (totalContrib > maxCap) {  
       Task newtask;
@@ -535,10 +534,12 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     debug (".test child " + child.getUID () + " - " + child + 
 	   " mass before " + child.getPhysicalPG().getMass().getKilograms());
 
-    if (original.getPhysicalPG () == child.getPhysicalPG ())
+    if (original.getPhysicalPG () == child.getPhysicalPG ()) {
       debug (".test pgs are the same(EXPECTED)");
-    else
+    }
+    else {
       debug (".test pgs are different");
+    }
 
     debug (".test original pg " + original.getPhysicalPG ().getClass());
     NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
@@ -546,10 +547,12 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     newPhysicalPG.setMass  (new Mass (666,   Mass.KILOGRAMS ));
     child.setPhysicalPG (newPhysicalPG);
 
-    if (original.getPhysicalPG () == child.getPhysicalPG ())
+    if (original.getPhysicalPG () == child.getPhysicalPG ()) {
       debug (".test pgs are the same (WEIRD) !");
-    else
+    }
+    else {
       debug (".test pgs are different (EXPECTED)");
+    }
 
     debug (".test child " + child.getUID () + " - " + child + 
 	   " mass after " + child.getPhysicalPG().getMass().getKilograms());
@@ -742,7 +745,10 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     if (glmasset.hasContainPG()) {
       try {
 	max[0] = glmasset.getContainPG().getMaximumWeight().getTons();
-      } catch (Exception e) {}
+      } catch (Exception e) {
+	if (isDebugEnabled())
+	  debug (".getAssetMaxContain : no contain pg for asset " + glmasset);
+      }
 	  
       max[1] = glmasset.getContainPG().getMaximumPassengers();
       if (isDebugEnabled())

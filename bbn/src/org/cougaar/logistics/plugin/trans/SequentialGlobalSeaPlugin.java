@@ -59,11 +59,10 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
     super.localSetup();
 
     try {
-      if (getMyParams().hasParam ("useSeaRoutes"))
-	useSeaRoutes = getMyParams().getBooleanParam("useSeaRoutes");
-      else
-	useSeaRoutes = true;
-    } catch(Exception e) {} 
+      useSeaRoutes = (getMyParams().hasParam ("useSeaRoutes")) ? 
+	getMyParams().getBooleanParam("useSeaRoutes") : 
+	true;
+    } catch (Exception e) { warn ("got really unexpected exception " + e); }
 
     if (useSeaRoutes)
       locator.setFactory (ldmf); // tell route finder the ldm factory to use

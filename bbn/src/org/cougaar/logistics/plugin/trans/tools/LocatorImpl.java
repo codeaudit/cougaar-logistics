@@ -85,12 +85,10 @@ public class LocatorImpl implements Locator {
     routeFinder.setFactory (ldmf);
 
     try {
-      if (myPlugin.getMyParams().hasParam ("MAX_GROUND_DISTANCE"))
-	MAX_GROUND_DISTANCE = myPlugin.getMyParams().getDoubleParam("MAX_GROUND_DISTANCE");
-      else
-	MAX_GROUND_DISTANCE = 400.0; 
-    }
-    catch(Exception e) {}
+      MAX_GROUND_DISTANCE = (myPlugin.getMyParams().hasParam ("MAX_GROUND_DISTANCE")) ?
+	myPlugin.getMyParams().getDoubleParam("MAX_GROUND_DISTANCE") :
+	400.0; 
+    } catch(Exception e) { logger.warn ("got really unexpected exception " + e); }  // never happen
   }
   
   /*
@@ -162,10 +160,7 @@ public class LocatorImpl implements Locator {
 
   public Location getLocationForGeolocCode (String geoloc) { 
     Object asset = geolocToAsset.get (geoloc);
-    if (asset != null)
-      return (Location) assetToLocation.get (asset);
-    else
-      return null;
+    return (asset != null) ? (Location) assetToLocation.get (asset) : null;
   }
   
   public Location getLocationOfAsset (Object asset) { return (Location) assetToLocation.get(asset); }
@@ -250,13 +245,13 @@ public class LocatorImpl implements Locator {
 				       Collection exceptions) {
     GeolocLocation POE = getNearestLocationExcept (fromGeoloc,  exceptions);
     if (POE == null)
-      System.out.println ("Locator chose POE " + POE + " nearest to " + fromGeoloc + " from among " +
-			  myLocations + "\nexceptions " + exceptions);
+      logger.warn ("Locator chose POE " + POE + " nearest to " + fromGeoloc + " from among " +
+		   myLocations + "\nexceptions " + exceptions);
 			
     GeolocLocation POD = getNearestLocation (toGeoloc);
     if (POD == null)
-      System.out.println ("Locator chose POD " + POD + " nearest to " + toGeoloc + " from among " +
-			  myLocations + "\nexceptions " + exceptions);
+      logger.warn ("Locator chose POD " + POD + " nearest to " + toGeoloc + " from among " +
+		   myLocations + "\nexceptions " + exceptions);
 
     TransportationRoute route = routeFinder.getRoute(POE, POD);
 

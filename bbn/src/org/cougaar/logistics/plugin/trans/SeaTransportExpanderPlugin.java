@@ -96,12 +96,15 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
 
     double itemContrib;
 
-    if (isTruck) 
+    if (isTruck) {
       itemContrib = getItemAreaContribution(itemProto);
-    else if (isContainer) 
+    }
+    else if (isContainer) {
       itemContrib = 1;
-    else
+    }
+    else {
       itemContrib = getItemVolumeContribution(itemProto);
+    }
 
     double maxCap = 
       ((isTruck) ? maxAreaCapacity : 
