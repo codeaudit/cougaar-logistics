@@ -105,10 +105,10 @@ public class LogisticsInventoryFormatter {
     public final static String AMMUNITION_SUPPLY_TYPE = "Ammunition";
     public final static String CONSUMABLE_SUPPLY_TYPE = "Consumable";
 
-    public final static String SUBSISTENCE_UNIT = "Meals";
+    public final static String SUBSISTENCE_UNIT = "Units of Issue";
     public final static String BULK_POL_UNIT = "Gallons";
     public final static String PACKAGED_POL_UNIT = "Packages";
-    public final static String AMMUNITION_UNIT = "Rounds";
+    public final static String AMMUNITION_UNIT = "Tons";
     public final static String CONSUMABLE_UNIT = "Packages";
     
 
