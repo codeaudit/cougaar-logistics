@@ -134,7 +134,7 @@
 
 <Policy name="SparePartsPolicy" type="org.cougaar.logistics.plugin.inventory.InventoryPolicy">
     <RuleParam name="ResourceType">
-      	<String value ="Consumables">
+      	<String value ="Consumable">
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
