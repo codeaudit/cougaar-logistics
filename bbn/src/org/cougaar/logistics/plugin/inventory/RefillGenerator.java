@@ -169,7 +169,17 @@ public class RefillGenerator extends InventoryLevelGenerator {
 //             double refillQty = generateRefill(invLevel, refillBucket, 
 // 					      reorderPeriodEndBucket, thePG);
 	    int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
-	    double targetLevel = getTargetLevel(refillBucket,reorderPeriodEndBucket, thePG);
+            double targetLevel = getTargetLevel(refillBucket,reorderPeriodEndBucket, thePG);
+            if (thePG.getFillToCapacity()) {
+              double capacity = thePG.getCapacity();
+              if (targetLevel > capacity) {
+                logger.error("Capacity of inventory for "+
+                            thePG.getResource().getTypeIdentificationPG().getTypeIdentification()+
+                            " at "+getMyOrganization()+
+                            " is too small to accommodate calculated target level");
+              }
+              targetLevel = capacity;
+            } 
             double refillQty = targetLevel-invLevel;
 	    if(refillQty > 0.0) {
 	      lastRefillBucket=refillBucket;
