@@ -52,6 +52,7 @@ public class DataGrabberConfig implements XMLable, DeXMLable {
     public static final String NAME_TAG = "DataGrabber";
 
     public static final String VERBOSITY_TAG = "Verbosity";
+    public static final String NUM_DB_CONNECTIONS_TAG = "NumDBConnections";
     public static final String CONTROLLER_MAX_THREADS_TAG="ControllerMaxThreads";
 
     //Variables:
@@ -59,6 +60,7 @@ public class DataGrabberConfig implements XMLable, DeXMLable {
 
     protected int verbosityLevel;
     protected int controllerMaxThreads;
+    protected int numDBConnections = 4;
 
     protected DBConfig dbConfig;
     protected WebServerConfig webServerConfig;
@@ -81,6 +83,10 @@ public class DataGrabberConfig implements XMLable, DeXMLable {
 
     public int getVerbosity() {
         return verbosityLevel;
+    }
+
+    public int getNumDBConnections() {
+        return numDBConnections;
     }
 
     public int getControllerMaxThreads() {
@@ -124,6 +130,7 @@ public class DataGrabberConfig implements XMLable, DeXMLable {
     public void toXML(XMLWriter w) throws IOException {
         w.optagln(NAME_TAG);
         w.tagln(VERBOSITY_TAG, Logger.SEVERITIES[verbosityLevel]);
+        w.tagln(NUM_DB_CONNECTIONS_TAG, getNumDBConnections());
         w.tagln(CONTROLLER_MAX_THREADS_TAG,
                 Integer.toString(controllerMaxThreads));
         dbConfig.toXML(w);
@@ -152,7 +159,14 @@ public class DataGrabberConfig implements XMLable, DeXMLable {
     throws UnexpectedXMLException {
         if(name.equals(NAME_TAG)) {}
         else if(name.equals(VERBOSITY_TAG)) {
-            verbosityLevel=StdLogger.getSeverity(data);
+	  verbosityLevel=StdLogger.getSeverity(data);
+	}
+        else if(name.equals(NUM_DB_CONNECTIONS_TAG)) {
+	  try {
+            numDBConnections=Integer.parseInt(data);
+	  } catch (NumberFormatException nfe) {
+	    throw new UnexpectedXMLException("Could not parse num db connections as number: "+data);
+	  }
         } else if(name.equals(CONTROLLER_MAX_THREADS_TAG)) {
             try {
                 controllerMaxThreads=Integer.parseInt(data);
