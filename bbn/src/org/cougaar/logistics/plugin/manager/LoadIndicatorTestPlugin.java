@@ -22,6 +22,7 @@ package org.cougaar.logistics.plugin.manager;
 
 import java.util.*;
 
+import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
@@ -36,6 +37,7 @@ import org.cougaar.planning.ldm.plan.Verb;
 
 import org.cougaar.core.util.UID;
 
+import org.cougaar.util.log.Logging;
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.glm.ldm.oplan.Oplan;
@@ -49,8 +51,8 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
   private IncrementalSubscription myOplanSubscription;
   private IncrementalSubscription myLoadIndicatorSubscription;
   private IncrementalSubscription myGLSSubscription;
+  private IncrementalSubscription myInterAgentOperatingModePolicySubscription;
 
-  private LoggingService myLoggingService;
   private BlackboardService myBlackboardService;
   private UIDService myUIDService;
 
@@ -87,16 +89,27 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
       return false;
     }
   };
+
+  private UnaryPredicate myInterAgentOperatingModePolicyPred = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof InterAgentOperatingModePolicy) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
   
   protected void setupSubscriptions() {
     myOplanSubscription = (IncrementalSubscription)subscribe(myOplanPred);
     myLoadIndicatorSubscription = (IncrementalSubscription)subscribe(myLoadIndicatorPred);
     myGLSSubscription = (IncrementalSubscription)subscribe(myGLSPred);
+    myInterAgentOperatingModePolicySubscription = (IncrementalSubscription)subscribe(myInterAgentOperatingModePolicyPred);
     
+
     myBlackboardService = 
       (BlackboardService) getBindingSite().getServiceBroker().getService(this, BlackboardService.class, null);
-    myLoggingService = 
-      (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
+
     myUIDService = 
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
   }
@@ -111,7 +124,7 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
       loadIndicator.addTarget(new AttributeBasedAddress("MiniTestConfig",
                                                         "Role", 
                                                         "Manager"));
-      myLoggingService.warn("LoadIndicatorTestPlugin: adding LoadIndicator to be sent to " + loadIndicator.getTargets());
+      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": adding LoadIndicator to be sent to " + loadIndicator.getTargets());
       publishAdd(loadIndicator);
     }
 
@@ -120,13 +133,35 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
            iterator.hasNext();) {
         LoadIndicator loadIndicator = (LoadIndicator) iterator.next();
         loadIndicator.setLoadStatus(LoadIndicator.SEVERE_LOAD);
-        myLoggingService.warn("LoadIndicatorTestPlugin: changing load status for LoadIndicator: " + loadIndicator.getTargets());
+        Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": changing load status for LoadIndicator: " + loadIndicator.getTargets());
         publishChange(loadIndicator);
       }
     }
+
+    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getAddedCollection().iterator(); 
+         iterator.hasNext();) {
+      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": new InterAgentOperatingModePolicy: " + 
+                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
+    }
+    
+    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getChangedCollection().iterator(); 
+         iterator.hasNext();) {
+      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": modified InterAgentOperatingModePolicy: " + 
+                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
+    }
+
+    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getRemovedCollection().iterator(); 
+         iterator.hasNext();) {
+      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": removed InterAgentOperatingModePolicy: " + 
+                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
+
+    }
   }
+
                        
 }
+
+
 
 
 
