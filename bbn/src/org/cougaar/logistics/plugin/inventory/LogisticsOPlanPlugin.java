@@ -117,6 +117,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     }
     updateOplans();
     updateOrgActivities();
+    publishLogOplanObjects();
   }
   
   protected void setupSubscriptions() {
@@ -208,15 +209,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 	    getBlackboardService().subscribe(new OplanOrgActivitiesPredicate(oplanUID));
 	  orgActivitySubscriptionOfOPlanUID.put(oplanUID, oplanActivities);
 	}
-	LogisticsOPlan loplan = (LogisticsOPlan) oplanHash.get(oplanUID);
-	if (loplan == null) {
-	  loplan = new LogisticsOPlan(clusterId, oplan);
-	  oplanHash.put(oplanUID, loplan);
-	  getBlackboardService().publishAdd(loplan);
-          if (logger.isDebugEnabled()) {
-            logger.debug("Published LogisticsOPlan "+loplan+" for "+clusterId);
-          }
-	}
+        // publish code was here
       }
     }
     // Remove LogisticsOPlan objects that are no longer relevant
@@ -236,9 +229,6 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 	break;
       }
     }
-    if (oplanHash.isEmpty() && logger.isErrorEnabled()) {
-      logger.error(" updateOplans no OPLAN");
-    }
   }
 
   // Each LogisticsOPlan updates its own OrgActivities if needed
@@ -249,11 +239,63 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
       LogisticsOPlan loplan = (LogisticsOPlan) enum.next();
       IncrementalSubscription s = (IncrementalSubscription)
 	orgActivitySubscriptionOfOPlanUID.get(loplan.getOplanUID());
-      update = update || loplan.updateOrgActivities(s);
+      if (s.hasChanged()) {
+        update = update || loplan.updateOrgActivities(s);
+        getBlackboardService().publishChange(loplan);
+      }
     }
     return update;
   }
- 
+
+  /** The publishLogOplanObjects() method publishes the LogisticsOPlan objects for
+   *  oplans that also have orgactivities.
+   *  The updateOPlans() method associates the Oplan with its OrgActivities by placing
+   *  them in the orgActivitySubscriptionOfOPlanUID map.  At the end of the execute the
+   *  publishLogOplanObjects() looks through the map to find oplans with orgActivities 
+   *  that have not been published (do not appear in the oplanHash) and creates and
+   *  publishes the LogOplan object.
+   **/
+  private void publishLogOplanObjects() {
+    Oplan oplan;
+    UID oplanUID;
+    LogisticsOPlan loplan;
+    Iterator oplanUIDset = orgActivitySubscriptionOfOPlanUID.keySet().iterator();
+    while (oplanUIDset.hasNext()) {
+      oplanUID = (UID)oplanUIDset.next();
+      oplan = findOplan(oplanUID);
+      if (oplan == null) {
+        logger.error("Cannot find matching oplan "+oplanUID);
+        continue;
+      }
+      loplan = (LogisticsOPlan) oplanHash.get(oplanUID);
+      IncrementalSubscription s = (IncrementalSubscription)
+	orgActivitySubscriptionOfOPlanUID.get(oplanUID);
+      if (loplan == null) {
+        if (!s.isEmpty()) {
+          loplan = new LogisticsOPlan(clusterId, oplan);
+          loplan.updateOrgActivities(s);
+          oplanHash.put(oplanUID, loplan);
+          getBlackboardService().publishAdd(loplan);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Published LogisticsOPlan "+loplan+" for "+clusterId);
+          }
+        }
+      }
+    }
+  }
+
+  private Oplan findOplan(UID oplanUID) {
+    Iterator oplanIt = oplans.iterator();
+    Oplan oplan;
+    while (oplanIt.hasNext()) {
+      oplan = (Oplan)oplanIt.next();
+      if (oplan.getUID().equals(oplanUID)) {
+        return oplan;
+      }
+    }
+    return null;
+  }
+
   public LoggingService getLoggingService(Object requestor) {
     return (LoggingService) 
       getServiceBroker().getService(requestor,
