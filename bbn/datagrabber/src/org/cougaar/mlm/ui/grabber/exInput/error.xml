@@ -1,4 +1,0 @@
-<Error>
- <Message>Error</Message>
- <StackTrace>java.blah.Exception at java.blah.blah 120</StackTrace>
-</Error>

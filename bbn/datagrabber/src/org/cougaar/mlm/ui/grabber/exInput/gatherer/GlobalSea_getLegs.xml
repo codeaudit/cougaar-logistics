@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Legs>
- <Leg UID="Leg1" STime="123121" ETime="2134123" ReadyTime="0" 
-      EariestEndTime="0" BestEndTime="0" LatestEndTime="0" 
-      SLoc="loc1" ELoc="loc2" Type="0" ConvID="Conv1" IsDetail="F">
-  <CarriedAsset>Asset1</CarriedAsset>
- </Leg>
-</Legs>

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Locations>
- <Loc UID="Loc1" Lat="3.34" Lon="5.43" geoLoc="BOSP" ICAO="" 
-      PName="BostonPort"/>
- <Loc UID="Loc2" Lat="34.34" Lon="75.43" geoLoc="NYCP" ICAO="" 
-      PName="NewYorkPort"/>
-</Locations>
