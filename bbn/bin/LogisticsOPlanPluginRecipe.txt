@@ -1,0 +1,8 @@
+INSERT INTO  v4_lib_mod_recipe (MOD_RECIPE_LIB_ID, NAME, JAVA_CLASS, DESCRIPTION) VALUES ('RECIPE-LogisticsOPlanPlugin', 'LogisticsOPlanPluginInsertion', 'org.cougaar.tools.csmart.recipe.SpecificInsertionRecipe', 'Add LogisticsOPlanPlugin to all agents');
+
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Component Name', 0.0, 'org.cougaar.logistics.plugin.inventory.LogisticsOPlanPlugin');
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Component Priority', 2.0, 'COMPONENT');
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Type of Insertion', 1.0, 'plugin');
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Number of Arguments', 3.0, '0');
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Class Name', 4.0, 'org.cougaar.logistics.plugin.inventory.LogisticsOPlanPlugin');
+INSERT INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-LogisticsOPlanPlugin', 'Target Component Selection Query', 5.0, 'recipeQueryAllAgents');
