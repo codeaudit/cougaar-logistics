@@ -87,6 +87,10 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
     }
 
     private boolean allocateTask(Task task) {
+      if (task.getPlanElement() != null) {
+        logger.error("Found Task with PlanElement. Ignoring task.");
+        return true;
+      }
 	Organization provider = findBestSource(task);
 	if (provider != null) {
 	  if(verifyBeforeAllocation(task,provider)){
@@ -159,18 +163,20 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 	else {
 	    String itemId = task.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
 	    if (getTaskUtils().isProjection(task)) {
-		logger.error("No "+providerRole+" for task " + task.getUID() + ", during ["+getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
+		logger.warn("No "+providerRole+" for task " + task.getUID() + ", during ["+
+                            getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
 			     "-" +
-			   getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]");
+			   getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]"+". Will retry.");
 	    } else {
-		logger.error("No "+providerRole+" for task " + task.getUID() + ", during "+getTimeUtils().dateString(getTaskUtils().getEndTime(task)));
+		logger.warn("No "+providerRole+" for task " + task.getUID() + ", during "+
+                            getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
 	    }
 	    // prevents same error message from being printed many times.
-	    if (!noResupply.contains(itemId)) {
-		logger.debug("findBestSource() <"+ providerRole +
-			   "> allocateRefillTask no best source for "+itemId);
-		noResupply.addElement(itemId);
-	    }
+// 	    if (!noResupply.contains(itemId)) {
+// 		logger.debug("findBestSource() <"+ providerRole +
+// 			   "> allocateRefillTask no best source for "+itemId);
+// 		noResupply.addElement(itemId);
+// 	    }
 	}
 	return null;
     }
