@@ -164,7 +164,8 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     try{
       if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY) &&
-	  !isSelfPropelled  (task, task.getDirectObject())) {
+	  (!isSelfPropelled  (task, task.getDirectObject()) || 
+	   (getBindingSite().getAgentIdentifier().toString().indexOf("Packer") != -1))) {
 	expandLowFi (task, subtasks);
       }
       else if (task.getDirectObject () instanceof AggregateAsset) {
