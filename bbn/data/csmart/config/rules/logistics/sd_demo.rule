@@ -8,6 +8,8 @@ new_plugin2 = "org.cougaar.logistics.plugin.servicediscovery.ALProviderPlugin"
 old_plugin2 = "org.cougaar.servicediscovery.plugin.SDProviderPlugin"
 new_plugin3 = "org.cougaar.logistics.plugin.servicediscovery.ALRegistrationPlugin"
 old_plugin3 = "org.cougaar.servicediscovery.plugin.SDRegistrationPlugin"
+new_plugin4 = "org.cougaar.logistics.plugin.servicediscovery.ALCommBasedRegistrationPlugin"
+old_plugin4 = "org.cougaar.servicediscovery.plugin.SDCommunityBasedRegistrationPlugin"
 sd_servlet = "org.cougaar.logistics.servlet.SDUseCaseServlet"
 relationship_servlet = "org.cougaar.logistics.ui.servicediscovery.RelationshipScheduleServletComponent"
 
@@ -16,16 +18,16 @@ society.each_agent do |agent|
     case c.classname
      when old_plugin1 
        c.classname = new_plugin1
-       c.name =~ /^.*\((.*)\)$/
-       c.name = "#{new_plugin1}(#$1)"
+       c.name = c.comparison_name
      when old_plugin2 
        c.classname = new_plugin2
-       c.name =~ /^.*\((.*)\)$/
-       c.name = "#{new_plugin2}(#$1)"
+       c.name = c.comparison_name
      when old_plugin3 
        c.classname = new_plugin3
-       c.name =~ /^.*\((.*)\)$/
-       c.name = "#{new_plugin3}(#$1)"
+       c.name = c.comparison_name
+     when old_plugin4 
+       c.classname = new_plugin4
+       c.name = c.comparison_name
     end
   end
   re = /^.*Provider.*$/
@@ -46,3 +48,4 @@ society.each_agent do |agent|
     c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
   end
 end
+
