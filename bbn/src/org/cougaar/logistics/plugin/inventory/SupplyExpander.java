@@ -87,8 +87,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
   private static class SupplyARA implements AllocationResultAggregator {
     public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
       AspectValue[] merged = new AspectValue[AlpineAspectType.LAST_ALPINE_ASPECT + 1];
-      long startTime = Long.MAX_VALUE;
-      long endTime = Long.MIN_VALUE;
       boolean success = true;
       float rating = 0.0f;
       int tstSize = tst.size();
@@ -102,14 +100,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
         AspectValue av = curr[i];
         int type = av.getAspectType();
         merged[type] = av;
-        switch (type) {
-          case START_TIME:
-            startTime = (long) av.getValue();
-            break;
-          case END_TIME:
-            endTime = (long) av.getValue();
-            break;
-        }
       }
       for (int i = 0; i < tstSize; i++) {
         AllocationResult ar = tst.getAllocationResult(i);
@@ -185,28 +175,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     }
   }
 
-  private static class SupplyTaskKey {
-    private long endTime;
-    private Object customer;
-    private int hc;
-
-    public SupplyTaskKey(Task aTask) {
-      endTime = TaskUtils.getEndTime(aTask);
-      customer = TaskUtils.getCustomer(aTask);
-      hc = ((int) endTime) ^ ((int) (endTime >> 32)) ^ customer.hashCode();
-    }
-    public int hashCode() {
-      return hc;
-    }
-    public boolean equals(Object o) {
-      if (o instanceof SupplyTaskKey) {
-        SupplyTaskKey that = (SupplyTaskKey) o;
-        return this.endTime == that.endTime && this.customer.equals(that.customer);
-      }
-      return false;
-    }
-  }
-
   protected static final long MSEC_PER_MIN =  60 * 1000;
   protected static final long MSEC_PER_HOUR = MSEC_PER_MIN *60;
   public static final long  DEFAULT_ORDER_AND_SHIPTIME = 24 * MSEC_PER_HOUR; // second day
@@ -222,9 +190,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
   private static AllocationResultAggregator supplyARA = new SupplyARA();
 
   private MessageAddress clusterId;
-
-  private Map supplyTaskOfTaskKey;
-  private Map supplyTaskKeyOfTaskUID = new HashMap();
 
   public SupplyExpander(InventoryPlugin imPlugin) {
     super(imPlugin);
@@ -258,44 +223,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     Iterator taskIter = tasks.iterator();
     while (taskIter.hasNext()) {
       aTask = (Task) taskIter.next();
-      SupplyTaskKey key = getSupplyTaskKey(aTask);
-      Task existingTask = getExistingTask(key);
-      if (isPrediction(aTask)) {
-        if (existingTask != null) {
-          if (logger.isWarnEnabled()) {
-            logger.warn("SupplyExpander rescinding redundant prediction: " + aTask);
-          } else if (logger.isDebugEnabled()) {
-            logger.debug("SupplyExpander rescinding unnecessary predicton: " + aTask);
-          }
-          inventoryPlugin.publishRemove(aTask); // Probably a bug
-          continue;
-        }
-        if (logger.isDebugEnabled()) {
-          logger.debug("SupplyExpander adding prediction: " + aTask);
-        }
-        putExistingTask(key, aTask);
-      } else {
-        putExistingTask(key, aTask); // Regardless of what follows, this is now the prevailing task for this slot
-        if (existingTask != null && isPrediction(existingTask)) {
-          // Maybe we can use the withdraw of the prediction
-          NewPlanElement pe = (NewPlanElement) existingTask.getPlanElement();
-          inventoryPlugin.publishRemove(existingTask);
-          if (logger.isDebugEnabled()) {
-            logger.debug("SupplyExpander replacing prediction with: " + aTask);
-          }
-          if (pe != null) {
-            pe.resetTask(aTask);
-            // Cause the existing estimated AllocationResult of the expansion to be sent for the new task.
-            Transaction.noteChangeReport(pe, new PlanElement.EstimatedResultChangeReport());
-            inventoryPlugin.publishChange(pe);
-            continue;     // No need to process the task itself
-          }
-        } else {
-          if (logger.isDebugEnabled()) {
-            logger.debug("Adding supply task " + aTask);
-          }
-        }
-      }
       wdrawTask = expandDemandTask(aTask, createWithdrawTask(aTask));
       logInvPG = getLogisticsInventoryPG(wdrawTask);
       if (logInvPG != null) {
@@ -316,29 +243,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
       LogisticsInventoryPG thePG = getLogisticsInventoryPG(aTask);
       if (thePG != null) {
         thePG.removeWithdrawRequisition(aTask);
-      }
-    }
-  }
-
-  public void handleRemovedRealRequisitions(Collection tasks) {
-    Iterator taskIter = tasks.iterator();
-    while (taskIter.hasNext()) {
-      Task aTask = (Task)taskIter.next();
-      if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
-                     "processing removal of real requisition: " + aTask.getUID());
-      }
-      SupplyTaskKey key = getSupplyTaskKey(aTask);
-      Task existingTask = getExistingTask(key);
-      if (existingTask != null) {
-        if (logger.isDebugEnabled()) {
-          if (isPrediction(existingTask)) {
-            logger.debug("SupplyExpander removing prediction: " + existingTask);
-          } else {
-            logger.debug("SupplyExpander removing requisition: " + existingTask);
-          }
-        }
-        removeExistingTask(key);
       }
     }
   }
@@ -486,58 +390,6 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (tasksIter.hasNext()) {
       aTask = (Task)tasksIter.next();
     }
-  }
-
-
-  private static boolean isPrediction(Task aTask) {
-    PrepositionalPhrase for_pp = aTask.getPrepositionalPhrase(Constants.Preposition.FOR);
-    String forOrgName = (String) for_pp.getIndirectObject();
-    String fromOrgName = aTask.getSource().toString();
-    return !forOrgName.equals(fromOrgName);
-  }
-
-  /**
-   * Create the supplyTaskMap if necessary. We populate the map with
-   * the current prevailing task for every particular customer/time.
-   * The prevailing task is always the one task having a PlanElement
-   * (Expansion). No further checking is required
-   **/
-  private synchronized Map getSupplyTaskOfTaskKey() {
-    if (supplyTaskOfTaskKey == null) {
-      supplyTaskOfTaskKey = new HashMap();
-      Iterator i = inventoryPlugin.getSupplyTaskScheduler().iterator();
-      while (i.hasNext()) {
-        Task aTask = (Task) i.next();
-        // Ignore tasks without plan elements for now; they will be processed later.
-        if (aTask.getPlanElement() == null) continue;
-        SupplyTaskKey key = getSupplyTaskKey(aTask);
-        supplyTaskOfTaskKey.put(key, aTask);
-        supplyTaskKeyOfTaskUID.put(aTask.getUID(), key);
-      }
-    }
-    return supplyTaskOfTaskKey;
-  }
-
-  private Task getExistingTask(SupplyTaskKey key) {
-    return (Task) getSupplyTaskOfTaskKey().get(key);
-  }
-
-  private void putExistingTask(SupplyTaskKey key, Task aTask) {
-    getSupplyTaskOfTaskKey().put(key, aTask);
-  }
-
-  private void removeExistingTask(SupplyTaskKey key) {
-    getSupplyTaskOfTaskKey().remove(key);
-  }
-
-  private SupplyTaskKey getSupplyTaskKey(Task aTask) {
-    UID uid = aTask.getUID();
-    SupplyTaskKey key = (SupplyTaskKey) supplyTaskKeyOfTaskUID.get(uid);
-    if (key == null) {
-      key = new SupplyTaskKey(aTask);
-      supplyTaskKeyOfTaskUID.put(uid, key);
-    }
-    return key;
   }
 
   private Task expandDemandTask(Task parentTask, Task withdrawTask) {
