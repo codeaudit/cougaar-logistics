@@ -52,6 +52,7 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.plugin.util.AllocationResultHelper;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
@@ -1540,6 +1541,10 @@ public class InventoryPlugin extends ComponentPlugin
     ((NewTask) subtask).setContext(parent.getContext());
     ((NewTask) subtask).setPlan(parent.getPlan());
     // Task has not been expanded, create an expansion
+    if (pe instanceof Disposition) {
+      publishRemove(pe);
+      pe = null;
+    }
     if (pe == null) {
       PlanningFactory factory = getPlanningFactory();
       // Create workflow
@@ -1581,6 +1586,34 @@ public class InventoryPlugin extends ComponentPlugin
     Task milTask = detReqHandler.findOrMakeMILTask(inventory,
                                                    aggMILSubscription);
     publishAddToExpansion(milTask, task);
+  }
+
+  public void disposeOfUnusedMILTask(Inventory inventory, boolean noRefills) {
+    if (noRefills) {
+      Task milTask = detReqHandler.findOrMakeMILTask(inventory,
+                                                     aggMILSubscription);
+      PlanElement pe = milTask.getPlanElement();
+      // If the PlanElement is already a Disposition then do nothing
+      if (!(pe instanceof Disposition)) {
+        // If the PlanElement is not null then it is an expansion.  
+        // Only Remove expansion if there is nothing in the workflow.
+        if (pe instanceof Expansion) {
+          Enumeration tasks = ((Expansion)pe).getWorkflow().getTasks();
+          if (!tasks.hasMoreElements()) {
+            publishRemove(pe);
+            pe = null;
+          }
+        }
+        if (pe == null) {
+          // Create Disposition
+          AllocationResultHelper helper = new AllocationResultHelper(milTask, null);
+          AllocationResult dispAR = helper.getAllocationResult(1.0, true);
+          Disposition disposition =
+            getPlanningFactory().createDisposition(milTask.getPlan(), milTask, dispAR);
+          publishAdd(disposition);
+        }
+      }
+    }
   }
 
   private Organization getMyOrganization(Enumeration orgs) {

@@ -304,6 +304,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         // call the Comparator for this Inventory which will compare the old and
         // new Refills and then publish the new Refills and Rescind the old Refills.
         myComparator.compareRefills(newRefills, oldRefills, anInventory);
+        inventoryPlugin.disposeOfUnusedMILTask(anInventory, newRefills.isEmpty());
       } // end of if not level 2 inventory
     } // done going through inventories
   }
@@ -504,7 +505,6 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     }
     return myDecimalFormatter;
   }
-
 }
 
 
