@@ -49,13 +49,9 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
 
     private BlackboardService blackboard;
     private static String ROLE = "PackagedPOLSupplyProvider";
-    /*AmmunitionProvider
-    FuelSupplyProvider
-    PackagedPOLSupplyProvider
-    SparePartsProvider
-    StrategicTransportationProvider
-    SubsistenceSupplyProvider
-    */
+    private static String[] ROLE_NAMES = {"AmmunitionProvider", "FuelSupplyProvider",
+      "PackagedPOLSupplyProvider", "SparePartsProvider", "StrategicTransportationProvider",
+      "SubsistenceSupplyProvider"};
     private static String PATH = "/SD_Use_Case";
     private static String ROLE_PARAMETER = "role";
     private static String END_DATE_PARAMETER = "enddate";
@@ -171,12 +167,18 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
     }
 
     private void printForm(HttpServletRequest req, PrintWriter out) {
+      String optionString = "";
+      for(int i=0; i<ROLE_NAMES.length; i++) {
+        optionString = optionString.concat(
+      "<option value=\"" + ROLE_NAMES[i] + "\">" + ROLE_NAMES[i] + "</option>" + "\n");
+      }
+
 	out.print("<form method=\"GET\" action=\"" +
 		  req.getRequestURI() +
 		  "\">\n"+
 		  "Enter role: " +
 		  "<select size=1 name=\"" + ROLE_PARAMETER + "\">\n" +
-		  "<option selected>" + ROLE + "\n" +
+                  optionString +
 		  "</select>" +
 		  "<p>Enter new end date (MM/DD/YYYY): " +
 		  "<input type=\"text\" name=\"" + END_DATE_PARAMETER + "\" size=40>\n" +
