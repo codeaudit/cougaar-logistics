@@ -306,13 +306,13 @@ public class HTMLizer implements Logger{
   }
   
   private void indent(){
-    for(int i=0;i<indent;i++)
-      ps.print(' ');
+    char spaces [] = new char [indent];
+    for (int i = 0; i < indent; i++)
+      spaces[i] = ' ';
+    ps.print(spaces);
   }
 
-
   //Logger:
-
 
   public void logMessage(int severity, int type, String message){
     if(severity<=verbosityLevel){
