@@ -599,9 +599,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         createEstimatedAllocationResult(withdraw, inventoryPlugin.getRootFactory(), 
                                         0.9, true);
       pe.setEstimatedResult(estimatedResult);
-      inventoryPlugin.publishChange(pe);
+      //inventoryPlugin.publishChange(pe);
       thePG.updateWithdrawRequisition(withdraw);
     }
+    // mark it as changed either way so that the actionable expansion list contains this change
+    inventoryPlugin.publishChange(pe);
   }
       
 
