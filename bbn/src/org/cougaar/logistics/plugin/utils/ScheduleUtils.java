@@ -345,4 +345,59 @@ public class ScheduleUtils {
     return orgActSchedule;
   }
 
+  public static Schedule trimObjectSchedule(Schedule schedule, TimeSpan span) {
+    if (span == null) {
+      return schedule;
+    }
+    ObjectScheduleElement startOse=null, endOse=null, ose;
+    Vector resultElements = new Vector();
+    long start = span.getStartTime();
+    long end = span.getEndTime();
+//     System.out.println("TIME SPAN "+TimeUtils.dateString(start)+
+//                        " to "+TimeUtils.dateString(end)+", SCHEDULE "+schedule);
+    // Grab all elements of this schedule that are bounded by timespan
+    Collection elements = schedule.getEncapsulatedScheduleElements(start, end);
+    // Grab start and end time elements as they may not be bounded by timespan
+    Collection col = schedule.getScheduleElementsWithTime(start);
+    if (!col.isEmpty()){
+      startOse = (ObjectScheduleElement)col.iterator().next();
+    }
+    col = schedule.getScheduleElementsWithTime(end-1);
+    if (!col.isEmpty()) {
+      endOse = (ObjectScheduleElement)col.iterator().next();
+    }
+    Iterator elementsIt = elements.iterator();
+    while (elementsIt.hasNext()) {
+      ose = (ObjectScheduleElement)elementsIt.next();
+      // Check to see if start or end is fully encapsulated in this schedule
+      if (ose == startOse) {
+        startOse = null;
+      } 
+      if (ose == endOse) {
+        endOse = null;
+      }
+      // Include all elements that are fully encapsulated by the timespan
+      resultElements.add(new ObjectScheduleElement(ose.getStartTime(), ose.getEndTime(),
+                                                   ose.getObject()));
+    }
+    if ((startOse == endOse) && (startOse != null)) {
+      resultElements.add(new ObjectScheduleElement(start, end,
+                                                   startOse.getObject()));
+    } else {
+      if (startOse != null) {
+        // start does not fully encapsulate this element
+        // adjust start of return schedule to reflect time span restriction
+        resultElements.add(new ObjectScheduleElement(start, startOse.getEndTime(),
+                                                     startOse.getObject()));
+      }
+      if (endOse != null) {
+        // end does not fully encapsulate this element
+        // adjust end of return schedule to reflect time span restriction
+        resultElements.add(new ObjectScheduleElement(endOse.getStartTime(), end,
+                                                     endOse.getObject()));
+      }
+    }
+    return newObjectSchedule(resultElements.elements());
+  }
+  
 }
