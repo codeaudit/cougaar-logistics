@@ -50,6 +50,8 @@ import java.io.IOException;
  **/
 public class DemandGeneratorOutputModule {
 
+  public final static String OUTPUT_SUBDIR = "DemandGeneratorOutput";
+
   protected transient Logger logger;
   protected transient DemandGeneratorPlugin dgPlugin;
   private boolean aborted = false;
@@ -78,12 +80,17 @@ public class DemandGeneratorOutputModule {
       return;
     }
 
+    String dirPath = System.getProperty("org.cougaar.workspace", ".") + File.separator +      OUTPUT_SUBDIR;
+
     if (writer == null) {
+
+      File dirFile = new File(dirPath);
       // Open file for output of demand data
-      File file = new File(System.getProperty("org.cougaar.workspace", "."),
+      File file = new File(dirPath,
                            "ExecutionDemand." + dgPlugin.getOrgName() + "." +
                            dgPlugin.getSupplyType());
       try {
+	dirFile.mkdirs();
         writer = new PrintWriter(new FileWriter(file,
             dgPlugin.getBlackboardService().didRehydrate()));
       }

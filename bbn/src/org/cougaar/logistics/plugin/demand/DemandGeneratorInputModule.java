@@ -142,8 +142,10 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
       return;
     }
 
+    String dirPath = System.getProperty("org.cougaar.workspace", ".") + File.separator +      DemandGeneratorOutputModule.OUTPUT_SUBDIR;
+
     // Open file for input of demand data
-    File file = new File(System.getProperty("org.cougaar.workspace", "."),
+    File file = new File(dirPath,
                          "ExecutionDemand." + dgPlugin.getOrgName() + "." +
                          dgPlugin.getSupplyType());
     try {
