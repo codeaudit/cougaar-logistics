@@ -10,7 +10,7 @@ new_plugin3 = "org.cougaar.logistics.plugin.servicediscovery.ALRegistrationPlugi
 old_plugin3 = "org.cougaar.servicediscovery.plugin.SDRegistrationPlugin"
 new_plugin4 = "org.cougaar.logistics.plugin.servicediscovery.ALCommBasedRegistrationPlugin"
 old_plugin4 = "org.cougaar.servicediscovery.plugin.SDCommunityBasedRegistrationPlugin"
-sd_servlet = "org.cougaar.logistics.servlet.SDUseCaseServlet"
+sd_servlet = "org.cougaar.logistics.servlet.AvailabilityServlet"
 relationship_servlet = "org.cougaar.logistics.ui.servicediscovery.RelationshipScheduleServletComponent"
 
 society.each_agent do |agent|
