@@ -116,7 +116,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
       // DEBUG
       //   String myOrgName = inventoryPlugin.getOrgName();
-      // String myItemId = anInventory.getItemIdentificationPG().getItemIdentification();
+      String myItemId = anInventory.getItemIdentificationPG().getItemIdentification();
       
       //Only magically recalculate the initial inventory level
       //(the prepo) up to when the prepo arrives.
@@ -223,7 +223,9 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 //                               debugItem);
 	    if(refillBucket < firstLegalRefillBucket) {
 		if(logger.isWarnEnabled()) {
-		    logger.warn("At " + inventoryPlugin.getOrgName() + " not ordering a refill on day when we've fallen below critical level, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+		    logger.warn("At " + inventoryPlugin.getOrgName() + 
+				"-" + myItemId + ":" +
+				" not ordering a refill on day when we've fallen below critical level, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
 		}
 	    }
             else if(refillQty > 0.00) {
@@ -322,7 +324,6 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
 
-    //TODO:MWD turn this from debug to warn when all classes are incorporated
     if((endDay < inventoryPlugin.getRefillStartTime()) &&
         (logger.isWarnEnabled())){
       logger.warn("Creating new refill task for day " + getTimeUtils().dateString(endDay) +

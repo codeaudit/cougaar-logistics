@@ -359,8 +359,11 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	Enumeration subTasks = wf.getTasks();
 	while (subTasks.hasMoreElements()) {
 	  task = (Task)subTasks.nextElement();
+	  thePG = getLogisticsInventoryPG(supply);
 	  if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-	    thePG = getLogisticsInventoryPG(supply);
+	      if((getTaskUtils().getEndTime(task) < inventoryPlugin.getOPlanArrivalInTheaterTime()) && (logger.isErrorEnabled())) {
+		  logger.error("At " + inventoryPlugin.getOrgName() + "- Requisition Task:" + task.getUID() + " item: " + getTaskUtils().getTaskItemName(task) + " has an endTime of " + getTimeUtils().dateString(getTaskUtils().getEndTime(task)) + " which is before this orgs arrival time of " + inventoryPlugin.getOPlanArrivalInTheaterTime());
+	      }
 	    if (thePG != null) {
 	      thePG.updateWithdrawRequisition(task);
 	      synchronized (supply) {
@@ -392,6 +395,9 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	      task = (Task)subTasks.nextElement();
 	      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
 		  thePG = getLogisticsInventoryPG(projSupply);
+		  if((getTaskUtils().getStartTime(task) < inventoryPlugin.getOPlanArrivalInTheaterTime()) && (logger.isErrorEnabled())) {
+		      logger.error("At " + inventoryPlugin.getOrgName() + "- Projection Task:" + task.getUID() + " item: " + getTaskUtils().getTaskItemName(task) + " has an start time of " + getTimeUtils().dateString(getTaskUtils().getStartTime(task)) + " which is before this orgs arrival time of " + inventoryPlugin.getOPlanArrivalInTheaterTime());
+		  }
 		  if (thePG != null) {
 		      thePG.removeWithdrawProjection(task);
 		      if (task.getPlanElement() != null) {
