@@ -345,7 +345,9 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
       thePG = getLogisticsInventoryPG(aTask);
       if (thePG != null) {
 	thePG.removeWithdrawProjection(aTask);
-	removedProjections = true;
+        if (!aTask.isDeleted()) {
+          removedProjections = true;
+        }
       }
     }
     return removedProjections;
@@ -443,7 +445,9 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	// we might be looking at pass-thru's from the change list
 	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
 	if (inventory != null) {
-	  inventoryPlugin.touchInventory(inventory);
+          if (!wdrawTask.isDeleted()) {
+            inventoryPlugin.touchInventory(inventory);
+          }
 	  logInvPG = (LogisticsInventoryPG)
 	    inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
 	}
