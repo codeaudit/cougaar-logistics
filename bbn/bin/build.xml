@@ -278,7 +278,7 @@
 	<target name="really-compile" depends="prepare, defrunner" if="has.src">
 		<mkdir dir="${build}" />
 		<available property="has.build" file="${build}"/>
-		<javac srcdir="${src}" destdir="${build}" 
+		<javac debug="true" srcdir="${src}" destdir="${build}" 
 		       includeAntRuntime="no" deprecation="${doDeprecation}">
  	             	<classpath>
         	          <path refid="${module}.classpath" />
