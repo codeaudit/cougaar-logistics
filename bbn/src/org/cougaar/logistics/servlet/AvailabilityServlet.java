@@ -64,6 +64,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   private final static String ADD = "Add";
   private final static String CLEAR = "clear";
   private final static String CLEAR_SELECTED_ROWS = "Clear Selected Rows";
+  private final static String BACK = "BACK";
 
   private List changeMessages = new ArrayList();
   private static Logger logger = Logging.getLogger(AvailabilityServlet.class);
@@ -138,43 +139,35 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     long now = currentTimeMillis();
     printTitles();
     printInfo(now);
-    Collection col;
-    try {
-      blackboard.openTransaction();
-      col = blackboard.query(availabilityPred);
-      blackboard.closeTransaction();
-      if (! col.isEmpty()) {
-        // TODO:  Need to change this behavior -- not sure to what yet
-        printChangeInfo(col, false);
-      } else {
-        if (action == null) {
-          printForm();
-        }
-        else if (action.equals(ADD)) {
-          if (end_date == null) {
-            printError("Could not read date; try again.");
-            printForm();
-          } else if (end_date.getTime() < now) {
-            printError("End date must be in the future; try again.");
-            printForm();
-          } else {
-            addChangeMessage(start_date, end_date, role, isAvailable);
-          }
-        } else if (action.equals(CLEAR_SELECTED_ROWS)) {
-          clearSelectedRows();
-        } else if (action.equals(PUBLISH)) {
-          publish();
-        }
-      }
-    } catch (Exception e) {
-      printError("Servlet error: " + e);
-    } finally {
-      if (blackboard.isTransactionOpen()) {
-        blackboard.closeTransactionDontReset();
-      }
-      out.println("</body>");
-      out.flush();
-    }
+     try {
+       if (action == null) {
+         printForm();
+       } else if (action.equals(ADD)) {
+         if (end_date == null) {
+           printError("Could not read date; try again.");
+           printForm();
+         } else if (end_date.getTime() < now) {
+           printError("End date must be in the future; try again.");
+           printForm();
+         } else {
+           addChangeMessage(start_date, end_date, role, isAvailable);
+         }
+       } else if (action.equals(CLEAR_SELECTED_ROWS)) {
+         clearSelectedRows();
+       } else if (action.equals(PUBLISH)) {
+         publish();
+       } else if (action.equals(BACK)) {
+         printForm();
+       }
+     } catch (Exception e) {
+       printError("Servlet error: " + e);
+     } finally {
+       if (blackboard.isTransactionOpen()) {
+         blackboard.closeTransactionDontReset();
+       }
+       out.println("</body>");
+       out.flush();
+     }
   }
 
   private void clearSelectedRows() {
@@ -204,8 +197,10 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
       AvailabilityChangeMessage acm = (AvailabilityChangeMessage) iterator.next();
       blackboard.publishAdd(acm);
     }
-    printChangeInfo(changeMessages, true);
     blackboard.closeTransaction();
+    printChangeInfo(changeMessages);
+    changeMessages.clear();
+
   }
 
   private List getProviderRoles() {
@@ -305,22 +300,25 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     out.print("</form>");
   }
 
-  private void printChangeInfo(Collection messages, boolean newChange) {
-    if (newChange) {
-      out.println("<p>\n");
-      out.println("Successfully posted availability change:");
-      for (Iterator iterator = messages.iterator(); iterator.hasNext();) {
-        AvailabilityChangeMessage message = (AvailabilityChangeMessage) iterator.next();
-        out.println("<ul><li>Role: " + message.getRole() +
-                    "<li>Available: " + getAvailabilityString(message.isAvailable()) +
-                    "<li>Start Date: " + new Date(message.getTimeSpan().getStartTime()) +
-                    "<li>End Date: " + new Date(message.getTimeSpan().getEndTime()) +
-                    "<li>Registry Updated: " + message.isRegistryUpdated() +
-                    "</ul>");
-      }
-    } else {
-      printForm();
+  private void printChangeInfo(Collection messages) {
+    out.println("<p>\n");
+    out.println("Successfully posted availability change:");
+    for (Iterator iterator = messages.iterator(); iterator.hasNext();) {
+      AvailabilityChangeMessage message = (AvailabilityChangeMessage) iterator.next();
+      out.println("<ul><li>Role: " + message.getRole() +
+                  "<li>Available: " + getAvailabilityString(message.isAvailable()) +
+                  "<li>Start Date: " + new Date(message.getTimeSpan().getStartTime()) +
+                  "<li>End Date: " + new Date(message.getTimeSpan().getEndTime()) +
+                  "<li>Registry Updated: " + message.isRegistryUpdated() +
+                  "</ul>");
     }
+
+    out.print("<form method=\"GET\" action=\"" +
+              request.getRequestURI() +
+              "\">\n" +
+              "<p><input type=submit name=\"" + ACTION_PARAM + "\" value=\"" + BACK + "\">\n" +
+              "</form>\n");
+
   }
 
   private void printError(String text) {
