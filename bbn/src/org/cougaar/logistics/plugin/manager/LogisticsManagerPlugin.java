@@ -22,7 +22,6 @@ package org.cougaar.logistics.plugin.manager;
 
 import java.util.*;
 
-import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
@@ -31,7 +30,6 @@ import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
-import org.cougaar.core.util.UID;
 
 import org.cougaar.multicast.AttributeBasedAddress;
 
@@ -84,18 +82,19 @@ public class LogisticsManagerPlugin extends SimplePlugin {
   };
 
   protected void setupSubscriptions() {
-    myUIDService = 
+    myUIDService =
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
-    
-    myLoggingService = 
+
+    myLoggingService =
       (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
 
     myLoadIndicators = (IncrementalSubscription) subscribe(myLoadIndicatorsPred);
     myFallingBehindPolicies = (IncrementalSubscription) subscribe(myFallingBehindPoliciesPred);
 
     // Find name of community to monitor
-    myCommunitiesToManage = getCommunityService().search("(CommunityManager=" +
-      getAgentIdentifier().toString() + ")");
+    String filter =  "(CommunityManager=" + getAgentIdentifier().toString() + ")";
+    myCommunitiesToManage = getCommunityService().listParentCommunities(null, filter, null);
+
     if (myCommunitiesToManage.isEmpty()) {
       myLoggingService.warn(getAgentIdentifier() + " is not a CommunityManager." +
                             " Plugin will not be receiving LoadIndicators.");
@@ -113,7 +112,7 @@ public class LogisticsManagerPlugin extends SimplePlugin {
     if (myFallingBehindPolicies.size() == 0) {
       createFallingBehindPolicies();
     }
-    
+
   }
   
   public void execute() {
