@@ -23,17 +23,11 @@ package org.cougaar.logistics.plugin.trans;
 import java.util.*;
 
 import org.cougaar.logistics.ldm.Constants;
-
-import org.cougaar.glm.packer.Geolocs;
-
 import org.cougaar.glm.util.GLMPrepPhrase;
-
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
-
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
-
+import org.cougaar.logistics.plugin.packer.Geolocs;
 import org.cougaar.planning.ldm.asset.Asset;
-
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.NewTask;
 
