@@ -125,6 +125,9 @@ public class ShortfallChartDataModel
 	    if(yvalues[0][i] > 0) {
 		shortfallExists = true;
 	    }
+	    else if(yvalues[0][i] < 0) {
+		yvalues[0][i] = 0;
+	    }
 	}
     }
 
