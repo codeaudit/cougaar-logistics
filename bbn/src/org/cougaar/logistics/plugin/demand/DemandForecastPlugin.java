@@ -974,7 +974,12 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void rehydrateHashMaps() {
-    Iterator gpIt = genProjTaskScheduler.getAllTasks();
+    // Took this out because getAllTasks() is the union of all added, changed, 
+    // and removed tasks of which there are none after rehydration - 
+    // getAllTasksCollection is currently everything on the subscription. 
+    //    Iterator gpIt = genProjTaskScheduler.getAllTasks();
+    Collection gpTasks = genProjTaskScheduler.getAllTasksCollection(); 
+    Iterator gpIt = gpTasks.iterator();
     while (gpIt.hasNext()) {
       Task gpTask = (Task) gpIt.next();
       Asset mei = gpTask.getDirectObject();
