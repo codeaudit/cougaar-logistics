@@ -113,13 +113,14 @@ public class InventoryPlugin extends ComponentPlugin
   private boolean rehydrateInvs = false;
   private boolean OMChange = false;
   private long prevLevel6;
-
+  private boolean turnOnTaskSched=false;
   private int prepoArrivalOffset=3;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
   public final String PREPO_ARRIVAL_OFFSET = "PREPO_ARRIVAL_OFFSET";
+  public final String TASK_SCHEDULER_ON = "TASK_SCHEDULER_ON";
 
   // as a default make the max the end of the oplan (225)
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
@@ -363,7 +364,13 @@ public class InventoryPlugin extends ComponentPlugin
 //        firstTimeThrough = false;
 //      } else {
         Collection addedSupply = supplyTaskScheduler.getAddedCollection();
-        TimeSpan timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
+        TimeSpan timeSpan = null;
+        if (turnOnTaskSched) {
+          timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
+        } else {
+          timeSpan = new ScheduleElementImpl(getLogOPlanStartTime(),
+                                             getLogOPlanEndTime());
+        }
         if (!addedSupply.isEmpty()) {
           expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
         }
@@ -374,7 +381,13 @@ public class InventoryPlugin extends ComponentPlugin
         supplyTaskScheduler.finishedExecuteCycle();
 
         Collection addedProjections = projectionTaskScheduler.getAddedCollection();
-        TimeSpan timeSpan2 = projectionTaskScheduler.getCurrentTimeSpan();
+        TimeSpan timeSpan2 = null;
+        if (turnOnTaskSched) {
+          timeSpan2 = projectionTaskScheduler.getCurrentTimeSpan();
+        } else {
+          timeSpan2 = new ScheduleElementImpl(getLogOPlanStartTime(),
+                                              getLogOPlanEndTime());
+        }
         if (!addedProjections.isEmpty()) {
           // getTasksWithoutPEs is fix for bug #1695
           touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
@@ -613,6 +626,9 @@ public class InventoryPlugin extends ComponentPlugin
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
+    // Setup TaskSchedulers
+    String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
+    boolean turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService) 
@@ -620,26 +636,40 @@ public class InventoryPlugin extends ComponentPlugin
     qrs.setAgentIdentificationService(ais);
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     String id = getAgentIdentifier().toString();
-    java.io.InputStream is = null;
-    try {
-      is = getConfigFinder().open ("supplyTaskPolicy.xml");
-    } catch (Exception e) {
-      logger.error ("Could not find file supplyTaskPolicy.xml");
-    }
-    supplyTaskScheduler = new TaskScheduler
-       (new SupplyTaskPredicate(supplyType, id, taskUtils),
-        TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-        blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
-    try {
-      is = getConfigFinder().open ("projectionTaskPolicy.xml");
-    } catch (Exception e) {
-      logger.error ("Could not find file projectionTaskPolicy.xml");
-    }
-    projectionTaskScheduler = new TaskScheduler
+    if (turnOnTaskSched) {
+      logger.debug("TASK SCHEDULER ON for "+id);
+      java.io.InputStream is = null;
+      try {
+        is = getConfigFinder().open ("supplyTaskPolicy.xml");
+      } catch (Exception e) {
+        logger.error ("Could not find file supplyTaskPolicy.xml");
+      }
+      supplyTaskScheduler = new TaskScheduler
+        (new SupplyTaskPredicate(supplyType, id, taskUtils),
+         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+         blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
+      try {
+        is = getConfigFinder().open ("projectionTaskPolicy.xml");
+      } catch (Exception e) {
+        logger.error ("Could not find file projectionTaskPolicy.xml");
+      }
+      projectionTaskScheduler = new TaskScheduler
         (new ProjectionTaskPredicate(supplyType, id, taskUtils),
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
          blackboard, q, logger, "projTasks for " + getBlackboardClientName());
+    } else { // TaskScheduler OFF
+      supplyTaskScheduler = new TaskScheduler
+        (new SupplyTaskPredicate(supplyType, id, taskUtils),
+         new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+                                   {TaskSchedulingPolicy.PASSALL}),
+         blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
 
+      projectionTaskScheduler = new TaskScheduler
+        (new ProjectionTaskPredicate(supplyType, id, taskUtils),
+         new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+                                   {TaskSchedulingPolicy.PASSALL}),
+         blackboard, q, logger, "projTasks for " + getBlackboardClientName());
+    }
 //    supplyTaskSubscription = (IncrementalSubscription) blackboard.
 //        subscribe(new SupplyTaskPredicate(supplyType, id, taskUtils));
 //    projectionTaskSubscription = (IncrementalSubscription) blackboard.
@@ -1624,6 +1654,16 @@ public class InventoryPlugin extends ComponentPlugin
       }
     }
     return relSchedChange;
+  }
+
+  // get the first day in theater
+  public long getLogOPlanStartTime() {
+    return logOPlan.getStartTime();
+  }
+
+  // get the last day in theater
+  public long getLogOPlanEndTime() {
+    return logOPlan.getEndTime();
   }
 
   protected ExpanderModule getExpanderModule() {
