@@ -71,19 +71,29 @@ public class RefillProjectionGenerator extends InventoryModule {
     super(imPlugin);
   }
 
-  // can we only call this if the 'touched' part was a projection touch!!
+  /** Called by the InventoryPlugin to calculate new Refills.
+   *  We only want to calculate new Refills for inventories that have changed
+   *  because of projection changes.
+   *  @param touchedInventories Inventories that have changed
+   *  @param daysOnHand Number of DaysOnHand from the InventoryPolicy
+   *  @param endOfLevelSix The day representing the end of the Level 6 window
+   *   from the VariableTimeHorizon OperatingMode (knob)
+   *  @param endOfLelelTwo  The day representing the end of the Level 2 window
+   *   from the VariableTimeHorizon OperatingMode (knob)
+   **/
   public void calculateRefillProjections(ArrayList touchedInventories, int daysOnHand,
                                          long endOfLevelSix, long endOfLevelTwo) {
     // get the demand projections for each customer from bg
     // time shift the demand for each customer
     // sum the each customer's time shifted demand
 
-    //TODO :need to figure out what day to start on
+    //get today to see where we are with respect to the VTH windows
     long today = inventoryPlugin.getCurrentTimeMillis();
+    
     // TODO need whole list of inventories
     ArrayList inventories = new ArrayList();
     if (today < endOfLevelSix) {
-      calculateLevelSixProjections(touchedInventories, today, daysOnHand, endOfLevelSix);
+      calculateLevelSixProjections(touchedInventories, daysOnHand, endOfLevelSix);
       calculateLevelTwoProjections(inventories, daysOnHand, 
                                    getTimeUtils().addNDays(endOfLevelSix, 1),
                                    endOfLevelTwo);
@@ -96,111 +106,126 @@ public class RefillProjectionGenerator extends InventoryModule {
     } 
   }
 
-  private void calculateLevelSixProjections(ArrayList touchedInventories, long today,
+  /** Calculate Projection Refills in level Six detail until the end of the
+   *  Level 6 VTH window.
+   *  @param touchedInventories  The Inventories that have changed wrt projections.
+   *   We will only recalculate refill projections for these.
+   *  @param daysOnHand DaysOnHand policy.
+   *  @param endOfLevelSix The date representing the end of the Level 6 VTH window.
+   **/
+  private void calculateLevelSixProjections(ArrayList touchedInventories, 
                                             int daysOnHand, long endOfLevelSix) {
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-      //do we need to clear the projected refills from the bg?
-      //thePG.clearRefillProjections(new Date(today));
-      long startDay = today;
-      long currentDay = today;
-      long customerDemandDay = getTimeUtils().addNDays(currentDay, daysOnHand);
+      //TODO: clear the projected refills from the bg
+      //thePG.clearRefillProjections();
+
+      //start time is the start time of the inventorybg
+      long startDay = thePG.getStartTime();
+      int startBucket = thePG.convertTimeToBucket(startDay);
+      int currentBucket = startBucket;
+      int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
+                                                           addNDays(startDay, daysOnHand));
       double projDemand = 0;
       double nextProjDemand = 0;
+      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
       
-      //get the initial demand for today - Is there a better way to do this
-      // to avoid the duplication?
- //      Schedule projectedDemandSched = thePG.getProjectedDemand();
-//       Collection projDemandElements = projectedDemandSched.
-//         getScheduleElementsWithTime(customerDemandDay);
-//       if (! projDemandElements.isEmpty()) {
-//         //assume only one match for now
-//         projDemand = ((QuantityScheduleElement)projDemandElements.iterator().
-//                              next()).getQuantity();
-//       // what do we do if this returns null or 0???
-//       }
-//       //move forward a day
-//       currentDay = getTimeUtils().addNDays(currentDay, 1);
-//       customerDemandDay = getTimeUtils().addNDays(customerDemandDay, 1);
+      //get the initial demand for the customer for startBucket + daysOnHand
+      //Is there a better way to do this to avoid the duplication?
+      projDemand = thePG.getProjectedDemand(customerDemandBucket);
 
-//       //Begin looping through currentDay forward until you hit the end of
-//       // the level six boundary
-//       //possible boundary issue... is it '<' or '<=' ??
-//       while (currentDay < endOfLevelSix) {
-//         projDemandElements = projectedDemandSched.
-//           getScheduleElementsWithTime(customerDemandDay);
-//         if (! projDemandElements.isEmpty()) {
-//           //assume only one match for now
-//           nextProjDemand = ((QuantityScheduleElement)projDemandElements.
-//                                    iterator().next()).getQuantity();
-//           // what do we do if this returns null or 0???
-//         }
+      //move forward a bucket
+      currentBucket = currentBucket + 1;
+      customerDemandBucket = customerDemandBucket + 1;
 
-//         if (projDemand != nextProjDemand) {
-//           //if there's a change in the demand, create a refill projection
-//           createProjectionRefill(startDay, 
-//                                  getTimeUtils().subtractNDays(currentDay, 1),
-//                                  today, projDemand, anInventory, thePG);
-//           //then reset the startday and the new demand 
-//           startDay = currentDay;
-//           projDemand = nextProjDemand;
-//         }
-//         //in either case bump forward a day.
-//         currentDay = getTimeUtils().addNDays(currentDay, 1);
-//         customerDemandDay = getTimeUtils().addNDays(customerDemandDay, 1);
-//        }
-//       // when we get to the end of the level six window create the last
-//       // projection task (if there is one)
-//       if (startDay != currentDay) {
-//         createProjectionRefill(startDay,
-//                                getTimeUtils().subtractNDays(currentDay, 1),
-//                                today, projDemand, anInventory, thePG);
-//       }
+      //Begin looping through currentBucket forward until you hit the end of
+      // the level six boundary
+      //possible boundary issue... is it '<' or '<=' ??
+      while (currentBucket < endOfLevelSixBucket) {
+        nextProjDemand = thePG.getProjectedDemand(customerDemandBucket);
+        if (projDemand != nextProjDemand) {
+          //if there's a change in the demand, create a refill projection
+          createProjectionRefill(thePG.convertBucketToTime(startBucket), 
+                                 thePG.convertBucketToTime(currentBucket -1),
+                                 projDemand, anInventory, thePG);
+          //then reset the start bucket and the new demand 
+          startBucket = currentBucket;
+          projDemand = nextProjDemand;
+        }
+        //in either case bump current and customer forward a bucket.
+        currentBucket = currentBucket + 1;
+        customerDemandBucket = customerDemandBucket + 1;
+       }
+      // when we get to the end of the level six window create the last
+      // projection task (if there is one)
+      if (startBucket != currentBucket) {
+        createProjectionRefill(thePG.convertBucketToTime(startBucket),
+                               thePG.convertBucketToTime(currentBucket - 1),
+                               projDemand, anInventory, thePG);
+      }
      }
   }
 
+  /** Calculate the Projection Refills in Level 2
+   *  @param myInventories All of the Inventories for this supply Type.
+   *  @param daysOnHand  The DaysOnHand value from the InventoryPolicy
+   *  @param start The start time of the Level 2 VTH window
+   *  @param endOfLevelTwo The end time of the Level 2 VTH window
+   **/
   private void calculateLevelTwoProjections(ArrayList myInventories, int daysOnHand, 
-                                             long start, long endOfLevelTwo) {
-    long startDay = start;
-    long currentDay = startDay;
+                                            long start, long endOfLevelTwo) {
+    //since all Inventories in the agent will use the same bucket size
+    // get a token inventory to convert the start and end times to buckets
+    // so that we don't have to deal with times and buckets for each inventory.
+    LogisticsInventoryPG tokenPG = (LogisticsInventoryPG) ((Inventory)myInventories.get(0)).
+      searchForPropertyGroup(LogisticsInventoryPG.class);
+
+    int startBucket = tokenPG.convertTimeToBucket(start);
+    int currentBucket = startBucket;
+    int customerDemandBucket = tokenPG.convertTimeToBucket(getTimeUtils().
+                                                           addNDays(start, daysOnHand));
+    int endOfLevelTwoBucket = tokenPG.convertTimeToBucket(endOfLevelTwo);
     double projDemand = -1;
-    while (currentDay < endOfLevelTwo) {
+
+    //loop through the buckets until we reach the end of level two
+    while (currentBucket < endOfLevelTwoBucket) {
       double combinedDailyDemand = 0;
       for (int i=0; i < myInventories.size(); i++) {
         Inventory inv = (Inventory) myInventories.get(i);
         // should we make a PG collection and keep it around???
-        LogisticsInventoryPG thePG = (LogisticsInventoryPG) inv.
+        LogisticsInventoryPG thePG = (LogisticsInventoryPG) ((Inventory)myInventories.get(i)).
           searchForPropertyGroup(LogisticsInventoryPG.class);
         // how do we make aggregates??
-       //  combinedDailyDemand = combinedDailyDemand + 
-//           thePG.getProjectedDemand(getTimeUtils().addNDays(currentDay, daysOnHand));
-        if (i == 0) {
-          projDemand = combinedDailyDemand;
-        }
+        double rawdemand = thePG.getProjectedDemand(customerDemandBucket);
+        // need physical pg so demand = rawdemand * tons or whatever
+        //  combinedDailyDemand = combinedDailyDemand + demand;
       }
-
+      //if its the first bucket, seed proj demand
+      if (projDemand == -1) {
+        projDemand = combinedDailyDemand;
+      }
       //check the results for the Day.
       if (projDemand != combinedDailyDemand) {
         //if there's a change in the demand, create a refill projection
-        createAggregateProjectionRefill(startDay, 
-                                        getTimeUtils().subtractNDays(currentDay, 1),
-                                        projDemand);
-        //then reset the startday and the new demand 
-        startDay = currentDay;
+        createAggregateProjectionRefill(tokenPG.convertBucketToTime(startBucket), 
+                                        tokenPG.convertBucketToTime(currentBucket - 1),
+                                        tokenPG.getStartTime(), projDemand);
+        //then reset the start bucket  and the new demand 
+        startBucket = currentBucket;
         projDemand = combinedDailyDemand;
       }
-      //in either case bump forward a day.
-      currentDay = getTimeUtils().addNDays(currentDay, 1);
+      //if we create a refill or don't bump forward a bucket.
+      currentBucket = currentBucket + 1;
     }
     // when we get to the end of the level two window create the last
     // projection task (if there is one)
-    if (startDay != currentDay) {
-      createAggregateProjectionRefill(startDay,
-                                      getTimeUtils().subtractNDays(currentDay, 1),
-                                      projDemand);
+    if (startBucket != currentBucket) {
+      createAggregateProjectionRefill(tokenPG.convertBucketToTime(startBucket), 
+                                      tokenPG.convertBucketToTime(currentBucket - 1),
+                                      tokenPG.getStartTime(), projDemand);      
     }
   }      
  
@@ -208,20 +233,61 @@ public class RefillProjectionGenerator extends InventoryModule {
   /** Make a Projection Refill Task and publish it to the InventoryPlugin.
    *  The InventoryPlugin will hook the task in to the proper workflow
    *  and publish it to the blackboard.
+   *  @param start The start time for the Task
+   *  @param end The end time for the Task
+   *  @param demand The demandrate value of the task
+   *  @param inv  The inventory Asset this Task is refilling.
+   *  @param thePG  The Property Group of the Inventory Asset
    **/
-  private void createProjectionRefill(long start, long end, long today,  
-				      double demand, Inventory inv, 
+  private void createProjectionRefill(long start, long end,
+                                      double demand, Inventory inv, 
                                       LogisticsInventoryPG thePG) {
     //create a projection refill task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(inv);
+    fillInTask(newRefill, start, end, thePG.getStartTime(), demand, thePG.getResource());
+    // publish the refill
+    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
+    // apply this to the bg
+    thePG.addRefillProjection(newRefill);
+  }
+
+  /** Create a Level 2 Projection Refill
+   *  @param start The start time of the Task
+   *  @param end The end time of the Task
+   *  @param demand The total demand in terms of tons or volume
+   **/
+  private void createAggregateProjectionRefill(long start, long end, 
+                                               long earliest, double demand) {
+    //create a level two projection refill task
+    NewTask newAggRefill = inventoryPlugin.getRootFactory().newTask();
+    newAggRefill.setVerb(Constants.Verb.ProjectSupply);
+    //need to create the asset representing this class of supply
+    //physical pg needs to represent demand
+    Asset asset = null;
+    newAggRefill.setDirectObject(asset);
+    fillInTask(newAggRefill, start, end, earliest, 0, asset);
+    //TODO: publish the refill
+    //inventoryPlugin.publishAggRefillTask(newAggRefill);
+    //do we even apply this to a bg - to what inventory is this attached to??
+  }
+
+  /** Utility method to fill in task details
+   *  @param newRefill The task to fill in
+   *  @param start Start time for Task
+   *  @param end End Time for Task
+   *  @param qty Quantity Pref for Task
+   *  @param asset Direct Object for Task
+   **/
+  private void fillInTask(NewTask newRefill, long start, long end, long earliest, 
+                          double qty, Asset asset) {
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
-    p_start = createRefillTimePreference(start, today);
-    p_end = createRefillTimePreference(end, today);
-    p_qty = createRefillRatePreference(demand);
+    p_start = createRefillTimePreference(start, earliest);
+    p_end = createRefillTimePreference(end, earliest);
+    p_qty = createRefillRatePreference(qty);
     prefs.add(p_start);
     prefs.add(p_end);
     prefs.add(p_qty);
@@ -231,8 +297,8 @@ public class RefillProjectionGenerator extends InventoryModule {
     Vector pp_vector = new Vector();
     pp_vector.add(createPrepPhrase(Constants.Preposition.FOR, getOrgName()));
     pp_vector.add(createPrepPhrase(Constants.Preposition.OFTYPE, 
-					 inventoryPlugin.getSupplyType()));
-
+                                   inventoryPlugin.getSupplyType()));
+    
     Object io;
     Enumeration geolocs = getAssetUtils().getGeolocLocationAtTime(
 								  getMyOrganization(),
@@ -243,8 +309,7 @@ public class RefillProjectionGenerator extends InventoryModule {
       io = getHomeLocation();
     }
     pp_vector.addElement(createPrepPhrase(Constants.Preposition.TO, io));
-    Asset resource = thePG.getResource();
-    TypeIdentificationPG tip = ((Asset)resource).getTypeIdentificationPG();
+    TypeIdentificationPG tip = asset.getTypeIdentificationPG();
     MaintainedItem itemID = MaintainedItem.
       findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(), 
                                null, tip.getNomenclature(), inventoryPlugin);
@@ -252,25 +317,17 @@ public class RefillProjectionGenerator extends InventoryModule {
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
     
     newRefill.setPrepositionalPhrases(pp_vector.elements());
+  } 
 
-    // can this be the same for projection refills?
-    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
-    // apply this to the bg
-    thePG.addRefillProjection(newRefill);
-  }
-
-
-  // DO we really need two separate methods???
-  private void createAggregateProjectionRefill(long start, long end, double demand) {
-    //create a level two projection refill task
-  }
-
-  //  UTILITY METHODS
-
-  //USE V Scoring Function for now. Note that this doesn't exactly represent
-  //the scoring function we developed in our IM SDD.
-  private Preference createRefillTimePreference(long bestDay, long today) {
-    AspectValue beforeAV = new TimeAspectValue(AspectType.END_TIME, today);
+  /** Create a Time Preference for the Refill Task
+   *  USE V Scoring Function for now. Note that this doesn't exactly represent
+   *  the scoring function we developed in our IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  @param start The earliest time this preference can have
+   *  @return Preference The new Time Preference
+   **/
+  private Preference createRefillTimePreference(long bestDay, long start) {
+    AspectValue beforeAV = new TimeAspectValue(AspectType.END_TIME, start);
     AspectValue bestAV = new TimeAspectValue(AspectType.END_TIME, bestDay);
     //TODO - really need end of deployment from an OrgActivity -
     // As a hack for now just add 180 days from today - note that this
@@ -278,14 +335,18 @@ public class RefillProjectionGenerator extends InventoryModule {
     //AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME, 
     //				    inventoryPlugin.getEndOfDeplyment()); 
     AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME,
-					      getTimeUtils().addNDays(today, 180));
+					      getTimeUtils().addNDays(start, 180));
     ScoringFunction endTimeSF = ScoringFunction.
 	createVScoringFunction(beforeAV, bestAV, afterAV);
     return inventoryPlugin.getRootFactory().
 	  newPreference(AspectType.END_TIME, endTimeSF);
   }
 
-  // utility method to create Refill Projection Rate preference
+  /** Utility method to create Refill Projection Rate preference
+   *  We use a V scoring function for this preference.
+   *  @param refill_qty  The quantity we want for this Refill Task
+   *  @return Preference  The new demand rate preference for the Refill Task
+   **/
   private Preference createRefillRatePreference(double refill_qty) {
     AspectValue lowAV = new AspectValue(AlpineAspectType.DEMANDRATE, 0.01);
     AspectValue bestAV = new AspectValue(AlpineAspectType.DEMANDRATE, refill_qty);
@@ -296,6 +357,11 @@ public class RefillProjectionGenerator extends InventoryModule {
 	newPreference(AlpineAspectType.DEMANDRATE, qtySF);
   }
 
+  /** Utility method to create a Refill Projection Prepositional Phrase
+   *  @param prep  The preposition
+   *  @param io  The indirect object
+   *  @return PrepositionalPhrase  A new prep phrase for the task
+   **/
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
     NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().
 	newPrepositionalPhrase();
@@ -304,7 +370,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     return newpp;
   }
 
-  //Get and Keep organization info from the InventoryPlugin.
+  /** Utility method to get and keep organization info from the InventoryPlugin. **/
   private Organization getMyOrganization() {
     if (myOrg == null) {
        myOrg = inventoryPlugin.getMyOrganization();
@@ -317,7 +383,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     return myOrg;
   }
 
-  //Get the Org Name from my organization and keep it around.
+  /** Utility accessor to get the Org Name from my organization and keep it around **/
   private String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
@@ -325,7 +391,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     return myOrgName;
   }
 
-  // Get the default (home) location of the Org
+  /** Utility method to get the default (home) location of the Org **/
   private GeolocLocation getHomeLocation() {
     if (homeGeoloc == null ) {
       Organization org = getMyOrganization();
