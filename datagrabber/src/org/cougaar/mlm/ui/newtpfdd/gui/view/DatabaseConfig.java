@@ -25,16 +25,19 @@
  */
 package org.cougaar.mlm.ui.newtpfdd.gui.view;
 
-import java.sql.DriverManager;
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.cougaar.mlm.ui.newtpfdd.TPFDDConstants;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
 import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 import org.cougaar.mlm.ui.grabber.logger.Logger;
-import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
+import org.cougaar.mlm.ui.newtpfdd.TPFDDConstants;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /** now mainly uses DBConfig to hold database config information */
 public class DatabaseConfig implements DBConnectionProvider {
@@ -115,6 +118,10 @@ public class DatabaseConfig implements DBConnectionProvider {
 
   public Connection getDBConnection () {
     return getConnection ();
+  }
+
+  public Statement createStatement () throws SQLException {
+    return getConnection ().createStatement();
   }
 
   public Connection getConnection () {
