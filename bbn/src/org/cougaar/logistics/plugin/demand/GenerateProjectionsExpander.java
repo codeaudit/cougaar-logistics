@@ -91,8 +91,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         rate = getRate(pg, consumedItem, (List) ose.getObject());
         // FIXME:  Should we report a warning or is this normal????
         if (rate == null)  {
-          System.out.println("------------------ THE RATE is NULL ------------------------  " +
-                             consumedItem.getTypeIdentificationPG().getNomenclature());
+	  String myOrgName = 
+	    dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+	  if (myOrgName.indexOf("35-ARBN") >= 0) {
+	    System.out.println("------------------ THE RATE is NULL ------------------------  " +
+			       consumedItem.getTypeIdentificationPG().getNomenclature()+" - "+
+			       consumedItem.getTypeIdentificationPG().getTypeIdentification());
+	  }
           continue;
         }
         logger.info("checking Rate on consumed item " + rate.toString());
@@ -101,7 +106,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       }
     }
     System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
-                       consumer.getTypeIdentificationPG().getNomenclature());
+                       consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
+		       consumer.getTypeIdentificationPG().getTypeIdentification());
     if (!subTasks.isEmpty()) {
       createAndPublishExpansion(gpTask, subTasks);
     }
