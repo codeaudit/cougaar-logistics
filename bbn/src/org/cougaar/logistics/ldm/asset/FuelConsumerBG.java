@@ -163,7 +163,7 @@ public class FuelConsumerBG extends ConsumerBG {
 							      myPG.getService(), myPG.getTheater());
       if (result == null) {
 	logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-		     myPG.getMei()+", "+supplyType););
+		     myPG.getMei()+", "+supplyType);
       } else {
 	parseResults(result);
       }
