@@ -1,72 +1,71 @@
 /*
- * <copyright>
- *  Copyright 1997-2003 BBNT Solutions, LLC
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the Cougaar Open Source License as published by
- *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- *
- *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
- *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
- *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
- *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
- *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
- *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
- *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- *  PERFORMANCE OF THE COUGAAR SOFTWARE.
- * </copyright>
- */
+* <copyright>
+*  Copyright 1997-2003 BBNT Solutions, LLC
+*  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the Cougaar Open Source License as published by
+*  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+*
+*  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+*  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+*  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+*  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+*  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+*  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+*  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+*  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+*  PERFORMANCE OF THE COUGAAR SOFTWARE.
+* </copyright>
+*/
 
 package org.cougaar.logistics.plugin.inventory;
-
-import java.lang.reflect.Constructor;
-import java.util.*;
-
-import org.cougaar.core.mts.*;
-import org.cougaar.glm.plugins.FileUtils;
-
-import org.cougaar.glm.ldm.asset.Inventory;
-import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.glm.ldm.asset.ScheduledContentPG;
-import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
-import org.cougaar.glm.ldm.asset.SupplyClassPG;
-import org.cougaar.logistics.ldm.Constants;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
-import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.planning.ldm.PlanningFactory;
-import org.cougaar.core.service.DomainService;
-
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.util.Enumerator;
-import org.cougaar.util.TimeSpan;
-import org.cougaar.planning.plugin.util.PluginHelper;
-import org.cougaar.logistics.plugin.utils.TaskScheduler;
-import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
-import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
-
-import org.cougaar.core.blackboard.*;
-import org.cougaar.core.component.Component;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.service.QuiescenceReportService;
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.logging.LoggingServiceWithPrefix;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.planning.service.LDMService;
-import org.cougaar.core.component.ServiceRevokedListener;
-import org.cougaar.core.component.ServiceRevokedEvent;
 
 import org.cougaar.core.adaptivity.OMCRange;
 import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.OperatingMode;
 import org.cougaar.core.adaptivity.OperatingModeImpl;
-
+import org.cougaar.core.blackboard.CollectionSubscription;
+import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.core.component.ServiceRevokedEvent;
+import org.cougaar.core.component.ServiceRevokedListener;
+import org.cougaar.core.logging.LoggingServiceWithPrefix;
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.service.AgentIdentificationService;
+import org.cougaar.core.service.DomainService;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.QuiescenceReportService;
+import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
+import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.glm.ldm.asset.ScheduledContentPG;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.glm.plugins.FileUtils;
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.utils.TaskScheduler;
+import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
+import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
+import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
+import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.util.TimeSpan;
+import org.cougaar.util.UnaryPredicate;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Vector;
 
 /** The InventoryPlugin is the Glue of inventory management.
  *  It handles all blackboard services for its modules,
@@ -217,7 +216,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   public String getOrgName() {
-      return myOrgName;
+    return myOrgName;
   }
 
   public long getCurrentTimeMillis() {
@@ -252,10 +251,10 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   public LoggingService getLoggingService(Object requestor) {
-    LoggingService ls = (LoggingService) 
-      getServiceBroker().getService(requestor,
-				    LoggingService.class,
-				    null);
+    LoggingService ls = (LoggingService)
+        getServiceBroker().getService(requestor,
+                                      LoggingService.class,
+                                      null);
     return LoggingServiceWithPrefix.add(ls, getAgentIdentifier() + ": ");
   }
 
@@ -324,11 +323,11 @@ public class InventoryPlugin extends ComponentPlugin
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
       Collection c = logisticsOPlanSubscription.getCollection();
       for (Iterator i = c.iterator(); i.hasNext();) {
-	  logOPlan = (LogisticsOPlan) i.next();
-          //        System.out.println("logOplan in :" + getAgentIdentifier().toString() + 
-          //                   " is: " + logOPlan);
-	  resetLogOPlanForInventories();
-	  break;
+        logOPlan = (LogisticsOPlan) i.next();
+        //        System.out.println("logOplan in :" + getAgentIdentifier().toString() +
+        //                   " is: " + logOPlan);
+        resetLogOPlanForInventories();
+        break;
       }
     }
 
@@ -366,76 +365,76 @@ public class InventoryPlugin extends ComponentPlugin
 //        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
 //        firstTimeThrough = false;
 //      } else {
-        Collection addedSupply = supplyTaskScheduler.getAddedCollection();
-        TimeSpan timeSpan = null;
-        if (turnOnTaskSched) {
-          timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
-        } else {
-          timeSpan = new ScheduleElementImpl(getLogOPlanStartTime(),
-                                             getLogOPlanEndTime());
-        }
-        if (!addedSupply.isEmpty()) {
-          expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
-        }
-        Collection changedSupply = supplyTaskScheduler.getChangedCollection();
-        if (!changedSupply.isEmpty()) {
-          supplyExpander.updateChangedRequisitions(changedSupply);
-        }
-        supplyTaskScheduler.finishedExecuteCycle();
+      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
+      TimeSpan timeSpan = null;
+      if (turnOnTaskSched) {
+        timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
+      } else {
+        timeSpan = new ScheduleElementImpl(getLogOPlanStartTime(),
+                                           getLogOPlanEndTime());
+      }
+      if (!addedSupply.isEmpty()) {
+        expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
+      }
+      Collection changedSupply = supplyTaskScheduler.getChangedCollection();
+      if (!changedSupply.isEmpty()) {
+        supplyExpander.updateChangedRequisitions(changedSupply);
+      }
+      supplyTaskScheduler.finishedExecuteCycle();
 
-        Collection addedProjections = projectionTaskScheduler.getAddedCollection();
-        TimeSpan timeSpan2 = null;
-        if (turnOnTaskSched) {
-          timeSpan2 = projectionTaskScheduler.getCurrentTimeSpan();
-        } else {
-          timeSpan2 = new ScheduleElementImpl(getLogOPlanStartTime(),
-                                              getLogOPlanEndTime());
-        }
-        if (!addedProjections.isEmpty()) {
-          // getTasksWithoutPEs is fix for bug #1695
-          touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
-        }
-        Collection changedProjections = projectionTaskScheduler.getChangedCollection();
-        if (!changedProjections.isEmpty()) {
-          supplyExpander.updateChangedProjections(changedProjections);
-          touchedChangedProjections = true;
+      Collection addedProjections = projectionTaskScheduler.getAddedCollection();
+      TimeSpan timeSpan2 = null;
+      if (turnOnTaskSched) {
+        timeSpan2 = projectionTaskScheduler.getCurrentTimeSpan();
+      } else {
+        timeSpan2 = new ScheduleElementImpl(getLogOPlanStartTime(),
+                                            getLogOPlanEndTime());
+      }
+      if (!addedProjections.isEmpty()) {
+        // getTasksWithoutPEs is fix for bug #1695
+        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
+      }
+      Collection changedProjections = projectionTaskScheduler.getChangedCollection();
+      if (!changedProjections.isEmpty()) {
+        supplyExpander.updateChangedProjections(changedProjections);
+        touchedChangedProjections = true;
 // System.out.println("Touched changed projections in " + getAgentIdentifier() +
 //                                " type is" + getSupplyType());
-        }
-        projectionTaskScheduler.finishedExecuteCycle();
+      }
+      projectionTaskScheduler.finishedExecuteCycle();
 
-	// Rescind tasks that no longer have a provider
-	// and
-        // Allocate any refill tasks from previous executions that were not allocated to providers
-        // but only if we are not about to rip out previous work we have done
-        if (didOrgRelationshipsChange()) {
+      // Rescind tasks that no longer have a provider
+      // and
+      // Allocate any refill tasks from previous executions that were not allocated to providers
+      // but only if we are not about to rip out previous work we have done
+      if (didOrgRelationshipsChange()) {
 //        logger.warn("ORG RELATIONSHIPS CHANGED");
 //	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" + 
 //			       supplyType + " role: " + getRole(supplyType) + "\n");
-	  HashMap providers = getProvidersAndEndDates();
-	  Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription, 
-							    Constants.Verb.Supply,
-							    providers);
-	  if (!unprovidedTasks.isEmpty()){
-	    if (logger.isWarnEnabled())
-	      logger.warn("Trying to rescind unprovided supply refill tasks...");
-	    rescindTaskAllocations(unprovidedTasks);
-	    externalAllocator.allocateRefillTasks(unprovidedTasks);
-	  }
-	  unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription, 
-						 Constants.Verb.ProjectSupply,
-						 providers);
-	  if (!unprovidedTasks.isEmpty()){
-	    if (logger.isWarnEnabled())
-	      logger.warn("Trying to rescind unprovided projection refill tasks...");
-	    rescindTaskAllocations(unprovidedTasks);
-	    externalAllocator.allocateRefillTasks(unprovidedTasks);
-	  }
+        HashMap providers = getProvidersAndEndDates();
+        Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
+                                                        Constants.Verb.Supply,
+                                                        providers);
+        if (!unprovidedTasks.isEmpty()){
+          if (logger.isWarnEnabled())
+            logger.warn("Trying to rescind unprovided supply refill tasks...");
+          rescindTaskAllocations(unprovidedTasks);
+          externalAllocator.allocateRefillTasks(unprovidedTasks);
+        }
+        unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
+                                             Constants.Verb.ProjectSupply,
+                                             providers);
+        if (!unprovidedTasks.isEmpty()){
+          if (logger.isWarnEnabled())
+            logger.warn("Trying to rescind unprovided projection refill tasks...");
+          rescindTaskAllocations(unprovidedTasks);
+          externalAllocator.allocateRefillTasks(unprovidedTasks);
+        }
 
-          Collection unalloc = null;
-          if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-	      sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription, 
-									 Constants.Verb.Supply));
+        Collection unalloc = null;
+        if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
+          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+                                                                     Constants.Verb.Supply));
 //             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription, 
 // 										       Constants.Verb.Supply));
 //             if (!unalloc.isEmpty()){
@@ -444,17 +443,17 @@ public class InventoryPlugin extends ComponentPlugin
 //               externalAllocator.allocateRefillTasks(unalloc);
 //             }
 
-            unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription, 
-							 Constants.Verb.Supply);
-            if (!unalloc.isEmpty()){
-	      if (logger.isWarnEnabled())
-		logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
-              externalAllocator.allocateRefillTasks(unalloc);
-            }
+          unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
+                                                       Constants.Verb.Supply);
+          if (!unalloc.isEmpty()){
+            if (logger.isWarnEnabled())
+              logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
+            externalAllocator.allocateRefillTasks(unalloc);
           }
-          if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-	      sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-									 Constants.Verb.ProjectSupply));
+        }
+        if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
+          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+                                                                     Constants.Verb.ProjectSupply));
 //             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
 // 										       Constants.Verb.ProjectSupply));
 //             if (!unalloc.isEmpty()) {
@@ -463,15 +462,15 @@ public class InventoryPlugin extends ComponentPlugin
 //               externalAllocator.allocateRefillTasks(unalloc);
 //             }
 
-            unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
-							 Constants.Verb.ProjectSupply);
-            if (!unalloc.isEmpty()) {
-	      if (logger.isWarnEnabled())
-		logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
-              externalAllocator.allocateRefillTasks(unalloc);
-            }
+          unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
+                                                       Constants.Verb.ProjectSupply);
+          if (!unalloc.isEmpty()) {
+            if (logger.isWarnEnabled())
+              logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
+            externalAllocator.allocateRefillTasks(unalloc);
           }
         }
+      }
 //      }
 
       // call the Refill Generators if we have new demand
@@ -563,69 +562,69 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   protected HashMap getProvidersAndEndDates() {
-      HashMap providers = new HashMap();
-      RelationshipSchedule relSched = myOrganization.getRelationshipSchedule();
-      Collection relationships = relSched.getMatchingRelationships(TimeSpan.MIN_VALUE,
-								   TimeSpan.MAX_VALUE);
-      Iterator rit = relationships.iterator();
-      Role myRole = getRole(supplyType);
+    HashMap providers = new HashMap();
+    RelationshipSchedule relSched = myOrganization.getRelationshipSchedule();
+    Collection relationships = relSched.getMatchingRelationships(TimeSpan.MIN_VALUE,
+                                                                 TimeSpan.MAX_VALUE);
+    Iterator rit = relationships.iterator();
+    Role myRole = getRole(supplyType);
 // 	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" + 
 // 			       supplyType + " role: " + getRole(supplyType) + "\n");
-      while (rit.hasNext()) {
-	  Relationship r = (Relationship) rit.next();
-	  HasRelationships hr = relSched.getOther(r);
-	  if (hr instanceof Organization) {
-	      Role role = relSched.getOtherRole(r);
-	      if (role == myRole) {
-		  Date endDate = r.getEndDate();
-		  providers.put(hr, endDate);
-		  //	  System.out.println("SDSD   org: " + hr + " end:" + endDate + "\n");
-	      }
-	  }
+    while (rit.hasNext()) {
+      Relationship r = (Relationship) rit.next();
+      HasRelationships hr = relSched.getOther(r);
+      if (hr instanceof Organization) {
+        Role role = relSched.getOtherRole(r);
+        if (role == myRole) {
+          Date endDate = r.getEndDate();
+          providers.put(hr, endDate);
+          //	  System.out.println("SDSD   org: " + hr + " end:" + endDate + "\n");
+        }
       }
-      return providers;
+    }
+    return providers;
   }
 
   private Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, HashMap providers) {
-      Iterator raIt = refill_allocations.iterator();
-      ArrayList unprovidedTasks = new ArrayList();
-      Task task;
-      Organization provider;
-      Allocation alloc;
-      long taskEnd;
-      Date providerEndDate;
-      while (raIt.hasNext()) {
-	  alloc = (Allocation)raIt.next();
-	  task = alloc.getTask();
-	  if ((alloc != null) && (task.getVerb().equals(verb))){
-	      taskEnd = TaskUtils.getEndTime(task);
-	      provider = (Organization)alloc.getAsset();
-	      if (alloc.getRole() != getRole(supplyType)) {
-		if (logger.isWarnEnabled())
-		  logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");	
-	      }
-	      providerEndDate = (Date) providers.get(provider);
-	      if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
-		  unprovidedTasks.add(task);
-	      }
-	  }
+    Iterator raIt = refill_allocations.iterator();
+    ArrayList unprovidedTasks = new ArrayList();
+    Task task;
+    Organization provider;
+    Allocation alloc;
+    long taskEnd;
+    Date providerEndDate;
+    while (raIt.hasNext()) {
+      alloc = (Allocation)raIt.next();
+      task = alloc.getTask();
+      if ((alloc != null) && (task.getVerb().equals(verb))){
+        taskEnd = TaskUtils.getEndTime(task);
+        provider = (Organization)alloc.getAsset();
+        if (alloc.getRole() != getRole(supplyType)) {
+          if (logger.isWarnEnabled())
+            logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
+        }
+        providerEndDate = (Date) providers.get(provider);
+        if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
+          unprovidedTasks.add(task);
+        }
       }
+    }
 //       if (! unprovidedTasks.isEmpty()) {
 // 	  System.out.println("SDSD unprovided: " + unprovidedTasks + "\n");	
 //       }
-      return unprovidedTasks;
+    return unprovidedTasks;
   }
 
   private void rescindTaskAllocations(Collection tasks) {
-      Task task;
-      Allocation alloc;
-      Iterator taskIt = tasks.iterator(); 
-      while (taskIt.hasNext()) {
-	  task = (Task) taskIt.next();
-	  //	  System.out.println("SDSD rescind: " + task + "\n");
-	  alloc = (Allocation)task.getPlanElement();
-	  publishRemove(alloc);
-      }
+    Task task;
+    Allocation alloc;
+    Iterator taskIt = tasks.iterator();
+    while (taskIt.hasNext()) {
+      task = (Task) taskIt.next();
+      //	  System.out.println("SDSD rescind: " + task + "\n");
+      alloc = (Allocation)task.getPlanElement();
+      publishRemove(alloc);
+    }
   }
 
   /** Subscription for aggregatable support requests. **/
@@ -750,15 +749,15 @@ public class InventoryPlugin extends ComponentPlugin
     String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
     boolean turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
-      getServiceBroker().getService(this, QuiescenceReportService.class, null);
-    AgentIdentificationService ais = (AgentIdentificationService) 
-      getServiceBroker().getService(this, AgentIdentificationService.class, null);
+        getServiceBroker().getService(this, QuiescenceReportService.class, null);
+    AgentIdentificationService ais = (AgentIdentificationService)
+        getServiceBroker().getService(this, AgentIdentificationService.class, null);
     qrs.setAgentIdentificationService(ais);
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     String id = getAgentIdentifier().toString();
     if (turnOnTaskSched) {
       if (logger.isDebugEnabled())
-	logger.debug("TASK SCHEDULER ON for "+id);
+        logger.debug("TASK SCHEDULER ON for "+id);
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open ("supplyTaskPolicy.xml");
@@ -766,30 +765,30 @@ public class InventoryPlugin extends ComponentPlugin
         logger.error ("Could not find file supplyTaskPolicy.xml");
       }
       supplyTaskScheduler = new TaskScheduler
-        (new SupplyTaskPredicate(supplyType, id, taskUtils),
-         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
+          (new SupplyTaskPredicate(supplyType, id, taskUtils),
+           TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+           blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
       try {
         is = getConfigFinder().open ("projectionTaskPolicy.xml");
       } catch (Exception e) {
         logger.error ("Could not find file projectionTaskPolicy.xml");
       }
       projectionTaskScheduler = new TaskScheduler
-        (new ProjectionTaskPredicate(supplyType, id, taskUtils),
-         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, q, logger, "projTasks for " + getBlackboardClientName());
+          (new ProjectionTaskPredicate(supplyType, id, taskUtils),
+           TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+           blackboard, q, logger, "projTasks for " + getBlackboardClientName());
     } else { // TaskScheduler OFF
       supplyTaskScheduler = new TaskScheduler
-        (new SupplyTaskPredicate(supplyType, id, taskUtils),
-         new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
-                                   {TaskSchedulingPolicy.PASSALL}),
-         blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
+          (new SupplyTaskPredicate(supplyType, id, taskUtils),
+           new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+           {TaskSchedulingPolicy.PASSALL}),
+           blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
 
       projectionTaskScheduler = new TaskScheduler
-        (new ProjectionTaskPredicate(supplyType, id, taskUtils),
-         new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
-                                   {TaskSchedulingPolicy.PASSALL}),
-         blackboard, q, logger, "projTasks for " + getBlackboardClientName());
+          (new ProjectionTaskPredicate(supplyType, id, taskUtils),
+           new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+           {TaskSchedulingPolicy.PASSALL}),
+           blackboard, q, logger, "projTasks for " + getBlackboardClientName());
     }
 //    supplyTaskSubscription = (IncrementalSubscription) blackboard.
 //        subscribe(new SupplyTaskPredicate(supplyType, id, taskUtils));
@@ -807,7 +806,7 @@ public class InventoryPlugin extends ComponentPlugin
   };
 
   private static class SupplyTaskPredicate
-          implements TaskSchedulingPolicy.Predicate {
+      implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
     TaskUtils taskUtils;
@@ -820,15 +819,15 @@ public class InventoryPlugin extends ComponentPlugin
 
     public boolean execute(Task task) {
       return task.getVerb().equals(Constants.Verb.SUPPLY) &&
-             taskUtils.isDirectObjectOfType(task, supplyType) &&
-             (!taskUtils.isMyRefillTask(task, orgName)) &&
-             (taskUtils.getQuantity(task) > 0);
+          taskUtils.isDirectObjectOfType(task, supplyType) &&
+          (!taskUtils.isMyRefillTask(task, orgName)) &&
+          (taskUtils.getQuantity(task) > 0);
     }
   }
 
 
   private static class ProjectionTaskPredicate
-          implements TaskSchedulingPolicy.Predicate {
+      implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
     TaskUtils taskUtils;
@@ -841,8 +840,8 @@ public class InventoryPlugin extends ComponentPlugin
 
     public boolean execute(Task task) {
       return task.getVerb().equals(Constants.Verb.PROJECTSUPPLY) &&
-             taskUtils.isDirectObjectOfType(task, supplyType) &&
-             (!taskUtils.isMyInventoryProjection(task, orgName));
+          taskUtils.isDirectObjectOfType(task, supplyType) &&
+          (!taskUtils.isMyInventoryProjection(task, orgName));
     }
   }
 
@@ -1287,21 +1286,21 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
 
-    //AHF
+  //AHF
   protected void resetLogOPlanForInventories() {
     Iterator inventories = getInventories().iterator();
     while(inventories.hasNext()) {
       Inventory inv = (Inventory) inventories.next();
-      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) 
-        inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)
+          inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       if(logInvPG.getArrivalTime() != getOPlanArrivalInTheaterTime()) {
-        long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() + 
-          (getOPlanArrivalInTheaterTime() - logInvPG.getArrivalTime());
+        long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() +
+            (getOPlanArrivalInTheaterTime() - logInvPG.getArrivalTime());
         logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
         ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
         logInvPG.setStartCDay(logOPlan.getOplanCday());
         publishChange(inv);
-	touchInventory(inv);
+        touchInventory(inv);
       }
     }
   }
@@ -1429,7 +1428,7 @@ public class InventoryPlugin extends ComponentPlugin
       if (logToCSV) {
         logInvPG.logAllToCSVFile(cycleStamp);
       }
-      
+
       // Force incremental persistence snapshots to include changes to these
       publishChange(inv);
     }
@@ -1476,7 +1475,7 @@ public class InventoryPlugin extends ComponentPlugin
 
     String prepoOffsetStr = (String) map.get(PREPO_ARRIVAL_OFFSET);
     if((prepoOffsetStr != null) &&
-       !(prepoOffsetStr.trim().equals(""))) {
+        !(prepoOffsetStr.trim().equals(""))) {
       try {
         int prepoOffset = Integer.parseInt(prepoOffsetStr);
         prepoArrivalOffset = prepoOffset;
@@ -1684,7 +1683,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   public long getRefillStartTime() {
-	return Math.max(getOPlanArrivalInTheaterTime(),getSupplierArrivalTime());
+    return Math.max(getOPlanArrivalInTheaterTime(),getSupplierArrivalTime());
   }
 
   public int getMaxLeadTime() {
@@ -1823,7 +1822,7 @@ public class InventoryPlugin extends ComponentPlugin
     boolean relSchedChange=false;
     if (selfOrganizations.hasChanged())  {
       Set changeReports = selfOrganizations.getChangeReports(getMyOrganization());
-      
+
       Iterator crits = changeReports.iterator();
       while(crits.hasNext()) {
         if(crits.next() instanceof RelationshipSchedule.RelationshipScheduleChangeReport){
@@ -1875,8 +1874,8 @@ public class InventoryPlugin extends ComponentPlugin
         Class cls = Class.forName(comparatorClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         ComparatorModule comparator = (ComparatorModule) constructor.newInstance(initArgs);
-	if (logger.isInfoEnabled())
-	  logger.info("Using comparator " + comparatorClass);
+        if (logger.isInfoEnabled())
+          logger.info("Using comparator " + comparatorClass);
         return comparator;
       } catch (Exception e) {
         logger.error(e + " Unable to create Expander instance of " + comparatorClass + ". " +
