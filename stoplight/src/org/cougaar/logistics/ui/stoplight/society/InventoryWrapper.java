@@ -59,10 +59,12 @@ public class InventoryWrapper {
   // Used a lot, so just grab a reference to it once
   LogisticsInventoryPG logInvPG;
   private long switchOverDay = -1;
+  Logger logger;
 
   public InventoryWrapper(Inventory inputInventory) {
     inventory = inputInventory;
     logInvPG = (LogisticsInventoryPG)inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+    Logger logger = Logging.getLogger(this);
   }
 
   public Inventory getInventory() {
@@ -102,8 +104,13 @@ public class InventoryWrapper {
     if (logInvPG == null) {
       return null;
     }
-      
-    return scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
+    Schedule diSched = scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Due-In schedule");
+      printSchedule(diSched, logger);
+    }      
+    //return scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
+    return diSched;
   }
   
   /**
@@ -114,7 +121,13 @@ public class InventoryWrapper {
       return null;
     }
       
-    return scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
+    Schedule reqDISched = scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Requested Due-In schedule");
+      printSchedule(reqDISched, logger);
+    }      
+    //return scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
+    return reqDISched;
   }
 
   /**
@@ -183,7 +196,11 @@ public class InventoryWrapper {
           startTime += TimeUtils.MSEC_PER_DAY;
         }
       }
-    } 
+    }
+    if (logger.isDebugEnabled()) {
+      logger.debug("Projected Requested Due-In schedule");
+      printSchedule(schedule, logger);
+    }       
     return scheduleToNonOverlapSchedule(schedule);
   }
 
@@ -228,6 +245,10 @@ public class InventoryWrapper {
         }
       }
     } 
+    if (logger.isDebugEnabled()) {
+      logger.debug("Projected Due-In schedule");
+      printSchedule(schedule, logger);
+    }      
     return scheduleToNonOverlapSchedule(schedule);
   }
 
@@ -691,7 +712,7 @@ public class InventoryWrapper {
     if (schedule == null) {
       return null;
     }
-    Logger logger = Logging.getLogger(this);
+    //    Logger logger = Logging.getLogger(this);
     if (logger.isDebugEnabled()) {
       logger.debug("Original schedule");
       printSchedule(schedule, logger);
