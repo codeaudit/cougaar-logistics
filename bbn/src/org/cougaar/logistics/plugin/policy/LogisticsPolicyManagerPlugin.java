@@ -526,6 +526,11 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         match = true;
         matchPol = pol;
       }
+      //If this is the exact object then there is a "conflict" because we don't want to 
+      //republish anything.
+      else if (pol == p) {
+	  return true;
+      }
     }
     if (match == true){
       boolean eq = false;
