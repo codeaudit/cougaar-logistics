@@ -22,33 +22,36 @@
 package org.cougaar.logistics.ldm.asset;
 
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.planning.ldm.asset.PGDelegate;
+import org.cougaar.glm.ldm.asset.PackagePG;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
+import org.cougaar.logistics.ldm.ClassIConsumerPrototypeProvider;
+import org.cougaar.logistics.ldm.policy.FeedingPolicy;
+import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
+import org.cougaar.logistics.plugin.utils.FeedingPolicyPred;
+import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
+import org.cougaar.logistics.plugin.utils.MilitaryPersonPred;
+import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.CountRate;
+import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.policy.RangeRuleParameterEntry;
 import org.cougaar.planning.ldm.policy.KeyRuleParameterEntry;
-import org.cougaar.planning.ldm.policy.KeyRuleParameter;
 import org.cougaar.planning.ldm.policy.RangeRuleParameter;
-import org.cougaar.glm.ldm.asset.MilitaryPerson;
-import org.cougaar.glm.ldm.asset.PackagePG;
-import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
-import org.cougaar.glm.ldm.plan.Service;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.planning.ldm.policy.RangeRuleParameterEntry;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
 
-
-import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
-import org.cougaar.logistics.plugin.utils.*;
-import org.cougaar.logistics.ldm.ClassIConsumerPrototypeProvider;
-import org.cougaar.logistics.ldm.policy.FeedingPolicy;
-
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
 public class SubsistenceConsumerBG extends ConsumerBG {
 
@@ -74,7 +77,6 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
   public List getPredicates() {
     ArrayList predList = new ArrayList();
-    String typeId = myPG.getMei().getTypeIdentificationPG().getTypeIdentification();
     predList.add(new MilitaryPersonPred());
     predList.add(new OrgActivityPred());
     predList.add(new LogisticsOPlanPredicate());
@@ -97,15 +99,15 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof MilitaryPersonPred) {
-        Schedule consumerSched = 
-          parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
+        Schedule consumerSched =
+            parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
 //      if (myOrgName.indexOf("35-ARBN") >= 0) {
 //        System.out.println("getParamSched() ConsumerSched "+consumerSched);
 //      }
         params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
       } else if (predicate instanceof OrgActivityPred) {
-        Schedule orgActSched = 
-          parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
+        Schedule orgActSched =
+            parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
         params.add(orgActSched);
 //      if (myOrgName.indexOf("35-ARBN") >= 0) {
 //        System.out.println("getParamSched() OrgActSched "+orgActSched);
@@ -139,7 +141,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
   private HashMap addWater(HashMap water, String key, Double value) {
     water.put(key, value);
     return water;
-  }    
+  }
 
   private HashMap addEnhancements(HashMap enhance, String []nsn_keys, int j, FeedingPolicy fp) {
     KeyRuleParameterEntry [] keys = fp.getEnhancementsKeys(j);
@@ -147,7 +149,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       enhance.put(nsn_keys[i], new Double(keys[i].getValue()));
     }    
     return enhance;
-  }      
+  }
 
   protected Schedule getFeedingPolicySchedule(FeedingPolicy fp) {
     Vector sched_els = new Vector();
@@ -167,8 +169,8 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       start = end;
     }
     return parentPlugin.getScheduleUtils().newObjectSchedule(sched_els.elements());
-  } 
- 
+  }
+
   protected Schedule getWaterPolicySchedule(FeedingPolicy fp) {
     Vector sched_els = new Vector(0);
     if (fp != null) {
@@ -191,7 +193,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     }// else feeding policy is null return empty schedule
     return parentPlugin.getScheduleUtils().newObjectSchedule(sched_els.elements());
-  }        
+  }
 
   protected Schedule getEnhancementPolicySchedule(FeedingPolicy fp) {
     Vector sched_els = new Vector(0);
@@ -214,7 +216,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     }// else feeding policy is null return empty schedule
     return parentPlugin.getScheduleUtils().newObjectSchedule(sched_els.elements());
-  } 
+  }
 
   public Rate getRate(Asset asset, List params) {
 
@@ -228,7 +230,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       quantity = ((Double) obj).doubleValue();
     } else {
       if (obj != null) {
-        logger.debug ( "Bad param - expected quantity got " + obj); 
+        logger.debug ( "Bad param - expected quantity got " + obj);
       } // if
       return null;
     } // if
@@ -238,13 +240,13 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       act = (OrgActivity) obj;
     } else {
       if (obj != null) {
-        logger.debug ( "Bad param - expected OrgActivity got " + obj); 
+        logger.debug ( "Bad param - expected OrgActivity got " + obj);
       } // if
       return null;
     } // if
 
-    KeyRuleParameterEntry[] keys = 
-      getActionPolicy(act.getActivityType(), act.getOpTempo()); 
+    KeyRuleParameterEntry[] keys =
+        getActionPolicy(act.getActivityType(), act.getOpTempo());
     if ((keys != null) && (keys.length == 0)) {
       return null;
     } // if
@@ -262,11 +264,11 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     if (keys != null) {
       for (int j = 0; j < keys.length; j++) {
         if ((keys[j].getKey().equalsIgnoreCase("Breakfast")
-             && (keys[j].getValue().equals(identifier)))
+            && (keys[j].getValue().equals(identifier)))
             || (keys[j].getKey().equalsIgnoreCase("Lunch")
-                && (keys[j].getValue().equals(identifier)))
+            && (keys[j].getValue().equals(identifier)))
             || (keys[j].getKey().equalsIgnoreCase("Dinner")
-                && (keys[j].getValue().equals(identifier)))) {
+            && (keys[j].getValue().equals(identifier)))) {
           resource_count += 1.0;
         }
       }
@@ -277,16 +279,16 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       if (params.size() < 3) {
         logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
       } else if (params.get(2) != null) {
-          if (((HashMap) params.get(2)).containsKey(identifier)) {
-            // Meals
-            resource_count += ((Double) ((HashMap)
-                                         params.get(2)).get(identifier)).doubleValue(); 
-            logger.debug(identifier+" rate is "+resource_count);
-          } // if
-          // DEBUG
-          else {
-            logger.debug("No meal rates for "+identifier);
-          }
+        if (((HashMap) params.get(2)).containsKey(identifier)) {
+          // Meals
+          resource_count += ((Double) ((HashMap)
+              params.get(2)).get(identifier)).doubleValue();
+          logger.debug(identifier+" rate is "+resource_count);
+        } // if
+        // DEBUG
+        else {
+          logger.debug("No meal rates for "+identifier);
+        }
       } // if
 
       // Enhancements policy
@@ -294,9 +296,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
         if (((HashMap) params.get(3)).containsKey(identifier)) {
           // Meals
           resource_count += ((Double) ((HashMap)
-                                       params.get(3)).get(identifier)).doubleValue(); 
+              params.get(3)).get(identifier)).doubleValue();
           logger.debug ( " enhance params is " + ((Double)
-                                                  ((HashMap) params.get(3)).get (identifier)).doubleValue());
+              ((HashMap) params.get(3)).get (identifier)).doubleValue());
         }
       }
     }
@@ -309,24 +311,24 @@ public class SubsistenceConsumerBG extends ConsumerBG {
         if (((HashMap) params.get(4)).containsKey(identifier)) {
           // water
           resource_count += ((Double) ((HashMap)
-                                       params.get (4)).get(identifier)).doubleValue(); 
+              params.get (4)).get(identifier)).doubleValue();
           logger.debug ( " water params is " + ((Double) ((HashMap)
-                                                         params.get(4)).get (identifier)).doubleValue());
+              params.get(4)).get (identifier)).doubleValue());
         } // if
       } // if
     } // if
 
     if (resource_count > 0) {
-      double total = 
-        Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity); 
+      double total =
+          Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity);
       result = CountRate.newEachesPerDay (total);
       RationPG rpg = (RationPG)
-        asset.searchForPropertyGroup(RationPG.class);
+          asset.searchForPropertyGroup(RationPG.class);
       logger.debug ("\n THE rate is " +
-                   CountRate.newEachesPerDay (total) + " for asset " +
-                   identifier + " the ration type is " + rpg.getRationType());
+                    CountRate.newEachesPerDay (total) + " for asset " +
+                    identifier + " the ration type is " + rpg.getRationType());
       logger.debug ( " Unit of Issue  is " + ppg.getUnitOfIssue()
-                    + " count per pack" + ppg.getCountPerPack());
+                     + " count per pack" + ppg.getCountPerPack());
     } // if
     return result;
   } // getRate
@@ -373,6 +375,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
   }
 
   private KeyRuleParameterEntry[] getActionPolicy(String activity, String optempo) {
+
     RangeRuleParameterEntry[] rules = feedingPolicy.getRules();
     RangeRuleParameter theRule = new RangeRuleParameter();
     KeyRuleParameterEntry [] keys;
@@ -386,19 +389,19 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       j = 0;
       flag = true;
       while (flag && (j < keys.length)) {
-	if ((!keys[j].getKey().equalsIgnoreCase("OrgActivity")) && (!keys[j].getKey().equalsIgnoreCase("Optempo"))) {
-	  flag = false;
-	} else {
-	  if ((!keys[j].getValue().equalsIgnoreCase(activity)) && (!keys[j].getValue().equalsIgnoreCase(optempo))) {
-	    flag = false;
-	  } 
-	} 
-	j++;
+        if ((!keys[j].getKey().equalsIgnoreCase("OrgActivity")) && (!keys[j].getKey().equalsIgnoreCase("Optempo"))) {
+          flag = false;
+        } else {
+          if ((!keys[j].getValue().equalsIgnoreCase(activity)) && (!keys[j].getValue().equalsIgnoreCase(optempo))) {
+            flag = false;
+          }
+        }
+        j++;
       }
       if (flag) {
-	found = true;
+        found = true;
       } else {
-	i++;
+        i++;
       }
     } 
     if (found) {
@@ -411,7 +414,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
    * Get the mandatory supplements from the property group and create a map
    * that contains the daily consumption rate for both the supplements
    * and the meals for a given range.
-   * @param LogClassIPolicy
+   * @param policy the feeding policy
    * @return Vector of ObjectScheduleElements
    */
   private Vector createMealAndSupplementSchedule (FeedingPolicy policy) {
@@ -420,16 +423,16 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       RangeRuleParameterEntry[] mealRanges = policy.getMealPolicyRanges();
       ObjectScheduleElement element;
       for (int i = 0; i < mealRanges.length; i++) {
-	element = new ObjectScheduleElement( mealRanges[i].getRangeMin(),
-					     mealRanges[i].getRangeMax(), 
-					     addMeals(new HashMap(), i, policy));
-	sched_els.addElement(element);
+        element = new ObjectScheduleElement( mealRanges[i].getRangeMin(),
+                                             mealRanges[i].getRangeMax(),
+                                             addMeals(new HashMap(), i, policy));
+        sched_els.addElement(element);
       } // for
     } // if
     return sched_els;
   } // createMealAndSupplementSchedule
 
-		
+
   private HashMap addMeals (HashMap map, int j, FeedingPolicy p) {
     RangeRuleParameterEntry[] meals; // bRanges, lRanges, dRanges;
     meals = p.getMealPolicyRanges();
@@ -441,8 +444,8 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     for (int i = 0; i < keys.length; i++) {
       nsn = keys[i].getValue().toString();
       if (nsn != null && nsn.length() > 0) {
-	calculateConsumptionRate(map, nsn);
-	map = addSupplementRate(map, nsn);
+        calculateConsumptionRate(map, nsn);
+        map = addSupplementRate(map, nsn);
       } // if
     } // for
     return map;
@@ -468,9 +471,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       RationPG rpg = (RationPG)item.searchForPropertyGroup(RationPG.class);
       HashMap supplements = rpg.getMandatorySupplement();
       //	System.JTEST.out.println (" the supplements list is "  + supplements);
-      for (Iterator i = supplements.keySet().iterator(); i.hasNext();) { 
-	String nsn = (String)i.next();
-	m = calculateSupplementRate(m, nsn, ((BigDecimal)supplements.get(nsn)).doubleValue());
+      for (Iterator i = supplements.keySet().iterator(); i.hasNext();) {
+        String nsn = (String)i.next();
+        m = calculateSupplementRate(m, nsn, ((BigDecimal)supplements.get(nsn)).doubleValue());
       } // for
     } // if
     return m;
@@ -485,9 +488,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       m.put(key, new Double(value));
     } 
     return m;
-  }	
-
-
+  }
 }
 
 
