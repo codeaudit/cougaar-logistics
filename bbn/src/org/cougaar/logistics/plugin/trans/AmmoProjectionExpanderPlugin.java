@@ -62,6 +62,7 @@ import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.glm.util.GLMPrepPhrase;
 
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
+import org.cougaar.lib.callback.*;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
 
@@ -110,6 +111,33 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
     } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
   }
+
+  protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
+    if (isInfoEnabled())
+      info (getName () + " : Filtering for Expandable Tasks...");
+
+    myInputTaskCallback = new UTILExpandableTaskCallback (bufferingThread, logger) {
+	protected UnaryPredicate getPredicate () {
+	  return new UnaryPredicate() {
+	      public boolean execute(Object o) {
+		if ( o instanceof Task ) {
+		  Task task = (Task) o;
+		  boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
+		  boolean isReserved   = (task.getPrepositionalPhrase (START) != null);
+		  if (hasTransport && isReserved) return true;
+
+		  return ( (((Task)o).getWorkflow() == null )  &&
+			   (((Task)o).getPlanElement() == null ) &&
+			   ((UTILGenericListener) myListener).interestingTask ((Task) o)); 
+		}
+		return false;
+	      }
+	    };
+	}
+      };  
+
+    return myInputTaskCallback;
+  } 
 
   /**
    * State that we are interested in all transport tasks
@@ -691,11 +719,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	  if (examinedIsReserved) {
 	    // has it already been removed from workflow?
 	    if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
-	      if (isDebugEnabled ())
-		debug ("skipping reserved transport task " + examinedTask.getUID() + 
-		       " since it's already been removed from it's workflow.");
+	      if (isInfoEnabled ())
+		info ("skipping reserved transport task " + examinedTask.getUID() + 
+		      " since it's already been removed from it's workflow.");
 	      return false;
 	    }
+	  }
+	  else if (!(task instanceof MPTask)) {
+	    if (isInfoEnabled ())
+	      info ("saw transport task "  + task.getUID());
 	  }
 
 	  // is it for the same org? 
@@ -823,13 +855,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       return false;
     }
 	  
-    boolean val = (best.getTime() <= reservedBest.getTime());
-    
-    if (isInfoEnabled () && val) 
-      info ("transport " + transport.getUID() + " best "+ best+ " between reserved " + reserved.getUID()+ 
-	    " ready " + reservedReady + " and " + reservedBest);
- 
-    return val;
+    if (isInfoEnabled ()) 
+      info ("transport " + transport.getUID() + " best "+ best+ " after reserved " + reserved.getUID()+ 
+	    " ready " + reservedReady);
+
+    return true;
   }
 
   protected String reportTransportDate (Task reserved){
@@ -863,6 +893,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   protected void dealWithReservedTask (Task task, Task reservedTask) {
+    // preconditions
     if (isReservedTask (task))
       error ("arg - task "  + task.getUID () + " is a reserved task.");
 
@@ -876,28 +907,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       return;
     }
-
-    Date best          = prefHelper.getBestDate (task);
-    Date reservedBest  = prefHelper.getBestDate (reservedTask);
-    long daysLeft      = (reservedBest.getTime()-best.getTime())/MILLIS_PER_DAY;
-    Date reservedReady = (Date) prepHelper.getIndirectObject (reservedTask, START);
-    long currentDays   = (reservedBest.getTime()-reservedReady.getTime())/MILLIS_PER_DAY;
-    if (daysLeft < 0) error ("best dates broken");
-
-    if (isInfoEnabled ()) {
-      info (getName() + ".dealWithReservedTask - applying " + task.getUID () + " best " + best +
-	    " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
-    }
-    // if it does, publish remove it and replace it with one with altered date span, quantity, and START prep
-    
-    Container reservedDO = (Container)reservedTask.getDirectObject();
-    ContentsPG contents = reservedDO.getContentsPG();
-    Collection weights = contents.getWeights();
-    Mass weight = (Mass) weights.iterator().next();
-    weights.remove (weight);
-    double factor = (double)daysLeft/(double)currentDays;
-    weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
-
     NewWorkflow tasksWorkflow = (NewWorkflow) reservedTask.getWorkflow ();
 
     if (tasksWorkflow == null) {
@@ -907,7 +916,29 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     int numTasksBefore = numTasksInWorkflow (tasksWorkflow);
 
+    // real code starts here ---
+
+    Date best          = prefHelper.getBestDate (task);
+    Date reservedBest  = prefHelper.getBestDate (reservedTask);
+    long daysLeft      = (reservedBest.getTime()-best.getTime())/MILLIS_PER_DAY;
+    Date reservedReady = (Date) prepHelper.getIndirectObject (reservedTask, START);
+    long currentDays   = (reservedBest.getTime()-reservedReady.getTime())/MILLIS_PER_DAY;
+
+    if (isInfoEnabled ()) {
+      info (getName() + ".dealWithReservedTask - applying actual " + task.getUID () + " best " + best +
+	    " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
+      info ("\t" + reportContentTypes (task, reservedTask));
+    }
+
+    double factor = (double)daysLeft/(double)currentDays;
     if (factor > 0) {
+      Container reservedDO = (Container)reservedTask.getDirectObject();
+      ContentsPG contents = reservedDO.getContentsPG();
+      Collection weights = contents.getWeights();
+      Mass weight = (Mass) weights.iterator().next();
+      weights.remove (weight);
+      weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
+
       Asset deliveredAsset = reservedDO;
 
       NewTask replacement = 
@@ -992,6 +1023,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       } 
       else {
 	publishRemove(exp);
+	if (isInfoEnabled ()) {
+	  info ("removing expansion of task " + exp.getTask().getUID());
+	}
 	AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
 	Disposition disposition =
 	  ldmf.createDisposition(parent.getPlan(), parent, ar);
