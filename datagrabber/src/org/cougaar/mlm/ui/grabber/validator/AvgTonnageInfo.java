@@ -40,55 +40,20 @@ import java.util.Date;
  *
  * @since 2/26/01
  **/
-public class AvgTonnageInfo extends Test{
+public class AvgTonnageInfo extends AbstractTonnageInfo {
   
-  //Constants:
-  ////////////
-
-  public final String COL_TONNAGE = "Tonnage";
-  public final String COL_CLASS = "Class";
-  public final String COL_TYPE = "Type";
-  public final String COL_UNIT = "Unit";
-  public final String COL_LOCATION = "Location";
   boolean debug = false;
-
-  //Variables:
-  ////////////
-
-    boolean showUnit;
-    boolean showClass;
-    boolean showType;
-    boolean showLocation;
-
-  //Constructors:
-  ///////////////
 
   public AvgTonnageInfo(DBConfig dbConfig, boolean showUnit, boolean showClass,
 				  boolean showType, boolean showLocation){
     super(dbConfig);
-    this.showUnit = showUnit;
-    this.showClass = showClass;
-    this.showType = showType;
-    this.showLocation = showLocation;
-  }
-
-  //Members:
-  //////////
-
-  public int failureLevel(){
-    return RESULT_INFO;
+      init(showUnit, showClass, showType, showLocation);
   }
 
   /**for gui**/
   public String getDescription(){
     return "Average Tonnage Per Day Information by "+(showUnit?"Unit":"")+
       (showClass?"Class":"")+(showType?"Type":"")+(showLocation?"Location":"");
-  }
-
-  /**Base name**/
-  protected String getRawTableName(){
-    return (showUnit?"Unit":"")+(showClass?"Class":"")+(showType?"Type":"")+
-      (showLocation?"Location":"")+"AvgTonnageInfo";
   }
 
   /**Get header strings for the table**/

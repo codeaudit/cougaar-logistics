@@ -41,17 +41,9 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
  *
  * @since 2/26/01
  **/
-public class TonnageInfo extends Test implements Graphable {
+public class TonnageInfo extends AbstractTonnageInfo implements Graphable {
   
-  //Constants:
-  ////////////
-
-  public final String COL_TONNAGE = "Tonnage";
-  public final String COL_CLASS = "Class";
-  public final String COL_TYPE = "Type";
-  public final String COL_UNIT = "Unit";
-  public final String COL_LOCATION = "Location";
-  /** 
+  /**
    * These constants are from :
    *	  http://www.wrsc.usace.army.mil/ndc/metric.htm
    */
@@ -60,12 +52,7 @@ public class TonnageInfo extends Test implements Graphable {
   //Variables:
   ////////////
 
-    boolean showUnit;
-    boolean showClass;
-    boolean showType;
-    boolean showLocation;
-
-  public boolean debug = "true".equals (System.getProperty("TonnageInfo.debug", "false"));
+    public boolean debug = "true".equals (System.getProperty("TonnageInfo.debug", "false"));
 
   //Constructors:
   ///////////////
@@ -73,29 +60,13 @@ public class TonnageInfo extends Test implements Graphable {
   public TonnageInfo(DBConfig dbConfig, boolean showUnit, boolean showClass,
 				  boolean showType, boolean showLocation){
     super(dbConfig);
-    this.showUnit = showUnit;
-    this.showClass = showClass;
-    this.showType = showType;
-    this.showLocation = showLocation;
-  }
-
-  //Members:
-  //////////
-
-  public int failureLevel(){
-    return RESULT_INFO;
+      init(showUnit, showClass, showType, showLocation);
   }
 
   /**for gui**/
   public String getDescription(){
     return "Tonnage Information by "+(showUnit?"Unit":"")+
       (showClass?"Class":"")+(showType?"Type":"")+(showLocation?"Location":"");
-  }
-
-  /**Base name**/
-  protected String getRawTableName(){
-    return (showUnit?"Unit":"")+(showClass?"Class":"")+(showType?"Type":"")+
-      (showLocation?"Location":"")+"TonnageInfo";
   }
 
   /**Get header strings for the table**/
