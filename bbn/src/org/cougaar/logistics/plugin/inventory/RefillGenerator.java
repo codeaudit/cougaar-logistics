@@ -258,26 +258,36 @@ public class RefillGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to create the Refill tasks time preference
-   *  Use a V scoring function for now in place of our new scoring function
-   *  design.
+   *  Use a Piecewise Linear scoring function - see the IM desing doc
+   *  for details.
    *  @param bestDay The time representation of the desired result
    *  @param today The time representation of today or now
    *  @return Preference  The new time preference
    **/
   private Preference createRefillTimePreference(long bestDay, long today) {
-    AspectValue beforeAV = new TimeAspectValue(AspectType.END_TIME, today);
-    AspectValue bestAV = new TimeAspectValue(AspectType.END_TIME, bestDay);
     //TODO - really need end of deployment from an OrgActivity -
     // As a hack for now just add 180 days from today - note that this
     // will push the possible end date out too far...
-    //AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME, 
-    //				    inventoryPlugin.getEndOfDeplyment()); 
-    AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME,
-                                              getTimeUtils().addNDays(today, 180));
+    // long end = inventoryPlugin.getEndOfDeplyment()); 
+    long end = getTimeUtils().addNDays(today, 180);
+    double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
+    //Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+    // define alpha .25
+    double alpha = .25;
+
+    AspectScorePoint earliest = new AspectScorePoint(today, alpha);
+    AspectScorePoint best = new AspectScorePoint(bestDay, 0.0);
+    AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+                                                       alpha);
+    AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score));
+
+    Vector points = new Vector(earliest, best, first_late, latest);
     ScoringFunction endTimeSF = ScoringFunction.
-      createVScoringFunction(beforeAV, bestAV, afterAV);
+      createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getRootFactory().
       newPreference(AspectType.END_TIME, endTimeSF);
+    
   }
 
   /** Utility method to create a Refill Quantity  preference

@@ -351,12 +351,9 @@ public class SupplyExpander extends InventoryModule {
         long anticipation = 0L;
         if (addTransport) anticipation += ost;
 
-	// Add preferences for QUANTITY
-	subtask.setVerb(WITHDRAWVERB);
-	double quantity = getTaskUtils().getPreference(parentTask, AspectType.QUANTITY);
-	Preference p_qty = createQuantityPreference(AspectType.QUANTITY, quantity);
-	subtask.addPreference(p_qty);
-	addEndTimePref(subtask, getTaskUtils().getEndTime(parentTask) - anticipation);
+        subtask.setVerb(WITHDRAWVERB);
+        //TODO Figure out what to offset the task by for transport
+	//addEndTimePref(subtask, getTaskUtils().getEndTime(parentTask) - anticipation);
 
 	return subtask;
      }
@@ -371,12 +368,6 @@ public class SupplyExpander extends InventoryModule {
         if (addTransport) anticipation += ost;
 
 	subtask.setVerb(PROJECTWITHDRAWVERB);
-	Preference pref = parentTask.getPreference(AlpineAspectType.DEMANDRATE);
-	if (pref.getScoringFunction().getBest().getAspectValue() instanceof AspectRate) {
-	} else {
-	  logger.error("SupplyExpander DEMANDRATE preference not AspectRate:" + pref);
-	}
-	subtask.addPreference(pref);
 	//design issue:
 	//MWD do we build in ost anticipation to end time pref 
 	//like above if there is a
@@ -399,23 +390,8 @@ public class SupplyExpander extends InventoryModule {
 	subtask.setPriority(parentTask.getPriority());
 	subtask.setSource( clusterId );
 
-	// Copy all preferences that aren't used for repetitive tasks
-	Vector prefs = new Vector();
-	int aspect_type;
-	Preference pref;
-	Enumeration preferences = parentTask.getPreferences();
-	while (preferences.hasMoreElements()) {
-	    pref = (Preference)preferences.nextElement();
-	    aspect_type = pref.getAspectType();
-	    // Quanity added to withdraw by task specific method.
-	    // Inerval and DemandRate are not added to withdraw task.
-	    if ((aspect_type != AspectType.QUANTITY) && 
-		(aspect_type != AspectType.INTERVAL) &&
-		(aspect_type != AlpineAspectType.DEMANDRATE)) {
-		prefs.addElement(pref);
-	    }
-	}
-	subtask.setPreferences(prefs.elements());
+	// Copy all preferences 
+        subtask.setPreferences(parentTask.getPreferences());
 	return subtask;
     }
 
@@ -427,37 +403,6 @@ public class SupplyExpander extends InventoryModule {
     return null;
   }
 
-
-    /** Create a preference with the scoring NearOrAbove function at 'value' for the
-	given aspect type */
-    public Preference createQuantityPreference(int aspect, double value) {
-	AspectValue av = new AspectValue(aspect,value);
- 	ScoringFunction score = ScoringFunction.createNearOrAbove(av, 0);
-	return inventoryPlugin.getRootFactory().newPreference(aspect, score);
-    }
-    
-    public Preference createDateBeforePreference(int aspect, long value) {
-	AspectValue av = new AspectValue(aspect,value);
- 	ScoringFunction score = ScoringFunction.createNearOrBelow(av, 0);
-	return inventoryPlugin.getRootFactory().newPreference(aspect, score);
-    }
-
-    public Preference createDateAfterPreference(int aspect, long value) {
-	AspectValue av = new AspectValue(aspect,value);
- 	ScoringFunction score = ScoringFunction.createNearOrAbove(av, 0);
-	return inventoryPlugin.getRootFactory().newPreference(aspect, score);
-    }
-
-   /** Creates a start and end preference and attaches them to a task **/
-    protected void addEndTimePref(NewTask task, long end) {
-	Preference p_end = createDateBeforePreference(AspectType.END_TIME, end);
-	task.addPreference(p_end);
-    }
-
-    protected void addStartTimePref(NewTask task, long start) {
- 	Preference p_start = createDateAfterPreference(AspectType.START_TIME, start);
- 	task.addPreference(p_start);
-    }
 
   public void updateAllocationResult(IncrementalSubscription sub) {
     PluginHelper.updateAllocationResult(sub);

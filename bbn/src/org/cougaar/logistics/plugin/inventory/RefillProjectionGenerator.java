@@ -381,8 +381,8 @@ public class RefillProjectionGenerator extends InventoryModule {
   } 
 
   /** Create a Time Preference for the Refill Task
-   *  USE V Scoring Function for now. Note that this doesn't exactly represent
-   *  the scoring function we developed in our IM SDD.
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
    *  @param bestDay The time you want this preference to represent
    *  @param start The earliest time this preference can have
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
@@ -390,19 +390,28 @@ public class RefillProjectionGenerator extends InventoryModule {
    **/
   private Preference createRefillTimePreference(long bestDay, long start, 
                                                 int aspectType) {
-    AspectValue beforeAV = new TimeAspectValue(aspectType, start);
-    AspectValue bestAV = new TimeAspectValue(aspectType, bestDay);
     //TODO - really need end of deployment from an OrgActivity -
     // As a hack for now just add 180 days from today - note that this
     // will push the possible end date out too far...
-    //AspectValue afterAV = new TimeAspectValue(aspectType, 
-    //				    inventoryPlugin.getEndOfDeplyment()); 
-    AspectValue afterAV = new TimeAspectValue(aspectType,
-					      getTimeUtils().addNDays(start, 180));
+    // long end = inventoryPlugin.getEndOfDeplyment()); 
+    long end = getTimeUtils().addNDays(today, 180);
+    double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
+    //Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+    // define alpha .25
+    double alpha = .25;
+
+    AspectScorePoint earliest = new AspectScorePoint(start, alpha);
+    AspectScorePoint best = new AspectScorePoint(bestDay, 0.0);
+    AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+                                                       alpha);
+    AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score));
+
+    Vector points = new Vector(earliest, best, first_late, latest);
     ScoringFunction timeSF = ScoringFunction.
-	createVScoringFunction(beforeAV, bestAV, afterAV);
+      createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getRootFactory().
-	  newPreference(aspectType, timeSF);
+      newPreference(aspectType, timeSF);
   }
 
   /** Utility method to create Refill Projection Rate preference
