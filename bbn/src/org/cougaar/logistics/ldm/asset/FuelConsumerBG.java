@@ -46,7 +46,6 @@ public class FuelConsumerBG extends ConsumerBG {
   protected FuelConsumerPG myPG;
   MEIPrototypeProvider parentPlugin;
   String supplyType = "BulkPOL";
-  Schedule mergedSchedule = null;
   HashMap consumptionRates = new HashMap();
   private transient LoggingService logger;
 
@@ -103,11 +102,7 @@ public class FuelConsumerBG extends ConsumerBG {
     if (myOrgName.indexOf("35-ARBN") >= 0) {
       System.out.println("getParamSched() MERGED "+paramSchedule);
     }
-    if (mergedSchedule == null) {
-      mergedSchedule = paramSchedule;
-      return paramSchedule;
-    }
-    return null; // diff'ed schedule
+    return paramSchedule;
   }
 
   public Rate getRate(Asset asset, List params) {
@@ -166,9 +161,10 @@ public class FuelConsumerBG extends ConsumerBG {
     if (consumptionRates.isEmpty()) {
       Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
 							      myPG.getService(), myPG.getTheater());
-      parseResults(result);
-      if (consumptionRates.isEmpty()) {
+      if (result == null) {
 	logger.error("getConsumed(): Database query returned EMPTY result set");
+      } else {
+	parseResults(result);
       }
     }
     return consumptionRates.keySet();
@@ -187,10 +183,6 @@ public class FuelConsumerBG extends ConsumerBG {
     double dcr;
     Asset newAsset;
     HashMap map = null;
-    // AMY FIX THIS: I'm not sure if this is ok but it prevents an NPE
-    if (result == null) {
-      return;
-    }
     Enumeration results = result.elements();
     Object row[];
 
