@@ -1,12 +1,12 @@
 =begin experiment
 ####### CHANGE THE LAYOUT #########################
-name: Baseline
-description: Baseline
-script: $CIP/csmart/scripts/definitions/BaselineTemplate.rb
+name: BaselineSD
+description: BaselineSD
+script: $CIP/csmart/scripts/definitions/BaselineTemplate-ExtOplan-W-ATDebug.rb
 parameters:
-  - run_count: 3
-  - society_file: $CIP/csmart/config/societies/ua/small-tc20-17a12v.plugins.rb
-  - layout_file: $CIP/operator/T20-SMALL-UA-layout.xml
+  - run_count: 2
+  - society_file: $CIP/csmart/config/societies/ua/full-tc20-232a703v.plugins.rb
+  - layout_file: $CIP/operator/layouts/FULL-UA-TC20-35H41N-layout.xml
   - archive_dir: $CIP/Logs
   
   - rules:
@@ -15,11 +15,11 @@ parameters:
     - $CIP/csmart/config/rules/logistics
 
 include_scripts:
-  - script: $CIP/csmart/scripts/definitions/clearPnLogs.rb
-  - script: $CIP/csmart/scripts/definitions/datagrabber_include.rb
-  - script: $CIP/csmart/scripts/definitions/sdDataDump.rb
-  - script: $CIP/csmart/scripts/definitions/providerAvail.rb
-  - script: $CIP/csmart/scripts/definitions/relationship.rb
+  - script: $CIP/csmart/lib/isat/clearPnLogs.rb
+  - script: $CIP/csmart/lib/isat/datagrabber_include.rb
+  - script: $CIP/csmart/lib/logistics/sdDataDump.rb
+  - script: $CIP/csmart/lib/logistics/providerAvail.rb
+  - script: $CIP/csmart/lib/logistics/relationship.rb
 
 =end
 
