@@ -1042,27 +1042,7 @@ public class ExtractionHelper
         logger.warn("Error: could not parse CDate -> " + cdate_property);
       return 0l;
     }
-/*
-    TimeZone tz = TimeZone.getTimeZone(timezone_property);
 
-    GregorianCalendar gc = new GregorianCalendar (tz);
-
-    StringTokenizer st = new StringTokenizer (cdate_property, "/");
-
-    String c_time_month_string = st.nextToken();
-    String c_time_day_string = st.nextToken();
-    String c_time_year_string = st.nextToken();
-
-    // Month is offset from zero, others are not
-    // Last three are hour, minute, second
-
-    gc.set (Integer.parseInt (c_time_year_string),
-            Integer.parseInt (c_time_month_string) - 1,
-            Integer.parseInt (c_time_day_string),
-            0, 0, 0);
-
-    c_time_msec = gc.getTime().getTime();
-*/
     // This was needed to ensure that the milliseconds were set to 0
     c_time_msec = c_time_msec / 1000;
     c_time_msec *= 1000;
