@@ -123,6 +123,19 @@ public class QueryEditor extends JPanel
     return aq;
   }
 
+  /**
+   * Get the latest list of Source Clusters in the query editor
+   */
+  public Vector getSourceClusters() {
+    Vector retVec = new Vector();
+    ListModel lm = sourceClusters.getModel();
+    for (int i = 0; i < lm.getSize(); i++)
+    {
+      retVec.add(lm.getElementAt(i).toString());
+    }
+    return retVec;
+  }
+  
   public XmlFormat getXmlFormat () {
     if (fullFormat.isSelected())
       return XmlFormat.INCREMENT;

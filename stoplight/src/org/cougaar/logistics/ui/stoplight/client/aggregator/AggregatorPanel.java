@@ -188,6 +188,9 @@ public class AggregatorPanel extends JPanel implements CougaarUI
     TableCellButton cancelButton = new TableCellButton("Cancel");
     queryTable.setDefaultRenderer(Boolean.class,new TableCellButton("Cancel"));
     queryTable.setDefaultEditor(Boolean.class, cancelButton);
+    TableCellButton updateButton = new TableCellButton("Update");
+    queryTable.setDefaultRenderer(Integer.class,new TableCellButton("Update"));
+    queryTable.setDefaultEditor(Integer.class, updateButton);
     queryTable.setRowHeight(queryTable.getRowHeight() * 2);
     queryTable.getColumnModel().getColumn(0).setPreferredWidth(5);
     JScrollPane scrolledList = new JScrollPane(queryTable);
@@ -361,6 +364,19 @@ public class AggregatorPanel extends JPanel implements CougaarUI
         }
       });
 
+    updateButton.addButtonEditorListener(
+      new TableCellButton.ButtonEditorListener() {
+        public void buttonPressed(JTable table, int row)
+        {
+          int idColumn =
+            table.convertColumnIndexToView(queryTableModel.QUERY_ID_COLUMN);
+          String queryId = table.getValueAt(row, idColumn).toString();
+          QueryResultAdapter qra = queryTableModel.getQuery(queryId);
+          qra.updateClusters(queryForm.getSourceClusters());
+          pspInterface.updateQuery(qra);
+        }
+      });
+      
     /*
     createQueryButton.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e)
@@ -536,7 +552,8 @@ public class AggregatorPanel extends JPanel implements CougaarUI
     private static final int QUERY_ID_COLUMN = 0;
     private static final int QUERY_NAME_COLUMN = 1;
     private static final int CANCEL_COLUMN = 2;
-    private String[] columnHeaders = {"Id", "Name", "Cancel"};
+    private static final int UPDATE_COLUMN = 3;
+    private String[] columnHeaders = {"Id", "Name", "Cancel", "UpdateClusters"};
     private Vector queries = new Vector();
 
     public int addQuery(QueryResultAdapter qra)
@@ -596,7 +613,9 @@ public class AggregatorPanel extends JPanel implements CougaarUI
     {
       if (column == CANCEL_COLUMN)
         return Boolean.class;
-
+      else if (column == UPDATE_COLUMN)
+        return Integer.class;
+        
       return String.class;
     }
 
@@ -614,6 +633,9 @@ public class AggregatorPanel extends JPanel implements CougaarUI
           break;
         case CANCEL_COLUMN:
           value = Boolean.TRUE;
+          break;
+        case UPDATE_COLUMN:
+          value = new Integer(1);
       }
 
       return value;
@@ -621,7 +643,7 @@ public class AggregatorPanel extends JPanel implements CougaarUI
 
     public boolean isCellEditable(int rowIndex, int columnIndex)
     {
-      return (columnIndex == CANCEL_COLUMN);
+      return (columnIndex == CANCEL_COLUMN || columnIndex == UPDATE_COLUMN);
     }
   }
 
