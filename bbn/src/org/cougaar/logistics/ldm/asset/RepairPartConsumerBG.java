@@ -53,6 +53,9 @@ public class RepairPartConsumerBG extends ConsumerBG {
   final static double LOW_X = 0.4;
   final static double MEDIUM_X = 0.6;
   final static double HIGH_X = 1.0;
+  final static String LOW_OPTEMPO = OpTempo.LOW.toUpperCase();
+  final static String MEDIUM_OPTEMPO = OpTempo.MEDIUM.toUpperCase();
+  final static String HIGH_OPTEMPO = OpTempo.HIGH.toUpperCase();
   ArrayList consumptionRates = new ArrayList();
   ArrayList parts = new ArrayList();
   private transient LoggingService logger;
@@ -82,35 +85,35 @@ public class RepairPartConsumerBG extends ConsumerBG {
     UnaryPredicate predicate;
     // DEBUG
     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getParamSched() Asset is "+
-			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getParamSched() Asset is "+
+// 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
+//     }
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof ConsumerPredicate) {
 	Schedule consumerSched = 
 	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
-	}
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
+// 	}
  	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
       } else if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
  	params.add(orgActSched);
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("getParamSched() OrgActSched "+orgActSched);
-	}
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("getParamSched() OrgActSched "+orgActSched);
+// 	}
       } else {
  	logger.error("getParameterSchedule: unknown predicate");
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getParamSched() MERGED "+paramSchedule);
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getParamSched() MERGED "+paramSchedule);
+//     }
 
     return paramSchedule;
   }
@@ -130,11 +133,12 @@ public class RepairPartConsumerBG extends ConsumerBG {
     Double qty = (Double)params.get(0);
     OrgActivity orgAct = (OrgActivity)params.get(1);
     if (orgAct == null) {
-      logger.error("getRate() orgAct null");
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate() orgAct null for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+      logger.debug("getRate() orgAct null for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	System.out.println("getRate() orgAct null for "+
+// 			   asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
     int idx = parts.indexOf(asset);
@@ -146,23 +150,24 @@ public class RepairPartConsumerBG extends ConsumerBG {
       }
       return r;
     }
+
     double  dailyRate = d.doubleValue();
-    if (orgAct.getOpTempo().toUpperCase().equals(OpTempo.HIGH)) {
+    if (orgAct.getOpTempo().toUpperCase().equals(HIGH_OPTEMPO)) {
       dailyRate = dailyRate * HIGH_X;
-    } else if (orgAct.getOpTempo().toUpperCase().equals(OpTempo.MEDIUM)) {
+    } else if (orgAct.getOpTempo().toUpperCase().equals(MEDIUM_OPTEMPO)) {
       dailyRate = dailyRate * MEDIUM_X;
-    } else if (orgAct.getOpTempo().toUpperCase().equals(OpTempo.LOW)) {
+    } else if (orgAct.getOpTempo().toUpperCase().equals(LOW_OPTEMPO)) {
       dailyRate = dailyRate * LOW_X;
     } else {
       dailyRate = dailyRate * ZERO_X;
     }
 
     r = CountRate.newEachesPerDay (dailyRate*qty.doubleValue());
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getRate() Rate is  "+ r +", for "+
-			 asset.getTypeIdentificationPG().getNomenclature()+
-			 " at "+orgAct.getOpTempo());
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getRate() Rate is  "+ r +", for "+
+// 			 asset.getTypeIdentificationPG().getNomenclature()+
+// 			 " at "+orgAct.getOpTempo());
+//     }
     return r;
   }
 
@@ -205,16 +210,18 @@ public class RepairPartConsumerBG extends ConsumerBG {
       if (newAsset != null) {
 	optempo = (String) row[2]; // Query only retrieves HIGH optempo, ignore
 	dcr = ((BigDecimal) row[3]).doubleValue();
-	parts.add(i, newAsset);
-	consumptionRates.add(i, new Double(dcr));
-	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
+	parts.add(newAsset);
+	consumptionRates.add(new Double(dcr));
+	logger.debug("parseResult() for part "+i+" "+newAsset+", MEI "+mei_nsn+
 		     ", DCR "+dcr+", Optempo "+optempo);
 	//DEBUG
 	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
-			     ", DCR "+dcr+", Optempo "+optempo);
-	}
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
+// 			     ", DCR "+dcr+", Optempo "+optempo);
+// 	}
+      } else {
+	logger.debug("parseResult() could not getPrototype for "+typeid+", "+supplyType);
       }
     }
   } // parseResults
