@@ -32,6 +32,7 @@ import org.cougaar.core.service.DomainService;
 
 import org.cougaar.glm.ldm.Constants;
 
+import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.glm.ldm.asset.ForUnitPG;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
@@ -108,6 +109,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public final Integer LEVEL_2_TIME_HORIZON_DEFAULT = LEVEL_2_MAX;
   public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
   public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
+
+  public final int NUM_TRANSPORT_CLASSES = 6;
 
   public void localSetup() {     
     super.localSetup();
@@ -299,7 +302,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
       Set [] categories = sortAssetsByCategory(expandAsset(parentTask.getDirectObject()));
 
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < NUM_TRANSPORT_CLASSES; i++) {
 	if (!categories[i].isEmpty())
 	  childTasks.add(getLowFidelityTask (parentTask, categories[i]));
       }
@@ -341,12 +344,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   }
 
   protected Set [] sortAssetsByCategory (Collection assets) {
-    Set [] categories = new Set[4];
+    Set [] categories = new Set[NUM_TRANSPORT_CLASSES];
 
     categories[0] = new HashSet();
     categories[1] = new HashSet();
     categories[2] = new HashSet();
     categories[3] = new HashSet();
+    categories[4] = new HashSet();
+    categories[5] = new HashSet();
 
     Set category;
 
@@ -354,19 +359,23 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       GLMAsset asset = (GLMAsset) iter.next();
       String ccc = getCategory(asset);
 
-      switch (ccc.charAt(1)) {
-      case '0': // non-air
-	categories[0].add(asset);
-	break;
-      case '1': // outsized
-	categories[1].add(asset);
-	break;
-      case '2': // oversized
-	categories[2].add(asset);
-	break;
-      default: // bulk or unknown
-	categories[3].add(asset);
-	break;
+      if (ccc.charAt(0) == 'R')
+	categories[4].add(asset);
+      else {
+	switch (ccc.charAt(1)) {
+	case '0': // non-air
+	  categories[0].add(asset); break;
+	case '1': // outsized
+	  categories[1].add(asset); break;
+	case '2': // oversized
+	  categories[2].add(asset); break;
+	default: // bulk or unknown
+	  if (asset instanceof Container)
+	    categories[5].add (asset);
+	  else
+	    categories[3].add(asset);
+	  break;
+	}
       }
     }
 
@@ -377,26 +386,28 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   protected Task getLowFidelityTask (Task parentTask, Set uniformAssets) {
     Task newTask = null;
 
-    GLMAsset lowFiAsset = 
-      (GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "Level2Prototype", "Level2_" + getNextID());
+    GLMAsset lowFiAsset = null;
     NewLowFidelityAssetPG lowFiPG = 
       (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
     NewMovabilityPG movabilityPG = 
       (NewMovabilityPG)ldmf.createPropertyGroup(MovabilityPG.class);
 
-    lowFiPG.setOriginalAsset (lowFiAsset); // now subobject can have a pointer back to parent
-    lowFiAsset.addOtherPropertyGroup(lowFiPG);
-    lowFiAsset.setMovabilityPG(movabilityPG);
-
     try {
       NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-      Set cccDims = setDimensions (newPhysicalPG, uniformAssets);
-      lowFiPG.setCCCDims(cccDims);
-      if (cccDims.size() > 1)
-	logger.error ("huh?  ccc dims size > 1 : " + cccDims.size());
+      CargoCatCodeDimensionPG cccd = setDimensions (newPhysicalPG, uniformAssets);
+      lowFiPG.setCCCDim(cccd);
 
-      CargoCatCodeDimensionPG cccd = (CargoCatCodeDimensionPG) cccDims.iterator().next();
+      lowFiAsset = 
+	(GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "Level2Prototype", 
+					       "Level2_" + /*getNextID() + "_" +*/ getTransportType(cccd));
+      ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("Level2Aggregate");
+
+      lowFiPG.setOriginalAsset (lowFiAsset); // now subobject can have a pointer back to parent
+
       lowFiAsset.setPhysicalPG (newPhysicalPG);
+      lowFiAsset.addOtherPropertyGroup(lowFiPG);
+      lowFiAsset.setMovabilityPG(movabilityPG);
+
       movabilityPG.setCargoCategoryCode(cccd.getCargoCatCode());
 
       if (!movabilityPG.getCargoCategoryCode().equals(cccd.getCargoCatCode()))
@@ -407,9 +418,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     } catch (Exception e) { 
       Asset asset = parentTask.getDirectObject();
       logger.error ("problem processing task " + parentTask.getUID() + "'s d.o. asset" + asset, e);
+      return null;
     }
-
-    ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("Level2Aggregate");
 
     if (isDebugEnabled())
       debug ("getLowFidelityTask - created low fi asset " + 
@@ -428,6 +438,27 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return newTask;
   }
 
+  /** return a human-readable string to indicate transport type */
+  protected String getTransportType (CargoCatCodeDimensionPG cccd) {
+    String ccc = cccd.getCargoCatCode ();
+
+    if (ccc.charAt(0) == 'R')
+      return "Roadable";
+
+    switch (ccc.charAt(1)) {
+    case '0': // non-air
+      return "Non-air Transport";
+    case '1': // outsized
+      return "Outsized";
+    case '2': // oversized
+      return "Oversized";
+    default: // bulk or unknown
+      if (cccd.getIsContainer())
+	return "Container";
+      else
+	return "bulk";
+    }
+  }
 
   /** 
    * Recovers owner of task's d.o. from either a FOR prep on the task
@@ -521,7 +552,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * @param realAssets to sum
    * @param physicalPG to set with their aggregate dimensions
    **/
-  protected Set setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
+  protected CargoCatCodeDimensionPG setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
     double length = 0.0;
     double width  = 0.0;
     double area   = 0.0;
@@ -531,30 +562,21 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     Object firstItem = realAssets.iterator().next();
 
-    PhysicalPG bulkPG     = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG oversizePG = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG outsizePG  = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG nonAirPG   = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-
-    NewCargoCatCodeDimensionPG cccdBulkPG     = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdBulkPG.setDimensions(bulkPG);
-    NewCargoCatCodeDimensionPG cccdOversizePG = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdOversizePG.setDimensions(oversizePG);
-    NewCargoCatCodeDimensionPG cccdOutsizePG  = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdOutsizePG.setDimensions(outsizePG);
-    NewCargoCatCodeDimensionPG cccdNonAirPG   = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdNonAirPG.setDimensions(nonAirPG);
+    PhysicalPG cccdPhysicalPG     = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
+    NewCargoCatCodeDimensionPG cccdPG     = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
+    cccdPG.setDimensions(cccdPhysicalPG);
 
     if (firstItem instanceof AggregateAsset) { // there is only one item...
       if (realAssets.size () > 1)
 	logger.error (getBindingSite().getAgentIdentifier() + " found aggregate, but skipping some expanded items???");
 
       AggregateAsset aggAsset = (AggregateAsset) firstItem;
-      PhysicalPG itemPhysicalPG = ((GLMAsset)aggAsset.getAsset()).getPhysicalPG();
-      String ccc = getCategory((GLMAsset)aggAsset.getAsset());
-
+      GLMAsset baseAsset = (GLMAsset)aggAsset.getAsset();
+      PhysicalPG itemPhysicalPG = baseAsset.getPhysicalPG();
+      String ccc = getCategory(baseAsset);
+	
       if (itemPhysicalPG == null) {
-	if (!((GLMAsset)aggAsset.getAsset()).hasPersonPG())
+	if (!baseAsset.hasPersonPG())
 	  warn (".setDimensions - asset " + firstItem + 
 		"'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
 	else if (isDebugEnabled ())
@@ -571,12 +593,17 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	volume = itemPhysicalPG.getVolume().getCubicMeters() * q;
 	mass   = itemPhysicalPG.getMass().getKilograms() * q;
 	
-	addToDimension (ccc, q, itemPhysicalPG, cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
+	addToDimension (ccc, q, itemPhysicalPG, cccdPG); //cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
+
+	if (baseAsset instanceof Container)
+	  cccdPG.setIsContainer(true);
       }
     }
     else {
+      Object last = null;
       for (Iterator iter = realAssets.iterator(); iter.hasNext();) {
 	GLMAsset asset = (GLMAsset)iter.next();
+	last = asset;
 	PhysicalPG itemPhysicalPG = asset.getPhysicalPG();
 	String ccc = getCategory(asset);
 
@@ -589,9 +616,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	  volume += itemPhysicalPG.getVolume().getCubicMeters();
 	  mass   += itemPhysicalPG.getMass().getKilograms();
 
-	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
+	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdPG); //cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
 	}
       }
+      if (last instanceof Container)
+	cccdPG.setIsContainer(true);
     }
 
     physicalPG.setMass  (new Mass     (mass,   Mass.KILOGRAMS ));
@@ -606,17 +635,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	     " v " + physicalPG.getVolume ());
     }
 
-    Set cccds = new HashSet ();
-    if (cccdBulkPG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdBulkPG);
-    if (cccdOversizePG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdOversizePG);
-    if (cccdOutsizePG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdOutsizePG);
-    if (cccdNonAirPG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdNonAirPG);
-
-    return cccds;
+    return cccdPG;
   }
 
   protected String getCategory (GLMAsset asset) {
@@ -641,41 +660,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   protected void addToDimension (String ccc, 
 				 double quantity,
 				 PhysicalPG itemPhysicalPG,
-				 CargoCatCodeDimensionPG cccdBulkPG,
-				 CargoCatCodeDimensionPG cccdOversizePG,
-				 CargoCatCodeDimensionPG cccdOutsizePG,
-				 CargoCatCodeDimensionPG cccdNonAirPG) {
-    NewPhysicalPG whichPG = null;
-    NewCargoCatCodeDimensionPG whichCCCDimPG = null;
-    NewPhysicalPG bulkPG  = (NewPhysicalPG) cccdBulkPG.getDimensions();
-    NewPhysicalPG oversizePG = (NewPhysicalPG) cccdOversizePG.getDimensions();
-    NewPhysicalPG outsizePG  = (NewPhysicalPG) cccdOutsizePG.getDimensions();
-    NewPhysicalPG nonAirPG   = (NewPhysicalPG) cccdNonAirPG.getDimensions();
-
-    switch (ccc.charAt(1)) {
-    case '0': // non-air
-      whichPG = (NewPhysicalPG) nonAirPG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdNonAirPG;
-      break;
-    case '1': // outsized
-      whichPG = (NewPhysicalPG) outsizePG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdOutsizePG;
-      break;
-    case '2': // oversized
-      whichPG = (NewPhysicalPG) oversizePG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdOversizePG;
-      break;
-    case '3': // bulk
-      whichPG = (NewPhysicalPG) bulkPG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdBulkPG;
-      break;
-    default:
-      logger.warn ("Could not determine transportation category from cargo cat code " + ccc);
-      break;
-    }
-
-    //    if (isInfoEnabled())
-    //      info (".addToDimension adding " + ccc + " with dim " +itemPhysicalPG + " to " +whichPG);
+				 CargoCatCodeDimensionPG cccdPG) {
+    NewPhysicalPG whichPG = (NewPhysicalPG) cccdPG.getDimensions();
+    NewCargoCatCodeDimensionPG whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdPG;
 
     if (whichPG == null) {
       logger.error ("Could not set physical PG?");
@@ -723,10 +710,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     whichPG.setFootprintArea (new Area (area +
 					itemPhysicalPG.getFootprintArea().getSquareMeters() * quantity, Area.SQUARE_METERS));
-    whichPG.setVolume (new Volume (volume +
-				   itemPhysicalPG.getVolume().getCubicMeters() * quantity, Volume.CUBIC_METERS));
-    whichPG.setMass (new Mass (mass +
-			       itemPhysicalPG.getMass().getKilograms() * quantity, Mass.KILOGRAMS));
+    whichPG.setVolume        (new Volume (volume +
+					  itemPhysicalPG.getVolume().getCubicMeters() * quantity, Volume.CUBIC_METERS));
+    whichPG.setMass          (new Mass (mass +
+					itemPhysicalPG.getMass().getKilograms() * quantity, Mass.KILOGRAMS));
 
     if (isDebugEnabled())
       debug (".addToDimension final dim for " + ccc + " - " + 
