@@ -117,7 +117,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
       // DEBUG
       //   String myOrgName = inventoryPlugin.getOrgName();
       String myItemId = anInventory.getItemIdentificationPG().getItemIdentification();
-      
+
       //Only magically recalculate the initial inventory level
       //(the prepo) up to when the prepo arrives.
       if(today <= inventoryPlugin.getPrepoArrivalTime()) {
@@ -139,7 +139,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         // bucket.  This prevents us from removing refills that because of OST, cannot be
         // replaced leaving holes in supply.
         int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
-	int firstLegalRefillBucket = 
+	int firstLegalRefillBucket =
 	    thePG.convertTimeToBucket(inventoryPlugin.getRefillStartTime(),true) + orderShipTime;
 
         double prevTarget = 0;
@@ -153,7 +153,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         //  create the refills
         // RJB
         int lastRefillBucket=refillBucket;
-	
+
         while (refillBucket <= maxLeadBucket) {
           double invLevel = thePG.getLevel(startBucket) -
                   thePG.getActualDemand(refillBucket);
@@ -223,7 +223,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 //                               debugItem);
 	    if(refillBucket < firstLegalRefillBucket) {
 		if(logger.isWarnEnabled()) {
-		    logger.warn("At " + inventoryPlugin.getOrgName() + 
+		    logger.warn("At " + inventoryPlugin.getOrgName() +
 				"-" + myItemId + ":" +
 				" not ordering a refill on day when we've fallen below critical level, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
 		}
@@ -359,6 +359,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME,
                                                                                   bestDay+thePG.getBucketMillis()),
                                                        alpha);
+    end = getTimeUtils().addNDays(bestDay, 20);
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME, end),
                                                    (alpha + late_score));
 
