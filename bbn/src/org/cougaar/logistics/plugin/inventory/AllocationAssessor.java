@@ -412,9 +412,13 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
   private void fulfillTask (Task task, int currentBucket, Inventory inv, LogisticsInventoryPG thePG){
     if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-      if (task.getPlanElement() != null) {
+      //Safely check if the pe is null here and if we get one, pass it to the check method
+      //instead of letting the check method get it since it may have been rescinded in between
+      // the task.getPlanElement() calls which can cause an NPE in checkPlanElement
+      PlanElement pe = task.getPlanElement();
+      if (pe != null) {
         // previously allocated WITHDRAW task -- update plan element if needed
-        checkPlanElement(task);
+        checkPlanElement(task, pe);
       } else {
         // previously un-allocated WITHDRAW task
         createBestAllocation(task, inv, thePG);
@@ -715,11 +719,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  This is called if we want to give a best result - so if the previous
    *  result was not best we will change it.
    *  @param withdraw The Withdraw Task we are allocating against the Inventory
+   *  @param pe The PlanElement associated with the Task.
    **/
-  private void checkPlanElement(Task withdraw) {
+  private void checkPlanElement(Task withdraw, PlanElement pe) {
     //if this task already has a pe - make sure the results are consistent
     // with best.
-    PlanElement pe = withdraw.getPlanElement();
+    //PlanElement pe = withdraw.getPlanElement();
     AllocationResult ar = pe.getEstimatedResult();
     AllocationResult estimatedResult = PluginHelper.
             createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
