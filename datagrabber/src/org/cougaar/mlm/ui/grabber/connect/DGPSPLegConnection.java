@@ -20,25 +20,31 @@
  */
 package org.cougaar.mlm.ui.grabber.connect;
 
+import java.sql.*;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.cougaar.core.util.UID;
 
-import org.cougaar.planning.servlet.data.xml.DeXMLable;
-import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
+import org.cougaar.mlm.ui.grabber.config.DataGathererPSPConfig;
+import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.config.URLConnectionData;
+
+import org.cougaar.mlm.ui.grabber.controller.RunResult;
+import org.cougaar.mlm.ui.grabber.controller.SuccessRunResult;
+
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+
 import org.cougaar.mlm.ui.psp.transit.data.legs.Leg;
 import org.cougaar.mlm.ui.psp.transit.data.legs.LegsData;
 import org.cougaar.mlm.ui.psp.transit.data.legs.LegsDataFactory;
 
-import org.cougaar.mlm.ui.grabber.logger.Logger;
-import org.cougaar.mlm.ui.grabber.workqueue.Result;
-import org.cougaar.mlm.ui.grabber.config.DataGathererPSPConfig;
-import org.cougaar.mlm.ui.grabber.config.URLConnectionData;
-import org.cougaar.mlm.ui.grabber.config.DBConfig;
-import org.cougaar.mlm.ui.grabber.controller.RunResult;
-import org.cougaar.mlm.ui.grabber.controller.SuccessRunResult;
-
-import java.sql.*;
-
-import java.util.Iterator;
+import org.cougaar.planning.servlet.data.xml.DeXMLable;
+import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 
 /**
  * Handles getting leg data from DataGatherer PSP
@@ -51,9 +57,16 @@ public class DGPSPLegConnection extends DGPSPConnection
 
   //Constants:
   ////////////
+  boolean writePreferences = false;
 
   //Variables:
   ////////////
+
+  protected Map assetUIDToString = new HashMap();
+  protected Map legUIDToString   = new HashMap();
+  protected Map conveyanceUIDToString = new HashMap();
+  protected Map routeUIDToString = new HashMap();
+  protected Map missionUIDToString = new HashMap();
 
   //Constructors:
   ///////////////
@@ -181,10 +194,14 @@ public class DGPSPLegConnection extends DGPSPConnection
     sb.append(COL_LEGID);sb.append(",");
     sb.append(COL_STARTTIME);sb.append(",");
     sb.append(COL_ENDTIME);sb.append(",");
-    sb.append(COL_READYAT);sb.append(",");
-    sb.append(COL_EARLIEST_END);sb.append(",");
-    sb.append(COL_BEST_END);sb.append(",");
-    sb.append(COL_LATEST_END);sb.append(",");
+
+    if (writePreferences) {
+      sb.append(COL_READYAT);sb.append(",");
+      sb.append(COL_EARLIEST_END);sb.append(",");
+      sb.append(COL_BEST_END);sb.append(",");
+      sb.append(COL_LATEST_END);sb.append(",");
+    }
+
     sb.append(COL_STARTLOC);sb.append(",");
     sb.append(COL_ENDLOC);sb.append(",");
     sb.append(COL_LEGTYPE);sb.append(",");
@@ -195,10 +212,14 @@ public class DGPSPLegConnection extends DGPSPConnection
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
+
+    if (writePreferences) {
+      sb.append("?");sb.append(",");
+      sb.append("?");sb.append(",");
+      sb.append("?");sb.append(",");
+      sb.append("?");sb.append(",");
+    }
+
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
@@ -229,8 +250,8 @@ public class DGPSPLegConnection extends DGPSPConnection
       Iterator iter=l.getCarriedAssetsIterator();
       while(iter.hasNext()){
 	UID assetUID=(UID)iter.next();
-	s.setString(1, assetUID.toString());
-	s.setString(2, l.UID.toString());
+	s.setString(1, getUID(assetUID, assetUIDToString));
+	s.setString(2, getUID(l.UID, legUIDToString));
 	s.addBatch ();
       }
     }catch(SQLException e){
@@ -244,19 +265,24 @@ public class DGPSPLegConnection extends DGPSPConnection
   protected boolean updateConveyedLeg(PreparedStatement s, Leg l){
     boolean ret=false;
     try{
-      s.setString(1, l.UID.toString());
-      s.setString(2, dbConfig.dateToSQL(l.startTime));
-      s.setString(3, dbConfig.dateToSQL(l.endTime));
-      s.setString(4, dbConfig.dateToSQL(l.readyAtTime));
-      s.setString(5, dbConfig.dateToSQL(l.earliestEndTime));
-      s.setString(6, dbConfig.dateToSQL(l.bestEndTime));
-      s.setString(7, dbConfig.dateToSQL(l.latestEndTime));
-      s.setString(8, l.startLoc);
-      s.setString(9, l.endLoc);
-      s.setInt(10, pspToDBLegType(l.legType));
-      s.setString(11, l.conveyanceUID.toString());
-      s.setString(12, (l.routeUID != null) ? l.routeUID.toString() : "null");
-      s.setString(13, l.missionUID.toString());
+      int col = 0;
+      s.setString(++col, getUID(l.UID, legUIDToString));
+      s.setString(++col, dbConfig.dateToSQL(l.startTime));
+      s.setString(++col, dbConfig.dateToSQL(l.endTime));
+
+      if (writePreferences) {
+	s.setString(++col, dbConfig.dateToSQL(l.readyAtTime));
+	s.setString(++col, dbConfig.dateToSQL(l.earliestEndTime));
+	s.setString(++col, dbConfig.dateToSQL(l.bestEndTime));
+	s.setString(++col, dbConfig.dateToSQL(l.latestEndTime));
+      }
+
+      s.setString(++col, l.startLoc);
+      s.setString(++col, l.endLoc);
+      s.setInt(++col, pspToDBLegType(l.legType));
+      s.setString(++col, getUID (l.conveyanceUID, conveyanceUIDToString));
+      s.setString(++col, (l.routeUID != null) ? getUID (l.routeUID, routeUIDToString) : "null");
+      s.setString(++col, getUID (l.missionUID, missionUIDToString));
       s.addBatch();
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not add batch to table("+
@@ -264,6 +290,14 @@ public class DGPSPLegConnection extends DGPSPConnection
       return false;
     }
     return true;
+  }
+
+  protected String getUID (UID uid, Map uidToString) {
+    String returnedUID = (String) uidToString.get (uid);
+    if (returnedUID == null) {
+      uidToString.put (uid, (returnedUID = uid.toString()));
+    }
+    return returnedUID;
   }
 
   protected RunResult prepResult(DeXMLable obj){
