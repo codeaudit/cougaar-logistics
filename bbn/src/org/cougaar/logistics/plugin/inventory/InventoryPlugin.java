@@ -1711,8 +1711,9 @@ public class InventoryPlugin extends ComponentPlugin
                      "publishAdd returned: " + didAddSub);
     }
 
-    if ((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
-        (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
+    if (((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
+        (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) &&
+        (subtask.getPrepositionalPhrase("SplitTask") == null)) {
       newRefills.add(subtask);
     }
   }
