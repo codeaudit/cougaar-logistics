@@ -182,6 +182,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
 
     out.writeObject(prototypeUID.intern());
     out.writeObject(ownerID.intern());
+    out.writeObject ((name != null) ? name.intern() : "no_name");
 
     //  out.writeObject(manifestUID);
     out.writeBoolean(hasManifest);
@@ -223,6 +224,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
 
     prototypeUID = ((String) in.readObject()).intern();
     ownerID      = ((String) in.readObject()).intern();
+    name         = ((String) in.readObject()).intern();
 
     //    manifestUID = ((String) in.readObject()).intern();
     hasManifest = in.readBoolean();
