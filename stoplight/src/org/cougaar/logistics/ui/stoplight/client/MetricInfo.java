@@ -35,12 +35,12 @@ public class MetricInfo
 
     private static final boolean useAssessmentAgent = true;
     private static final String INV_SAF_METRIC = "Inventory Over Target Level";
-    private static final String MOCK_INV_SAF_METRIC = "Mock Inventory Over Mock Target Level";
     private static final String INV_CRITICAL_METRIC = "Inventory Over Critical Level";
-    private static final String MOCK_INV_CRITICAL_METRIC = "Mock Inventory Over Mock Critical Level";
     private static final String RES_DEM_METRIC = "Cumulative Resupply Over Cumulative Demand";
     private static final String DUE_IN_SHORTFALL_METRIC = "Due In Over Requested Due In";
     private static final String DUE_OUT_SHORTFALL_METRIC = "Due Out Over Requested Due Out";
+    private static final String DUE_IN_SHORTFALL_QUANTITY_METRIC = "Requested Due In Minus Due In";
+    private static final String DUE_OUT_SHORTFALL_QUANTITY_METRIC = "Requested Due Out Minus Due Out";
     private static final String DEMAND_METRIC = "Demand";
     private static final String DUEIN_METRIC = useAssessmentAgent ? "Due In" : "DueIn";
     private static final String DUEOUT_METRIC = useAssessmentAgent ? "Due Out" : "DueOut";
@@ -77,8 +77,8 @@ public class MetricInfo
           }
           mu.put(DUE_IN_SHORTFALL_METRIC, UNITLESS);
           mu.put(DUE_OUT_SHORTFALL_METRIC, UNITLESS);
-          mu.put(MOCK_INV_SAF_METRIC, UNITLESS);
-          mu.put(MOCK_INV_CRITICAL_METRIC, UNITLESS);
+          mu.put(DUE_IN_SHORTFALL_QUANTITY_METRIC, ITEM_UNITS);
+          mu.put(DUE_OUT_SHORTFALL_QUANTITY_METRIC, ITEM_UNITS);
         }
         else
         {
@@ -145,24 +145,23 @@ public class MetricInfo
           dm.put(DUE_OUT_SHORTFALL_METRIC, f);
 
           f = new Vector();
-          f.add(InventoryMetric.MOCK_INVENTORY.toString());
-          f.add(InventoryMetric.MOCK_INVENTORY.toString());
-          f.add(InventoryMetric.REORDER_LEVEL.toString());
-          f.add(InventoryMetric.GOAL_LEVEL.toString());
-          f.add(ExtractionHelper.AVERAGE);
-          f.add(ExtractionHelper.TRIM_TO_SCHEDULE);
-          f.add("/");
-          dm.put(MOCK_INV_SAF_METRIC, f);
+          f.add(InventoryMetric.REQUESTED_DUE_IN.toString());
+          f.add(InventoryMetric.PROJECTED_REQUESTED_DUE_IN.toString());
+          f.add("+");
+          f.add(InventoryMetric.DUE_IN.toString());
+          f.add(InventoryMetric.PROJECTED_DUE_IN.toString());
+          f.add("+");
+          f.add("-");
+          dm.put(DUE_IN_SHORTFALL_QUANTITY_METRIC, f);
 
           f = new Vector();
-          f.add(InventoryMetric.MOCK_INVENTORY.toString());
-          f.add(InventoryMetric.MOCK_INVENTORY.toString());
-          f.add(InventoryMetric.REORDER_LEVEL.toString());
-          f.add("1.25");
-          f.add("/");
-          f.add(ExtractionHelper.TRIM_TO_SCHEDULE);
-          f.add("/");
-          dm.put(MOCK_INV_CRITICAL_METRIC, f);
+          f.add(DEMAND_METRIC);
+          f.add(InventoryMetric.DUE_OUT.toString());
+          f.add(InventoryMetric.PROJECTED_DUE_OUT.toString());
+          f.add("+");
+          f.add("-");
+          dm.put(DUE_OUT_SHORTFALL_QUANTITY_METRIC, f);
+
         }
 
         f = new Vector();
