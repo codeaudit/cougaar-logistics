@@ -30,6 +30,10 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
+import org.cougaar.planning.ldm.measure.CountRate;
+import org.cougaar.planning.ldm.measure.FlowRate;
+
+import org.cougaar.planning.ldm.plan.AspectRate;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.NewTask;
@@ -252,7 +256,8 @@ public class RefillProjectionGenerator extends InventoryModule {
         Task newLevel2Refill = 
           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
                                           level2PG.convertBucketToTime(currentBucket - 1),
-                                          level2PG.getStartTime(), projDemand, level2PG);
+                                          level2PG.getStartTime(), projDemand, level2PG,
+                                          level2Inv);
         newProjections.add(newLevel2Refill);
         //then reset the start bucket  and the new demand 
         startBucket = currentBucket;
@@ -268,7 +273,8 @@ public class RefillProjectionGenerator extends InventoryModule {
       Task lastLevel2Refill = 
         createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
                                         level2PG.convertBucketToTime(currentBucket - 1),
-                                        level2PG.getStartTime(), projDemand, level2PG);
+                                        level2PG.getStartTime(), projDemand, level2PG,
+                                        level2Inv);
       newProjections.add(lastLevel2Refill);
     }
     // send the new projections and the old projections to the Comparator
@@ -296,7 +302,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(inv);
     newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
-                           demand, thePG.getResource());
+                           demand, thePG);
     return newRefill;
   }
 
@@ -306,21 +312,21 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param earliest  The earliest delivery time.
    *  @param demand The total demand in terms of tons or volume
    *  @param level2PG  The PropertyGroup of the Level 2 Inventory
+   *  @param level2Inv  The Level 2 Inventory
    *  @return Task The new Level 2 Projection Task
    **/
   private Task createAggregateProjectionRefill(long start, long end, 
                                                long earliest, double demand, 
-                                               LogisticsInventoryPG level2PG) {
+                                               LogisticsInventoryPG level2PG,
+                                               Inventory level2Inv) {
     //create a level two projection refill task
     NewTask newAggRefill = inventoryPlugin.getRootFactory().newTask();
     newAggRefill.setVerb(Constants.Verb.ProjectSupply);
-    //need to create the asset representing this class of supply
-    Asset level2Asset = level2PG.getResource();
-    //TODO FOR JUNE
+    //TODO - for now physical pg can stay the same as the demand task
     //physical pg needs to represent demand
     // level2Asset.setPhysicalPG(demand);
-    newAggRefill.setDirectObject(level2Asset);
-    newAggRefill = fillInTask(newAggRefill, start, end, earliest, 1, level2Asset);
+    newAggRefill.setDirectObject(level2Inv);
+    newAggRefill = fillInTask(newAggRefill, start, end, earliest, 1, level2PG);
     return newAggRefill;
   }
 
@@ -329,17 +335,17 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param start Start time for Task
    *  @param end End Time for Task
    *  @param qty Quantity Pref for Task
-   *  @param asset Direct Object for Task
+   *  @param thePG The property group attached to the Inventory 
    *  @param NewTask Return the filled in Task
    **/
   private NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
-                          double qty, Asset asset) {
+                             double qty, LogisticsInventoryPG thePG) {
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
     p_start = createRefillTimePreference(start, earliest, AspectType.START_TIME);
     p_end = createRefillTimePreference(end, earliest, AspectType.END_TIME);
-    p_qty = createRefillRatePreference(qty);
+    p_qty = createRefillRatePreference(qty, thePG.getBucketMillis());
     prefs.add(p_start);
     prefs.add(p_end);
     prefs.add(p_qty);
@@ -361,7 +367,7 @@ public class RefillProjectionGenerator extends InventoryModule {
       io = getHomeLocation();
     }
     pp_vector.addElement(createPrepPhrase(Constants.Preposition.TO, io));
-    TypeIdentificationPG tip = asset.getTypeIdentificationPG();
+    TypeIdentificationPG tip = thePG.getResource().getTypeIdentificationPG();
     MaintainedItem itemID = MaintainedItem.
       findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(), 
                                null, tip.getNomenclature(), inventoryPlugin);
@@ -402,10 +408,25 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param refill_qty  The quantity we want for this Refill Task
    *  @return Preference  The new demand rate preference for the Refill Task
    **/
-  private Preference createRefillRatePreference(double refill_qty) {
-    AspectValue lowAV = new AspectValue(AlpineAspectType.DEMANDRATE, 0.01);
-    AspectValue bestAV = new AspectValue(AlpineAspectType.DEMANDRATE, refill_qty);
-    AspectValue highAV = new AspectValue(AlpineAspectType.DEMANDRATE, refill_qty+1.0);
+  private Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
+    double ratevalue = refill_qty / (bucketMillis / getTimeUtils().MSEC_PER_DAY);
+    AspectRate lowAV, bestAV, highAV;
+    //highAV could be bumped to more than refill_qty + 1 if needed
+    if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+      lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                             FlowRate.newGallonsPerDay(0.01));
+      bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                              FlowRate.newGallonsPerDay(refill_qty));
+      highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                              FlowRate.newGallonsPerDay(refill_qty+1.0));
+    } else {
+      lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                             CountRate.newEachesPerDay(0.01));
+      bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                              CountRate.newEachesPerDay(refill_qty));
+      highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
+                              CountRate.newEachesPerDay(refill_qty+1.0));
+    }
     ScoringFunction qtySF = ScoringFunction.
 	createVScoringFunction(lowAV, bestAV, highAV);
     return  inventoryPlugin.getRootFactory().
