@@ -196,6 +196,7 @@ public abstract class Test{
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
 			  "Could not construct validation table.",
 			  e);
+	e.printStackTrace();
       }
     }
   }
