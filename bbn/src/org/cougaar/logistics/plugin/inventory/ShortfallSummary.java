@@ -42,8 +42,12 @@ import java.util.Iterator;
 
 public class ShortfallSummary implements UniqueObject, java.io.Serializable, Publishable {
 
+  private final static String HOURS = "Hours";
+  private final static String DAYS = "Days";
+
   private UID uid = null;
   private String supplyType = "";
+  private long bucketSize;
   private HashMap shortfallInventories;
 
   /**
@@ -52,8 +56,9 @@ public class ShortfallSummary implements UniqueObject, java.io.Serializable, Pub
    */
 
   
-  public ShortfallSummary (String aSupplyType, UID aUID) {
+  public ShortfallSummary (String aSupplyType, UID aUID, long mSecs) {
     supplyType = aSupplyType;
+    bucketSize = mSecs;
     shortfallInventories = new HashMap();
     this.uid = aUID;
   }
@@ -74,6 +79,7 @@ public class ShortfallSummary implements UniqueObject, java.io.Serializable, Pub
     this.uid = uid;
   }
 
+  public long getMsecPerBucket() { return bucketSize; }
 
   public String getSupplyType() { return supplyType; }
 
@@ -137,6 +143,22 @@ public class ShortfallSummary implements UniqueObject, java.io.Serializable, Pub
   public Collection getShortfallInventories() {
       return shortfallInventories.values();
   }
+
+  public String getUnit() {
+    return getUnit(getMsecPerBucket());
+  }
+
+  public static String getUnit(long msecPerBucket) {
+      if(msecPerBucket == TimeUtils.MSEC_PER_DAY) {
+	  return DAYS;
+      }
+      else if (msecPerBucket == TimeUtils.MSEC_PER_HOUR) {
+	  return HOURS;
+      }
+      else { 
+	  return "UNKNOWN";
+      }
+  }
   
   public String toString() {
     StringBuffer sb = new StringBuffer(getSupplyType());
@@ -149,6 +171,7 @@ public class ShortfallSummary implements UniqueObject, java.io.Serializable, Pub
     }
     return sb.toString();
   }
+
 
   
 
