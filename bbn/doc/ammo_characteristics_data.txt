@@ -1,0 +1,70 @@
+Instructions for creating the ammo_characteristics table from the Gorman-Braddock data.
+
+Step 1:
+
+Obtain the source file from the Gorman-Braddock study:
+
+  ammo_characteristics.2.csv
+
+This contains the updated data. The commas and quotation marks in the nomenclature
+field have been replaced by colons and "-IN".
+
+Load the data into a data editor (such as Excel or Emacs).
+
+
+Step 2:
+
+Extract the data from the current ammo_characteristics table in the database
+(using DB-Visualizer or your favorite tool) and load into the data editor.
+
+
+Step 3:
+
+Replace the commas in the current data with colons.
+
+
+Step 4: 
+
+Check the current data for any items not present in the new data.
+Manually add these to the new data. For example, the following items
+were found at the time this document was written:
+
+  H116   2.75IN SMOKE M259   34.5   MBB
+  H183   2.75IN M257 ILLUM   44.3   MBB
+  T943   120MM STAFF         72     MBB
+
+Save the combined data as ammo_characteristics_new_raw.csv.
+
+
+Step 5:
+
+Check for (using sort or a similar utility)and manually remove duplicate 
+dodic records, keeping the one for each dodic that contains the most info 
+in the nomenclature field (or that contains the most standard-looking text).
+
+Save the edited data as ammo_characteristics_new.csv. You can check for 
+remaining duplicates and mistakenly deleted items using sort and diff.
+
+Notes:
+
+    A059 -> M855 seems to be standard (www.fas.org)
+    A063 -> M856
+
+
+Step 6: 
+
+Make sure the data records end with commas:
+
+   lastcomma.pl ammo_characteristics_new.csv  > ammo_characteristics_new2.csv
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as ammo_characteristics.csv.
+
+
+Step 7:
+
+Copy the file to appropriate place in your source tree (this was
+dbms/data/csv at the time of writing).

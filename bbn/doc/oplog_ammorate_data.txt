@@ -1,0 +1,118 @@
+Instructions for creating the oplog_ammorate table from the Gorman-Braddock data. 
+This table replaces the alp_mei_dodic_2_view table.
+
+Step 1:
+
+Obtain the source file from the Gorman-Braddock study:
+
+  OPLOG_AMMORATE.csv
+
+Source data is in rounds per day.
+
+
+Step 2:
+
+Convert the data to SQL and load to your database in the table 
+oplog_ammorate_tmp0. Convert the posture to a number for simple sorting, 
+convert the echelon to a string for later use, and filter out BULK items.
+
+Posture Conversion
+
+A = 1
+D = 2
+P = 3
+H = 4
+S = 5
+R = 6
+U = 7
+
+Echelon Conversion
+
+A = "COMPANY"
+B = "BATTALION"
+D = "DIVISION"
+C = "BRIGADE"
+E = "ABOVE DIV"
+F = "THTR-ARMY"
+G = "THTR-JNT"
+
+Use the following script and commands to do this:
+
+ process_oplog_ammorate_1.pl OPLOG_AMMORATE.csv  > oplog_ammorate_1.sql
+ mysql -u <user> -p <database> < oplog_ammorate_1.sql
+
+
+Step 2:
+
+View the data using DB-Visualizer or other tool.
+
+Run the following to sort the data:
+
+  sort_oplog_ammorate.sql
+
+Save the results as a CSV file oplog_ammorate_1.csv
+
+Step 3:
+
+Convert posture to high/medium/low optempo using following conversion:
+
+ A High     1
+ H Medium   4
+ U Low      7
+
+if the value of U is zero, successively try higher postures
+if the value of H is zero, successively try higher postures
+
+Convert the echelon code to echelon string.
+
+Use the following to do this:
+
+   process_oplog_ammorate_2.pl oplog_ammorate_1.csv  > oplog_ammorate_2.csv
+
+
+Step 4:
+
+Convert the data to SQL and load into database using another temporary table
+as follows:
+
+  process_oplog_ammorate_3.pl oplog_ammorate_2.csv > oplog_ammorate_tmp.sql
+  mysql -u <user> -p <database> < oplog_ammorate_tmp.sql
+
+
+Step 5:
+
+Convert to tons per day using weight from ammo_characteristics table (if you
+need to update this table, do it first).
+
+View the data using DB-Visualizer or other tool.
+
+Run the following to perform the conversion:
+
+  convert_oa_to_tons.sql
+
+Copy the results to Excel or another data editor, make sure there are 10 places 
+in the rate column, and save the file to CSV as oplog_ammorate_prep.csv
+
+
+Step 6: 
+
+Make sure the data records end with commas:
+
+   lastcomma.pl oplog_ammorate_prep.csv > oplog_ammorate_prep2.csv
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as oplog_ammorate.csv.
+
+
+Step 7:
+
+Copy the file to appropriate place in your source tree (this was
+dbms/data/csv at the time of writing).
+
+The first time this is done, the load_domain_data.sql needs to be updated by 
+removing the reference to alp_mei_dodic_2_view, adding one for oplog_ammorate,
+and providing the correct table definition.
+

@@ -1,0 +1,151 @@
+Instructions for creating ammunition inventory files from the Gorman-Braddock data. 
+These files replace the existing ammunition inventory files.
+
+
+Step 1: 
+
+Obtain the combat load data from the Gorman-Braddock study and additional
+combat load data:
+
+  BasicLoad.xls
+  (U) WARREQ05 Combat Loads 063098.xls
+
+Load the data into Excel or your favorite data editor.
+
+Extract the organization type, syslin, dodic, and combat load per 
+system from BasicLoad.xls.
+
+Delete lines with TBD in syslin, dodic, or combat load.
+
+Add in the additional data from "(U) WARREQ05 Combat Loads 063098.xls."
+
+Add the following source code to each line for later reference if necessary:
+
+  A. BasicLoad.xls
+  B. (U) WARREQ05 Combat Loads 063098.xls
+
+Save the file as compiled_combat_loads.xls.
+
+
+Step 2: 
+
+Using DB-Visualizer or your favorite tool, generate from the database a list 
+of the MEI/Dodic combinations we need using the following script:
+
+  get_mei_and_dodic_combinations.sql
+
+Save this data as required_mei_and_dodic_combinations.xls.
+
+
+Step 3:
+
+Using sort and diff, figure out what required combinations are missing from the 
+compiled_combat_loads.xls. Add them along with missing org type and combat load 
+data by finding equivalent dodics or LINs in the source spreadsheets. The
+site www.fas.org is usually in figuring out equivalents.
+
+Add the data to compiled_combat_loads.xls. In the example, the data added in the 
+step was given source codes of C, D, and E. 
+
+The data produced in this step is documented in equivalents.xls.
+
+
+Notes: 
+
+H57642 -> HOWITZER MED SELF PRO (from ftid)
+
+= M109 according to Rusty
+
+confirmed at
+
+http://www.fas.org/man/dod-101/sys/land/m109.htm
+
+Use M109 Series (DS BN) from BasicLoad.xls (no LIN)
+
+E56578 -> CBT ENG VEH FTRAC (from ftid)
+
+appears to be variant of m113
+see http://www.fas.org/man/dod-101/sys/land/m113.htm
+
+Use M113 APC for Engr unit from BasicLoad.xls (no LIN)
+
+http://www.fas.org/man/dod-101/sys/land/m981.htm
+
+M981 Fire Support Team Vehicle (FISTV) 
+variant of m113 FOV
+
+M548
+variant of m113
+
+
+Step 4:
+
+There will remain some lin/dodic combinations whose combat loads can't be 
+determined by above methods. In this case we estimate the combat load by 
+taking the daily usage for a high optempo for a battalion and multiplying 
+by 5 days. These combinations are in lin_dodic_missing_clean.csv.
+
+Build SQL file using perl script and load into database:
+
+   compute_basic_load_sql.pl lin_dodic_missing_clean.csv > compute_basic_load.sql
+   mysql -u <user> -p <database> < compute_basic_load.sql
+
+Use the following query to compute the combat loads in terms of qty per system
+via DB-Visualizer or other tool:
+
+  compute_basic_load_from_daily_rate.sql
+
+Save the data in the file computed_basic_loads.xls.
+
+Add the data to compiled_combat_loads.xls, marking as code F and org type 
+battalion.
+
+
+Step 5:
+
+Build inventory files for consuming units.
+
+Make list of orgs, LINs, DODICs, unit equipment qty, and DODIC weight 
+from the database using the following script via DB-Visualizer or other
+tool:
+
+  get_unit_equipment_and_dodics.sql
+
+Save the resulting data as unit_equipment_and_dodics.csv.
+
+Extract compiled_combat_loads.csv from compiled_combat_loads.xls
+
+Run perl script to generate inventory files:
+
+  make_inventory.pl compiled_combat_loads.csv unit_equipment_and_dodics.csv 
+
+For each organization, this computes the basic load per DODIC in terms of tons, 
+based on the equipment (MEIs) for that unit.
+
+
+Step 6:
+
+Build inventory files for supply units. We will basically figure out
+all the dodics used by every consumer unit and provide those dodics 
+to each supply unit with a default basic load.
+
+Make a list of supply units from the database using the following script 
+via DB-Visualizer or other tool:
+
+  get_supply_units.sql
+
+Save data as supplyunits.csv.
+
+Run perl script to generate inventory files:
+
+  make_stock_point_files.pl <relative path to consumer inventory files>
+                            supplyunits.csv>
+                            <path to output directory>
+
+Step 7:
+
+Combine the consumer unit files and supply unit files.
+
+Copy the results of step 5 to a working directory, then copy the results
+of step 6 to the same directory. If there are any duplicate files,
+make sure the ones from step 6 overwrite the ones from step 5.
