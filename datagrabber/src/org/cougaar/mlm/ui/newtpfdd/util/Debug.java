@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.3 2002-08-07 21:17:33 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.4 2002-08-16 15:03:37 tom Exp $ */
 
  /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -14,6 +14,9 @@
 
 package org.cougaar.mlm.ui.newtpfdd.util;
 
+
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import java.security.AccessControlException;
 
@@ -32,7 +35,7 @@ public class Debug extends OutputHandler
 	catch ( AccessControlException e ) {e.printStackTrace();
 	}
 	if ( doDebug != null && doDebug.equalsIgnoreCase("true") ) {
-	    System.out.println("Debugging is on.");
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Debugging is on.");
 	    debug = true;
 	}
     }

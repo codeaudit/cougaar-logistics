@@ -19,6 +19,9 @@
  * </copyright>
  */
 package org.cougaar.mlm.ui.newtpfdd.transit;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+
 import java.util.*;
 import java.io.Serializable;
 
@@ -202,9 +205,9 @@ public abstract class Chronicle implements Serializable{
 
     /*Debug:
     if(getIndexBelow(s)+1 != getIndexAboveEq(s))
-      System.out.println("ERR S: "+getIndexBelow(s)+","+getIndexAboveEq(s));
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ERR S: "+getIndexBelow(s)+","+getIndexAboveEq(s));
     if(getIndexBelowEq(e)+1 != getIndexAbove(e))
-      System.out.println("ERR E: "+getIndexBelowEq(e)+","+getIndexAbove(e));
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ERR E: "+getIndexBelowEq(e)+","+getIndexAbove(e));
     */
 
     int startIndex = getIndexAboveEq(s);
@@ -546,10 +549,10 @@ public abstract class Chronicle implements Serializable{
 
   protected void logMessage(int level, String message){
     if(level <= messageLevel)
-      System.out.println(getClassName()+ ": " + message);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, getClassName()+ ": " + message);
   }
 
   protected static void logStaticMessage(int level, String message){
-    System.out.println(message);
+    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, message);
   }
 }

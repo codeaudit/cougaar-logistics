@@ -216,7 +216,7 @@ public class GraphPane extends StatisticsPane {
 				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC,"[");
 				
 				for (int j = 0; j < valueMatrix[i].length; j++)
-				  System.out.print ("" + valueMatrix[i][j] + ((j == valueMatrix[i].length-1) ? "" : ","));
+				  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "" + valueMatrix[i][j] + ((j == valueMatrix[i].length-1) ? "" : ","));
 				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "]");
 			  }
 			}
