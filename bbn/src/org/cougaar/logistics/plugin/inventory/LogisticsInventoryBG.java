@@ -923,7 +923,7 @@ public class LogisticsInventoryBG implements PGDelegate {
      **/
     public int convertTimeToBucket(long time, boolean partialBuckets) {
       if (time < 0) {
-	logger.error("convertTimeToBucket: Got negative time " + time, new Throwable());
+	logger.error("convertTimeToBucket: Got negative time " + TimeUtils.dateString(time), new Throwable());
 	return 0;
       }
         int thisBucket = (int) (time / MSEC_PER_BUCKET);
@@ -947,7 +947,11 @@ public class LogisticsInventoryBG implements PGDelegate {
      * next sequential bucket's start time (non-inclusive).
      **/
     public long convertBucketToTime(int bucket) {
-        return (bucket + timeZero) * MSEC_PER_BUCKET;
+      if (bucket < 0) {
+        logger.error("convertBucketToTime: Got negative bucket "+bucket, new Throwable());
+        return 0;
+      }
+      return (bucket + timeZero) * MSEC_PER_BUCKET;
     }
 
     /** @return long The amount of ms the bucket spans **/
