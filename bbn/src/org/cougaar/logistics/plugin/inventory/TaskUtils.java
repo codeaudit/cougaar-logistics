@@ -113,7 +113,7 @@ public class TaskUtils extends PluginHelper {
       + task.getVerb()+"("+
       getQuantity(task)+" "+
       getTaskItemName(task)+") "+
-      new Date(getStartTime(task));
+      new Date(getEndTime(task));
   }
 
     public String getTaskItemName(Task task){
