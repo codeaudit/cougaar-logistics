@@ -91,12 +91,25 @@ public class InventoryAR extends InventoryTaskBase {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
 	
 	double aQty = (new Double(subStrings[AR_QTY_INDEX])).doubleValue();
-	long aStartTime = -0L;
+	long aStartTime = -1;
+	long anEndTime = -1;
 	String startTimeStr = subStrings[AR_START_TIME_INDEX].trim();
 	if(!(startTimeStr.equals(""))) {
 	    aStartTime = (new Long(startTimeStr)).longValue();
 	}
-	long anEndTime = (new Long(subStrings[AR_END_TIME_INDEX])).longValue();
+	String endTimeStr = subStrings[AR_END_TIME_INDEX].trim();
+	if(!(endTimeStr.equals(""))) {
+	    anEndTime= (new Long(endTimeStr)).longValue();
+	    if(aStartTime == -1) {
+		aStartTime = anEndTime-1;
+	    }
+	}
+	else if(aStartTime == -1) {
+	    throw new RuntimeException("Both Start time and end time have no value cannot process!!");
+	}
+	else {
+	    anEndTime = aStartTime + 1;
+	}
 
 	int aResultType = AR_ESTIMATED;
 	if(subStrings[AR_TYPE_INDEX].trim().equals(AR_REPORTED_STR)) {
