@@ -28,6 +28,7 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
@@ -35,11 +36,13 @@ import org.cougaar.planning.ldm.plan.NewTask;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -104,15 +107,38 @@ public class RefillProjectionGenerator extends InventoryModule {
       //thePG.clearRefillProjections(new Date(today));
       long startDay = today;
       long currentDay = today;
-
-      // what do we do if this returns null or 0???
-     //  double projDemand = theBG.getProjectedDemand(getTimeUtils().
-//                                                    addNDays(currentDay, daysOnHand));
+      long customerDemandDay = getTimeUtils().addNDays(currentDay, daysOnHand);
+      double projDemand = 0;
+      double nextProjDemand = 0;
+      
+      //get the initial demand for today - Is there a better way to do this
+      // to avoid the duplication?
+ //      Schedule projectedDemandSched = thePG.getProjectedDemand();
+//       Collection projDemandElements = projectedDemandSched.
+//         getScheduleElementsWithTime(customerDemandDay);
+//       if (! projDemandElements.isEmpty()) {
+//         //assume only one match for now
+//         projDemand = ((QuantityScheduleElement)projDemandElements.iterator().
+//                              next()).getQuantity();
+//       // what do we do if this returns null or 0???
+//       }
+//       //move forward a day
 //       currentDay = getTimeUtils().addNDays(currentDay, 1);
+//       customerDemandDay = getTimeUtils().addNDays(customerDemandDay, 1);
+
+//       //Begin looping through currentDay forward until you hit the end of
+//       // the level six boundary
 //       //possible boundary issue... is it '<' or '<=' ??
 //       while (currentDay < endOfLevelSix) {
-//         double nextProjDemand = thePG.getProjectedDemand(getTimeUtils().
-//                                                   addNDays(currentDay, daysOnHand));
+//         projDemandElements = projectedDemandSched.
+//           getScheduleElementsWithTime(customerDemandDay);
+//         if (! projDemandElements.isEmpty()) {
+//           //assume only one match for now
+//           nextProjDemand = ((QuantityScheduleElement)projDemandElements.
+//                                    iterator().next()).getQuantity();
+//           // what do we do if this returns null or 0???
+//         }
+
 //         if (projDemand != nextProjDemand) {
 //           //if there's a change in the demand, create a refill projection
 //           createProjectionRefill(startDay, 
@@ -124,7 +150,8 @@ public class RefillProjectionGenerator extends InventoryModule {
 //         }
 //         //in either case bump forward a day.
 //         currentDay = getTimeUtils().addNDays(currentDay, 1);
-//       }
+//         customerDemandDay = getTimeUtils().addNDays(customerDemandDay, 1);
+//        }
 //       // when we get to the end of the level six window create the last
 //       // projection task (if there is one)
 //       if (startDay != currentDay) {
@@ -132,7 +159,7 @@ public class RefillProjectionGenerator extends InventoryModule {
 //                                getTimeUtils().subtractNDays(currentDay, 1),
 //                                today, projDemand, anInventory, thePG);
 //       }
-    }
+     }
   }
 
   private void calculateLevelTwoProjections(ArrayList myInventories, int daysOnHand, 
@@ -228,6 +255,8 @@ public class RefillProjectionGenerator extends InventoryModule {
 
     // can this be the same for projection refills?
     inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
+    // apply this to the bg
+    thePG.addRefillProjection(newRefill);
   }
 
 

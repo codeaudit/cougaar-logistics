@@ -79,65 +79,73 @@ public class RefillGenerator extends InventoryModule {
     int reorderPeriod = policy.getReorderPeriod();
 
     //Should we push now to the end of today? For now we WILL NOT.
-    //long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
+    //long today = getTimeUtils().
+    //  pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
     long today = inventoryPlugin.getCurrentTimeMillis();
-    long maxLeadDay = getTimeUtils().addNDays(today, maxLeadTime);
+    //start time (k) is today plus OST.
+    long start = getTimeUtils().addNDays(today, advanceOrderTime);
+    
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
       //clear the refills
-      thePG.clearRefillTasks(new Date(today));
+      thePG.clearRefillTasks(new Date(start));
 
-      //ask the bg (or another module) what the reorder level is
-      //int reorderLevel = theBG.getReorderLevel();
+ //      int startBucket = thePG.getBucket(start);
+//       // refillDay is start + 1 day (k+1)
+//       int refillDayBucket = startBucket + 1; 
+//       // max lead day is today + maxLeadTime
+//       int maxLeadDayBucket = thePG.getBucket(getTimeUtils().
+//                                              addNDays(today, maxLeadTime));
 
-      //pick a starting day - today + advanceOrderTime + 1
-      long refillDay = getTimeUtils().addNDays(today, advanceOrderTime + 1);
-      
-      //ask the bg for the inventory level for that day or get a schedule for it
-      //int invLevel = theBG.getInventoryLevel(refillDay);
-      // or...
-      //Schedule invLevelSched = thePG.getInventoryLevelsSchedule();
-      //Collection invLevels = invLevelSched.getScheduleElementsWithTime(refillDay);
-      //if (! invLevels.isEmpty()) {
-      //  //assume there is only one match for now
-      //  double invLevel = ((QuantityScheduleElement)invLevel.iterator().
-      //                       next()).getQuantity();
-      
-      //if the inv level is below the reorder level create a refill.
-      //if (invLevel < reorderLevel) {
-      //  create the refills
-      while (refillDay < maxLeadDay) {
-        double aRefill = generateRefill(refillDay, reorderPeriod);
-        // make a task for this refill and publish it to glue plugin
-        createRefillTask(aRefill, refillDay, anInventory, thePG, today);
-	// TODO: Apply Refill to LogisticsInventoryBG
-        refillDay = getTimeUtils().addNDays(refillDay, reorderPeriod);
-      }
-      
-      //}
+//       //  create the refills
+//       while (refillDayBucket <= maxLeadDayBucket) {
+//         long invLevel = thePG.getLevel(startBucket) - 
+//           thePG.getActualDemand(refillDayBucket);
+//         if (thePG.getCriticalLevel(refillDayBucket) < invLevel) {
+//           thePG.setLevel(refillDayBucket, 0);
+//         } else {
+//           long refillDay = refillDayBucket.getStartTime();
+//           int reorderPeriodEndBucket = thePG.getBucket(getTimeUtils().
+//                                                        addNDays(refillDay,
+//                                                                 reorderPeriod));
+//           double refillQty = generateRefill(invLevel, refillDayBucket, 
+//                                             reorderPeriodEndBucket, thePG);
+//           // make a task for this refill and publish it to glue plugin
+//           // and apply it to the LogisticsInventoryBG
+//           createRefillTask(refillQty, refillDay, anInventory, thePG, today);
+//           thePG.setLevel(refillDayBucket, (invLevel + refillQty));
+//         }
+//         //reset the buckets
+//         startBucket = refillDayBucket;
+//         refillDayBucket = startBucket + 1;
+//       }
     
     } // done going through inventories
   }
 
-  private double generateRefill(long day, int reorderPeriod) {
+  private double generateRefill(double invLevel, int refillBucket, 
+                                int reorderPeriodEndBucket, 
+                                LogisticsInventoryPG thePG) {
     double refillQty = 0;
-    long endOfPeriod = getTimeUtils().addNDays(day, reorderPeriod);
-    //double criticalAtEndOfPeriod = getCriticalLevel(endOfPeriod);
-    double demandForPeriod = calculateDemandForPeriod(day, endOfPeriod);
-    //refillQty = (criticalAtEndOfPeriod - invLevel) + demandForPeriod;
+ //    double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
+    double demandForPeriod = calculateDemandForPeriod(thePG, 
+                                                      refillBucket, 
+                                                      reorderPeriodEndBucket);
+ //    refillQty = (criticalAtEndOfPeriod - invLevel) + demandForPeriod;
     return refillQty;
   }
 
-  private double calculateDemandForPeriod(long day, long endOfPeriod) {
+  private double calculateDemandForPeriod(LogisticsInventoryPG thePG, 
+                                          int refillBucket, int endOfPeriodBucket) {
     double totalDemand = 0.0;
-    long currentDay = day;
-    while (currentDay <= endOfPeriod) {
-      // double demand = getDemand(currentDay);
+    int currentBucket = refillBucket;
+    while (currentBucket <= endOfPeriodBucket) {
+      // double demand = thePG.getDemand(currentBucket);
 //       totalDemand = totalDemand + demand;
-      currentDay = getTimeUtils().addNDays(currentDay, 1);
+      currentBucket = currentBucket + 1;
     }
     return totalDemand;
   }
@@ -186,8 +194,10 @@ public class RefillGenerator extends InventoryModule {
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
-
+    // hook this in with MaintainInventory and publish
     inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
+    //apply this to the LogisticsInventoryBG
+    thePG.addRefillRequisition(newRefill);
   }
 
   /** Utility method to create the Refill tasks time preference
