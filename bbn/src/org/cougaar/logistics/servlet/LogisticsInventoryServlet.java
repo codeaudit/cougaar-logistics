@@ -42,13 +42,8 @@ import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.UnaryPredicate;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.StringWriter;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.nio.charset.Charset;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -326,12 +321,16 @@ public class LogisticsInventoryServlet
       //UISimpleInventory simpleInventory = 
       //getInventoryForClient(inventory, provider, startDay);
 
-      // send the UISimpleInventory object
+      // send the String object
       if ((xmlStr != null) && 
 	  (!(xmlStr.trim().equals("")))){
-	ObjectOutputStream p = new ObjectOutputStream(out);
+	  //ObjectOutputStream p = new ObjectOutputStream(out);
 	//logger.debug("\n\n\n\n sending back a non-null inventory:\n"+simpleInventory);
-	p.writeObject(xmlStr);
+	  //p.writeObject(xmlStr);
+	  BufferedWriter p = new BufferedWriter(new OutputStreamWriter(out,Charset.forName("ASCII")));
+	  p.write(xmlStr);
+	  p.flush();
+    p.close();
 	logger.info("Sent XML document");
       } else {
         logger.error("XML string is null or empty.  returning null response.");
