@@ -1,4 +1,4 @@
-# Find all agents that are SecurityMnRManagers
+# Find all agents that are AL-Managers
 recipeQueryALManagers=\
 SELECT DISTINCT AC.COMPONENT_ALIB_ID FROM \
    alib_component AC, \
@@ -26,6 +26,7 @@ WHERE \
     AND CEA.ATTRIBUTE_ID = 'Role' \
     AND CEA.ATTRIBUTE_VALUE = 'AdaptiveLogisticsManager'
 
+#Find all agents that are ALMembers
 recipeQueryALMembers=\
 SELECT DISTINCT AC.COMPONENT_ALIB_ID FROM \
    alib_component AC, \
@@ -53,6 +54,7 @@ WHERE \
     AND CEA.ATTRIBUTE_ID = 'Role' \
     AND CEA.ATTRIBUTE_VALUE = 'Member'
 
+#Find all agents that are members of the AL-Transport Community
 recipeQueryALTransportMembers=\
 SELECT DISTINCT AC.COMPONENT_ALIB_ID FROM \
    alib_component AC, \
@@ -81,6 +83,7 @@ WHERE \
     AND CEA.ATTRIBUTE_VALUE = 'Member' \
     AND CA.COMMUNITY_ID LIKE '%TRANSPORT-COMM'
 
+#Find all agents that are members of the AL Supply Community
 recipeQueryALSupplyMembers=\
 SELECT DISTINCT AC.COMPONENT_ALIB_ID FROM \
    alib_component AC, \
