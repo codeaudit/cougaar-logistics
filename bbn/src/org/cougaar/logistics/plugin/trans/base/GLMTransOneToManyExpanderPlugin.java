@@ -640,10 +640,21 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	area   = itemPhysicalPG.getFootprintArea().getSquareMeters() * q;
 	volume = itemPhysicalPG.getVolume().getCubicMeters() * q;
 	mass   = itemPhysicalPG.getMass().getKilograms() * q;
-	
-	if (area == 0.0d || volume == 0.0d || mass == 0.0d)
-	  warn (".setDimensions - asset " + firstItem + 
-		" for task " + parentTask.getUID() + " has a zero dimension.");
+
+	if (area == 0.0d) {
+	  area = itemPhysicalPG.getLength().getMeters() * 
+	    itemPhysicalPG.getWidth().getMeters()* q;
+	  if (isInfoEnabled ()) {
+	    info (".setDimensions - fixing footprint area, was zero for asset " + aggAsset + 
+		  " on task " + parentTask.getUID());
+	  }
+	}
+	if (area == 0.0d || volume == 0.0d || mass == 0.0d) {
+	  if (isWarnEnabled()) {
+	    warn (".setDimensions - asset " + firstItem + 
+		  " for task " + parentTask.getUID() + " has a zero dimension.");
+	  }
+	}
 		
 	addToDimension (ccc, q, itemPhysicalPG, cccdPG);
 
@@ -672,9 +683,19 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	  volume += itemVolume;
 	  mass   += itemMass;
 
-	  if (itemArea == 0.0d || itemVolume == 0.0d || itemMass == 0.0d)
-	    warn (".setDimensions - asset " + asset + 
-		  " for task " + parentTask.getUID() + " has a zero dimension.");
+	  if (itemArea == 0.0d) {
+	    itemArea = itemPhysicalPG.getLength().getMeters() * 
+	      itemPhysicalPG.getWidth().getMeters();
+	    if (isInfoEnabled ()) {
+	      info (".setDimensions - fixing footprint area, was zero for asset " + asset + " on task " + parentTask.getUID());
+	    }
+	  }
+	  if (itemArea == 0.0d || itemVolume == 0.0d || itemMass == 0.0d) {
+	    if (isWarnEnabled ()) {
+	      warn (".setDimensions - asset " + asset + 
+		    " for task " + parentTask.getUID() + " has a zero dimension.");
+	    }
+	  }
 
 	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdPG);
 	}
