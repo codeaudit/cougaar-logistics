@@ -303,4 +303,11 @@ public class TaskScheduler {
     return al.iterator();
   }
 
+  public Collection getAllTasksCollection() {
+    List allTasks = new ArrayList();
+    for (int i = 0; i < subscriptions.length; i ++) {
+      allTasks.addAll(subscriptions[i]);
+    }
+    return allTasks;
+  }
 }
