@@ -215,13 +215,13 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
   }
   
   public void handleAssignment (org.cougaar.planning.ldm.plan.Task task, Asset asset, 
-				Date start, Date end, Date setupStart, Date wrapupEnd) {
+				Date start, Date end, Date setupStart, Date wrapupEnd, String contribs, String taskText) {
     Date best = prefHelper.getBestDate(task);
     if (end.getTime() > best.getTime() &&
 	end.getTime() < (best.getTime() + 1000l)) {
       end = best;
     }
-    super.handleAssignment (task, asset, start, end, setupStart, wrapupEnd);
+    super.handleAssignment (task, asset, start, end, setupStart, wrapupEnd, contribs, taskText);
   }
 
   protected boolean allNecessaryAssetsReported () {
