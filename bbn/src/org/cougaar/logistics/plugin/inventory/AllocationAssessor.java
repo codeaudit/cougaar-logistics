@@ -80,9 +80,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       // AF - we should get this from the BG (PG)
       int end_bucket = 180;
       createWithdrawAllocations(today_bucket, end_bucket, inventory, thePG);
-      //TODO AF - what should we call to update the lists so that the new
-      // allocation results place the withdraws in the right bucket?
-      //theBG.updateLists();
     }
   }
 
@@ -138,9 +135,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           // if its ok give it a pe and update the quantity
           runningQty = runningQty + qty;
           if (withdraw.getPlanElement() == null) {
-            createBestAllocation(withdraw, inv);
+            createBestAllocation(withdraw, inv, thePG);
           } else {
-            checkPlanElement(withdraw);
+            checkPlanElement(withdraw, thePG);
           }
         } else {
           //if we can't fulfill this withdraw add it for later
@@ -180,7 +177,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if ((level - checkQty) >= 0) {
         //TODO - should the Alloc date be the start time of the currentBucket
         // or should it be the end time??
-        createLateAllocation(task, thePG.convertBucketToTime(currentBucket), inv);
+        createLateAllocation(task, thePG.convertBucketToTime(currentBucket), inv, thePG);
         filled = filled + qty;
         processed.add(task);
       } else {
@@ -201,8 +198,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  best preferences for the withdraw task
    *  @param withdraw The withdraw task we are allocating
    *  @param inv The Inventory we are allocating against
+   *  @param thePG The PG of the Inventory we are allocating against
    **/
-  private void createBestAllocation(Task withdraw, Inventory inv) {
+  private void createBestAllocation(Task withdraw, Inventory inv, 
+                                    LogisticsInventoryPG thePG) {
     AllocationResult estimatedResult = PluginHelper.
       createEstimatedAllocationResult(withdraw, inventoryPlugin.getRootFactory(), 
                                       0.9, true);
@@ -210,14 +209,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       createAllocation(withdraw.getPlan(), withdraw,
                        inv, estimatedResult, myRole);
     inventoryPlugin.publishAdd(alloc);
+    thePG.updateWithdrawRequisition(withdraw);
   }
 
   /** Utility method to create a late Allocation
    *  @param withdraw The withdraw task to allocate
    *  @param time The time that it will be filled
    *  @param inv  The Inventory we are allocating against
+   *  @param thePG  The PG for the Inventory we are allocating against
    **/
-  private void createLateAllocation(Task withdraw, long time, Inventory inv) {
+  private void createLateAllocation(Task withdraw, long time, Inventory inv, 
+                                    LogisticsInventoryPG thePG) {
     int aspectTypes[] = {AspectType.END_TIME, AspectType.QUANTITY};
     double results[] = new double[2];
     results[0] = (double) time;
@@ -228,6 +230,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       createAllocation(withdraw.getPlan(), withdraw, inv, 
                         estimatedResult, myRole);
     inventoryPlugin.publishAdd(lateAlloc);
+    thePG.updateWithdrawRequisition(withdraw);
   }
 
   /** Method which checks a previously created planelement for the withdraw task
@@ -235,8 +238,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  This is called if we want to give a best result - so if the previous
    *  result was not best we will change it.
    *  @param withdraw The Withdraw Task we are allocating against the Inventory
+   *  @param thePG  The PG for the Inventory this allocation is against.
    **/
-  private void checkPlanElement(Task withdraw) {
+  private void checkPlanElement(Task withdraw, LogisticsInventoryPG thePG) {
     //if this task already has a pe - make sure the results are consistent
     // with best.
     PlanElement pe = withdraw.getPlanElement();
@@ -260,6 +264,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                         0.9, true);
       pe.setEstimatedResult(estimatedResult);
       inventoryPlugin.publishChange(pe);
+      thePG.updateWithdrawRequisition(withdraw);
     }
   }
       
