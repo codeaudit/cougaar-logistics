@@ -43,20 +43,17 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     super.localSetup();
 
     try {
-      if (getMyParams().hasParam ("GlobalAirRole"))
-	GLOBAL_AIR_ID = getMyParams().getStringParam("GlobalAirRole");
-      else
-	GLOBAL_AIR_ID = "AirTransportationProvider";
+      GLOBAL_AIR_ID = (getMyParams().hasParam ("GlobalAirRole")) ?
+	getMyParams().getStringParam("GlobalAirRole") :
+	"AirTransportationProvider";
 
-      if (getMyParams().hasParam ("GlobalSeaRole"))
-	GLOBAL_SEA_ID = getMyParams().getStringParam("GlobalSeaRole");
-      else
-	GLOBAL_SEA_ID = "SeaTransportationProvider";
+      GLOBAL_SEA_ID = (getMyParams().hasParam ("GlobalSeaRole")) ?
+	getMyParams().getStringParam("GlobalSeaRole") :
+	"SeaTransportationProvider";
 
-      if (getMyParams().hasParam ("NullAssetRole"))
-	NULL_ASSET_ID = getMyParams().getStringParam("NullAssetRole");
-      else
-	NULL_ASSET_ID = "NullNomen";
+      NULL_ASSET_ID = (getMyParams().hasParam ("NullAssetRole")) ?
+	getMyParams().getStringParam("NullAssetRole") :
+	"NullNomen";
 
     } catch(Exception e) {
       warn ("got really unexpected exception " + e);
@@ -76,8 +73,8 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     for (Iterator iter = myNewAssets.iterator (); iter.hasNext (); ) {
       String name = "";
 
+      Asset asset = (Asset) iter.next();
       try {
-	Asset asset = (Asset) iter.next();
 	if (asset instanceof Organization) {
 	  name = getOrganizationRole(asset);
 	  if (isDebugEnabled())
@@ -88,7 +85,10 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
 	  if (isDebugEnabled())
 	    debug (".handleNewAssets - " + asset + " is NOT an org.");
 	}
-      } catch (Exception e) {}
+      } catch (Exception e) {
+	if (isDebugEnabled())
+	  logger.debug (".handleNewAssets - " + asset + " was strange - ", e);
+      }
 
       if (name != null) {
 	if (name.startsWith (GLOBAL_AIR_ID))

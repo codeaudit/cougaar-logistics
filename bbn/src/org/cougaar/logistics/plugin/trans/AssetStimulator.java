@@ -146,10 +146,12 @@ public class AssetStimulator extends UTILPluginAdapter
 	public void actionPerformed(ActionEvent e) {
 	  String lnfName = e.getActionCommand();
 
-	  if (lnfName.equals("Add Asset"))
+	  if (lnfName.equals("Add Asset")) {
 	    addAsset ();
-	  else
+	  }
+	  else {
 	    changeAsset ();
+	  }
 	}
       };
 	

@@ -194,10 +194,12 @@ public class Network {
     public Object next() {
       check();
       Object result = this.here;
-      if (this.here == Network.this.from) 
+      if (this.here == Network.this.from) {
 	this.here = null;
-      else 
+      }
+      else {
 	this.here = this.here.getBack();
+      }
       return result;
     }
 

@@ -131,7 +131,8 @@ public class SeaDataXMLize extends GenericDataXMLize {
   protected boolean isAmmo (GLMAsset asset) {
     String unit = "";
     try{
-      unit = asset.getForUnitPG ().getUnit ();
+      if (asset.hasForUnitPG())
+	unit = asset.getForUnitPG ().getUnit ();
     } catch (Exception e) {
       return false;
     }
@@ -140,13 +141,8 @@ public class SeaDataXMLize extends GenericDataXMLize {
   }
 
   protected double getContainerCapacity (GLMAsset asset) {
-    double weight = 0;
-	
-    try {
-      weight = asset.getContainPG().getMaximumContainers();
-    } catch (Exception e) {}
-	
-    return weight;
+    return (asset.hasContainPG()) ?
+      asset.getContainPG().getMaximumContainers() : 0.0d;
   }
 
   protected boolean isAmmoShip (GLMAsset asset) {

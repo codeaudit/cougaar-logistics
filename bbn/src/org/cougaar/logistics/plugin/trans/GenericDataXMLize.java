@@ -144,63 +144,39 @@ public class GenericDataXMLize extends TranscomDataXMLize {
   }
   
   protected double getWeightCapacity (GLMAsset asset) {
-    double weight = 0;
-	
-    try {
-      weight = asset.getContainPG().getMaximumWeight().getShortTons();
-    } catch (Exception e) {}
-	
-    return weight;
+    return (asset.hasContainPG() && 
+	    asset.getContainPG().getMaximumWeight() != null) ?
+      asset.getContainPG().getMaximumWeight().getShortTons() : 0.0d;
   }
   
   protected double getWeight (GLMAsset asset) {
-    double weight = 0;
-	
-    try {
-      weight = asset.getPhysicalPG().getMass().getShortTons();
-    } catch (Exception e) {}
-	
-    return weight;
+    return (asset.hasPhysicalPG() && 
+	    asset.getPhysicalPG().getMass () != null) ?
+      asset.getPhysicalPG().getMass().getShortTons() : 0.0d;
   }
 
   protected double getAreaCapacity (GLMAsset asset) {
-    double area = 0;
-	
-    try {
-      area = asset.getContainPG().getMaximumFootprintArea().getSquareFeet();
-    } catch (Exception e) {}
-	
-    return area;
+    return (asset.hasContainPG() && 
+	    asset.getContainPG().getMaximumFootprintArea() != null) ?
+      asset.getContainPG().getMaximumFootprintArea().getSquareFeet() : 0.0;
   }
   
   protected double getArea (GLMAsset asset) {
-    double area = 0;
-	
-    try {
-      area = asset.getPhysicalPG().getFootprintArea().getSquareFeet();
-    } catch (Exception e) {}
-	
-    return area;
+    return (asset.hasPhysicalPG() && 
+	    asset.getPhysicalPG().getFootprintArea() != null) ? 
+      asset.getPhysicalPG().getFootprintArea().getSquareFeet() : 0.0d;
   }
 
+  /** returns 1 if asset isn't an aggregate */
   protected double getQuantity (Asset asset) {
-    double quantity = 1;
-	
-    try {
-      quantity = ((AggregateAsset)asset).getQuantity();
-    } catch (Exception e) {}
-	
-    return quantity;
+    return 
+      (asset instanceof AggregateAsset) ?
+      ((AggregateAsset)asset).getQuantity() : 1;
   }
 
   protected double getPassengerCapacity (GLMAsset asset) {
-    double pax = 0; 
-	
-    try {
-      pax = asset.getContainPG().getMaximumPassengers();
-    } catch (Exception e) {}
-	
-    return pax;
+    return (asset.hasContainPG()) ?
+      asset.getContainPG().getMaximumPassengers() : 0.0d;
   }
 
   /** 

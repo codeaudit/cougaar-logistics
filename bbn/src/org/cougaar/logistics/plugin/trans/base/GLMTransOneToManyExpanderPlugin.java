@@ -723,8 +723,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     String pgCCCString = whichCCCDimPG.getCargoCatCode();
 
-    if (pgCCCString == null) // we've never set the cargo cat code
+    if (pgCCCString == null) { // we've never set the cargo cat code
       whichCCCDimPG.setCargoCatCode(ccc);
+    }
     else if (!pgCCCString.equals(ccc)) {
       char [] pgCCC = pgCCCString.toCharArray();
       char [] newCCC = new char [3];

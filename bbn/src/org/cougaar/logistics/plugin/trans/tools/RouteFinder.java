@@ -51,10 +51,12 @@ public class RouteFinder {
   public TransportationRoute getRoute (GeolocLocation from, GeolocLocation to) {
     Map toGeolocRouteMap = (Map) geolocToGeolocToRoute.get (from.getGeolocCode());
     TransportationRoute route = null;
-    if (toGeolocRouteMap != null)
+    if (toGeolocRouteMap != null) {
       route = (TransportationRoute) toGeolocRouteMap.get(to.getGeolocCode());
-    else 
+    }
+    else {
       geolocToGeolocToRoute.put (from, (toGeolocRouteMap = new HashMap ()));
+    }
 
     if (route != null)
       return route;

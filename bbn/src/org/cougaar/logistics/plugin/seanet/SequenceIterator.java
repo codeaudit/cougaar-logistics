@@ -22,15 +22,17 @@ public class SequenceIterator implements Iterator {
       b = null;
       return this.hasNext();
     }
-    else 
+    else {
       return false;
+    }
   }
   
   public Object next() {
-    if (this.hasNext()) 
+    if (this.hasNext()) {
       return a.next();
-    else 
+    } else {
       throw new java.util.NoSuchElementException();
+    }
   }
 
   public void remove() {
