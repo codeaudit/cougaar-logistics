@@ -82,7 +82,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 	    }
 	    // There are new assets to add to the expansion
 	    else if(pe instanceof Expansion){
-
+		addToAndPublishExpansion(detReqTask,gpTasks);
 	    }
 	    else {
 		logger.error("Unhandled plan element type on DetermineRequirementsTask :" + pe.getClass().getName());
@@ -92,8 +92,19 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     }
 
     public void removeSubtasksFromDetermineRequirements(Task detReqTask, Collection removedAssets) {
-
-
+	Expansion expansion = (Expansion) detReqTask.getPlanElement();
+	NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
+	HashSet remTaskHash = new HashSet(removedAssets);
+	Enumeration subtasks = wf.getTasks();
+	while(subtasks.hasMoreElements()) {
+	    Task task = (Task) subtasks.nextElement()
+	    Asset consumer = task.getDirectObject();
+	    if(remTaskHash.contains(consumer)) {
+		wf.removeTask(task);
+		dfPlugin.publishRemove(task);
+	    }
+	}
+	dfPlugin.publishChange(expansion);
     }
 
     protected void createAndPublishExpansion(Task parent, Collection subtasks) {
@@ -104,6 +115,18 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 	Workflow wf = buildWorkflow(parent, subtasks);
 	Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
 	dfPlugin.publishAdd(expansion);
+    }
+
+    protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
+	Expansion expansion = (Expansion) parent.getPlanElement();
+	NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
+	Iterator subtasksIT = subtasks.iterator();
+	while(subtasksIT.hasNext()) {
+	    Task task = (Task) subtasksIT.next()
+	    dfPlugin.publishAdd(task);
+	    wf.addTask(task);
+	}
+	dfPlugin.publishChange(expansion);
     }
 
     protected void addNewTasksToExpansion(Task parentTask, Collection subtasks) {
