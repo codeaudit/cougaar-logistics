@@ -121,6 +121,7 @@ public class InventoryXMLParser
       String org=null;
       String asset=null;
       String unit=null;
+      String nomenclature=null;
       long cDay=0L;
       int i=1;
 
@@ -136,8 +137,16 @@ public class InventoryXMLParser
 	unit=words[i].substring("unit=".length());
       }
       i++;
-      while(!(words[i].startsWith("cDay"))) {
+      while(!(words[i].startsWith("nomenclature="))) {
 	  unit=unit + " " + words[i];
+	  i++;
+      }
+      if(words[i].startsWith("nomenclature=")){
+	nomenclature=words[i].substring("nomenclature=".length());
+      }
+      i++;
+      while(!(words[i].startsWith("cDay="))) {
+	  nomenclature=nomenclature + " " + words[i];
 	  i++;
       }
       if(words[i].startsWith("cDay=")){
@@ -145,11 +154,12 @@ public class InventoryXMLParser
 	cDay = (new Long(cDayString)).longValue();
       }      
 
-      inventory = new InventoryData(asset,org,unit,cDay);
+      inventory = new InventoryData(asset,org,unit,nomenclature,cDay);
       if(logger.isDebugEnabled()) {
 	  logger.debug("Parsed header w/org=|" + org +
 		       "| item=|" + asset + 
 		       "| unit=|" + unit +
+		       "| nomenclature=|" + nomenclature +
 		       "| cDay=|" + cDay + "|");
       }
       ctr++;

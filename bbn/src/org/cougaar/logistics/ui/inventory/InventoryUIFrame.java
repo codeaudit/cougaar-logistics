@@ -121,12 +121,6 @@ public class InventoryUIFrame extends JFrame
 	}
 	defaultCSVPath = baseDir + File.separator + "INVGUICSV" + File.separator + formatTimeStamp(new Date(),false) + File.separator; 
 	File pathDirs = new File(defaultCSVPath);
-	try {
-	    pathDirs.mkdirs();
-	}
-	catch(Exception e) {
-	    logger.error("Error creating default directory " + defaultCSVPath, e);
-	}	
 
 	fileChooser = new JFileChooser(pathDirs);
 	// fills frame
@@ -222,6 +216,15 @@ public class InventoryUIFrame extends JFrame
 	    connectToServlet();
 	}
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_SaveXML)) {
+	    File pathDirs = new File(defaultCSVPath);
+	    try {
+		if(!pathDirs.exists()){
+		    pathDirs.mkdirs();
+		}
+	    }
+	    catch(Exception ex) {
+		logger.error("Error creating default directory " + defaultCSVPath, ex);
+	    }
 	    if(inventory != null) {
 		String fileID = defaultCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
 		System.out.println("Save to file: " + fileID);

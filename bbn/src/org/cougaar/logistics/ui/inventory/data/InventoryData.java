@@ -43,14 +43,16 @@ public class InventoryData {
     protected String    item;
     protected String    org;
     protected String    unit;
+    protected String    nomenclature;
     protected long      startCDay;
 
     protected Hashtable schedules;
 
-    public InventoryData(String itemName,String anOrg,String aUnit,long aStartCDay) {
+    public InventoryData(String itemName,String anOrg,String aUnit,String nomen,long aStartCDay) {
 	item = itemName;
 	org = anOrg;
 	unit = aUnit;
+	nomenclature = nomen;
 	startCDay = aStartCDay;
 	schedules = new Hashtable(20);
     }
