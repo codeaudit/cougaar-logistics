@@ -283,6 +283,7 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
    */
   public void processTasks (List tasks) {
     if (!allNecessaryAssetsReported()) { // if need subordinates aren't there yet, way 10 seconds
+      getAllAssets ();
       delayedTasks.addAll (tasks);
 
       if (logger.isInfoEnabled()) {
