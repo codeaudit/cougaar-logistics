@@ -220,7 +220,7 @@ public class InventoryPreferenceData implements Cloneable {
   }
 
 
-  private static String stripTag(String line) {
+  protected static String stripTag(String line) {
     int start = 0;
     String tag = line.split(">")[0];
     int end = tag.length();
@@ -235,13 +235,13 @@ public class InventoryPreferenceData implements Cloneable {
     return tag.substring(start, end);
   }
 
-  private static String getTagName(String line) {
+  protected static String getTagName(String line) {
     String tag = stripTag(line);
     String words[] = tag.split("\\s");
     return words[0];
   }
 
-  private static boolean parseBoolean(String aBoolStr) {
+  protected static boolean parseBoolean(String aBoolStr) {
     if (aBoolStr.trim().toLowerCase().equals("true")) {
       return true;
     } else {
