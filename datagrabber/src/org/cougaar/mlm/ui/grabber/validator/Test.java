@@ -353,6 +353,7 @@ public abstract class Test{
     int retval = EQUALTO;
     int x = 0;
     int columnType;
+    String humanReadable;
 
     try { columnType = rs1.getMetaData().getColumnType(column); }
     catch(SQLException e){
@@ -361,8 +362,8 @@ public abstract class Test{
       return retval;
     }
 
-    if (logger.isMinorEnabled()) {
-      logger.logMessage(Logger.MINOR,Logger.DB_WRITE,"Calling columnCompare on column " + column + 
+    if (logger.isTrivialEnabled()) {
+      logger.logMessage(Logger.TRIVIAL,Logger.DB_WRITE,"Calling columnCompare on column " + column + 
 			" - type is " + columnType);
     }
 
@@ -372,14 +373,17 @@ public abstract class Test{
       case Types.VARCHAR:
 	x = ((String)rs1.getString(column)).compareTo((String)rs2.getString(column));
 	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
+	humanReadable = "CHAR";
 	break;
       case Types.INTEGER:
 	x = new Integer(rs1.getInt(column)).compareTo(new Integer(rs2.getInt(column)));
 	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
+	humanReadable = "INTEGER";
 	break;
       case Types.DOUBLE:
 	double first  = rs1.getDouble(column);
 	double second = rs2.getDouble(column);
+	humanReadable = "DOUBLE";
 
 	if (first > second + DELTA) 
 	    retval=GREATERTHAN;
@@ -387,9 +391,11 @@ public abstract class Test{
 	    retval=LESSTHAN;
 
 	//	x = new Double(first).compareTo(new Double(second));
-	if (logger.isMinorEnabled()) {
-	  logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
-			    "Comparing rs 1 column " + column + " value " + first + 
+	if (logger.isTrivialEnabled()) {
+	  logger.logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+			    "Comparing rs 1 column " + column + 
+			    " type " + humanReadable +
+			    " value " + first + 
 			    //			    " is " + ((x<0) ? "<" : ((x>0) ? ">" : "==")) +
 			    " is " + ((retval==LESSTHAN) ? "<" : ((retval==GREATERTHAN) ? ">" : "==")) +
 			    " rs 2 column " + column + " value " + second);
