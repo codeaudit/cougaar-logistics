@@ -334,6 +334,7 @@ public class InventoryPlugin extends ComponentPlugin
             // System.out.println("Touched changed projections in " + getAgentIdentifier() +
 //                                " type is" + getSupplyType());
 	}
+      }
 
         // call the Refill Generators if we have new demand
         if (! getTouchedInventories().isEmpty()) {
@@ -418,7 +419,7 @@ public class InventoryPlugin extends ComponentPlugin
         touchedChangedProjections = false;
         OMChange = false;
         //testBG();
-      }
+        //     }
     }
   }
 
