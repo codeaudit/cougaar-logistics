@@ -82,6 +82,8 @@ public class HTMLizer implements Logger{
     verbosityLevel=verbosity;
   }
 
+  public int getVerbosity () { return verbosityLevel; }
+
   public PrintStream getStream(){
     return ps;
   }
@@ -353,7 +355,7 @@ public class HTMLizer implements Logger{
 
   //Logger:
 
-  public void logMessage(int severity, int type, String message){
+  public synchronized void logMessage(int severity, int type, String message){
     if(severity<=verbosityLevel){
       ps.print("[");
       ps.print(Logger.SEVERITIES[severity]);
@@ -365,7 +367,7 @@ public class HTMLizer implements Logger{
     }
   }
 
-  public void logMessage(int severity, int type, String message, Exception e){
+  public synchronized void logMessage(int severity, int type, String message, Exception e){
     if(severity<=verbosityLevel){
       ps.print("[");
       ps.print(Logger.SEVERITIES[severity]);
@@ -379,11 +381,11 @@ public class HTMLizer implements Logger{
     }
   }
 
-  public boolean isWarningEnabled   () { return true; }
-  public boolean isImportantEnabled () { return true; }
-  public boolean isNormalEnabled    () { return true; }
-  public boolean isMinorEnabled     () { return true; }
-  public boolean isTrivialEnabled   () { return true; }
+  public boolean isWarningEnabled   () { return verbosityLevel >= WARNING; }
+  public boolean isImportantEnabled () { return verbosityLevel >= IMPORTANT; }
+  public boolean isNormalEnabled    () { return verbosityLevel >= NORMAL; }
+  public boolean isMinorEnabled     () { return verbosityLevel >= MINOR; }
+  public boolean isTrivialEnabled   () { return verbosityLevel >= TRIVIAL; }
 
   //InnerClasses:
   ///////////////
