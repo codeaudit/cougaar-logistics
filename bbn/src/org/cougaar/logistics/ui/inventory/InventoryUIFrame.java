@@ -47,6 +47,7 @@ import java.io.FileWriter;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringWriter;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -471,7 +472,7 @@ public class InventoryUIFrame extends JFrame
 
   public void doOpenXML(File[] openFiles) {
     InventoryFileManager fm = null;
-    String invXML = "";
+    String invXML="";
 
     try {
       SwingUtilities.invokeAndWait(new TaskStartRunnable(this));
@@ -491,19 +492,22 @@ public class InventoryUIFrame extends JFrame
     String lastGoodXML=null;
     for (int i = 0; i < openFiles.length; i++) {
       File openFile = openFiles[i];
-      invXML = "";
+      StringWriter writer = new StringWriter(InventoryConnectionManager.INITIAL_XML_SIZE);
+      invXML="";
       try {
         BufferedReader br = new BufferedReader(new FileReader(openFile));
 
         String nextLine = br.readLine();
         while (nextLine != null) {
 	    if(!nextLine.trim().equals("")) {
-		invXML = invXML + nextLine + "\n";
+		writer.write(nextLine + "\n");
 	    }
 	    nextLine = br.readLine();
 
         }
         br.close();
+	writer.flush();
+	invXML = writer.toString();
       } catch (IOException ioe) {
         throw new RuntimeException(ioe);
       }

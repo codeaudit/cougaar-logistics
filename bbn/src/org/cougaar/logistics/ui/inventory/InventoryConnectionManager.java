@@ -39,6 +39,7 @@ import java.io.ObjectInputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.nio.charset.Charset;
+import java.io.StringWriter;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -61,6 +62,8 @@ import org.cougaar.util.log.Logger;
 public class InventoryConnectionManager implements InventoryDataSource {
 
   static final String SERV_ID = "log_inventory";
+  public static final int INITIAL_XML_SIZE = 800000; 
+
   final public static String ASSET = "ASSET";
   final public static String ASSET_AND_CLASSTYPE = ASSET + ":" + "CLASS_TYPE:";
   final public static String GET_ALL_CLASS_TYPES = "All";
@@ -172,17 +175,20 @@ public class InventoryConnectionManager implements InventoryDataSource {
     }
 
     invXMLStr = null;
+    StringWriter writer = new StringWriter(INITIAL_XML_SIZE);
     try {
       //ObjectInputStream p = new ObjectInputStream(is);
       //invXMLStr = (String)p.readObject();
       BufferedReader p = new BufferedReader(new InputStreamReader(is, Charset.forName("ASCII")));
-      invXMLStr = p.readLine() + "\n";
+      writer.write(p.readLine() + "\n");
       String currLine = p.readLine();
       while (currLine != null) {
-        invXMLStr = invXMLStr + currLine + "\n";
+        writer.write(currLine + "\n");
         currLine = p.readLine();
       }
       p.close();
+      writer.flush();
+      invXMLStr = writer.toString();
       connection.closeConnection();
     } catch (Exception e) {
       displayErrorString("getInventoryData:Object read exception: " + e);
