@@ -508,7 +508,6 @@ ARCHIVE_TIME=${build.time}
 		<antcall target="compile"/>
 		<antcall target="dist-module"/>
 		<antcall target="zip-prep"/>
-		<antcall target="zip-copy-bin"/>
 		<antcall target="zip-copy-configs"/>
     <mkdir dir="configs_staging/configs/"/>
     <copy todir="configs_staging/configs/">
