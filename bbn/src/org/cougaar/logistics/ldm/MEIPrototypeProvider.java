@@ -113,11 +113,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public void load() {
     super.load();
-    logger = getLoggingService(this);
-    timeUtils = new TimeUtils(this);
-    assetUtils = new AssetUtils(this);
-    taskUtils = new TaskUtils(this);
-    scheduleUtils = new ScheduleUtils(this);
+    serviceBroker = getBindingSite().getServiceBroker();
+    if (serviceBroker != null) {
+      logger = getLoggingService(this);
+      timeUtils = new TimeUtils(this);
+      assetUtils = new AssetUtils(this);
+      taskUtils = new TaskUtils(this);
+      scheduleUtils = new ScheduleUtils(this);
+    }
   }
 
   protected void setupSubscriptions() { 
