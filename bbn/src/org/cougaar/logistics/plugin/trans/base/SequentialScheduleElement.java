@@ -98,6 +98,10 @@ public abstract class SequentialScheduleElement extends ScheduleElementImpl {
   public Vector getDependencies() { return dependencies; }
 	
   public boolean isPlanned() { return planned; }
+
+  public void unplan () { 
+    planned = false; 
+  }
 	
   public boolean isReady() {
     Vector dependencies = getDependencies();
