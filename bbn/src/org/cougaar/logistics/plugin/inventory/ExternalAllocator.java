@@ -175,11 +175,14 @@ public class ExternalAllocator extends InventoryModule {
     // Set up the affected inventories for the AllocationAssessor
     Task refill;
     Asset asset;
+    Allocation alloc;
     Inventory inventory;
     LogisticsInventoryPG logInvPG;
     Iterator refill_list = sub.getAddedCollection().iterator();
     while (refill_list.hasNext()) {
-      refill = (Task)refill_list.next();
+      alloc = (Allocation) refill_list.next();
+      //      refill = (Task)refill_list.next();
+      refill = alloc.getTask();
       asset = (Asset)refill.getDirectObject();
       inventory = inventoryPlugin.findOrMakeInventory(asset);
       logInvPG = (LogisticsInventoryPG)
