@@ -164,17 +164,8 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     Vector subtasks = new Vector();
     ForUnitPG unitPG = getForUnitPG (task.getDirectObject());
 
-    if (!didSetCapacity) {
-      Collection carriers = myAssetCallback.getSubscription().getCollection();
-      handleNewAssets(Collections.enumeration (carriers));
-      if (isWarnEnabled()) 
-	warn (getName() + ".getSubtasks - recalculated maxContainContrib after rehydration.");
-    }
-
-    if (maxContainCapacity == Double.MAX_VALUE) {
-      error (getName() + ".getSubtasks - maxContainCapacity has not been set, it's " + 
-	     maxContainCapacity);
-    }
+    if (!didSetCapacity)
+      resetCapacities ();
 
     try{
       if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY) &&
@@ -713,6 +704,18 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
   public void handleChangedAssets(Enumeration newAssets) {}
   
+  public void resetCapacities () {
+    Collection carriers = myAssetCallback.getSubscription().getCollection();
+    handleNewAssets(Collections.enumeration (carriers));
+    if (isWarnEnabled()) 
+      warn (getName() + ".getSubtasks - recalculated maxContainContrib after rehydration.");
+
+    if (maxContainCapacity == Double.MAX_VALUE) {
+      error (getName() + ".getSubtasks - maxContainCapacity has not been set, it's " + 
+	     maxContainCapacity);
+    }
+  }
+
   /**
    * <pre>
    * Place to handle new assets.
@@ -734,6 +737,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 	if (alpasset.hasContainPG()) {
 	  double [] maxContain = getAssetMaxContain(alpasset);
 	  calculateCommonMaxContain(maxContain);
+	  didSetCapacity = true;
 	}
 	else {
 	  if (isDebugEnabled())
@@ -778,8 +782,6 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     if (maxcontain[1] < maxPassengerCapacity)
       maxPassengerCapacity = maxcontain[1];
-
-    didSetCapacity = true;
   }
 
   protected double maxContainCapacity   = Double.MAX_VALUE;

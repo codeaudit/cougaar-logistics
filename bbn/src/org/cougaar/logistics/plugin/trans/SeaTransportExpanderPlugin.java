@@ -469,6 +469,18 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
     return max;
   }
 
+  public void resetCapacities () {
+    Collection carriers = myAssetCallback.getSubscription().getCollection();
+    handleNewAssets(java.util.Collections.enumeration (carriers));
+    if (isWarnEnabled()) 
+      warn (getName() + ".getSubtasks - recalculated maxContainContrib after rehydration.");
+
+    if (maxAreaCapacity == Double.MAX_VALUE) {
+      error (getName() + ".getSubtasks - maxContainCapacity has not been set, it's " + 
+	     maxContainCapacity);
+    }
+  }
+
   /** calculates the max contain -- smallest of all seen */
   protected void calculateCommonMaxContain (double [] maxcontain) {
     if (maxcontain[0] < maxAreaCapacity && maxcontain[0] > 0 && 
