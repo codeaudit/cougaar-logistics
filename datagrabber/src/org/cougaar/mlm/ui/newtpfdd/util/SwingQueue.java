@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/SwingQueue.java,v 1.2 2002-08-07 19:48:21 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/SwingQueue.java,v 1.3 2002-08-29 16:49:55 gvidaver Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -64,6 +64,9 @@ public class SwingQueue
     private static void runNext()
     {
 	try {
+	    if (runQ.isEmpty ())
+		return;
+
 	    Runnable next = (Runnable)(runQ.dequeue());
 	    if ( next != null )
 		next.run();

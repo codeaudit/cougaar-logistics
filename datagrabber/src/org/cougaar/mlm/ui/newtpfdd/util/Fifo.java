@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Fifo.java,v 1.3 2002-08-09 14:47:39 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Fifo.java,v 1.4 2002-08-29 16:49:55 gvidaver Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -24,6 +24,10 @@ public class Fifo
     public Fifo()
     {  
 	internal = new LinkedList();
+    }
+
+    public boolean isEmpty () { 
+	return internal.isEmpty ();
     }
 
     public void enqueue(Object o)
