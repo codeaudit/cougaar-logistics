@@ -515,7 +515,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
   public int getNumTheaterGroundAgents () {
     Object ammoShipPacker = findOrgWithRole(GLMTransConst.AMMO_SHIP_PACKER_ROLE);
-    if (ammoShipPacker != null) {
+    if (getAgentIdentifier ().toString().toLowerCase().startsWith("ammo")) {
       return 1; // ammo sea only needs one theater ground agent - ammo theater ground
     }
     else {
