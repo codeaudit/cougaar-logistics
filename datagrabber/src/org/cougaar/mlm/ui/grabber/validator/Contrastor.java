@@ -36,7 +36,7 @@ import java.util.List;
 
 /**
  * Contains all the tests and knows how to kick them off
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/27/01
  *
@@ -499,6 +499,7 @@ public class Contrastor extends Validator{
 	    h.tData(output_s);
 	    break;
 	  case Test.TYPE_DOUBLE:
+	  case Test.TYPE_TONNAGE_THREE_DIGITS:
 	    h.tData(rs.getDouble(tableindex));
 	    break;
 	  case Test.TYPE_TONNAGE:
