@@ -267,26 +267,18 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       }
     }
 
+    // if our top level MI task got removed, clean out the references .
+    if (! aggMILSubscription.getRemovedCollection().isEmpty()) {
+      detReqHandler.resetAggMITask();
+    }
+
     if ((detReqHandler.getDetermineRequirementsTask(aggMILSubscription) != null) &&
         (logOPlan != null)) {
       if (rehydrateInvs) {
         addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
         rehydrateInvs = false;
       }
-      boolean touchedRemovedProjections =
-          supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
-      supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
-      // The following is here because the above lies about what it does
-
-      //START EPD AUXQUERY CHANGES
-      //supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
-      Collection removedDispositions = recDispositions.getRemovedCollection();
-      if (! removedDispositions.isEmpty()) {
-        supplyExpander.handleRemovedRealRequisitions(removedDispositions);
-      }
-      // END EPD AUXQUERY CHANGES
-
-      handleRemovedRefills(refillSubscription.getRemovedCollection());
+      boolean touchedRemovedProjections = processRecRemoves();
 
       Collection addedSupply = supplyTaskScheduler.getAddedCollection();
       if (! commStatusSub.isEmpty()) {
@@ -350,15 +342,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         Collection unalloc = null;
         if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
           sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.Supply));
-//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-// 										       Constants.Verb.Supply));
-//             if (!unalloc.isEmpty()){
-// 	      if (logger.isWarnEnabled())
-// 		logger.warn("TRYING TO ALLOCATE SUPPLY NONREFILL TASKS...");
-//               externalAllocator.allocateRefillTasks(unalloc);
-//             }
-
+                                                                     Constants.Verb.Supply), "reconcile");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.Supply);
           if (!unalloc.isEmpty()){
@@ -369,15 +353,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         }
         if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
           sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.ProjectSupply));
-//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-// 										       Constants.Verb.ProjectSupply));
-//             if (!unalloc.isEmpty()) {
-// 	      if (logger.isWarnEnabled())
-// 		logger.warn("TRYING TO ALLOCATE PROJECTION NONREFILL TASKS...");
-//               externalAllocator.allocateRefillTasks(unalloc);
-//             }
-
+                                                                     Constants.Verb.ProjectSupply), "reconcile");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.ProjectSupply);
           if (!unalloc.isEmpty()) {
@@ -473,6 +449,9 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       touchedChangedProjections = false;
       OMChange = false;
       //testBG();
+    } else {
+      // process subscription removes even if we don't have a top level MI as it could have been rescinded
+      processRecRemoves();
     }
     // Review: not sure if this is the right place to make this call
     ReconcileSupplyExpander expander = getSupplyExpander();
@@ -626,7 +605,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
     Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
-    aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
+    aggMILSubscription = (IncrementalSubscription) blackboard.subscribe(new AggMILPredicate(), false);
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
@@ -1095,29 +1074,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     }
   }
 
-  /**
-   * Filters out tasks that already have PEs -- fix for bug #1695
-   * @param tasks - possibly from added list
-   * @return Collection - tasks that have no PEs
-   */
-//  protected Collection getTasksWithoutPEs(Collection tasks) {
-//    Set tasksWithoutPEs = new HashSet();
-//    for (Iterator iter = tasks.iterator(); iter.hasNext();) {
-//      Task task = (Task) iter.next();
-//
-//      if (task.getPlanElement() != null) {
-//        if (logger.isDebugEnabled()) {
-//          logger.debug(getMyOrganization() + " - found task that already had a p.e. attached? : " +
-//                       task.getUID() + " - so skipping it.");
-//        }
-//      } else {
-//        tasksWithoutPEs.add(task);
-//      }
-//    }
-//
-//    return tasksWithoutPEs;
-//  }
-
   private class WithdrawPredicate implements UnaryPredicate {
     String supplyType;
 
@@ -1201,12 +1157,12 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 //  }
 
   private void expandIncomingRequisitions(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
+    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "reconcile");
     supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
   }
 
   private boolean expandIncomingProjections(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
+    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "reconcile");
     return supplyExpander.expandAndDistributeProjections(tasksToExpand);
   }
 
@@ -1583,6 +1539,18 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       }
       logInvPG.Test();
     }
+  }
+
+  private boolean processRecRemoves() {
+    boolean touchedRemovedProjections =
+              supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
+    supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
+    Collection removedDispositions = recDispositions.getRemovedCollection();
+    if (! removedDispositions.isEmpty()) {
+      supplyExpander.handleRemovedRealRequisitions(removedDispositions);
+    }
+    handleRemovedRefills(refillSubscription.getRemovedCollection());
+    return touchedRemovedProjections;
   }
 }
 
