@@ -139,10 +139,18 @@ public class SupplyExpander extends InventoryModule {
                 }
             }
             List mergedPhasedResults = new ArrayList();
+            // this seems strange why do we assume everything is phased?
+            //for now check if this is null (as all the isphased seem to be true
+            // and if it is null get the nonphased results.
             List withdrawPhasedResults = withdrawAR.getPhasedAspectValueResults();
-            for (int i = 0, n = withdrawPhasedResults.size(); i < n; i++) {
+            if (withdrawPhasedResults != null) {
+              for (int i = 0, n = withdrawPhasedResults.size(); i < n; i++) {
                 AspectValue[] oneResult = (AspectValue[]) withdrawPhasedResults.get(i);
                 mergedPhasedResults.add(merge(merged, oneResult));
+              }
+            } else {
+              AspectValue[] npresult = (AspectValue[]) withdrawAR.getAspectValueResults();
+              mergedPhasedResults.add(merge(merged, npresult));
             }
             return new AllocationResult(rating / tstSize, success,
                                         merge(merged, null), mergedPhasedResults);
@@ -238,25 +246,13 @@ public class SupplyExpander extends InventoryModule {
 
   public void handleRemovedRequisitions(Collection tasks) {
     LogisticsInventoryPG thePG;
-    Task parent, aTask;
+    Task aTask;
     Iterator taskIter = tasks.iterator();
-    PlanElement pe;
-    Enumeration enum;
     while (taskIter.hasNext()) {
-      parent = (Task)taskIter.next();
-      pe = parent.getPlanElement();
-      if ((pe != null) && (pe instanceof Expansion)) {
-	enum = ((Expansion)pe).getWorkflow().getTasks();
-	while (enum.hasMoreElements()) {
-	  aTask = (Task)enum.nextElement();
-	  if (aTask.getVerb().equals(Constants.Verb.WITHDRAW)) { 
-	    thePG = getLogisticsInventoryPG(aTask);
-	    if (thePG != null) {
-	      thePG.removeWithdrawRequisition(aTask);
-	    }
-	    break;
-	  }
-	}
+      aTask = (Task)taskIter.next();
+      thePG = getLogisticsInventoryPG(aTask);
+      if (thePG != null) {
+	thePG.removeWithdrawRequisition(aTask);
       }
     }
   }
@@ -264,26 +260,14 @@ public class SupplyExpander extends InventoryModule {
   public boolean handleRemovedProjections(Collection tasks) {
     boolean removedProjections = false;
     LogisticsInventoryPG thePG;
-    Task parent, aTask;
+    Task aTask;
     Iterator taskIter = tasks.iterator();
-    PlanElement pe;
-    Enumeration enum;
     while (taskIter.hasNext()) {
-      parent = (Task)taskIter.next();
-      pe = parent.getPlanElement();
-      if ((pe != null) && (pe instanceof Expansion)) {
-	enum = ((Expansion)pe).getWorkflow().getTasks();
-	while (enum.hasMoreElements()) {
-	  aTask = (Task)enum.nextElement();
-	  if (aTask.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) { 
-	    thePG = getLogisticsInventoryPG(aTask);
-	    if (thePG != null) {
-	      thePG.removeWithdrawProjection(aTask);
-	      removedProjections = true;
-	    }
-	    break;
-	  }
-	}
+      aTask = (Task)taskIter.next();
+      thePG = getLogisticsInventoryPG(aTask);
+      if (thePG != null) {
+	thePG.removeWithdrawProjection(aTask);
+	removedProjections = true;
       }
     }
     return removedProjections;
