@@ -201,6 +201,7 @@ public class MultiChartPanel extends JPanel
       }
     });
 
+
     shortfallModeCheck = new JCheckBox(SHORTFALL_MODE, displayShortfall);
     shortfallModeCheck.setFont(newFont);
     shortfallModeCheck.setActionCommand(SHORTFALL_MODE);
@@ -394,8 +395,8 @@ public class MultiChartPanel extends JPanel
   }
 
   public void removeAllPickListeners() {
-    levelChart.getChart().removeMouseListener(mouseAdapter);
-    //levelChart.removePickListener(this);
+      //levelChart.getChart().removeMouseListener(mouseAdapter);
+    levelChart.removePickListener(this);
     refillChart.removePickListener(this);
     demandChart.removePickListener(this);
   }
@@ -403,8 +404,8 @@ public class MultiChartPanel extends JPanel
 
   public void addAllPickListeners() {
 
-    //levelChart.addPickListener(this);
-    levelChart.getChart().addMouseListener(mouseAdapter);
+    levelChart.addPickListener(this);
+      //levelChart.getChart().addMouseListener(mouseAdapter);
     refillChart.addPickListener(this);
     demandChart.addPickListener(this);
   }
@@ -500,11 +501,14 @@ public class MultiChartPanel extends JPanel
     }
 
 
+
     //The OrgActivityChart seems to be stealing picks
     //from the InventoryLevelChart data.  Turn about is fair play.
+    /**  MWD disabled when inventory chart became a bar chart.
     if (dataModel instanceof OrgActivityChartDataModel) {
       logger.warn("Still getting events from OrgActivityChartDataModel!");
     }
+    **/
 
 
     // user has picked a valid point
