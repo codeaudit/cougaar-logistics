@@ -24,6 +24,7 @@ package org.cougaar.logistics.ui.inventory.data;
 import java.io.Writer;
 import java.util.Enumeration;
 
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
@@ -41,12 +42,16 @@ public class InventoryData {
     
     protected String    item;
     protected String    org;
+    protected String    unit;
+    protected long      startCDay;
 
     protected Hashtable schedules;
 
-    public InventoryData(String itemName,String anOrg) {
+    public InventoryData(String itemName,String anOrg,String aUnit,long aStartCDay) {
 	item = itemName;
 	org = anOrg;
+	unit = aUnit;
+	startCDay = aStartCDay;
 	schedules = new Hashtable(20);
     }
 
@@ -55,10 +60,13 @@ public class InventoryData {
     }
 
     public Hashtable getSchedules() { return schedules; }
+    public String getUnit() { return unit; }
+    public long getStartCDay() { return startCDay; }
 
     public void writeHRString(Writer writer) throws java.io.IOException {
 	writer.write("<" + LogisticsInventoryFormatter.INVENTORY_DUMP_TAG +
-		     " org=" + org + " item=" + item + ">\n");
+		     " org=" + org + " item=" + item + " unit=" + unit +
+		     " cDay=" + new Date(startCDay) +">\n");
 
 	for(int i=1; i <= 5; i++) {
 	    Enumeration e = getSchedules().elements();
