@@ -54,6 +54,9 @@ import org.cougaar.core.component.ServiceBroker;
 
 public class ExternalAllocator extends InventoryModule implements AllocatorModule {
 
+  private static int WARNING_SUPPRESSION_INTERVAL = 2;
+  private long warningCutoffTime = 0;
+
   Role providerRole;
   /** list of nsn's with no resupply point */
   private Vector noResupply;
@@ -156,7 +159,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
     Enumeration support_orgs;
     if (getTaskUtils().isProjection(task)) {
       /* For a projection, should be time-phased as support
-      changes over time. We ignore that, for now */
+         changes over time. We ignore that, for now */
       support_orgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(),
                                                        providerRole,
                                                        getTaskUtils().getStartTime(task),
@@ -171,30 +174,52 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
       return (Organization)support_orgs.nextElement();
     }
     else {
-      String itemId = task.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
       if (getTaskUtils().isProjection(task)) {
-        logger.warn("No "+providerRole+" for task " + task.getUID() + ", during ["+
-                    getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
-                    "-" +
-                    getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]"+". Will retry.");
+        stagedErrorLog("No "+providerRole+" for projection task " + task.getUID() + ", during ["+
+                      getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
+                      "-" +
+                      getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]"+". Will retry.");
       } else {
-        logger.warn("No "+providerRole+" for task " + task.getUID() + ", during "+
-                    getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
+        stagedErrorLog("No "+providerRole+" for task " + task.getUID() + ", during "+
+                      getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
       }
-      // prevents same error message from being printed many times.
-// 	    if (!noResupply.contains(itemId)) {
-// 		logger.debug("findBestSource() <"+ providerRole +
-// 			   "> allocateRefillTask no best source for "+itemId);
-// 		noResupply.addElement(itemId);
-// 	    }
     }
     return null;
+  }
+
+  private long getWarningCutOffTime() {
+    if (warningCutoffTime == 0) {
+//       WARNING_SUPPRESSION_INTERVAL = Integer.getInteger(QUERY_GRACE_PERIOD_PROPERTY,
+// 							WARNING_SUPPRESSION_INTERVAL).intValue();
+      warningCutoffTime = System.currentTimeMillis() + WARNING_SUPPRESSION_INTERVAL*60000;
+    }
+
+    return warningCutoffTime;
+  }
+
+  private void stagedErrorLog(String message) {
+    stagedErrorLog(message, null);
+  }
+
+  private void stagedErrorLog(String message, Throwable e) {
+
+    if(System.currentTimeMillis() > getWarningCutOffTime()) {
+      if (e == null)
+	logger.error(inventoryPlugin.getClusterId().toString() + message);
+      else
+	logger.error(inventoryPlugin.getClusterId().toString() + message, e);
+    } else if (logger.isInfoEnabled()) {
+      if (e == null)
+	logger.info(inventoryPlugin.getClusterId().toString() + message);
+      else
+	logger.info(inventoryPlugin.getClusterId().toString() + message, e);
+    }
   }
 
   private boolean verifyBeforeAllocation(Task task, Organization org) {
     // Do not allocate tasks after they have taken place-AF does this make sense?
     if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
-      logger.warn("verifyBeforeAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
+      logger.warn("verifyBeforeAllocation: return ... after commitment "+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
       // too late to change
       return false;
     }
