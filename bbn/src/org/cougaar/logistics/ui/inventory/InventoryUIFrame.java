@@ -488,6 +488,7 @@ public class InventoryUIFrame extends JFrame
         dataSource = fm;
       }
     }
+    String lastGoodXML=null;
     for (int i = 0; i < openFiles.length; i++) {
       File openFile = openFiles[i];
       invXML = "";
@@ -496,16 +497,32 @@ public class InventoryUIFrame extends JFrame
 
         String nextLine = br.readLine();
         while (nextLine != null) {
-          invXML = invXML + nextLine + "\n";
-          nextLine = br.readLine();
+	    if(!nextLine.trim().equals("")) {
+		invXML = invXML + nextLine + "\n";
+	    }
+	    nextLine = br.readLine();
+
         }
         br.close();
       } catch (IOException ioe) {
         throw new RuntimeException(ioe);
       }
 
-      inventory = parser.parseString(invXML);
-      fm.addItem(inventory, invXML);
+      if(invXML.trim().equals("")) {
+	  displayErrorString("Empty File!","File " + openFile.getName() + " has no contents!");
+	  if(lastGoodXML != null) {
+	      invXML=lastGoodXML;
+	      inventory = parser.parseString(invXML);
+	  }
+	  else {
+	      inventory=null;	
+	  }
+      }
+      else {
+	  inventory = parser.parseString(invXML);
+	  fm.addItem(inventory, invXML);
+          lastGoodXML=invXML;
+      }
     }
     try {
       SwingUtilities.invokeAndWait(new FlushXMLToScreenRunnable(invXML, openFiles, fm));
@@ -609,7 +626,11 @@ public class InventoryUIFrame extends JFrame
   }
 
   private static void displayErrorString(String reply) {
-    JOptionPane.showMessageDialog(null, reply, reply,
+      displayErrorString(reply,reply);
+  }
+
+  private static void displayErrorString(String title, String reply) {
+    JOptionPane.showMessageDialog(null, reply, title,
                                   JOptionPane.ERROR_MESSAGE);
   }
 
