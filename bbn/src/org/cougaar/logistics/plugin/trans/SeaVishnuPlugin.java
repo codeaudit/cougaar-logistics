@@ -45,10 +45,82 @@ import org.cougaar.glm.util.GLMPrepPhrase;
  * adds information specific to the ship packing problem.
  */
 public class SeaVishnuPlugin extends GenericVishnuPlugin {
+  protected int SUB_PROCESS_SIZE;
+
   public void localSetup () {
     super.localSetup ();
 
+    try {
+      SUB_PROCESS_SIZE = (getMyParams().hasParam ("SUB_PROCESS_SIZE")) ?
+	getMyParams().getIntParam("SUB_PROCESS_SIZE") : 100;
+    } catch (Exception bogus) { error ("got bogus, never happen exception " + bogus); }
+
     glmPrepHelper = new GLMPrepPhrase (logger);
+  }
+
+  Comparator tasksComparator = new TaskSorter();
+
+  /**
+   * Sort first by arrival time, then by UID.
+   *
+   * If don't sort by UID, throws away subsequently added tasks with same
+   * arrival times are previous ones...
+   */
+  class TaskSorter implements Comparator {
+    public int compare (Object obj1, Object obj2) {
+      Task t1 = (Task) obj1;
+      Task t2 = (Task) obj2;
+      long best1 = prefHelper.getBestDate (t1).getTime();
+      long best2 = prefHelper.getBestDate (t2).getTime();
+      if (best1 < best2)
+	return -1;
+      else if (best1 > best2)
+	return 1;
+      
+      return t1.getUID().compareTo (t2.getUID());
+    }
+
+    public boolean equals (Object obj1, Object obj2) {
+      Task t1 = (Task) obj1;
+      Task t2 = (Task) obj2;
+      return (t1.equals (t2));
+    }
+  }
+
+  /**
+   * This avoid n^2 problem with prerequisite calculations within Vishnu!
+   */
+  public void processTasks (List tasks) {
+    // make a sorted set of tasks, sorted by best arrival time
+    SortedSet sorted = new TreeSet (tasksComparator);
+    sorted.addAll (tasks);
+
+    if (isInfoEnabled ()) {
+      info ("processTasks - got " + tasks.size() + 
+	    " now has " + sorted.size() + 
+	    " sorted.");
+    }
+
+    List toProcess = new ArrayList(SUB_PROCESS_SIZE);
+    for (Iterator iter = sorted.iterator(); iter.hasNext(); ) {
+      toProcess.add (iter.next());
+      if (toProcess.size () == SUB_PROCESS_SIZE) {
+	if (isInfoEnabled ()) {
+	  info ("processing task sub set of size " + toProcess.size());
+	}
+
+	super.processTasks (toProcess);
+	toProcess.clear ();
+      }
+    }
+
+    if (!toProcess.isEmpty ()) {
+      if (isInfoEnabled ()) {
+	info ("at end, processing task sub set of size " + toProcess.size());
+      }
+
+      super.processTasks (toProcess);
+    }
   }
 
   /** 
