@@ -123,7 +123,7 @@ public class InventoryPlugin extends ComponentPlugin {
   public String         getSupplyType() {return supplyType; }
   private String getInventoryFileName() {return inventoryFile; }
   public Organization   getMyOrganization() {return myOrganization;}
-  public long getCurrentTimeMillis() { return currentTimeMillis());
+    public long getCurrentTimeMillis() { return currentTimeMillis(); }
 
     public boolean publishAdd(Object o) {
 	return getBlackboardService().publishAdd(o);
@@ -580,6 +580,7 @@ public class InventoryPlugin extends ComponentPlugin {
     Expansion expansion;
     NewWorkflow wf;
     ((NewTask) subtask).setParentTask(parent);
+    ((NewTask) subtask).setPlan(parent.getPlan());
     // Task has not been expanded, create an expansion
     if (pe == null) {
       RootFactory factory = getRootFactory();
@@ -614,9 +615,9 @@ public class InventoryPlugin extends ComponentPlugin {
 
   // called by the RefillGenerator to hook up the refill task to the maintain
   // inventory parent task and workflow.
-  public void publishRefillTask(Task task) {
+  public void publishRefillTask(Task task, Inventory inventory) {
     Task milTask = detReqHandler.findOrMakeMILTask(inventory,
-    detReqSubscription, aggMILSubscription);
+						   detReqSubscription, aggMILSubscription);
     publishAddToExpansion(milTask, task);
   }
 

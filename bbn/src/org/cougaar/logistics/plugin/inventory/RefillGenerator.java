@@ -76,7 +76,7 @@ public class RefillGenerator extends InventoryModule {
   public void calculateRefills(ArrayList touchedInventories, int advanceOrderTime,
                                     int orderFrequency, int maxLeadTime) {
     //should we push now to the end of today?
-    long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getcurrentTimeMillis());
+    long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
     long maxLeadDay = getTimeUtils().addNDays(today, maxLeadTime);
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
@@ -179,7 +179,7 @@ public class RefillGenerator extends InventoryModule {
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
 
-    inventoryPlugin.publishRefillTask(newRefill);
+    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
   }
 
     //USE V Scoring Function for now - check with Rusty about a better one.
@@ -220,18 +220,16 @@ public class RefillGenerator extends InventoryModule {
        if (myOrg == null) {
 	 logger.error("RefillGenerator can not got MyOrganization from the InventoryPlugin");
        }
-    } else {
-      return myOrg;
-    }
+    } 
+    return myOrg;
   }
 
   //Get the Org Name from my organization and keep it around.
   private String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    } else {
-       return myOrgName;
-    }
+    } 
+    return myOrgName;
   }
 
   // Get the default (home) location of the Org
