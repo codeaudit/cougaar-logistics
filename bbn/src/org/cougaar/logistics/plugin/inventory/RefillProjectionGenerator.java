@@ -426,25 +426,17 @@ public class RefillProjectionGenerator extends InventoryModule {
    **/
   private Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
     double ratevalue = refill_qty / (bucketMillis / getTimeUtils().MSEC_PER_DAY);
-    AspectRate lowAV, bestAV, highAV;
+    AspectRate bestAV;
     //highAV could be bumped to more than refill_qty + 1 if needed
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-      lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                             FlowRate.newGallonsPerDay(0.01));
       bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
                               FlowRate.newGallonsPerDay(ratevalue));
-      highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              FlowRate.newGallonsPerDay(ratevalue+1.0));
     } else {
-      lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                             CountRate.newEachesPerDay(0.01));
       bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
                               CountRate.newEachesPerDay(ratevalue));
-      highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              CountRate.newEachesPerDay(ratevalue+1.0));
     }
     ScoringFunction qtySF = ScoringFunction.
-	createVScoringFunction(lowAV, bestAV, highAV);
+	createStrictlyAtValue(bestAV);
     return  inventoryPlugin.getRootFactory().
 	newPreference(AlpineAspectType.DEMANDRATE, qtySF);
   }

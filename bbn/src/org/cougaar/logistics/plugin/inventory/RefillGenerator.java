@@ -296,16 +296,17 @@ public class RefillGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to create a Refill Quantity  preference
-   *  We use a V scoring function for this preference.
+   *  We use a Strictly At scoring function for this preference.
+   *  Note that out use of strictly at allows for multiple shipments as 
+   *  long as the total amount delivered meets the best quantity for this
+   *  preference inside the feasable delivery time (defined by the end_time
+   *  scoring function)
    *  @param refill_qty  The quantity we want for this Refill Task
    *  @return Preference  The new quantity preference for the Refill Task
    **/
   private Preference createRefillQuantityPreference(double refill_qty) {
-    AspectValue lowAV = new AspectValue(AspectType.QUANTITY, 0.01);
-    AspectValue bestAV = new AspectValue(AspectType.QUANTITY, refill_qty);
-    AspectValue highAV = new AspectValue(AspectType.QUANTITY, refill_qty+1.0);
     ScoringFunction qtySF = ScoringFunction.
-      createVScoringFunction(lowAV, bestAV, highAV);
+      createStrictlyAtValue(new AspectValue(AspectType.QUANTITY, refill_qty));
     return  inventoryPlugin.getRootFactory().
       newPreference(AspectType.QUANTITY, qtySF);
   }
