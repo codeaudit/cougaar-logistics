@@ -173,7 +173,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
   private long ost;
   private static AllocationResultAggregator projectionARA = new ProjectionARA();
   private static AllocationResultAggregator supplyARA = new SupplyARA();
-  private static final long COMMS_UP_DELAY = 240000L; // 4 minutes
+  private static final long COMMS_UP_DELAY = 120000L; // 2 minutes
   private MessageAddress clusterId;
   private TaskUtils taskUtils = getTaskUtils();
 
