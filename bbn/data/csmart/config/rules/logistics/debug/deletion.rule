@@ -1,0 +1,14 @@
+####################################################
+# Add Deletion to every agent in society
+
+task_deletion = "org.cougaar.planning.plugin.deletion.TaskDeletionPlugin"
+
+society.each_agent do |agent|
+  agent.add_component do |c|
+    c.classname = task_deletion
+    c.add_argument("archivingEnabled=false")
+    c.add_argument("deletionPeriod=259200000")
+    c.add_argument("deletionDelay=259200000")
+  end
+end
+
