@@ -22,9 +22,9 @@
 
 package org.cougaar.logistics.servlet;
 
-import org.cougaar.core.agent.service.alarm.ExecutionTimer;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.servlet.ComponentServlet;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.servicediscovery.description.AvailabilityChangeMessage;
@@ -52,13 +52,23 @@ import java.util.List;
 public class AvailabilityServlet extends ComponentServlet implements BlackboardClient {
 
   private BlackboardService blackboard;
+  private AlarmService alarmService;
   private List registeredRoles;
   private final static String PATH = "/availabilityServlet";
-  private final static String ROLE_PARAMETER = "role";
-  private final static String AVAILABILITY_PARAMETER = "Availability";
-  private final static String START_DATE_PARAMETER = "startdate";
-  private final static String END_DATE_PARAMETER = "enddate";
+  private final static String ROLE = "role";
+  private final static String AVAILABILITY = "Availability";
+  private final static String START_DATE = "startdate";
+  private final static String END_DATE = "enddate";
+  private final static String ACTION_PARAM = "action";
+  private final static String PUBLISH = "Publish All Rows";
+  private final static String ADD = "Add";
+  private final static String CLEAR = "clear";
+  private final static String Clear_Selected_Rows = "Clear Selected Rows";
+
+  private List changeMessages = new ArrayList();
   private static Logger logger = Logging.getLogger(AvailabilityServlet.class);
+  private PrintWriter out;
+  private HttpServletRequest request;
 
   public void init() {
     // get the blackboard service
@@ -66,6 +76,10 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
                                                               BlackboardService.class, null);
     if (blackboard == null) {
       throw new RuntimeException("Unable to obtain blackboard service");
+    }
+    alarmService = (AlarmService) serviceBroker.getService(this, AlarmService.class, null);
+    if (alarmService == null) {
+      throw new RuntimeException("Unable to set alarm service");
     }
   }
 
@@ -89,7 +103,8 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   // BlackboardClient method:
   public long currentTimeMillis() {
-    return new ExecutionTimer().currentTimeMillis();
+    return alarmService.currentTimeMillis();
+    //return new ExecutionTimer().currentTimeMillis();
   }
 
   UnaryPredicate availabilityPred = new UnaryPredicate() {
@@ -100,15 +115,14 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   public void doGet(HttpServletRequest req,
                     HttpServletResponse res) throws IOException {
-
-    //myOrg = getMyOrganization();
+    out = res.getWriter();
+    request = req;
     registeredRoles = getProviderRoles();
-    PrintWriter out = res.getWriter();
-    Collection col;
-    String start_date_string = req.getParameter(START_DATE_PARAMETER);
-    String end_date_string = req.getParameter(END_DATE_PARAMETER);
-    String role = req.getParameter(ROLE_PARAMETER);
-    String available = req.getParameter(AVAILABILITY_PARAMETER);
+    String start_date_string = request.getParameter(START_DATE);
+    String end_date_string = request.getParameter(END_DATE);
+    String role = request.getParameter(ROLE);
+    String available = request.getParameter(AVAILABILITY);
+    String action = request.getParameter(ACTION_PARAM);
     boolean isAvailable = true;
     if (available != null) {
       isAvailable = available.equals("available");
@@ -123,40 +137,38 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
       start_date = dateFormat.parse(start_date_string, new ParsePosition(0));
     }
     long now = currentTimeMillis();
-    printTitles(out);
-    printInfo(now, out);
+    printTitles();
+    printInfo(now);
+    Collection col;
     try {
       blackboard.openTransaction();
       col = blackboard.query(availabilityPred);
       blackboard.closeTransaction();
-      if (!col.isEmpty()) {
-        Iterator it = col.iterator();
-        AvailabilityChangeMessage message = (AvailabilityChangeMessage) it.next();
-        printChangeInfo(message, false, out);
-
+      if (! col.isEmpty()) {
+        // TODO:  Need to change this behavior -- not sure to what yet
+        printChangeInfo(col, false);
       } else {
-        if (end_date_string == null) {
-          printForm(req, out);
-        } else if (end_date == null) {
-          printError("Could not read date; try again.", out);
-          printForm(req, out);
-        } else if (end_date.getTime() < now) {
-          printError("End date must be in the future; try again.", out);
-          printForm(req, out);
-        } else {
-          MutableTimeSpan span = new MutableTimeSpan();
-          span.setTimeSpan(start_date.getTime(), end_date.getTime());
-          AvailabilityChangeMessage message = new AvailabilityChangeMessage(Role.getRole(role),
-                                                                            false, span,
-                                                                            isAvailable);
-          blackboard.openTransaction();
-          blackboard.publishAdd(message);
-          blackboard.closeTransaction();
-          printChangeInfo(message, true, out);
+        if (action == null) {
+          printForm();
+        }
+        else if (action.equals(ADD)) {
+          if (end_date == null) {
+            printError("Could not read date; try again.");
+            printForm();
+          } else if (end_date.getTime() < now) {
+            printError("End date must be in the future; try again.");
+            printForm();
+          } else {
+            addChangeMessage(start_date, end_date, role, isAvailable);
+          }
+        } else if (action.equals(Clear_Selected_Rows)) {
+          clearSelectedRows();
+        } else if (action.equals(PUBLISH)) {
+          publish();
         }
       }
     } catch (Exception e) {
-      printError("Servlet error: " + e, out);
+      printError("Servlet error: " + e);
     } finally {
       if (blackboard.isTransactionOpen()) {
         blackboard.closeTransactionDontReset();
@@ -164,6 +176,37 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
       out.println("</body>");
       out.flush();
     }
+  }
+
+  private void clearSelectedRows() {
+    String paramValues [] = request.getParameterValues(CLEAR);
+    for(int i = 0; i < paramValues.length; i++) {
+      int index = Integer.parseInt(paramValues[i]);
+      changeMessages.remove(index);
+    }
+    printForm();
+    printSelections();
+  }
+
+  private void addChangeMessage(Date start_date, Date end_date, String role, boolean available) {
+    printForm();
+    MutableTimeSpan span = new MutableTimeSpan();
+    span.setTimeSpan(start_date.getTime(), end_date.getTime());
+    AvailabilityChangeMessage message = new AvailabilityChangeMessage(Role.getRole(role),
+                                                                      false, span,
+                                                                      available);
+    changeMessages.add(message);
+    printSelections();
+  }
+
+  private void publish() {
+    blackboard.openTransaction();
+    for (Iterator iterator = changeMessages.iterator(); iterator.hasNext();) {
+      AvailabilityChangeMessage acm = (AvailabilityChangeMessage) iterator.next();
+      blackboard.publishAdd(acm);
+    }
+    printChangeInfo(changeMessages, true);
+    blackboard.closeTransaction();
   }
 
   private List getProviderRoles() {
@@ -177,13 +220,13 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     return roles;
   }
 
-  private void printTitles(PrintWriter out) {
+  private void printTitles() {
     String title = "Availability  Servlet";
     out.println("<HEAD><TITLE>" + title + "</TITLE></HEAD>" +
                 "<BODY><H1>" + title + "</H1>");
   }
 
-  private void printInfo(long now, PrintWriter out) {
+  private void printInfo(long now) {
     String localAgent = getEncodedAgentName();
     out.println("<p>\n" +
                 "Agent: " + localAgent +
@@ -191,65 +234,110 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
                 "Current Society Time: " + new Date(now));
   }
 
-  private void printForm(HttpServletRequest req, PrintWriter out) {
-    String tableHeader;
-    StringBuffer optionString = new StringBuffer();
-    StringBuffer elements = new StringBuffer();
-
-    tableHeader = "<p>\n" + "<table border>"
-        + "<tr><th colspan=1>" + "Registered Roles" + "</th>" + "<th colspan=1>"
-        + "Clients" + "</th></tr>";
+  private void printForm() {
+    // Display the registered roles in a table
+    out.print("<p>\n" + "<table border>"
+              + "<tr><th colspan=1>" + "Registered Provider Roles" + "</th>" + "<th colspan=1>"
+              + "Active Contracts" + "</th></tr>");
     Iterator iter = registeredRoles.iterator();
+    StringBuffer roleOptions = new StringBuffer();
     while (iter.hasNext()) {
       Role role = (Role) iter.next();
       String client = "No";
       if (hasServiceContract(role)) {
         client = "Yes";
       }
-      elements.append("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
-      optionString.append("<option value=\"" + role + "\">" + role + "</option>" + "\n");
+      out.print("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
+      roleOptions.append("<option value=\"" + role + "\">" + role + "</option>" + "\n");
     }
-    out.print(tableHeader + elements.toString() + "</table>");
+    out.print("</table>");
     out.print("<form method=\"GET\" action=\"" +
-              req.getRequestURI() +
+              request.getRequestURI() +
               "\">\n" +
               "Select role: " +
-              "<select size=1 name=\"" + ROLE_PARAMETER + "\">\n" +
-              optionString.toString() +
+              "<select size=1 name=\"" + ROLE + "\">\n" +
+              roleOptions.toString() +
               "</select>" +
-              "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"available\">Available" +
-              "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"unavailable\">Unavailable<BR>" +
+              "<input type=radio name=\"" + AVAILABILITY + "\" value=\"available\">Available" +
+              "<input type=radio name=\"" + AVAILABILITY + "\" value=\"unavailable\">Unavailable<BR>" +
               "<p>Enter new start date (MM/DD/YYYY): " +
-              "<input type=\"text\" name=\"" + START_DATE_PARAMETER + "\" size=40>\n" +
+              "<input type=\"text\" name=\"" + START_DATE + "\" size=40>\n" +
               "</select>" +
               "<p>Enter new end date (MM/DD/YYYY): " +
-              "<input type=\"text\" name=\"" + END_DATE_PARAMETER + "\" size=40>\n" +
-              "<p><input type=\"submit\" value=\"Submit\">\n" +
+              "<input type=\"text\" name=\"" + END_DATE + "\" size=40>\n" +
+              "<p><input type=submit name=\"" + ACTION_PARAM + "\" value=\"" + ADD + "\">\n" +
               "</form>\n");
+    //printSelections(out);
   }
 
-  private void printChangeInfo(AvailabilityChangeMessage message, boolean newChange, PrintWriter out) {
-    out.println("<p>\n");
-    if (newChange) {
-      out.println("Successfully posted availability change:");
-    } else {
-      out.println("Availability already changed:");
+  private void printSelections() {
+    if (changeMessages.size() == 0) {
+      return;
     }
-    out.println("<ul><li>Role: " + message.getRole() +
-                "<li>Available: " + message.isAvailable() +
-                "<li>Start Date: " + new Date(message.getTimeSpan().getStartTime()) +
-                "<li>End Date: " + new Date(message.getTimeSpan().getEndTime()) +
-                "<li>Registry Updated: " + message.isRegistryUpdated() +
-                "</ul>");
+    out.print("<form method=\"GET\" action=\"" +
+              request.getRequestURI() +
+              "\">\n");
+    // Table column headers
+    out.print("<p>\n" + "<table border>" + "<tr>" +
+              "<th colspan=1>"+ "Role" + "</th>" +
+              "<th colspan=1>" + "Availability" + "</th>" +
+              "<th colspan=1>" + "Start" + "</th>" +
+              "<th colspan=1>" + "End" + "</th>" +
+              "<th colspan=1>" + "Clear Row" + "</th>" +
+              "</tr>");
+
+    // table row elements
+    for (int i = 0; i < changeMessages.size(); i++) {
+      AvailabilityChangeMessage acm = (AvailabilityChangeMessage) changeMessages.get(i);
+      out.print("<tr>" +
+                "<td>" + acm.getRole().toString() + "</td>" +
+                "<td>" + getAvailabilityString(acm.isAvailable()) + "</td>" +
+                "<td>" + new Date(acm.getTimeSpan().getStartTime()).toString() + "</td>" +
+                "<td>" + new Date(acm.getTimeSpan().getEndTime()).toString() + "</td>" +
+                "<td>" + "<input type=checkbox name=\""+ CLEAR
+                + "\" value=\""+ i + "\">Clear" + "</td>" +
+                "</tr>");
+    }
+    out.print("<tr><td colspan=5 align=right><input type=submit name=\"" + ACTION_PARAM + "\" value=\""
+              + Clear_Selected_Rows + "\">\n");
+    out.println("</td></tr>");
+    out.print("</table>");
+    out.print("<p><input type=submit name=\"" + ACTION_PARAM + "\" value=\"" + PUBLISH + "\">\n");
+    out.print("</form>");
   }
 
-  private void printError(String text, PrintWriter out) {
+  private void printChangeInfo(Collection messages, boolean newChange) {
+    if (newChange) {
+      out.println("<p>\n");
+      out.println("Successfully posted availability change:");
+      for (Iterator iterator = messages.iterator(); iterator.hasNext();) {
+        AvailabilityChangeMessage message = (AvailabilityChangeMessage) iterator.next();
+        out.println("<ul><li>Role: " + message.getRole() +
+                    "<li>Available: " + getAvailabilityString(message.isAvailable()) +
+                    "<li>Start Date: " + new Date(message.getTimeSpan().getStartTime()) +
+                    "<li>End Date: " + new Date(message.getTimeSpan().getEndTime()) +
+                    "<li>Registry Updated: " + message.isRegistryUpdated() +
+                    "</ul>");
+      }
+    } else {
+      printForm();
+    }
+  }
+
+  private void printError(String text) {
     out.println("<p>\n" +
                 "<b>" + text + "</b>" +
                 "<p>");
   }
 
-  private boolean hasServiceContract(Role role) {
+  private String getAvailabilityString(boolean available) {
+    if (available == true) {
+      return "Available";
+    }
+    else return "Unavailable";
+  }
+
+   private boolean hasServiceContract(Role role) {
     blackboard.openTransaction();
     Collection serviceContracts = blackboard.query(serviceContractRelayPred);
     blackboard.closeTransaction();
