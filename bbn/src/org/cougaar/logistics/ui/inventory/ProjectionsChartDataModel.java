@@ -204,8 +204,8 @@ public class ProjectionsChartDataModel
 		if(graphDay < nValues)
 		    projYValues[0][graphDay]+=task.getDailyRate();
 		else {
-		    if(logger.isWarnEnabled()) {
-			logger.warn("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+		    if(logger.isInfoEnabled()) {
+			logger.info("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
 		    }
 		}
 	    }
@@ -225,8 +225,8 @@ public class ProjectionsChartDataModel
 		    if(graphDay < nValues)
 			projYValues[1][graphDay]+=ar.getDailyRate();
 		    else {
-			if(logger.isWarnEnabled()) {
-			    logger.warn("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+			if(logger.isInfoEnabled()) {
+			    logger.info("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
 			}
 		    }
 		}	    
