@@ -40,6 +40,7 @@ import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.*;
 import org.cougaar.glm.ldm.asset.*;
+import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
@@ -103,6 +104,7 @@ public class InventoryPlugin extends ComponentPlugin
   private RefillProjectionGeneratorModule refillProjGenerator;
   private ComparatorModule refillComparator;
   private AllocationAssessor allocationAssessor;
+  private LogisticsPlanModule logisticsPlan;
   protected long startTime;
   private long cycleStamp;
   protected boolean logToCSV = false;
@@ -156,6 +158,7 @@ public class InventoryPlugin extends ComponentPlugin
     refillProjGenerator = getRefillProjectionGeneratorModule();
     refillComparator = getComparatorModule();
     allocationAssessor = new AllocationAssessor(this, getRole(supplyType));
+    logisticsPlan = new LogisticsPlan(getAgentIdentifier());
     inventoryHash = new HashMap();
     //    inventoryInitHash = new HashMap();
     touchedInventories = new HashSet();
@@ -360,36 +363,11 @@ public class InventoryPlugin extends ComponentPlugin
       initialized = true;
     }
 
-    // Bug #13532
-    // Specific rehydration bug - if orgAct subscription is empty then we do not yet have
-    // an arrival or end time.  The very next section of code calls resetLogOPlanForInventories()
-    // which sets touchedChangedProjections to true.  This will cause the refillGenerators to 
-    // rerun and result in an IllegalArgumentException from MutableTimeSpan because of bad dates.
-    // Temporary PAD fix.  This fix could also cause lost demand if a customer got its orgActs
-    // before this agent.  The supplyExpander obviously will not run.
-    if (orgActSubscription.isEmpty()) {
-      if (logger.isWarnEnabled()) {
-        if ((projectionTaskScheduler.getAddedCollection().size() > 0) ||
-            (supplyTaskScheduler.getAddedCollection().size() > 0)) {
-          logger.warn(myOrgName+" - Bug #13532 - Execute cycle terminated, missing OrgActs. "+
-                      "Sizeof incoming Projections subscription "+
-                      projectionTaskScheduler.getAddedCollection().size()+
-                      ".  Sizeof incoming Actuals subscription "+
-                      supplyTaskScheduler.getAddedCollection().size());
-        }
-      }
-      return;
-    }
 
-    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
-      Collection c = logisticsOPlanSubscription.getCollection();
-      for (Iterator i = c.iterator(); i.hasNext();) {
-        logOPlan = (LogisticsOPlan) i.next();
-        //        System.out.println("logOplan in :" + getAgentIdentifier().toString() +
-        //                   " is: " + logOPlan);
-        resetLogOPlanForInventories();
-        break;
-      }
+    logOPlan = logisticsPlan.updateOrgActivities(oplanSubscription, orgActSubscription);
+
+    if ((logOPlan != null) && orgActSubscription.hasChanged()) {
+      resetLogOPlanForInventories();
     }
 
     // if our top level MI task got removed, clean out the references .
@@ -1070,8 +1048,8 @@ public class InventoryPlugin extends ComponentPlugin
   /** Subscription for InventoryPolicy **/
   private IncrementalSubscription inventoryPolicySubscription;
 
-  /** Subscription for LogisticsOPlan object **/
-  private IncrementalSubscription logisticsOPlanSubscription;
+  /** Subscription for OPlan object **/
+  private IncrementalSubscription oplanSubscription;
 
   /** Subscription for Withdraw tasks created by this plugin **/
   private IncrementalSubscription withdrawTaskSubscription;
@@ -1144,7 +1122,8 @@ public class InventoryPlugin extends ComponentPlugin
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
     inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
-    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+    oplanSubscription = (IncrementalSubscription) blackboard.subscribe(new OplanPredicate());
+    //logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
     withdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new WithdrawPredicate(supplyType));
     projectWithdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new ProjectWithdrawPredicate(supplyType));
     MIExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new MIExpansionPredicate(supplyType, taskUtils));
@@ -1427,11 +1406,11 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   /**
-   Selects the LogisticsOPlan objects
+   Selects the Oplan objects
    **/
-  private static class LogisticsOPlanPredicate implements UnaryPredicate {
+  private static class OplanPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
-      return o instanceof LogisticsOPlan;
+      return o instanceof Oplan;
     }
   }
 

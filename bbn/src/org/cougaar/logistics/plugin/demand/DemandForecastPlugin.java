@@ -32,6 +32,7 @@ import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.DomainService;
+import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.QuiescenceReportService;
 import org.cougaar.core.service.AgentIdentificationService;
@@ -43,6 +44,8 @@ import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
+import org.cougaar.logistics.plugin.inventory.LogisticsPlanModule;
+import org.cougaar.logistics.plugin.inventory.LogisticsPlan;
 import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
@@ -77,6 +80,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     implements UtilsProvider {
 
   private DomainService domainService;
+  private AgentIdentificationService ais;
   private LoggingService logger;
   private TaskUtils taskUtils;
   private TimeUtils timeUtils;
@@ -88,6 +92,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   private HashMap subToPGsHash;
   private HashMap predToSubHash;
   private boolean rehydrate = false;
+
+  private boolean dfpQuiescenceState = true;
 
   private String supplyType;
   private Class supplyClassPG;
@@ -101,6 +107,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   private boolean turnOffTaskSched=false;
 
   private boolean processedDetReq = false;
+
+  private LogisticsPlanModule logisticsPlan;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String SUPPLY_PG_CLASS = "SUPPLY_PG_CLASS";
@@ -124,6 +132,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     determineRequirementsExpander = getDetermineRequirementsExpanderModule();
     generateProjectionsExpander = getGenerateProjectionsExpanderModule();
 
+    logisticsPlan = new LogisticsPlan(getAgentIdentifier());
 
     pgToPredsHash = new HashMap();
     pgToGPTaskHash = new HashMap();
@@ -142,6 +151,10 @@ public class DemandForecastPlugin extends ComponentPlugin
                                             domainService = null;
                                         }
                                       });
+
+    ais = (AgentIdentificationService)
+      getServiceBroker().getService(this, AgentIdentificationService.class, null);
+
     //   System.out.println("\n LOADING DemandForecastPlugin of type: " + supplyType +
 //  		       "in org: " + getAgentIdentifier().toString() +
 //    		       " this plugin is: " + this);
@@ -232,16 +245,13 @@ public class DemandForecastPlugin extends ComponentPlugin
       processedDetReq = (!(detReqTask.getPlanElement() == null));
 
 
-
-
       //There should be both a determineRequirements task
       //and an oplan before kicking off the expander for the first time.
       //from then on out we should be catching additional assets added, or removed.
       //It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
 
       //if there is a new determine requirements task or new oplan do this
-      if (((!orgActivities.getAddedCollection().isEmpty()) &&
-          (!processedDetReq)) ||
+      if (((!orgActivities.getAddedCollection().isEmpty()) && (!processedDetReq))  ||
           (!detReqSubscription.getAddedCollection().isEmpty())) {
         processDetReq(detReqSubscription,
                       assetsWithPGSubscription);
@@ -250,7 +260,8 @@ public class DemandForecastPlugin extends ComponentPlugin
       else if (!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
         processDetReq(detReqSubscription,
                       assetsWithPGSubscription.getAddedCollection());
-      } else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
+      } 
+      else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
         removeFromDetReq(detReqSubscription,
                          assetsWithPGSubscription.getRemovedCollection());
       }
@@ -270,35 +281,33 @@ public class DemandForecastPlugin extends ComponentPlugin
                     " not ready to process tasks yet." +
                     " my org is: " + myOrganization);
       }
+      logger.error("DemandForecastPlugin: myOrganization is null, not ready to process tasks for " +ais.getMessageAddress().toString());
       return;
     }
 
     // get the Logistics OPlan (our homegrown version with specific dates).
-    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
-      Iterator opIt = logisticsOPlanSubscription.iterator();
-      if (opIt.hasNext()) {
-        //we only expect to have one
-        logOPlan = (LogisticsOPlan) opIt.next();
+    logOPlan = logisticsPlan.updateOrgActivities(oplanSubscription, allOrgActivities);
+
+    //Only after we have all the constituent parts to start going - oplan, orgActitivities, logOplan do we
+    //lay down
+    if (logOPlan != null) {
+      if(logOPlan.getArrivalTime() != Long.MIN_VALUE){
+        if((supplyClassPG != null) && (genProjTaskScheduler == null)) {
+          setupTaskScheduler();
+          //genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
+        }
       }
-      //Only after we have all the constituent parts to start going - oplan, orgActitivities, logOplan do we
-      //lay down
-      if (logOPlan != null) {
-	updateStartAndEndTimes();
-	if(logOPlan.getArrivalTime() != Long.MIN_VALUE){
-	   if((supplyClassPG != null) &&
-	      (genProjTaskScheduler == null)) {
-	       setupTaskScheduler();
-	       //          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
-	   }
-	}
-	else {
-	  logOPlan = null;
-	  return;
-	}
-      } else {// wait for logOPlan
-        logger.debug("orgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
+      else {
+        logOPlan = null;
+        if (logger.isDebugEnabled()) {
+          logger.debug("DemandForecastPlugin for " +ais.getMessageAddress().toString() 
+                       + " returning b/c logOPlan arrivalTime not set.");
+        }
+
         return;
       }
+    } else { // wait for logOPlan
+      return;
     }
 
 //    if (genProjSubscription != null) {
@@ -324,9 +333,6 @@ public class DemandForecastPlugin extends ComponentPlugin
 
       genProjTaskScheduler.finishedExecuteCycle();
     }
-    //if the determine requirements task has already fired we're this far down
-    //in the execute we should check the hash table subscriptions and see if
-    //we have to regenerate some of the expansions due to subscription changes.
     if (processedDetReq) {
       checkAndProcessHashSubscriptions(justExpandedPGs);
     }
@@ -356,7 +362,6 @@ public class DemandForecastPlugin extends ComponentPlugin
       rehydrateHashMaps();
       rehydrate = false;
     }
-
   }
 
 
@@ -368,7 +373,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private TaskScheduler genProjTaskScheduler;
   private IncrementalSubscription genProjPESubscription;
   private IncrementalSubscription projectSupplySubscription;
-  private IncrementalSubscription logisticsOPlanSubscription;
+  //private IncrementalSubscription logisticsOPlanSubscription;
 
   /** Subscription for the Organization(s) in which this plugin resides **/
   private IncrementalSubscription selfOrganizations;
@@ -408,21 +413,30 @@ public class DemandForecastPlugin extends ComponentPlugin
     genProjPESubscription = (IncrementalSubscription)
         blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
 
-    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+    //logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
 
   private void setupTaskScheduler() {
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
-    turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
+    if (taskScheduler != null) {
+      turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
+    }
+    else {
+      turnOffTaskSched = false;
+    }
     QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
-    AgentIdentificationService ais = (AgentIdentificationService)
-      getServiceBroker().getService(this, AgentIdentificationService.class, null);
+//     AgentIdentificationService ais = (AgentIdentificationService)
+//       getServiceBroker().getService(this, AgentIdentificationService.class, null);
     qrs.setAgentIdentificationService(ais);
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
+    String myId = getBlackboardClientName()+ais.getMessageAddress().toString()+supplyType+"DemandForecastPlugin";
+//     if (myId.endsWith("SubsistenceDemandForecastPlugin")) {
+//       logger.error ("DemandForecastPlugin created an id for TaskScheduler of :" +myId);
+//     }
     if (!turnOffTaskSched) {
-      if (logger.isInfoEnabled())
-        logger.info("DemandForecastor TASK SCHEDULER ON "+ ais.getMessageAddress().toString() + getSupplyType());
+      if (logger.isDebugEnabled())
+        logger.debug("DemandForecastor TASK SCHEDULER ON "+ ais.getMessageAddress().toString() + getSupplyType());
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open ("demandSchedPolicy.xml");
@@ -432,15 +446,15 @@ public class DemandForecastPlugin extends ComponentPlugin
       genProjTaskScheduler = new TaskScheduler
         (new GenProjPredicate (supplyType, taskUtils),
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
+         blackboard, q, logger,"GenProjs for " + getBlackboardClientName()+ais.getMessageAddress().toString()+supplyType+"DemandForecastPlugin");
     } else {
-      if (logger.isInfoEnabled())
-        logger.info("DemandForecastor TASK SCHEDULER OFF "+ ais.getMessageAddress().toString() + getSupplyType());
+      if (logger.isDebugEnabled())
+        logger.debug("DemandForecastor TASK SCHEDULER OFF "+ ais.getMessageAddress().toString() + getSupplyType());
      genProjTaskScheduler = new TaskScheduler
       (new GenProjPredicate (supplyType, taskUtils),
        new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
                                      {TaskSchedulingPolicy.PASSALL}),
-       blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
+       blackboard, q, logger,"GenProjs for " + getBlackboardClientName()+ais.getMessageAddress().toString()+supplyType+"DemandForecastPlugin");
     }
   }
 
@@ -849,7 +863,8 @@ public class DemandForecastPlugin extends ComponentPlugin
        TimeSpan projectSpan = new ScheduleElementImpl(getLogOPlanStartTime(),
 						      getLogOPlanEndTime());
        processSubscriptionChangedPG(filteredPGs,projectSpan);
-       genProjTaskScheduler.clearState();
+       //logger.error("About to call TS's clearState method for: " +getOrgName());
+       genProjTaskScheduler.clearState();  //????
       }
     }
   }
@@ -908,7 +923,9 @@ public class DemandForecastPlugin extends ComponentPlugin
   private void invokeGenProjectionsExp(PropertyGroup pg, Task genProj, TimeSpan projectSpan) {
     Collection pgInputs = getSubscriptions(pg);
     Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
-    generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject(), projectSpan);
+    if (paramSchedule != null) {
+      generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject(), projectSpan);
+    }
   }
 
   private void removeFromDetReq(Collection addedDRs, Collection removedAssets) {
@@ -1260,16 +1277,16 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
   }
 
-public class OrgActivityPredicate implements UnaryPredicate {
-  private static final String predString = "OrgActivityPredicate";
-  public boolean execute (Object o) {
-    if (o instanceof OrgActivity) {
+  public class OrgActivityPredicate implements UnaryPredicate {
+    private static final String predString = "OrgActivityPredicate";
+    public boolean execute (Object o) {
+      if (o instanceof OrgActivity) {
 	return true;
+      }
+      return false;
     }
-    return false;
   }
-}
-
+  
 
   /**
    Self-Test

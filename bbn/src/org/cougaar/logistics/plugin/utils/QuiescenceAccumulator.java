@@ -47,4 +47,5 @@ public class QuiescenceAccumulator {
     if (notQuiescent.isEmpty())
       quiescence.setQuiescentState();
   }
+  
 }

@@ -146,7 +146,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     ArrayList oldProjections = new ArrayList();
 
     //temp mwd
-    inventoryPlugin.updateStartAndEndTimes();
+//      inventoryPlugin.updateStartAndEndTimes();
 
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {

@@ -55,11 +55,12 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
     defensiveSchedule = ScheduleUtils.newObjectSchedule((new Vector()).elements());
   }
   public boolean updateOrgActivities(IncrementalSubscription orgActivitySubscription) {
-    boolean update = super.updateOrgActivities(orgActivitySubscription);
+    super.updateOrgActivities(orgActivitySubscription.elements());
+    super.updateOPlanTimes();
     updateArrivalInTheater(orgActivitySubscription);
     updateDefensiveSchedule(orgActivitySubscription);
 //     System.out.println("DEFENSIVE SCHEDULE : "+defensiveSchedule);
-    return update;
+    return true;
   }
 
   public void updateArrivalInTheater(IncrementalSubscription orgActivitySubscription) {

@@ -175,6 +175,7 @@ public class TaskScheduler {
     }
   }
 
+
   /**
    * Plugins call this at end of execute cycle
    */
@@ -182,9 +183,10 @@ public class TaskScheduler {
     if(logger.isDebugEnabled()) {
       logger.debug("in finishedExecuteCycle");
     }
-    if (isEmpty())
+    if (isEmpty()){
       return;
-    shiftCollections();
+    }
+    shiftCollections(); //lists might be cleared here
     currentPhase++;
     // only requeue for execution if more to do
     if (currentPhase < policy.getOrdering().length) {
@@ -237,6 +239,7 @@ public class TaskScheduler {
         removedLists[i][j].clear();
       }
     }
+    quiescence.setQuiescentState(this);
   }
 
   /** check if anything to do in this scheduler */
