@@ -27,61 +27,48 @@
 package org.cougaar.logistics.plugin.inventory;
 
 
-import org.cougaar.util.log.Logger;
-import org.cougaar.core.logging.NullLoggingServiceImpl;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.component.ServiceBroker;
-
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.planning.plugin.util.PluginHelper;
-import org.cougaar.util.MoreMath;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.planning.ldm.measure.*;
-import org.cougaar.planning.ldm.PlanningFactory;
-
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Vector;
-import java.io.Serializable;
-
-import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
-import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.packer.GenericPlugin;
+import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.measure.*;
+import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.util.MoreMath;
+import org.cougaar.util.log.Logger;
+
+import java.io.Serializable;
+import java.util.*;
 
 
 /** Provides convenience methods. */
 public class TaskUtils extends PluginHelper implements Serializable { // revisit making Serializable later...
 
-    private transient Logger logger;
-    private transient UtilsProvider utilProvider;
-    private transient AssetUtils assetUtils;
+  private transient Logger logger;
+  private transient UtilsProvider utilProvider;
+  private transient AssetUtils assetUtils;
 
-    public TaskUtils(UtilsProvider provider) {
-	super();
-	utilProvider = provider;
-	logger = (Logger)utilProvider.getLoggingService(this);
-	assetUtils = utilProvider.getAssetUtils();
-    }
+  public TaskUtils(UtilsProvider provider) {
+    super();
+    utilProvider = provider;
+    logger = (Logger)utilProvider.getLoggingService(this);
+    assetUtils = utilProvider.getAssetUtils();
+  }
 
 
 
-     public TaskUtils(Logger aLogger) {
-	super();
-	utilProvider = null;
-	logger = aLogger;
-	assetUtils = new AssetUtils(aLogger);
-    }
- /** @param t the task
+  public TaskUtils(Logger aLogger) {
+    super();
+    utilProvider = null;
+    logger = aLogger;
+    assetUtils = new AssetUtils(aLogger);
+  }
+  /** @param task the task
    *  @return true if the task has an packer INTERNAL prep phrase */
   public static boolean isInternal(Task task) {
     PrepositionalPhrase pp = task.getPrepositionalPhrase(GenericPlugin.INTERNAL);
@@ -89,7 +76,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       return false;
     }
     return true;
-   }
+  }
 
 
   /** @param t the task
@@ -101,14 +88,14 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (pp != null) {
       Object obj = pp.getIndirectObject();
       if (obj instanceof Asset) {
-	Asset a = (Asset)obj;
-	return a.getTypeIdentificationPG().getTypeIdentification().equals(type);
+        Asset a = (Asset)obj;
+        return a.getTypeIdentificationPG().getTypeIdentification().equals(type);
       } 
     }
     return false;
   }
 
- /** @param t the task
+  /** @param t the task
    *  @param type type identification string
    *  @return true if the task's OFTYPE preposition's indirect object is 
    *  an string with nomeclature equal to 'type'.*/
@@ -117,7 +104,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (pp != null) {
       Object obj = pp.getIndirectObject();
       if (obj instanceof String) {
-	return ((String)obj).equals(type);
+        return ((String)obj).equals(type);
       } 
     }
     return false;
@@ -133,16 +120,16 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     try {
       SupplyClassPG pg = (SupplyClassPG)asset.searchForPropertyGroup(SupplyClassPG.class);
       if (pg != null) {
-	result = type.equals(pg.getSupplyType());
-	if((result == true) && (type.equals("PackagedPOL")) && 
-	  asset.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
-	  logger.debug("\n direct object type... type for plugin is: " +
-		       type + "]" + " type for DO is: [" + pg.getSupplyType() + "]");
-	}
-	  
+        result = type.equals(pg.getSupplyType());
+        if((result == true) && (type.equals("PackagedPOL")) &&
+            asset.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
+          logger.debug("\n direct object type... type for plugin is: " +
+                       type + "]" + " type for DO is: [" + pg.getSupplyType() + "]");
+        }
+
       }
       else {
-	logger.debug("No SupplyClassPG found on asset "+ this.taskDesc(t));
+        logger.debug("No SupplyClassPG found on asset "+ this.taskDesc(t));
       }
     } catch (Exception e) {
       logger.error("Tasks DO is null "+ this.taskDesc(t)+"\n"+e);
@@ -154,30 +141,30 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
   public String taskDesc(Task task) {
     if (isProjection(task)) {
       return task.getUID() + ": "
-	+ task.getVerb()+"("+
-	  getDailyQuantity(task)+" "+
-	  getTaskItemName(task)+") "+
-	  getTimeUtils().
-	  dateString(new Date(getStartTime(task)))+
-	  "  -  " +
-	  getTimeUtils().
-	  dateString(new Date(getEndTime(task)));
+          + task.getVerb()+"("+
+          getDailyQuantity(task)+" "+
+          getTaskItemName(task)+") "+
+          getTimeUtils().
+          dateString(new Date(getStartTime(task)))+
+          "  -  " +
+          getTimeUtils().
+          dateString(new Date(getEndTime(task)));
     } else {
       return task.getUID() + ": "
-	+ task.getVerb()+"("+
-	  getQuantity(task)+" "+
-	  getTaskItemName(task)+") "+
-	  getTimeUtils().
-	  dateString(new Date(getEndTime(task)));
+          + task.getVerb()+"("+
+          getQuantity(task)+" "+
+          getTaskItemName(task)+") "+
+          getTimeUtils().
+          dateString(new Date(getEndTime(task)));
     }
   }
 
 
-    public String getTaskItemName(Task task){
-	Asset prototype = (Asset)task.getDirectObject();
-	if (prototype == null) return "null";
-	return assetUtils.assetDesc(prototype);
-    }
+  public String getTaskItemName(Task task){
+    Asset prototype = (Asset)task.getDirectObject();
+    if (prototype == null) return "null";
+    return assetUtils.assetDesc(prototype);
+  }
 
   public static boolean isMyRefillTask(Task task, String myOrgName) {
     PrepositionalPhrase pp =task.getPrepositionalPhrase(Constants.Preposition.REFILL);
@@ -192,7 +179,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (io instanceof String) {
       String orgName = (String)io;
       if ( orgName.equals(myOrgName)) {
-	return true;
+        return true;
       }
     }
     return false;
@@ -211,13 +198,13 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (io instanceof String) {
       String orgName = (String)io;
       if ( orgName.equals(myOrgName)) {
-	return true;
+        return true;
       }
     }
     return false;
   }
 
- public static boolean isMyInventoryProjection(Task task, String myOrgName) {
+  public static boolean isMyInventoryProjection(Task task, String myOrgName) {
     PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.FOR);
     if (pp == null) {
       return false;
@@ -226,16 +213,16 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (io instanceof String) {
       String orgName = (String)io;
       if ( orgName.equals(myOrgName)) {
-	pp = task.getPrepositionalPhrase(Constants.Preposition.MAINTAINING);
-	if (pp != null) {
-	  try {
-	    if (((MaintainedItem)pp.getIndirectObject()).getMaintainedItemType().equals("Inventory")) {
-	      return true;
-	    } 
-	  } catch (ClassCastException exc) {
-	    return false;
-	  }
-	}
+        pp = task.getPrepositionalPhrase(Constants.Preposition.MAINTAINING);
+        if (pp != null) {
+          try {
+            if (((MaintainedItem)pp.getIndirectObject()).getMaintainedItemType().equals("Inventory")) {
+              return true;
+            }
+          } catch (ClassCastException exc) {
+            return false;
+          }
+        }
       }
     }
     return false;
@@ -243,8 +230,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
 
   public boolean isReadyForTransport(Task task){
-      PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.READYFORTRANSPORT);
-      return (pp != null);
+    PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.READYFORTRANSPORT);
+    return (pp != null);
   }
 
   public boolean isMyDemandForecastProjection(Task task,String orgName) {
@@ -254,11 +241,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
     Object io = pp.getIndirectObject();
     if (io instanceof String) {
-        String taskOrg = (String) io;
-        if(taskOrg.equals(orgName)) {
-          pp = task.getPrepositionalPhrase(Constants.Preposition.REFILL);
-          return (pp == null);
-        }
+      String taskOrg = (String) io;
+      if(taskOrg.equals(orgName)) {
+        pp = task.getPrepositionalPhrase(Constants.Preposition.REFILL);
+        return (pp == null);
+      }
     }
     return false;
   }
@@ -296,12 +283,12 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   public static Preference createDemandRatePreference(PlanningFactory rf, Rate rate) {
     ScoringFunction sf = ScoringFunction
-      .createStrictlyAtValue(AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
-                                                        rate));
+        .createStrictlyAtValue(AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+                                                          rate));
     return rf.newPreference(AlpineAspectType.DEMANDRATE, sf);
   }
 
-    /**
+  /**
    * Compare the preferences of two tasks return true if the tasks
    * have preferences for the same aspect types and if all
    * corresponding AspectValues are nearly equal.
@@ -364,7 +351,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
-  /** 
+  /**
    * Given a Scalar, return a double value representing
    * Gallons for Volume,
    * Eaches for Count and
@@ -382,37 +369,37 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       logger.error("InventoryBG.getDouble(), Inventory cannot determine type of measure");
     }
     return result;
-  }	
+  }
 
   public static double getQuantity(AllocationResult ar) {
     return getARAspectValue(ar, AspectType.QUANTITY);
   }
 
-    // Hand in the demandRate from a phase of particular allocation result
-    // and its parent task.  This function basically handles the
-    // contained demand rate result and returns the corresponding
-    // daily rate.    If its fuel (FlowRate) that's already gallons
-    // per day, otherwise its eaches per millisecond and should be
-    // multiplied correspondingly.
+  // Hand in the demandRate from a phase of particular allocation result
+  // and its parent task.  This function basically handles the
+  // contained demand rate result and returns the corresponding
+  // daily rate.    If its fuel (FlowRate) that's already gallons
+  // per day, otherwise its eaches per millisecond and should be
+  // multiplied correspondingly.
   public double convertResultsToDailyRate(Task task, double demandRate) {
-      if(isProjection(task)) {
-	  Rate r = getRate(task);
-	  if(!(r instanceof FlowRate)) {
-	      return demandRate * TimeUtils.SEC_PER_DAY;
-	  }
+    if(isProjection(task)) {
+      Rate r = getRate(task);
+      if(!(r instanceof FlowRate)) {
+        return demandRate * TimeUtils.SEC_PER_DAY;
       }
-      return demandRate;
+    }
+    return demandRate;
   }
 
   public double getQuantity(Task task, AllocationResult ar) {
-      if(isProjection(task)) {
+    if(isProjection(task)) {
 // 	  logger.warn("TaskUtils::getting qty from projection!");
-	  return convertResultsToDailyRate(task,
-					   getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
-      }
-      else {
-	  return getQuantity(ar);
-      }
+      return convertResultsToDailyRate(task,
+                                       getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
+    }
+    else {
+      return getQuantity(ar);
+    }
   }
 
   public double getQuantity(Task task, AllocationResult ar, long time_spanned) {
@@ -431,13 +418,13 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     AspectValue[] avs = ar.getAspectValueResults();
     for (int ii = 0; ii < avs.length; ii++) {
       if (avs[ii].getAspectType() == AlpineAspectType.DEMANDRATE) {
-	return ((AspectRate)avs[ii]).getRateValue();
+        return ((AspectRate)avs[ii]).getRateValue();
       }
     }
     return null;
   }
 
-    public TimeUtils getTimeUtils() {return utilProvider.getTimeUtils();}
+  public TimeUtils getTimeUtils() {return utilProvider.getTimeUtils();}
 
   public static Collection getUnallocatedTasks(Collection tasks, Verb verb) {
     Iterator taskIt = tasks.iterator();
@@ -462,11 +449,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       Task task = (Task)iterator.next();
       try {
         os_elements.add(new ObjectScheduleElement(getStartTime(task),
-            getEndTime(task), task));
+                                                  getEndTime(task), task));
       } catch (IllegalArgumentException iae) {
         if (logger.isErrorEnabled()) {
           logger.error("newObjectSchedule failed, start and end time is " + new Date(getStartTime(task)) +
-              " for task " + task + "\n" + iae.getMessage());
+                       " for task " + task + "\n" + iae.getMessage());
         }
       }
     }
@@ -474,7 +461,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return s;
   }
 
-
+  
 
   /** Create String defining task identity. Defaults to comparing preferences.
    * @param prev_task previously published task.
@@ -496,7 +483,6 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
     return null;
   }
-
 }
 
 
