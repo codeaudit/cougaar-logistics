@@ -484,8 +484,14 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	//TaskToSSE.remove(uid);
 		
 	Task parenttask = getParentTask(t, uid);
-	//ChildToParentUID.remove(uid);
-	turnCrank(parenttask);
+	if (parenttask == null) {
+	    if (isInfoEnabled()) {
+		info(getName () + ".handleSuccessfulAlloc - no parent task of task " + t.getUID() + " must be during rescinds.  Skipping seq. planning."); 
+	    }
+	}
+	else {
+	    turnCrank(parenttask);
+	}
       }
     }
     if (isDebugEnabled()) debug(getName () + "---handleSuccessfulAlloc: E"); 		
