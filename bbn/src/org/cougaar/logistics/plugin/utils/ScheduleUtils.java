@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.logistics.plugin.demand;
+package org.cougaar.logistics.plugin.utils;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.PlanningFactory;
