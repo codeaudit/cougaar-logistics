@@ -124,6 +124,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
         if (!howToSplit.isEmpty()) {
           Collection newPartialTasks = getTaskUtils().splitProjection(task, howToSplit, inventoryPlugin);
           allocateRefillTasks(newPartialTasks);
+          return null;
         } else {
           logger.warn("No "+providerRole+" for task " + task.getUID() + ", during ["+
                     getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
@@ -143,8 +144,12 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 			}
 		    }
     // For now, returning the first supporting org during the time span
-    return (Organization)support_orgs.nextElement();
-			}
+    if (support_orgs.hasMoreElements()) {
+      return (Organization)support_orgs.nextElement();
+    } else {
+      return null;
+    }
+  }
 
   /** build Allocation with an estimated alloc result */
   private Allocation buildAllocation(Task t, Asset a, Role r)
