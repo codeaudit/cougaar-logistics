@@ -690,7 +690,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	sse = spe;
       }
       else {
-	if (isInfoEnabled()) {
+	if (isInfoEnabled() && (sse != null)) {
 	  info (getName () + ".getElement - schedule task " + spe.getTask().getUID () + " != examined task " + child.getUID());
 	}
       }
