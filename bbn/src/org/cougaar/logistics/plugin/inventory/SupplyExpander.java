@@ -272,16 +272,34 @@ public class SupplyExpander extends InventoryModule {
 
   public void updateChangedRequisitions(Collection tasks) {
     LogisticsInventoryPG thePG;
-    Task aTask;
+    Expansion exp;
+    Task task, supply;
     Iterator taskIter = tasks.iterator();
     while (taskIter.hasNext()) {
-      aTask = (Task)taskIter.next();
-      thePG = getLogisticsInventoryPG(aTask);
-      if (thePG != null) {
-	thePG.updateWithdrawRequisition(aTask);
+      supply = (Task)taskIter.next();
+      if (supply.getPlanElement() instanceof Expansion) {
+	exp = (Expansion)supply.getPlanElement();
+	Workflow wf = exp.getWorkflow();
+	Enumeration subTasks = wf.getTasks();
+	while (subTasks.hasMoreElements()) {
+	  task = (Task)subTasks.nextElement();
+	  if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	    thePG = getLogisticsInventoryPG(supply);
+	    if (thePG != null) {
+	      thePG.updateWithdrawRequisition(task);
+	      synchronized (supply) {
+		((NewTask)task).setPreferences(supply.getPreferences());
+	      }
+	      inventoryPlugin.publishChange(task);
+	    }
+	  } else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
+	    ((NewTask)task).setPrepositionalPhrases(supply.getPrepositionalPhrases());
+	    inventoryPlugin.publishChange(task);
+	  }
+	}
       }
     }
-  } 
+  }
 
   public void updateChangedProjections(Collection tasks) {
     LogisticsInventoryPG thePG;
