@@ -289,7 +289,7 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
 
     while (workQ.isBusy ()) {
       synchronized (this) {
-	try {wait();} catch (Exception e) {}
+	try {wait(5000); if (halt) return; } catch (Exception e) {}
       }
     }
 
