@@ -352,7 +352,7 @@ public class UnitQuery extends SqlQuery {
 	if (legtype != DGPSPConstants.LEG_TYPE_POSITIONING && legtype != DGPSPConstants.LEG_TYPE_RETURNING) {
 	  if (readyAt.equals (start) && prevReadyAt != null)
 	    readyAt = prevReadyAt;
-	  Node legNode = createLeg (generator, id, start, end, readyAt, startLoc, startName, endLoc, endName, convtype, 
+	  LegNode legNode = createLeg (generator, id, start, end, readyAt, startLoc, startName, endLoc, endName, convtype, 
 				    legtype, nomen, bumperno);
 		  
 	  Node instanceNode = (Node)instanceToNode.get(assetid);
@@ -368,7 +368,7 @@ public class UnitQuery extends SqlQuery {
 	      System.out.println ("UnitQuery.attachInstancesFromResult - parent instance " + instanceNode);
 
 	    if (isLowFi) {
-	      Node currentLegNode = findLegNode(assetToLeg, assetid, startLoc, endLoc);
+	      LegNode currentLegNode = findLegNode(assetToLeg, assetid, startLoc, endLoc);
 	      if (currentLegNode == null) {
 		registerLegNode (assetToLeg, assetid, startLoc, endLoc, legNode);
 		cargoTree.addNode (instanceNode.getUID(), legNode);
@@ -425,7 +425,7 @@ public class UnitQuery extends SqlQuery {
       System.out.println ("UnitQuery.registerLegNode - maps now : assetToLeg - " + assetToLeg);
   }
 
-  protected Node findLegNode (Map assetToLeg, String assetid, String startLoc, String endLoc) {
+  protected LegNode findLegNode (Map assetToLeg, String assetid, String startLoc, String endLoc) {
     Map startToLegNode = (Map) assetToLeg.get (assetid);
     if (startToLegNode == null) {
       if (debug)
@@ -433,7 +433,7 @@ public class UnitQuery extends SqlQuery {
       return null;
     }
 
-    Node found = (Node) startToLegNode.get (startLoc);
+    LegNode found = (LegNode) startToLegNode.get (startLoc);
     if (debug) {
       System.out.println ("UnitQuery.findLegNode - for " + assetid + " at " + startLoc + " got leg " + found);
       if (found == null)
@@ -443,7 +443,7 @@ public class UnitQuery extends SqlQuery {
     return found;
   }
 
-  protected void rollUpLegNode (Node newLeg, Node currentLegNode) {
+  protected void rollUpLegNode (LegNode newLeg, LegNode currentLegNode) {
     if (debug)
       System.out.println ("UnitQuery.rollUpLegNode - current " + currentLegNode + " new " + newLeg);
 
@@ -462,6 +462,10 @@ public class UnitQuery extends SqlQuery {
       currentLegNode.setEarlyEnd(newEarlyEnd);
     if ((newLateEnd != null) && (newLateEnd.getTime() < currentLegNode.getLateEnd().getTime()))
       currentLegNode.setLateEnd(newLateEnd);
+    currentLegNode.setCarrierType(currentLegNode.getCarrierType() + ", " +
+				  newLeg.getCarrierType());
+    currentLegNode.setCarrierName(currentLegNode.getCarrierName() + ", " +
+				  newLeg.getCarrierName());
   }
 
   protected void attachConveyancesFromResult (ResultSet rs, UIDGenerator generator, 
@@ -605,7 +609,7 @@ public class UnitQuery extends SqlQuery {
 	return carrier;
   }
 
-  protected Node createLeg (UIDGenerator generator, String id, String start, String end, String readyAt,
+  protected LegNode createLeg (UIDGenerator generator, String id, String start, String end, String readyAt,
 							String startLoc, String startName, String endLoc, String endName, int convType,
 							int legType, String carrierNomen, String bumperNo) {
 	LegNode leg = new LegNode (generator, id);
