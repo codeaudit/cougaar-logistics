@@ -28,6 +28,7 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.LoggerFactory;
 
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
+import org.cougaar.logistics.ldm.Constants;
 
 /** 
  * <pre>
@@ -62,6 +63,8 @@ public class InventoryAR extends InventoryTaskBase {
     protected double qty;
     protected boolean success;
     protected int resultType;
+    
+    private static Logger logger=Logging.getLoggerFactory().createLogger(InventoryAR.class.getName());
 
     public InventoryAR(String aParentUID,
 		       String myUID,
@@ -114,7 +117,11 @@ public class InventoryAR extends InventoryTaskBase {
     public static InventoryAR createFromCSV(String csvString) {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
 	
-	double aQty = (new Double(subStrings[AR_QTY_INDEX])).doubleValue();
+	//double aQty = (new Double(subStrings[AR_QTY_INDEX])).doubleValue();
+
+        long qtyBits = Long.parseLong(subStrings[AR_QTY_INDEX],16);
+        double aQty = Double.longBitsToDouble(qtyBits);
+
 	long aStartTime = -1;
 	long anEndTime = -1;
 	String startTimeStr = subStrings[AR_START_TIME_INDEX].trim();
@@ -124,6 +131,15 @@ public class InventoryAR extends InventoryTaskBase {
 	String endTimeStr = subStrings[AR_END_TIME_INDEX].trim();
 	if(!(endTimeStr.equals(""))) {
 	    anEndTime= (new Long(endTimeStr)).longValue();
+	    if((aStartTime == 0) && 
+	       ((subStrings[VERB_INDEX].equals(Constants.Verb.WITHDRAW)) ||  
+		(subStrings[VERB_INDEX].equals(Constants.Verb.SUPPLY)))) {
+		logger.warn("A 0 start time in the withdraw task UID:" +
+			    subStrings[UID_INDEX].trim() + ".  Setting the start time to " +
+			    "a moment before end time.   This is harmless, " +
+			    "but why is there 0 start time in the society?");
+		aStartTime = anEndTime-1;
+	    }
 	    if(aStartTime == -1) {
 		aStartTime = anEndTime-1;
 	    }
@@ -162,7 +178,6 @@ public class InventoryAR extends InventoryTaskBase {
     public static void main(String[] args) {
 	Date now = new Date();
 	InventoryAR ar = InventoryAR.createFromCSV(now.getTime() + ",parent UID,UID, SUPPLY,3-69-ARBN,ESTIMATED,SUCCESS," + now.getTime() + "," + (now.getTime() + 1) + "," + 23 +"\n");
-	Logger logger = Logging.getLoggerFactory().createLogger(InventoryAR.class.getName());
 	logger.shout("InventoryAR is " + ar);
     }
 }

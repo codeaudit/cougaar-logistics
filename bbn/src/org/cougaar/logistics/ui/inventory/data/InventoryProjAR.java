@@ -115,7 +115,12 @@ public class InventoryProjAR extends InventoryAR {
   public static InventoryProjAR createProjFromCSV(String csvString) {
     String[] subStrings = csvString.split(SPLIT_REGEX);
 
-    double aQty = (new Double(subStrings[AR_QTY_INDEX])).doubleValue();
+    //double aQty = (new Double(subStrings[AR_QTY_INDEX])).doubleValue();
+
+    long qtyBits = Long.parseLong(subStrings[AR_QTY_INDEX],16);
+    double aQty = Double.longBitsToDouble(qtyBits);
+
+
     long aStartTime = -0L;
     String startTimeStr = subStrings[AR_START_TIME_INDEX].trim();
     if (!(startTimeStr.equals(""))) {

@@ -107,7 +107,11 @@ public class InventoryProjTask extends InventoryTaskBase {
   public static InventoryProjTask createFromCSV(String csvString) {
     String[] subStrings = csvString.split(SPLIT_REGEX);
 
-    double aRate = (new Double(subStrings[RATE_INDEX])).doubleValue();
+    //double aRate = (new Double(subStrings[RATE_INDEX])).doubleValue();
+
+    long rateBits = Long.parseLong(subStrings[RATE_INDEX],16);
+    double aRate = Double.longBitsToDouble(rateBits);
+
     long aStartTime = -0L;
     String startTimeStr = subStrings[START_TIME_INDEX].trim();
     if (!(startTimeStr.equals(""))) {
