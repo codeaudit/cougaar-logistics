@@ -364,9 +364,9 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 
     if(System.currentTimeMillis() > getWarningCutOffTime()) {
       if (e == null)
-	logger.error(inventoryPlugin.getClusterId().toString() + message);
+	logger.warn(inventoryPlugin.getClusterId().toString() + message);
       else
-	logger.error(inventoryPlugin.getClusterId().toString() + message, e);
+	logger.warn(inventoryPlugin.getClusterId().toString() + message, e);
     } else if (logger.isInfoEnabled()) {
       if (e == null)
 	logger.info(inventoryPlugin.getClusterId().toString() + message);
