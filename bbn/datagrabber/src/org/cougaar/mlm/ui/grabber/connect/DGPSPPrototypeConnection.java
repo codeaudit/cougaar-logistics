@@ -79,7 +79,7 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
   protected boolean updateAssetPrototype(Statement s, Prototype p){
     boolean ret=false;
     StringBuffer sb=new StringBuffer();
-      logMessage(Logger.WARNING,Logger.DB_WRITE, "Calling updateAssetPrototype.");
+
     try{
       sb.append("INSERT INTO ");
       sb.append(getTableName(ASSET_PROTOTYPE_TABLE));
