@@ -1103,7 +1103,24 @@ public class DemandForecastPlugin extends ComponentPlugin
         }
       }
     }
-    return new GenerateProjectionsExpander(this);
+    String gpExpanderClass = (String) pluginParams.get("GP_EXPANDER_CLASS");
+    if (gpExpanderClass == null) {
+      return new GenerateProjectionsExpander(this);
+    }
+    else {
+      try {
+        Class gpCls = Class.forName(gpExpanderClass);
+        Class[] paramTypes = {this.getClass()};
+        Object[] initArgs = {this};
+        Constructor constructor = gpCls.getConstructor(paramTypes);
+        return (GenerateProjectionsExpander) constructor.newInstance(initArgs);
+      }
+      catch (Exception e) {
+        logger.error(e + " Unable to create Expander instance of " + gpExpanderClass  +
+                     " Loading default org.cougaar.logistics.plugin.demand.GenerateProjectionsExpander");
+        return new GenerateProjectionsExpander(this);
+      }
+    }
   }
 
   public void publishAddToExpansion(Task parent, Task subtask) {
