@@ -547,7 +547,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     if (ar == null || !ar.equals(estimatedResult)) {
       pe.setEstimatedResult(estimatedResult);
       inventoryPlugin.publishChange(pe);
-      updatePG(withdraw, thePG);
+//       updatePG(withdraw, thePG);
     } 
   }
 
@@ -570,7 +570,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
     }
     
-    updatePG(withdraw, thePG);
+//     updatePG(withdraw, thePG);
   }
 
   public void updatePG(Task withdraw, LogisticsInventoryPG thePG) {
