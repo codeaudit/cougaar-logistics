@@ -28,6 +28,9 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.QueryLDMPlugin;
 import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
 import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.glm.ldm.asset.NewMovabilityPG;
+import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
+import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.glm.ldm.plan.Service;
 import org.cougaar.logistics.ldm.asset.*;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
@@ -360,8 +363,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           ammopg.setService(service);
           ammopg.setTheater(THEATER);
           if (anAsset instanceof Level2MEIAsset) {
-
             ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
+            //FIXME:  temp hack to suppress transportation warnings -- there will be a bug submitted
+            NewMovabilityPG mpg = (NewMovabilityPG) getLDM().getFactory().createPropertyGroup(MovabilityPG.class);
+            mpg.setMoveable(false);
+            mpg.setCargoCategoryCode("AOD");
+            anAsset.setPropertyGroup(mpg);
           } else {
             ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
           }
@@ -684,17 +691,19 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   } // substituteSupplyType
 
   public String substituteOrgName (String q, String agent_name) {
-    String query=null;
+    StringBuffer query = new StringBuffer();
+    q = q.trim();
+    agent_name = "'"+agent_name+"'";
     if (q != null) {
       int indx = q.indexOf(":org");
       if (indx != -1) {
-        query = q.substring(0,indx) + "'"+agent_name+"'";
-        if (q.length() > indx+3) {
-          query += q.substring(indx+3);
-        } // if
-      } // if
-    } // if
-    return query;
+        query.append(q.substring(0,indx) + agent_name);
+        if (q.length() > indx) {
+          query.append(q.substring(indx + 4));
+        }
+      }
+    }
+    return query.toString();
   }
 
   /**
