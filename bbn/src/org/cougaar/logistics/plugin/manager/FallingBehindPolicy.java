@@ -71,6 +71,24 @@ public class FallingBehindPolicy extends InterAgentOperatingModePolicy implement
     return XMLize.getPlanObjectXML(this, doc);
   }
 
+  /**
+   * appliesToThisAgent - return true if FallingBehindPolicy applies to 
+   * this Agent.
+   * Overrides default dehaviour - FallingBehindPolicyies are applied at the
+   * source as well at the target Agents. 
+   */
+  public boolean appliesToThisAgent() {
+    if (getSource() == null) {
+      /* Policy originated here - Am I also one of the targets?
+       * (KLUDGE) - should probably use the community code to resolves the targets
+       * and then look to see whether this agent is included.
+       */
+      return true;
+    } else {
+      return true;
+    }
+    
+  }
 }
 
 
