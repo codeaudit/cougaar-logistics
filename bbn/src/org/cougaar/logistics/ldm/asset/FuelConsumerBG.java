@@ -23,6 +23,7 @@ package org.cougaar.logistics.ldm.asset;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.asset.PGDelegate;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
@@ -43,10 +44,11 @@ import java.util.*;
 
 public class FuelConsumerBG extends ConsumerBG {
 
+  public static HashMap cachedDBValues = new HashMap();
   protected FuelConsumerPG myPG;
   transient MEIPrototypeProvider parentPlugin;
   String supplyType = "BulkPOL";
-  HashMap consumptionRates = new HashMap();
+  HashMap consumptionRates = null;
   private transient LoggingService logger;
 
   public FuelConsumerBG(FuelConsumerPG pg) {
@@ -60,8 +62,6 @@ public class FuelConsumerBG extends ConsumerBG {
 
   public List getPredicates() {
     ArrayList predList = new ArrayList();
-    String typeId = myPG.getMei().getTypeIdentificationPG().getTypeIdentification();
-    predList.add(new ConsumerPredicate(typeId));
     predList.add(new OrgActivityPred());
     return predList;
   }
@@ -77,45 +77,35 @@ public class FuelConsumerBG extends ConsumerBG {
 //       System.out.println("getParamSched() Asset is "+
 // 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
 //     }
+    ArrayList consumerlist = new ArrayList();
+    consumerlist.add(myPG.getMei());
+    Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
+    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
-      if (predicate instanceof ConsumerPredicate) {
-	Schedule consumerSched = 
-	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
-// 	}
- 	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
-      } else if (predicate instanceof OrgActivityPred) {
+      if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
  	params.add(orgActSched);
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("getParamSched() OrgActSched "+orgActSched);
-// 	}
       } else {
  	logger.error("getParameterSchedule: unknown predicate");
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-//     if (myOrgName.indexOf("35-ARBN") >= 0) {
-//       System.out.println("getParamSched() MERGED "+paramSchedule);
-//     }
     return paramSchedule;
   }
 
   public Rate getRate(Asset asset, List params) {
     Rate r = null;
-    // DEBUG
-//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+
+    if (consumptionRates == null) {
+      return r;
+    }
     if (params == null) {
       logger.error("getRate() params null for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
-//       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	   System.out.println("getRate() params null for "+
-// 			   asset.getTypeIdentificationPG().getNomenclature());
-//       }
+
       return r;
     }
     Double qty = (Double)params.get(0);
@@ -123,55 +113,55 @@ public class FuelConsumerBG extends ConsumerBG {
     if (orgAct == null) {
       logger.debug("getRate() orgAct null for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
-//       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	   System.out.println("getRate() orgAct null for "+
-// 			   asset.getTypeIdentificationPG().getNomenclature());
-//       }
+
       return r;
     }
     HashMap map = (HashMap) consumptionRates.get(asset);
     if (map == null) {
       logger.error("getRate()  no bulkpol consumption for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
-//       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	   System.out.println("getRate()  no bulkpol consumption for "+
-// 		  	      asset.getTypeIdentificationPG().getNomenclature());
-//       }
+
       return r;
     }
-//     if (myOrgName.indexOf("35-ARBN") >= 0) {
-//       System.out.println("getRate() orgAct name "+
-// 			 orgAct.getOpTempo()+", "+orgAct);
-//     }
+
     Double d = (Double) map.get(orgAct.getOpTempo().toUpperCase());
     if (d == null) {
       logger.error("getRate() consumption rate null for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
-//       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	   System.out.println("getRate() consumption rate null for "+
-// 			      asset.getTypeIdentificationPG().getNomenclature());
-// 	   System.out.println(" OrgACt "+orgAct);
-//       }
+
       return r;
     }
     r = FlowRate.newGallonsPerDay (d.doubleValue()*qty.doubleValue());
-//     if (myOrgName.indexOf("35-ARBN") >= 0) {
-//       System.out.println("getRate() Rate is  "+ r +", for "+
-// 			 asset.getTypeIdentificationPG().getNomenclature());
-//     }
+
     return r;
   }
 
   public Collection getConsumed() {
-    if (consumptionRates.isEmpty()) {
-      Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
-							      myPG.getService(), myPG.getTheater());
-      if (result == null) {
-	logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-		     myPG.getMei()+", "+supplyType);
-      } else {
-	parseResults(result);
+    if (consumptionRates == null) {
+      synchronized (cachedDBValues) {
+        Asset asset = myPG.getMei();
+        if (asset instanceof AggregateAsset) {
+          asset = ((AggregateAsset)asset).getAsset();
+        }
+        String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
+        consumptionRates = (HashMap)cachedDBValues.get(typeId);
+        if (consumptionRates == null){
+          Vector result = parentPlugin.lookupAssetConsumptionRate(asset, supplyType, 
+                                                                  myPG.getService(), myPG.getTheater());
+          if (result == null) {
+            logger.debug("getConsumed(): Database query returned EMPTY result set for "+
+                         myPG.getMei()+", "+supplyType);
+          } else {
+            consumptionRates = parseResults(result);
+            cachedDBValues.put(typeId, consumptionRates);
+          }
+        }
       }
+    }
+    if (consumptionRates == null) {
+      logger.debug("No consumption rates for "+myPG.getMei()+" at "+
+                   parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification());
+      consumptionRates = new HashMap();
     }
     return consumptionRates.keySet();
   }
@@ -184,13 +174,14 @@ public class FuelConsumerBG extends ConsumerBG {
     return getConsumed();
   }
 
-  protected void parseResults (Vector result) {
+  protected HashMap parseResults (Vector result) {
     String mei_nsn, typeid, optempo;
     double dcr;
     Asset newAsset;
-    HashMap map = null;
+    HashMap map = null, ratesMap = new HashMap();
     Enumeration results = result.elements();
     Object row[];
+
 
     for (int i=0; results.hasMoreElements(); i++) {
       row = (Object [])results.nextElement();
@@ -201,22 +192,17 @@ public class FuelConsumerBG extends ConsumerBG {
       if (newAsset != null) {
 	optempo = (String) row[2];
 	dcr = ((BigDecimal) row[3]).doubleValue();
-	map = (HashMap)consumptionRates.get(newAsset);
+	map = (HashMap)ratesMap.get(newAsset);
 	if (map == null) {
 	  map = new HashMap();
-	  consumptionRates.put(newAsset, map);
+	  ratesMap.put(newAsset, map);
 	}
 	map.put(optempo.toUpperCase(), new Double(dcr));
 	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
 		     ", DCR "+dcr+", Optempo "+optempo);
-	//DEBUG
-// 	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
-// 			     ", DCR "+dcr+", Optempo "+optempo);
-// 	}
       }
     }
+    return ratesMap;
   } // parseResults
 
   public PGDelegate copy(PropertyGroup pg) {

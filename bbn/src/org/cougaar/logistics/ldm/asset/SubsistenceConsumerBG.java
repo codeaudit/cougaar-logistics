@@ -32,6 +32,7 @@ import org.cougaar.logistics.plugin.utils.FeedingPolicyPred;
 import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
 import org.cougaar.logistics.plugin.utils.MilitaryPersonPred;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
@@ -55,12 +56,13 @@ import java.util.Vector;
 
 public class SubsistenceConsumerBG extends ConsumerBG {
 
+  public static HashMap cachedDBValues = new HashMap();
   protected SubsistenceConsumerPG myPG;
   transient ClassIConsumerPrototypeProvider parentPlugin;
   String supplyType = "Subsistence";
   private transient LoggingService logger;
   private LogisticsOPlan logOPlan = null;
-  private List consumedItems = new ArrayList();
+  private List consumedItems = null;
   private FeedingPolicy feedingPolicy = null;
   private final static String BOTTLED_WATER = "NSN/8960013687383";  
   private final static String FRESH_FRUITS = "NSN/891501F768439";
@@ -77,7 +79,6 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
   public List getPredicates() {
     ArrayList predList = new ArrayList();
-    predList.add(new MilitaryPersonPred());
     predList.add(new OrgActivityPred());
     predList.add(new LogisticsOPlanPredicate());
     predList.add(new FeedingPolicyPred(myPG.getService()));
@@ -95,17 +96,14 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 //       System.out.println("getParamSched() Asset is "+
 //                       myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
 //     }
+    ArrayList consumerlist = new ArrayList();
+    consumerlist.add(myPG.getMei());
+    Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
+    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
-      if (predicate instanceof MilitaryPersonPred) {
-        Schedule consumerSched =
-            parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-//      if (myOrgName.indexOf("35-ARBN") >= 0) {
-//        System.out.println("getParamSched() ConsumerSched "+consumerSched);
-//      }
-        params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
-      } else if (predicate instanceof OrgActivityPred) {
+      if (predicate instanceof OrgActivityPred) {
         Schedule orgActSched =
             parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
         params.add(orgActSched);
@@ -132,9 +130,6 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-//     if (myOrgName.indexOf("35-ARBN") >= 0) {
-//       System.out.println("getParamSched() MERGED "+paramSchedule);
-//     }
     return paramSchedule;
   }
 
@@ -285,7 +280,8 @@ public class SubsistenceConsumerBG extends ConsumerBG {
               params.get(2)).get(identifier)).doubleValue();
           logger.debug(identifier+" rate is "+resource_count);
         } // if
-        // DEBUG
+        // DEBUG  public static HashMap cachedDBValues = new HashMap();
+
         else {
           logger.debug("No meal rates for "+identifier);
         }
@@ -309,7 +305,8 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     } else {
       if (params.get(4) != null) {
         if (((HashMap) params.get(4)).containsKey(identifier)) {
-          // water
+          // water  public static HashMap cachedDBValues = new HashMap();
+
           resource_count += ((Double) ((HashMap)
               params.get (4)).get(identifier)).doubleValue();
           logger.debug ( " water params is " + ((Double) ((HashMap)
@@ -321,7 +318,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     if (resource_count > 0) {
       double total =
           Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity);
-      result = CountRate.newEachesPerDay (total);
+      result = CountRate.newEachesPerDay(total);
       RationPG rpg = (RationPG)
           asset.searchForPropertyGroup(RationPG.class);
       logger.debug ("\n THE rate is " +
@@ -335,14 +332,25 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
 
   public Collection getConsumed() {
-    if (consumedItems.isEmpty()) {
-      Vector result = parentPlugin.generateRationList();
-
-      if (result == null) {
-        logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-                     myPG.getMei()+", "+supplyType);
-      } else {
-        parseResults(result);
+    if (consumedItems == null) {
+      synchronized (cachedDBValues) {
+        Asset asset = myPG.getMei();
+        if (asset instanceof AggregateAsset) {
+          asset = ((AggregateAsset)asset).getAsset();
+        }
+        String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
+        consumedItems = (ArrayList)cachedDBValues.get(typeId);
+        if (consumedItems == null){
+          Vector result = parentPlugin.generateRationList();
+          
+          if (result == null) {
+            logger.debug("getConsumed(): Database query returned EMPTY result set for "+
+                         myPG.getMei()+", "+supplyType);
+          } else {
+            consumedItems = (ArrayList)parseResults(result);
+            cachedDBValues.put(typeId, consumedItems);
+          }
+        }
       }
     }
     return consumedItems;
@@ -356,18 +364,17 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     return getConsumed();
   }
 
-  protected void parseResults (Vector result) {
+  protected ArrayList parseResults (Vector result) {
     logger.debug ("parseACRResult() for consumer "+ myPG.getMei() + " asset type " +supplyType);
-    //String nsn, typeid, optempo;
     Asset newAsset;
-    //String typeIDPrefix = "NSN/";
+    ArrayList items = new ArrayList();
     Enumeration results = result.elements();
-    //Object row[];
-    //Vector part_types = new Vector();
+
     while (results.hasMoreElements()) {
       newAsset = (Asset)results.nextElement();
-      consumedItems.add(newAsset);
+      items.add(newAsset);
     }
+    return items;
   }
 
   public PGDelegate copy(PropertyGroup pg) {

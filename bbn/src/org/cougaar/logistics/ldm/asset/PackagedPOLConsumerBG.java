@@ -23,6 +23,7 @@ package org.cougaar.logistics.ldm.asset;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.asset.PGDelegate;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
@@ -43,10 +44,11 @@ import java.util.*;
 
 public class PackagedPOLConsumerBG extends ConsumerBG {
 
+  public static HashMap cachedDBValues = new HashMap();
   protected PackagedPOLConsumerPG myPG;
   transient MEIPrototypeProvider parentPlugin;
   String supplyType = "PackagedPOL";
-  HashMap consumptionRates = new HashMap();
+  HashMap consumptionRates = null;
   private transient LoggingService logger;
 
   public PackagedPOLConsumerBG(PackagedPOLConsumerPG pg) {
@@ -60,8 +62,6 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
 
   public List getPredicates() {
     ArrayList predList = new ArrayList();
-    String typeId = myPG.getMei().getTypeIdentificationPG().getTypeIdentification();
-    predList.add(new ConsumerPredicate(typeId));
     predList.add(new OrgActivityPred());
     return predList;
   }
@@ -77,17 +77,14 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
 //       System.out.println("getParamSched() Asset is "+
 // 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
 //     }
+    ArrayList consumerlist = new ArrayList();
+    consumerlist.add(myPG.getMei());
+    Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
+    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
-      if (predicate instanceof ConsumerPredicate) {
-	Schedule consumerSched = 
-	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
-// 	}
- 	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
-      } else if (predicate instanceof OrgActivityPred) {
+      if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
  	params.add(orgActSched);
@@ -109,6 +106,9 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
     Rate r = null;
     // DEBUG
 //     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+    if (consumptionRates == null) {
+      return r;
+    }
     if (params == null) {
       logger.error("getRate() params null for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
@@ -163,15 +163,31 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
   }
 
   public Collection getConsumed() {
-    if (consumptionRates.isEmpty()) {
-      Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
-							      myPG.getService(), myPG.getTheater());
-      if (result == null) {
-	logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-		     myPG.getMei()+", "+supplyType);
-      } else {
-	parseResults(result);
+    if (consumptionRates == null) {
+      synchronized (cachedDBValues) {
+        Asset asset = myPG.getMei();
+        if (asset instanceof AggregateAsset) {
+          asset = ((AggregateAsset)asset).getAsset();
+        }
+        String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
+        consumptionRates = (HashMap)cachedDBValues.get(typeId);
+        if (consumptionRates == null){
+          Vector result = parentPlugin.lookupAssetConsumptionRate(asset, supplyType, 
+                                                                  myPG.getService(), myPG.getTheater());
+          if (result == null) {
+            logger.debug("getConsumed(): Database query returned EMPTY result set for "+
+                         myPG.getMei()+", "+supplyType);
+          } else {
+            consumptionRates = parseResults(result);
+            cachedDBValues.put(typeId, consumptionRates);
+          }
+        }
       }
+    }
+    if (consumptionRates == null) {
+      logger.debug("No consumption rates for "+myPG.getMei()+" at "+
+                   parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification());
+      consumptionRates = new HashMap();
     }
     return consumptionRates.keySet();
   }
@@ -184,11 +200,11 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
     return getConsumed();
   }
 
-  protected void parseResults (Vector result) {
+  protected HashMap parseResults (Vector result) {
     String mei_nsn, typeid, optempo;
     double dcr;
     Asset newAsset;
-    HashMap map = null;
+    HashMap map = null, ratesMap = new HashMap();
     Enumeration results = result.elements();
     Object row[];
 
@@ -201,22 +217,17 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
       if (newAsset != null) {
 	optempo = (String) row[2];
 	dcr = ((BigDecimal) row[3]).doubleValue();
-	map = (HashMap)consumptionRates.get(newAsset);
+	map = (HashMap)ratesMap.get(newAsset);
 	if (map == null) {
 	  map = new HashMap();
-	  consumptionRates.put(newAsset, map);
+	  ratesMap.put(newAsset, map);
 	}
 	map.put(optempo.toUpperCase(), new Double(dcr));
 	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
 		     ", DCR "+dcr+", Optempo "+optempo);
-	//DEBUG
-// 	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
-// 			     ", DCR "+dcr+", Optempo "+optempo);
-// 	}
       }
     }
+    return ratesMap;
   } // parseResults
 
   public PGDelegate copy(PropertyGroup pg) {
