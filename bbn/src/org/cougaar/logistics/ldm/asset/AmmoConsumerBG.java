@@ -44,7 +44,7 @@ import java.util.*;
 public class AmmoConsumerBG extends ConsumerBG {
 
   protected AmmoConsumerPG myPG;
-  MEIPrototypeProvider parentPlugin;
+  transient MEIPrototypeProvider parentPlugin;
   String supplyType = "Ammunition";
   HashMap consumptionRates = new HashMap();
   private transient LoggingService logger;

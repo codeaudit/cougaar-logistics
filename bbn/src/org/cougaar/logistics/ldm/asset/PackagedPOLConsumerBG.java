@@ -44,7 +44,7 @@ import java.util.*;
 public class PackagedPOLConsumerBG extends ConsumerBG {
 
   protected PackagedPOLConsumerPG myPG;
-  MEIPrototypeProvider parentPlugin;
+  transient MEIPrototypeProvider parentPlugin;
   String supplyType = "PackagedPOL";
   HashMap consumptionRates = new HashMap();
   private transient LoggingService logger;

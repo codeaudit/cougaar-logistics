@@ -45,7 +45,7 @@ import java.util.*;
 public class RepairPartConsumerBG extends ConsumerBG {
 
   protected RepairPartConsumerPG myPG;
-  MEIPrototypeProvider parentPlugin;
+  transient MEIPrototypeProvider parentPlugin;
   final static String supplyType = "Consumable";
   final static int MAX_PARTS = 20;
   final static double ZERO_X = 0.0;
