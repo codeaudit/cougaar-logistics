@@ -34,19 +34,29 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.logistics.plugin.inventory.*;
+import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.logistics.plugin.inventory.AssetUtils;
+import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
-import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.logistics.ldm.Constants;
-import org.cougaar.glm.ldm.oplan.Oplan;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
-import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.planning.ldm.plan.Verb;
+import org.cougaar.util.Collectors;
+import org.cougaar.util.Thunk;
 import org.cougaar.util.UnaryPredicate;
 
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 /** The DemandGeneratorPlugin generates demand during execution.
  **/
@@ -176,14 +186,26 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     resetTimer();
   }
 
-  /** TODO: MWD Remove
-   private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
-   public boolean execute(Object o) {
-   return (o instanceof Oplan);
-   }
-   };
+  private void checkDateOfBlackboard() {
+    // get the start of the interval, e.g., beginning of the DAY or HOUR
+    long currentPeriod = getStartOfPeriod(getCurrentTimeMillis());
+    Collection supplyTasks = blackboard.query(
+        new LocalTaskPredicate(supplyType, getOrgName(), Constants.Verb.Supply, taskUtils));
+    if (supplyTasks.size() == 0) {
+      return;
+    }
+    long lastTaskTime = findLastSupplyTaskTime(supplyTasks);
+    long lastTaskPeriod = getStartOfPeriod(lastTaskTime);
 
-   **/
+    if (currentPeriod > lastTaskPeriod) {
+      if (logger.isErrorEnabled()) {
+        logger.error(myOrgName + supplyType +
+                     ": Rehydrated blackboard is in the past, last task time found was for : " +
+                     new Date(lastTaskTime) + " the current society time is " +
+                     new Date(getCurrentTimeMillis()));
+      }
+    }
+  }
 
   /** Selects the LogisticsOPlan objects **/
   private static class LogisticsOPlanPredicate implements UnaryPredicate {
@@ -192,21 +214,23 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
   }
 
-  private static class ProjectionTaskPredicate implements UnaryPredicate {
+  private static class LocalTaskPredicate implements UnaryPredicate {
     String supplyType;
     String orgName;
+    Verb verb;
     TaskUtils taskUtils;
 
-    public ProjectionTaskPredicate(String type, String orgname, TaskUtils aTaskUtils) {
+    public LocalTaskPredicate(String type, String orgname, Verb verb, TaskUtils aTaskUtils) {
       supplyType = type;
       orgName = orgname;
+      this.verb = verb;
       taskUtils = aTaskUtils;
     }
 
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task task = (Task) o;
-        if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+        if (task.getVerb().equals(verb)) {
           if (!taskUtils.isLevel2(task)) {
             if (taskUtils.isDirectObjectOfType(task, supplyType)) {
               //if (!taskUtils.isMyInventoryProjection(task, orgName)) {
@@ -356,23 +380,24 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if (myOrganization != null) {
-        projectionTaskSubscription = (IncrementalSubscription) blackboard.
-            subscribe(new ProjectionTaskPredicate(supplyType, getOrgName(), taskUtils));
+        if (blackboard.didRehydrate()) {
+          checkDateOfBlackboard();
+        }
+        projectionTaskSubscription =
+            (IncrementalSubscription)
+            blackboard.subscribe(new LocalTaskPredicate(supplyType, getOrgName(),
+                                                        Constants.Verb.ProjectSupply,
+                                                        taskUtils));
+      }
+      // the didRehydrate flag will be reset after the first transaction, if org is still null
+      // this is a problem
+      if (blackboard.didRehydrate() && myOrganization == null) {
+        if (logger.isErrorEnabled()) {
+          logger.error("Blackboard was rehydrated with null self organization, checkDateOfBlackboard"
+                       + " will not be called ");
+        }
       }
     }
-
-    /** TODO: MWD Remove
-     if(orgActivities.getCollection().isEmpty()) {
-     return;
-     }
-     else if((orgStartTime == -1) || (orgEndTime == -1)) {
-     computeOrgTimes(orgActivities.elements());
-     }
-
-     if (oplanSubscription.getCollection().isEmpty()) {
-     return;
-     }
-     **/
 
     // get the Logistics OPlan (our homegrown version with specific dates).
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -394,30 +419,32 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
     //nothing for now
     if (timerExpired()) {
-      long planTime = getStartOfPeriod();
+      long planTime = getStartOfPeriod(getCurrentTimeMillis());
       if (logger.isInfoEnabled()) {
-        logger.info("Timer has gone off.  Planning for the next " + ((int) (period / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
+        logger.info("Timer has gone off.  Planning for the next " +
+                    ((int) (period / getTimeUtils().MSEC_PER_HOUR))
+                    + "hours from " + new Date(planTime));
       }
       for (long time = planTime; time<planTime+period; time += stepPeriod) {
 
-	  //filter and create task from time to time plus step period inclusive
-	  //(stepPeriod -1)
+        //filter and create task from time to time plus step period inclusive
+        //(stepPeriod -1)
         Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
-                                                         time, time + (stepPeriod - 1));
+                                                           time, time + (stepPeriod - 1));
         //TODO: MWD Remove debug statements:
         if ((getOrgName() != null) &&
             (getOrgName().trim().equals("1-35-ARBN")) &&
             (logger.isDebugEnabled())) {
           logger.debug("I'm waking up - new period starts " + new Date(planTime) +
-                             " and step (start,dur) is (" + new Date(time) +
-                             "," + stepPeriod + ")" +
-                             " and Num of projections for " + getOrgName() +
-                             " is: " + relevantProjs.size());
+                       " and step (start,dur) is (" + new Date(time) +
+                       "," + stepPeriod + ")" +
+                       " and Num of projections for " + getOrgName() +
+                       " is: " + relevantProjs.size());
         }
 
         relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
-	//filter and create task from time to time plus step period inclusive
-	  //(stepPeriod -1)
+        //filter and create task from time to time plus step period inclusive
+        //(stepPeriod -1)
         List demandTasks = demandGenerator.generateDemandTasks(time, (stepPeriod - 1), relevantProjs);
 
         if (demandOutputModule != null) {
@@ -624,8 +651,8 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    * @return - the time in milliseconds that represents first thing in the
    *morning today
    */
-  protected long getStartOfPeriod() {
-    long timeIn = getCurrentTimeMillis();
+  protected long getStartOfPeriod(long timeIn) {
+    //long timeIn = getCurrentTimeMillis();
     //truncate to the whole number that represents the period num since the start of time.
     long periods = (long) (timeIn / period);
     //Multiply it back to which gives the start of the period.
@@ -645,7 +672,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    */
 
   protected void resetTimer() {
-    long expiration = getStartOfPeriod() + period;
+    long expiration = getStartOfPeriod(getCurrentTimeMillis()) + period;
     resetTimer(expiration);
   }
 
@@ -781,6 +808,33 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       boolean was = expired;
       expired = true;
       return was;
+    }
+  }
+
+  private long findLastSupplyTaskTime(Collection tasks) {
+    MaxEndThunk thunk = new MaxEndThunk();
+    Collectors.apply(thunk, tasks);
+    return thunk.getMaxEndTime();
+  }
+
+  private class MaxEndThunk implements Thunk {
+    long maxEnd = Long.MIN_VALUE;
+
+    public MaxEndThunk() {
+    }
+
+    public void apply(Object o) {
+      long endTime = taskUtils.getEndTime((Task) o);
+      if (endTime > maxEnd) {
+        maxEnd = endTime;
+      }
+    }
+
+    public long getMaxEndTime() {
+      if (logger.isDebugEnabled()) {
+        logger.debug(" Last task time found  " + new Date(maxEnd));
+      }
+      return maxEnd;
     }
   }
 }
