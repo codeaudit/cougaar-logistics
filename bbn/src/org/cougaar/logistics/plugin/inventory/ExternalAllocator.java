@@ -167,7 +167,9 @@ public class ExternalAllocator extends InventoryModule {
 	    }
 	}
 	else {
-	    logger.error("Could not publishAdd.  Task" + task + " unexpectedly already has a plan element.");
+	  logger.error("Could not publishAdd.  Task" + task + 
+			 " unexpectedly already has a plan element [" +
+			 pe + "]");
 	}
         return false;
     }
