@@ -362,7 +362,12 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	  thePG = getLogisticsInventoryPG(supply);
 	  if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
 	      if((getTaskUtils().getEndTime(task) < inventoryPlugin.getOPlanArrivalInTheaterTime()) && (logger.isErrorEnabled())) {
-		  logger.error("At " + inventoryPlugin.getOrgName() + "- Requisition Task:" + task.getUID() + " item: " + getTaskUtils().getTaskItemName(task) + " has an endTime of " + getTimeUtils().dateString(getTaskUtils().getEndTime(task)) + " which is before this orgs arrival time of " + inventoryPlugin.getOPlanArrivalInTheaterTime());
+		  logger.error("At " + inventoryPlugin.getOrgName() + "- Requisition Task:" + 
+                               task.getUID() + " item: " + getTaskUtils().getTaskItemName(task) + 
+                               " has an endTime of " + 
+                               getTimeUtils().dateString(getTaskUtils().getEndTime(task)) + 
+                               " which is before this orgs arrival time of " + 
+                               getTimeUtils().dateString(inventoryPlugin.getOPlanArrivalInTheaterTime()));
 	      }
 	    if (thePG != null) {
 	      thePG.updateWithdrawRequisition(task);
@@ -395,8 +400,13 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	      task = (Task)subTasks.nextElement();
 	      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
 		  thePG = getLogisticsInventoryPG(projSupply);
-		  if((getTaskUtils().getStartTime(task) < inventoryPlugin.getOPlanArrivalInTheaterTime()) && (logger.isErrorEnabled())) {
-		      logger.error("At " + inventoryPlugin.getOrgName() + "- Projection Task:" + task.getUID() + " item: " + getTaskUtils().getTaskItemName(task) + " has an start time of " + getTimeUtils().dateString(getTaskUtils().getStartTime(task)) + " which is before this orgs arrival time of " + inventoryPlugin.getOPlanArrivalInTheaterTime());
+		  if((getTaskUtils().getStartTime(projSupply) < inventoryPlugin.getOPlanArrivalInTheaterTime()) && (logger.isErrorEnabled())) {
+		      logger.error("At " + inventoryPlugin.getOrgName() + 
+                                   "- Projection Task:" + task.getUID() + " item: " + 
+                                   getTaskUtils().getTaskItemName(projSupply) + " has an start time of " + 
+                                   getTimeUtils().dateString(getTaskUtils().getStartTime(projSupply)) + 
+                                   " which is before this orgs arrival time of " + 
+                                   getTimeUtils().dateString(inventoryPlugin.getOPlanArrivalInTheaterTime()));
 		  }
 		  if (thePG != null) {
 		      thePG.removeWithdrawProjection(task);
