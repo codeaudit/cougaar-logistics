@@ -400,7 +400,8 @@ public class MultiChartPanel extends JPanel
 
         InventoryChartBaseCalendar tmpC = new InventoryChartBaseCalendar();
         tmpC.set(Calendar.YEAR, InventoryChartBaseCalendar.getBaseYear());
-        tmpC.set(Calendar.DAY_OF_YEAR, dayOfYear);
+        // add one because day of year is Zero based.
+        tmpC.set(Calendar.DAY_OF_YEAR, (dayOfYear + 1));
         tmpC.set(Calendar.HOUR_OF_DAY, hourOfDay);
         // add 1 to month as it numbers them from 0
         int month = tmpC.get(Calendar.MONTH) + 1;
