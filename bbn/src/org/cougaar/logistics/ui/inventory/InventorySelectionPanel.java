@@ -98,7 +98,7 @@ public class InventorySelectionPanel extends JPanel
 
     public static final String[] ORG_POP_OPTIONS = {ORGS_NAV, ORGS_HIST, ORGS_ALL};
 
-    ArrayList invListeners;
+  protected ArrayList invListeners;
 
     JComboBox orgsBox;
     JComboBox supplyTypesBox;
@@ -108,9 +108,9 @@ public class InventorySelectionPanel extends JPanel
 
     JButton   submitButton;
     
-    String currOrg;
-    String currSupplyType;
-    String currAssetName;
+    protected String currOrg;
+  protected String currSupplyType;
+  protected String currAssetName;
     
     JLabel supplyTypesLabel;
 
