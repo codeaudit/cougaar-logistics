@@ -1046,10 +1046,10 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
   protected void replanPortion (Expansion exp, SequentialScheduleElement spe) {
     handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
-    publishRemove (spe.getTask());
     if (exp != null) { // fix for bug #13417
       try {
 	((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	publishRemove (spe.getTask());
       } catch (IllegalArgumentException iae) {
 	error (getName () + " - task " + spe.getTask().getUID () + 
 	       " is not in workflow for task " + exp.getTask().getUID() + 
