@@ -63,7 +63,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   private final static String PUBLISH = "Publish All Rows";
   private final static String ADD = "Add";
   private final static String CLEAR = "clear";
-  private final static String Clear_Selected_Rows = "Clear Selected Rows";
+  private final static String CLEAR_SELECTED_ROWS = "Clear Selected Rows";
 
   private List changeMessages = new ArrayList();
   private static Logger logger = Logging.getLogger(AvailabilityServlet.class);
@@ -104,12 +104,11 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   // BlackboardClient method:
   public long currentTimeMillis() {
     return alarmService.currentTimeMillis();
-    //return new ExecutionTimer().currentTimeMillis();
   }
 
-  UnaryPredicate availabilityPred = new UnaryPredicate() {
+  protected static UnaryPredicate availabilityPred = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return o instanceof AvailabilityChangeMessage;  //ProviderRoleStatus;
+      return o instanceof AvailabilityChangeMessage;
     }
   };
 
@@ -161,7 +160,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
           } else {
             addChangeMessage(start_date, end_date, role, isAvailable);
           }
-        } else if (action.equals(Clear_Selected_Rows)) {
+        } else if (action.equals(CLEAR_SELECTED_ROWS)) {
           clearSelectedRows();
         } else if (action.equals(PUBLISH)) {
           publish();
@@ -299,7 +298,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
                 "</tr>");
     }
     out.print("<tr><td colspan=5 align=right><input type=submit name=\"" + ACTION_PARAM + "\" value=\""
-              + Clear_Selected_Rows + "\">\n");
+              + CLEAR_SELECTED_ROWS + "\">\n");
     out.println("</td></tr>");
     out.print("</table>");
     out.print("<p><input type=submit name=\"" + ACTION_PARAM + "\" value=\"" + PUBLISH + "\">\n");
@@ -337,7 +336,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     else return "Unavailable";
   }
 
-   private boolean hasServiceContract(Role role) {
+  private boolean hasServiceContract(Role role) {
     blackboard.openTransaction();
     Collection serviceContracts = blackboard.query(serviceContractRelayPred);
     blackboard.closeTransaction();
@@ -384,6 +383,3 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     return capabilites;
   }
 }
-
-
-
