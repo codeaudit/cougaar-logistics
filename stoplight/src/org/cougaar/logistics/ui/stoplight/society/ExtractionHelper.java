@@ -1029,6 +1029,10 @@ public class ExtractionHelper
     if ((cdate_property == null) || (timezone_property == null))
       return c_time_msec;
 
+    DateFormat f = (new SimpleDateFormat("MM/dd/yyy H:mm:ss"));
+    f.setTimeZone(TimeZone.getTimeZone(timezone_property));
+    c_time_msec = f.parse(cdate_property).getTime();
+/*
     TimeZone tz = TimeZone.getTimeZone(timezone_property);
 
     GregorianCalendar gc = new GregorianCalendar (tz);
@@ -1048,7 +1052,7 @@ public class ExtractionHelper
             0, 0, 0);
 
     c_time_msec = gc.getTime().getTime();
-
+*/
     // This was needed to ensure that the milliseconds were set to 0
     c_time_msec = c_time_msec / 1000;
     c_time_msec *= 1000;
