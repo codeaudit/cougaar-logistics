@@ -30,16 +30,19 @@ slots=Asset resource, \
       double capacity, \
       double initialLevel
 delegates=LogisticsInventoryBG logInvBG
-logInvBG.delegate= void initialize(long today, InventoryPlugin parentPlugin); \
-	void addWithdrawTask(Task task); \
+logInvBG.delegate= void initialize(long today, int critLevel,InventoryPlugin parentPlugin); \
+	void addWithdrawProjection(Task task); \
+	void addWithdrawRequisition(Task task); \
 	void removeWithdrawTask(Task task); \
-	void addRefillTask(Task task); \
-	void removeRefillTask(Task task); \
+	void addRefillRequisition(Task task); \
+	void addRefillProjection(Task task); \
+	void removeRefillProjection(Task task); \
+	void removeRefillRequisition(Task task); \
 	List clearRefillTasks(Date now); \
-	Schedule getCriticalLevel(); \
+	Schedule computeCriticalLevel(); \
 	void updateRefillAllocation(Task task); \
-	void logAllToCSVFile(long aCycleStamp); \
-	long getStartTime();
+	long getStartTime(); \
+	void takeSnapshot();
 
 ;;
 ;; examples
