@@ -63,10 +63,8 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  *
  **/
 
-public class InventoryDemandChart extends InventoryChart {
+public class InventoryDemandChart extends InventoryBarChart {
 
-    ChartDataView projChartDataView;
-    ChartDataView reqChartDataView;
 
     public final static String DEMAND_TASKS =
 	LogisticsInventoryFormatter.WITHDRAW_TASKS_TAG;
@@ -83,12 +81,12 @@ public class InventoryDemandChart extends InventoryChart {
     }
 
     public void initializeChart() {
-	RequisitionsChartDataModel reqDM = 
+	reqDM = 
 	    new RequisitionsChartDataModel("",
 					   DEMAND_TASKS,
 					   DEMAND_ARS);
 
-	ProjectionsChartDataModel projDM = 
+	projDM = 
 	    new ProjectionsChartDataModel("Demand",
 					  DEMAND_PROJ_TASKS,
 					  DEMAND_PROJ_ARS,
@@ -96,11 +94,21 @@ public class InventoryDemandChart extends InventoryChart {
 					  reqDM,
 					  false);
 
-	projChartDataView = addView(JCChart.BAR, projDM);
-	reqChartDataView = addView(JCChart.BAR, reqDM);
+	shortfallDM = 
+	    new ShortfallChartDataModel("",
+					reqDM,
+					projDM);
+				       
+
+	projChartDataView = addChartView(JCChart.BAR, projDM);
+	reqChartDataView = addChartView(JCChart.BAR, reqDM);
+	shortfallChartDataView = addChartView(JCChart.PLOT, shortfallDM);
 	
 	setBarChartColors();
-		    
-    }
- 
+	setShortfallChartColors();
+
+	displayShortfall=false;
+	updateShortfall();
+    }	    
+    
 }

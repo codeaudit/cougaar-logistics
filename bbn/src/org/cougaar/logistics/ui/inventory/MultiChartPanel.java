@@ -78,6 +78,7 @@ public class MultiChartPanel extends JPanel
     public final static String INITIAL_POINT_LABEL="Right click to get quantity at a point.";
 
     public static final String CDAY_MODE = "Cdays";
+    public static final String SHORTFALL_MODE = "Shortfall";
 
     protected InventoryLevelChart levelChart;
     protected InventoryRefillChart refillChart;
@@ -88,9 +89,12 @@ public class MultiChartPanel extends JPanel
     private Logger logger;
 
     private JCheckBox cdaysModeCheck;
+    private JCheckBox shortfallModeCheck;
 
     private boolean displayCDay=false;
     private long baseCDayTime=InventoryChartBaseCalendar.getBaseTime();
+
+    private boolean displayShortfall=false;
 
     public MultiChartPanel() {
 	super();
@@ -101,6 +105,8 @@ public class MultiChartPanel extends JPanel
     public void initializeMultiChart() {
 	int gridx = 0;
 	int gridy = 0;
+
+	InventoryColorTable colorTable = new InventoryColorTable();
 
 	Insets blankInsets = new Insets(0, 0, 0, 0);
 	levelChart = new InventoryLevelChart();
@@ -117,6 +123,14 @@ public class MultiChartPanel extends JPanel
 	cdaysModeCheck.setActionCommand(CDAY_MODE);
 	cdaysModeCheck.setToolTipText("Display xaxis dates as C-Days");
 	cdaysModeCheck.addItemListener(this);
+
+	shortfallModeCheck = new JCheckBox(SHORTFALL_MODE,displayShortfall);
+	shortfallModeCheck.setFont(newFont);
+	shortfallModeCheck.setActionCommand(SHORTFALL_MODE);
+	shortfallModeCheck.setToolTipText("Display shortfall plots");
+	shortfallModeCheck.setForeground(colorTable.get(ShortfallChartDataModel.SHORTFALL_SERIES_LABEL));
+	shortfallModeCheck.setEnabled(false);
+	shortfallModeCheck.addItemListener(this);
 
 	addAllChartListeners();
 	addAllPickListeners();
@@ -160,13 +174,17 @@ public class MultiChartPanel extends JPanel
 						GridBagConstraints.BOTH, 
 						blankInsets, 0, 0));
 
+	JPanel checkBoxPanel = new JPanel();
+	checkBoxPanel.setLayout(new BorderLayout());
+	checkBoxPanel.add(shortfallModeCheck,BorderLayout.WEST);
+	checkBoxPanel.add(Box.createHorizontalStrut(4),BorderLayout.CENTER);
+	checkBoxPanel.add(cdaysModeCheck,BorderLayout.EAST);
 
 	JPanel bottomPanel = new JPanel();
 	bottomPanel.setLayout(new BorderLayout());
 	bottomPanel.add(Box.createHorizontalStrut(20),BorderLayout.WEST);
 	bottomPanel.add(pointLabel,BorderLayout.CENTER);
-	bottomPanel.add(cdaysModeCheck,BorderLayout.EAST);
-
+	bottomPanel.add(checkBoxPanel,BorderLayout.EAST);
 
 	height = 1;
 	gridy += height;
@@ -189,7 +207,26 @@ public class MultiChartPanel extends JPanel
 	demandChart.setData(data);
 	reallignChartsByXAxis(levelChart.getFirstXAxis());
 	pointLabel.setText(INITIAL_POINT_LABEL);
+	if(updateShortfallCheckBox()) {
+	    setDisplayShortfall(true);
+	    shortfallModeCheck.setSelected(true);
+	}
+	else {
+	    shortfallModeCheck.setSelected(false);
+	}	    
 	addAllChartListeners();
+    }
+
+    public boolean updateShortfallCheckBox() {
+	if(refillChart.isShortfall() ||
+	   demandChart.isShortfall()) {
+	    shortfallModeCheck.setEnabled(true);
+	    return true;
+	}
+	else {
+	    shortfallModeCheck.setEnabled(false);
+	    return false;
+	}
     }
 
     public void setDisplayCDay(boolean doUseCDay) {
@@ -204,7 +241,17 @@ public class MultiChartPanel extends JPanel
 	    addAllChartListeners();
 	}
     }
-	    
+
+    public void setDisplayShortfall(boolean doDisplayShortfall) {
+	if(displayShortfall != doDisplayShortfall) {
+	    displayShortfall = doDisplayShortfall;
+	    removeAllChartListeners();
+	    refillChart.setDisplayShortfall(displayShortfall);
+	    demandChart.setDisplayShortfall(displayShortfall);
+	    pointLabel.setText(INITIAL_POINT_LABEL);
+	    addAllChartListeners();		
+	}
+    }	    
 
     public void removeAllChartListeners() {
 	levelChart.removeChartListener(this);
@@ -266,6 +313,9 @@ public class MultiChartPanel extends JPanel
 	    JCheckBox source = (JCheckBox) e.getSource();
 	    if(source.getActionCommand().equals(CDAY_MODE)) {
 		setDisplayCDay(e.getStateChange() == e.SELECTED);
+	    }
+	    else if(source.getActionCommand().equals(SHORTFALL_MODE)) {
+		setDisplayShortfall(e.getStateChange() == e.SELECTED);
 	    }
 	}
     }

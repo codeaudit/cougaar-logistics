@@ -68,7 +68,7 @@ public class InventoryLevelChart extends InventoryChart{
 
     public void initializeChart() {
 	InventoryLevelChartDataModel dm = new InventoryLevelChartDataModel();
-	ChartDataView chartDataView = addView(JCChart.PLOT, dm);
+	ChartDataView chartDataView = addChartView(JCChart.PLOT, dm);
 
 	// set line width
 	for (int j = 0; j < chartDataView.getNumSeries(); j++) {

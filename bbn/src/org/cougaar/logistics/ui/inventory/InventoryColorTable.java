@@ -42,11 +42,14 @@ public class InventoryColorTable {
     twoPut(InventoryLevelChartDataModel.TARGET_LEVEL_SERIES_LABEL + "_SYMBOL",
 	   Color.blue);
 
-    twoPut(RequisitionsChartDataModel.REQUISITION_SERIES_LABEL,
+    twoPut(ShortfallChartDataModel.SHORTFALL_SERIES_LABEL,
 	   new Color(255,0,0));  //red?
 
+    twoPut(RequisitionsChartDataModel.REQUISITION_SERIES_LABEL,
+	   new Color(0,255,0));  //green?
+
     twoPut(RequisitionsChartDataModel.REQUISITION_ALLOCATION_SERIES_LABEL,
-	   new Color(255,200,200));  //light red?
+	   new Color(200,255,200));  //light green?
 
     twoPut(ProjectionsChartDataModel.PROJECTION_SERIES_LABEL,
 	   new Color(0,0,255));  //blue

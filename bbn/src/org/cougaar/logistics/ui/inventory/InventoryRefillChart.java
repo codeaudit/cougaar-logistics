@@ -60,7 +60,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  *
  **/
 
-public class InventoryRefillChart extends InventoryChart{
+public class InventoryRefillChart extends InventoryBarChart{
 
     ChartDataView projChartDataView;
     ChartDataView reqChartDataView;
@@ -83,24 +83,33 @@ public class InventoryRefillChart extends InventoryChart{
 
 
     public void initializeChart() {
-	RequisitionsChartDataModel reqDM = 
+	reqDM = 
 	    new RequisitionsChartDataModel("",
 					   RESUPPLY_TASKS,
 					   RESUPPLY_ARS);
 
-	ProjectionsChartDataModel projDM = 
+	projDM = 
 	    new ProjectionsChartDataModel("Refill",
 					  RESUPPLY_PROJ_TASKS,
 					  RESUPPLY_PROJ_ARS,
 					  RESUPPLY_TASKS,
 					  reqDM,
 					  true);
+	shortfallDM = 
+	    new ShortfallChartDataModel("",
+					reqDM,
+					projDM);
+				       
 
-	projChartDataView = addView(JCChart.BAR, projDM);
-	reqChartDataView = addView(JCChart.BAR, reqDM);
-
-	setBarChartColors();
+	projChartDataView = addChartView(JCChart.BAR, projDM);
+	reqChartDataView = addChartView(JCChart.BAR, reqDM);
+	shortfallChartDataView = addChartView(JCChart.PLOT, shortfallDM);
 	
+	setBarChartColors();
+	setShortfallChartColors();
+
+	displayShortfall=false;
+	updateShortfall();
     }
  
 }

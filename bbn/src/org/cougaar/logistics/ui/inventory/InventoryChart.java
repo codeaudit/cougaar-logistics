@@ -140,7 +140,7 @@ public abstract class InventoryChart extends JPanel {
 
 	// set legend invisible, because we create our own??
 	chart.getLegend().setVisible(true);
-	chart.getLegend().setPreferredSize(new Dimension(141,95));
+	chart.getLegend().setPreferredSize(new Dimension(141,110)); //95
 
     }
 
@@ -169,7 +169,7 @@ public abstract class InventoryChart extends JPanel {
 	return null;
     }
 
-    private void resetAxes() {
+    protected void resetAxes() {
 
 	long baseCDayTime = 0L;
 	if(inventory != null) {
@@ -263,7 +263,7 @@ public abstract class InventoryChart extends JPanel {
 	    
 
 
-    protected ChartDataView addView(int chartType, 
+    protected ChartDataView addChartView(int chartType, 
 				  InventoryBaseChartDataModel dm) {
 
 	ChartDataView chartDataView = new ChartDataView();
@@ -276,30 +276,29 @@ public abstract class InventoryChart extends JPanel {
 	return chartDataView;
     }
 
+    protected int getChartViewIndex(ChartDataView chartDataView) {
+	for(int i=0; i < viewIndex; i++) {
+	    if(chartDataView == chart.getDataView(i)) {
+		return i;
+	    }
+	}
+	return -1;
+    }
+
+    protected void removeChartView(ChartDataView chartDataView) {
+	int chartIndex=getChartViewIndex(chartDataView);
+	if(chartIndex != -1) {
+	    chart.removeDataView(chartIndex);
+	}
+	viewIndex--;
+    }
+
     protected void setSeriesColor(ChartDataViewSeries series, Color color) {
 	series.getStyle().setLineColor(color);
 	series.getStyle().setFillColor(color);
 	series.getStyle().setSymbolColor(color);
     }
 
-
-    protected void setBarChartColors() {
-	java.util.List viewList = chart.getDataView();
-	for (int i = 0; i < viewList.size(); i++) {
-	    // set line width
-	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
-	    //((JCBarChartFormat)chartDataView .getChartFormat()).setClusterWidth(100);
-	    chartDataView.setOutlineColor(Color.black);
-	    for (int j = 0; j < chartDataView.getNumSeries(); j++) {
-		ChartDataViewSeries series = chartDataView.getSeries(j);
-		setSeriesColor(series,colorTable.get(series.getLabel()));
-		Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
-		if(symbolColor != null) {
-		    series.getStyle().setSymbolColor(symbolColor);
-		}
-	    }
-	}
-    }
 
     public void setXZoom(double start, double end) {
 	java.util.List viewList = chart.getDataView();
