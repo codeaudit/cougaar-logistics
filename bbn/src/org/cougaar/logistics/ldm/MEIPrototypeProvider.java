@@ -66,6 +66,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   private IncrementalSubscription meiSubscription;
 	
   private IncrementalSubscription myOrganizations;
+  protected Organization myOrg;
 
   private ServiceBroker serviceBroker;
   private LoggingService logger;
@@ -180,8 +181,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   protected void configure() {
     Enumeration new_orgs = myOrganizations.elements();
     if (new_orgs.hasMoreElements()) { 
-      Organization my_org = (Organization) new_orgs.nextElement();
-      Service srvc = my_org.getOrganizationPG().getService();
+      myOrg = (Organization) new_orgs.nextElement();
+      Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service= srvc.toString();
       } // if
@@ -191,6 +192,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public void setServiceBroker(ServiceBroker serviceBroker) {
     this.serviceBroker = serviceBroker;
+  }
+
+  public Organization getMyOrg() {
+    return myOrg;
   }
 
   public boolean canHandle (String typeid, Class class_hint) {
