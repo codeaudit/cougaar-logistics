@@ -581,7 +581,9 @@ public abstract class ALPacker extends GenericPlugin {
     // Add field with recipient
     if (receiver == null) {
       receiverID = UNKNOWN;
-      getLoggingService().error("Filler.addContentsInfo - Task " + task.getUID() + " had no FOR prep.");
+      if (getLoggingService().isErrorEnabled()) {
+        getLoggingService().error("Filler.addContentsInfo - Task " + task.getUID() + " had no FOR prep.");
+      }
     } else if (receiver instanceof String) {
       receiverID = (String) receiver;
     } else if (!(receiver instanceof Asset)) {
@@ -599,10 +601,10 @@ public abstract class ALPacker extends GenericPlugin {
     }
 
     double quantity = task.getPreferredValue(AspectType.QUANTITY);
-
-    getLoggingService().info("Subtracting - " + task.getUID () + " for "+ 
-			     receiverID + " - " + typeID + " - " + quantity);
-
+    if (getLoggingService().isInfoEnabled()) {
+      getLoggingService().info("Subtracting - " + task.getUID () + " for "+
+                               receiverID + " - " + typeID + " - " + quantity);
+    }
     subtractFromReceiver (receiverID, typeID, quantity);
   }
 
@@ -627,12 +629,18 @@ public abstract class ALPacker extends GenericPlugin {
       Object receiver = iter.next();
       Map typeToQuantity = (Map) receiverToType.get(receiver);
       if (typeToQuantity == null) {
-        getLoggingService().error("ALPacker: no type->quantity map for " + receiver);
+        if (getLoggingService().isErrorEnabled()) {
+          getLoggingService().error("ALPacker: no type->quantity map for " +
+                                    receiver);
+        }
       }
       Set types = new TreeSet(typeToQuantity.keySet()); // sorted
       for (Iterator iter2 = types.iterator (); iter2.hasNext(); ) {
 	Object type = iter2.next();
-        getLoggingService().info("\t" + receiver + " : " + type + " - " + typeToQuantity.get(type));
+        if (getLoggingService().isInfoEnabled()) {
+          getLoggingService().info("\t" + receiver + " : " + type + " - " +
+                                   typeToQuantity.get(type));
+        }
       }
     }
   }
