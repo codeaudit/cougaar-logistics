@@ -19,7 +19,7 @@ REM " TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR"
 REM " PERFORMANCE OF THE COUGAAR SOFTWARE."
 REM "</copyright>"
 
-set MYCLASSPATH=.;%COUGAAR_INSTALL_PATH%/lib/core.jar;%COUGAAR_INSTALL_PATH%/lib/bootstrap.jar;%COUGAAR_INSTALL_PATH%/lib/util.jar;%COUGAAR_INSTALL_PATH%/lib/glm.jar;%COUGAAR_INSTALL_PATH%/lib/Logistics_bbn_bbn.jar;%COUGAAR_INSTALL_PATH%/sys/jcchart451K.jar
+set MYCLASSPATH=.;%COUGAAR_INSTALL_PATH%/lib/core.jar;%COUGAAR_INSTALL_PATH%/lib/bootstrap.jar;%COUGAAR_INSTALL_PATH%/lib/util.jar;%COUGAAR_INSTALL_PATH%/lib/glm.jar;%COUGAAR_INSTALL_PATH%/lib/Logistics_bbn_bbn.jar;%COUGAAR_INSTALL_PATH%/sys/jcchart.jar;%COUGAAR_INSTALL_PATH%/sys/log4j.jar
 
 set MYCLASSES=org.cougaar.logistics.ui.inventory.InventoryUIFrame
 REM set MYCLASSES=org.cougaar.logistics.ui.inventory.data.InventoryProjAR
