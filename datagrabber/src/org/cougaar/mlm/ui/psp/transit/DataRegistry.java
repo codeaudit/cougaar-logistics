@@ -170,7 +170,7 @@ public abstract class DataRegistry {
       if (prettyName == null) {
         prettyName = geolocCode;
       }
-      loc.prettyName = prettyName;
+      loc.prettyName = prettyName.intern();
 
       if (DEBUG) {
         System.out.println(
@@ -316,8 +316,10 @@ public abstract class DataRegistry {
         // item id == "bumper number"
         toCarrier.bumperNo = 
           itemPG.getItemIdentification();
+	if (toCarrier.bumperNo != null) toCarrier.bumperNo = toCarrier.bumperNo.intern();
         toCarrier.itemNomen =
           itemPG.getNomenclature();
+	if (toCarrier.itemNomen != null) toCarrier.itemNomen = toCarrier.itemNomen.intern();
       }
       // home location id
       // FIXME: home location needs to be a registered LocationID,
@@ -326,7 +328,7 @@ public abstract class DataRegistry {
       // owner id
       // FIXME: for now use the UID's "clustername" owner field
       // better fix would be for assets to have a separate PG
-      toCarrier.ownerID = instAsset.getUID().getOwner();
+      toCarrier.ownerID = instAsset.getUID().getOwner().intern();
       // self propelled if specified by parameter
       toCarrier.selfPropelled = selfPropIfUnreg;
 
@@ -402,7 +404,7 @@ typical_case:
       if ((protTypeIdPG == null) ||
           ((protId = protTypeIdPG.getTypeIdentification()) == null)) {
         // typically use typeId, but here use UID
-        protId = alpProt.getUID().toString();
+        protId = alpProt.getUID().toString().intern();
       }
       if (toReg.carriers.getPrototype(protId) == null) {
         // must register this prototype
@@ -552,7 +554,7 @@ typical_case:
       String protId =
         ((protAlpTypeId != null) ?
          (protAlpTypeId) :
-         (protAsset.getUID().toString()));
+         (protAsset.getUID().toString().intern()));
       if (toReg.carriers.getPrototype(protId) == null) {
         // must register this prototype
         //
@@ -704,7 +706,7 @@ typical_case:
           toCargo.manifestUID = null;
         }
 	else if (instAsset instanceof Container) {
-	  if (testing) {
+	  if (testing) { // always false
 	    toCargo.hasManifest = true;
 	    toCargo.nomenclatures = new ArrayList ();
 	    toCargo.nomenclatures.add ("Tank Shell");
@@ -714,18 +716,16 @@ typical_case:
 	    toCargo.weights.add (Mass.newMass(0.01d, Mass.SHORT_TONS)); 
 	    System.out.println ("Added stuff to container " + instAsset);
 	  }
-	  /*
-	    else {
-	    Class contentsPGClass = org.cougaar.domain.glm.ldm.asset.ContentsPG.class;
+	  else {
+	    Class contentsPGClass = org.cougaar.glm.ldm.asset.ContentsPG.class;
 	    ContentsPG contentsPG = (ContentsPG) instAsset.searchForPropertyGroup (contentsPGClass);
 	    if (contentsPG != null) {
-	    toCargo.hasManifest = true;
-	    toCargo.nomenclatures = (List) contentsPG.getNomenclatures ();
-	    toCargo.typeIdentifications = (List) contentsPG.getTypeIdentifications ();
-	    toCargo.weights = (List) contentsPG.getWeights ();
+	      toCargo.hasManifest = true;
+	      toCargo.nomenclatures = (List) contentsPG.getNomenclatures ();
+	      toCargo.typeIdentifications = (List) contentsPG.getTypeIdentifications ();
+	      toCargo.weights = (List) contentsPG.getWeights ();
 	    }
-	    }
-	  */
+	  }
 	}
         singleAsset = instAsset;
       }
@@ -740,8 +740,10 @@ typical_case:
       if (itemPG != null) {
         toCargo.name = 
           itemPG.getItemIdentification();
+	if (toCargo.name != null) toCargo.name = toCargo.name.intern();
         toCargo.itemNomen =
           itemPG.getNomenclature();
+	if (toCargo.itemNomen != null) toCargo.itemNomen = toCargo.itemNomen.intern();
       }
 
       // register the cargo
@@ -829,7 +831,7 @@ typical_case:
       if ((protTypeIdPG == null) ||
 	  ((protId = protTypeIdPG.getTypeIdentification()) == null)) {
 	// typically use typeId, but here use UID
-	protId = alpProt.getUID().toString();
+	protId = alpProt.getUID().toString().intern();
       }
       if (toReg.cargoPrototypes.getPrototype(protId) == null) {
 	// must register this cargo prototype
@@ -989,7 +991,7 @@ typical_case:
       protId =
 	((protAlpTypeId != null) ?
 	 (protAlpTypeId) :
-	 (protAsset.getUID().toString()));
+	 (protAsset.getUID().toString().intern()));
       if (toReg.cargoPrototypes.getPrototype(protId) == null) {
 	// must register this prototype
 	//
@@ -1384,7 +1386,7 @@ typical_case:
         int slashIdx = ownerId.indexOf('/');
         if (slashIdx > 0) {
           // remove occasional "UIC/" prefix
-          ownerId = ownerId.substring(slashIdx+1);
+          ownerId = ownerId.substring(slashIdx+1).intern();
         }
       }
     } else {
