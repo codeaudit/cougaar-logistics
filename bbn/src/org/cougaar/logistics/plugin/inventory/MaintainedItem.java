@@ -53,7 +53,7 @@ public class MaintainedItem implements Serializable {
     nomenclature = nomen;
     invPlugin = invPlugin;
     if(aPlugin == null) {
-	logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+	logger = NullLoggingServiceImpl.getLoggingService();
     }
     else {
 	logger = (Logger)aPlugin.getLoggingService(this);
