@@ -83,17 +83,23 @@ public class DemandTaskGenerator extends DemandGeneratorModule
         Asset consumed = (Asset) assetsIt.next();
         Collection projTasks = (Collection) (assetMap.get(consumed));
         double totalQty = deriveTotalQty(start,end,projTasks);
-        int poissonQty = poissonGen.nextPoisson(totalQty);
+        double taskQty = 0.0;
+        if(dgPlugin.getPoissonOn()) {
+          taskQty = poissonGen.nextPoisson(totalQty);
+        }
+        else {
+          taskQty = totalQty;
+        }
         Iterator projTaskIt = projTasks.iterator();
         //This should not be a while, but an if
-        if((poissonQty > 0) &&
+        if((taskQty > 0) &&
            (projTaskIt.hasNext())) {
             supplyTasks.add(createNewDemandTask(gpTask,
                                                   (Task) projTaskIt.next(),
                                                   consumed,
                                                   start,
                                                   end,
-                                                  poissonQty));
+                                                  taskQty));
 
         }
 
@@ -183,7 +189,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       //TODO: MWD Remove debug statements:
       if ((dgPlugin.getOrgName() != null) &&
           (dgPlugin.getOrgName().trim().equals("1-35-ARBN"))) {
-        System.out.println("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
+        logger.shout("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
       }    
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
@@ -199,7 +205,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
                                         Asset consumed,
                                         long start,
                                         long end,
-                                        int qty) {
+                                        double qty) {
 
     Vector prefs = createDemandPreferences(start, end, qty);
 

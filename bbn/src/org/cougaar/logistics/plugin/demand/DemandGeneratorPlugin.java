@@ -64,8 +64,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String GENERATE_PERIOD = "GENERATE_PERIOD";
+  public final String RANDOM_DEVIATION_ON = "RANDOM_DEVIATION_ON";
 
   public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
+
+  private boolean poissonOn = true;
 
   private Organization myOrganization;
   private String myOrgName;
@@ -176,10 +179,12 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       if (o instanceof Task) {
         Task task = (Task) o;
         if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            //if (!taskUtils.isMyInventoryProjection(task, orgName)) {
-            if (taskUtils.isMyDemandForecastProjection(task,orgName)) {
-              return true;
+          if (!taskUtils.isLevel2(task)) {
+            if (taskUtils.isDirectObjectOfType(task, supplyType)) {
+              //if (!taskUtils.isMyInventoryProjection(task, orgName)) {
+              if (taskUtils.isMyDemandForecastProjection(task, orgName)) {
+                return true;
+              }
             }
           }
         }
@@ -435,6 +440,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
 
+  public boolean getPoissonOn() {
+    return poissonOn;
+  }
+
   public long getPeriod() {
     return period;
   }
@@ -471,7 +480,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    Initializes supplyType and inventoryFile
    **/
   private HashMap readParameters() {
-    final String errorString = "DemandGeneratorPlugin requires 2 parameters, Supply Type and Gemerate Period (secs).  Generate Period must be in whole days or whole hours (< 24)";
+    final String errorString = "DemandGeneratorPlugin requires 2 parameters, Supply Type and Gemerate Period (secs).  Generate Period must be in whole days or whole hours (< 24).  There is also a optional parameter RANDOM_DEVIATION_ON=<true,false> which enables whole number POISSON random deviation around the supply task quanity.";
     Collection p = getParameters();
 
     if (p.isEmpty()) {
@@ -493,18 +502,16 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
 
-    String periodString = (String)map.get(GENERATE_PERIOD);
+    String periodString = (String) map.get(GENERATE_PERIOD);
 
-    if((periodString != null) &&
-       (!(periodString.trim().equals("")))) {
+    if ((periodString != null) &&
+        (!(periodString.trim().equals("")))) {
       try {
         period = (new Long(periodString)).longValue();
-      }
-      catch(Exception e) {
+      } catch (Exception e) {
         period = -1;
       }
-    }
-    else {
+    } else {
       //Default is 24 hours
       period = 24 * 60 * 60;
       period = period * 1000;
@@ -513,6 +520,14 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     if (!isLegalPeriod(period)) {
       logger.error("Illegal Period - not in days or hours");
       period = -1;
+    }
+
+    String poissonOnString = (String) map.get(RANDOM_DEVIATION_ON);
+
+    if (poissonOnString != null) {
+      poissonOnString = poissonOnString.trim().toLowerCase();
+      poissonOn = (poissonOnString.equals("true"));
+      //logger.shout("RANDOM_DEVIATION_ON=" + poissonOn);
     }
 
     if (((supplyType == null) ||
@@ -534,7 +549,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   protected long getStartOfPeriod() {
     long timeIn = getCurrentTimeMillis();
     //truncate to the whole number that represents the period num since the start of time.
-    long periods = (long) (timeIn/period);
+    long periods = (long) (timeIn / period);
     //Multiply it back to which gives the start of the period.
     long timeOut = periods * period;
     if (timeIn == timeOut) {
@@ -546,23 +561,23 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   /** TODO: MWD take out this older verion of getStartOfPeriod()
 
-    protected long getStartOfPeriod() {
-    long timeIn = getCurrentTimeMillis();
-    long timeOut = 0;
-    calendar.setTimeInMillis(timeIn);
-    if (periodInDays()) {
-      calendar.set(calendar.HOUR_OF_DAY, 0);
-    }
-    calendar.set(calendar.MINUTE, 0);
-    calendar.set(calendar.SECOND, 0);
-    calendar.set(calendar.MILLISECOND, 0);
-    timeOut = calendar.getTimeInMillis();
-    if (timeIn == timeOut) {
-      logger.error("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
+   protected long getStartOfPeriod() {
+   long timeIn = getCurrentTimeMillis();
+   long timeOut = 0;
+   calendar.setTimeInMillis(timeIn);
+   if (periodInDays()) {
+   calendar.set(calendar.HOUR_OF_DAY, 0);
+   }
+   calendar.set(calendar.MINUTE, 0);
+   calendar.set(calendar.SECOND, 0);
+   calendar.set(calendar.MILLISECOND, 0);
+   timeOut = calendar.getTimeInMillis();
+   if (timeIn == timeOut) {
+   logger.error("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
 
-    }
-    return timeOut;
-  }
+   }
+   return timeOut;
+   }
 
    **/
   /**
@@ -606,10 +621,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       /**
        * TODO: MWD Remove
        *
-      if ((getOrgName() != null) &&
-          (getOrgName().trim().equals("1-35-ARBN"))) {
-        System.out.println("Setting new timer to go at: " + new Date(expiration));
-      }
+       if ((getOrgName() != null) &&
+       (getOrgName().trim().equals("1-35-ARBN"))) {
+       System.out.println("Setting new timer to go at: " + new Date(expiration));
+       }
        */
 
       timer = new CougTimeAlarm(expiration);
