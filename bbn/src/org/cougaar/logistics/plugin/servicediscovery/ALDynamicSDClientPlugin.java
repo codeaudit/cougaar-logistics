@@ -24,44 +24,32 @@ package org.cougaar.logistics.plugin.servicediscovery;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.mts.MessageAddress;
 
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.TimeAspectValue;
 import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.UnaryPredicate;
-//test
-import org.cougaar.planning.ldm.plan.Relationship;
 
-import org.cougaar.glm.ldm.Constants;
-import org.cougaar.glm.ldm.oplan.Oplan;
-import org.cougaar.glm.ldm.asset.Organization;
+//import org.cougaar.glm.ldm.Constants;
 
-import org.cougaar.servicediscovery.SDDomain;
 import org.cougaar.servicediscovery.SDFactory;
 import org.cougaar.servicediscovery.description.TimeInterval;
 import org.cougaar.servicediscovery.description.MMRoleQuery;
 import org.cougaar.servicediscovery.description.ScoredServiceDescription;
-import org.cougaar.servicediscovery.description.ServiceClassification;
 import org.cougaar.servicediscovery.description.ServiceDescription;
+import org.cougaar.servicediscovery.description.ServiceInfo;
 import org.cougaar.servicediscovery.description.ServiceRequest;
-import org.cougaar.servicediscovery.util.UDDIConstants;
+import org.cougaar.servicediscovery.plugin.SDClientPlugin;
 import org.cougaar.servicediscovery.transaction.MMQueryRequest;
 import org.cougaar.servicediscovery.transaction.ServiceContractRelay;
-import org.cougaar.servicediscovery.plugin.SDClientPlugin;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,6 +58,7 @@ import java.util.HashMap;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import org.cougaar.mlm.plugin.organization.GLSConstants;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 
@@ -118,6 +107,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                  + relay.getServiceRequest().getServiceRole());
         }
         serviceRequestHistories.remove(relay.getServiceRequest().getServiceRole().toString());
+	return;
       }
 
       //only take action if you are the client agent
@@ -131,14 +121,22 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                " !satisfied " + !timeIntervalRequestedCompletelySatisfied(relay) +
                                " client " + relay.getClient().equals(getSelfOrg()));
       }
-      if ((relay.getServiceContract().isRevoked() ||
-           !timeIntervalRequestedCompletelySatisfied(relay) ) &&
-           (relay.getClient().equals(getSelfOrg()))) {
+
+      if ((relay.getClient().equals(getSelfOrg())) &&
+	  ((relay.getServiceContract().isRevoked() ||
+           !timeIntervalRequestedCompletelySatisfied(relay)))) {
         if (myLoggingService.isDebugEnabled()) {
           myLoggingService.debug(getAgentIdentifier() +
                                  " queryServices because a service contract was revoked or did not satisfy the request for " +
                                  relay.getServiceContract().getServiceRole().toString());
         }
+
+	TimeInterval requestedTimeInterval = getRequestedTimeInterval(relay);
+	TimeInterval providedTimeInterval = getProvidedTimeInterval(relay);
+
+	ServiceRequestRecord srr = 
+	  new ServiceRequestRecord(relay.getProviderName(),
+				   requestedTimeInterval);
 
         //if this request is not in the history (because it previously
         //completely satisfied the request) put it in
@@ -151,32 +149,31 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                    relay.getProviderName() + " "
                                    + relay.getServiceRequest().getServiceRole());
           }
-          long start = (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
-              Preference.START_TIME);
-          long end = (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
-              Preference.END_TIME);
-          TimeInterval timeInterval = new TimeInterval(start, end);
-          ServiceRequestRecord srr = new ServiceRequestRecord(relay.getProviderName(),
-              timeInterval);
+
           srh = new ServiceRequestHistory(relay.getServiceContract().getServiceRole(),
-              timeInterval, srr);
+              requestedTimeInterval, srr);
           serviceRequestHistories.put(relay.getServiceContract().getServiceRole().toString(),
                                       srh);
-          Iterator it = serviceRequestHistories.keySet().iterator();
-          while(it.hasNext()) {
-            String key = (String)it.next();
-            if (myLoggingService.isDebugEnabled()) {
-              myLoggingService.debug("key " + key);
-            }
+
+	  if (myLoggingService.isDebugEnabled()) {
+	    Iterator it = serviceRequestHistories.keySet().iterator();
+	    while(it.hasNext()) {
+	      String key = (String)it.next();
+	      if (myLoggingService.isDebugEnabled()) {
+		myLoggingService.debug("key " + key);
+	      }
+	    }
           }
-        }
+        } else {
+	  //Add new service request history
+	  srh.addRequest(srr);
+	}
 
         //change the relay. If revoked, change request to zero.
         //If contract doesnt cover request, shrink request
         if(relay.getServiceContract().isRevoked()) {
           //todo, doesn't matter much now because we won't look at revoked ones
-        }
-        else { //change request to match contract
+        } else { //change request to match contract
           if (myLoggingService.isDebugEnabled()) {
             myLoggingService.debug(getAgentIdentifier() +
                                    " change request to match contract for " +
@@ -196,19 +193,24 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                  " do another queryServices for " +
                                  relay.getServiceContract().getServiceRole().toString());
         }
-        queryServices(relay.getServiceContract().getServiceRole());
+	Collection uncoveredTimeIntervals = 
+	  requestedTimeInterval.subtractInterval(providedTimeInterval);
+	  
+	UnaryPredicate servicePredicate = 
+	  new ServiceRequestPredicate(srh, uncoveredTimeIntervals);
+
+        queryServices(relay.getServiceContract().getServiceRole(), null,
+		      servicePredicate);
         //publishRemove(relay);
-      }
-      else if (timeIntervalRequestedCompletelySatisfied(relay) &&
-             relay.getClient().equals(getSelfOrg())) {
+      } else if ((relay.getClient().equals(getSelfOrg())) &&
+		 (timeIntervalRequestedCompletelySatisfied(relay))) {
           if (myLoggingService.isDebugEnabled()) {
             myLoggingService.debug(getAgentIdentifier() +
                                    " handleChangedServiceContractRelays timeIntervalRequestedCompletelySatisfied " +
                                    relay.getServiceContract().getServiceRole().toString());
           }
 
-        }
-      else if (!timeIntervalRequestedCompletelySatisfied(relay) &&
+      } else if (!timeIntervalRequestedCompletelySatisfied(relay) &&
              relay.getClient().equals(getSelfOrg())) {
           if (myLoggingService.isDebugEnabled()) {
             myLoggingService.debug(getAgentIdentifier() +
@@ -321,17 +323,15 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       }
       return ret;
     }
-    else {
-      if (myLoggingService.isDebugEnabled()) {
-        myLoggingService.debug(getAgentIdentifier() +
-                               " alreadyAskedForContractWithProvider srh is null");
-      }
+    else if (myLoggingService.isDebugEnabled()) {
+      myLoggingService.debug(getAgentIdentifier() +
+			     " alreadyAskedForContractWithProvider srh is null");
       Iterator it = serviceRequestHistories.keySet().iterator();
       while(it.hasNext()) {
-        String key = (String)it.next();
-        if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug("key " + key);
-        }
+	String key = (String)it.next();
+	if (myLoggingService.isDebugEnabled()) {
+	  myLoggingService.debug("key " + key);
+	}
       }
     }
 
@@ -489,200 +489,159 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     //todo: set a daily alarm
   }
 
-}
-
-/*
-class TimeInterval {
-  private long startTime;
-  private long endTime;
-  TimeInterval(long start, long end) {
-    startTime = start;
-    endTime = end;
-  }
-  long getEndTime() {
-    return endTime;
-  }
-  long getStartTime() {
-    return startTime;
-  }
-
-  public static Collection removeInterval(TimeInterval interval, Collection desiredCoverageIntervals) {
-    ArrayList ret = new ArrayList();
-    Iterator it = desiredCoverageIntervals.iterator();
-    while(it.hasNext()) {
-      TimeInterval current = (TimeInterval) it.next();
-      ret.addAll(current.subtractInterval(interval));
+  protected static class ServiceRequestHistory {
+    
+    Role requestedRole;
+    TimeInterval requestedTimeInterval;
+    ArrayList serviceRequestRecords;
+    
+    ServiceRequestHistory(Role requestedRole, TimeInterval requestedTimeInterval,
+			  ServiceRequestRecord firstRequestRecord) {
+      this.requestedRole = requestedRole;
+      this.requestedTimeInterval = requestedTimeInterval;
+      serviceRequestRecords = new ArrayList();
+      serviceRequestRecords.add(firstRequestRecord);
     }
-    return ret;
-  }
-
-
-  Collection subtractInterval(TimeInterval interval) {
-    ArrayList ret = new ArrayList();
-
-    //intervals are not overlapping
-    //return this
-    //this      ******
-    //interval           *****
-    if(this.getStartTime() < interval.getStartTime() &&
-       this.getEndTime() < interval.getEndTime() &&
-       this.getEndTime() <= interval.getStartTime()) {
-      ret.add(this);
-      return ret;
+    
+    void addRequest(ServiceRequestRecord srr) {
+      serviceRequestRecords.add(srr);
     }
-    //this             ******
-    //interval *****
-    else if(interval.getStartTime() < this.getStartTime() &&
-            interval.getEndTime() < this.getEndTime() &&
-            interval.getEndTime() <= this.getStartTime()) {
-      ret.add(this);
-      return ret;
-    }
-
-    //this is completely contained
-    //return empty
-    //this       ****
-    //interval  *******
-    else if(interval.getStartTime() <= this.getStartTime() &&
-       interval.getEndTime() >= this.getEndTime()) {
-      return ret;
-    }
-
-    //interval is completely contained
-    //return 0 or 1 or 2 time intervals
-    //this     *********
-    //interval    ****
-    else if(this.getStartTime() <= interval.getStartTime() &&
-            this.getEndTime() >= interval.getEndTime()) {
-
-      if(this.getStartTime() < interval.getStartTime()) {
-        ret.add(new TimeInterval(this.getStartTime(), interval.getStartTime()));
+    
+    //start with timeInterval
+    //for every ServiceRequestRecord with matching provider, subtract that time
+    //interval
+    //at the end, see if there is anything remaining
+    //if so, return false
+    boolean containsRequest(String providerName, TimeInterval requestedTimeInterval) {
+      
+      Iterator requests = serviceRequestRecords.iterator();
+      ArrayList unRequestedTimeIntervals = new ArrayList();
+      unRequestedTimeIntervals.add(new TimeInterval(requestedTimeInterval.getStartTime(),
+						    requestedTimeInterval.getEndTime()));
+      while(requests.hasNext()) {
+	ServiceRequestRecord current = (ServiceRequestRecord) requests.next();
+	ArrayList newUnrequestedTimeIntervals = new ArrayList();
+	if(current.providerName.equals(providerName)) {
+	  Iterator oldUnrequested = unRequestedTimeIntervals.iterator();
+	  while(oldUnrequested.hasNext()) {
+	    TimeInterval oldCurrent = (TimeInterval)oldUnrequested.next();
+	    newUnrequestedTimeIntervals.addAll(oldCurrent.subtractInterval(current.requestedTimeInterval));
+	  }
+	  unRequestedTimeIntervals = newUnrequestedTimeIntervals;
+	}
       }
-      if(this.getEndTime() > interval.getEndTime()) {
-        ret.add(new TimeInterval(interval.getEndTime(), this.getEndTime()));
-      }
-      return ret;
-    }
-
-    //overlap w/o containing
-    //return 1 time interval
-    //this   ******
-    //inteval    *****
-    else if(this.getStartTime() <= interval.getStartTime() &&
-            this.getEndTime() <= interval.getEndTime() &&
-            interval.getStartTime() < this.getEndTime()) {
-      ret.add(new TimeInterval(this.getStartTime(), interval.getStartTime()));
-      return ret;
-
-    }
-    //this       ******
-    //inteval  *****
-    else if(interval.getStartTime() <= this.getStartTime() &&
-            interval.getEndTime() <= this.getEndTime() &&
-            this.getStartTime() < interval.getEndTime()) {
-      ret.add(new TimeInterval(interval.getEndTime(), this.getEndTime()));
-      return ret;
-    }
-
-    else {
-      //this should never happen
-      return ret;
-    }
-  }
-
-}*/
-
-class ServiceRequestHistory{
-
-  Role requestedRole;
-  TimeInterval requestedTimeInterval;
-  ArrayList serviceRequestRecords;
-
-  ServiceRequestHistory(Role requestedRole, TimeInterval requestedTimeInterval,
-                        ServiceRequestRecord firstRequestRecord) {
-    this.requestedRole = requestedRole;
-    this.requestedTimeInterval = requestedTimeInterval;
-    serviceRequestRecords = new ArrayList();
-    serviceRequestRecords.add(firstRequestRecord);
-  }
-
-  void addRequest(ServiceRequestRecord srr) {
-    serviceRequestRecords.add(srr);
-  }
-
-  //start with timeInterval
-  //for every ServiceRequestRecord with matching provider, subtract that time
-  //interval
-  //at the end, see if there is anything remaining
-  //if so, return false
-  boolean containsRequest(String providerName, TimeInterval requestedTimeInterval) {
-
-    Iterator requests = serviceRequestRecords.iterator();
-    ArrayList unRequestedTimeIntervals = new ArrayList();
-    unRequestedTimeIntervals.add(new TimeInterval(requestedTimeInterval.getStartTime(),
-        requestedTimeInterval.getEndTime()));
-    while(requests.hasNext()) {
-      ServiceRequestRecord current = (ServiceRequestRecord) requests.next();
-      ArrayList newUnrequestedTimeIntervals = new ArrayList();
-      if(current.providerName.equals(providerName)) {
-        Iterator oldUnrequested = unRequestedTimeIntervals.iterator();
-        while(oldUnrequested.hasNext()) {
-          TimeInterval oldCurrent = (TimeInterval)oldUnrequested.next();
-          newUnrequestedTimeIntervals.addAll(oldCurrent.subtractInterval(current.requestedTimeInterval));
-        }
-        unRequestedTimeIntervals = newUnrequestedTimeIntervals;
-      }
-    }
-
-    if(unRequestedTimeIntervals.isEmpty()) {
-      return true;
-    }
-    else {
-      Iterator unrequested = unRequestedTimeIntervals.iterator();
-      while(unrequested.hasNext()) {
-        TimeInterval current = (TimeInterval)unrequested.next();
-        //may need to add an epsilon ball around each time
-        if(current.getStartTime() != current.getEndTime()) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-  }
-
-
-}
-
-class ServiceRequestRecord{
-  String providerName;
-  TimeInterval requestedTimeInterval;
-
-  ServiceRequestRecord(String providerName, TimeInterval requestedTimeInterval) {
-    this.providerName = providerName;
-    this.requestedTimeInterval = requestedTimeInterval;
-  }
-}
-
-class ScoredServiceDescriptionComparator implements java.util.Comparator {
-
-  public int compare(Object first, Object second) {
-    if( !(first instanceof ScoredServiceDescription) &&
-        !(second instanceof ScoredServiceDescription)) {
-      throw new ClassCastException("Both objects must be ScoredServiceDescriptions");
-    }
-    else  {
-      ScoredServiceDescription firstSSD = (ScoredServiceDescription) first;
-      ScoredServiceDescription secondSSD = (ScoredServiceDescription) second;
-      if(firstSSD.getScore() > secondSSD.getScore()) {
-        return 1;
-      }
-      else if(firstSSD.getScore() < secondSSD.getScore()) {
-        return -1;
+      
+      if(unRequestedTimeIntervals.isEmpty()) {
+	return true;
       }
       else {
-        return firstSSD.getProviderName().compareTo(secondSSD.getProviderName());
+	Iterator unrequested = unRequestedTimeIntervals.iterator();
+	while(unrequested.hasNext()) {
+	  TimeInterval current = (TimeInterval)unrequested.next();
+	  //may need to add an epsilon ball around each time
+	  if(current.getStartTime() != current.getEndTime()) {
+	    return false;
+	  }
+	}
+	return true;
+      }
+      
+    }
+    
+    
+  }
+
+  protected static class ServiceRequestRecord {
+    String providerName;
+    TimeInterval requestedTimeInterval;
+    
+    ServiceRequestRecord(String providerName, 
+			 TimeInterval requestedTimeInterval) {
+      this.providerName = providerName;
+      this.requestedTimeInterval = requestedTimeInterval;
+    }
+  }
+
+  protected static class ScoredServiceDescriptionComparator implements java.util.Comparator {
+
+    public int compare(Object first, Object second) {
+      if( !(first instanceof ScoredServiceDescription) &&
+	  !(second instanceof ScoredServiceDescription)) {
+	throw new ClassCastException("Both objects must be ScoredServiceDescriptions");
+      }
+      else  {
+	ScoredServiceDescription firstSSD = (ScoredServiceDescription) first;
+	ScoredServiceDescription secondSSD = (ScoredServiceDescription) second;
+	if(firstSSD.getScore() > secondSSD.getScore()) {
+	  return 1;
+	}
+	else if(firstSSD.getScore() < secondSSD.getScore()) {
+	  return -1;
+	}
+	else {
+	  return firstSSD.getProviderName().compareTo(secondSSD.getProviderName());
+	}
       }
     }
   }
+    
+  protected static class ServiceRequestPredicate implements UnaryPredicate {
+    ServiceRequestHistory serviceRequestHistory;
+    Collection uncoveredTimeIntervals;
+
+    public ServiceRequestPredicate(ServiceRequestHistory srh,
+				   Collection uti) {
+      uncoveredTimeIntervals = uti;
+      serviceRequestHistory = srh;
+    }
+
+    public boolean execute(Object o) {
+
+      if (o instanceof ServiceInfo) {
+	if (serviceRequestHistory == null) {
+	  // Nothing to evaluate against
+	  return true;
+	}
+
+	String providerName = ((ServiceInfo) o).getProviderName();
+
+	for (Iterator iterator = uncoveredTimeIntervals.iterator();
+	     iterator.hasNext();) {
+	  TimeInterval timeInterval = (TimeInterval) iterator.next();
+
+	  if (!serviceRequestHistory.containsRequest(providerName, 
+						     timeInterval)) {
+	    return true;
+	  }
+	}
+
+	// All intervals previously asked for
+	return false;
+      } else {
+	return false;
+      }
+    }
+  }
+
+  public static TimeInterval getRequestedTimeInterval(ServiceContractRelay relay) {
+    long start = 
+      (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
+				    Preference.START_TIME);
+    long end = 
+      (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
+				    Preference.END_TIME);
+    return new TimeInterval(start, end);
+  }
+  
+  public static TimeInterval getProvidedTimeInterval(ServiceContractRelay relay) {
+    long start = 
+      (long)SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
+				    Preference.START_TIME);
+    long end = 
+      (long)SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
+				    Preference.END_TIME);
+    return new TimeInterval(start, end);
+  }
 }
+
+
