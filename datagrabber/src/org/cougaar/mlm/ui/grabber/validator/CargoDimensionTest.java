@@ -228,9 +228,6 @@ public class CargoDimensionTest extends AbstractCargoTest implements Graphable {
 
     return RESULT_OK;
   }
-
-  //InnerClasses:
-  ///////////////
 }
 
 

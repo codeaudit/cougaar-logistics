@@ -32,7 +32,4 @@ public abstract class AbstractCargoTest extends Test {
     public int getXAxisColumn () { return 1; }
     public int getZAxisColumn () { return -1; }
     public boolean hasThirdDimension () { return false; }
-
-
-
 }
