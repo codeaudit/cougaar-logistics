@@ -551,6 +551,8 @@ public class InventoryPlugin extends ComponentPlugin {
     Inventory inventory = null;
     levels = (double[])inventoryInitHash.get(item);
     if (levels != null) {
+      inventory=(Inventory)getRootFactory().createAsset("Inventory");
+      ((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
       NewLogisticsInventoryPG logInvPG = 
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       logInvPG.setCapacity(levels[0]);
@@ -559,7 +561,6 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
       logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, logToCSV, this);
 
-      inventory=(Inventory)getRootFactory().createAsset("Inventory");
       inventory.addOtherPropertyGroup(logInvPG);
 
       NewTypeIdentificationPG ti = 
@@ -567,7 +568,6 @@ public class InventoryPlugin extends ComponentPlugin {
       ti.setTypeIdentification("InventoryAsset");
       ti.setNomenclature("Inventory Asset");
 
-      ((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
 
       NewScheduledContentPG scp;
       scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
