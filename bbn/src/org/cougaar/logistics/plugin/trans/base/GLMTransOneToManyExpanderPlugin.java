@@ -679,17 +679,19 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	  double itemArea   = itemPhysicalPG.getFootprintArea().getSquareMeters();
 	  double itemVolume = itemPhysicalPG.getVolume().getCubicMeters();
 	  double itemMass   = itemPhysicalPG.getMass().getKilograms();
-	  area   += itemArea;
-	  volume += itemVolume;
-	  mass   += itemMass;
 
-	  if (itemArea == 0.0d) {
+	  if (itemArea < 0.01d) {
 	    itemArea = itemPhysicalPG.getLength().getMeters() * 
 	      itemPhysicalPG.getWidth().getMeters();
 	    if (isInfoEnabled ()) {
 	      info (".setDimensions - fixing footprint area, was zero for asset " + asset + " on task " + parentTask.getUID());
 	    }
 	  }
+
+	  area   += itemArea;
+	  volume += itemVolume;
+	  mass   += itemMass;
+
 	  if (itemArea == 0.0d || itemVolume == 0.0d || itemMass == 0.0d) {
 	    if (isWarnEnabled ()) {
 	      warn (".setDimensions - asset " + asset + 
@@ -790,6 +792,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     if (whichPG.getFootprintArea () != null) {
       area   = whichPG.getFootprintArea().getSquareMeters ();
+      /*
+      if (area < 0.01d) {
+	area = whichPG.getLength().getMeters() * whichPG.getWidth().getMeters();
+	if (isInfoEnabled ()) {
+	  info (".addToDimensions - fixing footprint area, was zero for asset");
+	}
+      }
+      */
       volume = whichPG.getVolume().getCubicMeters ();
       mass   = whichPG.getMass().getKilograms ();
     } 

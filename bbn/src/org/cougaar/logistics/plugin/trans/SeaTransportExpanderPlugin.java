@@ -333,6 +333,12 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
     } catch (Exception e) {
       try {
 	itemArea = itemAsset.getPhysicalPG().getFootprintArea ().getSquareMeters();
+	/*
+	if (itemArea < 0.00001) {
+	  itemArea = itemAsset.getPhysicalPG().getLength().getMeters()*
+	    itemAsset.getPhysicalPG().getWidth().getMeters();
+	}
+	*/
       } catch (Exception ee) {
 	if (!itemAsset.hasPersonPG ())
 	  warn (".getItemContribution - unable to determine " + 
