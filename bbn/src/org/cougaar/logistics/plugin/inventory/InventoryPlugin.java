@@ -836,6 +836,7 @@ public class InventoryPlugin extends ComponentPlugin
       externalAllocator.allocateRefillTasks(unprovidedTasks);
     }
     if (!partial.isEmpty()) {
+      ArrayList originalTasks = new ArrayList();
       ArrayList partialsToAlloc = new ArrayList();
       Iterator partIt = partial.iterator();
       ArrayList failedSplits = new ArrayList();
@@ -847,6 +848,7 @@ public class InventoryPlugin extends ComponentPlugin
           continue;
         }
         Collection newPartialTasks = getTaskUtils().splitProjection(taskToSplit, splitTimes, this);
+        originalTasks.add(taskToSplit);
         partialsToAlloc.addAll(newPartialTasks);
       }
 
@@ -855,6 +857,7 @@ public class InventoryPlugin extends ComponentPlugin
         externalAllocator.allocateRefillTasks(failedSplits);
       }
       if (! partialsToAlloc.isEmpty()) {
+        externalAllocator.rescindTaskAllocations(originalTasks);
         externalAllocator.allocateRefillTasks(partialsToAlloc);
       }
     }
