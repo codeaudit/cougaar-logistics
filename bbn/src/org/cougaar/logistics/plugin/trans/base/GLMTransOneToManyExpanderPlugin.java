@@ -21,6 +21,7 @@
 package org.cougaar.logistics.plugin.trans.base;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.Set;
@@ -94,6 +95,7 @@ import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
 import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
 
 import org.cougaar.glm.ldm.asset.TransportationRoute;
+import org.cougaar.util.UnaryPredicate;
 
 /**
  * getSubtasks is filled in.  It justs blows up composite
@@ -103,7 +105,7 @@ import org.cougaar.glm.ldm.asset.TransportationRoute;
  */
 public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter implements BlackboardPlugin {
   /** VTH operating modes */
-  protected OperatingMode level2Horizon, level6Horizon;
+  protected transient OperatingMode level2Horizon, level6Horizon;
 
   public final Integer LEVEL_2_MIN = new Integer(2); // later, these should be parameters to plugin...
   public final Integer LEVEL_2_MAX = new Integer(365);
@@ -160,22 +162,48 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
   /** create and publish level-2 and 6 VTH Operating Modes */
   protected void setupOperatingModes () {
-    OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
-    OMCRangeList rangeList = new OMCRangeList (level2Range);
-    publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
-						       LEVEL_2_TIME_HORIZON_DEFAULT));
+    Collection modes = 
+      blackboard.query (new UnaryPredicate() { 
+	  public boolean execute (Object obj) { return (obj instanceof OperatingMode); }
+	});
 
-    OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
-    rangeList = new OMCRangeList (level6Range);
-    publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
-						       LEVEL_6_TIME_HORIZON_DEFAULT));
+    if (modes.isEmpty()) {
+      OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
+      OMCRangeList rangeList = new OMCRangeList (level2Range);
+      publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
+							 LEVEL_2_TIME_HORIZON_DEFAULT));
 
-    if(logger.isInfoEnabled())
-      logger.info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
-		   "level 2 time horizon is " + level2Horizon + 
-		   " and level 6 is " + level6Horizon);
+      OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
+      rangeList = new OMCRangeList (level6Range);
+      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
+							 LEVEL_6_TIME_HORIZON_DEFAULT));
+
+      if (isInfoEnabled())
+	info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
+	      "level 2 time horizon is " + level2Horizon + 
+	      " and level 6 is " + level6Horizon);
+
+    } else {
+      if (isInfoEnabled()) {
+	info (getName() + " skipping creating of operating modes since got them from blackboard.");
+      }
+
+      if (modes.size () != 2) {
+	error (getName() + " expecting two operating modes on rehydation - got " + modes.size () + 
+	       " instead : " + modes);
+      }
+
+      for (Iterator iter = modes.iterator(); iter.hasNext(); ) {
+	OperatingMode mode = (OperatingMode) iter.next();
+	if (mode.getName().equals (LEVEL_2_TIME_HORIZON))
+	  level2Horizon = mode;
+	else
+	  level6Horizon = mode;
+      }
+
+    }
   }
-  
+
   protected static class IntRange extends OMCRange {
     public IntRange (int a, int b) { super (a, b); }
   }
