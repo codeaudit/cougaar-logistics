@@ -16,7 +16,7 @@
         </Integer>
     </RuleParam>
     <RuleParam name="FillToCapacity">
-        <Boolean value = "true">
+        <Boolean value = "false">
         </Boolean>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
