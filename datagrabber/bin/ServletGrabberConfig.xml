@@ -23,13 +23,13 @@
  <DBConfig>
 <!-- that these lines are commented out means we are getting these values from cougaar.rc -->
 <!-- can override by un-commenting  -->
-
-  <User>test</User>
-  <Password>test</Password>
+<!--
+  <User>{yourUserName}</User>
+  <Password>{yourPassword}</Password>
   <DriverClass>org.gjt.mm.mysql.Driver</DriverClass>
-  <ConnectionURL>jdbc:mysql://localhost:3306/test</ConnectionURL>
+  <ConnectionURL>jdbc:mysql://{mySQLhost}/{yourDatabase}</ConnectionURL>
   <Syntax>MySQL</Syntax>
-
+-->
  </DBConfig>
  <HierarchyPSP Society="Tops">
   <Cluster>TRANSCOM</Cluster>

@@ -1,4 +1,4 @@
-
+@echo OFF
 
 REM "<copyright>"
 REM " Copyright 2001 BBNT Solutions, LLC"
@@ -35,6 +35,6 @@ REM PROPERTIES -
 
 echo "java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
 
-java -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
+java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
 
 
