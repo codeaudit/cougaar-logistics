@@ -45,6 +45,7 @@ import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.logistics.plugin.packer.GenericPlugin;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -128,10 +129,12 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
   private static class SupplyTaskPredicate implements UnaryPredicate {
     String supplyType;
+    String orgName;
     TaskUtils taskUtils;
 
-    public SupplyTaskPredicate(String type, TaskUtils aTaskUtils) {
+    public SupplyTaskPredicate(String type, String orgname, TaskUtils aTaskUtils) {
       supplyType = type;
+      orgName = orgname;
       taskUtils = aTaskUtils;
     }
 
@@ -140,7 +143,11 @@ public class Level2TranslatorPlugin extends ComponentPlugin
         Task task = (Task) o;
         if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
           if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            return true;
+	    if(!taskUtils.isInternal(task)) {
+	      if (!taskUtils.isMyRefillTask(task, orgName)) {
+		  return true;
+	      }
+	    }
           }
         }
       }
@@ -151,11 +158,14 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
   private static class ProjectionTaskPredicate implements UnaryPredicate {
     String supplyType;
+    String orgName;
     TaskUtils taskUtils;
 
-    public ProjectionTaskPredicate(String type, TaskUtils aTaskUtils) {
+
+    public ProjectionTaskPredicate(String type, String orgname, TaskUtils aTaskUtils) {
       supplyType = type;
       taskUtils = aTaskUtils;
+      orgName = orgname;
     }
 
     public boolean execute(Object o) {
@@ -163,7 +173,9 @@ public class Level2TranslatorPlugin extends ComponentPlugin
         Task task = (Task) o;
         if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
           if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            return !(taskUtils.isLevel2(task));
+	      if (!taskUtils.isMyRefillTask(task, orgName)) {
+		  return !(taskUtils.isLevel2(task));
+	      }
           }
         }
       }
@@ -289,9 +301,9 @@ public class Level2TranslatorPlugin extends ComponentPlugin
         level2TaskSubscription = (IncrementalSubscription) blackboard.
             subscribe(new Level2TaskPredicate(supplyType, taskUtils));
         supplyTaskSubscription = (IncrementalSubscription) blackboard.
-            subscribe(new SupplyTaskPredicate(supplyType, taskUtils));
+            subscribe(new SupplyTaskPredicate(supplyType, getOrgName(),taskUtils));
         projectionTaskSubscription = (IncrementalSubscription) blackboard.
-            subscribe(new ProjectionTaskPredicate(supplyType, taskUtils));
+            subscribe(new ProjectionTaskPredicate(supplyType,getOrgName(), taskUtils));
         if (logger.isDebugEnabled()) {
           logger.debug("Level2TranslatorPlugin just loaded level 2 subscription");
         }
