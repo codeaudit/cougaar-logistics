@@ -2,11 +2,13 @@
 REM This is a really dumb file that distributes the 
 REM transportPlaybook file to all transport agents
 
-copy transportPlaybook.txt ../configs/temp/CONUSGround-plays.txt
-copy transportPlaybook.txt ../configs/temp/GlobalAir-plays.txt
-copy transportPlaybook.txt ../configs/temp/GlobalSea-plays.txt
-copy transportPlaybook.txt ../configs/temp/PlanePacker-plays.txt
-copy transportPlaybook.txt ../configs/temp/ShipPacker-plays.txt
-copy transportPlaybook.txt ../configs/temp/TRANSCOM-plays.txt
-copy transportPlaybook.txt ../configs/temp/TheaterGround-plays.txt
+mkdir tempTransport
+
+copy transportPlaybook.txt tempTransport/CONUSGround-plays.txt
+copy transportPlaybook.txt tempTransport/GlobalAir-plays.txt
+copy transportPlaybook.txt tempTransport/GlobalSea-plays.txt
+copy transportPlaybook.txt tempTransport/PlanePacker-plays.txt
+copy transportPlaybook.txt tempTransport/ShipPacker-plays.txt
+copy transportPlaybook.txt tempTransport/TRANSCOM-plays.txt
+copy transportPlaybook.txt tempTransport/TheaterGround-plays.txt
 
