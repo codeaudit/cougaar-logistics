@@ -182,7 +182,7 @@ public class RefillProjectionGenerator extends InventoryModule {
 	  //BUT only if demand is non-zero 
 	  if (projDemand > 0.0) {
 	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
-						 thePG.convertBucketToTime(currentBucket -1),
+						 thePG.convertBucketToTime(currentBucket),
 						 projDemand, anInventory, thePG);
 	    refillProjections.add(refill);
 	  }
@@ -198,7 +198,7 @@ public class RefillProjectionGenerator extends InventoryModule {
       // projection task (if there is one)
       if (startBucket != currentBucket) {
         Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
-                                                 thePG.convertBucketToTime(currentBucket - 1),
+                                                 thePG.convertBucketToTime(currentBucket),
                                                  projDemand, anInventory, thePG);
         refillProjections.add(lastRefill);
       }
