@@ -4,8 +4,18 @@
   <property name="build" value="build"/>
   <property environment="env"/>
 
+  <target name="create-overlay-manifest">
+    <tstamp>
+      <format property="build.time" pattern="MM/dd/yyyy hh:mm aa"/>
+    </tstamp>
+    <mkdir dir="Manifest"/>
+    <echo file="Manifest/${ant.project.name}.txt" append="no">NAME=${ant.project.name}
+ARCHIVE_TIME=${build.time}
+</echo>
+    </target>
+
 <!-- TIC Overlay Build -->
-<target name="create_cougaar_overlay">
+<target name="create_cougaar_overlay" depends="create-overlay-manifest">
 
 	<path id="tic.build.overlay.class.path">
 	  <fileset dir="${env.COUGAAR_INSTALL_PATH}/lib">
@@ -25,6 +35,9 @@
   <javac classpathref="tic.build.overlay.class.path" srcdir="${src}" destdir="${build}"/>
   <jar jarfile="staging/lib/stoplight.jar" basedir="${build}"/>
 	<signjar jar="staging/lib/stoplight.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+	<move todir="staging/Manifest">
+		<fileset dir="Manifest"/>
+	</move>
   <copy todir="staging/doc">
     <fileset dir="doc">
       <patternset>
