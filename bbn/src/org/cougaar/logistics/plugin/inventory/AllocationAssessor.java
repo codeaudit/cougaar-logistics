@@ -186,7 +186,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    **/
   public void reconcileInventoryLevels(Collection inventories) {
     Iterator inv_list = inventories.iterator();
-    long today = inventoryPlugin.getCurrentTimeMillis();
+    long currentTime = inventoryPlugin.getCurrentTimeMillis();
     int today_bucket;
     Inventory inventory;
     LogisticsInventoryPG thePG;
@@ -199,7 +199,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       inventory = (Inventory)inv_list.next();
       thePG = (LogisticsInventoryPG)
               inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-
+      long inventoryStart = thePG.getStartTime();
+      long today = Math.max(inventoryStart, currentTime);
       today_bucket = thePG.convertTimeToBucket(today, true);
       reconcileThePast(today_bucket, thePG);
       int end_bucket = thePG.getLastDemandBucket();
