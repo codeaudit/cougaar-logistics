@@ -839,6 +839,9 @@ typical_case:
 	toProt.UID = protId;
 	toProt.isLowFidelity = isLowFiCargo;
 
+	if (protId == null)
+	  System.out.println (Thread.currentThread () + "." +"registerCargoPrototype - protId is null for " + alpProt);
+
 	double weight = 0.0;
 	double width  = 0.0;
 	double height = 0.0;
@@ -1104,11 +1107,15 @@ typical_case:
       // instAsset is different than it's prototype
       //
       // register the instance
+
+      // this is complicated because it needs to support the base asset of aggregates
+      // and low fi assets, as well as normal assets that don't inherit all of their
+      // prototype's attributes.
+      boolean hasItemID = instAsset.getItemIdentificationPG().getItemIdentification() != null;
       String instId =
-	((instAlpTypeId != null) ?
-	 //         (instAlpTypeId) :
-	 (instAsset.getItemIdentificationPG().getItemIdentification()) :
-	 (instAsset.getUID().toString()));
+	((instAlpTypeId != null) ? 
+	 ((hasItemID) ? 
+	  instAsset.getItemIdentificationPG().getItemIdentification() : instAlpTypeId) : instAsset.getUID().toString());
       if (toReg.cargoPrototypes.getPrototype(instId) == null) { 
 	// must register this "instance" prototype
 	//
