@@ -238,14 +238,17 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 		" to " + (targetQuantity - totalQuantity) + 
 		" total is " + totalQuantity);
 	quantity = targetQuantity - totalQuantity;
-      }
-      else if (isInfoEnabled ())
+      } else if (isInfoEnabled ()) {
 	info (".getSubtasks - task " + parentTask.getUID () + " quantity is " + quantity + 
 	      " chunk days " + daysToChunk+ " rate " + ratePerDay);
+      }
+
       if (quantity < 0.00001) {
-	error (".getSubtasks - task " + parentTask.getUID () + 
-	       " gets a quantity of zero, ratePerDay was " + ratePerDay + 
-	       " chunk days " +daysToChunk);
+	if (isInfoEnabled()) {
+	  info (".getSubtasks - task " + parentTask.getUID () + 
+		" gets a quantity of zero, ratePerDay was " + ratePerDay + 
+		" chunk days " +daysToChunk);
+	}
       }
       
       //      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
