@@ -64,6 +64,19 @@ packagedPOLBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
 	Collection getConsumed(); \
 	PGDelegate copy(PropertyGroup del);
 
+[RepairPartConsumerPG]
+slots=Asset mei, \
+      String service, \
+      String theater
+delegates=RepairPartConsumerBG repairPartBG
+
+repairPartBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
+	List getPredicates(); \
+	Schedule getParameterSchedule(Collection col, TimeSpan span); \
+	Rate getRate(Asset asset, List params); \
+	Collection getConsumed(); \
+	PGDelegate copy(PropertyGroup del);
+
 ;;
 ;; examples
 ;;
