@@ -1,0 +1,51 @@
+Instructions for generating the data for the mei_consumption table. Note 
+that this data is derived from data already existing in the database.
+This is done so that repeated queries will not have to be done at runtime.
+However, this means that the data needs to be regenerated whenever the 
+base data changes.
+
+Step 1:
+
+Run the script get-mei-consumption.sql in DB-Visualizer or your favorite tool
+to extract the data. Note that this may take a while.
+
+Save the data as the file mei_consumption_new.csv.
+
+
+Step 2:
+
+Add a record for LIN C13825. This is not in the database, but is used in
+the societies and consumes nothing.
+
+Here is the data for it:
+
+  TypeID= NSN/8115001682275 
+  TypeNomenclature= MILVAN BOX SHIP METAL 20 FT 
+  AlternateTypeID= LIN/C13825 
+
+  Cargo trans code is J3D (J for short).
+
+Here is the data in CSV format:
+
+C13825,8115001682275,J,0,0,0,0
+
+You can also cut and paste it from the current mei_consumption.csv file.
+
+
+Step 3: 
+
+Make sure the data records end with commas:
+
+   lastcomma.pl mei_consumption_new.csv  > mei_consumption_new2.csv
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as mei_consumption.csv.
+
+
+Step 4:
+
+Copy the file to appropriate place in your source tree (this was
+dbms/data/csv at the time of writing).
