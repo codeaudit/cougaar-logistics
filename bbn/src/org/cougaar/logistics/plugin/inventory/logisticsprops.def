@@ -30,12 +30,13 @@ import=org.cougaar.logistics.plugin.inventory.InventoryPlugin,\
 slots=Asset resource, \
       double capacity, \
       boolean fillToCapacity, \
+      long supplierArrivalTime, \
       double initialLevel, \
       boolean isLevel2, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, long bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin); \
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, long arrivalTime, Date startCDay, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	double getProjectionTaskDemand(Task task, int bucket, long start, long end); \
 	void addWithdrawRequisition(Task task); \
@@ -92,7 +93,8 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	ArrayList getActualDemandTasksList(); \
 	long getEffectiveProjectionStart(Task task, long start); \
 	void reinitialize(boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin); \
-        void clearTargetLevels(int startBucket);
+        void clearTargetLevels(int startBucket); \
+	void recalculateInitialLevel();
 
 ;;
 ;; examples
