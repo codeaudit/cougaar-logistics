@@ -260,13 +260,13 @@ public class LogisticsInventoryFormatter {
 		       (qtyInd < 0)){
 			logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
 		    }
-		    else if(startTime<endTime){
-			outputStr += results[qtyInd];
-			writeln(outputStr);
-		    }
 		    else {
-			if(!isCountedAR) {
-			    logger.warn("logAllocationResult: not going to log an allocation result where start is less than end time.");
+			outputStr += results[qtyInd];
+			if(startTime<=endTime){
+			    writeln(outputStr);
+			}
+			else if(!isCountedAR) {
+			    logger.warn("logAllocationResult: not going to log an allocation result where endTime is less than start time.  CSV line is is:" + outputStr);
 			}
 		    }
 		}
