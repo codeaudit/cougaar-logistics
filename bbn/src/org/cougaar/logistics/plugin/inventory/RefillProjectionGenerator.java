@@ -30,8 +30,11 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
+import org.cougaar.planning.ldm.measure.Count;
 import org.cougaar.planning.ldm.measure.CountRate;
+import org.cougaar.planning.ldm.measure.Duration;
 import org.cougaar.planning.ldm.measure.FlowRate;
+import org.cougaar.planning.ldm.measure.Volume;
 
 import org.cougaar.planning.ldm.plan.AspectRate;
 import org.cougaar.planning.ldm.plan.AspectScorePoint;
@@ -174,8 +177,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
       long startDay = thePG.getStartTime();
       int startBucket = thePG.convertTimeToBucket(startDay);
       int currentBucket = startBucket;
-      int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
-                                                           addNDays(startDay, daysOnHand));
+//       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
+//                                                            addNDays(startDay, daysOnHand));
+      int customerDemandBucket = thePG.convertTimeToBucket(startDay) + daysOnHand;
+ 
       double projDemand = 0;
       double nextProjDemand = 0;
       int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
@@ -392,8 +397,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
-    p_start = createRefillTimePreference(start, earliest, AspectType.START_TIME);
-    p_end = createRefillTimePreference(end, earliest, AspectType.END_TIME);
+    p_start = createRefillTimePreference(start, earliest, AspectType.START_TIME, thePG);
+    p_end = createRefillTimePreference(end, earliest, AspectType.END_TIME, thePG);
     p_qty = createRefillRatePreference(qty, thePG.getBucketMillis());
     prefs.add(p_start);
     prefs.add(p_end);
@@ -436,10 +441,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @return Preference The new Time Preference
    **/
   private Preference createRefillTimePreference(long bestDay, long start, 
-                                                int aspectType) {
+                                                int aspectType, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
-    double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
+    double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
@@ -448,8 +453,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
 
     AspectScorePoint earliest = new AspectScorePoint(start, alpha, aspectType);
     AspectScorePoint best = new AspectScorePoint(bestDay, 0.0, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
-                                                       alpha, aspectType);
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+//                                                        alpha, aspectType);
+    AspectScorePoint first_late = new AspectScorePoint(bestDay + thePG.getBucketMillis(),
+						       alpha, aspectType);
     AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score), aspectType);
 
     points.addElement(earliest);
@@ -468,15 +475,17 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @return Preference  The new demand rate preference for the Refill Task
    **/
   private Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
-    double ratevalue = refill_qty / (bucketMillis / getTimeUtils().MSEC_PER_DAY);
     AspectValue bestAV;
+    Duration dur = new Duration(bucketMillis, Duration.MILLISECONDS);
     //highAV could be bumped to more than refill_qty + 1 if needed
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+      Volume vol = new Volume(refill_qty, Volume.GALLONS);
       bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
-                                          FlowRate.newGallonsPerDay(ratevalue));
+					  new FlowRate(vol, dur));
     } else {
-      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
-                                          CountRate.newEachesPerDay(ratevalue));
+      Count cnt = new Count(refill_qty, Count.EACHES);
+      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+					  new CountRate(cnt, dur));
     }
     ScoringFunction qtySF = ScoringFunction.
 	createStrictlyAtValue(bestAV);

@@ -52,7 +52,6 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     // Bucket will be a knob, this implementation temporary
     private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 1;
-    private Duration durationArray[];
     protected LogisticsInventoryPG myPG;
     protected long startTime;
     protected int timeZero;
@@ -75,9 +74,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     protected double criticalLevelsArray[];
     protected double inventoryLevelsArray[];
     // Policy inputs
-    protected int criticalLevel = 3;
-    protected int reorderPeriod = 3;
-    protected int bucketSize = 1;
+    protected long bucketSize = MSEC_PER_BUCKET;
+    protected int criticalLevel = 3; // num buckets
+    protected int reorderPeriod = 3; // num buckets
     // Lists for csv logging & UI support
     protected ArrayList projWithdrawList;
     protected ArrayList withdrawList;
@@ -103,10 +102,6 @@ public class LogisticsInventoryBG implements PGDelegate {
         criticalLevelsArray = new double[180];
         inventoryLevelsArray = new double[180];
         Arrays.fill(criticalLevelsArray, Double.NEGATIVE_INFINITY);
-        durationArray = new Duration[15];
-        for (int i = 0; i <= 14; i++) {
-            durationArray[i] = Duration.newDays(0.0 + i);
-        }
         projWithdrawList = new ArrayList();
         withdrawList = new ArrayList();
         projSupplyList = new ArrayList();
@@ -117,7 +112,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
+    public void initialize(long startTime, int criticalLevel, int reorderPeriod, long bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
         this.startTime = startTime;
         // Set initial level of inventory from time zero to today.  This assumes that the inventory
         // is created because the existence of demand and the RefillGenerator will be run
@@ -126,6 +121,9 @@ public class LogisticsInventoryBG implements PGDelegate {
         // to today have been set before the RefillGenerator is run
         // Contract: the inventory for yesterday is always valid because initially it is
         // set by the behavior group of the inventory.
+	// FSC - HOURLY:
+	this.bucketSize = bucketSize;
+	MSEC_PER_BUCKET = this.bucketSize;
         timeZero = (int) ((startTime / MSEC_PER_BUCKET) - 1);
 
         //Initialize with initial level since the refill generator won't start setting inv levels
@@ -144,8 +142,6 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         this.criticalLevel = criticalLevel;
         this.reorderPeriod = reorderPeriod;
-        this.bucketSize = bucketSize;
-        MSEC_PER_BUCKET = bucketSize * TimeUtils.MSEC_PER_DAY;
         bufferedCriticalLevels =
                 ScheduleUtils.buildSimpleQuantitySchedule(0, startTime, startTime + (TimeUtils.MSEC_PER_DAY * 10));
         bufferedTargetLevels =
@@ -265,14 +261,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     public double getProjectionTaskDemand(Task task, int bucket, long start, long end) {
         // If days_spanned is less than zero or days_spanned is greater than the bucket size
         // then the task has no demand for this bucket
-        int days_spanned = getDaysSpanned(bucket, start, end);
-        if ((days_spanned > 0) && !(days_spanned > bucketSize)) {
+        // FCS - HOURLY : getProjectionTaskDemand calls getDaysSpanned()
+        long time_spanned = getTimeSpanned(bucket, start, end);
+        if ((time_spanned > 0) && !(time_spanned > bucketSize)) {
             Rate rate = taskUtils.getRate(task);
-            Duration d = durationArray[days_spanned];
-            Scalar scalar = (Scalar) rate.computeNumerator(d);
-            return taskUtils.getDouble(scalar);
-        }
-        return 0.0;
+	    Duration d = Duration.newMilliseconds((double)time_spanned);
+	    Scalar scalar = (Scalar)rate.computeNumerator(d);
+	    return taskUtils.getDouble(scalar);
+	}
+	return 0.0;
     }
 
     public void removeWithdrawRequisition(Task task) {
@@ -448,40 +445,34 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     private double[] computeCriticalLevels() {
         if (regenerate_projected_demand) {
-            regenerateProjectedDemandList();
-            regenerate_projected_demand = false;
-        }
-        long days_per_bucket = MSEC_PER_BUCKET / TimeUtils.MSEC_PER_DAY;
-        double cl_per_bucket = (double) criticalLevel / (double) days_per_bucket;
-        int mode = (int) Math.floor(cl_per_bucket);
-        double Ci;
-        criticalLevelsArray = new double[projectedDemandArray.length];
-        // Number of days in criticalLevel falls within a single bucket
-        if (mode == 0) {
-            for (int i = 0; i < projectedDemandArray.length; i++) {
-                Ci = projectedDemandArray[i] * cl_per_bucket;
-                criticalLevelsArray[i] = Ci;
-            }
-        } else { // Number of days in criticalLevel spans multiple buckets
-            int buckets = (int) Math.floor(cl_per_bucket);
-            double fe = cl_per_bucket - buckets;
-            Ci = 0.0;
-            for (int i = 1; i <= buckets; i++) {
-                Ci += projectedDemandArray[i];
-            }
-            Ci += projectedDemandArray[buckets + 1] * fe;
-            criticalLevelsArray[0] = Ci;
-            for (int i = 1; i < projectedDemandArray.length - buckets - 1; i++) {
-                Ci = Ci - projectedDemandArray[i] + projectedDemandArray[i + buckets] * (1 - fe) +
-                        projectedDemandArray[i + buckets + 1] * fe;
-                criticalLevelsArray[i] = Ci;
-            }
-            for (int i = projectedDemandArray.length - buckets - 1; i < projectedDemandArray.length; i++) {
-                Ci = Ci - projectedDemandArray[i];
-                criticalLevelsArray[i] = Ci;
-            }
-        }
-        return criticalLevelsArray;
+	    regenerateProjectedDemandList();
+	    regenerate_projected_demand = false;
+	}
+	double Ci;
+	criticalLevelsArray = new double[projectedDemandArray.length];
+	// criticalLevel falls within a single bucket
+	if (criticalLevel == 1) { 
+	    for (int i=0; i < projectedDemandArray.length; i++) {
+	        Ci =  projectedDemandArray[i];
+		criticalLevelsArray[i] = Ci;
+	    }
+	} else { // criticalLevel spans multiple buckets
+	  int buckets = criticalLevel;
+	  Ci = 0.0;
+	  for (int i=1; i <= buckets; i++) {
+	      Ci += projectedDemandArray[i];	  
+	  }
+	  criticalLevelsArray[0] = Ci;
+	  for (int i=1; i < projectedDemandArray.length-buckets-1; i++) {
+	      Ci =  Ci - projectedDemandArray[i] + projectedDemandArray[i+buckets];
+	      criticalLevelsArray[i] = Ci;
+	  }
+	  for (int i=projectedDemandArray.length-buckets-1; i < projectedDemandArray.length; i++) {
+	      Ci =  Ci - projectedDemandArray[i];
+	      criticalLevelsArray[i] = Ci;
+	  }
+	}
+	return criticalLevelsArray;
     }
 
     public double getLevel(int bucket) {
@@ -570,37 +561,37 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public double getActualDemand(int bucket) {
         if (bucket >= dueOutList.size()) {
-            return 0.0;
-        }
-        double actualDemand = 0.0;
-        Rate rate;
-        Scalar scalar;
-        Iterator list = ((ArrayList) dueOutList.get(bucket)).iterator();
-        while (list.hasNext()) {
-            Task task = (Task) list.next();
-            if (taskUtils.isProjection(task)) {
-                long start = (long) PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
-                long end = (long) PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-                start = getEffectiveProjectionStart(task, start);
-                if (isValidProjectionTaskInBucket(start, end, bucket)) {
-                    int days_spanned = getDaysSpanned(bucket, start, end);
-                    rate = taskUtils.getRate(task);
-                    try {
-                        scalar = (Scalar) rate.computeNumerator(durationArray[days_spanned]);
-                        actualDemand += taskUtils.getDouble(scalar);
-                    } catch (Exception e) {
-                        if (logger.isErrorEnabled()) {
-                            logger.error(taskUtils.taskDesc(task) +
-                                         " Start: " + TimeUtils.dateString(start) +
-                                         " days_spanned: " + days_spanned);
-                        }
-                    }
-                }
-            } else {
-                actualDemand += taskUtils.getQuantity(task);
-            }
-        }
-        return actualDemand;
+	    return 0.0;
+	}
+	double actualDemand = 0.0;
+	Rate rate;
+	Scalar scalar;
+	Iterator list = ((ArrayList)dueOutList.get(bucket)).iterator();
+	while (list.hasNext()) {
+	  Task task = (Task)list.next();
+	  if (taskUtils.isProjection(task)) {
+	      long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+	      long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+	      start = getEffectiveProjectionStart(task, start);
+	      if (isValidProjectionTaskInBucket(start, end, bucket)) {
+		  long time_spanned = getTimeSpanned(bucket, start, end);
+		  rate = taskUtils.getRate(task);
+		  try {
+		      scalar = (Scalar)rate.computeNumerator(Duration.newMilliseconds((double)time_spanned));
+		      actualDemand += taskUtils.getDouble(scalar);	
+		  } catch(Exception e) {
+		      if (logger.isErrorEnabled()) {
+			logger.error(taskUtils.taskDesc(task)+
+				     " Start: "+TimeUtils.dateString(start)+
+				     " time_spanned: "+time_spanned);
+		      }
+		  }
+	      }
+	  } else {
+	      actualDemand += taskUtils.getQuantity(task);
+	  }
+	}
+	return actualDemand; 
     }
 
     public Collection getActualDemandTasks(int bucket) {
@@ -637,12 +628,12 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
     }
 
-    private int getDaysSpanned(int bucket, long start, long end) {
+    private long getTimeSpanned(int bucket, long start, long end) {
         long bucket_start = convertBucketToTime(bucket);
-        long bucket_end = bucket_start + MSEC_PER_BUCKET;
-        long interval_start = Math.max(start, bucket_start);
-        long interval_end = Math.min(end, bucket_end);
-        int value = (int) ((interval_end - interval_start) / TimeUtils.MSEC_PER_DAY);
+	long bucket_end = bucket_start + MSEC_PER_BUCKET;
+	long interval_start = Math.max(start, bucket_start);
+	long interval_end = Math.min(end, bucket_end);
+	long value = interval_end - interval_start;
 //     if (value < 0) {
 //       logger.error("Bucket start: "+bucket_start+", Bucket end: "+bucket_end+
 // 		   ", Task start: "+TimeUtils.dateString(start)+
@@ -667,7 +658,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public double getReorderPeriod() {
-        return Math.ceil((double) reorderPeriod / (double) (MSEC_PER_BUCKET / TimeUtils.MSEC_PER_DAY));
+        return reorderPeriod;
     }
 
     /**
@@ -798,8 +789,13 @@ public class LogisticsInventoryBG implements PGDelegate {
      * used to index duein/out vectors, levels, etc.
      **/
     public int convertTimeToBucket(long time) {
-        int thisDay = (int) (time / MSEC_PER_BUCKET);
-        return thisDay - timeZero;
+        int thisBucket = (int) (time / MSEC_PER_BUCKET);
+	// FCS - HOURLY : Added this code from Bug #2413
+	if ((time % MSEC_PER_BUCKET) > 0.0) {
+	    thisBucket += 1;
+	}
+	// FCS - HOURLY : End added code
+	return thisBucket - timeZero;
     }
 
     /**
@@ -863,80 +859,80 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public void takeSnapshot(Inventory inventory) {
         ArrayList tmpProjWdraw = new ArrayList();
-        ArrayList tmpWdraw = new ArrayList();
-        ArrayList tmpProjResupply = new ArrayList();
-
-        Iterator due_outs;
-        for (int i = 0; i < dueOutList.size(); i++) {
-            due_outs = ((ArrayList) dueOutList.get(i)).iterator();
-            while (due_outs.hasNext()) {
-                Task task = (Task) due_outs.next();
-                if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-                    tmpWdraw.add(task);
-                } else { // PROJECTWITHDRAW
-                    if (!tmpProjWdraw.contains(task)) {
-                        tmpProjWdraw.add(task);
-                    }
-                }
-            }
-        }
-        projWithdrawList = tmpProjWdraw;
-        withdrawList = tmpWdraw;
-
-        Iterator projResupplyIt = refillProjections.iterator();
-        while (projResupplyIt.hasNext()) {
-            Task task = (Task) projResupplyIt.next();
-            if (!tmpProjResupply.contains(task)) {
-                tmpProjResupply.add(task);
-            }
-        }
-
-        projSupplyList = tmpProjResupply;
-        supplyList = (ArrayList) refillRequisitions.clone();
-        // MWD took this out when converted list to a schedule.
-        //    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
-
-        ArrayList tmpActualDemandTasksList = new ArrayList();
-        for (int i = 0; i < dueOutList.size(); i++) {
-            tmpActualDemandTasksList.add(getActualDemandTasks(i));
-        }
-        actualDemandTasksList = tmpActualDemandTasksList;
-
-        Vector list = new Vector();
-        long start = convertBucketToTime(0);
-        for (int i = 0; i < criticalLevelsArray.length; i++) {
-            if (criticalLevelsArray[i] >= 0.0) {
-                list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
-                                                                    start, start + MSEC_PER_BUCKET));
-            }
-            start += MSEC_PER_BUCKET;
-        }
-        bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(),
-                                                                PlanScheduleType.OTHER);
-        start = convertBucketToTime(0);
-        list.clear();
-        for (int i = 0; i < targetLevelsList.size(); i++) {
-            Double targetLevel = (Double) targetLevelsList.get(i);
-            if (targetLevel != null) {
-                list.add(ScheduleUtils.buildQuantityScheduleElement(targetLevel.doubleValue(), start, start + MSEC_PER_BUCKET));
-            }
-            start += MSEC_PER_BUCKET;
-        }
-        bufferedTargetLevels = GLMFactory.newQuantitySchedule(list.elements(),
-                                                              PlanScheduleType.OTHER);
-
-
-        start = convertBucketToTime(0);
-        list.clear();
-        for (int i = 0; i < inventoryLevelsArray.length; i++) {
-            list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
-                                                                start, start + MSEC_PER_BUCKET));
-            start += MSEC_PER_BUCKET;
-        }
-        bufferedInventoryLevels = GLMFactory.newQuantitySchedule(list.elements(),
-                                                                 PlanScheduleType.OTHER);
-        NewScheduledContentPG scp = (NewScheduledContentPG) inventory.getScheduledContentPG();
-        scp.setSchedule(bufferedInventoryLevels);
+	ArrayList tmpWdraw = new ArrayList();
+	ArrayList tmpProjResupply = new ArrayList();
+	
+	Iterator due_outs;
+	for (int i=0; i < dueOutList.size(); i++) {
+	    due_outs = ((ArrayList)dueOutList.get(i)).iterator();
+	    while (due_outs.hasNext()) {
+	        Task task = (Task)due_outs.next();
+		if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+		    tmpWdraw.add(task);
+		} else { // PROJECTWITHDRAW
+		    if (!tmpProjWdraw.contains(task)) {
+		      tmpProjWdraw.add(task);
+		    }
+		}
+	    }
+	}
+	projWithdrawList =tmpProjWdraw;
+	withdrawList = tmpWdraw;
+    
+	Iterator projResupplyIt = refillProjections.iterator();
+	while(projResupplyIt.hasNext()) {
+	    Task task = (Task) projResupplyIt.next();
+	    if(!tmpProjResupply.contains(task)) {
+	        tmpProjResupply.add(task);
+	    }
+	}
+	
+	projSupplyList = tmpProjResupply;
+	supplyList = (ArrayList)refillRequisitions.clone();
+	// MWD took this out when converted list to a schedule.
+	//    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
+	
+	ArrayList tmpActualDemandTasksList = new ArrayList();
+	for (int i=0; i < dueOutList.size(); i++) {
+	    tmpActualDemandTasksList.add(getActualDemandTasks(i));
+	}
+	actualDemandTasksList = tmpActualDemandTasksList;
+	
+	Vector list = new Vector();
+	long start = convertBucketToTime(0);
+	for (int i=0; i < criticalLevelsArray.length; i++) {
+	    if(criticalLevelsArray[i] >= 0.0) {
+	        list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
+								    start, start+MSEC_PER_BUCKET));
+	    }
+	    start += MSEC_PER_BUCKET;
+	}
+	bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(), 
+								PlanScheduleType.OTHER);
+	start = convertBucketToTime(0);
+	list.clear();
+	for (int i=0; i < targetLevelsList.size(); i++) {
+	    Double targetLevel = (Double)targetLevelsList.get(i);
+	    if(targetLevel != null) {
+	        list.add(ScheduleUtils.buildQuantityScheduleElement(targetLevel.doubleValue(),start,start+MSEC_PER_BUCKET));
+	    }
+	    start += MSEC_PER_BUCKET;
+	}
+	bufferedTargetLevels = GLMFactory.newQuantitySchedule(list.elements(),
+							      PlanScheduleType.OTHER);
+	
+	
+	start = convertBucketToTime(0);
+	list.clear();
+	for (int i=0; i < inventoryLevelsArray.length; i++) {
+	    list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
+								start, start+MSEC_PER_BUCKET));
+	    start += MSEC_PER_BUCKET;
+	}
+	bufferedInventoryLevels = GLMFactory.newQuantitySchedule(list.elements(), 
+							    PlanScheduleType.OTHER);
+	NewScheduledContentPG scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
+	scp.setSchedule(bufferedInventoryLevels);
     }
 
     public boolean getFailuresFlag() {
@@ -969,7 +965,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void Test() {
-//      logger.error("Bucket size is "+MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY);
+        logger.error("Bucket size is "+MSEC_PER_BUCKET/TimeUtils.MSEC_PER_HOUR+" hrs.");
 //      logger.error("ReorderPeriod is "+reorderPeriod+", getReorderPeriod() "+getReorderPeriod()+
 //  		       ", critical level "+criticalLevel);
 //      computeCriticalLevels();

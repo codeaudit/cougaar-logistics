@@ -126,7 +126,7 @@ public class InventoryPlugin extends ComponentPlugin
   private InventoryPolicy inventoryPolicy = null;
   private int criticalLevel = 3;
   private int reorderPeriod = 3;
-  private int bucketSize = 1;
+  private long bucketSize = TimeUtils.MSEC_PER_DAY;
 
   public void load() {
     super.load();
@@ -1329,6 +1329,11 @@ public class InventoryPlugin extends ComponentPlugin
       int rp = pol.getReorderPeriod();
       if ((rp >= 0) && (rp != reorderPeriod)) {
 	reorderPeriod = rp;
+	changed = true;
+      }
+      long bucket = pol.getBucketSize();
+      if (bucket >= TimeUtils.MSEC_PER_HOUR) {
+	bucketSize = bucket;
 	changed = true;
       }
     }

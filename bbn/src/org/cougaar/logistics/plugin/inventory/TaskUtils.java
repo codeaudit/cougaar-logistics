@@ -306,7 +306,30 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       }
   }
 
+  public double getQuantity(Task task, AllocationResult ar, long time_spanned) {
+    if (isProjection(task)) {
+      Rate rate = getARAspectRate(ar);
+      Duration d = Duration.newMilliseconds((double)time_spanned);
+      Scalar scalar = (Scalar)rate.computeNumerator(d);
+      return getDouble(scalar);
+    } else {
+      return getQuantity(ar);
+    }
+  }
+
+  public static Rate getARAspectRate(AllocationResult ar) {
+    if (ar == null) return null;
+    AspectValue[] avs = ar.getAspectValueResults();
+    for (int ii = 0; ii < avs.length; ii++) {
+      if (avs[ii].getAspectType() == AlpineAspectType.DEMANDRATE) {
+	return ((AspectRate)avs[ii]).getRateValue();
+      }
+    }
+    return null;
+  }
+
     public TimeUtils getTimeUtils() {return utilProvider.getTimeUtils();}
+
 }
 
 

@@ -110,7 +110,7 @@ public class InventoryLevelGenerator extends InventoryModule {
 	    //               //default rate for counts is millis
 	    //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
 	    // 	  }
-	    refillQty = getTaskUtils().getQuantity(refill, ar);
+	    refillQty = getTaskUtils().getQuantity(refill, ar, thePG.getBucketMillis());
           } else {
             try {
               refillQty = ar.getValue(AspectType.QUANTITY);

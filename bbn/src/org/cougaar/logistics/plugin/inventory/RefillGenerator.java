@@ -96,8 +96,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
     //  pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
     long today = inventoryPlugin.getCurrentTimeMillis();
     //start time (k) is today plus OST.
-    long start = getTimeUtils().addNDays(today, orderShipTime);
-    
+//     long start = getTimeUtils().addNDays(today, orderShipTime);
+    long start;
+
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       // clear the refill lists from the last inventory
@@ -110,6 +111,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
 
+      start = today + (orderShipTime * thePG.getBucketMillis());
+
       // only process Level 6 inventories
       if (! thePG.getIsLevel2()) {
 	//clear the refills
@@ -119,8 +122,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
         // refill time is start + 1 bucket (k+1)
         int refillBucket = startBucket + 1; 
         // max lead day is today + maxLeadTime
-        int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-						      addNDays(today, maxLeadTime));
+//         int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+// 						      addNDays(today, maxLeadTime));
+	int maxLeadBucket = thePG.convertTimeToBucket(today) + maxLeadTime;
 	double prevTarget = 0;
 
         //calculate inventory levels for time ZERO through start (today + OST)
@@ -225,11 +229,12 @@ public class RefillGenerator extends InventoryLevelGenerator {
     newRefill.setVerb(Constants.Verb.Supply);
     newRefill.setDirectObject(thePG.getResource());
     //set the commitment date to endDay - ost.
-    newRefill.setCommitmentDate(new Date(getTimeUtils().subtractNDays(endDay, ost)));
+    newRefill.setCommitmentDate(new Date(endDay-(thePG.getBucketMillis()*ost)));
+//     newRefill.setCommitmentDate(new Date(getTimeUtils().subtractNDays(endDay, ost)));
     // create preferences
     Vector prefs = new Vector();
     Preference p_end,p_qty;
-    p_end = createRefillTimePreference(endDay, today);
+    p_end = createRefillTimePreference(endDay, today, thePG);
     p_qty = createRefillQuantityPreference(quantity);
     prefs.add(p_end);
     prefs.add(p_qty);
@@ -269,19 +274,21 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param today The time representation of today or now
    *  @return Preference  The new time preference
    **/
-  private Preference createRefillTimePreference(long bestDay, long today) {
+  private Preference createRefillTimePreference(long bestDay, long today, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
-    double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
+    double bucketsBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
     //Use .0033 as a slope for now
-    double late_score = .0033 * daysBetween;
+    double late_score = .0033 * bucketsBetween;
     // define alpha .25
     double alpha = .25;
     Vector points = new Vector();
 
     AspectScorePoint earliest = new AspectScorePoint(today, alpha, AspectType.END_TIME);
     AspectScorePoint best = new AspectScorePoint(bestDay, 0.0, AspectType.END_TIME);
-    AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+//                                                        alpha, AspectType.END_TIME);
+    AspectScorePoint first_late = new AspectScorePoint(bestDay+thePG.getBucketMillis(), 
                                                        alpha, AspectType.END_TIME);
     AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score), 
                                                    AspectType.END_TIME);

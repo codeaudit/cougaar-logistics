@@ -24,6 +24,7 @@ package org.cougaar.logistics.plugin.inventory;
 import org.cougaar.planning.ldm.policy.BooleanRuleParameter;
 import org.cougaar.planning.ldm.policy.IntegerRuleParameter;
 import org.cougaar.planning.ldm.policy.DoubleRuleParameter;
+import org.cougaar.planning.ldm.policy.LongRuleParameter;
 import org.cougaar.planning.ldm.policy.Policy;
 import org.cougaar.planning.ldm.policy.RuleParameter;
 import org.cougaar.planning.ldm.policy.RuleParameterIllegalValueException;
@@ -39,6 +40,7 @@ public class InventoryPolicy extends Policy {
   public static final String HandlingTime = "HandlingTime";
   public static final String TransportTime = "TransportTime";
   public static final String OrderShipTime = "OrderShipTime";
+  public static final String BucketSize = "BucketSize";
 
   public InventoryPolicy() {
     StringRuleParameter id = new StringRuleParameter(AgentID);
@@ -114,6 +116,13 @@ public class InventoryPolicy extends Policy {
       // Print exception, waiting for a static logger
     }
     Add(ost);
+    LongRuleParameter bucket = new LongRuleParameter(BucketSize, TimeUtils.MSEC_PER_HOUR, Long.MAX_VALUE);
+    try {
+      bucket.setValue(new Long(TimeUtils.MSEC_PER_DAY));
+    } catch (RuleParameterIllegalValueException ex) {
+      exception = ex.toString();
+    }
+    Add(bucket);
   }
 
   public String getAgentID() {
@@ -278,4 +287,21 @@ public class InventoryPolicy extends Policy {
     }
   }
 
+  public long getBucketSize() {
+    LongRuleParameter param = (LongRuleParameter)
+      Lookup(BucketSize);
+    return ((Long)(param.getValue())).longValue();
+  }
+
+  public void setBucketSize(long l) {
+    String exception;
+    LongRuleParameter param = (LongRuleParameter)
+      Lookup(BucketSize);
+    try {
+      param.setValue(new Long(l));
+    } catch (RuleParameterIllegalValueException ex) {
+      exception = ex.toString();
+      // Print exception, waiting for a static logger
+    }
+  }
 }
