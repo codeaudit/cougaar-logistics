@@ -576,21 +576,21 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
   }
 
   public void determineCommStatus(IncrementalSubscription commStatusSub, Collection addedSupply) {
-    Collection added = commStatusSub.getAddedCollection();
-    Collection changed = commStatusSub.getChangedCollection();
+    Collection addedComms = commStatusSub.getAddedCollection();
+    Collection changedComms = commStatusSub.getChangedCollection();
     //    updateCommStatus(commStatusSub.getAddedCollection(), addedSupply);
     //    updateCommStatus(commStatusSub.getChangedCollection(), addedSupply);
-    updateCommStatus(added, addedSupply);
-    updateCommStatus(changed, addedSupply);
+    updateCommStatus(addedComms, addedSupply);
+    updateCommStatus(changedComms, addedSupply);
     //if there aren't any comms status subscription changes, but we are waiting on addedSupply
     //check things out to see its time to add the alarm
-    if ( (added.isEmpty()) && (changed.isEmpty()) 
+    if ( (addedComms.isEmpty()) && (changedComms.isEmpty())
          && (!commStatusSub.isEmpty()) && (!addedSupply.isEmpty()) ) {
       for (Iterator iter = commStatusSub.iterator(); iter.hasNext();) {
         CommStatus cs = (CommStatus) iter.next();
         String customerName = cs.getConnectedAgentName();
         CustomerState state = (CustomerState) customerStates.get(customerName);
-        if ( (state != null) && (state.getCommsUpAlarm() == null) ) {
+        if ( (state != null) && (state.getCommsUpAlarm() == null) && (! state.hasStateExpired()) ) {
           if ( (state.isCommsUp()) && (cs.isCommUp()) ) {
             Alarm alarm = ((ReconcileInventoryPlugin) inventoryPlugin).addAlarm(inventoryPlugin.getCurrentTimeMillis() +
                                                                                 COMMS_UP_DELAY);
@@ -618,6 +618,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
             logger.debug("Alarm expired on customer " + entry.getKey());
           }
           state.setCommsUpAlarm(null);
+          state.setStateExpired(true);
           reconcile((String) entry.getKey(), state);
         }
       }
@@ -986,6 +987,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     private Alarm alarm;
     private long latestEndTime = 0;
     private CommStatus cs = null;
+    private boolean expired = false;
 
     public CustomerState(CommStatus cs) {
       this.cs = cs;
@@ -1029,6 +1031,13 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
 
     public long getCommRestoreTime() {
       return this.cs.getCommRestoreTime();
+    }
+
+    public void setStateExpired(boolean value) {
+      this.expired = value;
+    }
+    public boolean hasStateExpired() {
+      return expired;
     }
   }
 
