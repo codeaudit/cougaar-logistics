@@ -27,6 +27,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.log.Logger;
+import org.cougaar.core.blackboard.Publishable;
 import java.util.*;
 
 /**
@@ -56,6 +57,8 @@ public class TaskScheduler {
   private IncrementalSubscription[] subscriptions;
   private Logger logger;
   private BlackboardService blackboard;
+  private String id;
+  private Storage storage;
 
   // lists of added, changed, and removed tasks that lives across
   // execute cycles; one for each priority/subscription
@@ -71,23 +74,43 @@ public class TaskScheduler {
    * @param outerFilter selects all tasks of interest
    * @param policy prioritizes tasks
    * @param blackboard where to register for subscriptions
+   * @param id an identifier for this scheduler that is unique to this agent
    */
   public TaskScheduler (TaskSchedulingPolicy.Predicate outerFilter,
                         TaskSchedulingPolicy policy,
                         BlackboardService blackboard,
-                        Logger logger) {
+                        Logger logger,
+                        String id) {
     this.outerFilter = outerFilter;
     this.policy = policy;
     this.logger = logger;
     this.blackboard = blackboard;
-    addedLists = setupLists();
-    changedLists = setupLists();
-    removedLists = setupLists();
-    resetCurrentPhase();
+    this.id = id;
     subscriptions = new IncrementalSubscription [policy.numPriorities()];
     for (int i = 0; i < subscriptions.length; i++) 
       subscriptions[i] = (IncrementalSubscription)
         blackboard.subscribe (ithPredicate (i));
+    Collection prev = blackboard.query (new UnaryPredicate() {
+      public boolean execute (Object o) {
+        if (! (o instanceof Storage))
+          return false;
+        return TaskScheduler.this.id.equals (((Storage) o).id);
+      }});
+    if (prev.size() == 0) {
+      addedLists = setupLists();
+      changedLists = setupLists();
+      removedLists = setupLists();
+      resetCurrentPhase();
+      storage = new Storage();
+      updateStorage();
+      blackboard.publishAdd (storage);
+    } else {
+      storage = (Storage) prev.iterator().next();
+      addedLists = storage.addedLists;
+      changedLists = storage.changedLists;
+      removedLists = storage.removedLists;
+      currentPhase = storage.currentPhase;
+    }
   }
 
   private ArrayList[][] setupLists() {
@@ -145,6 +168,25 @@ public class TaskScheduler {
       blackboard.signalClientActivity();
     else
       resetCurrentPhase();
+    updateStorage();
+    blackboard.publishChange (storage);
+  }
+
+  private void updateStorage() {
+    storage.addedLists = addedLists;
+    storage.changedLists = changedLists;
+    storage.removedLists = removedLists;
+    storage.currentPhase = currentPhase;
+    storage.id = id;
+  }
+
+  private static class Storage implements java.io.Serializable, Publishable {
+    public String id;
+    public int currentPhase;
+    public ArrayList[][] addedLists;
+    public ArrayList[][] changedLists;
+    public ArrayList[][] removedLists;
+    public boolean isPersistable()  { return true; }
   }
 
   private void resetCurrentPhase() {
