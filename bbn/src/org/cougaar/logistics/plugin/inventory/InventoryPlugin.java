@@ -299,8 +299,16 @@ public class InventoryPlugin extends ComponentPlugin {
                                                            getEndOfLevelTwo(), 
                                                            refillComparator);
 	  }
-	  refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
+ 	  refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
+          
+          //we might get new demand where we don't need to generate any new refills
+          // such as small demand from the stimulator servlet - when this happens we
+          // need to kick the allocation assessor to allocate the withdraws
+          if (newRefills.isEmpty()) {
+            allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
+          }
+
         } 
 	//        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
 	//        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
