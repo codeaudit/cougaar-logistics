@@ -380,6 +380,17 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void setupTaskScheduler() {
+    // 0 = Level 2
+    // 1 = Level 6
+    // and the order of the list sets the priority so,
+    // Priority 1 - Level 6 for the 1st timespan
+    // Priority 2 - Level 2 for the 2nd timespan
+    // Priority 3 - Level 2 for the 3rd timespan
+    // Priority 4 - Level 6 for the 2nd timespan
+    // Priority 5 - Level 2 for the 4th timespan
+    // Priority 6 - Level 6 for the 3rd timespan
+    // Priority 7 - Level 6 for the 4th timespan
+
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
     boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
     long now = getAlarmService().currentTimeMillis();
