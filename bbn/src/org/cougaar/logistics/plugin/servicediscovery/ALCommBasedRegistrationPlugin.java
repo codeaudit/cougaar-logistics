@@ -38,7 +38,7 @@ public class ALCommBasedRegistrationPlugin extends SDCommunityBasedRegistrationP
 	if(statusChange instanceof ALStatusChangeMessage) {
 	  statusChange.setStatus(StatusChangeMessage.COMPLETED);
 	  statusChange.setRegistryUpdated(true);
-	  publishChange(statusChange);
+	  getBlackboardService().publishChange(statusChange);
 	} else {
 	  super.handleStatusChange();
 	}
