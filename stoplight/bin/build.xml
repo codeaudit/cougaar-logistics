@@ -30,6 +30,12 @@
         <exclude name="**/CVS/**"/>
       </patternset>
     </fileset>
+    <fileset dir="bin">
+      <patternset>
+				<include name="*.bat"/>
+        <exclude name="**/CVS/**"/>
+      </patternset>
+    </fileset>
   </copy>
   <zip zipfile="Logistics_bbn_stoplight_overlay.zip" basedir="staging"/>
   <delete dir="staging"/>
