@@ -863,7 +863,7 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
     else
     {
       if (debug)
-        System.out.println("WARNING: could not combine like quantity elements");
+        System.out.println("WARNING: could not combine like quantity elements, type is: " + schedule.getScheduleElementType().getName());
     }
 
     return schedule;
@@ -894,7 +894,7 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
       }
       else {
         if (debug)
-          System.out.println("Not sure what kind of ScheduleElementImpl this is.");
+          System.out.println("Not sure what kind of ScheduleElementImpl this is: " + element.getClass().getName());
         continue;
       }
 
