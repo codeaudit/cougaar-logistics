@@ -80,7 +80,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
             asset = consumer.getPrototype();
           }
           logger.warn("Ignoring Asset: "+getAssetUtils().getAssetIdentifier(asset)+
-                      " at "+dfPlugin.getMyOrganization()+" - Asset has a quantity of zero");
+                      " at "+dfPlugin.getMyOrganization()+" - Asset has a quantity of zero. Bug #3467");
         }
       }
     }
