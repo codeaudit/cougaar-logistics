@@ -50,17 +50,19 @@ public class InventoryData {
     protected String    org;
     protected String    unit;
     protected String    nomenclature;
+    protected String    supplyType;
     protected long      startCDay;
 
     protected Hashtable schedules;
 
     protected long bucketSize;
 
-    public InventoryData(String itemName, String anOrg, String aUnit, String nomen, long aStartCDay) {
+    public InventoryData(String itemName, String anOrg, String aUnit, String nomen, String classOfSupply, long aStartCDay) {
         item = itemName;
         org = anOrg;
         unit = aUnit;
         nomenclature = nomen;
+	supplyType = classOfSupply;
         startCDay = aStartCDay;
         schedules = new Hashtable(20);
         bucketSize = -1;
@@ -92,6 +94,10 @@ public class InventoryData {
 
     public String getNomenclature() {
         return nomenclature;
+    }
+
+    public String getSupplyType() {
+	return supplyType;
     }
 
     public void writeHRString(Writer writer) throws java.io.IOException {

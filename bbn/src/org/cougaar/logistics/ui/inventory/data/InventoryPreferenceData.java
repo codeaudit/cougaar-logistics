@@ -120,7 +120,8 @@ public class InventoryPreferenceData implements Cloneable {
   public String getPreferredUnit(InventoryData data) {
     String dataUnit = data.getUnit();
     String item = data.getItem();
-    if (dataUnit.equals(LogisticsInventoryFormatter.AMMUNITION_UNIT)) {
+    String supplyType = data.getSupplyType();
+    if (supplyType.equals(LogisticsInventoryFormatter.AMMUNITION_SUPPLY_TYPE)) {
       return getAmmoUnitLabel();
     } else if (item.equals(LogisticsInventoryFormatter.WATER_ITEM_ID)) {
       return getWaterUnitLabel();
