@@ -179,6 +179,25 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return false;
   }
 
+  public static boolean isMyNonRefillTask(Task task, String myOrgName) {
+    PrepositionalPhrase pp =task.getPrepositionalPhrase(Constants.Preposition.REFILL);
+    if (pp != null) {
+      return false;
+    }
+    pp = task.getPrepositionalPhrase(Constants.Preposition.FOR);
+    if (pp == null) {
+      return false;
+    }
+    Object io = pp.getIndirectObject();
+    if (io instanceof String) {
+      String orgName = (String)io;
+      if ( orgName.equals(myOrgName)) {
+	return true;
+      }
+    }
+    return false;
+  }
+
  public static boolean isMyInventoryProjection(Task task, String myOrgName) {
     PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.FOR);
     if (pp == null) {

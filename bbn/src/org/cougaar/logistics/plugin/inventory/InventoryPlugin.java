@@ -413,7 +413,7 @@ public class InventoryPlugin extends ComponentPlugin
 //	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" + 
 //			       supplyType + " role: " + getRole(supplyType) + "\n");
 	  HashMap providers = getProvidersAndEndDates();
-	  Collection unprovidedTasks = getUnprovidedTasks(refillSubscription, 
+	  Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription, 
 							    Constants.Verb.Supply,
 							    providers);
 	  if (!unprovidedTasks.isEmpty()){
@@ -422,7 +422,7 @@ public class InventoryPlugin extends ComponentPlugin
 	    rescindTaskAllocations(unprovidedTasks);
 	    externalAllocator.allocateRefillTasks(unprovidedTasks);
 	  }
-	  unprovidedTasks = getUnprovidedTasks(refillSubscription, 
+	  unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription, 
 						 Constants.Verb.ProjectSupply,
 						 providers);
 	  if (!unprovidedTasks.isEmpty()){
@@ -432,23 +432,43 @@ public class InventoryPlugin extends ComponentPlugin
 	    externalAllocator.allocateRefillTasks(unprovidedTasks);
 	  }
 
-          Collection unallocRefill = null;
+          Collection unalloc = null;
           if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-            unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription, 
-										       Constants.Verb.Supply));
-            if (!unallocRefill.isEmpty()){
+	      sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription, 
+									 Constants.Verb.Supply));
+//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription, 
+// 										       Constants.Verb.Supply));
+//             if (!unalloc.isEmpty()){
+// 	      if (logger.isWarnEnabled())
+// 		logger.warn("TRYING TO ALLOCATE SUPPLY NONREFILL TASKS...");
+//               externalAllocator.allocateRefillTasks(unalloc);
+//             }
+
+            unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription, 
+							 Constants.Verb.Supply);
+            if (!unalloc.isEmpty()){
 	      if (logger.isWarnEnabled())
 		logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
-              externalAllocator.allocateRefillTasks(unallocRefill);
+              externalAllocator.allocateRefillTasks(unalloc);
             }
           }
           if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-            unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription,
-										       Constants.Verb.ProjectSupply));
-            if (!unallocRefill.isEmpty()) {
+	      sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+									 Constants.Verb.ProjectSupply));
+//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+// 										       Constants.Verb.ProjectSupply));
+//             if (!unalloc.isEmpty()) {
+// 	      if (logger.isWarnEnabled())
+// 		logger.warn("TRYING TO ALLOCATE PROJECTION NONREFILL TASKS...");
+//               externalAllocator.allocateRefillTasks(unalloc);
+//             }
+
+            unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
+							 Constants.Verb.ProjectSupply);
+            if (!unalloc.isEmpty()) {
 	      if (logger.isWarnEnabled())
 		logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
-              externalAllocator.allocateRefillTasks(unallocRefill);
+              externalAllocator.allocateRefillTasks(unalloc);
             }
           }
         }
@@ -566,17 +586,17 @@ public class InventoryPlugin extends ComponentPlugin
       return providers;
   }
 
-  private Collection getUnprovidedTasks(Collection tasks, Verb verb, HashMap providers) {
-      Iterator taskIt = tasks.iterator();
+  private Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, HashMap providers) {
+      Iterator raIt = refill_allocations.iterator();
       ArrayList unprovidedTasks = new ArrayList();
       Task task;
       Organization provider;
       Allocation alloc;
       long taskEnd;
       Date providerEndDate;
-      while (taskIt.hasNext()) {
-	  task = (Task)taskIt.next();
-	  alloc = (Allocation)task.getPlanElement();
+      while (raIt.hasNext()) {
+	  alloc = (Allocation)raIt.next();
+	  task = alloc.getTask();
 	  if ((alloc != null) && (task.getVerb().equals(verb))){
 	      taskEnd = TaskUtils.getEndTime(task);
 	      provider = (Organization)alloc.getAsset();
@@ -633,6 +653,9 @@ public class InventoryPlugin extends ComponentPlugin
 
   /** Subscription for my Refill (Supply & ProjectSupply) tasks **/
   private IncrementalSubscription refillSubscription;
+
+  /** Subscription for my Non-Refill (Supply & ProjectSupply) tasks **/
+  private IncrementalSubscription nonrefillSubscription;
 
   /** Subscription for Supply/ProjectSupply Expansions **/
   private IncrementalSubscription expansionSubscription;
@@ -720,6 +743,8 @@ public class InventoryPlugin extends ComponentPlugin
         subscribe(new ExpansionPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    nonrefillSubscription = (IncrementalSubscription) blackboard.
+        subscribe(new NonRefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
     // Setup TaskSchedulers
     String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
@@ -1040,6 +1065,34 @@ public class InventoryPlugin extends ComponentPlugin
             task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
           if (taskUtils.isDirectObjectOfType(task, type_)) {
             if (taskUtils.isMyRefillTask(task, orgName_)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+  }
+
+  //Non-Refill tasks
+  static class NonRefillPredicate implements UnaryPredicate {
+    String type_;
+    String orgName_;
+    TaskUtils taskUtils;
+
+    public NonRefillPredicate(String type, String orgName, TaskUtils aTaskUtils) {
+      type_ = type;
+      orgName_ = orgName;
+      taskUtils = aTaskUtils;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task task = (Task) o;
+        if (task.getVerb().equals(Constants.Verb.SUPPLY) ||
+            task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+          if (taskUtils.isDirectObjectOfType(task, type_)) {
+            if (taskUtils.isMyNonRefillTask(task, orgName_)) {
               return true;
             }
           }
