@@ -20,59 +20,33 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import java.math.BigDecimal;
-
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 
-import org.cougaar.core.domain.LDMServesClient;
-import org.cougaar.core.domain.LDMServesPlugin;
 import org.cougaar.core.plugin.PluginBindingSite;
 
 import org.cougaar.glm.ldm.Constants;
 
-import org.cougaar.glm.ldm.asset.ContainPG;
-import org.cougaar.glm.ldm.asset.ForUnitPG;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.NewForUnitPG;
-import org.cougaar.glm.ldm.asset.NewPhysicalPG;
-import org.cougaar.glm.ldm.asset.PhysicalPG;
-import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
-import org.cougaar.glm.ldm.plan.GeolocLocation;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
+import org.cougaar.glm.packer.Geolocs;
 
 import org.cougaar.glm.util.GLMPrepPhrase;
 
-import org.cougaar.lib.callback.UTILAssetCallback;
-import org.cougaar.lib.callback.UTILAssetListener;
-
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
 
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.AssetGroup;
-import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
-import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
 
-import org.cougaar.planning.ldm.measure.*;
+import org.cougaar.planning.ldm.asset.Asset;
 
 import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.MPTask;
 import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.glm.packer.Geolocs;
 
 /**
- * Breaks up incoming tasks into aggregates that are no bigger than the largest carrier asset.
- * Carrier could be truck, ship, or plane.
+ * Takes low fidelity SUPPLY tasks marked with the LOW_FIDELITY prep
+ * and converts them into TRANSPORT tasks.
+ *
+ * The only real work that goes on is adding a FROM prep of Blue Grass, KY,
+ * which is prototypical ammo depot.
  */
-public class AmmoLowFidelityExpanderPlugin extends UTILExpanderPluginAdapter /*implements UTILAssetListener*/ {
+public class AmmoLowFidelityExpanderPlugin extends UTILExpanderPluginAdapter {
 
   public void localSetup() {     
     super.localSetup();
