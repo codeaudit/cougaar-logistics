@@ -27,7 +27,7 @@ import org.cougaar.planning.ldm.plan.MPTask;
 
 import org.cougaar.lib.vishnu.client.VishnuAggregatorPlugin;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.glm.ldm.plan.GeolocLocation;

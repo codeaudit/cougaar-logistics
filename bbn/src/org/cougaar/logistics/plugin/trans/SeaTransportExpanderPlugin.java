@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.glm.ldm.asset.ContainPG;

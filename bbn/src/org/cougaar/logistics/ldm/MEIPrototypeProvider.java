@@ -37,7 +37,7 @@ import org.cougaar.planning.ldm.LatePropertyProvider;
 import org.cougaar.util.MutableTimeSpan;
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.Service;

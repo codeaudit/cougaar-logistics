@@ -36,7 +36,7 @@ import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AssetGroup;
 import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.plan.GeolocLocation;  

@@ -71,7 +71,7 @@ public class TransportLoadIndicatorTestPlugin extends SimplePlugin {
       if (o instanceof Task) {
         Task task = (Task) o;
         Verb verb = task.getVerb();
-        if (verb.equals(org.cougaar.glm.ldm.Constants.Verb.Transport)) {
+        if (verb.equals(org.cougaar.logistics.ldm.Constants.Verb.Transport)) {
           return true;
         }
       } 

@@ -32,7 +32,7 @@ import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.util.Sortings;
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Ammunition;
 import org.cougaar.glm.packer.Packer;
 import org.cougaar.glm.packer.AggregationClosure;

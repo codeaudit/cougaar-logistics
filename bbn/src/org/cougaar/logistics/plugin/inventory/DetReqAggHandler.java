@@ -28,7 +28,7 @@ import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.Inventory;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.util.Enumerator;
 

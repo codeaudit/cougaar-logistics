@@ -21,14 +21,14 @@
 
 package org.cougaar.logistics.plugin.demand;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
-import org.cougaar.glm.plugins.AssetUtils;
-import org.cougaar.glm.plugins.ScheduleUtils;
-import org.cougaar.glm.plugins.TaskUtils;
-import org.cougaar.glm.plugins.TimeUtils;
+import org.cougaar.logistics.plugin.inventory.AssetUtils;
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -261,7 +261,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   protected GeolocLocation getGeolocLocation(Task parent_task, long time) {
-    Enumeration geolocs = AssetUtils.getGeolocLocationAtTime(dfPlugin.getMyOrganization(), time);
+    Enumeration geolocs = getAssetUtils().getGeolocLocationAtTime(dfPlugin.getMyOrganization(), time);
     if (geolocs.hasMoreElements()) {
       GeolocLocation geoloc = (GeolocLocation) geolocs.nextElement();
 //    GLMDebug.DEBUG("GenerateSupplyDemandExpander", clusterId_, "At "+TimeUtils.dateString(time)+ " the geoloc is "+geoloc);
@@ -312,7 +312,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     newTask.setVerb(Verb.getVerb(Constants.Verb.PROJECTSUPPLY));
     //newTask.setCommitmentDate(new Date(start));
     Vector prefs = new Vector();
-    prefs.addElement(TaskUtils.createDemandRatePreference(getPlanningFactory(), rate));
+    prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
     prefs.addElement(createTimePreference(start, AspectType.START_TIME));
     prefs.addElement(createTimePreference(end, AspectType.END_TIME));
@@ -508,8 +508,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (published_task != null && new_task != null) {
       // Depending upon whether the rate is equal set the end time of the published task to the start or
       // end time of the new task
-      Rate new_rate = TaskUtils.getRate(new_task);
-      if (new_rate.equals(TaskUtils.getRate(published_task))) {
+      Rate new_rate = getTaskUtils().getRate(new_task);
+      if (new_rate.equals(getTaskUtils().getRate(published_task))) {
         // check end times not the same
         synchronized ( new_task ) {
           ((NewTask)published_task).setPreference(new_task.getPreference(AspectType.END_TIME));
@@ -598,7 +598,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if(prev_task==new_task) {
       return new_task;
     }
-    if (!TaskUtils.comparePreferences(new_task, prev_task)) {
+    if (!getTaskUtils().comparePreferences(new_task, prev_task)) {
       synchronized ( new_task ) {
         Enumeration ntPrefs = new_task.getPreferences();
         ((NewTask)prev_task).setPreferences(ntPrefs);
@@ -607,6 +607,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     return null;
   }
+
+
 
   protected void setStartTimePreference(NewTask task, long start) {
     task.setPreference(createTimePreference(start, AspectType.START_TIME));
@@ -620,11 +622,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return "diffProjections() "
         + task.getUID()
         + " " + msg + " "
-        + TaskUtils.getDailyQuantity(task)
+        + getTaskUtils().getDailyQuantity(task)
         + " "
-        + TimeUtils.dateString(TaskUtils.getStartTime(task))
+        + getTimeUtils().dateString(TaskUtils.getStartTime(task))
         + " to "
-        + TimeUtils.dateString(TaskUtils.getEndTime(task));
+        + getTimeUtils().dateString(TaskUtils.getEndTime(task));
   }
 
   public void publishRemoveFromExpansion(Task subtask) {

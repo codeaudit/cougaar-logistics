@@ -36,7 +36,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.glm.callback.GLMOrganizationCallback;
 import org.cougaar.glm.callback.GLMOrganizationListener;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.ldm.asset.AirportPG;
 import org.cougaar.glm.ldm.asset.GLMAsset;

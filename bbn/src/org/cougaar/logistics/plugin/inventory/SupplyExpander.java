@@ -47,7 +47,7 @@ import org.cougaar.planning.ldm.plan.Workflow;
 
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 
 import org.cougaar.planning.ldm.plan.ScoringFunction;

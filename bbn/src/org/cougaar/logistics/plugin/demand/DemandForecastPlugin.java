@@ -28,7 +28,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
@@ -216,7 +216,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       processedDetReq = (!(detReqTask.getPlanElement() == null));
 
 
-      
+
 
       //There should be both a determineRequirements task
       //and an oplan before kicking off the expander for the first time.
@@ -742,7 +742,18 @@ public class DemandForecastPlugin extends ComponentPlugin
                        +sub.getChangedCollection().size());
         }
         Collection subPGs = (Collection) subToPGsHash.get(sub);
-        PGs.addAll(subPGs);
+        if (subPGs == null) {
+          if (logger.isErrorEnabled()) {
+            String errString = "Subscription fired in the hash table at " + getOrgName() + ", but there are no PGs in the other hash tables that correspond. The Predicate is " + pred.getClass().getName() + ".";
+            if (pred == orgActivities) {
+              errString += "  It turns out to be the orgActivities String.";
+            }
+            logger.error(errString);
+          }
+
+        } else {
+          PGs.addAll(subPGs);
+        }
       }
     }
     if (PGs.isEmpty()) {

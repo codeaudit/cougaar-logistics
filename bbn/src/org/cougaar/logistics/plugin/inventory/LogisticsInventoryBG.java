@@ -22,14 +22,14 @@
 package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.GLMFactory;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
 import org.cougaar.glm.ldm.plan.PlanScheduleType;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
-import org.cougaar.glm.plugins.ScheduleUtils;
-import org.cougaar.glm.plugins.TimeUtils;
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Duration;

@@ -22,7 +22,7 @@ package org.cougaar.logistics.plugin.trans;
 
 import java.util.*;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.packer.Geolocs;
 

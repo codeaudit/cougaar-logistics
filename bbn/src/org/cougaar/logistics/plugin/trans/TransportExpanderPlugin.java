@@ -33,7 +33,7 @@ import java.util.Vector;
 
 import org.cougaar.planning.ldm.LDMServesPlugin;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.ldm.asset.ContainPG;
 import org.cougaar.glm.ldm.asset.ForUnitPG;

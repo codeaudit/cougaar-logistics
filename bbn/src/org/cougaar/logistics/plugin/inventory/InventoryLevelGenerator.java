@@ -22,7 +22,7 @@
 package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AspectType;

@@ -32,7 +32,7 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.ScheduledContentPG;
 import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;

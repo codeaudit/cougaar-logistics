@@ -82,7 +82,7 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
       if (o instanceof Task) {
         Task task = (Task) o;
         Verb verb = task.getVerb();
-        if (verb.equals(org.cougaar.glm.ldm.Constants.Verb.GetLogSupport)) {
+        if (verb.equals(org.cougaar.logistics.ldm.Constants.Verb.GetLogSupport)) {
           return true;
         }
       } 

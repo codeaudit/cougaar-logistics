@@ -23,7 +23,7 @@ package org.cougaar.logistics.plugin.trans;
 import java.util.Collection;
 import java.util.Date;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.GeolocLocation;

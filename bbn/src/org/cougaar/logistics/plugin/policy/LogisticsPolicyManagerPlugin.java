@@ -37,7 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.cougaar.util.MutableTimeSpan;
 import org.cougaar.core.util.UID;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.glm.ldm.asset.Organization;

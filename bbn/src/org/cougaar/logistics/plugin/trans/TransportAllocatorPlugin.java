@@ -33,7 +33,7 @@ import org.cougaar.lib.filter.UTILSingleTaskAllocatorPlugin;
 
 import java.util.Date;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 

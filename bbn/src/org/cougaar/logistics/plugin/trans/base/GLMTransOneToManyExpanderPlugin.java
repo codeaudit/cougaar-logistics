@@ -38,7 +38,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.ThreadService;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.glm.ldm.asset.ForUnitPG;

@@ -46,7 +46,7 @@ import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.Workflow;
 import org.cougaar.planning.ldm.asset.AssetGroup;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 
 import org.cougaar.glm.packer.Geolocs;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;

@@ -35,7 +35,7 @@ import org.cougaar.planning.ldm.plan.AspectType;
 
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;

@@ -30,7 +30,7 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.w3c.dom.Document;
 
 import java.util.Collection;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.plan.Relationship;
 import org.cougaar.planning.ldm.plan.RelationshipType;
 import org.cougaar.planning.ldm.plan.Role;
