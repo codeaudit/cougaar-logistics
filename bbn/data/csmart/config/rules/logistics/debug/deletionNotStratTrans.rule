@@ -1,0 +1,23 @@
+####################################################
+# Add Deletion to every agent in society except for 
+# transportation agents which process strat trans tasks
+
+task_deletion = "org.cougaar.planning.plugin.deletion.TaskDeletionPlugin"
+
+society.each_agent do |agent|
+  unless agent.has_facet? { |facet| facet[:role] =~ /.*TransportationProvider/ &&
+                       !(facet[:role] == 'StrategicTransportationProvider') &&
+                       !(facet[:role] =~ /Ammo.*/) &&
+                       !(facet[:mechanism] == 'Ammo') 
+                      }
+#     print "     ", agent.name, "\n"
+    agent.add_component do |c|
+      c.classname = task_deletion
+      c.add_argument("archivingEnabled=false")
+      c.add_argument("deletionPeriod=259200000")
+      c.add_argument("deletionDelay=259200000")
+    end
+#   else
+#     print "XXX  ", agent.name, "\n"     
+  end
+end
