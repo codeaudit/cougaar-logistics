@@ -27,9 +27,11 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.ArrayList;
 
 import org.cougaar.glm.plugins.TaskUtils;
 import org.cougaar.glm.plugins.TimeUtils;
+import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.GLMFactory;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.PlanScheduleType;
@@ -62,11 +64,11 @@ public class MyInventoryWrapper {
     inventory = inputInventory;
     logInvPG = (LogisticsInventoryPG)inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       // print debug messages if inventory_debug set to true
-    String val = System.getProperty("inventory_debug");
+    String val = System.getProperty("org.cougaar.logistics.ui.stoplight.debug");
     if (val != null) {
-	if (val.equals("true")) {
-	    debug = true;
-	}
+      if (val.equals("true")) {
+        debug = true;
+      }
     }
   }
 
@@ -75,20 +77,23 @@ public class MyInventoryWrapper {
   }
   
   public Schedule getInventorySchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
     return scheduleToNonOverlapSchedule(logInvPG.getBufferedInvLevels());
   }
   
   public Schedule getReorderLevelSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
     return scheduleToNonOverlapSchedule(logInvPG.getBufferedCritLevels());
   }
   
   public Schedule getGoalLevelSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
     return scheduleToNonOverlapSchedule(logInvPG.getBufferedTargetLevels());
   }
   
@@ -97,73 +102,38 @@ public class MyInventoryWrapper {
   ***  All the Due In stuff
    */
    
+  /**
+   *  @returns A schedule of all the SUCCESSFUL supply elements
+   */
   public Schedule getDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
-      
-    NewSchedule schedule = new ScheduleImpl();
-    Collection list = logInvPG.getSupplyList();
-    if (list == null)
-      return null;
-    Iterator i = list.iterator();
-    while (i.hasNext()) {
-      Task task = (Task) i.next();
-      if (task == null)
-        continue;
-      PlanElement pe = task.getPlanElement();
-      if (pe == null)
-        continue;
-      AllocationResult ar = pe.getReportedResult();
-      if (ar != null && ar.isSuccess()) {
-        long endTime = TaskUtils.getEndTime(task); 
-        long startTime;
-	if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-          startTime = endTime - 1;
-        else 
-          startTime = TaskUtils.getStartTime(task);
-        double quantity = TaskUtils.getDailyQuantity(task);
-        
-        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
-                                                                         endTime,
-                                                                         quantity);
-        schedule.addScheduleElement(qse);
-      }
     }
-    return schedule;
+      
+    return scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
   }
   
+  /**
+   *  @returns A schedule of all the supply elements
+   */
   public Schedule getRequestedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
-      
-    NewSchedule schedule = new ScheduleImpl();
-    Collection list = logInvPG.getSupplyList();
-    Iterator i = list.iterator();
-    while (i.hasNext()) {
-      Task task = (Task) i.next();
-      if (task == null)
-        continue;
-      long endTime = TaskUtils.getEndTime(task); 
-      long startTime;
-      if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-        startTime = endTime - 1;
-      else 
-        startTime = TaskUtils.getStartTime(task);
-      double quantity = TaskUtils.getDailyQuantity(task);
-        
-      NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
-                                                                       endTime,
-                                                                       quantity);
-      schedule.addScheduleElement(qse);
     }
-    return schedule;
+      
+    return scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
   }
 
+  /**
+   *  @returns A schedule of all the supply elements whose outcome is unknown
+   */
   public Schedule getUnconfirmedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
       
-    NewSchedule schedule = new ScheduleImpl();
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
     Collection list = logInvPG.getSupplyList();
     Iterator i = list.iterator();
     while (i.hasNext()) {
@@ -176,11 +146,7 @@ public class MyInventoryWrapper {
       AllocationResult ar = pe.getReportedResult();
       if (ar == null) {
         long endTime = TaskUtils.getEndTime(task); 
-        long startTime;
-	if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-          startTime = endTime - 1;
-        else 
-          startTime = TaskUtils.getStartTime(task);
+        long startTime = getStartTime(task, endTime, false);
         double quantity = TaskUtils.getDailyQuantity(task);
         
         NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
@@ -189,18 +155,20 @@ public class MyInventoryWrapper {
         schedule.addScheduleElement(qse);
       }
     }
-    return schedule;
+    return scheduleToNonOverlapSchedule(schedule);
   }
 
   /**
    *  @returns A schedule of all the projection supply elements that are AFTER the switch over day
    */
   public Schedule getProjectedRequestedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
       
     calcSwitchOverDay();
-    NewSchedule schedule = new ScheduleImpl();
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
     Collection list = logInvPG.getProjSupplyList();
     Iterator i = list.iterator();
     while (i.hasNext()) {
@@ -208,11 +176,7 @@ public class MyInventoryWrapper {
       if (task == null)
         continue;
       long endTime = TaskUtils.getEndTime(task); 
-      long startTime;
-      if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-        startTime = endTime - 1;
-      else 
-        startTime = TaskUtils.getStartTime(task);
+      long startTime = getStartTime(task, endTime, false);
       double quantity = TaskUtils.getDailyQuantity(task);
       if (switchOverDay < endTime) {
         // If switch over time occurs in the middle of a projection, we need to grab the part after that
@@ -227,18 +191,20 @@ public class MyInventoryWrapper {
         }
       }
     } 
-    return schedule;
+    return scheduleToNonOverlapSchedule(schedule);
   }
 
   /**
    *  @returns A schedule of all the SUCCESSFUL projection supply elements that are AFTER the switch over day
    */
   public Schedule getProjectedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
       
     calcSwitchOverDay();
-    NewSchedule schedule = new ScheduleImpl();
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
     Collection list = logInvPG.getProjSupplyList();
     Iterator i = list.iterator();
     while (i.hasNext()) {
@@ -254,11 +220,7 @@ public class MyInventoryWrapper {
         continue;
 
       long endTime = TaskUtils.getEndTime(task); 
-      long startTime;
-      if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-        startTime = endTime - 1;
-      else 
-        startTime = TaskUtils.getStartTime(task);
+      long startTime = getStartTime(task, endTime, false);
       double quantity = TaskUtils.getDailyQuantity(task);
       if (switchOverDay < endTime) {
         // If switch over time occurs in the middle of a projection, we need to grab the part after that
@@ -273,18 +235,20 @@ public class MyInventoryWrapper {
         }
       }
     } 
-    return schedule;
+    return scheduleToNonOverlapSchedule(schedule);
   }
 
   /**
    *  @returns A schedule of all the projection supply elements that are BEFORE the switch over day
    */
   public Schedule getInactiveProjectedRequestedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
       
     calcSwitchOverDay();
-    NewSchedule schedule = new ScheduleImpl();
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
     Collection list = logInvPG.getProjSupplyList();
     Iterator i = list.iterator();
     while (i.hasNext()) {
@@ -292,11 +256,7 @@ public class MyInventoryWrapper {
       if (task == null)
         continue;
       long endTime = TaskUtils.getEndTime(task); 
-      long startTime;
-      if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-        startTime = endTime - 1;
-      else 
-        startTime = TaskUtils.getStartTime(task);
+      long startTime = getStartTime(task, endTime, false);
       double quantity = TaskUtils.getDailyQuantity(task);
       if (switchOverDay > startTime) {
         // If switch over time occurs in the middle of a projection, we need to grab the part after that
@@ -311,18 +271,20 @@ public class MyInventoryWrapper {
         }
       }
     } 
-    return schedule;
+    return scheduleToNonOverlapSchedule(schedule);
   }
 
   /**
    *  @returns A schedule of all the SUCCESSFUL projection supply elements that are BEFORE the switch over day
    */
   public Schedule getInactiveProjectedDueInSchedule() {
-    if (logInvPG == null)
+    if (logInvPG == null) {
       return null;
+    }
       
     calcSwitchOverDay();
-    NewSchedule schedule = new ScheduleImpl();
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
     Collection list = logInvPG.getProjSupplyList();
     Iterator i = list.iterator();
     while (i.hasNext()) {
@@ -338,11 +300,7 @@ public class MyInventoryWrapper {
         continue;
 
       long endTime = TaskUtils.getEndTime(task); 
-      long startTime;
-      if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null)
-        startTime = endTime - 1;
-      else 
-        startTime = TaskUtils.getStartTime(task);
+      long startTime = getStartTime(task, endTime, false);
       double quantity = TaskUtils.getDailyQuantity(task);
       if (switchOverDay > startTime) {
         // If switch over time occurs in the middle of a projection, we need to grab the part after that
@@ -357,7 +315,7 @@ public class MyInventoryWrapper {
         }
       }
     } 
-    return schedule;
+    return scheduleToNonOverlapSchedule(schedule);
   }
 
   /**
@@ -380,6 +338,325 @@ public class MyInventoryWrapper {
     }
   }
 
+
+  /*
+  ***  All the Due Out stuff
+   */
+   
+  /**
+   *  @returns A schedule of all the SUCCESSFUL Demand elements
+   */
+  public Schedule getDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    return scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getWithdrawList()));
+  }
+  
+  /**
+   *  @returns A schedule of all the Demand elements
+   */
+  public Schedule getRequestedDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    return scheduleToNonOverlapSchedule(getAllElements(logInvPG.getWithdrawList()));
+  }
+
+  /**
+   *  @returns A schedule of all the SUCCESSFUL projection Demand elements
+   */
+  public Schedule getProjectedDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Collection activeDemand = getFlatDemandList(logInvPG.getActualDemandTasksList());
+    Iterator i = activeDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      PlanElement pe = task.getPlanElement();
+      if (pe == null)
+        continue;
+      AllocationResult ar = pe.getReportedResult();
+      if (ar != null && ar.isSuccess()) {
+        long endTime = TaskUtils.getEndTime(task); 
+        long startTime = getStartTime(task, endTime, true);
+        double quantity = TaskUtils.getDailyQuantity(task);
+        while (startTime < endTime) {
+          NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                           startTime + TimeUtils.MSEC_PER_DAY,
+                                                                           quantity);
+          schedule.addScheduleElement(qse);
+          startTime += TimeUtils.MSEC_PER_DAY;
+        }
+      }
+    }
+
+    return scheduleToNonOverlapSchedule(schedule);
+  }
+    
+  /**
+   *  @returns A schedule of all the projection Demand elements
+   */
+  public Schedule getProjectedRequestedDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Collection activeDemand = getFlatDemandList(logInvPG.getActualDemandTasksList());
+    Iterator i = activeDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      long endTime = TaskUtils.getEndTime(task); 
+      long startTime = getStartTime(task, endTime, true);
+      double quantity = TaskUtils.getDailyQuantity(task);
+      while (startTime < endTime) {
+        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                         startTime + TimeUtils.MSEC_PER_DAY,
+                                                                         quantity);
+        schedule.addScheduleElement(qse);
+        startTime += TimeUtils.MSEC_PER_DAY;
+      }
+    }
+    
+    return scheduleToNonOverlapSchedule(schedule);
+  }
+
+  /**
+   *  @returns A schedule of all the INACTIVE SUCCESSFUL projection Demand elements
+   */
+  public Schedule getInactiveProjectedDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Collection activeDemand = getFlatDemandList(logInvPG.getActualDemandTasksList());
+    Collection allDemand = logInvPG.getProjWithdrawList();
+    Collection inactiveDemand = getInactiveDemand(allDemand, activeDemand);
+    
+    // First process the tasks that are completely inactive
+    Iterator i = inactiveDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      PlanElement pe = task.getPlanElement();
+      if (pe == null)
+        continue;
+      AllocationResult ar = pe.getReportedResult();
+      if (ar != null && ar.isSuccess()) {
+        long endTime = TaskUtils.getEndTime(task); 
+        long startTime = getStartTime(task, endTime, false);
+        double quantity = TaskUtils.getDailyQuantity(task);
+        while (startTime < endTime) {
+          NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                           startTime + TimeUtils.MSEC_PER_DAY,
+                                                                           quantity);
+          schedule.addScheduleElement(qse);
+          startTime += TimeUtils.MSEC_PER_DAY;
+        }
+      }
+    }
+
+    // Now process the tasks that are possibly partly inactive
+    i = activeDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      PlanElement pe = task.getPlanElement();
+      if (pe == null)
+        continue;
+      AllocationResult ar = pe.getReportedResult();
+      if (ar != null && ar.isSuccess()) {
+        // get the regular end time, but we'll only use it to calculate start time and a new endtime 
+        long endTime = TaskUtils.getEndTime(task);
+        // start time here will be the regular start time of the task 
+        long startTime = getStartTime(task, endTime, false);
+        // end time here will be when we switch from inactive to active - the start time for active demand tasks
+        endTime = getStartTime(task, endTime, true);
+        double quantity = TaskUtils.getDailyQuantity(task);
+        while (startTime < endTime) {
+          NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                           startTime + TimeUtils.MSEC_PER_DAY,
+                                                                           quantity);
+          schedule.addScheduleElement(qse);
+          startTime += TimeUtils.MSEC_PER_DAY;
+        }
+      }
+    }
+    
+    return scheduleToNonOverlapSchedule(schedule);
+  }
+
+  /**
+   *  @returns A schedule of all the INACTIVE projection Demand elements
+   */
+  public Schedule getInactiveProjectedRequestedDueOutSchedule() {
+    if (logInvPG == null)
+      return null;
+      
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Collection activeDemand = getFlatDemandList(logInvPG.getActualDemandTasksList());
+    Collection allDemand = logInvPG.getProjWithdrawList();
+    Collection inactiveDemand = getInactiveDemand(allDemand, activeDemand);
+    
+    // First process the tasks that are completely inactive
+    Iterator i = inactiveDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      long endTime = TaskUtils.getEndTime(task); 
+      long startTime = getStartTime(task, endTime, false);
+      double quantity = TaskUtils.getDailyQuantity(task);
+      while (startTime < endTime) {
+        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                         startTime + TimeUtils.MSEC_PER_DAY,
+                                                                         quantity);
+        schedule.addScheduleElement(qse);
+        startTime += TimeUtils.MSEC_PER_DAY;
+      }
+    }
+
+    // Now process the tasks that are possibly partly inactive
+    i = activeDemand.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      // get the regular end time, but we'll only use it to calculate start time and a new endtime 
+      long endTime = TaskUtils.getEndTime(task);
+      // start time here will be the regular start time of the task 
+      long startTime = getStartTime(task, endTime, false);
+      // end time here will be when we switch from inactive to active - the start time for active demand tasks
+      endTime = getStartTime(task, endTime, true);
+      double quantity = TaskUtils.getDailyQuantity(task);
+      while (startTime < endTime) {
+        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                         startTime + TimeUtils.MSEC_PER_DAY,
+                                                                         quantity);
+        schedule.addScheduleElement(qse);
+        startTime += TimeUtils.MSEC_PER_DAY;
+      }
+    }
+    
+    return scheduleToNonOverlapSchedule(schedule);
+  }
+
+  private Collection getFlatDemandList(ArrayList activeDemandList) {
+  	ArrayList activeProjDemand = new ArrayList();
+    for(int i=0; i<activeDemandList.size(); i++) {
+      ArrayList bucketODemand = (ArrayList) activeDemandList.get(i);
+      for(int j=0; j<bucketODemand.size(); j++) {
+        Task aTask = (Task) bucketODemand.get(j);
+        if(aTask.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+          if(!(activeProjDemand.contains(aTask))) {
+            activeProjDemand.add(aTask);
+          }
+        }
+      }
+    }
+    return activeProjDemand;
+  }
+
+  /**
+   *   @returns a list of all the tasks that are COMPLETELY inactive.  Pieces of the tasks in activeDemand may be
+   *        inactive as well.
+   */
+  private Collection getInactiveDemand(Collection allDemand, Collection activeDemand) {
+    if (allDemand == null || allDemand.size() == 0)
+      return new Vector();
+    if (activeDemand == null || activeDemand.size() == 0)
+      return allDemand;
+      
+    Vector inactiveDemand = new Vector();
+    Iterator i = allDemand.iterator();
+    while (i.hasNext()) {
+      Object obj = i.next();
+      if (obj == null)
+        continue;
+      if (!activeDemand.contains(obj) && !inactiveDemand.contains(obj))
+        inactiveDemand.add(obj);
+    }
+    return inactiveDemand;
+  }
+  
+  /*
+  ***  Utility methods used by due out and due in methods
+   */
+  private Schedule getSuccessfulElements(Collection list) {
+    if (list == null)
+      return null;
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Iterator i = list.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      PlanElement pe = task.getPlanElement();
+      if (pe == null)
+        continue;
+      AllocationResult ar = pe.getReportedResult();
+      if (ar != null && ar.isSuccess()) {
+        long endTime = TaskUtils.getEndTime(task); 
+        long startTime = getStartTime(task, endTime, false);
+        double quantity = TaskUtils.getDailyQuantity(task);
+        
+        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                         endTime,
+                                                                         quantity);
+        schedule.addScheduleElement(qse);
+      }
+    }
+    return schedule;
+  }
+  
+  private Schedule getAllElements(Collection list) {
+    if (list == null)
+      return null;
+      
+    ScheduleImpl schedule = new ScheduleImpl();
+    schedule.setScheduleElementType(QuantityScheduleElementImpl.class);
+    Iterator i = list.iterator();
+    while (i.hasNext()) {
+      Task task = (Task) i.next();
+      if (task == null)
+        continue;
+      long endTime = TaskUtils.getEndTime(task); 
+      long startTime = getStartTime(task, endTime, false);
+      double quantity = TaskUtils.getDailyQuantity(task);
+        
+      NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                       endTime,
+                                                                       quantity);
+      schedule.addScheduleElement(qse);
+    }
+    return schedule;
+  }
+
+  private long getStartTime(Task task, long endTime, boolean isActiveDemandProj) {
+    long startTime;
+    // This is just a way to check if this preference is set
+    if(TaskUtils.getPreferenceBest(task, AspectType.START_TIME) == null) {
+      startTime = endTime - 1;
+    } else { 
+      startTime = TaskUtils.getStartTime(task);
+      if (isActiveDemandProj)
+        startTime = logInvPG.getEffectiveProjectionStart(task,startTime); 
+    }
+    return startTime;
+  }
 
   /*
   ***  NEED TO DO
@@ -418,6 +695,9 @@ public class MyInventoryWrapper {
   }
 */  
   private Schedule scheduleToNonOverlapSchedule(Schedule schedule) {
+    if (schedule == null) {
+      return null;
+    }
     if (debug)  {
       System.out.println("Original schedule");
       printSchedule(schedule);
