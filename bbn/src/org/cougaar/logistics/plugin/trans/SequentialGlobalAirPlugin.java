@@ -106,8 +106,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   implements GLMOrganizationListener, BlackboardPlugin {
   
   private static final long ONE_HOUR = 1000l*60l*60l;
-  private static final double BILLION = 1000000000.0d;
-  private static final String SAND = "SAND";
+  //private static final double BILLION = 1000000000.0d;
+  //private static final String SAND = "SAND";
   public static int CONUS_THEATER_DIVIDING_LONGITUDE = 
     Integer.getInteger("SequentialGlobalAirPlugin.CONUS_THEATER_DIVIDING_LONGITUDE",25).intValue();
 

@@ -99,7 +99,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public static final String MILVAN_NSN = "NSN/8115001682275";
   public static final double PACKING_LIMIT = 13.9; /* short tons */
   private static Asset MILVAN_PROTOTYPE = null;
-  private static final String UNKNOWN = "unknown";
+  //private static final String UNKNOWN = "unknown";
   public static String START = "Start";
 
   public void localSetup () {
@@ -975,7 +975,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   protected boolean transportDateWithinReservedWindow (Task transport, Task reserved){
     Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
-    Date reservedBest  = prefHelper.getBestDate  (reserved);
+    //Date reservedBest  = prefHelper.getBestDate  (reserved);
 
     Date best          = prefHelper.getBestDate  (transport);
 
