@@ -66,7 +66,11 @@ public class SeaVishnuPlugin extends GenericVishnuPlugin {
   Comparator tasksComparator = new TaskSorter();
 
   /**
-   * Sort first by arrival time, then by UID.
+   * Sort first by arrival time window width, then by UID.
+   *
+   * E.g. a task with ready at date of 9-10 and arrival at 10-10 will go
+   * before a task with ready at of 8-10 and arrival of 10-10, since it's
+   * more constrained.
    *
    * If don't sort by UID, throws away subsequently added tasks with same
    * arrival times are previous ones...
@@ -75,11 +79,15 @@ public class SeaVishnuPlugin extends GenericVishnuPlugin {
     public int compare (Object obj1, Object obj2) {
       Task t1 = (Task) obj1;
       Task t2 = (Task) obj2;
-      long best1 = prefHelper.getBestDate (t1).getTime();
-      long best2 = prefHelper.getBestDate (t2).getTime();
-      if (best1 < best2)
+      long best1  = prefHelper.getBestDate (t1).getTime();
+      long ready1 = prefHelper.getReadyAt  (t1).getTime();
+      long diff1  = best1 - ready1;
+      long best2  = prefHelper.getBestDate (t2).getTime();
+      long ready2 = prefHelper.getReadyAt  (t2).getTime();
+      long diff2  = best2 - ready2;
+      if (diff1 < diff2)
 	return -1;
-      else if (best1 > best2)
+      else if (diff1 > diff2)
 	return 1;
       
       return t1.getUID().compareTo (t2.getUID());
