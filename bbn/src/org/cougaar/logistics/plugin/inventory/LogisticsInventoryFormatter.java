@@ -673,12 +673,14 @@ public class LogisticsInventoryFormatter {
 
     if (nomenclature == null) {
       nomenclature = itemId;
-      if (level2Inv) {
-        SupplyClassPG supplyPG = (SupplyClassPG) logInvPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
-        if (supplyPG != null) {
-          nomenclature = supplyPG.getSupplyType();
-        }
-      }
+
+    }
+    if (level2Inv) {
+	  //SupplyClassPG supplyPG = (SupplyClassPG) logInvPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
+	  //if (supplyPG != null) {
+          //nomenclature = supplyPG.getSupplyType();
+	  //}
+	  nomenclature="";
     }
 
     header = header + " nomenclature=" + nomenclature;
