@@ -27,6 +27,7 @@
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import com.klg.jclass.chart.ChartDataModel;
 import com.klg.jclass.chart.LabelledChartDataModel;
@@ -45,6 +46,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryTask;
 import org.cougaar.logistics.ui.inventory.data.InventoryAR;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleHeader;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
+
 
 
 import org.cougaar.util.TimeSpanSet;
@@ -143,7 +145,15 @@ public class RequisitionsChartDataModel
             InventoryTask task = (InventoryTask) requisitions.get(i);
             long endTime = task.getEndTime();
             int endBucket = (int) computeBucketFromTime(endTime);
-            yvalues[0][endBucket - minBucket] += (task.getQty() * unitFactor);
+	    try {
+		yvalues[0][endBucket - minBucket] += (task.getQty() * unitFactor);
+	    }
+	    catch(java.lang.ArrayIndexOutOfBoundsException ex) {
+		if(logger.isErrorEnabled()) {
+		    logger.error("Whoa! endBucket is " + endBucket + " and minBucket is " + minBucket + " and maxBucket is " + maxBucket + " and the task at the " + i + "th place is " + task + " - startTime " + new Date(task.getStartTime()) + " and the fatal end time is " + new Date(endTime));
+		}
+		throw ex;
+	    }
         }
 
         for (int i = 0; i < reqARs.size(); i++) {
