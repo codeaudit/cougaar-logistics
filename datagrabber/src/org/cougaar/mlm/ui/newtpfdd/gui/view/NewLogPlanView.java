@@ -40,16 +40,12 @@ import org.cougaar.mlm.ui.newtpfdd.gui.component.TPFDDColor;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
 import org.cougaar.mlm.ui.newtpfdd.util.SwingQueue;
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
-//import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
 
 public class NewLogPlanView extends JPanel
 {
     private NewJTreeTable treeTable;
   private TreeTableCellRenderer tree; // an instance of JTree
     private TaskModel model;
-
-  private static boolean debug = 
-    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.NewLogPlanView.debug"));
 
    public NewLogPlanView(NewTPFDDShell shell, int fontSize)
     {

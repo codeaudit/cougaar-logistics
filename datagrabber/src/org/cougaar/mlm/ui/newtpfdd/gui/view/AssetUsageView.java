@@ -46,8 +46,6 @@ public class AssetUsageView extends JPanel {
     private TreeTableCellRenderer tree;
     private AssetModel            model;
     
-    private static boolean debug = "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.AssetUsageView.debug"));
-    
     public AssetUsageView(NewTPFDDShell shell, int fontSize) {
 	model = new AssetModel(shell);
 
