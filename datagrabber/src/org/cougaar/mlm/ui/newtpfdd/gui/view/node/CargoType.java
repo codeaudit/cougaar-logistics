@@ -27,6 +27,7 @@ public class CargoType extends DBUIDNode {
     private String cargoType;
     private String cargoNameDBID;
     private String cargoTypeDBID;
+  private boolean isLowFi;
     
     public CargoType(UIDGenerator generator, String dbuid) {
 	  super (generator, dbuid);
@@ -47,4 +48,7 @@ public class CargoType extends DBUIDNode {
 
     public String getCargoTypeDBID() { return cargoTypeDBID; }
     public void setCargoTypeDBID(String cargoTypeDBID) { this.cargoTypeDBID = cargoTypeDBID; }
+
+    public boolean isLowFi() { return isLowFi; }
+    public void setLowFi(boolean val) { this.isLowFi = val; }
 }

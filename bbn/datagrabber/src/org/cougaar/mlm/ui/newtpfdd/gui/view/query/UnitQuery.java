@@ -244,8 +244,9 @@ public class UnitQuery extends SqlQuery {
 		String type  = rs.getString (1);
 		String nomen = rs.getString (2);
 		String proto = rs.getString (3);
+		boolean isLowFi = rs.getString (4).charAt(0)=='t';
 		
-		Node typeNode = createCargoType (generator, proto, type, nomen);
+		Node typeNode = createCargoType (generator, proto, type, nomen, isLowFi);
 
 		nameToNode.put (nomen, typeNode);
 		protoToNode.put (proto, typeNode);
@@ -344,7 +345,8 @@ public class UnitQuery extends SqlQuery {
 	boolean isLowFi   = rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY).equals("true");
 
 	if(debug){
-	  System.out.println ("UnitQuery.attachLegsFromResult - isLowFi was " + isLowFi + "/" + rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY));
+	  System.out.println ("UnitQuery.attachLegsFromResult - isLowFi was " + isLowFi + "/" + 
+			      rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY));
 	}
 
 	if (legtype != DGPSPConstants.LEG_TYPE_POSITIONING && legtype != DGPSPConstants.LEG_TYPE_RETURNING) {
@@ -541,11 +543,12 @@ public class UnitQuery extends SqlQuery {
 	return carrierType;
   }
 
-  protected Node createCargoType (UIDGenerator generator, String proto, String type, String nomen) {
+  protected Node createCargoType (UIDGenerator generator, String proto, String type, String nomen, boolean isLowFi) {
 	CargoType cargoType = new CargoType (generator, proto);
 	cargoType.setDisplayName (nomen);
 	cargoType.setCargoName (nomen);
 	cargoType.setCargoType (type);
+	cargoType.setLowFi (isLowFi);
 	return cargoType;
   }
 
@@ -632,11 +635,12 @@ public class UnitQuery extends SqlQuery {
     String typeID = DGPSPConstants.COL_ALP_TYPEID;
     String nomen = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String proto = PrepareDerivedTables.COL_INST_PROTOTYPEID;
+    String isLowFi = DGPSPConstants.COL_IS_LOW_FIDELITY;
     
     String instanceOwner = DGPSPConstants.COL_OWNER;
     
     String sqlQuery = 
-      "select distinct " + typeID + ", " + nomen + ", " + proto + 
+      "select distinct " + typeID + ", " + nomen + ", " + proto + "," + isLowFi +
       "\nfrom " + derivedTable +
       filterClauses.getUnitWhereSql (instanceOwner) +
       "\norder by " + nomen;

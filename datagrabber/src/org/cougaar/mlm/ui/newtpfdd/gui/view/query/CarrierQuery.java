@@ -239,8 +239,9 @@ public class CarrierQuery extends UnitQuery {
 		String proto = rs.getString (3);
 		String carrierInstance = rs.getString (4);
 		//		String parentProto = rs.getString (4);
+		boolean isLowFi = rs.getString (5).charAt(0)=='t';
 		
-		Node typeNode = createCargoType (generator, proto, type, nomen);
+		Node typeNode = createCargoType (generator, proto, type, nomen, isLowFi);
 		nameToNode.put    (nomen, typeNode);
 		protoToNode.put   (proto, typeNode);
 		nodeToCarrier.put (typeNode, carrierInstance);
@@ -605,13 +606,14 @@ public class CarrierQuery extends UnitQuery {
     String self2TypeID  = DGPSPConstants.COL_ALP_TYPEID;
     String self2Nomen   = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String self2Proto   = PrepareDerivedTables.COL_INST_PROTOTYPEID;
+    String isLowFi = DGPSPConstants.COL_IS_LOW_FIDELITY;
     
     String instanceOwner  = DGPSPConstants.COL_OWNER;
     String convInstanceID = DGPSPConstants.COL_CONVEYANCEID;
     
     String sqlQuery = 
       "select distinct " + self2TypeID + ", " + self2Nomen + ", " + self2Proto + ", " + 
-      convInstanceID +
+      convInstanceID + "," + isLowFi +
       "\nfrom "  + derivedTable +
       filterClauses.getUnitWhereSql (instanceOwner) + 
       "\norder by " + self2Nomen;
