@@ -91,20 +91,36 @@ public class ExternalAllocator extends InventoryModule {
 	if (provider != null) {
 	  if(verifyBeforeAllocation(task,provider)){
 	    AllocationResult estAR =  createPredictedAllocationResult(task,provider);
-	    Allocation alloc = buildAllocation(task, provider, providerRole);
-	    if (estAR != null){
-	      alloc.setEstimatedResult(estAR);
-	      if(inventoryPlugin.publishAdd(alloc)) {
-		return true;
-	      }
-	      else {
-		logger.error("Unable to publish the allocation " + alloc);
-	      }
-		   
-	    }
-	  } 
-	}
-	return false;
+            Allocation alloc;
+            //either make an allocation or reset the estimated AR on the
+            // already existing pe - mostly likely to happen if a task's prefs
+            // changed.
+            if (task.getPlanElement() == null) {
+              alloc = buildAllocation(task, provider, providerRole);
+              if (estAR != null){
+                alloc.setEstimatedResult(estAR);
+                if(inventoryPlugin.publishAdd(alloc)) {
+                  return true;
+                }
+                else {
+                  logger.error("Unable to publish the allocation " + alloc);
+                }
+              }
+            } else {
+              alloc = (Allocation)task.getPlanElement();
+              if (estAR != null){
+                alloc.setEstimatedResult(estAR);
+                if(inventoryPlugin.publishChange(alloc)) {
+                  return true;
+                }
+                else {
+                  logger.error("Unable to publish Change the allocation " + alloc);
+                }
+              }
+            }
+          } 
+        }
+        return false;
     }
 
     /** build Allocation with an estimated alloc result */
@@ -168,18 +184,7 @@ public class ExternalAllocator extends InventoryModule {
 	// too late to change
 	return false;
       }
-      PlanElement pe = task.getPlanElement();
-      if (pe == null) {
-	return true;
-      }
-      else {
-	logger.error("Should not publishAdd.  Task" + task + 
-		     " unexpectedly already has a plan element [" +
-		     pe + "]. was about to allocate to Asset: " + org + " from org " +
-	             myOrg );
-	Thread.dumpStack();
-      }
-      return false;
+      return true;
     }
 
 

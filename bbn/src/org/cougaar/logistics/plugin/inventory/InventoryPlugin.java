@@ -79,6 +79,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private HashSet touchedInventories;
     // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
+  private boolean touchedChangedProjections = false;
   private String supplyType;
   private String inventoryFile;
 //   private boolean fillToCapacity; Will be added bug #1482
@@ -302,12 +303,15 @@ public class InventoryPlugin extends ComponentPlugin {
 	Collection changedProjections = projectionTaskSubscription.getChangedCollection();
 	if (!changedProjections.isEmpty()) {
 	    supplyExpander.updateChangedProjections(changedProjections);
+            touchedChangedProjections = true;
+            // System.out.println("Touched changed projections in " + getAgentIdentifier() +
+//                                " type is" + getSupplyType());
 	}
 
         // call the Refill Generators if we have new demand
         if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections
-	  if (touchedProjections || touchedRemovedProjections) {
+	  if (touchedProjections || touchedRemovedProjections || touchedChangedProjections) {
             refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
                                                            criticalLevel, 
                                                            getEndOfLevelSix(), 
@@ -351,7 +355,13 @@ public class InventoryPlugin extends ComponentPlugin {
         if ((getSupplyType().equals("Subsistence")) 
             && (! Level6OMSubscription.getChangedCollection().isEmpty()) &&
             (((Integer)level6Horizon.getValue()).equals(LEVEL_6_MAX)) ) {
-          System.out.println("Reconciling all inventory levels at: " + getAgentIdentifier());
+          //System.out.println("Reconciling all inventory levels at: " + getAgentIdentifier());
+          refillProjGenerator.calculateRefillProjections(getInventories(), 
+                                                         criticalLevel, 
+                                                         getEndOfLevelSix(), 
+                                                         getEndOfLevelTwo(), 
+                                                         refillComparator);
+          externalAllocator.allocateRefillTasks(newRefills);
           allocationAssessor.reconcileInventoryLevels(getInventories());
         }
         
@@ -369,6 +379,7 @@ public class InventoryPlugin extends ComponentPlugin {
         touchedInventories.clear();
 	//backwardFlowInventories.clear(); //###
         touchedProjections = false;
+        touchedChangedProjections = false;
         //testBG();
       }
     }
