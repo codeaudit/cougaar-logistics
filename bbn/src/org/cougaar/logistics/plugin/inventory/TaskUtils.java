@@ -211,13 +211,13 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       return false;
     }
     Object io = pp.getIndirectObject();
-    if (io instanceof Asset) {
-        String taskOrg = ((Asset) io).getItemIdentificationPG().getItemIdentification();
+    if (io instanceof String) {
+        String taskOrg = (String) io;
         if(taskOrg.equals(orgName)) {
-	        pp = task.getPrepositionalPhrase(Constants.Preposition.REFILL);
-	        return (pp == null);
+          pp = task.getPrepositionalPhrase(Constants.Preposition.REFILL);
+          return (pp == null);
         }
-      }
+    }
     return false;
   }
 
