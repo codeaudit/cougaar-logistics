@@ -397,12 +397,8 @@ public class DemandForecastPlugin extends ComponentPlugin
       logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
      genProjTaskScheduler = new TaskScheduler
       (new GenProjPredicate (supplyType, taskUtils),
-       new TaskSchedulingPolicy (
-         new TaskSchedulingPolicy.Predicate[] {
-           new TaskSchedulingPolicy.Predicate() {
-             public boolean execute (Task task) {
-               return true; }}}
-           ),
+       new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+                                     {TaskSchedulingPolicy.PASSALL}),
        blackboard, logger,"GenProjs for " + getBlackboardClientName());
     }
   }

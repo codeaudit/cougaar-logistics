@@ -454,7 +454,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
   private synchronized Map getSupplyTaskOfTaskKey() {
     if (supplyTaskOfTaskKey == null) {
       supplyTaskOfTaskKey = new HashMap();
-      Iterator i = inventoryPlugin.getSupplyTaskSubscription().iterator();
+      Iterator i = inventoryPlugin.getSupplyTaskScheduler().iterator();
       while (i.hasNext()) {
         Task aTask = (Task) i.next();
         // Ignore tasks without plan elements for now; they will be processed later.

@@ -44,7 +44,10 @@ import org.cougaar.core.service.DomainService;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.Enumerator;
+import org.cougaar.util.TimeSpan;
 import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.logistics.plugin.utils.TaskScheduler;
+import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
 
 import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
@@ -73,7 +76,7 @@ public class InventoryPlugin extends ComponentPlugin
     implements UtilsProvider {
 
   private boolean initialized = false;
-  private boolean firstTimeThrough = true;
+//  private boolean firstTimeThrough = true;
   private DomainService domainService;
   private LoggingService logger;
   private TaskUtils taskUtils;
@@ -250,6 +253,10 @@ public class InventoryPlugin extends ComponentPlugin
     //clear our new refill list
     newRefills.clear();
 
+    // need to call these at beginning of execute cycle
+    supplyTaskScheduler.initForExecuteCycle();
+    projectionTaskScheduler.initForExecuteCycle();
+
     // if the OM changed and the window is further out then before
     // then mark the flag true so we process previously ignored tasks
     // and allocation results.  If it went down - don't undo work
@@ -321,14 +328,14 @@ public class InventoryPlugin extends ComponentPlugin
           supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       // The following is here because the above lies about what it does
-      supplyExpander.handleRemovedRealRequisitions(supplyTaskSubscription.getRemovedCollection());
+      supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
       // If its the first time we've gotten this far we now have our policy, org and others.
       // However, we may have missed some tasks on the added list in previous executes.
       // If its the first time through use the underlying subscription collection
       // instead of the added list.
-      if (firstTimeThrough) {
+//      if (firstTimeThrough) {
 //         Enumeration newReqs = supplyTaskSubscription.elements();
 //         ArrayList newReqsCollection = new ArrayList();
 //         while (newReqs.hasMoreElements()) {
@@ -341,31 +348,36 @@ public class InventoryPlugin extends ComponentPlugin
 //           newProjReqsCollection.add(newProjReqs.nextElement());
 //         }
 //         touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
-        expandIncomingRequisitions(getTasksWithoutPEs(supplyTaskSubscription));
-        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
-        firstTimeThrough = false;
-      } else {
-        Collection addedSupply = supplyTaskSubscription.getAddedCollection();
+//        expandIncomingRequisitions(getTasksWithoutPEs(supplyTaskSubscription));
+//        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
+//        firstTimeThrough = false;
+//      } else {
+        Collection addedSupply = supplyTaskScheduler.getAddedCollection();
+        TimeSpan timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
         if (!addedSupply.isEmpty()) {
           expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
         }
-        Collection changedSupply = supplyTaskSubscription.getChangedCollection();
+        Collection changedSupply = supplyTaskScheduler.getChangedCollection();
         if (!changedSupply.isEmpty()) {
           supplyExpander.updateChangedRequisitions(changedSupply);
         }
+        supplyTaskScheduler.finishedExecuteCycle();
 
-        Collection addedProjections = projectionTaskSubscription.getAddedCollection();
+        Collection addedProjections = projectionTaskScheduler.getAddedCollection();
+        TimeSpan timeSpan2 = projectionTaskScheduler.getCurrentTimeSpan();
         if (!addedProjections.isEmpty()) {
           // getTasksWithoutPEs is fix for bug #1695
           touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
         }
-        Collection changedProjections = projectionTaskSubscription.getChangedCollection();
+        Collection changedProjections = projectionTaskScheduler.getChangedCollection();
         if (!changedProjections.isEmpty()) {
           supplyExpander.updateChangedProjections(changedProjections);
           touchedChangedProjections = true;
 // System.out.println("Touched changed projections in " + getAgentIdentifier() +
 //                                " type is" + getSupplyType());
         }
+        projectionTaskScheduler.finishedExecuteCycle();
+
         // Allocate any refill tasks from previous executions that were not allocated to providers
         // but only if we are not about to rip out previous work we have done
         if (didOrgRelationshipsChange()) {
@@ -388,7 +400,7 @@ public class InventoryPlugin extends ComponentPlugin
             }
           }
         }
-      }
+//      }
 
       // call the Refill Generators if we have new demand
       if (!getTouchedInventories().isEmpty()) {
@@ -491,10 +503,12 @@ public class InventoryPlugin extends ComponentPlugin
   private IncrementalSubscription selfOrganizations;
 
   /** Subscription for incoming Supply tasks **/
-  private IncrementalSubscription supplyTaskSubscription;
+  private TaskScheduler supplyTaskScheduler;
+//  private IncrementalSubscription supplyTaskSubscription;
 
   /** Subscription for incoming Projection tasks **/
-  private IncrementalSubscription projectionTaskSubscription;
+  private TaskScheduler projectionTaskScheduler;
+//  private IncrementalSubscription projectionTaskSubscription;
 
   /** Subscription for Allocations on outgoing Refill (Supply & ProjectSupply) tasks **/
   private IncrementalSubscription refillAllocationSubscription;
@@ -588,10 +602,32 @@ public class InventoryPlugin extends ComponentPlugin
         subscribe(new ExpansionPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
-    supplyTaskSubscription = (IncrementalSubscription) blackboard.
-        subscribe(new SupplyTaskPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
-    projectionTaskSubscription = (IncrementalSubscription) blackboard.
-        subscribe(new ProjectionTaskPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+
+    String id = getAgentIdentifier().toString();
+    java.io.InputStream is = null;
+    try {
+      is = getConfigFinder().open ("supplyTaskPolicy.xml");
+    } catch (Exception e) {
+      logger.error ("Could not find file supplyTaskPolicy.xml");
+    }
+    supplyTaskScheduler = new TaskScheduler
+        (new SupplyTaskPredicate(supplyType, id, taskUtils),
+         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+         blackboard, logger, "supplyTasks for " + getBlackboardClientName());
+    try {
+      is = getConfigFinder().open ("projectionTaskPolicy.xml");
+    } catch (Exception e) {
+      logger.error ("Could not find file projectionTaskPolicy.xml");
+    }
+    projectionTaskScheduler = new TaskScheduler
+        (new ProjectionTaskPredicate(supplyType, id, taskUtils),
+         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+         blackboard, logger, "projTasks for " + getBlackboardClientName());
+
+//    supplyTaskSubscription = (IncrementalSubscription) blackboard.
+//        subscribe(new SupplyTaskPredicate(supplyType, id, taskUtils));
+//    projectionTaskSubscription = (IncrementalSubscription) blackboard.
+//        subscribe(new ProjectionTaskPredicate(supplyType, id, taskUtils));
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -603,7 +639,8 @@ public class InventoryPlugin extends ComponentPlugin
     }
   };
 
-  private static class SupplyTaskPredicate implements UnaryPredicate {
+  private static class SupplyTaskPredicate
+          implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
     TaskUtils taskUtils;
@@ -614,25 +651,17 @@ public class InventoryPlugin extends ComponentPlugin
       taskUtils = aTaskUtils;
     }
 
-    public boolean execute(Object o) {
-      if (o instanceof Task) {
-        Task task = (Task) o;
-        if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
-          if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            if (!taskUtils.isMyRefillTask(task, orgName)) {
-              if (taskUtils.getQuantity(task) > 0) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-      return false;
+    public boolean execute(Task task) {
+      return task.getVerb().equals(Constants.Verb.SUPPLY) &&
+             taskUtils.isDirectObjectOfType(task, supplyType) &&
+             (!taskUtils.isMyRefillTask(task, orgName)) &&
+             (taskUtils.getQuantity(task) > 0);
     }
   }
 
 
-  private static class ProjectionTaskPredicate implements UnaryPredicate {
+  private static class ProjectionTaskPredicate
+          implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
     TaskUtils taskUtils;
@@ -643,18 +672,10 @@ public class InventoryPlugin extends ComponentPlugin
       taskUtils = aTaskUtils;
     }
 
-    public boolean execute(Object o) {
-      if (o instanceof Task) {
-        Task task = (Task) o;
-        if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            if (!taskUtils.isMyInventoryProjection(task, orgName)) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
+    public boolean execute(Task task) {
+      return task.getVerb().equals(Constants.Verb.PROJECTSUPPLY) &&
+             taskUtils.isDirectObjectOfType(task, supplyType) &&
+             (!taskUtils.isMyInventoryProjection(task, orgName));
     }
   }
 
@@ -1496,8 +1517,8 @@ public class InventoryPlugin extends ComponentPlugin
     return getAgentIdentifier();
   }
 
-  public IncrementalSubscription getSupplyTaskSubscription() {
-    return supplyTaskSubscription;
+  public TaskScheduler getSupplyTaskScheduler() {
+    return supplyTaskScheduler;
   }
 
   //

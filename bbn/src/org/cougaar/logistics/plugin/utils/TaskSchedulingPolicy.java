@@ -260,12 +260,16 @@ public class TaskSchedulingPolicy {
         ordering = new ArrayList();
       }
       else if (name.equals ("CRITERION")) {
+        String passAll = atts.getValue ("passall");
         String level = atts.getValue ("level");
-        if (level == null)
+        if (passAll != null)
+          criteria.add (PASSALL);
+        else if (level != null)
+          criteria.add (new Level2Predicate ("2".equals (level.trim()),
+                                             taskUtils));
+        else
           throw new SAXException ("In scheduling policy criterion, " +
                 "currently must have level attribute defined");
-        boolean level2 = "2".equals (level.trim());
-        criteria.add (new Level2Predicate (level2, taskUtils));
       }
       else if (name.equals ("PHASE")) {
         String start = atts.getValue ("start");

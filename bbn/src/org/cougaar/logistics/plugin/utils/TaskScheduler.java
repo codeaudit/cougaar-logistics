@@ -161,6 +161,8 @@ public class TaskScheduler {
    * Plugins call this at end of execute cycle
    */
   public void finishedExecuteCycle() {
+    if (isEmpty())
+      return;
     shiftCollections();
     currentPhase++;
     // only requeue for execution if more to do
@@ -248,6 +250,16 @@ public class TaskScheduler {
     addedLists[pri][phase].clear();
     changedLists[pri][phase].clear();
     removedLists[pri][phase].clear();
+  }
+
+  /** iterates over all tasks */
+  public Iterator iterator() {
+    if (isEmpty())
+      return (new ArrayList(0)).iterator();
+    ArrayList al = new ArrayList (getAddedCollection());
+    al.addAll (getChangedCollection());
+    al.addAll (getRemovedCollection());
+    return al.iterator();
   }
 
   /** All added tasks at given priority since last cleared */
