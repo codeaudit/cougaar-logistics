@@ -66,14 +66,22 @@ public class DetReqAggHandler extends InventoryModule{
   public void addMILTasks(Enumeration milTasks) {
     while (milTasks.hasMoreElements()) {
       Task task = (Task) milTasks.nextElement();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Maintain Inv task being added... inserting into hashmap " + task.toString());
+      }
       Inventory inventory = (Inventory) task.getDirectObject();
       MILTaskHash.put(inventory, task);
     }
   }
 
-  private void removeMILTasks(Enumeration milTasks) {    
+  private void removeMILTasks(Enumeration milTasks) {
     while (milTasks.hasMoreElements()) {
       Task task = (Task) milTasks.nextElement();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "DetReqHandler[" +
+                     inventoryPlugin.getSupplyType() + "]" +
+                     "Maintain Inv task being removed... cleaning out hashmap " + task.toString());
+      }
       Inventory inventory = (Inventory) task.getDirectObject();
       MILTaskHash.remove(inventory);
     }
@@ -97,7 +105,7 @@ public class DetReqAggHandler extends InventoryModule{
   public Task getDetermineRequirementsTask(CollectionSubscription aggMILSubscription) {
     if (aggMILTask == null) {
       if (!aggMILSubscription.isEmpty()) {
-	aggMILTask = (Task) aggMILSubscription.elements().nextElement();
+        aggMILTask = (Task) aggMILSubscription.elements().nextElement();
       } 
     }
     return aggMILTask;
@@ -146,6 +154,7 @@ public class DetReqAggHandler extends InventoryModule{
     // create an expty expansion for the mp maintain inv task to be filled
     // in later with a MaintainInventory task for each maintained item
     createTopMIExpansion(mpTask);
+    aggMILTask = mpTask;
   }
 
   /** Create an empty expansion pe for the top level maintain inventory task
@@ -226,19 +235,22 @@ public class DetReqAggHandler extends InventoryModule{
     NewTask milTask = (NewTask) MILTaskHash.get(inventory);
     if (milTask == null) {
       Task parent = getDetermineRequirementsTask(aggMILSubscription);
-      if (parent == null) {
-	/**
-	   This might happen just after the last determine
-	   requirements task is removed. Because of inertia,
-	   the inventory manager might still be trying to
-	   refill the inventory although, in fact the demand
-	   for that inventory is in the process of
-	   disappearing. The caller, getting a null return will
-	   simply abandon the attempt to do the refill.
-	**/
-	logger.error("CANNOT CREATE MILTASK, no parent, inventory: "
-		     + getAssetUtils().assetDesc(inventory.getScheduledContentPG().getAsset()));	
-	return null; // Can't make one
+      if (parent == null || parent.getPlanElement() == null) {
+        /**
+         This might happen just after the last determine
+         requirements task is removed. Because of inertia,
+         the inventory manager might still be trying to
+         refill the inventory although, in fact the demand
+         for that inventory is in the process of
+         disappearing. The caller, getting a null return will
+         simply abandon the attempt to do the refill.
+         **/
+        if (logger.isWarnEnabled()) {
+          logger.warn("CANNOT CREATE MILTASK, no parent, parent pe or inventory: "
+                      + getAssetUtils().assetDesc(inventory.getScheduledContentPG().getAsset()) +
+                      " PARENT TASK IS: " + parent + " PARENT PE IS: " + parent.getPlanElement());
+        }
+        return null; // Can't make one
       }
       milTask = createMILTask(parent, inventory);
       PlanElement pe = parent.getPlanElement();
@@ -247,37 +259,47 @@ public class DetReqAggHandler extends InventoryModule{
         NewWorkflow wf = (NewWorkflow)expansion.getWorkflow();
         wf.addTask(milTask);
         ((NewTask) milTask).setWorkflow(wf);
+        // Publish new task
+        boolean addedNewMI = inventoryPlugin.publishAdd(milTask);
+        if (!addedNewMI) {
+          logger.error("publishAdd(milTask) fail to publish task "+ getTaskUtils().taskDesc(milTask));
+        }
+        MILTaskHash.put(inventory, milTask);
         inventoryPlugin.publishChange(expansion);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Created new Maintain Inv task: " + milTask.getUID() +
+                       " Parent UID is: " + parent.getUID());
+        }
       } else {
-        logger.error("publish Change to MIL Top Expansion: problem pe not Expansion? "+pe);
+        logger.error("publish Change to MIL Top Expansion: problem pe not Expansion? "+pe +
+                     " parent task is: " + parent.getUID());
       }
-      // Publish new task
-      if (!inventoryPlugin.publishAdd(milTask)) {
-        logger.error("publishAdd(milTask) fail to publish task "+ getTaskUtils().taskDesc(milTask));
-      }
-      MILTaskHash.put(inventory, milTask);
     }
     return milTask;
   }
-  
+
 
   private void setStartTimePreference(NewTask mpTask, long newStartTime) {
     ScoringFunction sf;
     Preference pref;
     sf = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.START_TIME,
-							       newStartTime));
+                                                                          newStartTime));
     pref = inventoryPlugin.getPlanningFactory().newPreference(AspectType.START_TIME, sf);
     mpTask.setPreference(pref);
     //    mpTask.setCommitmentDate(new Date(newStartTime));
   }
-  
+
   private void setEndTimePreference(NewTask mpTask, long newEndTime) {
     ScoringFunction sf;
     Preference pref;
     sf = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.END_TIME,
-							       newEndTime));
+                                                                          newEndTime));
     pref = inventoryPlugin.getPlanningFactory().newPreference(AspectType.END_TIME, sf);
     mpTask.setPreference(pref);
   }
-  
+
+  //Reset the task reference to AggMilTask if something was removed from top level MI subscription
+  public void resetAggMITask() {
+    aggMILTask = null;
+  }
 }
