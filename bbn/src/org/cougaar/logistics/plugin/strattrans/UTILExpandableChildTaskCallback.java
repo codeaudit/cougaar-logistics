@@ -47,18 +47,29 @@ public class UTILExpandableChildTaskCallback extends UTILExpandableTaskCallback 
     super (listener, logger);
   }
 
-  /** overridden to ignore workflow
+  /** 
+   * overridden to ignore workflow
+   *
+   * Just calls plugin interestingTask method.
+   *
+   * BUG FIX (deployment date perturbation bug) :
+   *
+   * Does NOT skip tasks that already have a plan element - this
+   * will be true on rehydration.  Including the check means no tasks in the 
+   * subscription and nothing to replan, should the org activity change.
+   *
+   * The plugin checks to see if the task already has a plan element and won't replan
+   * unless something else has changed.
+   *
+   * @see org.cougaar.logistics.plugin.strattrans.StrategicTransportProjectorPlugin#handleTask
+   * @see org.cougaar.logistics.plugin.strattrans.StrategicTransportProjectorPlugin#redoTasks
+   * @see org.cougaar.logistics.plugin.strattrans.StrategicTransportProjectorPlugin#interestingTask
    */
   protected UnaryPredicate getPredicate () {
     return new UnaryPredicate() {
 	public boolean execute(Object o) {
 	  if ( o instanceof Task ) {
-	    if (logger.isDebugEnabled()) {
-	      logger.debug("T:"+o);
-	      logger.debug("PE:"+((Task)o).getPlanElement());
-	    }
-	    return ( (((Task)o).getPlanElement() == null ) &&
-		     ((UTILGenericListener) myListener).interestingTask ((Task) o)); 
+	    return (((UTILGenericListener) myListener).interestingTask ((Task) o)); 
 	  }
 	  return false;
 	}

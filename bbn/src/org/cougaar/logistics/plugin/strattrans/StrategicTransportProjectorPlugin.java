@@ -86,77 +86,108 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
     return myInputTaskCallback;
   } 
 
+  /**
+   * Replan tasks when one of the inputs has changed, typically the Org Activity.
+   */
   public void redoTasks() {
-
     SubscriptionResults subscriptionResults = checkSubscriptions();
     if (subscriptionResults != null) {
-
       Enumeration enum = myInputTaskCallback.getSubscription().elements();
       boolean alreadyFound = false;
 
-      while (enum.hasMoreElements()) {
-          if (alreadyFound)
-              logger.warn(getAgentIdentifier() + " - more than one determine requirements task!");
-          Task t = (Task) enum.nextElement();
-          alreadyFound = true;
-          if (t.getPlanElement() == null) {
-	    if (isInfoEnabled()) {
-              logger.info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled for task " +t.getUID());
-	    }
-	    handleTask(t, subscriptionResults);
-          }
-          else {
-	    PlanElement prevPE = t.getPlanElement();
-
-	    // check to see if org activity in the past before we go tearing up the log plan
-	    if (orgActivityInThePast (subscriptionResults)) {
-	      if (isInfoEnabled()) {
-		logger.info(getAgentIdentifier() + " - redoTasks: not replanning " + t.getUID() + " because it's in the past.");
-	      }
-	    }
-	    else {
-	      if (isInfoEnabled()) {
-		logger.info(getAgentIdentifier() + " - redoTasks: Plan Element removed from " + t.getUID() + " and replanned.");
-	      }
-
-	      publishRemove(prevPE); // only remove old results if activity is in the future
-	      handleTask(t, subscriptionResults);
-
-	      // postcondition test
-	      if ((t.getPlanElement () == null) ||
-		  (t.getPlanElement () == prevPE)) {
-		logger.warn (getAgentIdentifier() + 
-			     " - redoTasks: didn't replan " + t.getUID () + 
-			     " properly, PE not updated.");
-	      }
-	    }
-          }
+      if (isInfoEnabled()) {
+	if (!enum.hasMoreElements())
+	  logger.info ("no tasks to replan on redo?");
       }
+
+      while (enum.hasMoreElements()) {
+	if (alreadyFound)
+	  logger.warn(getAgentIdentifier() + " - more than one determine requirements task!");
+	Task t = (Task) enum.nextElement();
+	alreadyFound = true;
+	if (t.getPlanElement() == null) {
+	  if (isInfoEnabled()) {
+	    logger.info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled for task " +t.getUID());
+	  }
+	  handleTask(t, subscriptionResults);
+	}
+	else {
+	  PlanElement prevPE = t.getPlanElement();
+
+	  // check to see if org activity in the past before we go tearing up the log plan
+	  if (orgActivityInThePast (subscriptionResults)) {
+	    if (isInfoEnabled()) {
+	      logger.info(getAgentIdentifier() + " - redoTasks: not replanning " + t.getUID() + " because it's in the past.");
+	    }
+	  }
+	  else {
+	    if (isInfoEnabled()) {
+	      logger.info(getAgentIdentifier() + " - redoTasks: Plan Element removed from " + t.getUID() + " and replanned.");
+	    }
+
+	    publishRemove(prevPE); // only remove old results if activity is in the future
+	    handleTask(t, subscriptionResults);
+
+	    // postcondition test
+	    if ((t.getPlanElement () == null) ||
+		(t.getPlanElement () == prevPE)) {
+	      logger.warn (getAgentIdentifier() + 
+			   " - redoTasks: didn't replan " + t.getUID () + 
+			   " properly, PE not updated.");
+	    }
+	  }
+	}
+      }
+    }
+    else {
+      logger.info ("Not acting on change since not all required elements on blackboard.");
     }
   }
 
   public void handleNewOrganizations (Enumeration e) {
-      redoTasks();
+    if (isInfoEnabled())
+      logger.info ("Got new organization - " + e.nextElement());
+    redoTasks();
   }
 
   public void handleNewParameterizedAssets (Enumeration e, String key) {
-      redoTasks();
+    if (isInfoEnabled())
+      logger.info ("Got new assets - " + e.nextElement() + " key " +key);
+    redoTasks();
   }
 
   public void handleNewOrgActivities (Enumeration e) {
-      redoTasks();
+    if (isInfoEnabled())
+      logger.info ("Got new org activity - " + e.nextElement());
+    redoTasks();
   }
 
+  /** 
+   * Does NOT replan on changed org.
+   *
+   * If we replan on changed org - will always replan on rehydrate, 
+   * when the org changes when the agent is reconstituted.
+   * Why the org changes, I'm not sure.  I just know it does on rehydrate.
+   */
   public void handleChangedOrganizations (Enumeration e) {
-      redoTasks();
+    if (isInfoEnabled())
+      logger.info ("Got changed organization - " + e.nextElement() + " but not replanning.");
   }
 
   public void handleChangedParameterizedAssets (Enumeration e, String key) {
-      redoTasks();
+    if (isInfoEnabled())
+      logger.info ("Got changed assets - " + e.nextElement() + " key " +key);
+    redoTasks();
   }
 
   public void handleChangedOrgActivities (Enumeration e) {
-      redoTasks();
+    if (isInfoEnabled()) {
+      while (e.hasMoreElements()) {
+	OrgActivity orgAct = (OrgActivity) e.nextElement();
+	logger.info ("Got changed org activity - " + orgAct + "'s end time " + orgAct.getTimeSpan().getEndDate());
+      }
+    }
+    redoTasks();
   }
 
 
