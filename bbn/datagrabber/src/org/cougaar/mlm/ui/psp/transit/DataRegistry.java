@@ -1043,11 +1043,11 @@ typical_case:
       PhysicalPG instPhysPG = 
 	((GLMAsset)instAsset).getPhysicalPG();
 
-      if (DEBUG)
-	System.out.println (Thread.currentThread () + ".registerCargoPrototype - Instance dimensions for " + instAsset.getUID() + 
-			    " - mass " + instPhysPG.getMass().getTons());
-
       if (instPhysPG != null) {
+	if (DEBUG)
+	  System.out.println (Thread.currentThread () + ".registerCargoPrototype - Instance dimensions for " + instAsset.getUID() + 
+			      " - mass " + instPhysPG.getMass().getTons());
+
 	Mass weight = instPhysPG.getMass();
 	if (weight != null) {
 	  instWeight = weight.getGrams();
@@ -1151,11 +1151,16 @@ typical_case:
     ccc.area   = area;
     ccc.volume = volume;
 
-    MovabilityPG movabilityPG = alpProt.getMovabilityPG();
+    MovabilityPG movabilityPG = null;
+    if (alpProt != null)
+      alpProt.getMovabilityPG();
+
     String cccString = "XXX";
     
-    if (movabilityPG == null)
-      System.out.println (Thread.currentThread () + ".registerCargoPrototype - no movability pg for asset " + alpProt);
+    if (movabilityPG == null) {
+      if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoPrototype - no movability pg for asset " + alpProt);
+    }
     else {
       cccString = movabilityPG.getCargoCategoryCode();
       if (DEBUG)
