@@ -380,28 +380,19 @@ public class TopsRun extends Run{
     }
   }
 
-  protected void setAutoCommitFalse () {
-    try { 
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
-      getDBConnection().setAutoCommit(false); 
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
-    } 
-    catch (Exception e) { 
-      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing setAutoCommit (false) - " + e);
-    }
-  }
-
   protected boolean processResultsObtainLegs(){
     boolean ret=genericWarningProcessResults("Obtained Leg information");
-    if(workGroup.isEmpty())
+    if(workGroup.isEmpty()) {
+      setAutoCommitTrue (); // commit leg batches
       obtainInstances();
+    }
     return ret;
   }
 
   //OBTAIN_INSTANCES:
 
   protected void obtainInstances(){
-    setAutoCommitTrue ();
+    setAutoCommitFalse();
     setEpoch(EPOCH_OBTAIN_INSTANCES);
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
     while(iter.hasNext()){
@@ -413,29 +404,42 @@ public class TopsRun extends Run{
     }
   }
 
-  protected void setAutoCommitTrue () {
-    try { 
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
-      getDBConnection().commit();
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
-      getDBConnection().setAutoCommit(true); 
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
-    } 
-    catch (Exception e) { 
-      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing commit - " + e);
-    }
-  }
-
   protected boolean processResultsObtainInstances(){
     //Later we may want to process the container information by setting up
     //to query another PSP based on the manifestUIDs returned by
     //The InstanceRunResult object that we get back here.  But for now we'll
     //just drop this info on the floor.
     boolean ret=genericWarningProcessResults("Obtained instance information");
-    if(workGroup.isEmpty())
+    if(workGroup.isEmpty()) {
+      setAutoCommitTrue (); // commit instance batches
       obtainPrototypes();
+    }
     return ret;
+  }
+
+  protected void setAutoCommitFalse () {
+    try { 
+      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
+      getDBConnection().setAutoCommit(false); 
+      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
+    } 
+    catch (Exception e) { 
+      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing setAutoCommit (false) - " + e);
+    }
+  }
+
+  protected void setAutoCommitTrue () {
+    try { 
+      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
+      getDBConnection().commit();
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
+      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
+      getDBConnection().setAutoCommit(true); 
+      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
+    } 
+    catch (Exception e) { 
+      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing commit - " + e);
+    }
   }
 
   //OBTAIN_PROTOTYPES:
