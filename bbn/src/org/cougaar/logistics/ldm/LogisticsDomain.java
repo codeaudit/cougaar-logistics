@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -120,11 +120,7 @@ public class LogisticsDomain extends DomainAdapter {
     }
 
     ldmf.addPropertyGroupFactory(new PropertyGroupFactory());
-
-    //TODO: MWD Remove these lines below?
-    //ldmf.addAssetFactory(new AssetFactory());
-    //Factory f = new GLMFactory();
-    //setFactory(f);
+    setFactory(new LogisticsFactory(ldm));
   }
 
   protected void loadXPlan() {
@@ -137,7 +133,7 @@ public class LogisticsDomain extends DomainAdapter {
       throw new RuntimeException("Missing \"root\" plan!");
     }
 
-    PlanningFactory ldmf = (PlanningFactory) 
+    PlanningFactory ldmf = (PlanningFactory)
       domainService.getFactory("planning");
     if (ldmf == null) {
       throw new RuntimeException("Missing \"planning\" factory!");
@@ -146,7 +142,7 @@ public class LogisticsDomain extends DomainAdapter {
     /**
      * We have no new logistics LPs for the time being.
      *
-    GLMFactory glmFactory = (GLMFactory) 
+    GLMFactory glmFactory = (GLMFactory)
       domainService.getFactory("glm");
 
     addLogicProvider(new ReceiveTransferableLP(rootplan, ldmf));
