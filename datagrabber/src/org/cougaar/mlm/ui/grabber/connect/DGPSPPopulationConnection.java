@@ -222,14 +222,6 @@ public class DGPSPPopulationConnection extends DGPSPConnection
     }
   }
 
-  protected RunResult prepResult(DeXMLable obj){
-    setStatus("Starting");
-    RunResult rr = new SuccessRunResult(getID(),getRunID());
-    setStatus("Done");
-    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
-    return rr;
-  }
-
   //Converters:
   //===========
 

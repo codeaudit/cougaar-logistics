@@ -30,7 +30,7 @@ import java.sql.*;
 
 /**
  * Handles creating the Hierarchy DB tables.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -64,23 +64,6 @@ public class HierarchyPrepareDBTables extends PrepareDBTables
   //Members:
   //////////
 
-  //Gets:
-
-  private String getRootTableName(){
-    return getTableName(ORGROOTS_TABLE_NAME);
-  }
-
-  private String getOrgTableName(){
-    return getTableName(ORG_TABLE_NAME);
-  }
-
-  private String getNamesTableName(){
-    return getTableName(ORGNAMES_TABLE_NAME);
-  }
-
-  private String getDescendTableName(){
-    return getTableName(ORGDESCEND_TABLE_NAME);
-  }
 
   //Actions:
 

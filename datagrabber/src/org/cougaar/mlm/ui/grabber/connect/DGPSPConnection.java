@@ -37,7 +37,7 @@ import java.sql.*;
 
 /**
  * Base class for connections to the DataGrathererPSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/18/01
  **/
@@ -67,6 +67,13 @@ public abstract class DGPSPConnection extends PSPConnection {
   //////////
 
   //Gets:
+  protected RunResult prepResult(DeXMLable obj){
+    setStatus("Starting");
+    RunResult rr = new SuccessRunResult(getID(),getRunID());
+    setStatus("Done");
+    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
+    return rr;
+  }
 
   protected String getQueryString(){
     return "?"+pspConfig.getQuery()+getSessionID();

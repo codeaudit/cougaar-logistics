@@ -33,7 +33,7 @@ import java.sql.*;
 /**
  * Base class for all Work that creates tables.
  *
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -187,6 +187,22 @@ public abstract class PrepareDBTables extends PSPWork{
   protected RunResult prepResult(Object hint){
     return new SuccessRunResult(getID(),getRunID());
   }
+
+    protected String getRootTableName(){
+      return getTableName(HierarchyConstants.ORGROOTS_TABLE_NAME);
+    }
+
+    protected String getOrgTableName(){
+      return getTableName(HierarchyConstants.ORG_TABLE_NAME);
+    }
+
+    protected String getNamesTableName(){
+      return getTableName(HierarchyConstants.ORGNAMES_TABLE_NAME);
+    }
+
+    protected String getDescendTableName(){
+      return getTableName(HierarchyConstants.ORGDESCEND_TABLE_NAME);
+    }
 
   //InnerClasses:
   ///////////////

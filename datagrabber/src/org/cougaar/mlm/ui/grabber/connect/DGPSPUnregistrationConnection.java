@@ -134,14 +134,6 @@ public class DGPSPUnregistrationConnection extends DGPSPConnection {
   protected void updateDB(Connection c, DeXMLable obj){
   }
 
-  protected RunResult prepResult(DeXMLable obj){
-    setStatus("Starting");
-    RunResult rr = new SuccessRunResult(getID(),getRunID());
-    setStatus("Done");
-    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
-    return rr;
-  }
-
   //Static functions:
   ///////////////////
 

@@ -294,14 +294,6 @@ public class DGPSPLegConnection extends DGPSPConnection
     return returnedUID;
   }
 
-  protected RunResult prepResult(DeXMLable obj){
-    setStatus("Starting");
-    RunResult rr = new SuccessRunResult(getID(),getRunID());
-    setStatus("Done");
-    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
-    return rr;
-  }
-
   //Converters:
   //===========
 
