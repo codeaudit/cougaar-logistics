@@ -419,6 +419,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   public void handleProjectSupplyTask(Task t) {
     wantConfidence = true;
+    if (t.getPlanElement() != null)
+      publishRemove (t.getPlanElement());
     handleTask(t);
     Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
     AspectValue ratePerSec = pref.getScoringFunction().getBest().getAspectValue();
