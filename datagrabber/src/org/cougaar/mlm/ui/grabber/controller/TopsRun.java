@@ -142,12 +142,12 @@ public class TopsRun extends Run{
     case EPOCH_OBTAIN_LEGS:
     case EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS:
       return processResultsObtainLegs();
-      //    case EPOCH_OBTAIN_INSTANCES:
-      //      return processResultsObtainInstances();
+    case EPOCH_OBTAIN_INSTANCES:
+      return processResultsObtainInstances();
     case EPOCH_OBTAIN_PROTOTYPES:
       return processResultsObtainPrototypes();
-      //    case EPOCH_OBTAIN_POPULATIONS:
-      //      return processResultsObtainPopulations();
+    case EPOCH_OBTAIN_POPULATIONS:
+      return processResultsObtainPopulations();
     case EPOCH_OBTAIN_LOCATIONS:
       return processResultsObtainLocations();
     case EPOCH_OBTAIN_ROUTES:
@@ -402,10 +402,10 @@ public class TopsRun extends Run{
   protected void obtainLegs(){
     setAutoCommitFalse ();
     //    if (doInstancesWithLegsAndPopulation) {
-      setEpoch(EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS);
+    //      setEpoch(EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS);
       //    }
       //    else {
-      //      setEpoch(EPOCH_OBTAIN_LEGS);
+            setEpoch(EPOCH_OBTAIN_LEGS);
       //    }
 
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
@@ -417,6 +417,7 @@ public class TopsRun extends Run{
 		    cluster);
 
       //      if (doInstancesWithLegsAndPopulation) {
+      /*
 	DataGathererPSPConfig dgc2= new DataGathererPSPConfig (dgc);
 	workGroup.add(startDGPSPInstanceConnection(dgc2),
 		      cluster);
@@ -424,6 +425,7 @@ public class TopsRun extends Run{
 	DataGathererPSPConfig dgc3= new DataGathererPSPConfig (dgc);
 	workGroup.add(startDGPSPPopulationConnection(dgc3),
 		      cluster);
+      */
 	//      }
     }
   }
@@ -441,10 +443,10 @@ public class TopsRun extends Run{
     if(workGroup.isEmpty()) {
       setAutoCommitTrue (); // commit leg batches
       //      if (doInstancesWithLegsAndPopulation) {
-	obtainPrototypes ();
+      //	obtainPrototypes ();
 	//      }
 	//      else {
-	//	obtainInstances();
+		obtainInstances();
 	//      }
     }
     return ret;
@@ -466,7 +468,6 @@ public class TopsRun extends Run{
   }
 
   /** after getting instances we get prototypes */
-  /*
   protected boolean processResultsObtainInstances(){
     //Later we may want to process the container information by setting up
     //to query another PSP based on the manifestUIDs returned by
@@ -479,7 +480,6 @@ public class TopsRun extends Run{
     }
     return ret;
   }
-  */
 
   protected void setAutoCommitFalse () {
     try { 
@@ -487,7 +487,8 @@ public class TopsRun extends Run{
 	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
       }
 
-      getDBConnection().setAutoCommit(false); 
+      for (Iterator iter = getAllDBConnections ().iterator(); iter.hasNext(); )
+	((Connection) iter.next()).setAutoCommit(false); 
 
       if (isTrivialEnabled()) {
 	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
@@ -504,7 +505,8 @@ public class TopsRun extends Run{
 	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
       }
 
-      getDBConnection().commit();
+      for (Iterator iter = getAllDBConnections ().iterator(); iter.hasNext(); )
+	((Connection) iter.next()).commit(); 
 
       if (isMinorEnabled()) {
 	logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
@@ -514,7 +516,8 @@ public class TopsRun extends Run{
 	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
       }
 
-      getDBConnection().setAutoCommit(true); 
+      for (Iterator iter = getAllDBConnections ().iterator(); iter.hasNext(); )
+	((Connection) iter.next()).setAutoCommit(true); 
 
       if (isTrivialEnabled()) {
 	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
@@ -544,10 +547,10 @@ public class TopsRun extends Run{
     boolean ret=genericWarningProcessResults("Obtained prototype information");
     if(workGroup.isEmpty()) {
       //      if (doInstancesWithLegsAndPopulation) {
-	obtainLocations();
+      //	obtainLocations();
 	//      }
 	//      else {
-	//	obtainPopulations();
+	obtainPopulations();
 	//      }
     }
     return ret;
@@ -568,21 +571,20 @@ public class TopsRun extends Run{
   }
 
   /** After getting populations we get prototypes */
-  /*
   protected boolean processResultsObtainPopulations(){
     boolean ret=genericWarningProcessResults
       ("Obtained population information");
     if(workGroup.isEmpty()) {
-      if (doInstancesWithLegsAndPopulation) {
-	obtainPrototypes();
-      }
-      else {
+      //      if (doInstancesWithLegsAndPopulation) {
+      //	obtainPrototypes();
+      //
+      //      }
+      //      else {
 	obtainLocations();
-      }
+	//      }
     }
     return ret;
   }
-  */
 
   //OBTAIN_LOCATIONS:
 
@@ -899,7 +901,8 @@ public class TopsRun extends Run{
     setStatus("starting to Prepare Derived Tables");
     PrepareDerivedTables pdt=
       new PrepareDerivedTables(workId, id, getDBConfig(),
-			       getDBConnection(),
+			       // getDBConnection(),
+			       getAllDBConnections(),
 			       getDGConfig().getDerivedTablesConfig(),
 			       this);
     if (isNormalEnabled()) {

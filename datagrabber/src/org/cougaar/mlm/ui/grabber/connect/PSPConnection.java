@@ -362,6 +362,9 @@ public abstract class PSPConnection extends PSPWork{
     
     setEpoch(UPDATINGDB);
     Connection c=getDBConnection();
+
+    logMessage(Logger.NORMAL,Logger.NET_IO,"updating DB with connection " + c);
+
     updateDB(c,obj);
 
     logTiming ();

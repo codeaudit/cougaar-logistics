@@ -155,6 +155,16 @@ public class DataGrabber{
 
     DataGrabber dg= new DataGrabber(dgc);
     dg.start();
+
+    // close db connections on exit
+    final Controller localController = dg.controller;
+    final WebServer  localWebServer  = dg.webServer;
+    Runtime.getRuntime().addShutdownHook (new Thread () { 
+	public void run () { 
+	  localController.shutDown ();
+	  localWebServer.shutDown  ();
+	}
+      });
   }
 
   public static DataGrabberConfig loadConfigFromFile(String fileName)

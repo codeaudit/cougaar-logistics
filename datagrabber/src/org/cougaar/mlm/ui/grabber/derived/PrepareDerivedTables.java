@@ -41,6 +41,7 @@ import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 import org.cougaar.mlm.ui.grabber.controller.FailureRunResult;
 
 import java.sql.*;
+import java.util.List;
 
 /**
  * Creates derived tables used by TPFDD viewer to speed up queries.
@@ -221,6 +222,8 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
 
   private DerivedTablesConfig dtConfig;
   private WorkQueue workQ;
+  List dbConnections;
+  int dbConnectionRequest = 1;
 
   private boolean buildTable[]=new boolean[DERIVED_TABLES.length];
   
@@ -229,15 +232,17 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
 
   public PrepareDerivedTables(int id, int runID, 
 			      DBConfig dbConfig,
-			      Connection dbConnection,
+			      //Connection dbConnection,
+			      List dbConnections,
 			      DerivedTablesConfig dtConfig,
 			      Logger logger){
-    super(id,runID,dbConfig,dbConnection,logger);
+    super(id,runID,dbConfig,(Connection)dbConnections.get(0),logger);
     this.dtConfig=dtConfig;
     for(int i=0;i<buildTable.length;i++)
       buildTable[i]=false;
 
     workQ = new WorkQueue(logger, this);
+    this.dbConnections = dbConnections;
   }
 
   /*
@@ -266,14 +271,32 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     return ret;
   }
 
+  /** 
+   * round-robin connection choice 
+   */
+  public Connection getDBConnection(){
+    //return dbConnection;
+    
+    Connection connection;
+    connection = (Connection) dbConnections.get(dbConnectionRequest);
+
+    dbConnectionRequest = (dbConnectionRequest+1) % dbConnections.size ();
+
+    return connection;
+  }
+
   /**Prepare it, since we need preparation**/
-  protected void prepareDB(Connection c){
+  protected void prepareDB(Connection ignoredC){
     long startTime=System.currentTimeMillis();
 
     for(int i=0;i<DERIVED_TABLES.length;i++){
       if (halt) break;
       Statement s=null;
       try{
+	Connection c = getDBConnection();
+	logMessage(Logger.NORMAL,Logger.NET_IO,"creating derived table " + 
+		   DERIVED_TABLES[i] +
+		   " with connection " + c);
 	s = c.createStatement();
       }catch(SQLException e){
 	haltForError(Logger.DB_STRUCTURE,"Could not create Statement",e);

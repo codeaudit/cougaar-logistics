@@ -37,6 +37,9 @@ import org.cougaar.mlm.ui.grabber.config.DBConfig;
 import java.sql.Connection;
 import java.sql.Statement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents a single gatherer run
  *
@@ -111,6 +114,8 @@ public abstract class Run implements ResultHandler, Logger{
 
   private String status="Initialized";
   protected ResultQueue resultQ;
+  List dbConnections = new ArrayList();
+  int dbConnectionRequest = 0;
 
   private Connection dbConnection;
   private IDLogger logger;
@@ -149,9 +154,23 @@ public abstract class Run implements ResultHandler, Logger{
     return id;
   }
 
+  /** 
+   * round-robin connection choice 
+   */
   public Connection getDBConnection(){
-    return dbConnection;
+    //return dbConnection;
+    
+    Connection connection;
+    connection = (Connection) dbConnections.get(dbConnectionRequest);
+
+    dbConnectionRequest = (dbConnectionRequest+1) % dbConnections.size ();
+
+    return connection;
   }
+
+  public int getNumDBConnections () { return dbConnections.size(); }
+
+  public List getAllDBConnections () { return dbConnections; }
 
   public int getEpoch(){
     return epoch;
@@ -199,8 +218,14 @@ public abstract class Run implements ResultHandler, Logger{
     this.dgConfig=dgConfig;
   }
 
+  /*
   public void setDBConnection(Connection dbConnection){
     this.dbConnection=dbConnection;
+  }
+  */
+
+  public void addDBConnection(Connection dbConnection) {
+    dbConnections.add (dbConnection);
   }
 
   public void setLogger(IDLogger l){

@@ -30,12 +30,14 @@ import org.cougaar.mlm.ui.grabber.workqueue.*;
 import org.cougaar.mlm.ui.grabber.config.*;
 import org.cougaar.mlm.ui.grabber.connect.*;
 
-import java.util.Set;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Map;
+import java.util.Iterator;
+import java.util.List;
 import java.util.HashMap;
-import java.util.ConcurrentModificationException;
+import java.util.Set;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -78,7 +80,8 @@ public class Controller extends Thread implements ResultHandler{
   protected WorkQueue workQ;
   protected DataGrabberConfig dgConfig;
   protected Connection dbConnection;
-  
+  protected List dbConnections = new ArrayList();
+
   protected Map runMap;
 
   protected boolean halt=false;
@@ -154,21 +157,25 @@ public class Controller extends Thread implements ResultHandler{
     try{
       c=getConnection(dbConfig);
     }catch(SQLException e){
-	  logger.logMessage(Logger.MINOR,Logger.DB_CONNECT,
-						"SQL Error code was " + e.getErrorCode());
-	  logger.logMessage(Logger.IMPORTANT,Logger.DB_CONNECT,
-						"Could not establish connection, trying to create database.");
-	  c=createDatabase (dbConfig);
+      logger.logMessage(Logger.MINOR,Logger.DB_CONNECT,
+			"SQL Error code was " + e.getErrorCode());
+      logger.logMessage(Logger.IMPORTANT,Logger.DB_CONNECT,
+			"Could not establish connection, trying to create database.");
+      c=createDatabase (dbConfig);
     }
-	if (c != null)
-	  logger.logMessage(Logger.IMPORTANT,Logger.DB_CONNECT,
-						"Connection established");
+
+    if (c != null) {
+      logger.logMessage(Logger.IMPORTANT,Logger.DB_CONNECT,
+			"Database Connection established to " + dbConfig.getHostName() + 
+			" - " + dbConfig.getDatabaseName());
+    }
+
     return c;
   }
 
-    private Connection getConnection(DBConfig dbConfig) throws SQLException {
-        return DriverManager.getConnection(dbConfig.getConnectionURL(), dbConfig.getUser(), dbConfig.getPassword());
-    }
+  private Connection getConnection(DBConfig dbConfig) throws SQLException {
+    return DriverManager.getConnection(dbConfig.getConnectionURL(), dbConfig.getUser(), dbConfig.getPassword());
+  }
 
   protected Connection createDatabase (DBConfig dbConfig) {
     Connection c = null;
@@ -208,18 +215,13 @@ public class Controller extends Thread implements ResultHandler{
 	return c;
   }
   
-  protected void closeDBConnection(){
-    try{
-      dbConnection.close();
-    }catch(SQLException e){
-      logger.logMessage(Logger.WARNING,Logger.DB_CONNECT,
-		 "Could not close connection",e);
-    }
-  }
-
   /**Return true on success**/
   protected boolean initDB(){
     dbConnection=getNewDBConnection(dgConfig.getDBConfig());
+
+    for (int i = 0; i < dgConfig.getNumDBConnections (); i++)
+      dbConnections.add(getNewDBConnection(dgConfig.getDBConfig()));
+
     return dbConnection!=null;
   }
 
@@ -261,7 +263,11 @@ public class Controller extends Thread implements ResultHandler{
     run.setController(this);
     run.setWorkQueue(workQ);
     run.setDGConfig(dgConfig);
-    run.setDBConnection(dbConnection);
+    // run.setDBConnection(dbConnection);
+    for (Iterator iter = dbConnections.iterator (); iter.hasNext(); ) {
+      run.addDBConnection((Connection) iter.next());
+    }
+
     run.setLogger(logger);
     addRun(run);
     logger.logMessage(Logger.IMPORTANT,Logger.STATE_CHANGE,
@@ -346,6 +352,27 @@ public class Controller extends Thread implements ResultHandler{
     closeDBConnection();
   }
 
+  public void shutDown () {
+    closeDBConnection ();
+  }
+
+  protected void closeDBConnection(){
+    try{
+      logger.logMessage(Logger.NORMAL,Logger.DB_CONNECT,"Controller - Closing db connections.");
+
+      dbConnection.close();
+
+      for (Iterator iter = dbConnections.iterator (); iter.hasNext(); ) {
+	((Connection) iter.next()).close();
+      }
+
+    }catch(SQLException e){
+      logger.logMessage(Logger.WARNING,Logger.DB_CONNECT,
+		 "Could not close connection",e);
+    }
+  }
+
+
   //Run table:
 
   protected void updateRunTable(int id, long date, int condition){
@@ -411,6 +438,9 @@ public class Controller extends Thread implements ResultHandler{
     }catch(SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
 			"Could not obtain largest run number",e);
+      logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
+			"Connection was " + dbConnection);
+      e.printStackTrace();
     }
     return ret;
   }
