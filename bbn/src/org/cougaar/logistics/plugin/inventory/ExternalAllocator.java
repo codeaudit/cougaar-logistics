@@ -46,7 +46,7 @@ import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 
-public class ExternalAllocator extends InventoryModule {
+public class ExternalAllocator extends InventoryModule implements AllocatorModule {
 
     Organization myOrg;
     Role         providerRole;
