@@ -112,7 +112,7 @@ public class LogisticsInventoryLogger extends FileWriter{
 	}
     }
 
-    private static void initializeClass(LoggingService classLogger) {
+    private static synchronized void initializeClass(LoggingService classLogger) {
 	if(datestamp == null) {
 	    //TimeZone est = TimeZone.getTimeZone("EST");
 	    TimeZone gmt = TimeZone.getDefault();
