@@ -92,6 +92,7 @@ public class PortLocatorImpl extends LocatorImpl {
     if (POEExceptions == null) {
       allocHelper = new UTILAllocate (logger);
       POEExceptions = new HashSet(); 
+      POEExceptionsNotSunnyPoint = new HashSet(); 
       routeCache = new HashMap ();
     }
 
@@ -103,8 +104,10 @@ public class PortLocatorImpl extends LocatorImpl {
 
     for (Iterator iter = newPorts.iterator (); iter.hasNext(); ) {
       Asset asset = (Asset) iter.next();
-      if (asset.getTypeIdentificationPG().getTypeIdentification ().equals ("TheaterSeaport"))
+      if (asset.getTypeIdentificationPG().getTypeIdentification ().equals ("TheaterSeaport")) {
 	POEExceptions.add (getLocationOfAsset(asset));
+	POEExceptionsNotSunnyPoint.add (getLocationOfAsset(asset));
+      }
     }
   }
 
@@ -118,9 +121,6 @@ public class PortLocatorImpl extends LocatorImpl {
 
     Asset asset = parentTask.getDirectObject();
     boolean isAmmo = false;
-
-    boolean fromIsPOE = isKnownGeolocCode (origin.getGeolocCode());
-    boolean toIsPOD   = isKnownGeolocCode (destination.getGeolocCode());
 
     TransportationRoute route = null;
 
@@ -144,24 +144,48 @@ public class PortLocatorImpl extends LocatorImpl {
       // if not ammo, don't know what it is -- it must not be ammo
       isAmmo = (subAsset instanceof GLMAsset) ? isAmmo ((GLMAsset) subAsset) : false; 
 	
-      //      logger.warn ("PortLocatorImpl - got great circle route from " + origin + " to " + destination);
+      //      logger.info ("PortLocatorImpl - got great circle route from " + origin + " to " + destination);
     } else {
       isAmmo = isAmmo ((GLMAsset) asset);
     }
 
     if (route == null) {
       if (isAmmo) {
+	if (logger.isInfoEnabled()) {
+	  logger.info ("PortLocatorImpl.getRoute - task " + parentTask.getUID() + 
+		       " found ammo so getting route starting at SunnyPoint.");
+	}
+
 	Object seaport = getAssetAtGeolocCode ("WMPT");
-	if (seaport != null)
+	if (seaport != null) {
 	  origin = (GeolocLocation) getLocationOfAsset (seaport);
+	  if (logger.isInfoEnabled()) {
+	    logger.info ("PortLocatorImpl.getRoute - task " + parentTask.getUID() +  
+			 " getting route starting at " + origin);
+	  }
+	} else {
+	  if (logger.isWarnEnabled()) {
+	    logger.warn ("PortLocatorImpl.getRoute - could not find SunnyPoint port among known ports?");
+	  }
+	}
       }
     
       // determine POE that has the shortest ship route to the POD
       // this may differ a great deal from the simple great-circle distance
-      route = getRoute (origin, destination);//, fromIsPOE, toIsPOD);
+      route = getRoute (origin, destination, isAmmo);
+
+      if (!route.getSource ().getGeolocLocation().equals (origin)) {
+	if (logger.isInfoEnabled()) {
+	  logger.info ("asked for a route from " + origin + " but got one from " + route.getSource() + 
+		       " geoloc " + route.getSource().getGeolocLocation());
+	}
+      }
     }
     
     if (logger.isDebugEnabled()) {
+      boolean fromIsPOE = isKnownGeolocCode (origin.getGeolocCode());
+      boolean toIsPOD   = isKnownGeolocCode (destination.getGeolocCode());
+
       logger.debug ("PortLocatorImpl - getting route from " + origin + ((fromIsPOE) ? " POE " : "")+ 
 		   " to " + destination + ((toIsPOD) ? " POD " : ""));
       logger.debug ("PortLocatorImpl - route obtained was from " + route.getSource ().getGeolocLocation () +
@@ -172,13 +196,12 @@ public class PortLocatorImpl extends LocatorImpl {
   }
 
   /** caches routes found for FROM-TO pairs */
-  protected TransportationRoute getRoute (GeolocLocation origin, GeolocLocation destination) {//, 
-    //					  boolean fromIsPOE,
-    //					  boolean toIsPOD) {
+  protected TransportationRoute getRoute (GeolocLocation origin, GeolocLocation destination, 
+					  boolean isAmmo) {
     TransportationRoute route = getRouteFromCache (origin, destination);
 
     if (route == null) {
-      route = getRoute (origin, destination, /*fromIsPOE, toIsPOD,*/ POEExceptions);
+      route = getRoute (origin, destination, isAmmo ? POEExceptionsNotSunnyPoint : POEExceptions);
       cacheRoute (origin, destination, route);
     }
 
@@ -210,8 +233,25 @@ public class PortLocatorImpl extends LocatorImpl {
 
   protected void cacheRoute (GeolocLocation origin, GeolocLocation destination, TransportationRoute route) {
     Map destinationMap = (Map) routeCache.get (origin.getGeolocCode());
+
+    if (!route.getSource ().getGeolocLocation().equals (origin)) {
+      if (logger.isInfoEnabled()) {
+	logger.info ("cacheing route from " + origin + 
+		     " that starts from " + route.getSource() + 
+		     " geoloc " + route.getSource().getGeolocLocation());
+      }
+    }
+
     if (destinationMap == null)
       routeCache.put (origin.getGeolocCode(), (destinationMap = new HashMap()));
+
+    if (logger.isInfoEnabled()) {
+      logger.info ("cacheing route from " + origin + 
+		   " to " + destination + 
+		   " with route from " + route.getSource() + 
+		   " to " + route.getDestination ());
+    }
+
     destinationMap.put (destination.getGeolocCode(), route);
   }
 
@@ -234,19 +274,14 @@ public class PortLocatorImpl extends LocatorImpl {
 
   protected boolean isContainer (GLMAsset asset) { return asset instanceof Container;  }
 
+  /** 
+   * An asset is an ammo container if it has a contents pg, since
+   * only the Ammo Packer put a contents pg on a container.
+   *
+   * @return true if asset has a contents PG - i.e. is a milvan
+   */
   protected boolean isAmmo (GLMAsset asset) {
-    boolean isContainer = isContainer(asset);
-    if (!isContainer)
-      return false;
-
-    String unit = "";
-    try{
-      unit = asset.getForUnitPG ().getUnit ();
-    } catch (Exception e) {
-      return false;
-    }
-	
-    return unit.equals ("IOC") || unit.equals ("OSC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
+    return asset.hasContentsPG ();
   }
 
   protected String getAssetType (Asset asset) {
@@ -269,7 +304,8 @@ public class PortLocatorImpl extends LocatorImpl {
     return name;
   }
 
-  protected transient Set POEExceptions; // Locations
+  protected transient Set POEExceptions; // Locations not to leave from including Sunny Point
+  protected transient Set POEExceptionsNotSunnyPoint; // Locations not to leave from, except Sunny Point
   protected transient Map routeCache;
 
   UTILAllocate allocHelper;
