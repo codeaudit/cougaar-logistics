@@ -214,6 +214,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 										 spe));
 	
     Expansion exp = (Expansion)spe.getParentTask().getPlanElement();
+    if (exp == null) {
+      warn ("attachSubtask - task " + spe.getParentTask().getUID() + 
+	    "'s plan element is missing, so skipping trying to process subtask " + 
+	    subtask.getUID() + " must be in process of rescinds?");
+      return;
+    }
     NewWorkflow wf = (NewWorkflow)exp.getWorkflow();
 
     // This check so initial creation doesn;t get added and changed in same pass
