@@ -20,23 +20,25 @@
  */
 package org.cougaar.mlm.ui.grabber.connect;
 
-import org.cougaar.planning.servlet.data.xml.DeXMLable;
-import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
+import java.sql.*;
+
+import java.util.Iterator;
+
+import org.cougaar.mlm.ui.grabber.config.DataGathererPSPConfig;
+import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.config.URLConnectionData;
+import org.cougaar.mlm.ui.grabber.controller.RunResult;
+import org.cougaar.mlm.ui.grabber.controller.SuccessRunResult;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+
+import org.cougaar.mlm.ui.psp.transit.data.prototypes.CargoCatCode;
 import org.cougaar.mlm.ui.psp.transit.data.prototypes.Prototype;
 import org.cougaar.mlm.ui.psp.transit.data.prototypes.PrototypesData;
 import org.cougaar.mlm.ui.psp.transit.data.prototypes.PrototypesDataFactory;
 
-import org.cougaar.mlm.ui.grabber.logger.Logger;
-import org.cougaar.mlm.ui.grabber.workqueue.Result;
-import org.cougaar.mlm.ui.grabber.config.DataGathererPSPConfig;
-import org.cougaar.mlm.ui.grabber.config.URLConnectionData;
-import org.cougaar.mlm.ui.grabber.config.DBConfig;
-import org.cougaar.mlm.ui.grabber.controller.RunResult;
-import org.cougaar.mlm.ui.grabber.controller.SuccessRunResult;
-
-import java.sql.*;
-
-import java.util.Iterator;
+import org.cougaar.planning.servlet.data.xml.DeXMLable;
+import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 
 /**
  * Handles getting prototype data from DataGatherer PSP
@@ -88,10 +90,6 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       sb.append(COL_PARENT_PROTOTYPEID);sb.append(",");
       sb.append(COL_ASSET_CLASS);sb.append(",");
       sb.append(COL_ASSET_TYPE);sb.append(",");
-      sb.append(COL_WEIGHT);sb.append(",");
-      sb.append(COL_WIDTH);sb.append(",");
-      sb.append(COL_HEIGHT);sb.append(",");
-      sb.append(COL_DEPTH);sb.append(",");
       sb.append(COL_ALP_TYPEID);sb.append(",");
       sb.append(COL_ALP_NOMENCLATURE);sb.append(",");
       sb.append(COL_IS_LOW_FIDELITY);
@@ -103,11 +101,7 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       sb.append(Integer.toString(pspToDBAssetClass(p.assetClass)));
       sb.append(",");
       sb.append(Integer.toString(pspToDBAssetType(p.assetType)));
-      sb.append(",");
-      sb.append(dbConfig.getDBDouble(p.weight));sb.append(",");
-      sb.append(dbConfig.getDBDouble(p.width));sb.append(",");
-      sb.append(dbConfig.getDBDouble(p.height));sb.append(",");
-      sb.append(dbConfig.getDBDouble(p.depth));sb.append(",'");
+      sb.append(",'");
       sb.append(p.alpTypeID);sb.append("','");
       sb.append(p.nomenclature.replace('\'','_'));sb.append("','");
       sb.append((p.isLowFidelity ? "true" : "false"));sb.append("')");
@@ -145,17 +139,53 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
     int num=0;
     int unsuccessful=0;
     Iterator iter=data.getPrototypesIterator();
+    setStatus("Updating prototypes.");
     while(iter.hasNext()){
       num++;
-      setStatus("Updating prototype "+num);
       Prototype part=(Prototype)iter.next();
-      logMessage (Logger.MINOR,Logger.DB_WRITE, "adding prototype " + part.UID);
+      if (logger.isMinorEnabled())
+	logMessage (Logger.MINOR,Logger.DB_WRITE, "adding prototype " + part.UID);
       if(!updateAssetPrototype(s,part))
 	unsuccessful++;
       if(halt)return;
     }
-    logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
-	       getClusterName()+" added "+num+" prototype(s)");
+    if (logger.isMinorEnabled())
+      logMessage(Logger.MINOR,Logger.DB_WRITE,
+		 getClusterName()+" added "+num+" prototype(s)");
+    if(unsuccessful>0)
+      logMessage(Logger.WARNING,Logger.DB_WRITE,
+		 getClusterName()+" could not add "+unsuccessful+
+		 " prototype(s)");
+
+    updateDBForCargoCatCodes (s, data);
+
+    setStatus("Done");
+    
+    if(s!=null){
+      try{
+	s.close();
+      }catch(Exception e){
+      }
+    }
+  }
+
+  protected void updateDBForCargoCatCodes(Statement s, PrototypesData data){
+    int num=0;
+    int unsuccessful=0;
+    Iterator iter=data.getCCCEntriesIterator();
+    setStatus("Updating cargo cat code data.");
+    while(iter.hasNext()){
+      num++;
+      CargoCatCode part=(CargoCatCode)iter.next();
+      if (logger.isMinorEnabled())
+	logMessage (Logger.MINOR,Logger.DB_WRITE, "adding cargo cat code for prototype " + part.UID);
+      if(!updateCargoCatCode(s,part))
+	unsuccessful++;
+      if(halt)return;
+    }
+    if (logger.isMinorEnabled())
+      logMessage(Logger.MINOR,Logger.DB_WRITE,
+		 getClusterName()+" added "+num+" prototype(s)");
     if(unsuccessful>0)
       logMessage(Logger.WARNING,Logger.DB_WRITE,
 		 getClusterName()+" could not add "+unsuccessful+
@@ -168,6 +198,52 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       }catch(Exception e){
       }
     }
+  }
+
+  protected boolean updateCargoCatCode(Statement s, CargoCatCode ccc){
+    boolean ret=false;
+    StringBuffer sb=new StringBuffer();
+
+    try{
+      sb.append("INSERT INTO ");
+      sb.append(getTableName(CARGO_CAT_CODE_DIM_TABLE));
+      sb.append(" (");
+      sb.append(COL_PROTOTYPEID);sb.append(",");
+      sb.append(COL_WEIGHT);sb.append(",");
+      sb.append(COL_WIDTH);sb.append(",");
+      sb.append(COL_HEIGHT);sb.append(",");
+      sb.append(COL_DEPTH);sb.append(",");
+      sb.append(COL_AREA);sb.append(",");
+      sb.append(COL_VOLUME);sb.append(",");
+      sb.append(COL_CARGO_CAT_CODE);
+      sb.append(") VALUES('");
+      sb.append(ccc.UID);sb.append("',");
+      sb.append(dbConfig.getDBDouble(ccc.weight));sb.append(",");
+      sb.append(dbConfig.getDBDouble(ccc.width));sb.append(",");
+      sb.append(dbConfig.getDBDouble(ccc.height));sb.append(",");
+      sb.append(dbConfig.getDBDouble(ccc.depth));sb.append(",");
+      sb.append(dbConfig.getDBDouble(ccc.area));sb.append(",");
+      sb.append(dbConfig.getDBDouble(ccc.volume));sb.append(",'");
+      sb.append(ccc.cargoCatCode);sb.append("')");
+      ret=(s.executeUpdate(sb.toString())==1);
+    }catch(SQLException e){
+	  String message1 = "Could not update table("+getTableName(CARGO_CAT_CODE_DIM_TABLE)+")"+ 
+		"["+e.getSQLState()+"]<br>sql was : " + sb;
+      if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){
+		haltForError(Logger.DB_WRITE, message1, e);
+	
+	return false;
+      }else
+	return true;
+    }catch(Exception e){
+      String message1 = "Could not update table("+getTableName(CARGO_CAT_CODE_DIM_TABLE)+")"+ 
+	"<br>sql was : " + sb + "<br>Exception was " + e;
+      System.err.println ("Exception was " + e);
+      e.printStackTrace ();
+      logMessage(Logger.WARNING,Logger.DB_WRITE,message1);
+      return false;
+    }
+    return ret;
   }
 
   protected RunResult prepResult(DeXMLable obj){
