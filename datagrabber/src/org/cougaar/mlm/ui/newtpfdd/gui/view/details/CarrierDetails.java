@@ -124,10 +124,8 @@ public class CarrierDetails{
     case WEIGHTCAP: 
       weightCap=format.format((((Double)o).doubleValue()/1000)*KGS_TO_STONS);break;
     case AREACAP: 
-      System.out.println("area value " + ((Double)o).doubleValue());
       areaCap=format.format(((Double)o).doubleValue()*SQUARE_METERS_TO_SQUARE_FEET);break;
     case VOLCAP: 
-      System.out.println("vol value " + ((Double)o).doubleValue());
       volCap=format.format(((Double)o).doubleValue()*LITERS_TO_CUBIC_FEET);break;
     }
   }
