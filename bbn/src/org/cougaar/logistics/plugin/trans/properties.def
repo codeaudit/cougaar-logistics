@@ -33,8 +33,8 @@ package=org.cougaar.logistics.plugin.trans
 skeletonBase=org.cougaar.planning.ldm.asset.AssetSkeletonBase
 hasDataQuality=false
 
-[LowFidelityAssetUIDPG]
-doc=Carries unique identifier for a low fidelity asset, so it can be associated with other low-fi assets that are part of the same glob
-slots=String UID
-UID.doc=the UID of the original asset
+[LowFidelityAssetPG]
+doc=Carries copy of low fidelity asset, so it can be associated with other low-fi assets that are part of the same glob
+slots=Asset originalAsset
+originalAsset.doc=the original low-fidelity asset
 
