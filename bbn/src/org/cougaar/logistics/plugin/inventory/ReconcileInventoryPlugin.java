@@ -28,12 +28,12 @@ import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.component.ServiceRevokedListener;
+import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.QuiescenceReportService;
-import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
@@ -43,13 +43,13 @@ import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 import org.cougaar.logistics.plugin.utils.TaskScheduler;
 import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
 import org.cougaar.logistics.servlet.CommStatus;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Verb;
-import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.UnaryPredicate;
 
@@ -81,10 +81,10 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   private TimeUtils timeUtils;
   private AssetUtils AssetUtils;
   private HashMap pluginParams;
-   // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
+  // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private boolean touchedChangedProjections = false;
-   private String inventoryFile;
+  private String inventoryFile;
 //   private boolean fillToCapacity; Will be added bug #1482
 //   private boolean maintainAtCapacity; Will be added bug #1482
   private String myOrgName;
@@ -97,7 +97,8 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   private boolean rehydrateInvs = false;
   private boolean OMChange = false;
   private long prevLevel6;
-  private int prepoArrivalOffset = 3;
+  private boolean turnOnTaskSched=false;
+  private int prepoArrivalOffset=3;
   // Policy variables
   private InventoryPolicy inventoryPolicy = null;
 
@@ -269,37 +270,12 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
-      // If its the first time we've gotten this far we now have our policy, org and others.
-      // However, we may have missed some tasks on the added list in previous executes.
-      // If its the first time through use the underlying subscription collection
-      // instead of the added list.
-//      if (firstTimeThrough) {
-//         Enumeration newReqs = supplyTaskSubscription.elements();
-//         ArrayList newReqsCollection = new ArrayList();
-//         while (newReqs.hasMoreElements()) {
-//           newReqsCollection.add(newReqs.nextElement());
-//         }
-//         expandIncomingRequisitions(getTasksWithoutPEs(newReqsCollection));
-//         Enumeration newProjReqs = projectionTaskSubscription.elements();
-//         ArrayList newProjReqsCollection = new ArrayList();
-//         while (newProjReqs.hasMoreElements()) {
-//           newProjReqsCollection.add(newProjReqs.nextElement());
-//         }
-//         touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
-//        expandIncomingRequisitions(getTasksWithoutPEs(supplyTaskSubscription));
-//        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
-//        firstTimeThrough = false;
-//      } else {
-
-
-
-      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
-
-
       if (! commStatusSub.isEmpty()) {
         ReconcileSupplyExpander expander = getSupplyExpander();
         if (expander != null) expander.determineCommStatus(commStatusSub);
       }
+
+      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
       if (!addedSupply.isEmpty()) {
         expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
       }
@@ -333,42 +309,65 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 //	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" +
 //			       supplyType + " role: " + getRole(supplyType) + "\n");
         HashMap providers = getProvidersAndEndDates();
-        Collection unprovidedTasks = getUnprovidedTasks(refillSubscription,
+        Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                                         Constants.Verb.Supply,
                                                         providers);
-        if (!unprovidedTasks.isEmpty()) {
-          logger.warn("Trying to rescind unprovided supply refill tasks...");
+        if (!unprovidedTasks.isEmpty()){
+          if (logger.isWarnEnabled())
+            logger.warn("Trying to rescind unprovided supply refill tasks...");
           rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
-        unprovidedTasks = getUnprovidedTasks(refillSubscription,
+        unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                              Constants.Verb.ProjectSupply,
                                              providers);
-        if (!unprovidedTasks.isEmpty()) {
-          logger.warn("Trying to rescind unprovided projection refill tasks...");
+        if (!unprovidedTasks.isEmpty()){
+          if (logger.isWarnEnabled())
+            logger.warn("Trying to rescind unprovided projection refill tasks...");
           rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
 
-        Collection unallocRefill = null;
+        Collection unalloc = null;
         if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-          unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription,
-                                                                                     Constants.Verb.Supply));
-          if (!unallocRefill.isEmpty()) {
-            logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
-            externalAllocator.allocateRefillTasks(unallocRefill);
+          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+                                                                     Constants.Verb.Supply));
+//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+// 										       Constants.Verb.Supply));
+//             if (!unalloc.isEmpty()){
+// 	      if (logger.isWarnEnabled())
+// 		logger.warn("TRYING TO ALLOCATE SUPPLY NONREFILL TASKS...");
+//               externalAllocator.allocateRefillTasks(unalloc);
+//             }
+
+          unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
+                                                       Constants.Verb.Supply);
+          if (!unalloc.isEmpty()){
+            if (logger.isWarnEnabled())
+              logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
+            externalAllocator.allocateRefillTasks(unalloc);
           }
         }
         if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-          unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription,
-                                                                                     Constants.Verb.ProjectSupply));
-          if (!unallocRefill.isEmpty()) {
-            logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
-            externalAllocator.allocateRefillTasks(unallocRefill);
+          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+                                                                     Constants.Verb.ProjectSupply));
+//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
+// 										       Constants.Verb.ProjectSupply));
+//             if (!unalloc.isEmpty()) {
+// 	      if (logger.isWarnEnabled())
+// 		logger.warn("TRYING TO ALLOCATE PROJECTION NONREFILL TASKS...");
+//               externalAllocator.allocateRefillTasks(unalloc);
+//             }
+
+          unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
+                                                       Constants.Verb.ProjectSupply);
+          if (!unalloc.isEmpty()) {
+            if (logger.isWarnEnabled())
+              logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
+            externalAllocator.allocateRefillTasks(unalloc);
           }
         }
       }
-//      }
 
       // call the Refill Generators if we have new demand
       if (!getTouchedInventories().isEmpty()) {
@@ -459,32 +458,31 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     // Review: not sure if this is the right place to make this call
     ReconcileSupplyExpander expander = getSupplyExpander();
     if (expander != null) {
-     // if (logger.isDebugEnabled() && expander.debugAgent()) {
-        System.out.println("InventoryPlugin checking the comm status alarms for supply type " + supplyType + " time: "
-        + new Date(currentTimeMillis()));
-      //}
+      if (logger.isDebugEnabled() && expander.debugAgent()) {
+        logger.debug("InventoryPlugin checking the comm status alarms for supply type " + supplyType + " time: "
+                     + new Date(currentTimeMillis()));
+      }
       expander.checkCommStatusAlarms();
     }
   }
 
-
-
-  private Collection getUnprovidedTasks(Collection tasks, Verb verb, HashMap providers) {
-    Iterator taskIt = tasks.iterator();
+  private Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, HashMap providers) {
+    Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
     Task task;
     Organization provider;
     Allocation alloc;
     long taskEnd;
     Date providerEndDate;
-    while (taskIt.hasNext()) {
-      task = (Task) taskIt.next();
-      alloc = (Allocation) task.getPlanElement();
-      if ((alloc != null) && (task.getVerb().equals(verb))) {
+    while (raIt.hasNext()) {
+      alloc = (Allocation)raIt.next();
+      task = alloc.getTask();
+      if ((alloc != null) && (task.getVerb().equals(verb))){
         taskEnd = TaskUtils.getEndTime(task);
-        provider = (Organization) alloc.getAsset();
+        provider = (Organization)alloc.getAsset();
         if (alloc.getRole() != getRole(supplyType)) {
-          logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
+          if (logger.isWarnEnabled())
+            logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
         }
         providerEndDate = (Date) providers.get(provider);
         if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
@@ -535,6 +533,9 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
   /** Subscription for my Refill (Supply & ProjectSupply) tasks **/
   private IncrementalSubscription refillSubscription;
+
+  /** Subscription for my Non-Refill (Supply & ProjectSupply) tasks **/
+  private IncrementalSubscription nonrefillSubscription;
 
   /** Subscription for Supply/ProjectSupply Expansions **/
   private IncrementalSubscription expansionSubscription;
@@ -625,10 +626,12 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         subscribe(new ExpansionPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    nonrefillSubscription = (IncrementalSubscription) blackboard.
+        subscribe(new NonRefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
     // Setup TaskSchedulers
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_ON);
-    boolean turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
+    turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
         getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService)
@@ -637,7 +640,8 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     QuiescenceAccumulator q = new QuiescenceAccumulator(qrs);
     String id = getAgentIdentifier().toString();
     if (turnOnTaskSched) {
-      logger.debug("TASK SCHEDULER ON for " + id);
+      if (logger.isDebugEnabled())
+        logger.debug("TASK SCHEDULER ON for "+id);
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open("supplyTaskPolicy.xml");
@@ -965,6 +969,34 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     }
   }
 
+  //Non-Refill tasks
+  static class NonRefillPredicate implements UnaryPredicate {
+    String type_;
+    String orgName_;
+    TaskUtils taskUtils;
+
+    public NonRefillPredicate(String type, String orgName, TaskUtils aTaskUtils) {
+      type_ = type;
+      orgName_ = orgName;
+      taskUtils = aTaskUtils;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task task = (Task) o;
+        if (task.getVerb().equals(Constants.Verb.SUPPLY) ||
+            task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+          if (taskUtils.isDirectObjectOfType(task, type_)) {
+            if (taskUtils.isMyNonRefillTask(task, orgName_)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+  }
+
   private class ExpansionPredicate implements UnaryPredicate {
     String supplyType;
     String orgName;
@@ -1149,44 +1181,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     }
   }
 
-  //AHF
-//  protected void resetLogOPlanForInventories() {
-//    Iterator inventories = getInventories().iterator();
-//    while (inventories.hasNext()) {
-//      Inventory inv = (Inventory) inventories.next();
-//      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)
-//          inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-//      if (logInvPG.getArrivalTime() != getOPlanArrivalInTheaterTime()) {
-//        long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() +
-//            (logInvPG.getArrivalTime() - getOPlanArrivalInTheaterTime());
-//        logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
-//        ((NewLogisticsInventoryPG) logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
-//        logInvPG.setStartCDay(logOPlan.getOplanCday());
-//        publishChange(inv);
-//        touchInventory(inv);
-//      }
-//    }
-//  }
-
-//  protected void addInventory(Inventory inventory) {
-//    String item = getInventoryType(inventory);
-//    inventoryHash.put(item, inventory);
-//  }
-
-
-//  public String getInventoryType(Inventory inventory) {
-//    ScheduledContentPG scp = inventory.getScheduledContentPG();
-//    Asset proto = scp.getAsset();
-//    if (proto == null) {
-//      if (logger.isErrorEnabled()) {
-//        logger.error("getInventoryType failed to get asset for " +
-//                     inventory.getScheduledContentPG().getAsset().getTypeIdentificationPG());
-//      }
-//      return "";
-//    }
-//    return proto.getTypeIdentificationPG().getTypeIdentification();
-//  }
-
   public Inventory findOrMakeInventory(Asset resource) {
     Inventory inventory = null;
     String item = resource.getTypeIdentificationPG().getTypeIdentification();
@@ -1211,77 +1205,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     }
     return inventory;
   }
-
-//  protected Inventory createInventory(Asset resource, String item) {
-//    double levels[] = null;
-//    Inventory inventory = null;
-//    levels = (double[]) inventoryInitHash.get(item);
-//    if (levels != null) {
-//      inventory = (Inventory) getPlanningFactory().createAsset("Inventory");
-//      NewLogisticsInventoryPG logInvPG =
-//          (NewLogisticsInventoryPG) PropertyGroupFactory.newLogisticsInventoryPG();
-//      inventory.addOtherPropertyGroup(logInvPG);
-//      if (getAssetUtils().isLevel2Asset(resource)) {
-//        logInvPG.setIsLevel2(true); // will need to key off asset to identify level2 item
-//        // Need to distinguish Level2Package aggregates of different supply types otherwise
-//        // they are determined to be the same asset and are removed from the blackboard
-//        ((NewItemIdentificationPG) inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item + ":" + supplyType);
-//      } else {
-//        logInvPG.setIsLevel2(false);
-//        ((NewItemIdentificationPG) inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
-//      }
-//      logInvPG.setCapacity(levels[0]);
-//      logInvPG.setFillToCapacity(fillToCapacity);
-//      logInvPG.setInitialLevel(levels[1]);
-//      logInvPG.setResource(resource);
-//      logInvPG.setOrg(getMyOrganization());
-//      logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
-//      logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-//      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
-//      logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
-//      logInvPG.setStartCDay(logOPlan.getOplanCday());
-//
-//      NewTypeIdentificationPG ti =
-//          (NewTypeIdentificationPG) inventory.getTypeIdentificationPG();
-//      ti.setTypeIdentification("InventoryAsset");
-//      ti.setNomenclature("Inventory Asset");
-//
-//      NewScheduledContentPG scp;
-//      scp = (NewScheduledContentPG) inventory.getScheduledContentPG();
-//      scp.setAsset(resource);
-//     scp.setSchedule(scheduleUtils.buildSimpleQuantitySchedule(levels[1], startTime,
-//                                                                startTime + (TimeUtils.MSEC_PER_DAY * 10)));
-//    }
-//    return inventory;
-//  }
-
-//  public void touchInventory(Inventory inventory) {
-//    if (!touchedInventories.contains(inventory)) {
-//      touchedInventories.add(inventory);
-//    }
-//  }
-
-//  public Collection getTouchedInventories() {
-//    return touchedInventories;
-//  }
-
-//  public Collection getInventories() {
-//    return inventoryHash.values();
-//  }
-//
-//  public void takeInventorySnapshot(Collection inventories) {
-//    Inventory inv;
-//    Iterator inv_it = inventories.iterator();
-//    LogisticsInventoryPG logInvPG = null;
-//    while (inv_it.hasNext()) {
-//      inv = (Inventory) inv_it.next();
-//      logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-//      logInvPG.takeSnapshot(inv);
-//      if (logToCSV) {
-//        logInvPG.logAllToCSVFile(cycleStamp);
-//      }
-//    }
-//  }
 
   /**
    Read the Plugin parameters(Accepts key/value pairs)
@@ -1368,58 +1291,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return result;
   }
 
-//  public void publishAddToExpansion(Task parent, Task subtask) {
-//    //attach the subtask to its parent and the parent's workflow
-//    PlanElement pe = parent.getPlanElement();
-//    Expansion expansion;
-//    NewWorkflow wf;
-//    ((NewTask) subtask).setParentTask(parent);
-//    ((NewTask) subtask).setContext(parent.getContext());
-//    ((NewTask) subtask).setPlan(parent.getPlan());
-//    // Task has not been expanded, create an expansion
-//    if (pe == null) {
-//      PlanningFactory factory = getPlanningFactory();
-//      // Create workflow
-//      wf = (NewWorkflow) factory.newWorkflow();
-//      wf.setParentTask(parent);
-//      wf.setIsPropagatingToSubtasks(true);
-//      wf.addTask(subtask);
-//      ((NewTask) subtask).setWorkflow(wf);
-//      // Build Expansion
-//      expansion = factory.createExpansion(parent.getPlan(), parent, wf, null);
-//      // Publish Expansion
-//      publishAdd(expansion);
-//    }
-//    // Task already has expansion, add task to the workflow and publish the change
-//    else if (pe instanceof Expansion) {
-//      expansion = (Expansion) pe;
-//      wf = (NewWorkflow) expansion.getWorkflow();
-//      wf.addTask(subtask);
-//      ((NewTask) subtask).setWorkflow(wf);
-//      publishChange(expansion);
-//    } else {
-//      if (logger.isErrorEnabled()) {
-//        logger.error("publishAddToExpansion: problem pe not Expansion? " + pe);
-//      }
-//    }
-//
-//    // Publish new task
-//    publishAdd(subtask);
-//
-//    if ((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
-//        (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
-//      newRefills.add(subtask);
-//    }
-//  }
-
-  // called by the RefillGenerator to hook up the refill task to the maintain
-  // inventory parent task and workflow.
-//  public void publishRefillTask(Task task, Inventory inventory) {
-//    Task milTask = detReqHandler.findOrMakeMILTask(inventory,
-//                                                   aggMILSubscription);
-//    publishAddToExpansion(milTask, task);
-//  }
-
   private Organization getMyOrganization(Enumeration orgs) {
     Organization myOrg = null;
     // look for this organization
@@ -1429,22 +1300,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return myOrg;
   }
 
-//  public long getOPlanStartTime() {
-//    return logOPlan.getStartTime();
-//  }
-//
-//  public long getOPlanEndTime() {
-//    return logOPlan.getEndTime();
-//  }
-//
-//  public long getOPlanArrivalInTheaterTime() {
-//    return logOPlan.getArrivalTime();
-//  }
-//
-//  public long getPrepoArrivalTime() {
-//    return getOPlanArrivalInTheaterTime() - (bucketSize * prepoArrivalOffset);
-//  }
-   private String getInventoryFileName() {
+  private String getInventoryFileName() {
     return inventoryFile;
   }
   public void getInventoryData() {
@@ -1475,23 +1331,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       inventoryInitHash.put(item, levels);
     }
   }
-
-//  protected Role getRole(String supply_type) {
-//    if (supply_type.equals("Ammunition"))
-//      return Constants.Role.AMMUNITIONPROVIDER;
-//    if (supply_type.equals("BulkPOL"))
-//      return Constants.Role.FUELSUPPLYPROVIDER;
-//    if (supply_type.equals("Consumable"))
-//      return Constants.Role.SPAREPARTSPROVIDER;
-//    if (supply_type.equals("PackagedPOL"))
-//      return Constants.Role.PACKAGEDPOLSUPPLYPROVIDER;
-//    if (supply_type.equals("Subsistence"))
-//      return Constants.Role.SUBSISTENCESUPPLYPROVIDER;
-//    if (logger.isErrorEnabled()) {
-//      logger.error("Unsupported Supply Type");
-//    }
-//    return null;
-//  }
 
   protected boolean updateInventoryPolicy(Collection policies) {
     InventoryPolicy pol;
@@ -1532,10 +1371,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return inventoryPolicy.getSupplierArrivalTime();
   }
 
-//  public long getRefillStartTime() {
-//    return Math.max(getOPlanArrivalInTheaterTime(), getSupplierArrivalTime());
-//  }
-
   public int getMaxLeadTime() {
     return inventoryPolicy.getSupplierAdvanceNoticeTime() + getOrderShipTime();
   }
@@ -1546,7 +1381,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       super(a, b);
     }
   }
-
 
   public TaskScheduler getSupplyTaskScheduler() {
     return supplyTaskScheduler;
@@ -1626,30 +1460,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return new RefillProjectionGenerator(this);
   }
 
-//  protected ComparatorModule getComparatorModule() {
-//    String comparatorClass = (String) pluginParams.get("COMPARATOR");
-//    if (comparatorClass == null) {
-//      return new RefillComparator(this);
-//    } else {
-//      if (comparatorClass.indexOf('.') == -1) {
-//        comparatorClass = "org.cougaar.logistics.plugin.inventory." + comparatorClass;
-//      }
-//      try {
-//        Class[] paramTypes = {this.getClass()};
-//        Object[] initArgs = {this};
-//        Class cls = Class.forName(comparatorClass);
-//        Constructor constructor = cls.getConstructor(paramTypes);
-//        ComparatorModule comparator = (ComparatorModule) constructor.newInstance(initArgs);
-//        logger.info("Using comparator " + comparatorClass);
-//        return comparator;
-//      } catch (Exception e) {
-//        logger.error(e + " Unable to create Expander instance of " + comparatorClass + ". " +
-//                     "Loading default org.cougaar.logistics.plugin.inventory.RefillComparator");
-//      }
-//    }
-//    return new RefillComparator(this);
-//  }
-
   private final class CougTimeAlarm implements Alarm {
     private long expirationTime;
     private boolean expired = false;
@@ -1669,8 +1479,8 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         expired = true;
         BlackboardService bb = getBlackboardService();
         if (bb != null) {
-         // if (logger != null && logger.isDebugEnabled()) {
-            System.out.println("Alarm expire method called " + new Date(currentTimeMillis()));
+          // if (logger != null && logger.isDebugEnabled()) {
+          System.out.println("Alarm expire method called " + new Date(currentTimeMillis()));
           //}
           bb.signalClientActivity();
         } else {
