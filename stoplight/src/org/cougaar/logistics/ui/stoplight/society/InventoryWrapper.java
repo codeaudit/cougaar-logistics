@@ -106,8 +106,12 @@ public class InventoryWrapper {
     }
     Schedule diSched = scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
     if (logger.isDebugEnabled()) {
-      logger.debug("Due-In schedule");
-      printSchedule(diSched, logger);
+      if (diSched != null) {
+        logger.debug("Due-In schedule");
+        printSchedule(diSched, logger);
+      } else {
+        logger.debug("Due-In schedule is null!!!!");
+      }
     }      
     //return scheduleToNonOverlapSchedule(getSuccessfulElements(logInvPG.getSupplyList()));
     return diSched;
@@ -123,8 +127,12 @@ public class InventoryWrapper {
       
     Schedule reqDISched = scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
     if (logger.isDebugEnabled()) {
-      logger.debug("Requested Due-In schedule");
-      printSchedule(reqDISched, logger);
+      if(reqDISched != null) {
+        logger.debug("Requested Due-In schedule");
+        printSchedule(reqDISched, logger);
+      } else {
+        logger.debug("Requested Due-In schedule is null!!!");
+      }
     }      
     //return scheduleToNonOverlapSchedule(getAllElements(logInvPG.getSupplyList()));
     return reqDISched;
@@ -198,8 +206,12 @@ public class InventoryWrapper {
       }
     }
     if (logger.isDebugEnabled()) {
-      logger.debug("Projected Requested Due-In schedule");
-      printSchedule(schedule, logger);
+      if (schedule != null) {
+        logger.debug("Projected Requested Due-In schedule");
+        printSchedule(schedule, logger);
+      } else {
+        logger.debug("Projected Requested Due-In schedule is null!!!!");
+      }
     }       
     return scheduleToNonOverlapSchedule(schedule);
   }
@@ -246,8 +258,12 @@ public class InventoryWrapper {
       }
     } 
     if (logger.isDebugEnabled()) {
-      logger.debug("Projected Due-In schedule");
-      printSchedule(schedule, logger);
+      if (schedule != null) {
+        logger.debug("Projected Due-In schedule");
+        printSchedule(schedule, logger);
+      } else {
+        logger.debug("Projected Due-In schedule is null");
+      }
     }      
     return scheduleToNonOverlapSchedule(schedule);
   }
