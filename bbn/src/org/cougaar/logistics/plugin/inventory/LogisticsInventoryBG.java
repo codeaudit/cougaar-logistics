@@ -30,6 +30,9 @@ import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.GLMFactory;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
+import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.glm.plugins.TimeUtils;
@@ -48,7 +51,7 @@ import org.cougaar.logistics.plugin.inventory.TaskUtils;
 public class LogisticsInventoryBG implements PGDelegate {
 
   // Bucket will be a knob, this implementation temporary
-  private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY;
+  private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 3;
   private Duration durationArray[];
   protected LogisticsInventoryPG myPG;
   protected long startTime;
@@ -64,7 +67,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected ArrayList refillProjections;
   protected ArrayList refillRequisitions;
   protected ArrayList dueOutList;
-  protected Schedule inventoryLevelsSchedule;
+//    protected Schedule inventoryLevelsSchedule;
   protected Schedule criticalLevelsSchedule;
   // projectedDemandList mirrors dueOutList, each element
   // contains the sum of all Projected Demand for corresponding
@@ -106,7 +109,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
-    logger.debug("Start day: "+TimeUtils.dateString(today));
+    logger.debug("Start day: "+TimeUtils.dateString(today)+", time zero "+TimeUtils.dateString(timeZero));
+    System.out.println("Start day: "+TimeUtils.dateString(today)+", time zero "+TimeUtils.dateString(timeZero));
     this.criticalLevel = criticalLevel;
   }
 
@@ -118,13 +122,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     if (bucket_end >= projectedDemandArray.length) {
       projectedDemandArray = expandArray(projectedDemandArray);
     }
-    logger.error("\n"+taskUtils.taskDesc(task));
-    logger.error("start: "+TimeUtils.dateString(start));
-    logger.error("end  : "+TimeUtils.dateString(end));
-    logger.error("bucket start "+bucket_start+", bucket end "+bucket_end);
+//      logger.error("\n"+taskUtils.taskDesc(task));
+//      logger.error("start: "+TimeUtils.dateString(start));
+//      logger.error("end  : "+TimeUtils.dateString(end));
+//      logger.error("bucket start "+bucket_start+", bucket end "+bucket_end);
     while (bucket_end >= dueOutList.size()) {
       dueOutList.add(new ArrayList());
     }
+//  System.out.println("Task start: "+TimeUtils.dateString(start)+" end  : "+TimeUtils.dateString(end));
+//  System.out.println("bucket start "+bucket_start+", bucket end "+bucket_end);
     for (int i=bucket_start; i < bucket_end; i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
       list.add(task);
@@ -161,8 +167,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
     double demand = taskUtils.getDouble(scalar);
     projectedDemandArray[bucket] += demand;
-    logger.debug("Bucket "+bucket+": new demand "+demand+", total is "+
-		 projectedDemandArray[bucket]);
+//      logger.error("Bucket "+bucket+": new demand "+demand+", total is "+
+//  		 projectedDemandArray[bucket]);
   }
 
   // If have alloc results then use to remove from buckets
@@ -257,13 +263,33 @@ public class LogisticsInventoryBG implements PGDelegate {
     // shifting Refills and Projections in the dueIn list
   }
 
+  public Schedule getProjectedDemand() {
+    Schedule demand_schedule;
+    Vector new_elements = new Vector();
+    QuantityScheduleElement qse;
+    long bucket_zero_time = convertBucketToTime(0);
+    for (int i=0; i < projectedDemandArray.length; i++) {
+      long start = bucket_zero_time+(MSEC_PER_BUCKET*i);
+      long end = start + MSEC_PER_BUCKET;
+      try {
+	qse = ScheduleUtils.buildQuantityScheduleElement(projectedDemandArray[i], start, end);
+      } catch (IllegalArgumentException iae) {
+	iae.printStackTrace();
+	continue;
+      }
+      new_elements.add(qse);
+    }
+    demand_schedule = GLMFactory.newQuantitySchedule(new_elements.elements(), "DemandSchedule");
+    printQuantityScheduleTimes(demand_schedule);
+    return demand_schedule;
+  }
+
   private void logAllToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
 	  csvWriter.logDemandToExcelOutput(withdrawList,projWithdrawList,aCycleStamp);
 	  csvWriter.logResupplyToExcelOutput(supplyList,projSupplyList,aCycleStamp);
       }
   }
-
 
   public long getStartTime() {
     return startTime;
@@ -299,12 +325,36 @@ public class LogisticsInventoryBG implements PGDelegate {
     // do double buffer
   }
 
+  // If have alloc results then use to remove from buckets
+  // else use add method for removal
+  // Make this a general method (finding the days)
+  // findFirstBucket(projection)
+  // findLastBucket(projection)  may be able to use same
+  // methods for refill requisitions as well
+  private int findFirstBucket(Task task) {
+    return 0;
+  }
+
+  private int findLastBucket(Task task) {
+    return 0;
+  }
+
   // Ask Beth about persistance.  Would like to make sure structures
   // are persisted when they are added to the code
   public PGDelegate copy(PropertyGroup pg) {
     return new LogisticsInventoryBG((LogisticsInventoryPG)pg);
   }
 
+  private int printQuantityScheduleTimes(Schedule sched) {
+    Enumeration elements = sched.getAllScheduleElements();
+    QuantityScheduleElement qse;
+    while (elements.hasMoreElements()) {
+      qse = (QuantityScheduleElement)elements.nextElement();
+      System.out.println("qty: "+qse.getQuantity()+
+			 " "+qse.getStartDate()+" to "+ qse.getEndDate());
+    }
+    return 0;
+  }
+
+
 }
-
-
