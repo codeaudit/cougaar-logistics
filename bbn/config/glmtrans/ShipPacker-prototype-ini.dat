@@ -1,0 +1,31 @@
+[Prototype]     SupportOrganization
+
+[UniqueId]      "UTC/SupportOrg"
+
+[UIC]           "UIC/ShipPacker"
+
+[Relationship]
+Superior        "GlobalSea"         ""
+Supporting      "GlobalSea"         "ShipPackingTransportationProvider"
+
+[TypeIdentificationPG]
+TypeIdentification              String               "UTC/RTOrg"
+Nomenclature                    String               "ShipPacker Cluster"
+AlternateTypeIdentification     String               "SRC/87004L100100"
+
+[ClusterPG]
+ClusterIdentifier               ClusterIdentifier    "ShipPacker"
+
+[OrganizationPG]
+Roles                           Collection<Role>     "ShipPackingTransportationProvider"
+
+[MilitaryOrgPG]
+UIC                             String               "GLMTrans0003"
+Echelon                         String               "08"
+UTC                             String               ""
+SRC                             String               "87004L100100"
+
+[MilitaryOrgPG]
+HomeLocation	GeolocLocation "GeolocCode=XXXX, Name=String MSC NC, Latitude=Latitude 40.00 DEGREES, Longitude=Longitude -76.00 DEGREES"
+
+

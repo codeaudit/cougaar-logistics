@@ -1,0 +1,68 @@
+<!-- DTD definition of an xml task input file read by the GLMStimulatorPlugin        -->
+<!-- See org.cougaar.glm.plugins.tools.GLMStimulatorPlugin in the glm package -->
+<!-- Gordon Vidaver, gvidaver@bbn.com, 617 873 3558                                  -->
+
+<!ENTITY % locationcontent "geoloc, latitude, longitude">
+<!ENTITY % datecontent "year, month, day, hour, minute, second">
+
+<!ELEMENT tasklist (task*)>
+<!ELEMENT task (verb, directobject, for?, using?, from?, to?, with?, via?, ItineraryOf?, RespondTo?, FromTask?, readyat?, startdate, enddate, cost?)>
+<!ATTLIST task id ID #REQUIRED>
+<!ELEMENT verb (#PCDATA)>
+<!ELEMENT directobject (asset | aggregateasset | assetgroup)*>
+<!ELEMENT from (%locationcontent;)>
+<!ELEMENT to (%locationcontent;)>
+<!ELEMENT with (asset)>
+<!ELEMENT using (asset)>
+<!ELEMENT via (TransportationRouteSet)>
+<!ELEMENT for (#PCDATA)>
+<!ELEMENT RespondTo (#PCDATA)>
+<!ELEMENT FromTask (#PCDATA)>
+<!ELEMENT readyat (readyatdate)>
+<!ELEMENT cost (#PCDATA)>
+<!ELEMENT startdate (readyatdate)>
+<!ELEMENT readyatdate (%datecontent;)>
+<!ELEMENT endtime (earlydate, bestdate, latedate)>
+<!ELEMENT earlydate (%datecontent;)>
+<!ELEMENT bestdate (%datecontent;)>
+<!ELEMENT latedate (%datecontent;)>
+
+<!ELEMENT geoloc (#PCDATA)>
+<!ELEMENT latitude (#PCDATA)>
+<!ELEMENT longitude (#PCDATA)>
+
+<!ELEMENT year (#PCDATA)>
+<!ELEMENT month (#PCDATA)>
+<!ELEMENT day (#PCDATA)>
+<!ELEMENT hour (#PCDATA)>
+<!ELEMENT minute (#PCDATA)>
+<!ELEMENT second (#PCDATA)>
+
+<!ELEMENT assetgroup (asset | aggregateasset | assetgroup)*>
+<!ATTLIST assetgroup id ID #REQUIRED>
+
+<!ELEMENT asset (#PCDATA)>
+<!ATTLIST asset id ID #REQUIRED>
+
+<!ELEMENT aggregateasset (#PCDATA)>
+<!ATTLIST aggregateasset quantity CDATA #REQUIRED>
+
+<!ELEMENT TransportationRouteSet (TransportationRoute+)>
+<!ELEMENT TransportationRoute (nodelist)>
+<!ATTLIST TransportationRoute id ID #REQUIRED>
+<!ELEMENT nodelist (noderef, noderef+)>
+<!ELEMENT noderef EMPTY>
+<!ATTLIST noderef id CDATA #REQUIRED>
+
+<!ELEMENT ItineraryOf (ItineraryElement+)>
+<!ELEMENT ItineraryElement (StartLocation, StartDate, EndLocation, EndDate, Role)>
+<!ATTLIST ItineraryElement leg CDATA #REQUIRED>
+<!ELEMENT StartLocation (%locationcontent;)>
+<!ELEMENT StartDate (%datecontent;)>
+<!ELEMENT EndLocation (%locationcontent;)>
+<!ELEMENT EndDate (%datecontent;)>
+<!ELEMENT Role (#PCDATA)>
+
+
+
+

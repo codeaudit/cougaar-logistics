@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [ 
+<!ENTITY DummyPrototypes SYSTEM "DummyPrototypes.ldm.xml">
+<!ENTITY TankPrototypes SYSTEM "TankPrototypes.ldm.xml">]>
+
+<AssetList>
+  &DummyPrototypes;
+  &TankPrototypes;
+
+  <instance prototype="Null_Prototype" id="nullasset" quantity="1">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+</AssetList>
+

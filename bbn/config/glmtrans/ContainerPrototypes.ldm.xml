@@ -1,0 +1,540 @@
+<!--
+/***********************************************************************************
+ *                                                                                 *
+ * This is open-source software developed by the TOPS team of BBN Technologies     *
+ * under DARPA's ALPINE program. You can modify the software and redistribute it,  *
+ * but you CANNOT DELETE OR MODIFY THIS COMMENT.                                   *
+ *                                                                                 *
+ * This software is distributed in the hope that it will be useful,                *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of                  *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                            *
+ *                                                                                 *
+ * For details on the ALPINE open-source license please write:                     *
+ * alpine-support@bbn.com                                                          *
+ *                                                                                 *
+ * Copyright (C) 1998, 1999 BBN Technologies                                       *
+ *                                                                                 *
+ ***********************************************************************************/
+-->          
+  <prototype name="BIG_CONTAINER">
+    <object class="org.cougaar.glm.ldm.asset.Container">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> BIG_CONTAINER </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> 40FT_CONTAINER </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="PhysicalPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewPhysicalPG">
+
+	    <field name="Length" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 40.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Width" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Height" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Mass" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 10000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="FootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareFeet" type="double">
+		    <value> 320.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Volume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 2560.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="MovabilityPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewMovabilityPG">
+
+	    <field name="Moveable" type="boolean">
+	      <value> true </value>
+            </field>
+
+	    <field name="CargoCategoryCode" type="String">
+	      <value> JBB </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+  <!-- ::::::::::::::::::::LITTLE_CONTAINER::::::::::::::::::::::::::: -->
+
+  <prototype name="LITTLE_CONTAINER">
+    <object class="org.cougaar.glm.ldm.asset.Container">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> LITTLE_CONTAINER </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> 20FT_CONTAINER </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="PhysicalPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewPhysicalPG">
+
+	    <field name="Length" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 20.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Width" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Height" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Mass" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 5000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="FootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareFeet" type="double">
+		    <value> 160.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Volume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 1280.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="MovabilityPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewMovabilityPG">
+
+	    <field name="Moveable" type="boolean">
+	      <value> true </value>
+            </field>
+
+	    <field name="CargoCategoryCode" type="String">
+	      <value> J3B </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+  <!-- ::::::::::::::::::::AMMO_CONTAINER::::::::::::::::::::::::::: -->
+
+  <prototype name="AMMO_CONTAINER">
+    <object class="org.cougaar.glm.ldm.asset.Container">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> AMMO_CONTAINER </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> 20FT_AMMO_CONTAINER </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="PhysicalPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewPhysicalPG">
+
+	    <field name="Length" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 20.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Width" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Height" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 8.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Mass" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 5000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="FootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareFeet" type="double">
+		    <value> 160.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Volume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 1280.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="MovabilityPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewMovabilityPG">
+
+	    <field name="Moveable" type="boolean">
+	      <value> true </value>
+            </field>
+
+	    <field name="CargoCategoryCode" type="String">
+	      <value> MBB </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+  <!-- ::::::::::::::::::::PALLET::::::::::::::::::::::::::: -->
+
+  <prototype name="PALLET">
+    <object class="org.cougaar.glm.ldm.asset.Package">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PALLET </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> 463L_PALLET </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="PhysicalPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewPhysicalPG">
+
+	    <field name="Length" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 7.3333 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Width" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 9.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Height" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Feet" type="double">
+		    <value> 7.5 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Mass" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="FootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareFeet" type="double">
+		    <value> 66.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Volume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 495.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="MovabilityPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewMovabilityPG">
+
+	    <field name="Moveable" type="boolean">
+	      <value> true </value>
+            </field>
+
+	    <field name="CargoCategoryCode" type="String">
+	      <value> J3B </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+  <!-- ::::::::::::::::::::MRE_PALLET::::::::::::::::::::::::::: -->
+
+  <prototype name="MRE_PALLET">
+    <object class="org.cougaar.glm.ldm.asset.Package">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> MRE_PALLET </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> MRE_PALLET </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="PhysicalPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewPhysicalPG">
+
+	    <field name="Length" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 40 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Width" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 48 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Height" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 40 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Mass" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 1119 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="FootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareInches" type="double">
+		    <value> 1920 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="Volume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 46.61 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="MovabilityPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewMovabilityPG">
+
+	    <field name="Moveable" type="boolean">
+	      <value> true </value>
+            </field>
+
+	    <field name="CargoCategoryCode" type="String">
+	      <value> J3B </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>

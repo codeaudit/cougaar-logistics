@@ -1,0 +1,16 @@
+<?xml version="1.0"  encoding="US-ASCII"?>
+
+<!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [
+<!ENTITY tankprototypes SYSTEM "PROTOTYPES/TankPrototypes.ldm.xml">
+<!ENTITY personprototypes SYSTEM "PROTOTYPES/PersonPrototypes.ldm.xml">
+<!ENTITY containerprototypes SYSTEM "PROTOTYPES/ContainerPrototypes.ldm.xml">]>
+
+<AssetList>
+  &tankprototypes;
+  &containerprototypes;
+  &personprototypes;
+</AssetList>
+
+
+
+
