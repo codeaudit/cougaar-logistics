@@ -46,11 +46,12 @@ import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.lang.reflect.Constructor;
 
 /** The DemandGeneratorPlugin generates demand during execution.
  **/
 
-public class DemandGeneratorPlugin extends ComponentPlugin 
+public class DemandGeneratorPlugin extends ComponentPlugin
   implements UtilsProvider {
   private DomainService domainService;
   private LoggingService logger;
@@ -60,11 +61,16 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   private ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
 
+  private DemandTaskGeneratorIfc demandGenerator;
+  private DGClass9Scheduler      class9Scheduler;
+
   private String supplyType;
   private long frequency;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String GENERATE_FREQUENCY = "GENERATE_FREQUENCY";
+
+  public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
 
   public void load() {
     super.load();
@@ -84,6 +90,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
                                             domainService = null;
                                         }
                                       });
+
+    logger = getLoggingService(this);
+
+    demandGenerator = getDemandTaskGeneratorModule();
+    class9Scheduler = getClass9SchedulerModule();
 
   }
 
@@ -109,7 +120,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   public AssetUtils getAssetUtils() {
     return AssetUtils;
   }
-  
+
   public ScheduleUtils getScheduleUtils() {
     return scheduleUtils;
   }
@@ -156,6 +167,38 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     //nothing for now
   }
 
+
+  /**
+   * Creates an instance of an DemandTaskGeneratorIfc by
+   * searching plugin parameters for DEMAND_GENERATOR argument.
+   * In the absence of an REQ_EXPANDER argument, a default is used:
+   * org.cougaar.logistics.plugin.demand.DemandTaskGenerator
+   * @return {@link DemandTaskGeneratorIfc}
+   **/
+  private DemandTaskGeneratorIfc getDemandTaskGeneratorModule() {
+    String demGenClass = (String) pluginParams.get(DEMAND_GENERATOR);
+    if (demGenClass != null) {
+      try {
+        Class[] paramTypes = {this.getClass()};
+        Object[] initArgs = {this};
+        Class cls = Class.forName(demGenClass);
+        Constructor constructor = cls.getConstructor(paramTypes);
+        DemandTaskGeneratorIfc demandGen = (DemandTaskGeneratorIfc) constructor.newInstance(initArgs);
+        logger.info("Using RequirementsExpander " + demGenClass);
+        return demandGen;
+      } catch (Exception e) {
+        logger.error(e + " Unable to create demandTaskGeneratorModule instance of " + demGenClass + ". " +
+                     "Loading default org.cougaar.logistics.plugin.demand.DemandTaskGenerator");
+      }
+    }
+    return new DemandTaskGenerator(this);
+  }
+
+
+  private DGClass9Scheduler getClass9SchedulerModule() {
+	return new DGClass9Scheduler(this);
+  }
+
   /**
    Read the Plugin parameters(Accepts key/value pairs)
    Initializes supplyType and inventoryFile
@@ -182,14 +225,16 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
+
     //frequency = (new Long((String)map.get(GENERATE_FREQUENCY))).longValue();
-    frequency=60*60*24;
+    frequency = 24 * 60 * 60;
+
     if (((supplyType == null) ||
-         (frequency <= 0) && 
+         (frequency <= 0) &&
          logger.isErrorEnabled()))
     {
       logger.error(errorString);
-    } 
+    }
     return map;
   }
 
