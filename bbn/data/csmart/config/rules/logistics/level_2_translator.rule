@@ -2,10 +2,13 @@
 # Rule to insert Level2TranslatorPlugin to OSC agent
 
 level2translator = "org.cougaar.logistics.plugin.trans.Level2TranslatorPlugin"
-
-  society.agents["OSC"].add_component do |c|
+ 
+society.each_agent do |agent|
+  if agent.has_facet? { |facet| facet[:role]=='AmmunitionProvider' && (facet[:mechanism] == 'TerminalAmmunitionPacker')}
+    agent.add_component do |c|
       c.classname = level2translator
       c.add_argument("SUPPLY_TYPE=Ammunition")
+    end
   end
- 
+end
 
