@@ -362,7 +362,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     long start = getStartTime(task);
     long end = getEndTime(task);
     // Test for Failed Dispositions Bug #2033
-    if ((start < startTime) || (end <= start)) {
+    if (start == 0L) {
       return;
     }
     int bucket_start = convertTimeToBucket(start);
