@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
- 
+
 package org.cougaar.logistics.servlet;
 
 import javax.servlet.*;
@@ -34,6 +34,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.core.blackboard.Subscription;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.logistics.ldm.Constants.Verb;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
@@ -67,7 +68,7 @@ import org.cougaar.logistics.plugin.inventory.LogisticsInventoryPG;
 
 
 public class LogisticsInventoryServlet
-  extends HttpServlet 
+  extends HttpServlet
 {
 
   private SimpleServletSupport support;
@@ -93,7 +94,7 @@ public class LogisticsInventoryServlet
   {
     // create a new "InventoryGetter" context per request
     InventoryGetter ig = new InventoryGetter(support,alarmService,logger);
-    ig.execute(request, response);  
+    ig.execute(request, response);
   }
 
   public void doPut(
@@ -108,7 +109,7 @@ public class LogisticsInventoryServlet
 	e.printStackTrace();
     }
   }
-  
+
   /**
    * This inner class does all the work.
    * <p>
@@ -120,24 +121,24 @@ public class LogisticsInventoryServlet
    * This acts as a <b>context</b> per request.
    */
   private static class InventoryGetter {
-    
+
     public String desiredAssetName = "";
     ServletOutputStream out;
-    
+
     /* since "InventoryGetter" is a static inner class, here
      * we hold onto the support API.
      *
      * this makes it clear that InventoryGetter only uses
      * the "support" from the outer class.
-     */    
+     */
     SimpleServletSupport support;
     AlarmService         alarmService;
     LoggingService       logger;
-    
-    
+
+
     final public static String ASSET = "ASSET";
     final public static String ASSET_AND_CLASSTYPE = ASSET + ":" + "CLASS_TYPE:";
-    
+
     public InventoryGetter(SimpleServletSupport aSupport,
 			   AlarmService         anAlarmService,
 			   LoggingService        aLoggingService) {
@@ -145,23 +146,23 @@ public class LogisticsInventoryServlet
       this.alarmService = anAlarmService;
       this.logger = aLoggingService;
     }
-    
+
     /*
       Called when a request is received from a client.
       Either gets the command ASSET to return the names of all the assets
       that contain a ScheduledContentPG or
       gets the name of the asset to plot from the client request.
     */
-    public void execute( 
-			HttpServletRequest req, 
+    public void execute(
+			HttpServletRequest req,
 			HttpServletResponse res) throws IOException
     {
 
-	LogisticsInventoryPG logInvPG=null;      
+	LogisticsInventoryPG logInvPG=null;
 	this.out = res.getOutputStream();
-      
- 
-      
+
+
+
       int len = req.getContentLength();
       if (len > 0) {
 	  //logger.debug("READ from content-length["+len+"]");
@@ -175,14 +176,14 @@ public class LogisticsInventoryServlet
 	logger.warn(" No asset to plot");
 	return;
       }
-      
+
       // return list of asset names
       if (desiredAssetName.equals(ASSET)||
 	  desiredAssetName.startsWith(ASSET_AND_CLASSTYPE)) {
-	
+
 	  //DemandObjectPredicate assetNamePredicate;
 	AssetPredicate assetNamePredicate;
-	
+
 	if(desiredAssetName.startsWith(ASSET_AND_CLASSTYPE)) {
 	  String desiredClassType = desiredAssetName.substring(ASSET_AND_CLASSTYPE.length());
 	  //assetNamePredicate = new DemandObjectPredicate(desiredClassType);
@@ -192,12 +193,12 @@ public class LogisticsInventoryServlet
 	    //assetNamePredicate = new DemandObjectPredicate();
 	  assetNamePredicate = new AssetPredicate(logger);
 	}
-	
+
 	// Asset no demand type handling
 	/***
 	 **
 	 */
-	 
+
 	 Vector assetNames = new Vector();
 	 Collection container = support.queryBlackboard(assetNamePredicate);
 	 for (Iterator i = container.iterator(); i.hasNext(); ) {
@@ -206,7 +207,10 @@ public class LogisticsInventoryServlet
 	 logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
 	 TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
 	 String nomenclature = typeIdPG.getNomenclature();
-	 String typeId = typeIdPG.getTypeIdentification();
+// 	 String typeId = typeIdPG.getTypeIdentification();
+	 String typeId = inv.getItemIdentificationPG().getItemIdentification();
+         int idx = typeId.indexOf(':');
+         typeId = typeId.substring(idx+1);
 	 if (nomenclature != null) {
 	     nomenclature = nomenclature + ":" + typeId;
 	 }
@@ -224,17 +228,17 @@ public class LogisticsInventoryServlet
 	 }
 	 assetNames.addElement(nomenclature);
 	 }
-	 
+
 	 /***
 	  * Below is for Demand Object Predicate
 	  * MWD fix and try this out -below
 	  * MWD get rid of old commented out above replaced by below
 	  * to get demand even where no inventories.
 	  ***
-	
+
 	HashSet assetNamesSet = new HashSet();
 	Collection container = support.queryBlackboard(assetNamePredicate);
-	
+
 	for (Iterator i = container.iterator(); i.hasNext(); ) {
 	  Asset asset = ((Task)(i.next())).getDirectObject();
 	  TypeIdentificationPG typeIdPG = asset.getTypeIdentificationPG();
@@ -246,21 +250,21 @@ public class LogisticsInventoryServlet
 	    nomenclature = typeId;
 	  assetNamesSet.add(nomenclature);
 	}
-	
+
 	Vector assetNames = new Vector(assetNamesSet);
 	 ****/
-	
+
 	// send the results
 	ObjectOutputStream p = new ObjectOutputStream(out);
 	p.writeObject(assetNames);
         logger.info("Sent asset names");
 	return;
       } // end returning list of asset names
-      
+
       if (desiredAssetName.startsWith("UID:")) {
 	String desiredAssetUID = desiredAssetName.substring(4);
 	Collection collection = support.queryBlackboard(new AssetUIDPredicate(desiredAssetUID,logger));
-      
+
 	for (Iterator i = collection.iterator(); i.hasNext(); ) {
 	 Inventory inv = (Inventory)(i.next());
 	 logInvPG=null;
@@ -273,7 +277,7 @@ public class LogisticsInventoryServlet
 	 desiredAssetName = nomenclature + ":" + typeId;
 	}
       } // end getting asset name from UID
-      
+
       Date startDay=getStartDate();
 
       // get roles and determine if this cluster is a provider (or consumer)
@@ -282,11 +286,11 @@ public class LogisticsInventoryServlet
        ** all the role predicate code below
       RolePredicate rolePred = new RolePredicate(support.getEncodedAgentName());
       Collection roleCollection = support.queryBlackboard(rolePred);
-    
+
       boolean provider = false;
       if (!roleCollection.isEmpty()) {
 	Organization asset = (Organization) roleCollection.iterator().next();
-      
+
 	Collection roles = asset.getOrganizationPG().getRoles();
         if (roles != null) {
 	  Iterator i = roles.iterator();
@@ -297,7 +301,7 @@ public class LogisticsInventoryServlet
 	      break;
 	    }
 	  }
-	}	
+	}
       }
 
       *****/
@@ -305,24 +309,24 @@ public class LogisticsInventoryServlet
       // get asset and tasks we need to create the inventory
 
       logger.debug("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
-    
+
       InventoryPredicate inventoryPredicate = new InventoryPredicate(desiredAssetName, support.getEncodedAgentName(),logger);
       Collection collection = support.queryBlackboard(inventoryPredicate);
-    
+
       if (collection.isEmpty()) {
         logger.warn("\n\n ************* collection is empty; return no response!");
 	return;
       }
-    
+
       // create UIInventory data object from the log plan objects
       String xmlStr = getXMLFromLogPlan(collection,startDay);
-    
+
       // set values in UISimpleInventory, a serializable object
-      //UISimpleInventory simpleInventory = 
+      //UISimpleInventory simpleInventory =
       //getInventoryForClient(inventory, provider, startDay);
 
       // send the String object
-      if ((xmlStr != null) && 
+      if ((xmlStr != null) &&
 	  (!(xmlStr.trim().equals("")))){
 	  //ObjectOutputStream p = new ObjectOutputStream(out);
 	//logger.debug("\n\n\n\n sending back a non-null inventory:\n"+simpleInventory);
@@ -371,17 +375,17 @@ public class LogisticsInventoryServlet
 	     }
 	     return strWriter.toString();
 	 }
-	 
+
     }
-    
- 
+
+
     protected Date getStartDate() {
       Date startingCDay=null;
-      
+
       // get oplan
-      
+
       Collection oplanCollection = support.queryBlackboard(oplanPredicate());
-      
+
       if (!(oplanCollection.isEmpty())) {
         Iterator iter = oplanCollection.iterator();
         Oplan plan = (Oplan) iter.next();
@@ -401,17 +405,17 @@ public class LogisticsInventoryServlet
   }
 }
 
-  
+
 /** Get asset which represents this cluster.
    */
-  
+
 class RolePredicate implements UnaryPredicate {
   String myCluster;
-    
+
   public RolePredicate(String myCluster) {
     this.myCluster = myCluster;
   }
-    
+
   public boolean execute(Object o) {
     if (o instanceof Organization) {
       Organization asset = (Organization)o;
@@ -422,59 +426,62 @@ class RolePredicate implements UnaryPredicate {
     }
     return false;
   }
-    
+
 }
-  
+
 /** Subscribes to Logistics type inventories where the BG contains
     Buffered lists of information for each cycle.
   */
-  
+
 class InventoryPredicate implements UnaryPredicate {
   String desiredAssetName; // nomenclature:type id
   MessageAddress myClusterId;
   LoggingService logger;
-    
-  public InventoryPredicate(String desiredAssetName, 
+
+  public InventoryPredicate(String desiredAssetName,
 			    String myCluster,
 			    LoggingService aLogger) {
     this.desiredAssetName = desiredAssetName;
     myClusterId = MessageAddress.getMessageAddress(myCluster);
     logger = aLogger;
   }
-    
-  private boolean assetMatch(Asset asset,boolean level2) {
-    TypeIdentificationPG typeIdPG = asset.getTypeIdentificationPG();
-    if (typeIdPG == null) {
+
+  private boolean assetMatch(Asset asset,Asset resource, boolean level2) {
+    ItemIdentificationPG itemIdPG = asset.getItemIdentificationPG();
+    TypeIdentificationPG typeIdPG = resource.getTypeIdentificationPG();
+    if (itemIdPG == null) {
       logger.warn("No typeIdentificationPG for asset");
       return false;
     }
     String nomenclature = typeIdPG.getNomenclature();
-    String typeId = typeIdPG.getTypeIdentification();
+    String itemId = itemIdPG.getItemIdentification();
+    int idx = itemId.indexOf(':');
+    itemId = itemId.substring(idx+1);
     if (nomenclature != null) {
-	nomenclature = nomenclature + ":" + typeId; 
+	nomenclature = nomenclature + ":" + itemId;
     }
     else if(level2) {
 	SupplyClassPG supplyPG = (SupplyClassPG)asset.searchForPropertyGroup(SupplyClassPG.class);
 	if (supplyPG != null) {
-	    nomenclature = typeId + ":" + supplyPG.getSupplyType();
+	    nomenclature = itemId + ":" + supplyPG.getSupplyType();
 	}
 	else {
-	    nomenclature = typeId;
+	    nomenclature = itemId;
 	}
     }
     else {
-	nomenclature = typeId;
+	nomenclature = itemId;
     }
     return nomenclature.equals(desiredAssetName);
   }
-    
+
   /** Get Inventories at this cluster such that
-      LogisticsInventoryPG().getResource().getTypeIdentificationPG().getNomenclature 
+      LogisticsInventoryPG().getResource().getTypeIdentificationPG().getNomenclature
       equals desiredAssetName.
       Also matches if asset uid is equal to desiredAssetName -- i.e.
       the client can pass in a UID instead of the asset name.
   */
-    
+
   public boolean execute(Object o) {
     if (o instanceof Inventory) {
       // looking for Inventory Assets
@@ -488,29 +495,29 @@ class InventoryPredicate implements UnaryPredicate {
 	logger.warn("no asset in Inventory in InventoryPredicate");
 	return false;
       }
-      return assetMatch(a1,logInvPG.getIsLevel2());
+      return assetMatch(inv,a1,logInvPG.getIsLevel2());
     }
-    return false; 
+    return false;
   }
 }
-  
+
 class AssetPredicate implements UnaryPredicate {
-    
+
   private String supplyType;
   private LoggingService logger;
-    
+
   public AssetPredicate(LoggingService aLogger) {
     super();
     supplyType = null;
     logger = aLogger;
   }
-    
+
   public AssetPredicate(String theSupplyType, LoggingService aLogger) {
     super();
     supplyType = theSupplyType;
     logger = aLogger;
   }
-    
+
   public boolean execute(Object o) {
     if (!(o instanceof Inventory))
       return false;
@@ -554,9 +561,9 @@ class AssetPredicate implements UnaryPredicate {
     return true;
   }
 }
-  
+
 class DemandObjectPredicate implements UnaryPredicate {
-    
+
   private String supplyType;
   private LoggingService logger;
 
@@ -565,27 +572,27 @@ class DemandObjectPredicate implements UnaryPredicate {
     supplyType = null;
     logger = aLogger;
   }
-    
+
   public DemandObjectPredicate(String theSupplyType,
 			       LoggingService aLogger) {
     super();
     supplyType = theSupplyType;
     logger = aLogger;
   }
-    
+
   public boolean execute(Object o) {
     if (!(o instanceof Task))
       return false;
     Task task = (Task)o;
     if(!((task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) ||
-	 (task.getVerb().equals(Constants.Verb.SUPPLY)))) 
+	 (task.getVerb().equals(Constants.Verb.SUPPLY))))
       return false;
     Asset asset = task.getDirectObject();
     if (asset == null)
       return false;
     TypeIdentificationPG typeIdPG = asset.getTypeIdentificationPG();
     if (typeIdPG == null) {
-	if(logger != null)  
+	if(logger != null)
 	    logger.warn(" No typeIdentificationPG for asset");
       return false;
     }
@@ -600,16 +607,16 @@ class DemandObjectPredicate implements UnaryPredicate {
     return true;
   }
 }
-  
+
 class AssetUIDPredicate implements UnaryPredicate {
   String desiredAssetUID;
     private LoggingService logger;
-    
+
   public AssetUIDPredicate(String desiredAssetUID,LoggingService aLogger) {
     this.desiredAssetUID = desiredAssetUID;
     logger = aLogger;
   }
-    
+
   public boolean execute(Object o) {
     if (!(o instanceof Inventory))
       return false;
@@ -634,7 +641,7 @@ class AssetUIDPredicate implements UnaryPredicate {
     }
     return true;
   }
-    
+
 }
 
 
