@@ -388,7 +388,6 @@ public class LogisticsInventoryBG implements PGDelegate {
   /** Called by all methods which remove tasks from lists.
    *  When a task is deleted, the last affected bucket back to the beginning of
    *  list are emptied IFF the buckets have not already been emptied.
-   *  @param list Task list containing refills or withdrawals
    *  @param bucket Last effected bucket by task deletion
    **/ 
   protected void setDeletionBucket(int bucket) {
@@ -636,7 +635,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     public void removeRefillRequisition(Task task) {
       if (task.isDeleted()) {
         int end_bucket = convertTimeToBucket(getEndTime(task), false);
-        if (logger.isErrorEnabled()) {
+        if (logger.isDebugEnabled()) {
           logger.debug("Removing task "+taskUtils.taskDesc(task));
         }
         setDeletionBucket(end_bucket);
