@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.Iterator;
 
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectScorePoint;
@@ -33,6 +34,9 @@ import org.cougaar.planning.ldm.plan.AspectScoreRange;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.AllocationResult;
 
 import org.cougaar.core.plugin.PluginBindingSite;
 
@@ -56,6 +60,7 @@ import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 import org.cougaar.planning.ldm.plan.Preference;
+import org.cougaar.lib.util.UTILAllocate;
 import org.cougaar.lib.util.UTILPreference;
 
 import org.cougaar.planning.ldm.plan.Task;
@@ -231,6 +236,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
       lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
+
+      if (isWarnEnabled())
+	warn (getName () + " publishing reservation for " + itemNomen + " from " + lastBestDate + " to " + new Date(bestTime));
     }
 
     // post condition
@@ -314,4 +322,171 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     return deliveredAsset;
   }
+
+  public void handleTask(Task t) {
+    wantConfidence = true;
+    super.handleTask(t);
+    Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
+    double ratePerSec = prefHelper.getPreferenceBestValue (pref);
+    if (isInfoEnabled ()) 
+      info (getName () + ".handleTask - task " + t.getUID() + " had p.e. " + t.getPlanElement().getUID());
+    if (t.getPlanElement () instanceof Expansion) {
+      addToEstimatedAR (t.getPlanElement (), ratePerSec);
+      if (isWarnEnabled())
+	warn (getName () + ".handleTask " + t.getUID() + " in " + t.getWorkflow().getUID()+ 
+	      " p.e. " +t.getPlanElement ().getUID());
+    } 
+    else if (isWarnEnabled ()) 
+      warn (getName () + ".handleTask - task " + t.getUID() + " had no p.e.???");
+  }
+
+  protected void addToEstimatedAR (PlanElement exp, double rate) {
+    AllocationResult estAR = exp.getEstimatedResult ();
+    AspectValue [] aspectValues = estAR.getAspectValueResults();
+    AspectValue [] copy = new AspectValue [aspectValues.length+1];
+    System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
+    copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, rate);
+
+    AllocationResult replacement =  
+      ldmf.newAVAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
+    exp.setEstimatedResult (replacement);
+  }
+
+  /**
+   * Report to superior that the expansion has changed. Usually just a pass
+   * through to the UTILPluginAdapter's updateAllocationResult.
+   *
+   * @param exp Expansion that has changed.
+   * @see UTILPluginAdapter#updateAllocationResult
+   */
+  public void reportChangedExpansion(Expansion cpe) { 
+    if (isDebugEnabled ())
+      debug (getName () + " : Received changed pe " + 
+	    cpe.getUID () + " for task " + 
+	    cpe.getTask ().getUID());
+    AllocationResult reportedresult = cpe.getReportedResult();
+    if (reportedresult != null) {
+      // compare entire allocationresults.
+      AllocationResult estimatedresult = cpe.getEstimatedResult();
+      double confidence = reportedresult.getConfidenceRating ();
+      boolean nullEstimated  = (estimatedresult == null);
+      // if we are not ignoring low confidence reported values
+      boolean highConfidence = (!skipLowConfidence || confidence > HIGH_CONFIDENCE);
+
+      if ( nullEstimated  || 
+	   (highConfidence &&
+	    (! isEqual(estimatedresult, reportedresult)))) { 
+	if (isDebugEnabled ())
+          debug (getName () + " : Swapping Alloc Results for task " + 
+                              cpe.getTask ().getUID ());
+        if (isWarnEnabled() && !reportedresult.isSuccess ())
+          warn (getName () + " : " + 
+		cpe.getTask ().getUID () + " failed to allocate.");
+
+        cpe.setEstimatedResult(reportedresult);
+
+        double prefValue = 
+          cpe.getTask().getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
+
+        AspectValue[] aspectValues = cpe.getEstimatedResult().getAspectValueResults();
+	AspectValue [] copy = new AspectValue [aspectValues.length+1];
+	System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
+	copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, prefValue);
+	AllocationResult correctedAR = 
+	  new AllocationResult(reportedresult.getConfidenceRating(),
+			       reportedresult.isSuccess(),
+			       copy);
+
+	cpe.setEstimatedResult(correctedAR);          
+
+        if (isWarnEnabled()) 
+          warn (getName () + " : publish changing task " + cpe.getTask ().getUID ());
+
+	blackboard.publishChange(cpe);
+      }
+    }
+    else if (!cpe.getTask().getSource ().equals (((PluginBindingSite)getBindingSite()).getAgentIdentifier())) {
+      error ("ERROR! " + getName () + 
+	     " : "     + cpe.getTask ().getUID () + 
+	     " has a null reported allocation.");
+    }
+  }
+
+  /** checks to see if the AllocationResult is equal to this one.
+     * @param anAllocationResult
+     * @return boolean
+     */
+  public boolean isEqual(AllocationResult thisAR, AllocationResult that) {
+    if (thisAR == that) return true; // quick success
+    if (that == null) return false; // quick fail
+    if (!(thisAR.isSuccess() == that.isSuccess() &&
+          thisAR.isPhased() == that.isPhased() &&
+          thisAR.getConfidenceRating() == that.getConfidenceRating())) {
+      if (isInfoEnabled())
+	info ("AspectValues - success/phased/confidence this AR " + thisAR + " != " + that);
+      return false;
+    }
+       
+    //check the real stuff now!
+    //check the aspect types
+    //check the summary results
+    synchronized (thisAR.getAspectValueResults()) {
+      if (!nearlyEquals(thisAR.getAspectValueResults(), that.getAspectValueResults())) {
+	if (isDebugEnabled())
+	  debug ("AspectValues - this AR " + thisAR + " != " + that);
+	return false;
+      }
+      // check the phased results
+      if (thisAR.isPhased()) {
+        Iterator i1 = that.getPhasedAspectValueResults().iterator();
+        Iterator i2 = thisAR.getPhasedAspectValueResults().iterator();
+        while (i1.hasNext()) {
+          if (!i2.hasNext()) return false;
+          if (!nearlyEquals((AspectValue[]) i1.next(), (AspectValue[]) i2.next())) {
+	    if (isDebugEnabled())
+	      debug ("phased AspectValues - this AR " + thisAR + " != " + that);
+	    return false;
+	  }
+        }
+        if (i2.hasNext()) return false;
+      }
+    }
+
+    // check the aux queries
+    
+    /*
+    String[] taux = that.auxqueries;
+    if (auxqueries != taux) {
+      if (!Arrays.equals(taux, auxqueries)) return false;
+    }
+    */
+
+    // must be equals...
+    return true;
+  }
+
+  public boolean nearlyEquals(AspectValue[] avs1, AspectValue[] avs2) {
+    int len = avs1.length;
+    // if (len != avs2.length) return false; // Can't be equal if different length
+  outer:
+    for (int i = 0; i < len; i++) {
+      AspectValue av1 = avs1[i];
+      int type1 = av1.getAspectType();
+      if (type1 == AlpineAspectType.DEMANDRATE)
+	continue; // ignore DEMAND RATE!
+    inner:
+      for (int j = 0; j < len; j++) {
+        int k = (i + j) % len;
+        AspectValue av2 = avs2[k];
+        int type2 = av2.getAspectType();
+        if (type1 == type2) {
+          if (av1.nearlyEquals(av2)) continue outer;
+          break inner;
+        }
+      }
+      return false;             // Found no match
+    }
+    return true;                // Found a match for every aspect
+  }
+
 }
