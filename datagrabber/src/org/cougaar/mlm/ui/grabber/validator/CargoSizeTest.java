@@ -119,6 +119,14 @@ public class CargoSizeTest extends CargoDimensionTest {
 	double metricTons = kilograms/1000.0;
 	double shortTons = (metricTons)*METRIC_TO_SHORT_TON;
 
+	if (l.isMinorEnabled())
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"CargoSizeTest - h " + height + 
+		       " w " + width +
+		       " d " + depth +
+		       " a " + area +
+		       " v " + volume +
+		       " weight " + shortTons + " stons");
+
 	if (biggerThanAC5) {
 	  if (height > C5_HEIGHT ||
 	      width  > C5_WIDTH  ||
@@ -140,12 +148,12 @@ public class CargoSizeTest extends CargoDimensionTest {
       }    
 
       if (biggerThanAC5) {
-	insertRow(l,s,run,"",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>",0,0,0,0,0,0);
 	insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
 	insertRow(l,s,run,"<b>C5</b>",C5_HEIGHT,C5_WIDTH,C5_DEPTH,C5_AREA,C5_VOLUME,(C5_WEIGHT/1000)*METRIC_TO_SHORT_TON);
       }
       else {
-	insertRow(l,s,run,"",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>",0,0,0,0,0,0);
 	insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
 	insertRow(l,s,run,"<b>MILVAN</b>",MILVAN_HEIGHT,MILVAN_WIDTH,MILVAN_DEPTH,MILVAN_AREA,MILVAN_VOLUME,MILVAN_WEIGHT);
       }
