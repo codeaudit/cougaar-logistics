@@ -59,6 +59,8 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
   private boolean makeRouteElements=false;
   private boolean makeManifest=false;
 
+  public static boolean usePreferences = true; // until we can rip them out
+
   //Constructors:
   ///////////////
 
@@ -122,24 +124,41 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
 		   COL_ASSETID+" VARCHAR(255) NOT NULL,"+
 		   COL_LEGID+" VARCHAR(255) NOT NULL"+
 		   ")");
-    if(makeConveyedLeg)
-      prepareTable(s,getTableName(CONVEYED_LEG_TABLE),
-		   "CREATE TABLE "+getTableName(CONVEYED_LEG_TABLE)+" ( "+
-		   COL_LEGID+" VARCHAR(255) UNIQUE NOT NULL,"+
-		   COL_STARTTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
-		   COL_ENDTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
-		   COL_READYAT+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
-		   COL_EARLIEST_END+" "+dbConfig.getDateTimeType()+
-		   " NOT NULL,"+
-		   COL_BEST_END+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
-		   COL_LATEST_END+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
-		   COL_STARTLOC+" VARCHAR(255) NOT NULL,"+
-		   COL_ENDLOC+" VARCHAR(255) NOT NULL,"+
-		   COL_LEGTYPE+" INTEGER NOT NULL,"+
-		   COL_CONVEYANCEID+ " VARCHAR(255) NOT NULL,"+
-		   COL_ROUTEID+" VARCHAR(255),"+
-		   COL_MISSIONID+" VARCHAR(255)"+
-		   ")");
+    if(makeConveyedLeg) {
+      if (usePreferences) {
+	prepareTable(s,getTableName(CONVEYED_LEG_TABLE),
+		     "CREATE TABLE "+getTableName(CONVEYED_LEG_TABLE)+" ( "+
+		     COL_LEGID+" VARCHAR(255) UNIQUE NOT NULL,"+
+		     COL_STARTTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_ENDTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_READYAT+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_EARLIEST_END+" "+dbConfig.getDateTimeType()+
+		     " NOT NULL,"+
+		     COL_BEST_END+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_LATEST_END+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_STARTLOC+" VARCHAR(255) NOT NULL,"+
+		     COL_ENDLOC+" VARCHAR(255) NOT NULL,"+
+		     COL_LEGTYPE+" INTEGER NOT NULL,"+
+		     COL_CONVEYANCEID+ " VARCHAR(255) NOT NULL,"+
+		     COL_ROUTEID+" VARCHAR(255),"+
+		     COL_MISSIONID+" VARCHAR(255)"+
+		     ")");
+      }
+      else {
+	prepareTable(s,getTableName(CONVEYED_LEG_TABLE),
+		     "CREATE TABLE "+getTableName(CONVEYED_LEG_TABLE)+" ( "+
+		     COL_LEGID+" VARCHAR(255) UNIQUE NOT NULL,"+
+		     COL_STARTTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_ENDTIME+" "+dbConfig.getDateTimeType()+" NOT NULL,"+
+		     COL_STARTLOC+" VARCHAR(255) NOT NULL,"+
+		     COL_ENDLOC+" VARCHAR(255) NOT NULL,"+
+		     COL_LEGTYPE+" INTEGER NOT NULL,"+
+		     COL_CONVEYANCEID+ " VARCHAR(255) NOT NULL,"+
+		     COL_ROUTEID+" VARCHAR(255),"+
+		     COL_MISSIONID+" VARCHAR(255)"+
+		     ")");
+      }
+    }
     if(makeAssetInstance)
       prepareTable(s,getTableName(ASSET_INSTANCE_TABLE),
 		   "CREATE TABLE "+getTableName(ASSET_INSTANCE_TABLE)+" ( "+
