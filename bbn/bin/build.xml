@@ -31,12 +31,11 @@
 	<!-- This scopes all the environment variables -->
 	<property environment="env"/>
 
-	<!--OLD <property name="lib" value="c:\alp\cougaarHEAD\lib" /> -->
 	<property name="lib" value="${env.COUGAAR_INSTALL_PATH}/lib" />
 
 	<!-- Third party jar files go in CIP/sys -->
-	<!--OLD <property name="sys" value="c:\alp\cougaarHEAD\sys" /> -->
 	<property name="sys" value="${env.COUGAAR_INSTALL_PATH}/sys" />
+	<property name="other" value="${env.COUGAAR_INSTALL_PATH}/other" />
 
 	<property name="src" value="./src" />
 	<property name="testsrc" value="./regress" />
@@ -87,6 +86,7 @@
            <pathelement location="${lib}/glm.jar" />
            <pathelement location="${lib}/glmtrans.jar" />
            <pathelement location="${lib}/vishnu.jar" />
+           <pathelement location="${other}/vishnuServer.jar" />
 	   <pathelement location="${sys}/xerces.jar" />
 	   <pathelement location="${sys}/openmap.jar" />
 	   <pathelement location="${sys}/fesi-111.jar" />
