@@ -85,7 +85,6 @@
 	   <pathelement location="${lib}/vishnu.jar" />
      	   <pathelement location="${lib}/glm.jar" />
 	   <pathelement location="${lib}/servicediscovery.jar" />
-	   <pathelement location="${lib}/datagrabber.jar" />
      	   <pathelement location="${sys}/vishnuServer.jar" />
 	   <pathelement location="${sys}/xerces.jar" />
 	   <pathelement location="${sys}/openmap.jar" />
