@@ -284,7 +284,9 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
 	}
         //	distributeCheckOrgs(policyVector.elements(), allOrganizations_.elements());
 	distributeCheckPolicies(policyVector.elements());
-	distributeCommunityPolicies(communityVector.elements());
+        if (!communityVector.isEmpty()) {
+          distributeCommunityPolicies(communityVector.elements());
+        }
       }
     } catch ( SubscriberException se ) {
       se.printStackTrace();
