@@ -703,6 +703,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     return myOrgName;
   }
 
+  public Class getSupplyClassPG() {
+      return supplyClassPG;
+  }
 
   public Collection getPredicates(PropertyGroup pg) {
     Collection preds = null;
