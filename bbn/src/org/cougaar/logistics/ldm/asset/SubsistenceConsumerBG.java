@@ -99,14 +99,15 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     ArrayList consumerlist = new ArrayList();
     consumerlist.add(myPG.getMei());
     Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
-    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
+    consumerSched = parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched);
+    params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(consumerSched, span));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof OrgActivityPred) {
         Schedule orgActSched =
             parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
-        params.add(orgActSched);
+   	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
 //      if (myOrgName.indexOf("35-ARBN") >= 0) {
 //        System.out.println("getParamSched() OrgActSched "+orgActSched);
 //      }
@@ -119,11 +120,15 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       } else if (predicate instanceof FeedingPolicyPred) {
         Collection fpColl = (Collection) list.next();
         Iterator it = fpColl.iterator();
+        Schedule sched;
         if (it.hasNext()) {
           feedingPolicy = (FeedingPolicy)it.next();
-          params.add(getFeedingPolicySchedule(feedingPolicy));
-          params.add(getEnhancementPolicySchedule(feedingPolicy));
-          params.add(getWaterPolicySchedule(feedingPolicy));
+          sched = getFeedingPolicySchedule(feedingPolicy);
+          params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(sched, span));
+          sched = getEnhancementPolicySchedule(feedingPolicy);
+          params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(sched, span));
+          sched = getWaterPolicySchedule(feedingPolicy);
+          params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(sched, span));
         }
       } else {
         logger.error("getParameterSchedule: unknown predicate "+predicate);

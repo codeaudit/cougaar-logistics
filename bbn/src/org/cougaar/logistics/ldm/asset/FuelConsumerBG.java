@@ -80,19 +80,44 @@ public class FuelConsumerBG extends ConsumerBG {
     ArrayList consumerlist = new ArrayList();
     consumerlist.add(myPG.getMei());
     Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
-    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
+    consumerSched = parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched);
+    // DEBUG
+//     Schedule trimmedSched = parentPlugin.getScheduleUtils().trimObjectSchedule(consumerSched, span);
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("TimeSpan "+parentPlugin.getTimeUtils().dateString(span.getStartTime())+
+//                          " to "+parentPlugin.getTimeUtils().dateString(span.getEndTime()));
+//       System.out.println("CONSUMER Schedule: "+consumerSched);
+//       System.out.println("TRIMMED consumer: "+trimmedSched);
+//     }
+
+    params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(consumerSched, span));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
- 	params.add(orgActSched);
+        // DEBUG
+//         trimmedSched = parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span);
+//         if (myOrgName.indexOf("35-ARBN") >= 0) {
+//           System.out.println("ORGACT Schedule: "+orgActSched);
+//           System.out.println("TRIMMED ORGACT: "+trimmedSched);
+//         }
+
+   	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
       } else {
  	logger.error("getParameterSchedule: unknown predicate");
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
+
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       if (span != null) 
+//         System.out.println("TimeSpan "+parentPlugin.getTimeUtils().dateString(span.getStartTime())+
+//                            " to "+parentPlugin.getTimeUtils().dateString(span.getEndTime()));
+//       System.out.println(myPG.getMei().getTypeIdentificationPG().getTypeIdentification()+" PARAM SCHED: "+
+//                          paramSchedule);
+//     }
     return paramSchedule;
   }
 

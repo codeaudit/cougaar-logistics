@@ -95,14 +95,15 @@ public class RepairPartConsumerBG extends ConsumerBG {
     ArrayList consumerlist = new ArrayList();
     consumerlist.add(myPG.getMei());
     Schedule consumerSched = parentPlugin.getScheduleUtils().createConsumerSchedule(consumerlist);
-    params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
+    consumerSched = parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched);
+    params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(consumerSched, span));
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
- 	params.add(orgActSched);
+   	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
       } else {
  	logger.error("getParameterSchedule: unknown predicate");
       }
