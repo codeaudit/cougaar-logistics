@@ -58,8 +58,11 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   ///////////////
 
 
-  public FullShortfallData(String agentName,long time, Collection summaries) {
-      super(agentName,time,summaries);
+  public FullShortfallData(String agentName,
+			   long time, 
+			   Collection summaries,
+			   boolean userMode) {
+      super(agentName,time,summaries,userMode);
   }
 
 
@@ -80,6 +83,7 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
     w.tagln(AGENT_NAME_TAG, getAgentName());
     w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
     w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+    w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
     w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
     w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
     supplyTypesToXML(w);

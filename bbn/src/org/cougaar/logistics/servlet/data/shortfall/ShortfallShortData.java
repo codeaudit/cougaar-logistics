@@ -59,7 +59,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected final static String AGENT_NAME_TAG = "AGENT";
   protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
-protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
+  protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
+  protected final static String NUM_SHORTFALL_PERIOD_INVENTORIES_TAG = "NUM_SHORTFALL_PERIOD_INVENTORIES";
   protected final static String NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG = "NUM_UNEXPECTED_SHORTFALL_INVENTORIES";
   protected final static String EFFECTED_THREADS_TAG = "EFFECTED_SUPPLY_TYPES";
   protected final static String EFFECTED_THREAD_TAG = "SUPPLY_TYPE";
@@ -76,19 +77,28 @@ protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHO
 
   protected int numShortfallInventories;
 
+  protected int numShortfallPeriodInventories;
+
   protected int numTempShortfallInventories;
 
   protected int numUnexpectedShortfallInventories;
+
+  protected boolean userMode=false;
 
 
   //Constructors:
   ///////////////
 
 
-  public ShortfallShortData(String agentName, long time, Collection summaries) {
+  public ShortfallShortData(String agentName, 
+			    long time, 
+			    Collection summaries, 
+			    boolean userMode) {
       this.agentName = agentName;
       this.timeMillis = time;
+      this.userMode = userMode;
       numShortfallInventories = 0;
+      numShortfallPeriodInventories = 0;
       summaryMap = new HashMap(4);
       Iterator it = summaries.iterator();
       while(it.hasNext()) {
@@ -146,6 +156,10 @@ protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHO
     return numShortfallInventories;
   }
 
+  public int getNumberOfShortfallPeriodInventories() {
+    return numShortfallPeriodInventories;
+  }
+
   public int getNumberOfTempShortfallInventories() {
       return numTempShortfallInventories;
   }
@@ -172,33 +186,36 @@ protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHO
  
 
     protected void computeNumShortfallWithRules() {
-	Collection summaries = getShortfallSummaries().values();
-	Iterator summaryIT = summaries.iterator();
-	numUnexpectedShortfallInventories=0;
-	numTempShortfallInventories=0;
-	while(summaryIT.hasNext()) {
-	    ShortfallSummary summary = (ShortfallSummary) summaryIT.next();
-	    Iterator invIT = summary.getShortfallInventories().iterator();
-	    while(invIT.hasNext()) {
-		boolean ruleMatch=false;
-		ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
-		Iterator rulesIT = rulesList.iterator();
-		while(rulesIT.hasNext()) {
-		    ShortfallInventoryRule rule = (ShortfallInventoryRule) rulesIT.next();
-		    ShortfallInventory newInv = rule.apply(agentName,shortInv);
-		    if(newInv != null) {
-		      shortInv=newInv;
-		      ruleMatch=true;
-		    }
-		}
-		if(shortInv.getNumTotalShortfall() > 0) {
-		    numUnexpectedShortfallInventories++;
-		    if((shortInv.getNumTotalShortfall() - shortInv.getNumTempShortfall()) <= 0){
-		      numTempShortfallInventories++;
-		    }
-		}
+      Collection summaries = getShortfallSummaries().values();
+      Iterator summaryIT = summaries.iterator();
+      numUnexpectedShortfallInventories=0;
+      numTempShortfallInventories=0;
+      while(summaryIT.hasNext()) {
+	ShortfallSummary summary = (ShortfallSummary) summaryIT.next();
+	Iterator invIT = summary.getShortfallInventories().iterator();
+	while(invIT.hasNext()) {
+	  ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
+
+	  if(!shortInv.getShortfallPeriods().isEmpty()) {
+	      numShortfallPeriodInventories++;
+	  }
+	    
+	  Iterator rulesIT = rulesList.iterator();
+	  while(rulesIT.hasNext()) {
+	    ShortfallInventoryRule rule = (ShortfallInventoryRule) rulesIT.next();
+	    ShortfallInventory newInv = rule.apply(agentName,shortInv);
+	    if(newInv != null) {
+	      shortInv=newInv;
 	    }
+	  }
+	  if(shortInv.getNumTotalShortfall() > 0) {
+	    numUnexpectedShortfallInventories++;
+	    if((shortInv.getNumTotalShortfall() - shortInv.getNumTempShortfall()) <= 0){
+	      numTempShortfallInventories++;
+	    }
+	  }
 	}
+      }
     }
 
 
@@ -227,6 +244,7 @@ protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHO
     w.tagln(AGENT_NAME_TAG, getAgentName());
     w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
     w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+    w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
     w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
     w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
     supplyTypesToXML(w);
