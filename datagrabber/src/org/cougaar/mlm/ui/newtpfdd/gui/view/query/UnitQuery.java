@@ -561,9 +561,10 @@ public class UnitQuery extends SqlQuery {
 
   protected Node createCargoInstance (UIDGenerator generator, String id, String name, String aggnumber,
 				      String unitName, String protoNomen,
-				      double weight, double width, double height, double depth, String alpType, String container) {
+				      double weight, double width, double height, double depth, double area, double volume,
+				      String alpType, String container) {
     CargoInstance cargo = 
-      (CargoInstance) createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen, weight, width, height, depth);
+      (CargoInstance) createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen, weight, width, height, depth, area, volume);
 
     cargo.setALPType (alpType);
     cargo.setContainer (container);
@@ -573,7 +574,7 @@ public class UnitQuery extends SqlQuery {
 
   protected Node createCargoInstance (UIDGenerator generator, String id, String name, String aggnumber,
 				      String unitName, String protoNomen,
-				      double weight, double width, double height, double depth) {
+				      double weight, double width, double height, double depth, double area, double volume) {
     CargoInstance cargo = 
       (CargoInstance) createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen);
 
@@ -581,6 +582,8 @@ public class UnitQuery extends SqlQuery {
     cargo.setWidth  (width);
     cargo.setHeight (height);
     cargo.setDepth  (depth);
+    cargo.setArea   (area);
+    cargo.setVolume (volume);
 
     return cargo;
   }
@@ -722,16 +725,20 @@ public class UnitQuery extends SqlQuery {
     String instanceAggNumber = DGPSPConstants.COL_AGGREGATE;
     String orgNamesName = HierarchyConstants.COL_PRETTY_NAME;
     String prototypeNomen = DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String prototypeWeight = DGPSPConstants.COL_WEIGHT;
-    String prototypeWidth = DGPSPConstants.COL_WIDTH;
-    String prototypeHeight = DGPSPConstants.COL_HEIGHT;
-    String prototypeDepth = DGPSPConstants.COL_DEPTH;
+
+    String weight = DGPSPConstants.COL_WEIGHT;
+    String width  = DGPSPConstants.COL_WIDTH;
+    String height = DGPSPConstants.COL_HEIGHT;
+    String depth  = DGPSPConstants.COL_DEPTH;
+    String area   = DGPSPConstants.COL_AREA;
+    String volume = DGPSPConstants.COL_VOLUME;
+
     String instanceOwner     = DGPSPConstants.COL_OWNER;
     String cLegStart   = DGPSPConstants.COL_STARTTIME;
 	
     String sqlQuery = 
       "select distinct " + instanceID + ", " + instanceProto + ", " + instanceName + ", " + instanceAggNumber + ", " +
-      orgNamesName + ", " + prototypeNomen +", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +
+      orgNamesName + ", " + prototypeNomen +", " + weight +", " + width +", " + height +", " + depth +", " + area +", " + volume +
       "\nfrom " + derivedTable +
       filterClauses.getUnitWhereSql (instanceOwner) +
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
@@ -745,14 +752,19 @@ public class UnitQuery extends SqlQuery {
   protected String formFirstCargoInstanceSql (FilterClauses filterClauses, int recentRun) {
     String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
     String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;
+    String cccDimTable = DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE + "_" + recentRun;
 
     String prototypeProto = assetProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimProto    = cccDimTable + "." + DGPSPConstants.COL_PROTOTYPEID;
     String prototypeParentProto = assetProtoTable + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
     String prototypeNomen = assetProtoTable + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String prototypeWeight = DGPSPConstants.COL_WEIGHT;
-    String prototypeWidth = DGPSPConstants.COL_WIDTH;
-    String prototypeHeight = DGPSPConstants.COL_HEIGHT;
-    String prototypeDepth = DGPSPConstants.COL_DEPTH;
+
+    String weight = DGPSPConstants.COL_WEIGHT;
+    String width  = DGPSPConstants.COL_WIDTH;
+    String height = DGPSPConstants.COL_HEIGHT;
+    String depth  = DGPSPConstants.COL_DEPTH;
+    String area   = DGPSPConstants.COL_AREA;
+    String volume = DGPSPConstants.COL_VOLUME;
 
     String instanceID        = assetInstanceTable + "." + DGPSPConstants.COL_ASSETID;
     String instanceProto     = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -779,14 +791,15 @@ public class UnitQuery extends SqlQuery {
 	
     String sqlQuery = 
       "select distinct " + instanceID + ", " + instanceProto + ", " + instanceName + ", " + instanceAggNumber + ", " +
-      orgNamesName + ", " + prototypeNomen + ", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +
-      "\nfrom "  + assetInstanceTable + ", " + assetProtoTable + ", " + orgNames + ", " + assetItineraryTable + ", " +
-      conveyedLegTable +
+      orgNamesName + ", " + prototypeNomen +", " + weight +", " + width +", " + height +", " + depth +", " + area +", " + volume +
+      "\nfrom "  + assetInstanceTable + ", " + assetProtoTable + ", " + orgNames + ", " + assetItineraryTable + ", " + cccDimTable +", "+
+      conveyedLegTable + 
       wherePrefix +
       instanceProto + " = " + prototypeProto +
       "\nand " + orgNamesOrg + " = " + instanceOwner +
       "\nand " + instanceID + " = " + itinID + 
       "\nand " + itinLeg + " = " + cLegID +
+      "\nand " + cccDimProto + " = " + prototypeProto +
       "\nand " + prototypeParentProto + " is null " +
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
@@ -799,14 +812,19 @@ public class UnitQuery extends SqlQuery {
   protected String formSecondCargoInstanceSql (FilterClauses filterClauses, int recentRun) {
     String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
     String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;
+    String cccDimTable = DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE + "_" + recentRun;
 
     String prototypeProto = assetProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimProto    = cccDimTable + "." + DGPSPConstants.COL_PROTOTYPEID;
     String prototypeParentProto = assetProtoTable + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
     String prototypeNomen = assetProtoTable + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String prototypeWeight = DGPSPConstants.COL_WEIGHT;
-    String prototypeWidth = DGPSPConstants.COL_WIDTH;
-    String prototypeHeight = DGPSPConstants.COL_HEIGHT;
-    String prototypeDepth = DGPSPConstants.COL_DEPTH;
+
+    String weight = DGPSPConstants.COL_WEIGHT;
+    String width  = DGPSPConstants.COL_WIDTH;
+    String height = DGPSPConstants.COL_HEIGHT;
+    String depth  = DGPSPConstants.COL_DEPTH;
+    String area   = DGPSPConstants.COL_AREA;
+    String volume = DGPSPConstants.COL_VOLUME;
 
     String instanceID        = assetInstanceTable + "." + DGPSPConstants.COL_ASSETID;
     String instanceProto     = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -833,14 +851,15 @@ public class UnitQuery extends SqlQuery {
 	
     String sqlQuery = 
       "select distinct " + instanceID + ", " + prototypeParentProto + ", " + instanceName + ", " + instanceAggNumber + ", " +
-      orgNamesName + ", " + prototypeNomen + ", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +
-      "\nfrom "  + assetInstanceTable + ", " + assetProtoTable + ", " + orgNames + ", " + assetItineraryTable + ", " +
+      orgNamesName + ", " + prototypeNomen +", " + weight +", " + width +", " + height +", " + depth +", " + area +", " + volume +
+      "\nfrom "  + assetInstanceTable + ", " + assetProtoTable + ", " + orgNames + ", " + assetItineraryTable + ", " +cccDimTable +", "+
       conveyedLegTable +
       wherePrefix +
       instanceProto + " = " + prototypeProto +
       "\nand " + orgNamesOrg + " = " + instanceOwner +
       "\nand " + instanceID + " = " + itinID + 
       "\nand " + itinLeg + " = " + cLegID +
+      "\nand " + cccDimProto + " = " + prototypeProto +
       "\nand " + prototypeParentProto + " is not null " +
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
