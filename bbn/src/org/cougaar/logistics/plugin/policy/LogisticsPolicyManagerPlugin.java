@@ -319,8 +319,16 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
 
     if (allOrganizations_.hasChanged()) {
       if (myOrganization_ != null){
-        distributeCheckOrgs(sub.elements(), allOrganizations_.getAddedList());
-        distributeCheckOrgs(sub.elements(), allOrganizations_.getChangedList());
+        Enumeration allOrgChanged = allOrganizations_.getChangedList();
+        Enumeration allOrgAdded = allOrganizations_.getAddedList();
+        if (logger.isDebugEnabled()) {
+          logger.debug("AllOrganizations has changed. AddedList is " +
+                       allOrgAdded + " ChangedList is " + allOrgChanged);
+        }
+        //        distributeCheckOrgs(sub.elements(), allOrganizations_.getAddedList());
+        //        distributeCheckOrgs(sub.elements(), allOrganizations_.getChangedList());
+        distributeCheckOrgs(sub.elements(), allOrgAdded);
+        distributeCheckOrgs(sub.elements(), allOrgChanged);
 
       }
     }
@@ -415,7 +423,12 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
     }
     Vector allTargets = new Vector();
     while (targets.hasMoreElements()){
-      allTargets.add(targets.nextElement());
+      Organization o = (Organization) targets.nextElement();
+      allTargets.add(o);
+      if (logger.isDebugEnabled()) {
+        logger.debug("New or Changed Org is: "+ o);
+      }
+      //allTargets.add(targets.nextElement());
     }
     Vector goodTargets = new Vector();
     while ( policies.hasMoreElements() ) {
