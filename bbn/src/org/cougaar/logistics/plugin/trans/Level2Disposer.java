@@ -109,7 +109,7 @@ public class Level2Disposer extends Level2TranslatorModule {
     }
     else {
       if(logger.isWarnEnabled()) {
-	logger.warn("Quantity on task is " + getTaskUtils().getQuantity(level2Task) + " while the estimate result says " + getTaskUtils().getQuantity(level2Task,ar));
+	logger.warn("Re-disposing: Quantity on task is " + getTaskUtils().getQuantity(level2Task) + " while the estimate result says " + getTaskUtils().getQuantity(level2Task,ar));
       }
       translatorPlugin.publishRemove(disposition);
       return true;
