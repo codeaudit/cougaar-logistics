@@ -156,8 +156,10 @@ public class TaskScheduler {
     if (lists.length == 0)
       return;
     lists[0].addAll (items);
-    if (! items.isEmpty())
+    if (! items.isEmpty()) {
       currentPhase = 0;
+      quiescence.clearQuiescentState (this);
+    }
   }
 
   /**
@@ -171,7 +173,6 @@ public class TaskScheduler {
     // only requeue for execution if more to do
     if (currentPhase < policy.getOrdering().length) {
       blackboard.signalClientActivity();
-      quiescence.clearQuiescentState (this);
     } else {
       resetCurrentPhase();
       quiescence.setQuiescentState (this);
