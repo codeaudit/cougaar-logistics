@@ -1,0 +1,24 @@
+####################################################
+# Rule to add an argument to a plugin in a specific Agent
+#
+
+
+# Check for the orig plugin here
+inventory_plugin = "org.cougaar.logistics.plugin.inventory.InventoryPlugin"
+
+
+# Add all the agents you want to replace the component in this array.
+agents = ["123-MSB"]
+
+society.each_agent do |agent|
+  agents.each do |item| 
+    if agent.name.include?(item) 
+      agent.each_component do |c|
+      if c.classname == inventory_plugin
+        c.add_argument('EXPANDER=ReconcileSupplyExpander')
+        c.name = c.comparison_name 
+       end
+      end
+    end
+  end
+end
