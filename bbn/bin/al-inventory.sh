@@ -20,12 +20,22 @@
 # </copyright>
 
 
-source $COUGAAR_INSTALL_PATH/bin/setlibpath.sh
-source $COUGAAR_INSTALL_PATH/bin/setarguments.sh
-
 # Modify the argument org.cougaar.ui.userAuthClass to use a
 # UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
 
-MYCLASSES="org.cougaar.logistics.ui.inventory.InventoryUIFrame"
 
-exec java $MYPROPERTIES -classpath $LIBPATHS $BOOTSTRAPPER $DEVP $MYCLASSES $*
+if [ -z "$COUGAAR_INSTALL_PATH" ]; then
+    if [ "$CIP" ]; then
+	COUGAAR_INSTALL_PATH="$CIP";
+    else
+	s=`echo "$0" | sed -e 's,/bin/.*,,'`
+	if [ x$s != x ] ; then
+	    COUGAAR_INSTALL_PATH=$s
+	else
+	    echo "Error: Could not find COUGAAR_INSTALL_PATH!";
+	    exit;
+	fi
+    fi
+fi
+
+exec /bin/sh $COUGAAR_INSTALL_PATH/bin/boost org.cougaar.logistics.ui.inventory.InventoryUIFrame $*
