@@ -85,16 +85,11 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param touchedInventories  The collection of changed Inventories.
    *  @param policy The InventoryPolicy
    **/
-  public void calculateRefills(Collection touchedInventories, InventoryPolicy policy, 
-			       RefillComparator myComparator) {
-    if (policy == null) {
-      logger.error("\n Inventory RefillGenerator got a null InventoryPolicy in: " +
-		   myOrgName);
-    }
+  public void calculateRefills(Collection touchedInventories, RefillComparator myComparator) {
     ArrayList newRefills = new ArrayList();
     ArrayList oldRefills = new ArrayList();
-    int orderShipTime = policy.getOrderShipTime();
-    int maxLeadTime = policy.getSupplierAdvanceNoticeTime() + orderShipTime;
+    int orderShipTime = inventoryPlugin.getOrderShipTime();
+    int maxLeadTime = inventoryPlugin.getMaxLeadTime();
     
     //Should we push now to the end of today? For now we WILL NOT.
     //long today = getTimeUtils().
@@ -150,6 +145,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 			   thePG.getCriticalLevel(refillBucket));
 	  }
           if (thePG.getCriticalLevel(refillBucket) < invLevel) {
+
             thePG.setLevel(refillBucket, invLevel);
 	    if (logger.isDebugEnabled()) { 
 		logger.debug("\nSetting the Inv Level for refillbucket: " + refillBucket +
@@ -439,6 +435,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
                    startBucket);
     }
 
+    thePG.clearTargetLevels(startBucket);
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int lastDemandBucket = thePG.getLastDemandBucket();
     double lastTarget;
