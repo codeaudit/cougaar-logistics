@@ -102,7 +102,7 @@ public class ExternalAllocator extends InventoryModule {
 	      }
 		   
 	    }
-	  }
+	  } 
 	}
 	return false;
     }
@@ -161,7 +161,7 @@ public class ExternalAllocator extends InventoryModule {
     private boolean verifyBeforeAllocation(Task task, Organization org) {
       // Do not allocate tasks after they have taken place-AF does this make sense?
       if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
-      logger.warn("publishAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
+      logger.warn("verifyBeforeAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
       // too late to change
       return false;
       }
@@ -172,7 +172,8 @@ public class ExternalAllocator extends InventoryModule {
       else {
 	logger.error("Should not publishAdd.  Task" + task + 
 		     " unexpectedly already has a plan element [" +
-		     pe + "]");
+		     pe + "]. was about to allocate to Asset: " + org + " from org " +
+	             myOrg );
 	Thread.dumpStack();
       }
       return false;
