@@ -284,9 +284,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       childTasks.addElement (subTask);
     }
     else if ((getMode(parentTask) == LEVEL_2_MODE) && 
-	     ((parentTask.getDirectObject() instanceof AssetGroup)     || // it doesn't make sense to aggregate
-	      (parentTask.getDirectObject() instanceof AggregateAsset) || // an individual item asset
-	      !isPersonTask(parentTask))) {
+	     ((parentTask.getDirectObject() instanceof AssetGroup) ||      // it doesn't make sense to aggregate an individual item asset
+	      (parentTask.getDirectObject() instanceof AggregateAsset)) && 
+	     !isPersonTask(parentTask)) {
       if (isDebugEnabled()) 
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in LOW fidelity mode. d.o. is " + parentTask.getDirectObject());
