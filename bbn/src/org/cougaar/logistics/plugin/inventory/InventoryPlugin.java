@@ -162,12 +162,13 @@ public class InventoryPlugin extends ComponentPlugin {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if ((myOrganization != null) && (supplyTaskSubscription == null)) {
 	myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
+	supplyExpander.initialize(myOrganization);
 	setupSubscriptions2();
       }
     }
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
-      expandIncomingDemandTasks(supplyTaskSubscription.getAddedCollection());
-      expandIncomingDemandTasks(projectionTaskSubscription.getAddedCollection());
+      expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
+      expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
     }
   }
 
@@ -414,6 +415,8 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   } 
 
+  // Determines which tasks should be expanded and which should be
+  // re-allocated to a supplier
   private Collection sortIncomingSupplyTasks(Collection tasks) {
     ArrayList expandList = new ArrayList();
     ArrayList passThruList = new ArrayList();
@@ -434,9 +437,14 @@ public class InventoryPlugin extends ComponentPlugin {
     return expandList;
   }
 
-  private void expandIncomingDemandTasks(Collection tasks) {
+  private void expandIncomingRequisitions(Collection tasks) {
     Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
-    supplyExpander.expandAndDistributeDemandTasks(tasksToExpand, myOrganization);
+    supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
+  }
+
+  private void expandIncomingProjections(Collection tasks) {
+    Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
+    supplyExpander.expandAndDistributeProjections(tasksToExpand);
   }
     
   /**
@@ -506,7 +514,7 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, this);
+      logInvPG.initialize(startTime, criticalLevel, this);
       inventory=(Inventory)getRootFactory().createAsset("Inventory");
       inventory.addOtherPropertyGroup(logInvPG);
 
