@@ -100,6 +100,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   // booleans used for recalculations
   private boolean failures = false;
   private boolean compute_critical_levels = true;
+  private boolean regenerate_projected_demand = false;
   
   public LogisticsInventoryBG(LogisticsInventoryPG pg) {
     myPG = pg;
@@ -180,7 +181,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public void addWithdrawProjection(Task task) {
     // Adding projections mean changed critical levels and
-    // target levels.  Set boolean to recompute criticla
+    // target levels.  Set boolean to recompute critical
     // levels and clear targetLevelsList for CSV logging
     compute_critical_levels = true;
     targetLevelsList.clear();
@@ -218,6 +219,25 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     ArrayList list = (ArrayList)dueOutList.get(bucket);
     list.add(task);
+  }
+
+  private void regenerateProjectedDemandList() {
+    // clear out old demand
+    Arrays.fill(projectedDemandArray, 0.0);
+    int size = dueOutList.size();
+    Collection list;
+    Iterator list_itr;
+    Task task;
+    for (int i=0; i < size; i++) {
+      list = getProjectedDemandTasks(i);
+      list_itr = list.iterator();
+      while (list_itr.hasNext()) {
+	task = (Task)list_itr.next();
+	long start = getStartTime(task);
+	long end = getEndTime(task);
+	updateProjectedDemandList(task, i, start, end, true);
+      }
+    }
   }
 
   // ******* HERE LIES A BUG
@@ -264,30 +284,18 @@ public class LogisticsInventoryBG implements PGDelegate {
    *  been rescinded or changed.
    *  @param task  The ProjectWithdraw task being removed
    **/
-  //  WARNING - BUG may be in this code
-  //  called from the SupplyExpander assuming that this task has not already
-  //  been allocated. If it has already been allocated, then may be removing
-  //  it from the wrong buckets and incorrectly updating the projected demand array
   public void removeWithdrawProjection(Task task) {
     compute_critical_levels = true;
-    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
-    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-    int bucket_start = convertTimeToBucket(start);
-    int bucket_end = convertTimeToBucket(end);
-    for (int i=bucket_start; i < bucket_end; i++) {
-      ArrayList list = (ArrayList)dueOutList.get(i);
+    regenerate_projected_demand = true;
+    ArrayList list;
+    for (int i=0; i < dueOutList.size(); i++) {
+      list = (ArrayList)dueOutList.get(i);
       list.remove(task);
-      updateProjectedDemandList(task, i, start, end, false);
     }
   }
 
   public void removeWithdrawProjectionAllocation(Task task) {
-    int size = dueOutList.size();
-    ArrayList list;
-    for (int i=0; i < size; i++) {
-      list = (ArrayList)dueOutList.get(i);
-      list.remove(task);
-    }
+    removeWithdrawProjection(task);
   }
 
   public void addRefillRequisition(Task task) {
@@ -430,6 +438,10 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   private double[] computeCriticalLevels() {
+    if (regenerate_projected_demand) {
+      regenerateProjectedDemandList();
+      regenerate_projected_demand = false;
+    }
     long days_per_bucket = MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY;
     double cl_per_bucket = (double)criticalLevel/(double)days_per_bucket;
     int mode = (int)Math.floor(cl_per_bucket);
@@ -511,7 +523,10 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public double getProjectedDemand(int bucket) {
-
+    if (regenerate_projected_demand) {
+      regenerateProjectedDemandList();
+      regenerate_projected_demand = false;
+    }
     if ((bucket >= projectedDemandArray.length) ||
 	(bucket < 0)) {
       return 0.0;
@@ -609,6 +624,13 @@ public class LogisticsInventoryBG implements PGDelegate {
     long interval_start = Math.max(start, bucket_start);
     long interval_end = Math.min(end, bucket_end);
     int value = (int)((interval_end - interval_start)/TimeUtils.MSEC_PER_DAY);
+//     if (value < 0) {
+//       logger.error("Bucket start: "+bucket_start+", Bucket end: "+bucket_end+
+// 		   ", Task start: "+TimeUtils.dateString(start)+
+// 		   ", Task end: "+TimeUtils.dateString(end)+
+// 		   "interval start: "+TimeUtils.dateString(interval_start)+
+// 		   "interval end: "+TimeUtils.dateString(interval_end));
+//     }
     if (value > bucketSize) {
       logger.error("bucket "+bucket+", Bucket start "+TimeUtils.dateString(bucket_start)+
 		   ", end "+TimeUtils.dateString(bucket_end));
