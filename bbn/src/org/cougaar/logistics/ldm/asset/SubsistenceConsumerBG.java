@@ -88,7 +88,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     Iterator predList = col.iterator();
     UnaryPredicate predicate;
     // DEBUG
-//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
 //     if (myOrgName.indexOf("35-ARBN") >= 0) {
 //       System.out.println("getParamSched() Asset is "+
 // 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
@@ -130,9 +130,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-//     if (myOrgName.indexOf("35-ARBN") >= 0) {
-//       System.out.println("getParamSched() MERGED "+paramSchedule);
-//     }
+    if (myOrgName.indexOf("35-ARBN") >= 0) {
+      System.out.println("getParamSched() MERGED "+paramSchedule);
+    }
     return paramSchedule;
   }
 

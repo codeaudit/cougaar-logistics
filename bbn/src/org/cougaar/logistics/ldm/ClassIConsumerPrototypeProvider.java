@@ -71,6 +71,7 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
   private TimeUtils timeUtils;
   private AssetUtils assetUtils;
   private ScheduleUtils scheduleUtils;
+  private Organization myOrg;
 
   private static UnaryPredicate orgsPredicate= new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -130,6 +131,9 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
     } // if
   } // setupSubscriptions
 
+  public Organization getMyOrg() {
+    return myOrg;
+  }
 
   protected void rehydrate() {
     configure();
@@ -180,8 +184,8 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
   protected void configure() {
     Enumeration new_orgs = myOrganizations.elements();
     if (new_orgs.hasMoreElements()) {
-      Organization my_org = (Organization) new_orgs.nextElement();
-      Service srvc = my_org.getOrganizationPG().getService();
+      myOrg = (Organization) new_orgs.nextElement();
+      Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service = srvc.toString();
 	configured = true;
