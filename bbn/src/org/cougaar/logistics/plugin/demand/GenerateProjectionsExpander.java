@@ -543,6 +543,18 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // Examine the new task and published task that straddle NOW
     Task published_task = null;
     Task new_task = null;
+    //Remove historical tasks that don't touch now first.
+    Iterator new_historical_tasks =
+      newtask_schedule.getEncapsulatedScheduleElements(TimeSpan.MIN_VALUE, now).iterator();
+    while (new_historical_tasks.hasNext()) {
+      ose = (ObjectScheduleElement)new_historical_tasks.next();
+      ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Found NEW Historical task... current society time is:" + 
+                     new Date(now) + " start time of ose is: " + new Date(ose.getStartTime()) +
+                     " end time of ose is: " + new Date(ose.getEndTime()));
+      }
+    }
     Collection c = newtask_schedule.getScheduleElementsWithTime(now);
     if (!c.isEmpty()) {
       ose = (ObjectScheduleElement)c.iterator().next();
