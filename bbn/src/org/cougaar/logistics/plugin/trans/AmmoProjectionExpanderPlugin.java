@@ -20,15 +20,18 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
 import java.util.Vector;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.Iterator;
 
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectScorePoint;
@@ -39,6 +42,7 @@ import org.cougaar.planning.ldm.plan.TimeAspectValue;
 import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.Workflow;
 
 import org.cougaar.core.plugin.PluginBindingSite;
@@ -74,6 +78,13 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.NewTask;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 import org.cougaar.glm.ldm.asset.PhysicalAsset;
+import org.cougaar.util.UnaryPredicate;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
+import org.cougaar.planning.ldm.plan.Workflow;
+import org.cougaar.planning.ldm.plan.WorkflowImpl;
+import org.cougaar.planning.ldm.plan.RelationshipSchedule;
+import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.MPTask;
 
 /**
  * Takes PROJECT_SUPPLY tasks 
@@ -89,6 +100,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public static final double PACKING_LIMIT = 13.9; /* short tons */
   private static Asset MILVAN_PROTOTYPE = null;
   private static final String UNKNOWN = "unknown";
+  public static String START = "Start";
 
   public void localSetup () {
     super.localSetup ();
@@ -106,13 +118,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    */
   public boolean interestingTask(Task task){
     boolean hasSupply = task.getVerb().equals (Constants.Verb.PROJECTSUPPLY);
-    if (!hasSupply)
-      return false;
+    boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
 
-    if (isDebugEnabled())
+    if (isDebugEnabled() && hasSupply)
       debug (".interestingTask - processing PROJECT_SUPPLY task " + task.getUID ());
+    if (isDebugEnabled() && hasTransport)
+      debug (".interestingTask - processing TRANSPORT task " + task.getUID ());
 
-    return true;
+    return (hasSupply || hasTransport);
   }
 
   int total = 0;
@@ -121,9 +134,13 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * Implemented for UTILExpanderPlugin interface
    *
    * Break up tasks into constituent parts.
+   *
+   * Called from handleTask, which is called from HandleProjectSupplyTask
    */
   public Vector getSubtasks(Task parentTask) {
-    
+    if (!(parentTask.getVerb ().equals (Constants.Verb.PROJECTSUPPLY)))
+      error ("Expecting a project supply task, got " + parentTask);
+
     Vector childTasks = new Vector ();
 
     // create the d.o.
@@ -205,17 +222,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       }
       
       double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
-      //      AggregateAsset deliveredAsset = createDeliveredAsset (parentTask, supplyAsset, quantity);
-      totalQuantity += quantity; //deliveredAsset.getQuantity ();
-
-      //      if (deliveredAsset.getQuantity () != quantity) {
-      //	error (".getSubtasks - task " + parentTask.getUID () + " quantities don't match");
-      //      }
+      totalQuantity += quantity;
 
       // set item id pg to show it's a reservation, and not a normal task's asset
 
       ItemIdentificationPG itemIDPG = (ItemIdentificationPG) supplyAsset.getItemIdentificationPG();
-      //      NewItemIdentificationPG newItemIDPG = (NewItemIdentificationPG) PropertyGroupFactory.newItemIdentificationPG();
       String itemID = itemIDPG.getItemIdentification();
       String itemNomen = itemIDPG.getNomenclature ();
 
@@ -229,10 +240,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	itemNomen = typeID.getNomenclature();
       }
 
-      //      newItemIDPG.setItemIdentification (itemID    + "_Reservation_" + total);
-      //      newItemIDPG.setNomenclature       (itemNomen + "_Reservation_" + (total++));
-      //      deliveredAsset.setItemIdentificationPG (newItemIDPG);
-    
       GLMAsset milvan = makeMilvan ();
       addContentsInfo (milvan, itemNomen, itemID, unit, massInKGs);
 
@@ -355,9 +362,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return deliveredAsset;
   }
 
-  public void handleTask(Task t) {
+  public void handleProjectSupplyTask(Task t) {
     wantConfidence = true;
-    super.handleTask(t);
+    handleTask(t);
     Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
     double ratePerSec = prefHelper.getPreferenceBestValue (pref);
     if (isInfoEnabled ()) 
@@ -543,7 +550,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     
     String itemID = makeMilvanID();
     Container milvan = 
-      //      (Container)assetHelper.createInstance(getLDMService().getLDM(), MILVAN_PROTOTYPE, itemID);
       (Container)getLDMService().getLDM().getFactory().createInstance(MILVAN_PROTOTYPE, itemID);
     
     // AMMO Cargo Code
@@ -559,7 +565,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     
     // Unique Item Identification
     NewItemIdentificationPG itemIdentificationPG = 
-      //      (NewItemIdentificationPG)milvan.getItemIdentificationPG();
       PropertyGroupFactory.newItemIdentificationPG ();
 
     //    String itemID = makeMilvanID();
@@ -588,56 +593,13 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     List weights = new ArrayList();
     List receivers = new ArrayList();
 
-    /*    for (Iterator iterator = agglist.iterator(); iterator.hasNext();) {
-         Task task = (Task) iterator.next();
-          TypeIdentificationPG typeIdentificationPG = 
-            toAdd.getTypeIdentificationPG();
-      String typeID;
-      String nomenclature;
-      if (typeIdentificationPG != null) {
-        typeID = typeIdentificationPG.getTypeIdentification();
-        if ((typeID == null) || (typeID.equals(""))) {
-          typeID = UNKNOWN;
-        } 
-        
-        nomenclature = typeIdentificationPG.getNomenclature();
-        if ((nomenclature == null) || (nomenclature.equals(""))) {
-          nomenclature = UNKNOWN;
-        }
-      } else {
-        typeID = UNKNOWN;
-        nomenclature = UNKNOWN;
-      }
-    */
-      typeIDs.add(typeID);
-      nomenclatures.add(nomen);
+    typeIDs.add(typeID);
+    nomenclatures.add(nomen);
       
-      Mass mass = Mass.newMass(massInKGs, Mass.KILOGRAMS); 
-      weights.add(mass);
+    Mass mass = Mass.newMass(massInKGs, Mass.KILOGRAMS); 
+    weights.add(mass);
       
-      /*
-      Object receiver = 
-        task.getPrepositionalPhrase(Constants.Preposition.FOR);
-      String receiverID;
-        
-      // Add field with recipient
-      if ((receiver == null) || !(receiver instanceof Asset)) {
-        receiverID = UNKNOWN;
-      } else {
-        ItemIdentificationPG itemIdentificationPG = 
-          ((Asset) receiver).getItemIdentificationPG();
-        if ((itemIdentificationPG == null) ||
-            (itemIdentificationPG.getItemIdentification() == null) ||
-            (itemIdentificationPG.getItemIdentification().equals(""))) {
-          receiverID = UNKNOWN;
-        } else {
-          receiverID = itemIdentificationPG.getItemIdentification();
-        }
-      }
-      receivers.add(receiverID);
-      */
-      receivers.add(unit);
-      //    }
+    receivers.add(unit);
     
     // Contents
     NewContentsPG contentsPG = 
@@ -648,4 +610,467 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     contentsPG.setReceivers(receivers);
     container.setContentsPG(contentsPG);
   }
+
+  /** 
+   * Implemented for UTILBufferingPlugin interface
+   *
+   * @param tasks that have been buffered up to this point
+   * @see UTILBufferingPlugin
+   */
+  public void processTasks (List tasks) {
+    if (isInfoEnabled()) {
+      info (getName () + 
+	    ".processTasks - processing " + tasks.size() + " tasks.");
+    }
+
+    Map reservedToActual = new HashMap ();
+    for (int i = 0; i < tasks.size (); i++) {
+      Task task = (Task) tasks.get (i);
+
+      if (task.getVerb ().equals (Constants.Verb.TRANSPORT))
+	handleTransportTask (task, reservedToActual);
+      else
+	handleProjectSupplyTask (task);
+    }
+
+    for (Iterator iter = reservedToActual.keySet().iterator(); iter.hasNext(); ) {
+      Task reserved = (Task)iter.next ();
+      Task actual   = (Task) reservedToActual.get(reserved);
+      dealWithReservedTask (actual, reserved);
+    }
+  }
+
+  /**
+   * find matching reservation transport task
+   * see if date overlaps
+   * if it does, publish remove it and replace it with one with altered date span and quantity
+   *
+   * OK - could be MUCH more efficient!
+   */
+  public void handleTransportTask(Task task1, Map reservedToActual) {
+    // find matching reservation transport task
+    final Task task = task1;
+    final Collection units = findForPreps (task);
+    final boolean isReserved = isReservedTask (task);
+
+    if (isReservedTask (task) && !ownWorkflow(task)) {
+      if (isInfoEnabled()) info (".handleTask - skipping reserved task " + task.getUID () + 
+				" that's not in it's own workflow.");
+      return;
+    }
+
+    if (isInfoEnabled())
+      info (getName () + ".handleTask - looking through blackboard for task to match " + 
+	    ((isReserved) ? "reserved " : "normal ") + task.getUID());
+
+    Collection matchingTaskCollection = blackboard.query (new UnaryPredicate () {
+	public boolean execute (Object obj) {
+	  if (!(obj instanceof Task)) return false;
+	  Task examinedTask = (Task) obj;
+	  if (task.getUID().equals(examinedTask.getUID())) {
+	    if (isDebugEnabled())
+	      debug ("skipping self " + examinedTask.getUID());
+	    return false; // don't match yourself
+	  }
+
+	  // better be a transport task
+	  if (!(examinedTask.getVerb ().equals (Constants.Verb.TRANSPORT))) {
+	    if (isDebugEnabled())
+	      debug ("skipping non-transport task " + examinedTask.getUID());
+	    return false;
+	  }
+
+	  // is it a reservation task?
+	  boolean examinedIsReserved = isReservedTask (examinedTask);
+	  if ((!isReserved && !examinedIsReserved) || 
+	      ( isReserved &&  examinedIsReserved)) {
+	    if (isDebugEnabled())
+	      debug ("skipping examined transport task because same type " + examinedTask.getUID() + " and " + task.getUID());
+	    return false;
+	  }
+
+	  if (examinedIsReserved) {
+	    // has it already been removed from workflow?
+	    if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
+	      if (isDebugEnabled ())
+		debug ("skipping reserved transport task " + examinedTask.getUID() + 
+		       " since it's already been removed from it's workflow.");
+	      return false;
+	    }
+	  }
+
+	  // is it for the same org? 
+	  Collection examinedUnits = findForPreps (examinedTask);
+	  Collection copy = new ArrayList(examinedUnits);
+	  examinedUnits.retainAll (units);
+	  if (examinedUnits.isEmpty ()) {
+	    if (isDebugEnabled())
+	      debug ("skipping transport task where units don't match " + units + " vs examined " + copy);
+	    return false;
+	  }
+
+	  // are they for the same type of supply?
+	  if (!contentTypesOverlap (task, examinedTask)) return false;
+
+	  // do the dates overlap
+	  Task reserved, transport;
+	  if (examinedIsReserved) {
+	    reserved  = examinedTask;
+	    transport = task;
+	  }
+	  else {
+	    reserved  = task;
+	    transport = examinedTask;
+	  }
+	  
+	  return transportDateWithinReservedWindow (transport, reserved);
+	}
+      } 
+							  );
+
+    // there can be more than one matching reserved task, e.g. when the actual contains multiple different DODICS:
+    //  types [DODIC/C787, DODIC/C380, ] vs [DODIC/C787] (Task 1)
+    //  types [DODIC/C787, DODIC/C380, ] vs [DODIC/C380] (Task 2)
+
+    if (matchingTaskCollection.isEmpty () && isInfoEnabled ()) {
+      info (".handleTask - could not find matching task for " + task.getUID());
+      return;
+    }
+    if (isInfoEnabled ()) {
+      info  (".handleTask - found " + matchingTaskCollection.size () + " matches.");
+    }
+
+    for (Iterator iter = matchingTaskCollection.iterator(); iter.hasNext();) {
+      Task reservedTask, actual;
+
+      if (isReserved) {
+	reservedTask = task;
+	actual       = (Task)iter.next();
+      }
+      else {
+	reservedTask = (Task) iter.next ();
+	actual       = task;
+      }
+
+      if (!ownWorkflow (reservedTask)) {
+	error (".handleTask - huh? reserved task " + reservedTask.getUID () + 
+	       " not a member of it's own workflow " + reservedTask.getWorkflow () + 
+	       "\nuids " + uidsWorkflow(reservedTask));
+      }
+
+      updateMap (reservedToActual, actual, reservedTask);
+    }
+  }
+
+  protected boolean contentTypesOverlap (Task task, Task examinedTask){
+    Container taskDO = (Container)task.getDirectObject ();
+    Container examinedDO = (Container)examinedTask.getDirectObject ();
+
+    ContentsPG contents = taskDO.getContentsPG ();
+    Collection typeIDs  = contents.getTypeIdentifications ();
+
+    ContentsPG examinedContents = examinedDO.getContentsPG ();
+    Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
+    Collection copy = new ArrayList (examinedTypeIDs);
+
+    copy.retainAll (typeIDs);
+    if (copy.isEmpty()) {
+      if (isDebugEnabled())
+	debug ("skipping transport task where type ids don't match. No overlap between examined container " + 
+	       examinedTypeIDs + 
+	       " and other container's list " + typeIDs);
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+
+  protected String reportContentTypes (Task task, Task examinedTask){
+    Container taskDO = (Container)task.getDirectObject ();
+    Container examinedDO = (Container)examinedTask.getDirectObject ();
+
+    ContentsPG contents = taskDO.getContentsPG ();
+    Collection typeIDs  = contents.getTypeIdentifications ();
+
+    ContentsPG examinedContents = examinedDO.getContentsPG ();
+    Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
+
+    StringBuffer buf =new StringBuffer();
+    
+    buf.append("[");
+    for (Iterator iter = typeIDs.iterator(); iter.hasNext();)
+      buf.append(iter.next() + ", ");
+    buf.append("]");
+    buf.append(" vs ");
+    buf.append("[");
+    for (Iterator iter = examinedTypeIDs.iterator(); iter.hasNext();)
+      buf.append(iter.next());
+    buf.append("]");
+
+    return buf.toString();
+  }
+
+  protected boolean transportDateWithinReservedWindow (Task transport, Task reserved){
+    Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
+    Date reservedBest  = prefHelper.getBestDate  (reserved);
+
+    Date best          = prefHelper.getBestDate  (transport);
+
+    if (reservedReady.getTime () >= best.getTime()) {
+      if (isDebugEnabled())
+	debug ("skipping transport task where task best " + best + 
+	       " before examined ready " + reservedReady);
+      return false;
+    }
+	  
+    boolean val = (best.getTime() <= reservedBest.getTime());
+    
+    if (isInfoEnabled () && val) 
+      info ("transport " + transport.getUID() + " best "+ best+ " between reserved " + reserved.getUID()+ 
+	    " ready " + reservedReady + " and " + reservedBest);
+ 
+    return val;
+  }
+
+  protected String reportTransportDate (Task reserved){
+    Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
+    Date reservedBest  = prefHelper.getBestDate  (reserved);
+
+    return " ready "+reservedReady+ " -> " + reservedBest;
+  }
+
+  protected void updateMap (Map reservedToActual, Task actual, Task reserved) {
+    Task foundActual;
+    if ((foundActual = (Task) reservedToActual.get (reserved)) == null) {
+      if (isInfoEnabled ()) {
+	info ("initally, actual " + actual.getUID () + " matches reserved " + reserved.getUID());
+      }
+      reservedToActual.put (reserved, actual);
+    }
+    else {
+      if (isDebugEnabled ()) {
+	debug ("actual " + actual.getUID () + " matches reserved " + reserved.getUID());
+      }
+
+      if (prefHelper.getBestDate(foundActual).getTime()<prefHelper.getBestDate(actual).getTime()) {
+	if (isInfoEnabled ()) {
+	  info ("replacing foundActual " + foundActual.getUID () + " with actual " + actual.getUID () + 
+		" which matches reserved " + reserved.getUID());
+	}
+	reservedToActual.put (reserved, actual); // replace with later date
+      }
+    }
+  }
+
+  protected void dealWithReservedTask (Task task, Task reservedTask) {
+    if (isReservedTask (task))
+      error ("arg - task "  + task.getUID () + " is a reserved task.");
+
+    if (!isReservedTask (reservedTask))
+      error ("arg - task "  + reservedTask.getUID () + " is not a reserved task.");
+
+    if (!ownWorkflow (reservedTask)) {
+      error ("huh? reserved task " + reservedTask.getUID () + " not a member of it's own workflow " + reservedTask.getWorkflow () + 
+	     "\nuids " + uidsWorkflow(reservedTask)); 
+      error ("assuming it will be removed -- returning.");
+
+      return;
+    }
+
+    Date best          = prefHelper.getBestDate (task);
+    Date reservedBest  = prefHelper.getBestDate (reservedTask);
+    long daysLeft      = (reservedBest.getTime()-best.getTime())/MILLIS_PER_DAY;
+    Date reservedReady = (Date) prepHelper.getIndirectObject (reservedTask, START);
+    long currentDays   = (reservedBest.getTime()-reservedReady.getTime())/MILLIS_PER_DAY;
+    if (daysLeft < 0) error ("best dates broken");
+
+    if (isInfoEnabled ()) {
+      info (getName() + ".dealWithReservedTask - applying " + task.getUID () + " best " + best +
+	    " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
+    }
+    // if it does, publish remove it and replace it with one with altered date span, quantity, and START prep
+    
+    Container reservedDO = (Container)reservedTask.getDirectObject();
+    ContentsPG contents = reservedDO.getContentsPG();
+    Collection weights = contents.getWeights();
+    Mass weight = (Mass) weights.iterator().next();
+    weights.remove (weight);
+    double factor = (double)daysLeft/(double)currentDays;
+    weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
+
+    NewWorkflow tasksWorkflow = (NewWorkflow) reservedTask.getWorkflow ();
+
+    if (tasksWorkflow == null) {
+      error ("huh? reservedTask " + reservedTask.getUID () + " workflow is null?");
+      return;
+    }
+
+    int numTasksBefore = numTasksInWorkflow (tasksWorkflow);
+
+    if (factor > 0) {
+      Asset deliveredAsset = reservedDO;
+
+      NewTask replacement = 
+	(NewTask) expandHelper.makeSubTask (ldmf,
+					    reservedTask.getPlan(),
+					    reservedTask.getParentTaskUID(),
+					    reservedTask.getVerb(),
+					    reservedTask.getPrepositionalPhrases(),
+					    deliveredAsset,
+					    reservedTask.getPreferences(),
+					    reservedTask.getPriority(),
+					    reservedTask.getSource());
+
+      if (isInfoEnabled ())
+	info ("Reserved task " + reservedTask.getUID () + 
+	      " current days " + currentDays + 
+	      " daysLeft " + daysLeft + 
+	      " replacing asset weight " +weight.getKilograms() +
+	      " with " + weight.getKilograms()*factor);
+
+      if (isInfoEnabled ())
+	info ("on task " + replacement.getUID() + " replacing start prep date " + reservedReady + 
+	      " with " + best + " - also becomes early date for task.");
+
+      prepHelper.replacePrepOnTask (replacement, 
+				    prepHelper.makePrepositionalPhrase(ldmf,START,best));
+
+      prefHelper.replacePreference (replacement, 
+				    prefHelper.makeEndDatePreference(ldmf, 
+								     best, 
+								     reservedBest, 
+								     prefHelper.getLateDate(reservedTask)));
+
+      replacement.setWorkflow(tasksWorkflow);
+      tasksWorkflow.addTask (replacement);
+      publishAdd (replacement);
+      if (isInfoEnabled ())
+	info ("Publishing replacement " + replacement.getUID() + " in workflow "+ tasksWorkflow.getUID() + 
+	      " start " + best + " best " + reservedBest + " dodic " + reservedDO.getContentsPG().getTypeIdentifications());
+
+      if (best.getTime () != ((Date)prepHelper.getIndirectObject(replacement, START)).getTime())
+	error ("replacement start " + prepHelper.getIndirectObject(replacement, START) + " != " + best);
+
+      if (!taskInWorkflow(replacement, tasksWorkflow))
+	error ("huh? after adding to workflow, replacement " + replacement.getUID () + " is not in workflow " + tasksWorkflow + "?"); 
+    }
+    else {
+      if (isInfoEnabled ())
+	info ("Removing reserved task " + reservedTask.getUID () + " since weight is zero. Days Left was " + daysLeft + 
+	      ", current days was " + currentDays + " parent was " + reservedTask.getParentTaskUID());
+    }
+
+    tasksWorkflow.removeTask (reservedTask);
+    publishRemove(reservedTask);
+
+    if (taskInWorkflow(reservedTask, tasksWorkflow))
+      error ("huh? after removing, reserved task " + reservedTask.getUID () + " is still a member of workflow " + tasksWorkflow); 
+
+    int numTasksAfter = numTasksInWorkflow (tasksWorkflow);
+
+    if (numTasksAfter == 0) {
+      final Task reservedCopy = reservedTask;
+	if (isWarnEnabled ()) {
+	  warn ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
+	}
+      Collection parents = blackboard.query (new UnaryPredicate () { 
+	  public boolean execute (Object obj) { 
+	    if (obj instanceof Task) {
+	      return (((Task) obj).getUID().equals (reservedCopy.getParentTaskUID()));
+	    } 
+	    else return false;
+	  }
+	}
+					     );
+
+      Task parent = (Task) parents.iterator ().next();
+      PlanElement exp = parent.getPlanElement();
+      if (exp == null) {
+	if (isWarnEnabled ()) {
+	  warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
+	}
+      } 
+      else {
+	publishRemove(exp);
+	AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
+	Disposition disposition =
+	  ldmf.createDisposition(parent.getPlan(), parent, ar);
+	publishAdd (disposition);
+	if (isWarnEnabled ())
+	  warn (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
+      }
+    }
+
+    if (factor < 0.00000001 && (numTasksAfter != numTasksBefore-1))
+      error ("Reserved task " + reservedTask.getUID() + "'s workflow had " + numTasksBefore + " should have " + (numTasksBefore-1) + 
+	     " but has " + numTasksAfter);
+    else if (factor > 0 && (numTasksAfter != numTasksBefore))
+      error ("Reserved task " + reservedTask.getUID() + "'s workflow had " + numTasksBefore + " != numTaskAfter, which is " + numTasksAfter);
+  }
+
+  protected boolean isReservedTask (Task task) {
+    return (prepHelper.hasPrepNamed (task, START));
+  }
+
+  protected boolean ownWorkflow (Task task) {
+    if (task.getWorkflow () == null) 
+      return false;
+
+    return taskInWorkflow (task, task.getWorkflow());
+  }
+
+  protected boolean taskInWorkflow (Task task, Workflow workflow) {
+    String [] uidsInWorkflow = ((WorkflowImpl)workflow).getTaskIDs ();
+    boolean found = false;
+    for (int i = 0; i < uidsInWorkflow.length && !found; i++)
+      if (uidsInWorkflow[i].equals(task.getUID().toString()))
+	found = true;
+
+    return found;
+  }
+
+  protected String uidsWorkflow (Task task) {
+    return uids (((WorkflowImpl)task.getWorkflow ()).getTaskIDs());
+  }
+
+  protected String uids (String [] array) {
+    StringBuffer buf = new StringBuffer();
+    for (int i = 0; i < array.length; i++)
+      buf.append (array[i] + ", ");
+    return buf.toString();
+  }
+
+  protected int numTasksInWorkflow (Workflow workflow) {
+    int num = 0;
+    for (Enumeration enum = workflow.getTasks (); enum.hasMoreElements(); enum.nextElement()) { num++; }
+    return num;
+  }
+
+  protected Collection findForPreps (final Task task) {
+    List units = new ArrayList();
+    if (task instanceof MPTask) {
+      Collection parents = ((MPTask)task).getComposition().getParentTasks ();
+      for (Iterator iter = parents.iterator(); iter.hasNext(); ) {
+	Task parentTask = (Task) iter.next();
+	if (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR))
+	  units.add (prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR));
+      }
+    }
+    else {
+      if (prepHelper.hasPrepNamed (task, Constants.Preposition.FOR)) {
+	units.add (prepHelper.getIndirectObject (task, Constants.Preposition.FOR));
+      }
+      else {
+	if (isWarnEnabled())
+	  warn ("no FOR prep on task " + task.getUID() + " using UID owner ");
+	units.add (task.getUID().getOwner());
+      }
+    }
+
+    if (isDebugEnabled())
+      debug ("Units for " + task.getUID() + " were " + units);
+    
+    return units;
+  }    
 }
