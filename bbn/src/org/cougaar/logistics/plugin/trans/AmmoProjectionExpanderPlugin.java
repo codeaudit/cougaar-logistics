@@ -971,8 +971,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     if (numTasksAfter == 0) {
       final Task reservedCopy = reservedTask;
-	if (isWarnEnabled ()) {
-	  warn ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
+	if (isInfoEnabled ()) {
+	  info ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
 	}
       Collection parents = blackboard.query (new UnaryPredicate () { 
 	  public boolean execute (Object obj) { 
@@ -997,8 +997,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	Disposition disposition =
 	  ldmf.createDisposition(parent.getPlan(), parent, ar);
 	publishAdd (disposition);
-	if (isWarnEnabled ())
-	  warn (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
+	if (isInfoEnabled ())
+	  info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
       }
     }
 
