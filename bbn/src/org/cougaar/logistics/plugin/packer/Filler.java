@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Vector;
 
 class Filler {
-  double MIN_DELTA = 0.0001; // 1/10 of a pound
+  double MIN_DELTA = 0.0001; // 1/10000 of a pound
 
   private static final String UNKNOWN = "UNKNOWN";
   private Sizer _sz;
