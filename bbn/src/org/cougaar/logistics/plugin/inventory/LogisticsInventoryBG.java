@@ -103,6 +103,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     private boolean compute_critical_levels = true;
     private boolean regenerate_projected_demand = false;
     private boolean recalculate_initial_level = true;
+    protected int deletionBucket = -1;
 
 
     public LogisticsInventoryBG(LogisticsInventoryPG pg) {
@@ -182,20 +183,47 @@ public class LogisticsInventoryBG implements PGDelegate {
     public void addWithdrawProjection(Task task) {
         if (!task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) { // assertion/pre-condition
             Exception exception = new Exception("Adding non-PROJECTWITHDRAW task to inventory BG");
-            logger.error(".addWithdrawProjection - adding non-PROJECTWITHDRAW task " + task +
-                         " to inventory BG.", exception);
+            if (logger.isErrorEnabled()) {
+              logger.error(".addWithdrawProjection - adding non-PROJECTWITHDRAW task " + task +
+                           " to inventory BG.", exception);
+            }
         }
 
-        // Adding projections mean changed critical levels and
-        // target levels.  Set boolean to recompute critical
-        // levels and clear targetLevelsList for CSV logging
-        compute_critical_levels = true;
-        targetLevelsList.clear();
         long start = taskUtils.getStartTime(task);
         long end = taskUtils.getEndTime(task);
         // THIS ONE
         int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
+//         targetLevelsList.clear();
+        clearTargetLevels(bucket_start);
+        // Adding projections mean changed critical levels and
+        // target levels.  Set boolean to recompute critical
+        // levels and clear targetLevelsList for CSV logging
+        compute_critical_levels = true;
+
+        // StartBucket for the inventory is the first bucket which has not seen any deletions
+        // It is possible to have a case where a projection is added to buckets in the past
+        // because the allocation results on a projection can change until the end of the
+        // task which may still be in the future.  Allow projections to be added to buckets
+        // in the past but not to buckets before the start bucket of the inventory.
+        if (bucket_start < getStartBucket()) {
+          if (bucket_end < getStartBucket()) {
+            if (logger.isErrorEnabled()) {
+              logger.error("addWithdrawProjection not adding old projection. startBucket is "+
+                          TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                          ", task "+taskUtils.taskDesc(task));
+              
+            }
+            return;
+          } else {
+            if (logger.isWarnEnabled()) {
+              logger.warn("addWithdrawProjection not adding projection to deleted buckets. "+
+                          "startBucket is "+TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                          ", task "+taskUtils.taskDesc(task));
+            }
+            bucket_start = getStartBucket();
+          }
+        }
 
         //If this new projection effects the initial level demand then recalc.
         if((bucket_start <= getInitialLevelDemandEndBucket()) &&
@@ -226,6 +254,15 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
 
         long endTime = taskUtils.getEndTime(task);
+        int bucket = convertTimeToBucket(endTime, false);
+        if (bucket < getStartBucket()) {
+          if (logger.isErrorEnabled()) {
+            logger.error("addWithdrawRequisition not adding old requisition. startBucket is "+
+                         TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                         ", task "+taskUtils.taskDesc(task));
+          }
+          return;
+        }
         Object org = TaskUtils.getCustomer(task);
         if (org != null) {
             Long lastActualSeen = (Long) customerHash.get(org);
@@ -233,7 +270,6 @@ public class LogisticsInventoryBG implements PGDelegate {
                 customerHash.put(org, new Long(endTime));
             }
         }
-        int bucket = convertTimeToBucket(endTime, false);
         while (bucket >= dueOutList.size()) {
             dueOutList.add(new ArrayList());
         }
@@ -243,7 +279,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     private void regenerateProjectedDemandList() {
         // clear out old demand
-        Arrays.fill(projectedDemandArray, 0.0);
+//         Arrays.fill(projectedDemandArray, 0.0);
+        Arrays.fill(projectedDemandArray,getStartBucket(),projectedDemandArray.length-1, 0.0);
         int size = dueOutList.size();
         Collection list;
         Iterator list_itr;
@@ -271,7 +308,14 @@ public class LogisticsInventoryBG implements PGDelegate {
 	logger.error("updateProjectedDemandList got bucket " + bucket + " for task " + task, new Throwable());
 	bucket = 0;
       }
-
+      if (bucket < getStartBucket()) {
+        if (logger.isWarnEnabled()) {
+          logger.warn("updateProjectedDemandList not adding demand for old projection. startBucket is "+
+                      TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                      ", task "+taskUtils.taskDesc(task));
+        }
+        return;
+      }
         double demand = getProjectionTaskDemand(task, bucket, start, end);
         if (add) {
             if (bucket >= projectedDemandArray.length) {
@@ -288,7 +332,6 @@ public class LogisticsInventoryBG implements PGDelegate {
     public double getProjectionTaskDemand(Task task, int bucket, long start, long end) {
         // If days_spanned is less than zero or days_spanned is greater than the bucket size
         // then the task has no demand for this bucket
-        // FCS - HOURLY : getProjectionTaskDemand calls getDaysSpanned()
         long time_spanned = getTimeSpanned(bucket, start, end);
         if ((time_spanned > 0) && !(time_spanned > bucketSize)) {
             Rate rate = taskUtils.getRate(task);
@@ -300,30 +343,71 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void removeWithdrawRequisition(Task task) {
-        for (int i = 0; i < dueOutList.size(); i++) {
-            ArrayList list = (ArrayList) dueOutList.get(i);
-            list.remove(task);
+      if (task.isDeleted()) {
+        int end_bucket = convertTimeToBucket(getEndTime(task), false);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Removing task "+taskUtils.taskDesc(task));
         }
+        setDeletionBucket(end_bucket);
+      }
+      for (int i = 0; i < dueOutList.size(); i++) {
+        ArrayList list = (ArrayList) dueOutList.get(i);
+        if (list != null) {
+          list.remove(task);
+        }
+      }
     }
 
     /** Called by SupplyExpander to remove a Withdraw task that has either
      *  been rescinded or changed.
      *  @param task  The ProjectWithdraw task being removed
      **/
+  // TODO possible gotcha - only removing the deleted task from reported end time back.
+  //      could it be hiding somewhere else in the list - TEST
     public void removeWithdrawProjection(Task task) {
+      if (task.isDeleted()) {
+        int end_bucket = convertTimeToBucket(getEndTime(task), true);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Removing task "+taskUtils.taskDesc(task));
+        }
+        setDeletionBucket(end_bucket-1);
+      }else {
         compute_critical_levels = true;
         recalculate_initial_level = true;
         regenerate_projected_demand = true;
-        ArrayList list;
-        for (int i = 0; i < dueOutList.size(); i++) {
-            list = (ArrayList) dueOutList.get(i);
-            list.remove(task);
+      }
+      ArrayList list;
+      for (int i = 0; i < dueOutList.size(); i++) {
+        list = (ArrayList) dueOutList.get(i);
+        if (list != null) {
+          list.remove(task);
         }
+      }
     }
+
+  /** Called by all methods which remove tasks from lists.
+   *  When a task is deleted, the last affected bucket back to the beginning of
+   *  list are emptied IFF the buckets have not already been emptied.
+   *  @param list Task list containing refills or withdrawals
+   *  @param bucket Last effected bucket by task deletion
+   **/ 
+  protected void setDeletionBucket(int bucket) {
+    if (bucket > deletionBucket) {
+      deletionBucket = bucket;
+    }
+  }
 
     public void addRefillRequisition(Task task) {
         long endTime = getEndTime(task);
         int bucket = convertTimeToBucket(endTime, false);
+        if (bucket < getStartBucket()) {
+          if (logger.isErrorEnabled()) {
+            logger.error("addRefillRequisition not adding old requisition. startBucket is "+
+                         TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                         ", task "+taskUtils.taskDesc(task));
+          }
+          return;
+        }
         while (bucket >= refillRequisitions.size()) {
             refillRequisitions.add(null);
         }
@@ -469,67 +553,104 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void addRefillProjection(Task task) {
-        long start = getStartTime(task);
-        long end = getEndTime(task);
-        // Test for Failed Dispositions Bug #2033
-        if (start == 0L) {
-            return;
+      long start = getStartTime(task);
+      long end = getEndTime(task);
+      // Test for Failed Dispositions Bug #2033
+      if (start == 0L) {
+        return;
+      }
+      int bucket_start = convertTimeToBucket(start, false);
+      int bucket_end = convertTimeToBucket(end, true);
+      // StartBucket for the inventory is the first bucket which has not seen any deletions
+      // It is possible to have a case where a projection is added to buckets in the past
+      // because the allocation results on a projection can change until the end of the
+      // task which may still be in the future.  Allow projections to be added to buckets
+      // in the past but not to buckets before the start bucket of the inventory.
+      if (bucket_start < getStartBucket()) {
+        if (bucket_end < getStartBucket()) {
+          if (logger.isErrorEnabled()) {
+            logger.error("addRefillProjection not adding old projection. startBucket is "+
+                         TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                         ", task "+taskUtils.taskDesc(task));
+            
+          }
+          return;
+        } else {
+          if (logger.isWarnEnabled()) {
+            logger.warn("addRefillProjection not adding projection to deleted buckets. "+
+                        "startBucket is "+TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                        ", task "+taskUtils.taskDesc(task));
+          }
+          bucket_start = getStartBucket();
         }
-        int bucket_start = convertTimeToBucket(start, false);
-        int bucket_end = convertTimeToBucket(end, true);
-
-        while (bucket_end >= refillProjections.size()) {
-            refillProjections.add(null);
+      }
+      
+      while (bucket_end >= refillProjections.size()) {
+        refillProjections.add(null);
+      }
+      for (int i = bucket_start; i < bucket_end; i++) {
+        ArrayList refills = (ArrayList) refillProjections.get(i);
+        if(refills == null) {
+          refills = new ArrayList();
+          refillProjections.set(i, refills);
         }
-        for (int i = bucket_start; i < bucket_end; i++) {
-	    ArrayList refills = (ArrayList) refillProjections.get(i);
-	    if(refills == null) {
-		refills = new ArrayList();
-		refillProjections.set(i, refills);
-	    }
-	    if(!refills.contains(task)) {
-		refills.add(task);
-	    }
+        if (!refills.contains(task)) {
+          refills.add(task);
         }
+      }
     }
 
     public void removeRefillProjection(Task task) {
+      if (task.isDeleted()) {
+        int end_bucket = convertTimeToBucket(getEndTime(task), true);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Removing task "+taskUtils.taskDesc(task));
+        }
+        setDeletionBucket(end_bucket-1);
+      }
       ArrayList refills;
       Task refillProj = null;
       for (int i=0; i < refillProjections.size(); i++) {
         refills = (ArrayList)refillProjections.get(i);
-	if(refills != null) {
-	    //	    for(j=0; j < refills.size() ;j++) {
-	    //		refillProj = (Task) refills.get(j);
-	    //	if ((refillProj != null) &&
-	    //	    (refillProj.getUID().equals(task.getUID()))) {
-	    //	    refills.remove(j);
-	    //}
-	    //}
-	    if(refills.remove(task)) {
-		if(refills.size() < 1) {
-		    refillProjections.set(i,null);
-		}
-	    }
+        if(refills != null) {
+          //	    for(j=0; j < refills.size() ;j++) {
+          //		refillProj = (Task) refills.get(j);
+          //	if ((refillProj != null) &&
+          //	    (refillProj.getUID().equals(task.getUID()))) {
+          //	    refills.remove(j);
+          //}
+          //}
+          if(refills.remove(task)) {
+            if(refills.size() < 1) {
+              refillProjections.set(i,null);
+            }
+          }
 	}
-//         int index;
+ //         int index;
 //         while ((index = refillProjections.indexOf(task)) != -1) {
 //             refillProjections.set(index, null);
 //         }
+      }
     }
-}
 
     public void removeRefillRequisition(Task task) {
-        for (int i = 0; i < refillRequisitions.size(); i++) {
-            ArrayList refills = (ArrayList) refillRequisitions.get(i);
-	    if(refills != null) {
-		if(refills.remove(task)){
-		    if(refills.size() < 1) {
-			refillRequisitions.set(i, null);
-		    }
-		}
-	    }
-	}
+      if (task.isDeleted()) {
+        int end_bucket = convertTimeToBucket(getEndTime(task), false);
+        if (logger.isErrorEnabled()) {
+          logger.debug("Removing task "+taskUtils.taskDesc(task));
+        }
+        setDeletionBucket(end_bucket);
+      }
+      for (int i = 0; i < refillRequisitions.size(); i++) {
+        ArrayList refills = (ArrayList) refillRequisitions.get(i);
+        if(refills != null) {
+          if(refills.remove(task)){
+            if(refills.size() < 1) {
+              refillRequisitions.set(i, null);
+            }
+          }
+        }
+      }
     }
 
     public List clearRefillTasks(Date now) {
@@ -659,7 +780,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public void recalculateInitialLevel() {
       double newInitialLevel = getDemandDerivedInitialLevel();
-      if(recalculate_initial_level) {
+      if((recalculate_initial_level) && (getStartBucket() == 0)) {
 	      if(newInitialLevel != -1.0) {
 	         inventoryLevelsArray[0] = newInitialLevel;
         }
@@ -677,24 +798,28 @@ public class LogisticsInventoryBG implements PGDelegate {
 	criticalLevelsArray = new double[projectedDemandArray.length];
 	// criticalLevel falls within a single bucket
 	if (criticalLevel == 1) {
+// 	    for (int i=getStartBucket(); i < projectedDemandArray.length; i++) {
 	    for (int i=0; i < projectedDemandArray.length; i++) {
 	        Ci =  getProjectedDemand(i);
 		criticalLevelsArray[i] = Ci;
 	    }
 	} else { // criticalLevel spans multiple buckets
+//           int start = (getStartBucket() > 1) ? getStartBucket() : 1;
+          int start = 1;
 	  int buckets = criticalLevel;
 	  Ci = 0.0;
-	  for (int i=1; i <= buckets; i++) {
+	  for (int i=start; i <= buckets; i++) {
 	      Ci += getProjectedDemand(i);
 	  }
 	  criticalLevelsArray[0] = Ci;
-	  for (int i=1; i < projectedDemandArray.length-buckets-1; i++) {
+	  for (int i=start; i < projectedDemandArray.length-buckets-1; i++) {
 	      Ci =  Ci - getProjectedDemand(i) + getProjectedDemand(i+buckets);
 	      if (Ci < 0.0) {
 		  Ci = 0.0;
 	      }
 	      criticalLevelsArray[i] = Ci;
 	  }
+          // TODO may want to test start bucket here too but I'm on the fence
 	  for (int i=projectedDemandArray.length-buckets-1; i < projectedDemandArray.length; i++) {
 	      Ci =  Ci - getProjectedDemand(i);
 	      if (Ci < 0.0) {
@@ -707,7 +832,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	//No critical level before we arrive in theatre.
 	//We're not supposed to order refills before we arrive in theatre.
 	int arrivalTimeBucket = convertTimeToBucket(arrivalTime,false);
-	for (int i=0; i<arrivalTimeBucket; i++) {
+	for (int i=getStartBucket(); i<arrivalTimeBucket; i++) {
 	    criticalLevelsArray[i] = 0.0;
 	}
 
@@ -726,6 +851,18 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void setLevel(int bucket, double value) {
+      if (bucket < getStartBucket()) {
+        if (bucket < 0) {
+          if (logger.isErrorEnabled()) {
+            logger.error("setLevel called with bucket "+bucket+" when startBucket is "+
+                         getStartBucket(), new Throwable());
+          }
+        }
+        if (logger.isDebugEnabled()) {
+          logger.debug("setLevel called with bucket "+bucket+" when startBucket is "+getStartBucket());
+        }
+        return;
+      }
         if (bucket >= inventoryLevelsArray.length) {
             inventoryLevelsArray = expandArray(inventoryLevelsArray, bucket);
         }
@@ -741,9 +878,16 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void setTarget(int bucket, double value) {
-      if (bucket < 0) {
-	logger.error("setTarget called with bucket " + bucket + " and value " + value, new Throwable());
-	bucket = 0;
+      if (bucket < getStartBucket()) {
+        if (bucket < 0) {
+          if (logger.isErrorEnabled()) {
+            logger.error("setTarget called with bucket " + bucket + " and value " + value, new Throwable());
+          }
+        }
+        if (logger.isDebugEnabled()) {
+          logger.debug("setTarget called with bucket "+bucket+" when startBucket is "+getStartBucket());
+        }
+        return;
       }
         // The intention of the List is to hold values for the buckets
         // that have target levels and hold nulls for those buckets that
@@ -757,12 +901,24 @@ public class LogisticsInventoryBG implements PGDelegate {
         targetLevelsList.set(bucket, new Double(value));
     }
 
-
     public void clearTargetLevels(int startBucket) {
       if (startBucket < 0) {
-	logger.error("clearTargetLevels called with startBucket " + startBucket, new Throwable());
+        if (logger.isErrorEnabled()) {
+          logger.error("clearTargetLevels called with startBucket " + startBucket, new Throwable());
+        }
 	startBucket = 0;
       }
+      if (logger.isDebugEnabled()) {
+        logger.debug(getOrgName()+" clearTargetLevels called with bucket "+
+                     TimeUtils.dateString(convertBucketToTime(startBucket))+" when start bucket is "+
+                     TimeUtils.dateString(convertBucketToTime(getStartBucket())));
+      }
+      // Below will be replaced by the following once debugging is complete
+      // startBucket = (startBucket < getStartBucket()) ? getStartBucket() : startBucket;
+      if (startBucket < getStartBucket()) {
+        startBucket = getStartBucket();
+      }
+
         // Clear target levels from the given bucket to end of array
         int len = targetLevelsList.size();
         for (int i = startBucket; i < len; i++) {
@@ -1034,6 +1190,10 @@ public class LogisticsInventoryBG implements PGDelegate {
         return startTime;
     }
 
+  public int getStartBucket() {
+    return deletionBucket+1;
+  }
+
     public ArrayList getProjWithdrawList() {
         return projWithdrawList;
     }
@@ -1127,8 +1287,12 @@ public class LogisticsInventoryBG implements PGDelegate {
         // If the task has no plan element then return the StartTime Pref
         if (pe == null) {
             return PluginHelper.getStartTime(task);
-        } 
-        return (long) PluginHelper.getStartTime(pe.getEstimatedResult());
+        }
+        AllocationResult ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
+        return (long) PluginHelper.getStartTime(ar);
     }
 
     protected long getEndTime(Task task) {
@@ -1137,8 +1301,10 @@ public class LogisticsInventoryBG implements PGDelegate {
         if (pe == null) {
             return PluginHelper.getEndTime(task);
         }
-        AllocationResult ar = pe.getEstimatedResult();
-
+        AllocationResult ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
         // make sure that we got atleast a valid reported OR estimated allocation result
         if (ar != null) {
             double resultTime;
