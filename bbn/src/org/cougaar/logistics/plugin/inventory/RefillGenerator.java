@@ -109,6 +109,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
+
       // only process Level 6 inventories
       if (! thePG.getIsLevel2()) {
 	//clear the refills
@@ -144,7 +145,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
 			   ".... The Critical Level for the refill bucket is: " +
 			   thePG.getCriticalLevel(refillBucket));
 	  }
-          if (thePG.getCriticalLevel(refillBucket) < invLevel) {
+
+          if ((thePG.getCriticalLevel(refillBucket)< invLevel)  ||
+	      (thePG.getCriticalLevel(refillBucket) == 0.0)) {
 
             thePG.setLevel(refillBucket, invLevel);
 	    if (logger.isDebugEnabled()) { 
@@ -171,6 +174,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 						anInventory, thePG, 
 						today, orderShipTime);
 	      newRefills.add(theRefill);
+      
 	    }
 	    else if (logger.isDebugEnabled()) {
 		logger.debug("Not placing a refill order of qty: " + refillQty) ;
@@ -180,12 +184,6 @@ public class RefillGenerator extends InventoryLevelGenerator {
             //set the target level to invlevel + refillQty (if we get the refill we
             //ask for we hit the target - otherwise we don't)
             thePG.setTarget(refillBucket, targetLevel);
-
-// 	    if ((debugItem.indexOf("9140002865294") > 0) && (getOrgName().indexOf("FSB") > 0)) {
-// 	      System.out.println("     bucket: "+refillBucket+", endbucket: "+reorderPeriodEndBucket+
-// 				 ", inv level : "+invLevel+", refillQty: "+refillQty+
-// 				 ", Target: "+(invLevel+refillQty));
-// 	    }
 	    if (logger.isDebugEnabled()) { 
 		double printsum = targetLevel;
   		logger.debug("\nSetting the InventoryLevel and the TargetLevel to: " + printsum);
@@ -225,10 +223,15 @@ public class RefillGenerator extends InventoryLevelGenerator {
     double targetLevel = 0;
     //    double criticalAtEndOfPeriod = Math.max(.9, thePG.getCriticalLevel(reorderPeriodEndBucket));
     double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
+    // OLD METHOD -- generates bad refill for Fresh Fruit, which shows up the Inventory Plotting bug!
+//     double demandForPeriod = calculateDemandForPeriod(thePG, 
+//                                                       refillBucket, 
+//                                                       reorderPeriodEndBucket);
+//     targetLevel = criticalAtEndOfPeriod + demandForPeriod;
     double demandForPeriod = calculateDemandForPeriod(thePG, 
                                                       refillBucket, 
-                                                      reorderPeriodEndBucket);
-    targetLevel = criticalAtEndOfPeriod + demandForPeriod;
+                                                      reorderPeriodEndBucket-1);
+    targetLevel = criticalAtEndOfPeriod + demandForPeriod + .0005;
 
     return targetLevel;
   }
