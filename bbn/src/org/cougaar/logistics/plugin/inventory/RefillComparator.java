@@ -24,8 +24,10 @@ package org.cougaar.logistics.plugin.inventory;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.NewWorkflow;
+import org.cougaar.planning.ldm.plan.WorkflowImpl;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 
 /** The Refill Comparator Module is responsible for deciding whether to
@@ -104,8 +106,37 @@ public class RefillComparator extends InventoryModule {
       // add in a check for a null - nulls and tasks are put in the
       // refill lists so make sure we don't publish null!
       if (oldRefillProj != null) {
+	// HACK! This is almost certainly not the best way to
+	// handle this. Workflow now logs a warning
+	// if you remove a task it does not have. So this hack
+	// takes 2 expensive steps to address it:
+	// 1) synchronize on the workflow to be sure it doesn't
+	// change our from under us, and 
+	// 2) enumerate through all the tasks doing a .equals
+	// However the fact that this happens so often probably indicates a problem.
+	WorkflowImpl wf = (WorkflowImpl)oldRefillProj.getWorkflow();
+	boolean taskIsThere = false;
+	synchronized (wf) {
+	  wf.setWalkingSubtasks(true);
+	  Enumeration enum = wf.getTasks();
+	  // See if oldRefillProj is in the workflow. If so, remove it
+	  while (enum.hasMoreElements()) {
+	    Task t = (Task)enum.nextElement();
+	    if (oldRefillProj.equals(t)) {
+	      taskIsThere = true;
+	      break;
+	    }
+	  }
+	  wf.setWalkingSubtasks(false);
+	} // end of synch on workflow
+	if (taskIsThere) {
 	  // remove this from the workflow's sub task list first
-	  ((NewWorkflow)oldRefillProj.getWorkflow()).removeTask(oldRefillProj);
+	  wf.removeTask(oldRefillProj);
+	} else {
+	  // why were we trying in the first place?
+	  if (logger.isDebugEnabled())
+	    logger.debug("Task not in workflow we're trying to remove it from. Task: " + oldRefillProj + ".  Workflow: " + wf, new Throwable());
+	}
 	inventoryPlugin.publishRemove(oldRefillProj);
       }
     }
