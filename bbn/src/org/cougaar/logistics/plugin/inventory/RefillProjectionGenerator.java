@@ -118,7 +118,10 @@ public class RefillProjectionGenerator extends InventoryModule {
       calculateLevelSixProjections(level6Inventories, daysOnHand,
                                    endOfLevelSix, theComparator);
     }
-    if (level2Inv != null) {
+    // if the level 2 and level 6 boundaries are = don't process
+    // and just for safety make sure the end of level 2 doesn't fall before
+    // the end of the level 6 window
+    if ((level2Inv != null) && ( endOfLevelTwo > endOfLevelSix)) {
       calculateLevelTwoProjections(level2Inv, daysOnHand, 
                                    getTimeUtils().addNDays(endOfLevelSix, 1),
                                    endOfLevelTwo, theComparator);

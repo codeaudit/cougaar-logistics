@@ -98,11 +98,12 @@ public class InventoryPlugin extends ComponentPlugin {
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
 
+  // as a default make the max the end of the oplan (225)
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
-  public final Integer LEVEL_2_MAX = new Integer(80);
+  public final Integer LEVEL_2_MAX = new Integer(225);
   public final Integer LEVEL_6_MIN = new Integer(20);
-  public final Integer LEVEL_6_MAX = new Integer(180);
-
+  public final Integer LEVEL_6_MAX = new Integer(225);
+  // then default to the end of the oplan (max)
   public final String  LEVEL_2_TIME_HORIZON = "Level2TimeHorizon";
   public final Integer LEVEL_2_TIME_HORIZON_DEFAULT = LEVEL_2_MAX;
   public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
@@ -148,9 +149,9 @@ public class InventoryPlugin extends ComponentPlugin {
 	      domainService  = null;
 	  }
       });
-    //  System.out.println("\n InventoryPlugin of type: " + supplyType +
-//  		       "in org: " + getMyOrganization().getClusterPG().getClusterIdentifier().toString() +
-//  		       " this plugin is: " + this);
+    // System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
+// 		       "in org: " + getBindingSite().getAgentIdentifier().toString() +
+//   		       " this plugin is: " + this);
   }
 
   public TaskUtils      getTaskUtils() {return taskUtils;}
@@ -203,7 +204,7 @@ public class InventoryPlugin extends ComponentPlugin {
       if (logger.isInfoEnabled ())
 	logger.info("\n InventoryPlugin " + supplyType + 
 		    " not ready to process tasks yet." +
-		    " my inv policy is: " + inventoryPolicy + " in " + getMyOrganization().getClusterPG().getClusterIdentifier().toString());
+		    " my inv policy is: " + inventoryPolicy + " in " + getMyOrganization());
       return;
     }
 	
@@ -621,12 +622,12 @@ public class InventoryPlugin extends ComponentPlugin {
 	if (type.equals(this.type)) {
 	  if (logger.isInfoEnabled()) 
 	    logger.info("Found an inventory policy for "+this.type + "agent is: " +
-			getMyOrganization().getClusterPG().getClusterIdentifier().toString());
+			getMyOrganization());
 	  return true;
 	} else {
 	  if (logger.isDebugEnabled()) 
 	    logger.debug("Ignoring type of: "+type + " in " +
-			 getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " this type is: " + 
+			 getMyOrganization() + " this type is: " + 
 			 this.type);
 	}
       }
@@ -1004,13 +1005,13 @@ public class InventoryPlugin extends ComponentPlugin {
       publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON+"_"+supplyType, rangeList,
 							 LEVEL_6_TIME_HORIZON_DEFAULT));
     } catch (Exception e) {  
-      logger.error (getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " got exception creating operating modes.", e); 
+      logger.error ("" + getMyOrganization() + " got exception creating operating modes.", e); 
     } finally {
       getBlackboardService().closeTransaction();
     }
 
     if(logger.isInfoEnabled())
-      logger.info (getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " created operating modes - " + 
+      logger.info ("" + getMyOrganization() + " created operating modes - " + 
 		   "level 2 time horizon is " + level2Horizon + 
 		   " and level 6 is " + level6Horizon);
   }
