@@ -21,21 +21,23 @@
 
 package org.cougaar.logistics.plugin.demand;
 
-import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
-import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
-import org.cougaar.logistics.plugin.inventory.AssetUtils;
-import org.cougaar.logistics.plugin.utils.ScheduleUtils;
-import org.cougaar.logistics.plugin.inventory.TaskUtils;
-import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.measure.*;
+import org.cougaar.planning.ldm.measure.Count;
+import org.cougaar.planning.ldm.measure.Duration;
+import org.cougaar.planning.ldm.measure.Mass;
+import org.cougaar.planning.ldm.measure.Rate;
+import org.cougaar.planning.ldm.measure.Scalar;
+import org.cougaar.planning.ldm.measure.Volume;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
@@ -49,7 +51,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-import java.util.Date;
 
 /**
  * <pre>
@@ -107,13 +108,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
       Asset asset = (Asset) iterator.next();
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
-      if (publishedTasks.isEmpty()) {
-        continue;
-      }
       assetList.clear();
       assetList.add(asset);
       logger.debug("Handling consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
+      if (publishedTasks.isEmpty() && newTasks.isEmpty()) {
+        continue;
+      }
       Schedule publishedTasksSched = TaskUtils.newObjectSchedule(publishedTasks);
       Schedule newTasksSched = TaskUtils.newObjectSchedule(newTasks);
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched, timespan);
