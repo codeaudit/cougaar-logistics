@@ -130,13 +130,13 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       //TODO figure out what the end is
       // AF - we should get this from the BG (PG)
       int end_bucket = 180;
-      int lastRefillBucket = thePG.getLastRefillRequisitionBucket();
+      int lastWithdrawBucket = thePG.getLastWithdrawBucket();
       // bump this one more day - otherwise we get withdraws at the boundary
-      int reorderPeriod = ((int) thePG.getReorderPeriod()) + 2;
-      if (today_bucket < lastRefillBucket) {
-        createWithdrawAllocations(today_bucket, lastRefillBucket + reorderPeriod, inventory, thePG);
+//        int reorderPeriod = ((int) thePG.getReorderPeriod()) + 2;
+      if (today_bucket < lastWithdrawBucket) {
+        createWithdrawAllocations(today_bucket, lastWithdrawBucket, inventory, thePG);
       }
-      determineProjectionAllocations(lastRefillBucket+ reorderPeriod +1, end_bucket, inventory, thePG);
+      determineProjectionAllocations(lastWithdrawBucket+1, end_bucket, inventory, thePG);
       createBestProjectionAllocations(allocatedProjections, inventory);
       allocateLateDeliveries(trailingPointersHash, inventory);
     }
