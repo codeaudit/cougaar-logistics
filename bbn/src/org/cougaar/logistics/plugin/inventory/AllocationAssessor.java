@@ -37,11 +37,7 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Role;
 
-import org.cougaar.planning.ldm.measure.Count;
-import org.cougaar.planning.ldm.measure.CountRate;
-import org.cougaar.planning.ldm.measure.Duration;
-import org.cougaar.planning.ldm.measure.FlowRate;
-import org.cougaar.planning.ldm.measure.Volume;
+import org.cougaar.planning.ldm.measure.*;
 
 
 /** AllocationAssessor module is a module of the InventoryPlugin looks at
@@ -86,12 +82,56 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     public void incrementBacklog(double bl){
       backlog=bl+backlog;
     }
-    public Collection getAllocationPhases() {
+    public Collection getDeficitAllocationPhases() {
       return allocated;
     }
 
+    //Fill in the gaps in the deficit buckets with successful buckets
+    public Collection generateAllAllocationPhases() {
+      Iterator defPhasesIt = allocated.iterator();
+      long taskStartTime = getTaskUtils().getStartTime(task);
+      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime,true);
+      long taskEndTime = getTaskUtils().getEndTime(task);
+      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime,false);
+
+      int lastBucket = taskStartBucket;
+
+      ArrayList allPhases = new ArrayList();
+
+      while(defPhasesIt.hasNext()){
+        AllocPhase currentPhase = (AllocPhase)defPhasesIt.next();
+        if(currentPhase.startBucket > lastBucket) {
+          AllocPhase betweenPhase = new AllocPhase(lastBucket,getBestBucketQty());
+          betweenPhase.endBucket = currentPhase.startBucket;
+          allPhases.add(betweenPhase);
+        }
+        allPhases.add(currentPhase);
+        lastBucket = currentPhase.endBucket;
+      }
+
+      if(lastBucket < taskEndBucket){
+        AllocPhase lastPhase = new AllocPhase(lastBucket,getBestBucketQty());
+        lastPhase.endBucket = taskEndBucket;
+        allPhases.add(lastPhase);
+      }
+      return allPhases;
+    }
+
+    public double getBestBucketQty() {
+      Rate r = getTaskUtils().getRate(task);
+      return getQuantityForDuration(r,thePG.getBucketMillis());
+    }
+
+    public double getQuantityForDuration(Rate r, long duration){
+        Duration d = Duration.newMilliseconds(duration);
+        Scalar scalar = (Scalar)r.computeNumerator(d);
+        return getTaskUtils().getDouble(scalar);
+    }
+
+
     public TaskDeficit(Task withdraw, double qty, LogisticsInventoryPG thePG){
       task = withdraw;
+      lastPhase = null;
       remainingQty=qty;
       this.thePG=thePG;
     }
@@ -99,13 +139,15 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     public void addPhase(double amount, int currentBucket){
       if (amount <= 0.0) {
         return;
-      } else if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW) &&
+      }				       
+      else if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW) &&
               lastPhase !=null &&
               currentBucket==lastPhase.endBucket &&
               amount==lastPhase.amount ) {
         // same as last phase so just extend last phase
         lastPhase.endBucket=currentBucket+1;
       } else {
+
         // add new phase
         lastPhase = new AllocPhase(currentBucket, amount);
         allocated.add(lastPhase);
@@ -194,10 +236,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Task withdraw;
 
     // DEBUG
-    //     String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    //     String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+    //   String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    //   String myItemId = inv.getItemIdentificationPG().getItemIdentification();
 
-
+    //if ((myOrgName.indexOf("592") >= 0) && (myItemId.indexOf("Level2Amm") >= 0)) {
+    //	      System.out.println("### createAlloc : Assesing allocations RIGHT ORG NAME COMBO - " + myOrgName + " - " + myItemId);
+    //}
 
 
     // loop through the buckets in the inventory
@@ -213,6 +257,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         TaskDeficit td = (TaskDeficit) tpIt.next();
         withdraw = td.getTask();
         qty = td.getRemainingQty();
+	// DEBUG Task deficits
+	//if ((myOrgName.indexOf("592-ORDCO") >= 0) && (myItemId.indexOf("Level2Am") >= 0)) {
+	//    System.out.println("### createAlloc : trying to fill a PREVIOUS deficit for task:|" + withdraw.getUID() + "| : todaylevel|" + todayLevel + "| and qty is |" + qty + "| and the date is " +  getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+	//}
         // check the level
         if (todayLevel >= qty) {
           // Can completely fill known deficit
@@ -255,6 +303,14 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           if (pe != null) inventoryPlugin.publishRemove(pe);
           TaskDeficit td = getTaskDeficit(withdraw,currentBucket,thePG);
           td.addPhase(todayLevel, currentBucket);
+	  // DEBUG Task deficits
+	  //if ((myOrgName.indexOf("592-ORDCO") >= 0) && (myItemId.indexOf("Level2Amm") >= 0)) {
+	  //    System.out.println("### createAlloc : adding a phase to a task deficit/deficit added to TRAILING POINTERS for task:|" 
+	  //+ td.getTask().getUID() +"|  todaylevel|" + todayLevel + 
+	  // "| and qty is |" + qty + "| and the date is " +  
+	  //getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+	  //}
+
           trailingPointers.add(td);
           // this task depletes the inventory level
           todayLevel = 0.0;
@@ -267,21 +323,22 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
 
     // DEBUG inventory levels
-//     if ((myOrgName.indexOf("MSB") > 0) && (myItemId.indexOf("768439") > 0)) {
-//       for(currentBucket = 1; currentBucket<180; currentBucket++){
-// 	if (thePG.convertBucketToTime(currentBucket) >= 1128643200000L) {
-// 	  System.out.println("### createAlloc Inventory Level = "+
-// 			     thePG.getLevel(currentBucket)+ " on "+
-// 			     getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
-// 	}
-//       }
-//     }
+    //if ((myOrgName.indexOf("592-ORDCO") >= 0) && (myItemId.indexOf("Level2Amm") >= 0)) {
+	//  for(currentBucket = 0; currentBucket<80; currentBucket++){
+    //if (thePG.convertBucketToTime(currentBucket) >= 1128643200000L) {
+	//System.out.println("###-" + myOrgName + 
+    //"-createAlloc Inventory Level = "+
+	//thePG.getLevel(currentBucket)+ " on ("+ currentBucket +") " +
+	//getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+	//	}
+    // }
+	//}
 
     //when we are finished, if we have things left in trailingPointers, fail them
     Iterator tpIt = trailingPointers.iterator();
     while (tpIt.hasNext()) {
       TaskDeficit td = (TaskDeficit) tpIt.next();
-      createPhasedAllocationResult(td, currentBucket, inv, thePG, false);
+      createPhasedAllocationResult(td, inv, thePG, false);
     }
   }
 
@@ -306,21 +363,28 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   }
 
   private void fillDeficit(TaskDeficit td, int currentBucket, Inventory inv, LogisticsInventoryPG thePG){
+    // DEBUG      
+      //String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+      //String myItemId = inv.getItemIdentificationPG().getItemIdentification();
     Task task = td.getTask();
     if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
       // task is completed
-      if (td.getAllocationPhases().isEmpty()) {
+      if (td.getDeficitAllocationPhases().isEmpty()) {
         createLateAllocation(task, thePG.convertBucketToTime(currentBucket), inv, thePG);
       } else {
         //BD added the td.addPhase line to make a phase to fill the deficit
         td.addPhase(td.getRemainingQty(), currentBucket);
-        createPhasedAllocationResult(td, currentBucket, inv, thePG, true);
+        createPhasedAllocationResult(td, inv, thePG, true);
       }
     } else {
       td.addPhase(td.getRemainingQty(), currentBucket);
       if ((thePG.convertBucketToTime(currentBucket + 1) >=
               (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME))) {
-        createPhasedAllocationResult(td, currentBucket, inv, thePG, true);
+	  //DEBUG
+	  //  if ((myOrgName.indexOf("592") >= 0) && (myItemId.indexOf("Level2Amm") >= 0)) {
+	  //  logger.debug("### fillDeficit : creating a phased allocation result for task: " + task.getUID() + " on the date of " + getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+	  //}
+        createPhasedAllocationResult(td, inv, thePG, true);
       }
     }
     trailingPointersRemove.add(td);
@@ -344,7 +408,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         if ((thePG.convertBucketToTime(currentBucket + 1) >=
                 (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME))) {
           // the projectWithdraw does end during this bucket
-          createPhasedAllocationResult(td, currentBucket, inv, thePG, true);
+          createPhasedAllocationResult(td, inv, thePG, true);
         }
       } else if (thePG.convertBucketToTime(currentBucket + 1) >=
               (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME)) {
@@ -358,8 +422,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
   }
 
-  public void createPhasedAllocationResult(TaskDeficit td, int currentBucket,
-                                           Inventory inv, LogisticsInventoryPG thePG,
+  public void createPhasedAllocationResult(TaskDeficit td,  
+					   Inventory inv, 
+					   LogisticsInventoryPG thePG,
                                            boolean success) {
     ArrayList phasedResults = new ArrayList();
     double rollupQty = 0;
@@ -380,22 +445,23 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       avs = new AspectValue[3];
     }
 
-    ArrayList phases = (ArrayList)td.getAllocationPhases();
+    ArrayList phases = (ArrayList)td.getDeficitAllocationPhases();
     if (phases.isEmpty()) {
       //if we totally fail
       createFailedAllocation(task, inv, thePG);
       return;
     }
-    int rollupEnd = ((AllocPhase) phases.get(phases.size() - 1)).endBucket;
-    int rollupStart = ((AllocPhase) phases.get(0)).startBucket;
-    avs[0] = AspectValue.newAspectValue(AspectType.END_TIME,
-                                        thePG.convertBucketToTime(rollupEnd));
-    avs[1] = AspectValue.newAspectValue(AspectType.START_TIME,
-                                        thePG.convertBucketToTime(rollupStart));
 
-    Iterator phasesIt = phases.iterator();
 
     if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+      int rollupEnd = ((AllocPhase) phases.get(phases.size() - 1)).endBucket;
+      int rollupStart = ((AllocPhase) phases.get(0)).startBucket;
+      avs[0] = AspectValue.newAspectValue(AspectType.END_TIME,
+                                          thePG.convertBucketToTime(rollupEnd));
+      avs[1] = AspectValue.newAspectValue(AspectType.START_TIME,
+                                          thePG.convertBucketToTime(rollupStart));
+
+      Iterator phasesIt = phases.iterator();
       //use end and qty
       while (phasesIt.hasNext()) {
         AllocPhase aPhase = (AllocPhase) phasesIt.next();
@@ -407,15 +473,27 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
       avs[1] = AspectValue.newAspectValue(AspectType.QUANTITY, rollupQty);
     } else {
-      // project withdraw use start, end and rate
-      while (phasesIt.hasNext()) {
-        AllocPhase aPhase = (AllocPhase) phasesIt.next();
-        AspectValue thisPhase[] = new AspectValue[3];
+
+      phases = (ArrayList)td.generateAllAllocationPhases();
+
+      int rollupEnd = ((AllocPhase) phases.get(phases.size() - 1)).endBucket;
+      int rollupStart = ((AllocPhase) phases.get(0)).startBucket;
+      avs[0] = AspectValue.newAspectValue(AspectType.END_TIME,
+                                          thePG.convertBucketToTime(rollupEnd));
+      avs[1] = AspectValue.newAspectValue(AspectType.START_TIME,
+                                          thePG.convertBucketToTime(rollupStart));
+
+      Iterator phasesIt = phases.iterator();
+      
+      phasesIt = phases.iterator();
+      while(phasesIt.hasNext()) {
+	      AllocPhase aPhase = (AllocPhase) phasesIt.next();
+        rollupQty = rollupQty + ((aPhase.endBucket - aPhase.startBucket) * aPhase.amount);
         // take the max endBucket for the rollup end time
         if (aPhase.endBucket > rollupEnd) { rollupEnd = aPhase.endBucket;}
         // take the min startBucket for the rollup start time
         if (aPhase.startBucket < rollupStart) { rollupStart = aPhase.startBucket;}
-        rollupQty = rollupQty + ((aPhase.endBucket - aPhase.startBucket) * aPhase.amount);
+        AspectValue thisPhase[] = new AspectValue[3];
         thisPhase[0] = AspectValue.newAspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
         thisPhase[1] = AspectValue.newAspectValue(AspectType.START_TIME, thePG.convertBucketToTime(aPhase.startBucket));
         thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis());
@@ -661,5 +739,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
     return demandRateAV;
   }
+
+
+  
 
 }
