@@ -178,11 +178,13 @@ public class RelationshipUILauncherFrame extends JFrame
         JPanel agentPanel = new JPanel();
         agentPanel.setLayout(new FlowLayout());
         agentsBox = new JComboBox();
+	agentsBox.addActionListener(this);
         agentsBox.setPreferredSize(new Dimension(200, 25));
         JLabel agentBoxLabel = new JLabel(AGENT_COMBO_LABEL);
         agentPanel.add(agentBoxLabel);
         agentPanel.add(agentsBox);
         launchButton = new JButton(LAUNCH_BUTTON_LABEL);
+	launchButton.setEnabled(false);
         launchButton.addActionListener(this);
         launchButton.setFocusPainted(false);
         launchPanel.setLayout(new GridBagLayout());
@@ -297,6 +299,17 @@ public class RelationshipUILauncherFrame extends JFrame
 	    openXML();
         } else if (e.getActionCommand().equals(LAUNCH_BUTTON_LABEL)) {
             launchRelationshipViewer();
+	}
+        else if(e.getSource() == agentsBox) {
+	    //System.out.println("Orgs box action is: " + e);
+	    currAgent = (String) agentsBox.getSelectedItem();
+	    if(currAgent.startsWith(".")) {
+		reinitializeAgentNames(currAgent);
+		launchButton.setEnabled(false);
+	    }
+	    else {
+		launchButton.setEnabled(true);
+	    }
         } else {
             System.out.println("RelationshipUILauncherFrame: Unknown Action");
         }
@@ -341,12 +354,19 @@ public class RelationshipUILauncherFrame extends JFrame
 
     protected void connectToServlet() {
         if (getAgentHostAndPort()) {
-            Vector agents = getAgentNames();
+            reinitializeAgentNames(".");
+        }
+    }
+
+    protected void reinitializeAgentNames(String agentPath) {
+	    Vector agents = getAgentNames(agentPath);
             if (agents == null) {
                 displayErrorString("Error. Was unable to retrieve agents.");
             }
             initializeComboBoxes(agents);
-        }
+	    agentsBox.removeActionListener(this);
+	    agentsBox.setSelectedItem(agentPath);
+	    agentsBox.addActionListener(this);
     }
 
     private static void displayErrorString(String reply) {
@@ -388,12 +408,12 @@ public class RelationshipUILauncherFrame extends JFrame
         return (String) agentNames.elementAt(1);
     }
 
-    public Vector getAgentNames() {
+    public Vector getAgentNames(String agentPath) {
         logger.debug("Getting Agent List");
         ConnectionHelper connection = null;
         try {
             connection = new ConnectionHelper(getURLString());
-            agentURLs = connection.getClusterIdsAndURLs(this,".");
+            agentURLs = connection.getClusterIdsAndURLs(this,agentPath);
             connection.closeConnection();
             connection = null;
             if (agentURLs == null) {
@@ -533,6 +553,7 @@ public class RelationshipUILauncherFrame extends JFrame
     }
 
     protected void setAgents(Vector agents) {
+	agentsBox.removeActionListener(this);
         agentsBox.removeAllItems();
         currAgent = null;
         if (agents != null) {
@@ -544,6 +565,7 @@ public class RelationshipUILauncherFrame extends JFrame
                 currAgent = (String) agentsBox.getItemAt(0);
             }
         }
+	agentsBox.addActionListener(this);
     }
 
     public static String formatTimeStamp(Date dateToFormat,
