@@ -22,8 +22,6 @@ package org.cougaar.logistics.plugin.trans.base;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Vector;
 
 import org.cougaar.core.adaptivity.*;
@@ -32,13 +30,12 @@ import org.cougaar.core.service.DomainService;
 
 import org.cougaar.glm.ldm.Constants;
 
-import org.cougaar.glm.ldm.asset.ForUnitPG;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.MovabilityPG;
-import org.cougaar.glm.ldm.asset.NewForUnitPG;
-import org.cougaar.glm.ldm.asset.NewPhysicalPG;
 import org.cougaar.glm.ldm.asset.PhysicalPG;
+import org.cougaar.glm.ldm.asset.NewPhysicalPG;
+import org.cougaar.glm.ldm.asset.ForUnitPG;
+import org.cougaar.glm.ldm.asset.NewForUnitPG;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
+import org.cougaar.glm.ldm.asset.GLMAsset;
 
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
@@ -75,8 +72,6 @@ import org.cougaar.glm.util.GLMPrepPhrase;
 import org.cougaar.glm.util.GLMPreference;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
-import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
-import org.cougaar.logistics.plugin.trans.NewCargoCatCodeDimensionPG;
 
 import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
 import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
@@ -347,10 +342,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
 
     Asset asset = parentTask.getDirectObject();
-    Set cccds = null;
+
     try {
       NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-      lowFiPG.setCCCDims(setDimensions (newPhysicalPG, expandAsset (asset)));
+      setDimensions (newPhysicalPG, expandAsset (asset));
       lowFiAsset.setPhysicalPG (newPhysicalPG);
     } catch (Exception e) { 
       logger.error ("problem processing " + asset, e);
@@ -469,7 +464,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * @param realAssets to sum
    * @param physicalPG to set with their aggregate dimensions
    **/
-  protected Set setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
+  protected void setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
     double length = 0.0;
     double width  = 0.0;
     double area   = 0.0;
@@ -478,39 +473,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     double mass   = 0.0;
 
     Object firstItem = realAssets.iterator().next();
-
-    PhysicalPG bulkPG     = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG oversizePG = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG outsizePG  = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    PhysicalPG nonAirPG   = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-
-    NewCargoCatCodeDimensionPG cccdBulkPG     = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdBulkPG.setDimensions(bulkPG);
-    NewCargoCatCodeDimensionPG cccdOversizePG = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdOversizePG.setDimensions(oversizePG);
-    NewCargoCatCodeDimensionPG cccdOutsizePG  = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdOutsizePG.setDimensions(outsizePG);
-    NewCargoCatCodeDimensionPG cccdNonAirPG   = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
-    cccdNonAirPG.setDimensions(nonAirPG);
-
-    if (firstItem instanceof AggregateAsset) { // there is only one item...
-      if (realAssets.size () > 1)
-	logger.error (getBindingSite().getAgentIdentifier() + " skipping some expanded items???");
-
+    
+    if (firstItem instanceof AggregateAsset) {
       AggregateAsset aggAsset = (AggregateAsset) firstItem;
       PhysicalPG itemPhysicalPG = ((GLMAsset)aggAsset.getAsset()).getPhysicalPG();
-      MovabilityPG movabilityPG = ((GLMAsset)aggAsset.getAsset()).getMovabilityPG();
-      String ccc = null;
-
-      if (movabilityPG == null)
-	logger.warn (getBindingSite().getAgentIdentifier() + " " + aggAsset.getAsset() +
-		     " was missing a movability PG, so could not determine cargo cat code.");
-      else {
-	ccc = movabilityPG.getCargoCategoryCode();
-	if (logger.isInfoEnabled ())
-	  logger.info ("Aggregate's base asset " + aggAsset.getAsset() + " ccc was " + ccc);
-      }
-
       if (itemPhysicalPG == null) {
 	if (!((GLMAsset)aggAsset.getAsset()).hasPersonPG())
 	  warn (".setDimensions - asset " + firstItem + 
@@ -523,159 +489,50 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	long quantity = aggAsset.getQuantity();
 	double q = (double)quantity;
 
-	// it doesn't make sense to display aggregate length, width, height,
-	// since they won't correspond to area and volume
+	length = itemPhysicalPG.getLength().getMeters() * q;
+	width  = itemPhysicalPG.getWidth().getMeters() * q;
+	height = itemPhysicalPG.getHeight().getMeters() * q;
 	area   = itemPhysicalPG.getFootprintArea().getSquareMeters() * q;
 	volume = itemPhysicalPG.getVolume().getCubicMeters() * q;
 	mass   = itemPhysicalPG.getMass().getKilograms() * q;
-	
-	addToDimension (ccc, q, itemPhysicalPG, cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
       }
     }
     else {
       for (Iterator iter = realAssets.iterator(); iter.hasNext();) {
 	GLMAsset asset = (GLMAsset)iter.next();
 	PhysicalPG itemPhysicalPG = asset.getPhysicalPG();
-
-	MovabilityPG movabilityPG = asset.getMovabilityPG();
-
-	String ccc = null;
-
-	if (movabilityPG == null)
-	  logger.warn (getBindingSite().getAgentIdentifier() + " " + asset +
-		       " was missing a movability PG, so could not determine cargo cat code.");
-	else {
-	  ccc = movabilityPG.getCargoCategoryCode();
-	  if (logger.isInfoEnabled ())
-	    logger.info (asset.toString () + " ccc was " + ccc);
-	}
-
 	if (itemPhysicalPG == null)
 	  error ("Asset " + asset + " doesn't have a physical PG.");
 	else {
 	  // it doesn't make sense to display aggregate length, width, height,
 	  // since they won't correspond to area and volume
+	  //	  length += itemPhysicalPG.getLength().getMeters();
+	  //	  width  += itemPhysicalPG.getWidth().getMeters();
+	  //	  height += itemPhysicalPG.getHeight().getMeters();
 	  area   += itemPhysicalPG.getFootprintArea().getSquareMeters();
 	  volume += itemPhysicalPG.getVolume().getCubicMeters();
 	  mass   += itemPhysicalPG.getMass().getKilograms();
-
-	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
 	}
       }
     }
 
+    physicalPG.setLength(new Distance (length, Distance.METERS));
+    physicalPG.setWidth (new Distance (width,  Distance.METERS));
+    physicalPG.setHeight(new Distance (height, Distance.METERS));
     physicalPG.setMass  (new Mass     (mass,   Mass.KILOGRAMS ));
+
     physicalPG.setFootprintArea(new Area (area,   Area.SQUARE_METERS));
     physicalPG.setVolume(new Volume   (volume,   Volume.CUBIC_METERS));
 
     if (isDebugEnabled()) {
       debug (".setDimensions got " + realAssets.size () + " items.");
-      debug (".setDimensions low fi dimensions : " + 
+      debug (".setDimensions low fi dimensions : l " + physicalPG.getLength () + 
+	     " w " + physicalPG.getWidth () + 
+	     " h " + physicalPG.getHeight () + 
 	     " m " + physicalPG.getMass () + 
 	     " a " + physicalPG.getFootprintArea () + 
 	     " v " + physicalPG.getVolume ());
     }
-
-    Set cccds = new HashSet ();
-    if (cccdBulkPG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdBulkPG);
-    if (cccdOversizePG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdOversizePG);
-    if (cccdOutsizePG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdOutsizePG);
-    if (cccdNonAirPG.getDimensions().getFootprintArea () != null)
-      cccds.add (cccdNonAirPG);
-
-    return cccds;
-  }
-
-  protected void addToDimension (String ccc, 
-				 double quantity,
-				 PhysicalPG itemPhysicalPG,
-				 CargoCatCodeDimensionPG cccdBulkPG,
-				 CargoCatCodeDimensionPG cccdOversizePG,
-				 CargoCatCodeDimensionPG cccdOutsizePG,
-				 CargoCatCodeDimensionPG cccdNonAirPG) {
-    NewPhysicalPG whichPG = null;
-    NewCargoCatCodeDimensionPG whichCCCDimPG = null;
-    NewPhysicalPG bulkPG  = (NewPhysicalPG) cccdBulkPG.getDimensions();
-    NewPhysicalPG oversizePG = (NewPhysicalPG) cccdOversizePG.getDimensions();
-    NewPhysicalPG outsizePG  = (NewPhysicalPG) cccdOutsizePG.getDimensions();
-    NewPhysicalPG nonAirPG   = (NewPhysicalPG) cccdNonAirPG.getDimensions();
-
-    if (bulkPG == null) {
-      logger.error ("bulk Physical PG is null???");
-    }
-    
-    switch (ccc.charAt(1)) {
-    case '0': // non-air
-      whichPG = (NewPhysicalPG) nonAirPG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdNonAirPG;
-      break;
-    case '1': // outsized
-      whichPG = (NewPhysicalPG) outsizePG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdOutsizePG;
-      break;
-    case '2': // oversized
-      whichPG = (NewPhysicalPG) oversizePG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdOversizePG;
-      break;
-    case '3': // bulk
-      whichPG = (NewPhysicalPG) bulkPG;
-      whichCCCDimPG = (NewCargoCatCodeDimensionPG) cccdBulkPG;
-      break;
-    default:
-      logger.warn ("Could not determine transportation category from cargo cat code " + ccc);
-      break;
-    }
-
-    if (whichPG == null) {
-      logger.error ("Could not set physical PG?");
-    }
-
-    String pgCCCString = whichCCCDimPG.getCargoCatCode();
-
-    if (pgCCCString == null)
-      whichCCCDimPG.setCargoCatCode(ccc);
-    else if (!pgCCCString.equals(ccc)) {
-      char [] pgCCC = pgCCCString.toCharArray();
-      char [] newCCC = new char [3];
-      char [] cccArray = ccc.toCharArray ();
-
-      if (cccArray[0] != pgCCC[0])
-	newCCC[0]='X';
-      else 
-	newCCC[0]=pgCCC[0];
-
-      if (cccArray[1] != pgCCC[1])
-	newCCC[0]='X';
-      else 
-	newCCC[0]=pgCCC[1];
-
-      if (cccArray[2] != pgCCC[2])
-	newCCC[0]='X';
-      else 
-	newCCC[0]=pgCCC[2];
-
-      whichCCCDimPG.setCargoCatCode(new String(newCCC));
-    }
-
-    double area = 0.0d;
-    double volume = 0.0d;
-    double mass = 0.0d;
-
-    if (whichPG.getFootprintArea () != null) {
-      area   = whichPG.getFootprintArea().getSquareMeters ();
-      volume = whichPG.getVolume().getCubicMeters ();
-      mass   = whichPG.getMass().getKilograms ();
-    } 
-
-    whichPG.setFootprintArea (new Area (area +
-					itemPhysicalPG.getFootprintArea().getSquareMeters() * quantity, Area.SQUARE_METERS));
-    whichPG.setVolume (new Volume (volume +
-				   itemPhysicalPG.getVolume().getCubicMeters() * quantity, Volume.CUBIC_METERS));
-    whichPG.setMass (new Mass (mass +
-			       itemPhysicalPG.getMass().getKilograms() * quantity, Mass.KILOGRAMS));
   }
 
   /** 

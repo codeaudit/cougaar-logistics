@@ -20,18 +20,14 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data.prototypes;
 
+import org.cougaar.planning.servlet.data.xml.*;
+
+import java.io.Writer;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.Writer;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-
-import org.cougaar.planning.servlet.data.xml.*;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import org.xml.sax.Attributes;
 
@@ -53,14 +49,12 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
   ////////////
 
   protected Map prototypes;
-  protected Set cccEntries;
 
   //Constructors:
   ///////////////
 
   public PrototypesData(){
     prototypes = new HashMap(89);
-    cccEntries = new HashSet(89);
   }
 
   //Members:
@@ -68,9 +62,6 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
 
   public int numPrototypes(){
     return prototypes.size();
-  }
-  public int numCCCEntries(){
-    return cccEntries.size();
   }
 
   public Prototype getPrototype(String uid){
@@ -89,24 +80,8 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
     */
   }
 
-  public void addCCCEntry(CargoCatCode ccc){
-    cccEntries.add (ccc);
-
-    /*
-    System.out.println (this + " - Known cccs :");
-    for (Iterator iter = cccEntries.iterator(); iter.hasNext (); ) {
-      Object cccEntry = iter.next();
-      System.out.println ("\t" + cccEntry);
-    }
-    */
-  }
-
   public Iterator getPrototypesIterator(){
     return prototypes.values().iterator();
-  }
-
-  public Iterator getCCCEntriesIterator(){
-    return cccEntries.iterator();
   }
 
   //XMLable members:
@@ -123,15 +98,6 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
     while(protoIter.hasNext()){
       Prototype proto = (Prototype)protoIter.next();
       proto.toXML(w);
-    }
-
-    Iterator iter = getCCCEntriesIterator();
-    while(iter.hasNext()){
-      Collection stuff = (Collection)iter.next();
-      for (Iterator iter2 = stuff.iterator (); iter2.hasNext(); ) {
-	CargoCatCode ccc = (CargoCatCode)iter2.next();
-	ccc.toXML(w);
-      }
     }
 
     w.cltagln(NAME_TAG);
@@ -180,10 +146,6 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
     throws UnexpectedXMLException{
     if(obj instanceof Prototype){
       addPrototype((Prototype)obj);
-    }
-    else if(obj instanceof CargoCatCode) {
-      CargoCatCode ccc = (CargoCatCode)obj;
-      addCCCEntry(ccc);
     }else{
       throw new UnexpectedXMLException("Unknown object:" + name + ":"+obj);
     }

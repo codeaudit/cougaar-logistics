@@ -64,15 +64,14 @@ public abstract class AssetDetailRequest{
     if (debug) 
       System.out.println ("AssetDetailRequest.getAssetDetails called.");
 
-    String sql = getSql(dbConfig,runID);
     try{
       Statement s = dbConfig.getConnection().createStatement();
-      ResultSet rs= s.executeQuery(sql);
+      ResultSet rs= s.executeQuery(getSql(dbConfig,runID));
       while(rs.next()){
 	ret.add(produceAssetDetails(rs));
       }
     }catch(SQLException e){
-      System.err.println("SQL Exception getting Asset Details: "+e + "\nSql was:\n" + sql);
+      System.err.println("SQL Exception getting Asset Details: "+e);
     }
     return ret;
   }
@@ -90,31 +89,6 @@ public abstract class AssetDetailRequest{
     ad.setValueAt(new Double(rs.getDouble(9)),AssetDetails.WIDTH);
     ad.setValueAt(new Double(rs.getDouble(10)),AssetDetails.HEIGHT);
     ad.setValueAt(new Double(rs.getDouble(11)),AssetDetails.DEPTH);
-    ad.setValueAt(new Double(rs.getDouble(12)),AssetDetails.AREA);
-    ad.setValueAt(new Double(rs.getDouble(13)),AssetDetails.VOLUME);
-
-    String ccc =rs.getString(14);
-    ad.setValueAt(ccc,AssetDetails.CCC);
-
-    String transport;
-    switch (ccc.charAt(1)) {
-    case '0': // non-air
-      transport = "Non-Air";
-      break;
-    case '1': // outsized
-      transport = "Outsized";
-      break;
-    case '2': // oversized
-      transport = "Oversized";
-      break;
-    case '3': // bulk
-      transport = "Bulk";
-      break;
-    default:
-      transport = "Unknown";
-    }
-    ad.setValueAt(transport,AssetDetails.TRANSPORT);
-
     return ad;
   }
 

@@ -105,8 +105,6 @@ public class PrepareDerivedTables extends PrepareDBTables{
 						DGPSPConstants.COL_WIDTH,
 						DGPSPConstants.COL_HEIGHT,
 						DGPSPConstants.COL_DEPTH,
-						DGPSPConstants.COL_AREA,
-						DGPSPConstants.COL_VOLUME,
 						DGPSPConstants.COL_IS_LOW_FIDELITY};
 
   public static final String[] CARGO_TYPE_INDICES={DGPSPConstants.COL_OWNER,
@@ -524,10 +522,6 @@ public class PrepareDerivedTables extends PrepareDBTables{
     sb.append(" DOUBLE, ");
     sb.append(DGPSPConstants.COL_DEPTH);
     sb.append(" DOUBLE, ");
-    sb.append(DGPSPConstants.COL_AREA);
-    sb.append(" DOUBLE, ");
-    sb.append(DGPSPConstants.COL_VOLUME);
-    sb.append(" DOUBLE, ");
     sb.append(DGPSPConstants.COL_IS_LOW_FIDELITY);
     sb.append(" VARCHAR(5) ");
     sb.append(")");
@@ -541,7 +535,6 @@ public class PrepareDerivedTables extends PrepareDBTables{
     String conveyancePrototypeTable = getTableName(DGPSPConstants.CONV_PROTOTYPE_TABLE);
     String itinTable = getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE);
     String cLegTable = getTableName(DGPSPConstants.CONVEYED_LEG_TABLE);
-    String cccDimTable = getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE);
     
     String instanceOwner      = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
     String instanceProto      = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -558,14 +551,10 @@ public class PrepareDerivedTables extends PrepareDBTables{
     String self2Proto        = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
     String self2ParentProto  = "self2" + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
 
-    String cccDimWeight   = DGPSPConstants.COL_WEIGHT;
-    String cccDimWidth    = DGPSPConstants.COL_WIDTH;
-    String cccDimHeight   = DGPSPConstants.COL_HEIGHT;
-    String cccDimDepth    = DGPSPConstants.COL_DEPTH;
-    String cccDimArea     = DGPSPConstants.COL_AREA;
-    String cccDimVolume   = DGPSPConstants.COL_VOLUME;
-    String cccDimProto    = cccDimTable + "." + DGPSPConstants.COL_PROTOTYPEID;
-
+    String prototypeWeight = "self1." + DGPSPConstants.COL_WEIGHT;
+    String prototypeWidth = "self1." + DGPSPConstants.COL_WIDTH;
+    String prototypeHeight = "self1." + DGPSPConstants.COL_HEIGHT;
+    String prototypeDepth = "self1." + DGPSPConstants.COL_DEPTH;
     String prototypeLowFi = "self1." + DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String ciConvID      = conveyanceInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
@@ -591,18 +580,16 @@ public class PrepareDerivedTables extends PrepareDBTables{
       typeID + ", " + nomen + ", " + proto + 
       ", " + instanceAggNumber + ", " +
       ciPrototypeID + ", " + ciConvID + ", " + instanceID + 
-      ",\n " + cccDimWeight +", " + cccDimWidth +", " + cccDimHeight +
-      ",\n " + cccDimDepth + ", " + cccDimArea + ", " + cccDimVolume + ", " + prototypeLowFi + 
+      ",\n " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth + ", " + prototypeLowFi + 
       "\nfrom "  + assetInstanceTable + ", " + protoTables + ", " + 
       conveyanceInstanceTable + ", " +
-      itinTable + ", " + cLegTable + ", " +
-      cccDimTable + 
+      itinTable + ", " + cLegTable +
+      
       "\nwhere "+
       instanceID + " = " + itinID +
       "\nand " + itinLeg + " = " + cLegID +
       "\nand " + cLegConvID + " = " + ciConvID +
       "\nand " + instanceProto + " = " + self1Proto + 
-      "\nand " + cccDimProto + " = " + self1Proto + 
       "\nand " + protocolTest ;//+
       //      " group by " + typeID + ((aggregateByUnit) ? ", " + instanceOwner : "");
 

@@ -36,7 +36,7 @@ import java.sql.SQLException;
  *
  * @since 4/27/01
  **/
-public class LegAssetDetailRequest extends AssetAssetDetailRequest{
+public class LegAssetDetailRequest extends AssetDetailRequest{
 
   //Constants:
   ////////////
@@ -48,33 +48,60 @@ public class LegAssetDetailRequest extends AssetAssetDetailRequest{
   //Constructors:
   ///////////////
   public LegAssetDetailRequest(String legID){
-    super ("");
     this.legID=legID;
   }
 
   //Members:
   //////////
 
-  protected String getFrom (int runID) {
+  protected String getSql(DatabaseConfig dbConfig, int runID){
     String itinTable=getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE,runID);
+    String aiTable=getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,runID);
+    String apTable=getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,runID);
 
-    return super.getFrom (runID) + ", "+itinTable+ " itin";
-  } 
+    //For select:
+    String aiOwner="ai."+DGPSPConstants.COL_OWNER;
+    String apType="ap."+DGPSPConstants.COL_ALP_TYPEID;
+    String apNomen="ap."+DGPSPConstants.COL_ALP_NOMENCLATURE;
+    String aiName="ai."+DGPSPConstants.COL_NAME;
+    String aiAgg="ai."+DGPSPConstants.COL_AGGREGATE;
+    String apAClass="ap."+DGPSPConstants.COL_ASSET_CLASS;
+    String apAType="ap."+DGPSPConstants.COL_ASSET_TYPE;
+    String apWeight="ap."+DGPSPConstants.COL_WEIGHT;
+    String apWidth="ap."+DGPSPConstants.COL_WIDTH;
+    String apHeight="ap."+DGPSPConstants.COL_HEIGHT;
+    String apDepth="ap."+DGPSPConstants.COL_DEPTH;
 
-  protected String getWhere (int runID) {
+    //For Where:
+    String itinLegID="itin."+DGPSPConstants.COL_LEGID;
+    String itinAssetID="itin."+DGPSPConstants.COL_ASSETID;
     String aiAssetID="ai."+DGPSPConstants.COL_ASSETID;
     String aiProtoID="ai."+DGPSPConstants.COL_PROTOTYPEID;
     String apProtoID="ap."+DGPSPConstants.COL_PROTOTYPEID;
-    String itinLegID="itin."+DGPSPConstants.COL_LEGID;
-    String itinAssetID="itin."+DGPSPConstants.COL_ASSETID;
-    String cccDimTable=getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,runID);
-    String cccDimProtoID=cccDimTable +"."+DGPSPConstants.COL_PROTOTYPEID;
 
-    return 
-      itinLegID     +"='"+legID     + "'\n and " + 
-      itinAssetID   +"=" +aiAssetID +  "\n and " + 
-      aiProtoID     +"=" +apProtoID +  "\n and " +
-      cccDimProtoID +"=" +apProtoID;
+    String sql="select "+
+      aiOwner+", "+
+      apType+", "+
+      apNomen+", "+
+      aiName+", "+
+      aiAgg+", "+
+      apAClass+", "+
+      apAType+", "+
+      apWeight+", "+
+      apWidth+", "+
+      apHeight+", "+
+      apDepth+
+      " from "+
+      itinTable+" itin, "+
+      aiTable+" ai, "+   
+      apTable+" ap "+
+      " where "+
+      itinLegID+"='"+legID+"'\nand "+
+      itinAssetID+"="+aiAssetID+"\nand "+
+      aiProtoID+"="+apProtoID + "\n" +
+      "order by " + aiOwner +"," +apType+","+apNomen+","+aiName;
+
+      return sql;
   }
 
   //InnerClasses:

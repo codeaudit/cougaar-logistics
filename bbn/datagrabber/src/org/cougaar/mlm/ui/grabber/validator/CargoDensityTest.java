@@ -67,6 +67,29 @@ public class CargoDensityTest extends CargoDimensionTest {
     return RESULT_WARNING;
   }
 
+  /**
+   * Get the result based on the table.
+   * If all the rows are the info rows (start with the bold tag)
+   * then it's not a warning.
+   **/
+  protected int determineResult(Statement s, int run) throws SQLException {
+    String sql = "SELECT COUNT(*) FROM "+getTableName(run);
+    ResultSet rs=null;
+    
+    sql = getQuery(run);
+    rs=s.executeQuery(sql);
+
+    boolean allInfoRows = true;
+    while(rs.next() && allInfoRows){
+      String nomenclature = rs.getString(1);
+      allInfoRows = !nomenclature.startsWith ("<b>");
+    }
+    if (!allInfoRows)
+      return failureLevel();
+
+    return RESULT_OK;
+  }
+
   /**for gui**/
   public String getDescription(){
     return "Cargo Density Test (cargo denser than lead)";
@@ -96,19 +119,18 @@ public class CargoDensityTest extends CargoDimensionTest {
 	double width = rs.getDouble (3);
 	double depth = rs.getDouble (4);
 	// weight is in grams, we want short tons = 2000 pounds
-	double area = rs.getDouble (5);
-	double volume   = rs.getDouble (6);
-	double weight = rs.getDouble (7);
+	double weight = rs.getDouble (5);
 	double kilograms  = weight/1000.0;
 	double metricTons = kilograms/1000.0;
 	double shortTons = (metricTons)*METRIC_TO_SHORT_TON;
+	double volume = height*width*depth; // meters
 
 	if (kilograms/volume > DENSITY_OF_LEAD)
-	  insertRow(l,s,run,nomenclature,height,width,depth,area,volume,shortTons);
+	  insertRow(l,s,run,nomenclature,height,width,depth,volume,shortTons);
       }    
-      insertRow(l,s,run,"<b></b>",0,0,0,0,0,0);
-      insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
-      insertRow(l,s,run,"<b>LEAD</b>",0,0,0,0,1,(DENSITY_OF_LEAD/1000)*METRIC_TO_SHORT_TON);
+      insertRow(l,s,run,"<b></b>",0,0,0,0,0);
+      insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0);
+      insertRow(l,s,run,"<b>LEAD</b>",0,0,0,1,(DENSITY_OF_LEAD/1000)*METRIC_TO_SHORT_TON);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "CargoProfileTest.insertResults - Problem walking results.",sqle);

@@ -173,8 +173,6 @@ public class FilterQuery extends TPFDDQuery {
 	double width     = rs.getDouble (8);
 	double height    = rs.getDouble (9);
 	double depth     = rs.getDouble (10);
-	double area      = rs.getDouble (11);
-	double volume    = rs.getDouble (12);
 
 	String nameKey = nomen;
 	if (aggregateByUnit)
@@ -187,7 +185,7 @@ public class FilterQuery extends TPFDDQuery {
 	AggregateCargoType aggTypeNode = (AggregateCargoType)protoToNode.get(key);
 	if(aggTypeNode == null){
 	  aggTypeNode = createCargoType (generator, proto, type, nomen, aggNumber, aggNumber, owner,
-					 weight, width, height, depth, area, volume);
+					 weight, width, height, depth);
 	  nameToNode.put  (nameKey, aggTypeNode);
 	  protoToNode.put (key, aggTypeNode);
 	  protoToName.put (key, nameKey);
@@ -381,9 +379,7 @@ public class FilterQuery extends TPFDDQuery {
 							       prototypeNode.getWeight(),
 							       prototypeNode.getWidth(),
 							       prototypeNode.getHeight(),
-							       prototypeNode.getDepth(),
-							       prototypeNode.getArea(),
-							       prototypeNode.getVolume());
+							       prototypeNode.getDepth());
 	    cargoTree.addNode(cargoTree.getRoot().getUID(), branchingNode);
 	
 	    if (debug) 
@@ -712,7 +708,7 @@ public class FilterQuery extends TPFDDQuery {
 						int aggNumber, 
 						int totalAggNumber,
 						String unit,
-						double weight, double width, double height, double depth, double area, double volume) {
+						double weight, double width, double height, double depth) {
     if (debug)
       System.out.println("FilterQuery.createCargoType() - proto=" + proto + 
 			 " type=" + type + 
@@ -731,8 +727,6 @@ public class FilterQuery extends TPFDDQuery {
     cargoType.setWidth  (width);
     cargoType.setHeight (height);
     cargoType.setDepth  (depth);
-    cargoType.setArea   (area);
-    cargoType.setVolume (volume);
 
     String longName = nomen; // shows on mouseover in tpfdd view
 	
@@ -757,17 +751,13 @@ public class FilterQuery extends TPFDDQuery {
 
     String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
     String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;
-    String cccDimTable = DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE + "_" + recentRun;
     String prototypeProto = assetProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
-    String cccDimProto = cccDimTable + "." + DGPSPConstants.COL_PROTOTYPEID;
     String prototypeParentProto = assetProtoTable + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
     String prototypeNomen = assetProtoTable + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String cccDimWeight = DGPSPConstants.COL_WEIGHT;
-    String cccDimWidth  = DGPSPConstants.COL_WIDTH;
-    String cccDimHeight = DGPSPConstants.COL_HEIGHT;
-    String cccDimDepth  = DGPSPConstants.COL_DEPTH;
-    String cccDimArea   = DGPSPConstants.COL_AREA;
-    String cccDimVolume = DGPSPConstants.COL_VOLUME;
+    String prototypeWeight = DGPSPConstants.COL_WEIGHT;
+    String prototypeWidth = DGPSPConstants.COL_WIDTH;
+    String prototypeHeight = DGPSPConstants.COL_HEIGHT;
+    String prototypeDepth = DGPSPConstants.COL_DEPTH;
 
     String instanceID        = assetInstanceTable + "." + DGPSPConstants.COL_ASSETID;
     String instanceProto     = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -790,10 +780,9 @@ public class FilterQuery extends TPFDDQuery {
 
     String sqlQuery = 
       "select distinct " + instanceID + ", " + protoColToUse + ", " + instanceName + "," + instanceAggNumber + "," +
-      orgNamesName + ", " + prototypeNomen +",\n" + 
-      cccDimWeight +", " + cccDimWidth +", " + cccDimHeight +", " + cccDimDepth +", " + cccDimArea +", " + cccDimVolume +
+      orgNamesName + ", " + prototypeNomen +", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +
       "\nfrom "  + assetInstanceTable + ", " + assetProtoTable + ", " + orgNames + ", " + assetItineraryTable + ", " +
-      conveyedLegTable + ", " + cccDimTable +
+      conveyedLegTable +
       filterClauses.getTables   (recentRun, false, false) + "\n" +
       filterClauses.getWhereSql (instanceOwner, convProtoProtoID, convInstanceID, protoColToUse, instanceID) +
       filterClauses.getJoins    (recentRun) +
@@ -802,7 +791,6 @@ public class FilterQuery extends TPFDDQuery {
       "\nand " + prototypeParentProto + protoTest +
       "\nand " + instanceID + " = " + itinID + 
       "\nand " + itinLeg + " = " + cLegID +
-      "\nand " + prototypeProto + " = " + cccDimProto +
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
     if (debug) 
@@ -937,11 +925,9 @@ public class FilterQuery extends TPFDDQuery {
     String nomen   = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String proto   = PrepareDerivedTables.COL_INST_PROTOTYPEID;
     String prototypeWeight = DGPSPConstants.COL_WEIGHT;
-    String prototypeWidth  = DGPSPConstants.COL_WIDTH;
+    String prototypeWidth = DGPSPConstants.COL_WIDTH;
     String prototypeHeight = DGPSPConstants.COL_HEIGHT;
-    String prototypeDepth  = DGPSPConstants.COL_DEPTH;
-    String prototypeVolume = DGPSPConstants.COL_VOLUME;
-    String prototypeArea   = DGPSPConstants.COL_AREA;
+    String prototypeDepth = DGPSPConstants.COL_DEPTH;
     
     String instanceOwner  = DGPSPConstants.COL_OWNER;
     String instanceID     = DGPSPConstants.COL_ASSETID;
@@ -1149,18 +1135,18 @@ public class FilterQuery extends TPFDDQuery {
 	  continue;
 
 	Node instanceNode = createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen,
-						 weight, width, height, depth, width*depth, width*depth*height, proto, container);		
+						 weight, width, height, depth, proto, container);		
 	cargoTree.addNode (cargoTree.getRoot(), instanceNode);
 	instanceToNode.put (id, instanceNode);
       }
       if (debug) 
-	System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - total rows for instances " + rows);
+	System.out.println ("TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
     } catch (SQLException e) {
-      System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - SQLError : " + e);
+      System.out.println ("TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - " + 
+	  System.out.println ("TPFDDQuery.attachInstancesFromResult - " + 
 			      "closing result set, got sql error : " + e); 
 	}
       }

@@ -41,7 +41,7 @@ import org.cougaar.glm.ldm.asset.*;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.util.AssetUtil;
 import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
-import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetPGImpl;
 
 import org.cougaar.mlm.ui.psp.transit.data.instances.*;
 import org.cougaar.mlm.ui.psp.transit.data.legs.*;
@@ -732,7 +732,7 @@ typical_case:
 
       // set prototype id
       toCargo.prototypeUID = 
-        registerCargoPrototype(toReg, singleAsset, isLowFiCargo, lowFiUID);
+        registerCargoPrototype(toReg, singleAsset, isLowFiCargo);
 
       // set the item id == "bumper number"
       ItemIdentificationPG itemPG = 
@@ -772,8 +772,7 @@ typical_case:
   private static String registerCargoPrototype(
 					       Registry toReg, 
 					       Asset instAsset,
-					       boolean isLowFiCargo,
-					       LowFidelityAssetPG lowFiAssetPG) {
+					       boolean isLowFiCargo) {
 
     // given an "instance" of a cargoAsset, register it with
     //   it's "template" (== "prototype").
@@ -839,13 +838,6 @@ typical_case:
 	toProt.UID = protId;
 	toProt.isLowFidelity = isLowFiCargo;
 
-	double weight = 0.0;
-	double width  = 0.0;
-	double height = 0.0;
-	double depth  = 0.0;
-	double area   = 0.0;
-	double volume = 0.0;
-
 	// toProt.parentUID is null, since we're using the prototype
 	//
 	// asset class (CLASS_I, CLASS_IV, etc)
@@ -863,32 +855,22 @@ typical_case:
 	  // weight in grams
 	  Mass protWeight = protPhysPG.getMass();
 	  if (protWeight != null) {
-	    weight = protWeight.getGrams();
+	    toProt.weight = protWeight.getGrams();
 	  }
 	  // width in meters
 	  Distance protWidth = protPhysPG.getWidth();
 	  if (protWidth != null) {
-	    width = protWidth.getMeters();
+	    toProt.width = protWidth.getMeters();
 	  }
 	  // height in meters
 	  Distance protHeight = protPhysPG.getHeight();
 	  if (protHeight != null) {
-	    height = protHeight.getMeters();
+	    toProt.height = protHeight.getMeters();
 	  }
 	  // depth in meters
 	  Distance protDepth = protPhysPG.getLength();
 	  if (protDepth != null) {
-	    depth = protDepth.getMeters();
-	  }
-	  // area in square meters
-	  Area protArea = protPhysPG.getFootprintArea();
-	  if (protArea != null) {
-	    area = protArea.getSquareMeters();
-	  }
-	  // volume in cubic meters
-	  Volume protVolume = protPhysPG.getVolume();
-	  if (protVolume != null) {
-	    volume = protVolume.getCubicMeters();
+	    toProt.depth = protDepth.getMeters();
 	  }
 	}
 	if (protTypeIdPG != null) {
@@ -902,12 +884,6 @@ typical_case:
 
 	// register the cargo prototype
 	toReg.cargoPrototypes.addPrototype(toProt);
-	if (lowFiAssetPG != null) {
-	  if (lowFiAssetPG.getCCCDims() != null) // not always applied...?
-	    registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
-	}
-	else
-	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, width, height, depth, weight, area, volume, (GLMAsset)protAsset));
       }
 
       // return the id
@@ -927,14 +903,11 @@ typical_case:
     int protAssetType = 0;
     String protAlpTypeId = null;
     String protNomenclature = null;
-
     double protWeight = 0.0;
-    double protWidth  = 0.0;
+    double protWidth = 0.0;
     double protHeight = 0.0;
-    double protDepth  = 0.0;
-    double protArea   = 0.0;
-    double protVolume = 0.0;
-
+    double protDepth = 0.0;
+    //
     if (protAsset != null) {
       protAssetClass = getAssetClass(protAsset);
       protAssetType = 
@@ -969,16 +942,6 @@ typical_case:
 	  if (depth != null) {
 	    protDepth = depth.getMeters();
 	  }
-	  // area in square meters
-	  Area area = protPhysPG.getFootprintArea();
-	  if (area != null) {
-	    protArea = area.getSquareMeters();
-	  }
-	  // volume in cubic meters
-	  Volume volume = protPhysPG.getVolume();
-	  if (volume != null) {
-	    protVolume = volume.getCubicMeters();
-	  }
 	}
       }
 
@@ -998,6 +961,10 @@ typical_case:
 	toProt.assetType = protAssetType;
 	toProt.alpTypeID = protAlpTypeId;
 	toProt.nomenclature = protNomenclature;
+	toProt.weight = protWeight;
+	toProt.width = protWidth;
+	toProt.height = protHeight;
+	toProt.depth = protDepth;
 
 	// register the cargo prototype
 	if (DEBUG)
@@ -1005,10 +972,6 @@ typical_case:
 			      ".registerCargoPrototype - register proto proto for "+instAsset.getUID());
 
 	toReg.cargoPrototypes.addPrototype(toProt);
-	if (lowFiAssetPG != null)
-	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
-	else
-	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, protWidth, protHeight, protDepth, protWeight, protArea, protVolume, (GLMAsset)protAsset));
       }
 
       // don't return the protId just yet!
@@ -1023,8 +986,6 @@ typical_case:
     double instWidth = 0.0;
     double instHeight = 0.0;
     double instDepth = 0.0;
-    double instArea = 0.0;
-    double instVolume = 0.0;
     //
     instAssetClass = getAssetClass(instAsset);
     instAssetType = 
@@ -1063,16 +1024,6 @@ typical_case:
 	Distance depth = instPhysPG.getLength();
 	if (depth != null) {
 	  instDepth = depth.getMeters();
-	}
-	// area in square meters
-	Area area = instPhysPG.getFootprintArea();
-	if (area != null) {
-	  instArea = area.getSquareMeters();
-	}
-	// volume in cubic meters
-	Volume volume = instPhysPG.getVolume();
-	if (volume != null) {
-	  instVolume = volume.getCubicMeters();
 	}
       }
     }
@@ -1122,69 +1073,22 @@ typical_case:
 	toProt.assetType = instAssetType;
 	toProt.alpTypeID = instAlpTypeId;
 	toProt.nomenclature = instNomenclature;
+	toProt.weight = instWeight;
+	toProt.width = instWidth;
+	toProt.height = instHeight;
+	toProt.depth = instDepth;
 
 	// register the cargo "instance" prototype
 	if (DEBUG)
 	  System.out.println (Thread.currentThread () + ".registerCargoPrototype - register Instance proto for "+ instAsset.getUID());
 
 	toReg.cargoPrototypes.addPrototype(toProt);
-	if (lowFiAssetPG != null)
-	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
-	else
-	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, instWidth, instHeight, instDepth, instWeight, instArea, instVolume, (GLMAsset)protAsset));
       }
       else if (DEBUG)
 	System.out.println (Thread.currentThread () + ".registerCargoPrototype - ignoring instId " + instId);
 
       // return the instance id
       return instId;
-    }
-  }
-
-  protected static CargoCatCode getCCCDim (String uid, double width, double height, double depth, double weight, double area, double volume, GLMAsset alpProt) {
-    CargoCatCode ccc = new CargoCatCode ();
-    ccc.UID    = uid;
-    ccc.width  = width;
-    ccc.height = height;
-    ccc.depth  = depth;
-    ccc.weight = weight;
-    ccc.area   = area;
-    ccc.volume = volume;
-
-    MovabilityPG movabilityPG = alpProt.getMovabilityPG();
-    String cccString = "XXX";
-    
-    if (movabilityPG == null)
-      System.out.println (Thread.currentThread () + ".registerCargoPrototype - no movability pg for asset " + alpProt);
-    else {
-      cccString = movabilityPG.getCargoCategoryCode();
-      if (DEBUG)
-	System.out.println ("Asset " + alpProt + " ccc was " + cccString);
-    }
-
-    ccc.cargoCatCode = cccString;
-
-    return ccc;
-  }
-
-  protected static void registerCargoCatCodes (PrototypesData data, String uid, Collection cccDims) {
-    if (DEBUG)
-      System.out.println (Thread.currentThread () + ".registerCargoCatCodes - registering these cccDims : "+ cccDims);
-
-    for (Iterator iter = cccDims.iterator (); iter.hasNext (); ) {
-      CargoCatCodeDimensionPG cccDimPG = (CargoCatCodeDimensionPG) iter.next ();
-      CargoCatCode cargoCatCode = new CargoCatCode();
-      cargoCatCode.cargoCatCode = cccDimPG.getCargoCatCode();
-      cargoCatCode.UID=uid;
-      PhysicalPG dim = cccDimPG.getDimensions();
-      cargoCatCode.height =0.0d;
-      cargoCatCode.width  =0.0d;
-      cargoCatCode.depth  =0.0d;
-      cargoCatCode.weight =dim.getMass().getGrams();
-      cargoCatCode.area   =dim.getFootprintArea().getSquareMeters();
-      cargoCatCode.volume =dim.getVolume().getCubicMeters();
-
-      data.addCCCEntry (cargoCatCode);
     }
   }
 

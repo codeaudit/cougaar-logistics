@@ -114,7 +114,6 @@ public interface DGPSPConstants{
 
   //Table base names:
   public static final String ASSET_PROTOTYPE_TABLE="assetprototype";
-  public static final String CARGO_CAT_CODE_DIM_TABLE="cargocatcodedim";
   
   //also needed for ASSET_PROTOTYPE_TABLE:
   // Dimensions : 
@@ -129,9 +128,6 @@ public interface DGPSPConstants{
   public static final String COL_WIDTH="width";   // meters
   public static final String COL_HEIGHT="height"; // meters
   public static final String COL_DEPTH="depth";   // meters
-  public static final String COL_AREA="area";     // square meters
-  public static final String COL_VOLUME="volume"; // cubic meters
-  public static final String COL_CARGO_CAT_CODE="ccc"; // three letter code
   public static final String COL_ALP_TYPEID="alptypeid";
   public static final String COL_ALP_NOMENCLATURE="alpnomenclature";
   public static final String COL_IS_LOW_FIDELITY="isLowFidelity";
