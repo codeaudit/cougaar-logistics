@@ -67,7 +67,7 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
 
     Asset directObject = t.getDirectObject ();
     if (!(directObject instanceof AssetGroup))
-      isSelfPropelled = isSelfPropelled (directObject);
+      isSelfPropelled = isSelfPropelled (t, directObject);
 
     boolean val = !isSelfPropelled;
 
@@ -113,32 +113,25 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
     }
   }
   
-  protected boolean isSelfPropelled (Asset directObject) {
+  protected boolean isSelfPropelled (Task t, Asset directObject) {
     GLMAsset baseAsset = 
       (directObject instanceof AggregateAsset) ? 
       (GLMAsset) ((AggregateAsset)directObject).getAsset() : 
       (GLMAsset) directObject;
+	
+    MovabilityPG move_prop = baseAsset.getMovabilityPG();
 
-    MovabilityPG move_prop;
-    try {
-      move_prop = baseAsset.getMovabilityPG();
-    } catch (Exception npe){
-      error (getName() + ".isSelfPropelled - base asset is null on direct object " + directObject +
-			  ((directObject instanceof AggregateAsset) ? 
-			   " It is an aggregate." : 
-			   " It is a regular asset."));
-      return false;
-    }
-		
-    try {
+    if (move_prop != null) {
       String cargocatcode = move_prop.getCargoCategoryCode();
-      if (cargocatcode.charAt(0) == 'R')
+      if (cargocatcode.charAt(0) == 'R') {
+	if (isDebugEnabled())
+	  debug (getName() + ".isSelfPropelled - found self-propelled vehicle on task " + t.getUID());
 	return true;
-    } catch (Exception e) {
-      if (complainAboutMissingMovabilityPG)
-	error (getName() + ".isSelfPropelled - asset " + baseAsset + 
-			    " is missing its movability PG.");
-      return false;
+      }
+    }
+    else if (complainAboutMissingMovabilityPG) {
+      error (getName() + ".isSelfPropelled - asset " + baseAsset + 
+	     " is missing its movability PG.");
     }
 
     return false;

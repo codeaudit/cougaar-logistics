@@ -147,33 +147,28 @@ public class GroundTransportAllocatorPlugin extends TransportAllocatorPlugin {
    * @param directObject asset to examine 
    */
   protected boolean isSelfPropelled (Task t, Asset directObject) {
-    try {
-      GLMAsset baseAsset = 
-	(directObject instanceof AggregateAsset) ? 
-	(GLMAsset) ((AggregateAsset)directObject).getAsset() : 
-	(GLMAsset) directObject;
+    GLMAsset baseAsset = 
+      (directObject instanceof AggregateAsset) ? 
+      (GLMAsset) ((AggregateAsset)directObject).getAsset() : 
+      (GLMAsset) directObject;
 	
-      MovabilityPG move_prop = baseAsset.getMovabilityPG();
-		
-      try {
-	String cargocatcode = move_prop.getCargoCategoryCode();
-	if (cargocatcode.charAt(0) == 'R') {
-	  if (isDebugEnabled())
-	    debug (getName() + ".isSelfPropelled - found self-propelled vehicle - " + directObject);
-	  return true;
-	}
-      } catch (Exception e) {
+    MovabilityPG move_prop = baseAsset.getMovabilityPG();
+
+    if (move_prop != null) {
+      String cargocatcode = move_prop.getCargoCategoryCode();
+      if (cargocatcode.charAt(0) == 'R') {
+	if (isDebugEnabled())
+	  debug (getName() + ".isSelfPropelled - found self-propelled vehicle on task " + t.getUID());
+	return true;
+      }
+    }
+    else {
+      if (isInfoEnabled())
 	info (getName() + ".isSelfPropelled - asset " + baseAsset + " for task " + t + 
 	      " is missing its movability PG.");
-	return false;
-      }
-
-      return false;
-    } catch (Exception e) {
-      info (getName() + ".isSelfPropelled - NOTE - got exception " + e.getMessage () + " for task " + t.getUID ()+
-	    " asset " + directObject);
-      return false;
     }
+
+    return false;
   }
 
   /** 
