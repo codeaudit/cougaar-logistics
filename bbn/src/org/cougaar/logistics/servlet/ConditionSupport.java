@@ -4,6 +4,10 @@ import org.cougaar.core.agent.ClusterIdentifier;
 
 import org.cougaar.core.domain.*;
 
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceRevokedEvent;
+import org.cougaar.core.component.ServiceRevokedListener;
+
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.BlackboardQueryService;
@@ -29,7 +33,7 @@ import org.cougaar.util.ConfigFinder;
  * is "DoubleCondition".
  * </pre>
  */
-public class ConditionSupport extends BlackboardServletSupport {
+public class ConditionSupport extends BlackboardServletSupport implements ServiceRevokedListener {
   public ConditionSupport(
       String path,
       ClusterIdentifier agentId,
@@ -42,17 +46,54 @@ public class ConditionSupport extends BlackboardServletSupport {
       LDMServesPlugin ldm,
       SchedulerService scheduler,
       ConditionService condition,
+      ServiceBroker broker,
       String conditionName) {
     super (path, agentId, blackboardQuery, ns, logger, blackboard, configFinder, ldmf, ldm, scheduler);
     this.conditionService = condition;
     this.conditionName = conditionName;
+    this.broker = broker;
 
     if (getLog().isInfoEnabled())
       getLog().info (getAgentIdentifier() + " - Publishing condition : " + conditionName);
 
-    if (conditionService == null)
-      getLog().warn (getAgentIdentifier() + " - No condition service available - will not be able to set a condition in this agent.\n"+
-		     "Consider loading the ConditionServiceProvider as an agent component OR before the servlet.");
+    if (conditionService == null) {
+      if (getLog().isInfoEnabled())
+	getLog().info (getAgentIdentifier() + " - No condition service available at startup." +
+		       " Will check again when servlet called.\n"+
+		       " This servlet needs the ConditionServiceProvider to be loaded eventually.");
+    }
+    else
+      publishCondition ();
+  }
+
+  /** publishes the condition to blackboard, if the condition service is available. */
+  public void publishCondition () {
+    if (!broker.hasService (org.cougaar.core.service.ConditionService.class)) {
+      if (getLog().isInfoEnabled())
+	getLog().info (getAgentIdentifier() + " - No condition service available." +
+		       " Servlet will not be able to set the condition.\n"+
+		       " Servlet needs the ConditionServiceProvider to be loaded.");
+      return;
+    }
+    else if (conditionService == null) {
+      conditionService = (ConditionService)
+	broker.getService (this,
+			   org.cougaar.core.service.ConditionService.class,
+			   this);
+      if (conditionService == null) {
+	if (getLog().isInfoEnabled())
+	  getLog().info (getAgentIdentifier() + " - No condition service available." +
+			 " Servlet will not be able to set the condition.\n"+
+			 " Servlet needs the ConditionServiceProvider to be loaded.");
+	return;
+      }
+
+      if (getLog().isDebugEnabled())
+	getLog().debug (getAgentIdentifier() + " - found condition service.");
+    }
+
+    if (didPublish)
+      return;
 
     ConditionServlet.DoubleCondition doubleCondition = 
       new ConditionServlet.DoubleCondition(conditionName);
@@ -60,6 +101,9 @@ public class ConditionSupport extends BlackboardServletSupport {
     try {
       getBlackboardService().openTransaction();
       getBlackboardService().publishAdd(doubleCondition);
+      setCondition (doubleCondition);
+      if (getLog().isDebugEnabled())
+	getLog().debug (getAgentIdentifier() + " - published condition " + doubleCondition);
     } 
     catch (Exception exc) {
       getLog().error ("Could not publish double condition???", exc);
@@ -67,17 +111,37 @@ public class ConditionSupport extends BlackboardServletSupport {
     finally{
      getBlackboardService().closeTransactionDontReset();
     }  
+    
+    didPublish = true;
   }
 
   /**
-   * Get the condition service
+   * Get the condition service. <p>
+   *
+   * @return null if there is no condition service provider in this agent
    */
   protected ConditionService getConditionService() {
+    if (conditionService == null)
+      publishCondition (); // may fail if configuration is bad
+
     return conditionService;
   }
+
+  /** condition service went away? */
+  public void serviceRevoked(ServiceRevokedEvent re) {
+    conditionService = null;
+  }
+
+  protected void setCondition (ConditionServlet.DoubleCondition condition) { this.condition = condition; }
+  /** not usually needed */
+  public ConditionServlet.DoubleCondition getCondition () { return condition; }
 
   protected String getConditionName () { return conditionName; }
 
   protected ConditionService conditionService;
+  protected ConditionServlet.DoubleCondition condition;
   protected String conditionName;
+  protected ServiceBroker broker = null;
+
+  protected boolean didPublish = false;
 }

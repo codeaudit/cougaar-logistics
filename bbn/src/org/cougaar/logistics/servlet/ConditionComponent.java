@@ -37,6 +37,7 @@ import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.ConditionService;
+import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.SchedulerService;
 
@@ -68,25 +69,14 @@ public class ConditionComponent extends BlackboardServletComponent {
    * Called just after construction (via introspection) by the 
    * loader if a non-null parameter Object was specified by
    * the ComponentDescription.
-   **/
-  /*
-  public void setParameter(Object param) {
-    super.setParameter (param);
-
-    if (param != null) {
-      parameters = (Collection) param;
-    } else {
-      parameters = new Vector(0);
-    }
-  }
-  */
-
-  /**
+   * <p>
    * Save our Servlet's configurable path, for example
    * "/test".
    * <p>
    * This is only set during initialization and is constant
    * for the lifetime of the Servlet.
+   *
+   * @param o list of parameters to plugin
    */
   public void setParameter(Object o) {
     // expecting a List of [String, String]
@@ -146,16 +136,24 @@ public class ConditionComponent extends BlackboardServletComponent {
 	log,
         getBlackboardService(),
 	getConfigFinder(),
-	getLDMService().getFactory(),
+	getDomainService().getFactory(),
 	getLDMService().getLDM(),
 	getSchedulerService(),
 	getConditionService(),
+	serviceBroker,
 	conditionName);
   }
 
+  public final void setDomainService(DomainService s) {
+    domainService = s;
+  }
+  protected final DomainService getDomainService() {
+    return domainService;
+  }
+
   /** 
-   * Expecting conditionName=ferris as parameter to component - I *assume* this is possible in CSMART??? <p>
-   * If none, defaults to DoubleCondition.
+   * Expecting conditionName=ferris as parameter to component. <br>
+   * If none, defaults to DoubleCondition. <p>
    *
    * Potentially there could be a list of conditions, but then the gui would have to deal with it, etc...
    **/
@@ -184,7 +182,7 @@ public class ConditionComponent extends BlackboardServletComponent {
     }
   }
 
-
+  protected DomainService domainService = null;
   protected ConditionService conditionService;
   protected ParamParser paramParser = new ParamParser();
   protected String conditionName = "DoubleCondition";

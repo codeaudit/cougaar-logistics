@@ -207,8 +207,7 @@ public class ConditionWorker
       return false;
     }
 
-    ConditionServlet.DoubleCondition doubleCondition = (ConditionServlet.DoubleCondition)
-      support.getConditionService().getConditionByName(support.getConditionName());
+    ConditionServlet.DoubleCondition doubleCondition = support.getCondition ();
 
     if (doubleCondition != null) {
       doubleCondition.setValue(new Double(value));
@@ -229,6 +228,10 @@ public class ConditionWorker
 	support.getBlackboardService().closeTransactionDontReset();
       }  
     }
+    else if (support.getLog().isInfoEnabled())
+      support.getLog().info (support.getAgentIdentifier() + 
+			     " - condition service could not find condition " +
+			     support.getConditionName());
 
     return successful;
   }

@@ -39,11 +39,8 @@ import org.cougaar.core.persist.NotPersistable;
 
 /**
  * <pre>
- * An example URL is :
- * 
- * http://localhost:8800/$TRANSCOM/conditionsetter
+ * Sets a double condition constrained to be in the range 0.0-1.0, in every agent with this servlet.
  *
- * Sets a double condition constrained to be in the range 0.0-1.0.
  *
  * The name of the condition can be specified as a parameter to the component, e.g.
  *
@@ -57,6 +54,16 @@ import org.cougaar.core.persist.NotPersistable;
  * To concurrently specify a different condition, specify a different servlet name-condition name pair, e.g.
  *
  * plugin = org.cougaar.core.servlet.BlackboardServletComponent(org.cougaar.logistics.servlet.ConditionServlet, /buellersetter, conditionName=bueller)
+ *
+ * An example URL to access the servlet is :
+ * 
+ * http://localhost:8800/$TRANSCOM/conditionsetter
+ *
+ * NOTES :
+ *  - the default name of the condition is "DoubleCondition".
+ *  - the ConditionServiceProvider should also be loaded in any agent with this servlet
+ *  - the servlet does *not* depend on load order
+ *
  * </pre>
  */
 public class ConditionServlet extends ServletBase {
