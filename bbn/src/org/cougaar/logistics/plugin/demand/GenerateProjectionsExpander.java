@@ -103,14 +103,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
       Asset asset = (Asset) iterator.next();
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
-      logger.debug("Handling consumed item "+dfPlugin.getAssetUtils().getAssetIdentifier(asset));
-
       if (publishedTasks.isEmpty()) {
-        logger.error("No project supply tasks were found for parent task " + gpTask.toString());
-        return;
+        logger.debug("No project supply tasks were found for parent task " + gpTask.toString() +
+                     " and consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
+        continue;
       }
       assetList.clear();
       assetList.add(asset);
+      logger.debug("Handling consumed item "+dfPlugin.getAssetUtils().getAssetIdentifier(asset));
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
       Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
       Schedule newTasksSched =  newObjectSchedule(newTasks);
