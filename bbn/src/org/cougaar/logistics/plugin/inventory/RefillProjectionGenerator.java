@@ -229,7 +229,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
                                             anInventory);
      
       if (thePG.getIsLevel2()) {
-        setTargetForProjectionPeriod(thePG, 1, thePG.getInitialLevel());
+        setTargetForProjectionPeriod(thePG, 0, thePG.getInitialLevel());
       }
     }
     
