@@ -44,6 +44,8 @@ import com.klg.jclass.chart.JCAxisTitle;
 import com.klg.jclass.chart.JCDataIndex;
 import com.klg.jclass.chart.JCPickEvent;
 import com.klg.jclass.chart.EventTrigger;
+import com.klg.jclass.chart.JCChartListener;
+
 
 import com.klg.jclass.util.legend.JCLegend;
 import com.klg.jclass.util.legend.JCMultiColLegend;
@@ -103,6 +105,10 @@ public abstract class InventoryChart extends JPanel
 	initializeChart();
 	customizeAxes("");
 
+	if(myTitle != null) {
+	    chart.setHeader(new JLabel(myTitle));
+	}
+
 // allow user to zoom in on chart
 	chart.setTrigger(0, new EventTrigger(0, EventTrigger.ZOOM));
 
@@ -123,7 +129,7 @@ public abstract class InventoryChart extends JPanel
 
 	// add chart to panel
 	setLayout(new GridBagLayout());
-	chart.getHeader().setVisible(true);
+	chart.getHeader().setVisible(false);
 	add(chart, new GridBagConstraints(gridx, gridy++, 1, 1, 1.0, 1.0,
 					  GridBagConstraints.CENTER, 
 					  GridBagConstraints.BOTH, 
@@ -136,7 +142,7 @@ public abstract class InventoryChart extends JPanel
 
 	// set legend invisible, because we create our own??
 	chart.getLegend().setVisible(true);
-	chart.getLegend().setPreferredSize(new Dimension(141,70));
+	chart.getLegend().setPreferredSize(new Dimension(141,95));
 
 
 
@@ -152,6 +158,14 @@ public abstract class InventoryChart extends JPanel
 					       blankInsets, 0, 0));
 
 	***/
+    }
+
+    public void addChartListener(JCChartListener listener) {
+	chart.addChartListener(listener);
+    }
+
+    public void removeChartListener(JCChartListener listener) {
+	chart.removeChartListener(listener);
     }
 
     public void pick(JCPickEvent e) {
@@ -300,6 +314,16 @@ public abstract class InventoryChart extends JPanel
 		    series.getStyle().setSymbolColor(symbolColor);
 		}
 	    }
+	}
+    }
+
+    public void setXZoom(double start, double end) {
+	java.util.List viewList = chart.getDataView();
+	for (int i = 0; i < viewList.size(); i++) {
+	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
+	    // use time axis for x axis
+	    JCAxis xaxis = chartDataView.getXAxis();
+	    chart.zoom(start,end,xaxis,true);
 	}
     }
 }

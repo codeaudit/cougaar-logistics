@@ -33,6 +33,11 @@ import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 
+import com.klg.jclass.chart.JCChartListener;
+import com.klg.jclass.chart.JCChartEvent;
+import com.klg.jclass.chart.JCChart;
+import com.klg.jclass.chart.JCAxis;
+
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 /** 
@@ -51,7 +56,8 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  *
  **/
 
-public class MultiChartPanel extends JPanel {
+public class MultiChartPanel extends JPanel 
+    implements JCChartListener{
 
     protected InventoryLevelChart levelChart;
     protected InventoryRefillChart refillChart;
@@ -70,6 +76,8 @@ public class MultiChartPanel extends JPanel {
 	levelChart = new InventoryLevelChart();
 	refillChart = new InventoryRefillChart();
 	demandChart = new InventoryDemandChart();
+
+	addAllChartListeners();
 
 	// set header and legend to black
 	// set beveled borders around plot area and chart
@@ -96,8 +104,42 @@ public class MultiChartPanel extends JPanel {
     }
    
     public void setData(InventoryData data) {
+	removeAllChartListeners();
 	levelChart.setData(data);
 	refillChart.setData(data);
 	demandChart.setData(data);
+	addAllChartListeners();
     }
+
+    public void removeAllChartListeners() {
+	levelChart.removeChartListener(this);
+	refillChart.removeChartListener(this);
+	demandChart.removeChartListener(this);
+    }
+
+    public void addAllChartListeners() {
+	levelChart.addChartListener(this);
+	refillChart.addChartListener(this);
+	demandChart.addChartListener(this);
+    }
+
+    public void changeChart(JCChartEvent jce) {
+	JCChart source = (JCChart)jce.getSource();
+	String headerText =  ((JLabel) source.getHeader()).getText();
+	JCAxis axis = jce.getModifiedAxis();
+	if(!axis.isVertical()) {
+	    double xStart = axis.getMin();
+	    double xEnd = axis.getMax();
+	    System.out.println("X-Axis of " + headerText + " changed min: " + axis.getMin() + " Max: " + axis.getMax());
+	    removeAllChartListeners();
+	    levelChart.setXZoom(xStart,xEnd);
+	    refillChart.setXZoom(xStart,xEnd);
+	    demandChart.setXZoom(xStart,xEnd);
+	    addAllChartListeners();
+	}
+    }
+
+    public void paintChart(JCChart chart) {
+    }
+
 }

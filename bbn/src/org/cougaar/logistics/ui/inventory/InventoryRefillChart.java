@@ -81,11 +81,13 @@ public class InventoryRefillChart extends InventoryChart{
 
     public void initializeChart() {
 	RequisitionsChartDataModel reqDM = 
-	    new RequisitionsChartDataModel(RESUPPLY_TASKS,
+	    new RequisitionsChartDataModel("",
+					   RESUPPLY_TASKS,
 					   RESUPPLY_ARS);
 
 	ProjectionsChartDataModel projDM = 
-	    new ProjectionsChartDataModel(RESUPPLY_PROJ_TASKS,
+	    new ProjectionsChartDataModel("Refill",
+					  RESUPPLY_PROJ_TASKS,
 					  RESUPPLY_PROJ_ARS,
 					  RESUPPLY_TASKS,
 					  reqDM,

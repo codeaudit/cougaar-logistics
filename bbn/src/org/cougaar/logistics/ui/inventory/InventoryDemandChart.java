@@ -81,11 +81,13 @@ public class InventoryDemandChart extends InventoryChart {
 
     public void initializeChart() {
 	RequisitionsChartDataModel reqDM = 
-	    new RequisitionsChartDataModel(DEMAND_TASKS,
+	    new RequisitionsChartDataModel("",
+					   DEMAND_TASKS,
 					   DEMAND_ARS);
 
 	ProjectionsChartDataModel projDM = 
-	    new ProjectionsChartDataModel(DEMAND_PROJ_TASKS,
+	    new ProjectionsChartDataModel("Demand",
+					  DEMAND_PROJ_TASKS,
 					  DEMAND_PROJ_ARS,
 					  DEMAND_TASKS,
 					  reqDM,
