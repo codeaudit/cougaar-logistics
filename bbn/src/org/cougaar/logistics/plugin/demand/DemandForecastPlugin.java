@@ -31,23 +31,24 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.NewWorkflow;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.asset.PropertyGroup;
+import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.TimeSpan;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -74,8 +75,9 @@ public class DemandForecastPlugin extends ComponentPlugin
   private AssetUtils AssetUtils;
   private ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
-  private HashMap subscriptionToBGHash;
-  private HashMap predToSubscriptionHash;
+  private HashMap bgToPredsHash;
+  private HashMap subToBGsHash;
+  private HashMap predToSubHash;
 
   private String supplyType;
   private Class supplyClassPG;
@@ -86,7 +88,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private GenProjExpanderIfc generateProjectionsExpander;
   //  private SchedulerModule planningScheduler;
 
-  private boolean processedDetReq=false;
+  private boolean processedDetReq = false;
 
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
@@ -110,8 +112,10 @@ public class DemandForecastPlugin extends ComponentPlugin
     determineRequirementsExpander = getDetermineRequirementsExpanderModule();
     generateProjectionsExpander = getGenerateProjectionsExpanderModule();
 
-    subscriptionToBGHash = new HashMap();
-    predToSubscriptionHash = new HashMap();
+
+    bgToPredsHash = new HashMap();
+    subToBGsHash = new HashMap();
+    predToSubHash = new HashMap();
 
     //startTime = currentTimeMillis();
 
@@ -201,12 +205,14 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   protected void execute() {
 
-    if((orgActivities.getCollection().isEmpty()) || (detReqSubscription.getCollection().isEmpty())) {
+    if ((oplanSubscription.getCollection().isEmpty()) ||
+        (orgActivities.getCollection().isEmpty()) ||
+        (detReqSubscription.getCollection().isEmpty())) {
       processDetReq = false;
       return;
     }
 
-    if(!detReqSubscription.getCollection().isEmpty()) {
+    if (!detReqSubscription.getCollection().isEmpty()) {
       Iterator detReqIt = detReqSubscription.getCollection().iterator();
       Task detReqTask = (Task) detReqIt.next();
       processDetReq = (!(detReqTask.getPlanElement() == null));
@@ -218,21 +224,19 @@ public class DemandForecastPlugin extends ComponentPlugin
     //It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
 
     //if there is a new determine requirements task or new oplan do this
-    if(((!orgActivities.getAddedCollection().isEmpty()) &&
+    if (((!orgActivities.getAddedCollection().isEmpty()) &&
         (!processedDetReq)) ||
         (!detReqSubscription.getAddedCollection().isEmpty())) {
       processDetReq(detReqSubscription.getCollection(),
                     assetsWithPGSubscription.getCollection());
     }
     //otherwise just issue a new
-    else if(!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
+    else if (!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
       processDetReq(detReqSubscription.getCollection(),
                     assetsWithPGSubscription.getAddedCollection());
-    }
-    else if(!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
+    } else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
       removeFromDetReq(detReqSubscription.getCollection(),
                        assetsWithPGSubscription.getRemovedCollection());
-
     }
 
     if (myOrganization == null) {
@@ -248,14 +252,23 @@ public class DemandForecastPlugin extends ComponentPlugin
       return;
     }
 
+    if (genProjSubscription.hasChanged()) {
+      if (!genProjSubscription.getAddedCollection().isEmpty()) {
+        processNewGenProjs(genProjSubscription.getAddedCollection());
+      }
+    }
+
   }
 
 
-  /** Subscription for aggregatable support requests. **/
   private IncrementalSubscription orgActivities;
 
-  /** Subscription for aggregatable support requests. **/
+  private IncrementalSubscription oplanSubscription;
+
   private IncrementalSubscription detReqSubscription;
+
+  private IncrementalSubscription genProjSubscription;
+
 
   /** Subscription for the Organization(s) in which this plugin resides **/
   private IncrementalSubscription selfOrganizations;
@@ -267,9 +280,15 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
-    orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPredicate);
+    UnaryPredicate orgActivityPred = new OrgActivityPred();
+    orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
+    predToSubHash.put(orgActivityPred,orgActivities);
+
+    oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
 
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
+
+    genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyClassPG));
 
     assetsWithPGSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
   }
@@ -286,6 +305,12 @@ public class DemandForecastPlugin extends ComponentPlugin
   private static UnaryPredicate orgActivityPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof OrgActivity);
+    }
+  };
+
+  private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof Oplan);
     }
   };
 
@@ -312,6 +337,30 @@ public class DemandForecastPlugin extends ComponentPlugin
       return false;
     } // execute
   } // DetReqPredicate
+
+
+  private static class GenProjPredicate implements UnaryPredicate {
+
+    private Class supplyPGClass;
+
+    public GenProjPredicate(Class pgClass) {
+      this.supplyPGClass = pgClass;
+    } // constructor
+
+    /**
+     *  Predicate defining expandable Determine Reqs.
+     **/
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task t = (Task) o;
+        if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
+          Asset asset = t.getDirectObject();
+          return (asset.searchForPropertyGroup(supplyPGClass) != null);
+        }
+      }
+      return false;
+    } // execute
+  } // GenProjPredicate
 
 
   private static class AssetOfTypePredicate implements UnaryPredicate {
@@ -388,8 +437,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     if (((supplyType == null) ||
         (supplyClassPGStr == null) ||
         (supplyClassPGStr.trim().equals(""))
-        && logger.isErrorEnabled()))
-    {
+        && logger.isErrorEnabled())) {
       logger.error(errorString);
     } else {
       try {
@@ -404,17 +452,35 @@ public class DemandForecastPlugin extends ComponentPlugin
 
 
   private void processDetReq(Collection addedDRs, Collection assets) {
-    // with one oplan we should only have one DR for MI.
+    // with one oplan we should only have one DR task.
     Iterator drIt = addedDRs.iterator();
     if (drIt.hasNext()) {
       Task detReq = (Task) drIt.next();
       //synch on the detReq task so only one instance of this plugin
       // checks and creates a single agg task and then creates an
       // empty expansion (wf) for the maintain inventory for each item tasks
-      synchronized(detReq) {
-        determineRequirementsExpander.expandDetermineRequirements(detReq,assets);
+      synchronized (detReq) {
+        determineRequirementsExpander.expandDetermineRequirements(detReq, assets);
         processedDetReq = true;
       }
+    }
+  }
+
+
+  private void processNewGenProjs(Collection addedGPs) {
+    Iterator gpIt = addedGPs.iterator();
+    if (gpIt.hasNext()) {
+      Task genProj = (Task) gpIt.next();
+      Asset asset = genProj.getDirectObject();
+      PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
+      Collection bgInputs = getSubscriptions(pg);
+      Oplan oplan = getOplan();
+      //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
+      TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
+                                                     oplan.getEndDay());
+      Schedule paramSchedule = getParameterSchedule(pg, bgInputs, projectSpan);
+      generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, asset);
+
     }
   }
 
@@ -426,13 +492,55 @@ public class DemandForecastPlugin extends ComponentPlugin
       //synch on the detReq task so only one instance of this plugin
       // checks and creates a single agg task and then creates an
       // empty expansion (wf) for the maintain inventory for each item tasks
-      synchronized(detReq) {
-        determineRequirementsExpander.removeSubtasksFromDetermineRequirements(detReq,removedAssets);
+      synchronized (detReq) {
+        determineRequirementsExpander.removeSubtasksFromDetermineRequirements(detReq, removedAssets);
         processedDetReq = true;
       }
     }
   }
 
+  protected Collection getSubscriptions(PropertyGroup pg) {
+    if(!bgToPredsHash.containsKey(pg)) {
+	    addNewBG(pg);
+    }
+    ArrayList bgInputs = new ArrayList();
+    Collection preds = (Collection) bgToPredsHash.get(pg);
+    Iterator predsIt = preds.iterator();
+    while(predsIt.hasNext()){
+        UnaryPredicate pred = (UnaryPredicate) predsIt.next();
+	      ArrayList inputPair = new ArrayList();
+	      IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
+	      inputPair.add(pred);
+	      inputPair.add(sub.getCollection());
+	      bgInputs.add(inputPair);
+    }
+    return bgInputs;
+  }
+
+  protected void addNewBG(PropertyGroup pg) {
+    Collection preds = getPredicates(pg);
+    Iterator predIt = preds.iterator();
+    while (predIt.hasNext()) {
+      UnaryPredicate pred = (UnaryPredicate) predIt.next();
+      IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
+      if (sub == null) {
+        sub = (IncrementalSubscription) blackboard.subscribe(pred);
+        predToSubHash.put(pred, sub);
+      }
+      Collection PGs = (Collection) subToBGsHash.get(sub);
+      if (PGs == null) {
+        PGs = new ArrayList();
+        subToBGsHash.put(sub, PGs);
+      }
+      if (!PGs.contains(pg)) {
+        PGs.add(pg);
+      }
+    }
+       Collection hashPreds = (Collection) bgToPredsHash.get(pg);
+      if (hashPreds == null) {
+        bgToPredsHash.put(pg, getPredicates(pg));
+      }
+  }
 
   private String getClusterSuffix(String clusterId) {
     String result = null;
@@ -573,12 +681,74 @@ public class DemandForecastPlugin extends ComponentPlugin
     return getAgentIdentifier();
   }
 
+  public Oplan getOplan() {
+    Iterator oplanIt = oplanSubscription.getCollection().iterator();
+    if (oplanIt.hasNext()) {
+      return (Oplan) oplanIt.next();
+    }
+    return null;
+  }
+
 
   public String getOrgName() {
     if (myOrgName == null) {
-      myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
+      myOrgName = getMyOrganization().getItemIdentificationPG().getItemIdentification();
     }
     return myOrgName;
+  }
+
+
+  public Collection getPredicates(PropertyGroup pg) {
+    Collection preds = null;
+    Class parameters[] = {};
+    Object arguments[] = {};
+    Method m = null;
+    try {
+      m = supplyClassPG.getMethod("getPredicates", parameters);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
+    try {
+      preds = (Collection) m.invoke(pg, arguments);
+      return preds;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return new ArrayList();
+  }
+
+
+  public Schedule getParameterSchedule(PropertyGroup pg,
+                                       Collection bgInputs,
+                                       TimeSpan projectSpan) {
+    Schedule paramSchedule = null;
+    Class parameters[] = {Collection.class, TimeSpan.class};
+    Object arguments[] = {bgInputs, projectSpan};
+    Method m = null;
+    try {
+      m = supplyClassPG.getMethod("getParameterSchedule", parameters);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
+    try {
+      paramSchedule = (Schedule) m.invoke(pg, arguments);
+      return paramSchedule;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return new ScheduleImpl();
   }
 
   /**
