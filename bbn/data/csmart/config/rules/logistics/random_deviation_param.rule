@@ -1,0 +1,16 @@
+# Adds the parameter "RANDOM_DEVIATION_ON=false" to every instance 
+# of the plugin "org.cougaar.logistics.plugin.demand.DemandGeneratorPlugin" 
+# in the society.
+
+plugin = "org.cougaar.logistics.plugin.demand.DemandGeneratorPlugin"
+arg = "RANDOM_DEVIATION_ON=false"
+
+society.each_agent do |agent|
+  agent.each_component do |comp|
+    if comp.name == plugin
+      comp.add_argument(arg)
+      break
+    end
+  end
+end
+
