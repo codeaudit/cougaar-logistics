@@ -163,7 +163,6 @@ public class LoadIndicator extends RelayAdapter {
       myToString = getClass() + ": agent=<" + getAgentName() + ">, sensor=<" +
         getReportingSensorClassName() + ">, load status=<" + getLoadStatus() + 
         ">, UID=<" + getUID() + ">";
-      myToString = myToString.intern();
     }
 
     return myToString;
