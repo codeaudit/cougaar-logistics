@@ -240,7 +240,7 @@ public class StatisticsPane extends JPanel implements ActionListener{
   }
 
   protected Statement getStatement() throws SQLException{
-    return shell.getDBConfig().getConnection().createStatement();
+    return shell.getDBConfig().createStatement();
   }
 
   protected int getRunID(){
