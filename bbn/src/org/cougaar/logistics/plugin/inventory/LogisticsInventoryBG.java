@@ -194,8 +194,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         // THIS ONE
         int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
-//         targetLevelsList.clear();
-        clearTargetLevels(bucket_start);
+
         // Adding projections mean changed critical levels and
         // target levels.  Set boolean to recompute critical
         // levels and clear targetLevelsList for CSV logging

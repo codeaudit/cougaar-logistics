@@ -146,8 +146,8 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
 	int firstLegalRefillBucket =
 	    thePG.convertTimeToBucket(inventoryPlugin.getRefillStartTime(),false) + orderShipTime;
-        thePG.clearTargetLevels(firstLegalRefillBucket);
-
+        boolean clearTargetLevels = true;
+        int clearTargetBucket = refillBucket;
         double prevTarget = 0;
 
         //calculate inventory levels for time ZERO through start (today + OST)
@@ -199,6 +199,10 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 // 					      reorderPeriodEndBucket, thePG);
             int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
             double targetLevel = getTargetLevel(refillBucket,reorderPeriodEndBucket, thePG);
+            if (clearTargetLevels) {
+              clearTargetLevels = false;
+              thePG.clearTargetLevels(clearTargetBucket);
+            }
             thePG.setTarget(refillBucket, targetLevel);
             if (thePG.getFillToCapacity()) {
               double capacity = thePG.getCapacity();
