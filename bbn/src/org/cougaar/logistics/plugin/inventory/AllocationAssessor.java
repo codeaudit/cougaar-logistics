@@ -111,6 +111,14 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       while(defPhasesIt.hasNext()){
         AllocPhase currentPhase = (AllocPhase)defPhasesIt.next();
         if(currentPhase.startBucket > lastBucket) {
+          /*if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
+             (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
+            System.out.println("Got a Phase after the end time of the task..." +
+                               " qty of phase is " + currentPhase.amount + " " +
+                               task.getUID() + " late phase starts on " +
+                               new Date(thePG.convertBucketToTime(currentPhase.startBucket)));
+          }*/
+          //TODO - EPD This best quantity fill in code causes lots of problems!!!!
           AllocPhase betweenPhase = new AllocPhase(lastBucket,getBestBucketQty());
           betweenPhase.endBucket = currentPhase.startBucket;
           allPhases.add(betweenPhase);
@@ -190,6 +198,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           }
         }
         if (thePhase == null) {
+//          if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
+//              (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
+//            System.out.println("Adding new last phase to fill deficit... task " + task.getUID() + " bucket " +
+//                               new Date (thePG.convertBucketToTime(currentBucket)) + " amount " + amount);
+//          }
           // add new phase
           lastPhase = new AllocPhase(currentBucket, amount);
           allocated.add(lastPhase);
@@ -283,12 +296,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Task withdraw;
 
     // DEBUG
-    //   String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    //   String myItemId = inv.getItemIdentificationPG().getItemIdentification();
+    String myOrgName = inventoryPlugin.getClusterId().toString();
+    String myItemId = inv.getItemIdentificationPG().getItemIdentification();
 
-    //if ((myOrgName.indexOf("592") >= 0) && (myItemId.indexOf("Level2Amm") >= 0)) {
-    //	      System.out.println("### createAlloc : Assesing allocations RIGHT ORG NAME COMBO - " + myOrgName + " - " + myItemId);
-    //}
+    /*if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
+    	      System.out.println("### createAlloc : Assessing allocations RIGHT ORG NAME COMBO - " + myOrgName + " - " + myItemId);
+    }*/
 
 
     // loop through the buckets in the inventory
@@ -296,7 +309,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
       todayRefill = findCommittedRefill(currentBucket, thePG, true);
       todayLevel = thePG.getLevel(currentBucket - 1) + todayRefill;
-      
+
       /***
        **
 
@@ -313,13 +326,32 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       while (tpIt.hasNext()) {
         TaskDeficit td = (TaskDeficit) tpIt.next();
         withdraw = td.getTask();
+        //TODO - EPD HACK for LAT 1.0 delivery to stop late fills of projections
+        // related problem is in the TD code that "fills in" bare spots.
+        if (withdraw.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+          long taskEndTime = getTaskUtils().getEndTime(withdraw);
+          int taskEndBucket = thePG.convertTimeToBucket(taskEndTime,true);
+          if (taskEndBucket < currentBucket ) {
+            continue;
+          }
+        }
         qty = td.getRemainingQty();
 	// DEBUG Task deficits
 	//if ((myOrgName.indexOf("592-ORDCO") >= 0) && (myItemId.indexOf("Level2Am") >= 0)) {
-	//    System.out.println("### createAlloc : trying to fill a PREVIOUS deficit for task:|" + withdraw.getUID() + "| : todaylevel|" + todayLevel + "| and qty is |" + qty + "| and the date is " +  getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+        //if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
+          //System.out.println("### createAlloc : trying to fill a PREVIOUS deficit for task:|" + withdraw.getUID() + "| : todaylevel|" + todayLevel + "| and qty is |" + qty + "| and the date is " +  getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+        //}
 	//}
         // check the level
-        if (todayLevel >= qty) {
+        if (todayLevel <= 0.0) {
+//          if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
+//            System.out.println("TodayLevel is " + todayLevel + " adding 0 phase for bucket " +
+//                               new Date(thePG.convertBucketToTime(currentBucket)) + " task " +
+//                               td.getTask().getUID());
+//          }
+          td.addPhase(0.0, currentBucket);
+          break;
+        } else if (todayLevel >= qty) {
           // Can completely fill known deficit
           /***
            **
@@ -334,8 +366,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
           fillDeficit(td,currentBucket,inv,thePG);
           todayLevel = todayLevel - qty;
-        } else if (todayLevel==0.0){
-          break;
         } else {
           //this withdraw has previously had a deficit we cannot fill the deficit entirely during this bucket`
           //  leave the TaskDeficit in the same place on the queue -- it still needs to be filled with its old priority
@@ -449,7 +479,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Iterator tpIt = trailingPointers.iterator();
     while (tpIt.hasNext()) {
       TaskDeficit td = (TaskDeficit) tpIt.next();
-      createPhasedAllocationResult(td, inv, thePG, false);
+//      if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
+//        System.out.println("Creating failed phased AR. task deficit is " + td.getTask() + " " + td.getRemainingQty());
+//      }
+      //createPhasedAllocationResult(td, inv, thePG, false);
+      createPhasedAllocationResult(td, inv, thePG, true);
     }
   }
 
@@ -537,15 +571,23 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
   }
 
-  public void createPhasedAllocationResult(TaskDeficit td,  
-					   Inventory inv, 
-					   LogisticsInventoryPG thePG,
+  public void createPhasedAllocationResult(TaskDeficit td,
+                                           Inventory inv,
+                                           LogisticsInventoryPG thePG,
                                            boolean success) {
+    //if we are passing in a false - see if we already made a failed AR/PE. If we did just get out.
+    Task task = td.getTask();
+    PlanElement prevPE = task.getPlanElement();
+    if (prevPE != null && !success) {
+      if (!prevPE.getEstimatedResult().isSuccess()) {
+        return;
+      }
+    }
+
     ArrayList phasedResults = new ArrayList();
     double rollupQty = 0;
     AspectValue avs[];
 
-    Task task = td.getTask();
     long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
     long endOfTask = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
     // Do not process tasks whose end times are beyond level 2
@@ -563,6 +605,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     ArrayList phases = (ArrayList)td.getDeficitAllocationPhases();
     if (phases.isEmpty()) {
       //if we totally fail
+      if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
+              (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
+        System.out.println("Totally failing task b/c there are not phases... " + task.getUID());
+      }
       createFailedAllocation(task, inv, thePG);
       return;
     }
@@ -622,6 +668,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
             newPhasedAllocationResult(Constants.Confidence.SCHEDULED, success, avs, (new Vector(phasedResults)).elements());
 
+    //TODO - check me - doesn't seem to be working properly
     compareResults(estimatedResult, task, inv, thePG);
   }
 
@@ -753,6 +800,14 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
 
   private void createFailedAllocation(Task task, Inventory inventory, LogisticsInventoryPG thePG) {
+    //check if the task already has a failed allocation on it - don't even bother to compare
+    //failed should equal failed at this point.
+    PlanElement prevPE = task.getPlanElement();
+    if (prevPE != null) {
+      if (!prevPE.getEstimatedResult().isSuccess()) {
+        return;
+      }
+    }
     if (logger.isDebugEnabled()) {
       logger.debug("Failing task: " + getTaskUtils().taskDesc(task) + " at agent: " 
                    + inventoryPlugin.getClusterId().toString() +
@@ -789,7 +844,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
     AllocationResult failed =
             inventoryPlugin.getPlanningFactory().newAllocationResult(Constants.Confidence.SCHEDULED, false, avs);
-    PlanElement prevPE = task.getPlanElement();
+    //PlanElement prevPE = task.getPlanElement();
     if (prevPE == null) {
       Allocation alloc = inventoryPlugin.getPlanningFactory().
               createAllocation(task.getPlan(), task, inventory,
@@ -798,6 +853,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     } else {
       AllocationResult previous = prevPE.getEstimatedResult();
       if (!previous.equals(failed)) {
+        if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
+              (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
+          System.out.println("Previous pe ER does not match new one... publish changing - Extra??");
+        }
         prevPE.setEstimatedResult(failed);
         inventoryPlugin.publishChange(prevPE);
       }
