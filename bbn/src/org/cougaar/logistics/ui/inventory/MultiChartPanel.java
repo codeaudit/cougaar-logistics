@@ -200,7 +200,7 @@ public class MultiChartPanel extends JPanel
         refillChart.resetAxes();
         demandChart.getChart().reset();
         demandChart.resetAxes();
-        reallignChartsByXAxis(levelChart.getFirstXAxis());
+        reallignChartsByXAxis();
         pointLabel.setText(INITIAL_POINT_LABEL);
         addAllChartListeners();
       }
@@ -325,7 +325,7 @@ public class MultiChartPanel extends JPanel
     levelChart.setData(data);
     refillChart.setData(data);
     demandChart.setData(data);
-    JCAxis firstXAxis = levelChart.getFirstXAxis();
+    JCAxis firstXAxis = getFirstXAxis();
     firstXAxis.recalc();
     reallignChartsByXAxis(firstXAxis);
     pointLabel.setText(INITIAL_POINT_LABEL);
@@ -369,7 +369,7 @@ public class MultiChartPanel extends JPanel
       levelChart.setDisplayCDay(displayCDay);
       refillChart.setDisplayCDay(displayCDay);
       demandChart.setDisplayCDay(displayCDay);
-      reallignChartsByXAxis(levelChart.getFirstXAxis());
+      reallignChartsByXAxis();
       pointLabel.setText(INITIAL_POINT_LABEL);
       addAllChartListeners();
     }
@@ -430,6 +430,24 @@ public class MultiChartPanel extends JPanel
     refillChart.setXZoom(xStart, xEnd);
     demandChart.setXZoom(xStart, xEnd);
   }
+
+  public void reallignChartsByXAxis() {
+      reallignChartsByXAxis(getFirstXAxis());
+  }
+
+    //Get the defining or limiting first x axis
+  public JCAxis getFirstXAxis() {
+      JCAxis xAxis=null;
+      if(mainPanel.getComponentCount() > 0) {
+	  InventoryChart chart = (InventoryChart) mainPanel.getComponent(0);
+	  xAxis = chart.getFirstXAxis();
+      }
+      else {
+	  xAxis = levelChart.getFirstXAxis();
+      }
+     return xAxis;
+  }
+
 
   public void changeChart(JCChartEvent jce) {
     JCChart source = (JCChart) jce.getSource();
