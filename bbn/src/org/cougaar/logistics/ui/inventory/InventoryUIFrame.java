@@ -24,6 +24,11 @@ package org.cougaar.logistics.ui.inventory;
 
 import java.util.Vector;
 import java.util.Hashtable;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.util.GregorianCalendar;
+
 
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
@@ -90,6 +95,8 @@ public class InventoryUIFrame extends JFrame
     
     private Logger logger;
 
+    String defaultCSVPath;
+
 
     InventorySelectionPanel selector;
     InventoryXMLParser parser;
@@ -103,7 +110,25 @@ public class InventoryUIFrame extends JFrame
 	parser = new InventoryXMLParser();
 	logger = Logging.getLogger(this);
 	contentPane = getRootPane().getContentPane();
-	fileChooser = new JFileChooser(".");
+
+	
+
+	String baseDir = System.getProperty("org.cougaar.workspace");
+	if((baseDir == null) ||
+	   (baseDir.trim().equals(""))) {
+	    baseDir = System.getProperty("org.cougaar.install.path");
+	    baseDir = baseDir + File.separator + "workspace";
+	}
+	defaultCSVPath = baseDir + File.separator + "INVGUICSV" + File.separator + formatTimeStamp(new Date(),false) + File.separator; 
+	File pathDirs = new File(defaultCSVPath);
+	try {
+	    pathDirs.mkdirs();
+	}
+	catch(Exception e) {
+	    logger.error("Error creating default directory " + defaultCSVPath, e);
+	}	
+
+	fileChooser = new JFileChooser(pathDirs);
 	// fills frame
 	doMyLayout();
 	dataSource=null;
@@ -143,17 +168,13 @@ public class InventoryUIFrame extends JFrame
 
 	JButton parseButton = new JButton("Parse");
 	JButton dataButton = new JButton("Data");
-	JButton hrButton = new JButton("Readable Data");
 	parseButton.addActionListener(this);
 	dataButton.addActionListener(this);
-	hrButton.addActionListener(this);
 
 	JPanel buttonPanel = new JPanel();
 	buttonPanel.setLayout(new FlowLayout());
 	buttonPanel.add(dataButton);
-	buttonPanel.add(Box.createHorizontalStrut(20));
-	buttonPanel.add(hrButton);
-	buttonPanel.add(Box.createHorizontalStrut(20));
+	buttonPanel.add(Box.createHorizontalStrut(60));
 	buttonPanel.add(parseButton);
 	
 	editPanel.add(buttonPanel,BorderLayout.NORTH);
@@ -201,6 +222,11 @@ public class InventoryUIFrame extends JFrame
 	    connectToServlet();
 	}
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_SaveXML)) {
+	    if(inventory != null) {
+		String fileID = defaultCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
+		System.out.println("Save to file: " + fileID);
+		fileChooser.setSelectedFile(new File(fileID));
+	    }
 	    int retval = fileChooser.showSaveDialog(this);
 	    if(retval == fileChooser.APPROVE_OPTION) {
 		File saveFile = fileChooser.getSelectedFile();
@@ -223,23 +249,6 @@ public class InventoryUIFrame extends JFrame
 	}
 	else if(e.getActionCommand().equals("Data")) {
 	    editPane.setText(dataSource.getCurrentInventoryData());
-	}
-	else if(e.getActionCommand().equals("Readable Data")) {
-	    String xmlString = dataSource.getCurrentInventoryData();
-	    if((inventory == null) ||
-	       (xmlString == null) ||
-	       (xmlString.trim().equals(""))) {
-		return;
-	    }
-	    StringWriter writer = new StringWriter();
-	    try {
-		inventory.writeHRString(writer);
-		writer.flush();
-	    }
-	    catch(IOException ioe) {
-		throw new RuntimeException(ioe);
-	    }
-	    editPane.setText(writer.toString());
 	}
     }
 
@@ -274,8 +283,33 @@ public class InventoryUIFrame extends JFrame
 	}
     }
 
+    public static String formatTimeStamp(Date dateToFormat, 
+					 boolean includeSeconds) {
 
-   
+	String datestamp;
+	TimeZone gmt = TimeZone.getDefault();
+	GregorianCalendar now = new GregorianCalendar(gmt);
+	now.setTime(dateToFormat);
+	datestamp = "" + now.get(Calendar.YEAR);
+	datestamp += prependSingle(now.get(Calendar.MONTH) + 1);
+	datestamp += prependSingle(now.get(Calendar.DAY_OF_MONTH));
+	datestamp += prependSingle(now.get(Calendar.HOUR_OF_DAY));
+	datestamp += prependSingle(now.get(Calendar.MINUTE));
+	if(includeSeconds) {
+	    datestamp += prependSingle(now.get(Calendar.SECOND));
+	}
+	return datestamp;
+    }   
+
+    private static String prependSingle(int digit) {
+	if(digit < 10) {
+	    return "0" + digit;
+	}
+	else {
+	    return "" + digit;
+	}
+    }
+
   public static void main(String[] args)
   {
       InventoryUIFrame frame = new InventoryUIFrame();

@@ -62,6 +62,8 @@ public class InventoryData {
     public Hashtable getSchedules() { return schedules; }
     public String getUnit() { return unit; }
     public long getStartCDay() { return startCDay; }
+    public String getOrg() { return org; }
+    public String getItem() { return item; }
 
     public void writeHRString(Writer writer) throws java.io.IOException {
 	writer.write("<" + LogisticsInventoryFormatter.INVENTORY_DUMP_TAG +
