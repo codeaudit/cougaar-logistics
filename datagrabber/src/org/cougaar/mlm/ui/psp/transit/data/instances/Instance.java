@@ -92,7 +92,7 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
   public static int numLong = 1;
   public static int numBoolean = 1;
   public static int numInt = 1; // all manifest lists are the same length
-  public static int maxStringLength = 60;
+  public static int maxStringLength = 85;
 
   //Constructors:
   ///////////////
