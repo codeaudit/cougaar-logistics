@@ -113,7 +113,7 @@ public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable
   public static int numLongFields  = 2; 
   public static int numIntFields  = 2; 
   public static int numBooleanFields = 1;
-  public static int maxStringLength = 70;
+  public static int maxStringLength = 80;
 
   //Constructors:
   ///////////////
