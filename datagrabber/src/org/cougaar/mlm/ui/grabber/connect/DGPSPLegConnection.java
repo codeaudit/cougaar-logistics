@@ -66,7 +66,6 @@ public class DGPSPLegConnection extends DGPSPConnection
   protected Map legUIDToString   = new HashMap();
   protected Map conveyanceUIDToString = new HashMap();
   protected Map routeUIDToString = new HashMap();
-  protected Map missionUIDToString = new HashMap();
 
   //Constructors:
   ///////////////
@@ -206,8 +205,7 @@ public class DGPSPLegConnection extends DGPSPConnection
     sb.append(COL_ENDLOC);sb.append(",");
     sb.append(COL_LEGTYPE);sb.append(",");
     sb.append(COL_CONVEYANCEID); sb.append(",");
-    sb.append(COL_ROUTEID); sb.append(",");
-    sb.append(COL_MISSIONID);
+    sb.append(COL_ROUTEID);
     sb.append(") VALUES(");
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
@@ -220,7 +218,6 @@ public class DGPSPLegConnection extends DGPSPConnection
       sb.append("?");sb.append(",");
     }
 
-    sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
     sb.append("?");sb.append(",");
@@ -282,7 +279,6 @@ public class DGPSPLegConnection extends DGPSPConnection
       s.setInt(++col, pspToDBLegType(l.legType));
       s.setString(++col, getUID (l.conveyanceUID, conveyanceUIDToString));
       s.setString(++col, (l.routeUID != null) ? getUID (l.routeUID, routeUIDToString) : "null");
-      s.setString(++col, getUID (l.missionUID, missionUIDToString));
       s.addBatch();
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not add batch to table("+
