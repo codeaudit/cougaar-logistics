@@ -51,6 +51,7 @@ public class ArrivalTimeTest extends Test{
   static final String COL_NUMASSETS = "numassets";
   static final String COL_NUMDIFF = "numdiff";
   static final String COL_ARRIVALTIMEDIFF = "avgdiff";
+  static final int MILLIS_PER_HOUR = 60 * 60 * 1000;
 
   //Variables:
   ////////////
@@ -230,8 +231,6 @@ public class ArrivalTimeTest extends Test{
   
   // Computes the average of the set of end times versus the preferred end time.
   protected int computeArrivalTimeDiff(Collection endTimesForUnit, String preferredTimeString, int total) {
-    final int MILLIS_PER_HOUR = 60 * 60 * 1000;
-
     long sum = 0;
     try {
       SimpleDateFormat format = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
@@ -251,13 +250,12 @@ public class ArrivalTimeTest extends Test{
   // Computes the "standard deviation" of the set of end times versus the preferred
   // end time.
   protected int computeSumSquareArrivalTimeDiff(Collection endTimesForUnit, String preferredTimeString, int total) {
-    final int MILLIS_PER_HOUR = 60 * 60 * 1000;
 
     double squaresum = 0;
     try {
       SimpleDateFormat format = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
       long preferredTime = format.parse(preferredTimeString).getTime() / MILLIS_PER_HOUR;
-      
+
       for (Iterator iter = endTimesForUnit.iterator(); iter.hasNext();) {
 	long actualEndTime = format.parse((String) iter.next()).getTime() / MILLIS_PER_HOUR;
 	squaresum += (preferredTime - actualEndTime) * (preferredTime - actualEndTime);
@@ -269,19 +267,12 @@ public class ArrivalTimeTest extends Test{
     return ((int)Math.sqrt(squaresum / total));
   }
 
-
   protected void insertRow(Logger l, Statement s, int run,
 			   String owner, 
 			   int count, 
 			   int diffcount, 
 			   int avgArrivalTimeDiff) throws SQLException {
     String sql = null;
-    
-//      System.out.println("ArrivalTimeTest.insertRow() - inserting owner = " + owner + 
-//  		       " total = " + count + 
-//  		       " diffcount = " + diffcount + 
-//  		       " avgDiff = " + avgArrivalTimeDiff);
-
     try {
       StringBuffer sb=new StringBuffer();
       sb.append("INSERT INTO ");

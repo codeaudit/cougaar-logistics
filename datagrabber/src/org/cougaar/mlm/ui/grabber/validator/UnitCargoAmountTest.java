@@ -41,7 +41,7 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
  *
  * @since 2/26/01
  **/
-public class UnitCargoAmountTest extends Test implements Graphable {
+public class UnitCargoAmountTest extends AbstractCargoTest implements Graphable {
   
   //Constants:
   ////////////
@@ -58,13 +58,6 @@ public class UnitCargoAmountTest extends Test implements Graphable {
   public UnitCargoAmountTest(DBConfig dbConfig, boolean people){
     super(dbConfig);
     this.people = people;
-  }
-
-  //Members:
-  //////////
-
-  public int failureLevel(){
-    return RESULT_INFO;
   }
 
   /**for gui**/
@@ -89,24 +82,7 @@ public class UnitCargoAmountTest extends Test implements Graphable {
     return types;
   }
 
-  /** methods for interface Graphable */
-  public int getXAxisColumn () { return 1; }
   public int getYAxisColumn () { return 2; }
-  public int getZAxisColumn () { return -1; }
-  public boolean hasThirdDimension () { return false; }
-
-  /** 
-   * if the third dimension is too wide, e.g. asset types, 
-   * show one graph per X dimension entry 
-   **/
-  public boolean showMultipleGraphs () { return false; }
-
-  /**Actually do the query and build the table**/
-  protected void constructTable(Logger l, Statement s, int run)
-    throws SQLException{
-    createTable(s, run);
-    insertResults(l,s,run);
-  }
 
   protected void createTable(Statement s, int run) throws SQLException{
     s.executeUpdate("CREATE TABLE "+getTableName(run)+" ( "+
