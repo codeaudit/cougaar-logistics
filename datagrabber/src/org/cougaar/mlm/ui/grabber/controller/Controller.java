@@ -490,33 +490,33 @@ public class Controller extends Thread implements ResultHandler, DBConnectionPro
 		     dgConfig.getDBConfig().getDateTimeType()+
 		     " NULL, "+
 		     COL_CONDITION+" INTEGER NOT NULL, " +
-			COL_ANNOTATION+" VARCHAR(255)"+
-			")");
+		     COL_ANNOTATION+" VARCHAR(255)"+
+		     ")");
 	s.close();
       }
-	else {
-      		ResultSet rs2 = meta.getColumns(null,null,getRunTableName(),COL_ANNOTATION);
-	 	if (!rs2.next()) {
-			logger.logMessage(Logger.NORMAL,Logger.DB_QUERY,"need to add annotation column");
-      			Statement s=dbConnection.createStatement();
-      			if(s==null){
-				logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
-			  	"Could not create statement from connection");
-				return false;
-			}
-			try {
-				ResultSet rs3=s.executeQuery("ALTER TABLE " + getRunTableName() +
-							    " ADD COLUMN " + COL_ANNOTATION + 
-							    " VARCHAR(255) AFTER " + COL_CONDITION);
-				rs3.close();
-			} catch (SQLException sql) { 
-				logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
-				"Could not add column to run table?");
-			}		
+      else {
+	ResultSet rs2 = meta.getColumns(null,null,getRunTableName(),COL_ANNOTATION);
+	if (!rs2.next()) {
+	  logger.logMessage(Logger.NORMAL,Logger.DB_QUERY,"need to add annotation column");
+	  Statement s=dbConnection.createStatement();
+	  if(s==null){
+	    logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+			      "Could not create statement from connection");
+	    return false;
+	  }
+	  try {
+	    ResultSet rs3=s.executeQuery("ALTER TABLE " + getRunTableName() +
+					 " ADD COLUMN " + COL_ANNOTATION + 
+					 " VARCHAR(255) AFTER " + COL_CONDITION);
+	    rs3.close();
+	  } catch (SQLException sql) { 
+	    logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+			      "Could not add column to run table?");
+	  }		
 		
-	 	}	
-		rs2.close();
-	}
+	}	
+	rs2.close();
+      }
       rs.close();
     }catch(SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
