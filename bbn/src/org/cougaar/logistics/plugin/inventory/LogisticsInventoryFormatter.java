@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Collection;
+import java.util.Iterator;
 
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.PlanElement;
@@ -38,8 +40,8 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-
-
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
 /** 
  * <pre>
@@ -155,7 +157,52 @@ public class LogisticsInventoryFormatter {
     }    
 
 
+    protected void logLevels(Schedule reorderLevels,
+			     Schedule inventoryLevels, 
+			     long aCycleStamp, 
+			     boolean expandTimestamp) {
+	cycleStamp = aCycleStamp;
+	Enumeration e = reorderLevels.getAllScheduleElements();
+	while(e.hasMoreElements()) {
+	    QuantityScheduleElement qse=(QuantityScheduleElement)e.nextElement();
+	    Collection invLevelsInRange = 
+		inventoryLevels.getEncapsulatedScheduleElements(qse.getStartTime(),qse.getEndTime());
+	    logLevels(qse,invLevelsInRange,expandTimestamp);
+	}
+    }
     
+    protected void logLevels(QuantityScheduleElement reorderLevel,
+			     Collection invLevelsInRange,
+			     boolean expandTimestamp) {
+
+	String outputStr = getDateString(reorderLevel.getStartTime(),expandTimestamp) + ",";
+	outputStr += getDateString(reorderLevel.getEndTime(),expandTimestamp) + ",";
+	outputStr += reorderLevel.getQuantity() + ",";
+	if(invLevelsInRange.isEmpty()) {
+	    if(logger.isWarnEnabled()) {
+		logger.warn("logLevel:no inventory level in range " + outputStr);
+	    }
+	    writeln(outputStr);
+	}
+	else {
+	    Iterator it = invLevelsInRange.iterator();
+	    boolean moreThanOne = false;
+	    boolean alreadyLogged = false;
+	    while(it.hasNext()) {
+		QuantityScheduleElement invLevel=(QuantityScheduleElement) it.next();
+		outputStr += invLevel.getQuantity();
+		if(moreThanOne && !alreadyLogged) {
+		    if(logger.isWarnEnabled()) {
+			logger.warn("logLevel:More than one inventory level in range " + outputStr);			
+		    }
+		    alreadyLogged=true;
+		}
+		writeln(outputStr + invLevel.getQuantity());
+		moreThanOne=true;
+	    }
+	}
+    }
+		
     protected static int getIndexForType(int[] types, int type) {
 	for (int ii = 0; ii < types.length; ii++) {
 	    if (types[ii] == type) {
@@ -177,6 +224,14 @@ public class LogisticsInventoryFormatter {
 	    return Long.toString(datetime);
 	}
     }
+
+    protected void excelLogLevels(Schedule reorderLevels,
+				  Schedule inventoryLevels,
+				  long aCycleStamp) {
+	writeNoCycleLn("CYCLE,START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL");
+	logLevels(reorderLevels,inventoryLevels,aCycleStamp,true);
+    } 
+
 
     protected void excelLogProjections(ArrayList tasks,long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE");
@@ -209,6 +264,26 @@ public class LogisticsInventoryFormatter {
 	return parentList;
     }
     
+
+    public void logToExcelOutput(ArrayList withdrawList,
+				 ArrayList projWithdrawList,
+				 ArrayList resupplyList,
+				 ArrayList projResupplyList,
+				 Schedule  reorderLevels,
+				 Schedule  inventoryLevels,
+				 long aCycleStamp) {
+	logDemandToExcelOutput(withdrawList,projWithdrawList,aCycleStamp);
+	logResupplyToExcelOutput(resupplyList,projResupplyList,aCycleStamp);
+	logLevelsToExcelOutput(reorderLevels,inventoryLevels,aCycleStamp);
+
+	try {
+	    output.flush();
+	}
+	catch(IOException e) {
+	    logger.error("Exception when trying to flush excel stream." + e.toString());
+	}
+    }
+
     protected void logDemandToExcelOutput(ArrayList withdrawList,
 					  ArrayList projWithdrawList,
 					  long aCycleStamp) {
@@ -264,6 +339,104 @@ public class LogisticsInventoryFormatter {
 	excelLogARs(projResupplyList,aCycleStamp);
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS: END");
 
+    }
+
+    protected void logLevelsToExcelOutput(Schedule reorderLevels,
+					  Schedule inventoryLevels,
+					  long aCycleStamp) {
+
+	writeNoCycleLn("INVENTORY LEVELS: START");
+	excelLogLevels(reorderLevels,inventoryLevels,aCycleStamp);
+	writeNoCycleLn("INVENTORY LEVELS: END");
+    }
+
+    public void logToXMLOutput(Asset invAsset,
+			       Organization anOrg,
+			       ArrayList withdrawList,
+			       ArrayList projWithdrawList,
+			       ArrayList resupplyList,
+			       ArrayList projResupplyList,
+			       Schedule  reorderLevels,
+			       Schedule  inventoryLevels,
+			       long aCycleStamp) {
+	cycleStamp = aCycleStamp;
+	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
+	String assetName = invAsset.getItemIdentificationPG().getItemIdentification();
+	writeln("<INVENTORY_DUMP org=" + orgId + " item=" + assetName + ">");
+	logDemandToXMLOutput(withdrawList,projWithdrawList,aCycleStamp);
+	logResupplyToXMLOutput(resupplyList,projResupplyList,aCycleStamp);
+	logLevelsToXMLOutput(reorderLevels,inventoryLevels,aCycleStamp);
+	writeln("</INVENTORY_DUMP>");
+	try {
+	    output.flush();
+	}
+	catch(IOException e) {
+	    logger.error("Exception when trying to flush xml stream." + e.toString());
+	}
+    }
+
+    protected void logDemandToXMLOutput(ArrayList withdrawList,
+					ArrayList projWithdrawList,
+					long aCycleStamp) {
+
+	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
+	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
+
+	writeNoCycleLn("SUPPLY TASKS type=TASKS");
+	logTasks(supplyList,aCycleStamp,false);
+	writeNoCycleLn("/SUPPLY TASKS");
+	writeNoCycleLn("WITHDRAW TASKS type=TASKS");
+	logTasks(withdrawList,aCycleStamp,false);
+	writeNoCycleLn("/WITHDRAW TASKS");
+	writeNoCycleLn("PROJECTSUPPLY TASKS type=PROJTASKS");
+	logTasks(projSupplyList,aCycleStamp,false);
+	writeNoCycleLn("/PROJECTSUPPLY TASKS");
+	writeNoCycleLn("PROJECTWITHDRAW TASKS type=PROJTASKS");
+	logTasks(projWithdrawList,aCycleStamp,false);
+	writeNoCycleLn("/PROJECTWITHDRAW TASKS");
+
+	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	logAllocationResults(supplyList,aCycleStamp,false);
+	writeNoCycleLn("/SUPPLY TASK ALLOCATION RESULTS");
+	writeNoCycleLn("WITHDRAW TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	logAllocationResults(withdrawList,aCycleStamp,false);
+	writeNoCycleLn("/WITHDRAW TASK ALLOCATION RESULTS");
+	writeNoCycleLn("PROJECTSUPPLY TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	logAllocationResults(projSupplyList,aCycleStamp,false);
+	writeNoCycleLn("/PROJECTSUPPLY TASK ALLOCATION RESULTS");
+	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	logAllocationResults(projWithdrawList,aCycleStamp,false);
+	writeNoCycleLn("/PROJECTWITHDRAW TASK ALLOCATION RESULTS");
+
+    }
+
+    protected void logResupplyToXMLOutput(ArrayList resupplyList,
+					  ArrayList projResupplyList,
+					  long aCycleStamp) {
+	cycleStamp = aCycleStamp;
+
+	writeNoCycleLn("RESUPPLY SUPPLY TASKS type=TASKS");
+	logTasks(resupplyList,aCycleStamp,false);
+	writeNoCycleLn("/RESUPPLY SUPPLY TASKS");
+	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASKS type=PROJTASKS");
+	logTasks(projResupplyList,aCycleStamp,false);
+	writeNoCycleLn("/RESUPPLY PROJECTSUPPLY TASKS");
+
+	writeNoCycleLn("RESUPPLY SUPPLY TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	excelLogARs(resupplyList,aCycleStamp);
+	writeNoCycleLn("/RESUPPLY SUPPLY TASK ALLOCATION RESULTS");
+	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS type=ALLOCATION_RESULTS");
+	excelLogARs(projResupplyList,aCycleStamp);
+	writeNoCycleLn("/RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS");
+
+    }
+
+    protected void logLevelsToXMLOutput(Schedule reorderLevels,
+					Schedule inventoryLevels,
+					long aCycleStamp) {
+	writeNoCycleLn("INVENTORY LEVELS type=LEVELS");
+	logLevels(reorderLevels,inventoryLevels,aCycleStamp,false);
+	writeNoCycleLn("INVENTORY LEVELS: END");
     }
 
     public void writeln(String csvString) {
