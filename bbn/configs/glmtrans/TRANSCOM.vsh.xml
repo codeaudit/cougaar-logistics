@@ -83,7 +83,7 @@
 <LITERAL value="3600.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="23.0" type="constant" datatype="number" />
+<LITERAL value="15.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
@@ -121,29 +121,29 @@
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="&lt;" >
-<OPERATOR operation="/" >
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="distance" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="number" />
+ <OPERATOR operation="/" >
+  <OPERATOR operation="get" >
+   <LITERAL value="task" type="variable" datatype="task" />
+   <LITERAL value="distance" type="constant" datatype="string" />
+   <LITERAL value="" type="variable" datatype="number" />
+  </OPERATOR>
+ <OPERATOR operation="/" >
+  <OPERATOR operation="-" >
+   <OPERATOR operation="get" >
+    <LITERAL value="task" type="variable" datatype="task" />
+    <LITERAL value="arrival" type="constant" datatype="string" />
+    <LITERAL value="" type="variable" datatype="datetime" />
+   </OPERATOR>
+  <OPERATOR operation="get" >
+   <LITERAL value="task" type="variable" datatype="task" />
+   <LITERAL value="departure" type="constant" datatype="string" />
+   <LITERAL value="" type="variable" datatype="datetime" />
+  </OPERATOR>
+ </OPERATOR>
+ <LITERAL value="3600.0" type="constant" datatype="number" />
 </OPERATOR>
-<OPERATOR operation="/" >
-<OPERATOR operation="-" >
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="arrival" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="departure" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-</OPERATOR>
-<LITERAL value="3600.0" type="constant" datatype="number" />
-</OPERATOR>
-</OPERATOR>
-<LITERAL value="23.0" type="constant" datatype="number" />
+<LITERAL value="15.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
