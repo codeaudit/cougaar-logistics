@@ -126,7 +126,7 @@
 
   <!-- ::::::::::::::::::::::::::LowFi:::::::::::::::::::::::::::: -->
 
-  <prototype name="LowFidelityPrototype">
+  <prototype name="Level2Prototype">
     <object class="org.cougaar.glm.ldm.asset.PhysicalAsset">
 
       <field name="TypeIdentificationPG" type="object">
@@ -134,12 +134,12 @@
           <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
             <field name="TypeIdentification" type="java.lang.String">
               <value>
-	        LowFidelityTypeID
+	        Level2TypeID
 	      </value>
             </field>
             <field name="Nomenclature" type="java.lang.String">
               <value>
-	        LowFidelityNomen
+	        Level2Nomen
 	      </value>
             </field>
           </object>
