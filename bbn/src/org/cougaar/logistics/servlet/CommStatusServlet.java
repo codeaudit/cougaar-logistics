@@ -152,6 +152,8 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
           CommStatus temp = (CommStatus) i.next();
           if (temp.connectedAgentName.equals(connectedAgentName)) {
             cs = temp;
+            System.out.println("\n CSS Found matching CommStatus object for connectedAgentName: " +
+                               connectedAgentName);
             break;
           }
         }
@@ -165,8 +167,12 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
         cs = new CommStatus(connectedAgentName);
         if (commUp == false) {
           cs.setCommLoss(currentTimeMillis());
+          System.out.println("\n CSS Setting Comm LOSS for NEW CommStatus object for connectedAgentName: " +
+                             connectedAgentName);
         } else {
           cs.setCommRestore(currentTimeMillis());
+          System.out.println("\n CSS Setting Comm RESTORE for NEW CommStatus object for connectedAgentName: " +
+                             connectedAgentName);
         }
         blackboard.openTransaction();
         blackboard.publishAdd(cs);
@@ -174,8 +180,12 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
       } else {  //otherwise update the existing CommStatus object
         if (commUp == false) {
           cs.setCommLoss(currentTimeMillis());
+          System.out.println("\n CSS Setting Comm LOSS for MATCHING CommStatus object for connectedAgentName: " +
+                             connectedAgentName);
         } else {
           cs.setCommRestore(currentTimeMillis());
+          System.out.println("\n CSS Setting Comm RESTORE for MATCHING CommStatus object for connectedAgentName: " +
+                             connectedAgentName);
         }
         blackboard.openTransaction();
         blackboard.publishChange(cs);
