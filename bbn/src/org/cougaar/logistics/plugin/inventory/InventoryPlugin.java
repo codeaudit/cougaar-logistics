@@ -592,36 +592,40 @@ public class InventoryPlugin extends ComponentPlugin {
   /**
      Passes Inventory assets that have a valid LogisticsInventoryPG
   **/
-  private static class InventoryPredicate implements UnaryPredicate {
+
+ private static class InventoryPredicate implements UnaryPredicate {
     String supplyType;
 
-    public InventoryPredicate(String type){ 
-      supplyType = type; 
-    }
-
-    public boolean execute(Object o) {
-      if (o instanceof Inventory) {
-	LogisticsInventoryPG logInvpg = 
-	  (LogisticsInventoryPG) ((Inventory) o).searchForPropertyGroup(LogisticsInventoryPG.class);
-	if (logInvpg != null) {
-	  String type = getAssetType((Inventory)o);
-	  if (supplyType.equals(type)) {
-	    return true;    
-	  }
-	}
-      }
-      return false;
-    }
-
-    private String getAssetType(Inventory inventory) {
-      InventoryPG invpg = (InventoryPG)inventory.getInventoryPG();
-      if (invpg == null ) return null;
-      Asset a = invpg.getResource();
-      if (a == null) return null;
-      SupplyClassPG pg = (SupplyClassPG)a.searchForPropertyGroup(SupplyClassPG.class);
-      return pg.getSupplyType();
-    }
-  }
+     public InventoryPredicate(String type){
+	 supplyType = type;
+     }
+     
+     public boolean execute(Object o) {
+	 if (o instanceof Inventory) {
+	     Inventory inv = (Inventory) o;
+	     LogisticsInventoryPG logInvpg =
+		 (LogisticsInventoryPG) 
+		 inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+	     if (logInvpg != null) {
+		 String type = getAssetType(inv, logInvpg);
+		 if (supplyType.equals(type)) {
+		     return true;    
+		 }
+	     }
+	 }
+	 return false;
+     }
+     
+     private String getAssetType(Inventory inventory, 
+				 LogisticsInventoryPG invpg) {
+	 Asset a = invpg.getResource();
+	 if (a == null) return null;
+	 SupplyClassPG pg = (SupplyClassPG) 
+	     a.searchForPropertyGroup(SupplyClassPG.class);
+	 return pg.getSupplyType();
+     }
+ }
+    
     
 
     //Allocation of refill tasks
@@ -834,8 +838,8 @@ public class InventoryPlugin extends ComponentPlugin {
      Method called during rehydration to populate inventory hash
   **/
   private void addInventories(Collection inventories) {
-    for (Iterator i = inventories.iterator(); i.hasNext(); ) {
-      addInventory((Inventory) i.next());
+      for (Iterator i = inventories.iterator(); i.hasNext(); ) {
+	  addInventory((Inventory) i.next());
     }
   }
   
