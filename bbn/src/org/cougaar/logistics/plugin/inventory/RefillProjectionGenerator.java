@@ -127,58 +127,61 @@ public class RefillProjectionGenerator extends InventoryModule {
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-      // clear all of the projections
-      oldProjections.addAll(thePG.clearRefillProjectionTasks());
+      // don't process the level 2 inventory
+      if (! thePG.getIsLevel2()) {
+	// clear all of the projections
+	oldProjections.addAll(thePG.clearRefillProjectionTasks());
 
-      //start time is the start time of the inventorybg
-      long startDay = thePG.getStartTime();
-      int startBucket = thePG.convertTimeToBucket(startDay);
-      int currentBucket = startBucket;
-      int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
-                                                           addNDays(startDay, daysOnHand));
-      double projDemand = 0;
-      double nextProjDemand = 0;
-      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
+        //start time is the start time of the inventorybg
+	long startDay = thePG.getStartTime();
+	int startBucket = thePG.convertTimeToBucket(startDay);
+	int currentBucket = startBucket;
+	int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
+							     addNDays(startDay, daysOnHand));
+	double projDemand = 0;
+	double nextProjDemand = 0;
+	int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
       
-      //get the initial demand for the customer for startBucket + daysOnHand
-      //Is there a better way to do this to avoid the duplication?
-      projDemand = thePG.getProjectedDemand(customerDemandBucket);
+	//get the initial demand for the customer for startBucket + daysOnHand
+	//Is there a better way to do this to avoid the duplication?
+	projDemand = thePG.getProjectedDemand(customerDemandBucket);
 
-      //move forward a bucket
-      currentBucket = currentBucket + 1;
-      customerDemandBucket = customerDemandBucket + 1;
+	//move forward a bucket
+	currentBucket = currentBucket + 1;
+	customerDemandBucket = customerDemandBucket + 1;
 
-      //Begin looping through currentBucket forward until you hit the end of
-      // the level six boundary
-      //possible boundary issue... is it '<' or '<=' ??
-      while (currentBucket < endOfLevelSixBucket) {
-        nextProjDemand = thePG.getProjectedDemand(customerDemandBucket);
-        if (projDemand != nextProjDemand) {
-          //if there's a change in the demand, create a refill projection
-          Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
-					       thePG.convertBucketToTime(currentBucket -1),
-					       projDemand, anInventory, thePG);
-	  refillProjections.add(refill);
-          //then reset the start bucket and the new demand 
-          startBucket = currentBucket;
-          projDemand = nextProjDemand;
-        }
-        //in either case bump current and customer forward a bucket.
-        currentBucket = currentBucket + 1;
-        customerDemandBucket = customerDemandBucket + 1;
-       }
-      // when we get to the end of the level six window create the last
-      // projection task (if there is one)
-      if (startBucket != currentBucket) {
-        Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
-                               thePG.convertBucketToTime(currentBucket - 1),
-                               projDemand, anInventory, thePG);
-	refillProjections.add(lastRefill);
-      }
-      // send the new projections and the old projections to the Comparator
-      // the comparator will rescind the old and publish the new projections
-      myComparator.compareRefillProjections(refillProjections, oldProjections, 
-					    anInventory);
+	//Begin looping through currentBucket forward until you hit the end of
+	// the level six boundary
+	//possible boundary issue... is it '<' or '<=' ??
+	while (currentBucket < endOfLevelSixBucket) {
+	  nextProjDemand = thePG.getProjectedDemand(customerDemandBucket);
+          if (projDemand != nextProjDemand) {
+            //if there's a change in the demand, create a refill projection
+	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
+						 thePG.convertBucketToTime(currentBucket -1),
+						 projDemand, anInventory, thePG);
+	    refillProjections.add(refill);
+	    //then reset the start bucket and the new demand 
+	    startBucket = currentBucket;
+	    projDemand = nextProjDemand;
+	  }
+	  //in either case bump current and customer forward a bucket.
+	  currentBucket = currentBucket + 1;
+	  customerDemandBucket = customerDemandBucket + 1;
+	}
+	// when we get to the end of the level six window create the last
+	// projection task (if there is one)
+	if (startBucket != currentBucket) {
+	  Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
+						   thePG.convertBucketToTime(currentBucket - 1),
+						   projDemand, anInventory, thePG);
+	  refillProjections.add(lastRefill);
+	}
+	// send the new projections and the old projections to the Comparator
+	// the comparator will rescind the old and publish the new projections
+	myComparator.compareRefillProjections(refillProjections, oldProjections, 
+					      anInventory);
+      } // end of not level 2 inventory
     }
   }
 
@@ -190,43 +193,71 @@ public class RefillProjectionGenerator extends InventoryModule {
    **/
   private void calculateLevelTwoProjections(Collection inventories, int daysOnHand, 
                                             long start, long endOfLevelTwo) {
-      ArrayList myInventories = new ArrayList(inventories);
-    //since all Inventories in the agent will use the same bucket size
-    // get a token inventory to convert the start and end times to buckets
-    // so that we don't have to deal with times and buckets for each inventory.
-    LogisticsInventoryPG tokenPG = (LogisticsInventoryPG) ((Inventory)myInventories.get(0)).
-      searchForPropertyGroup(LogisticsInventoryPG.class);
+    LogisticsInventoryPG level2PG = null;
+    Inventory level2Inv = null;
+    ArrayList myInventories = new ArrayList(inventories);
+    Iterator invIter = myInventories.iterator();
+    while (invIter.hasNext()) {
+      Inventory testInv = (Inventory) invIter.next();
+      LogisticsInventoryPG aPG = (LogisticsInventoryPG) testInv.
+	  searchForPropertyGroup(LogisticsInventoryPG.class);
+      if (aPG.getIsLevel2()) {
+	  level2Inv = testInv;
+	level2PG = aPG;
+      }
+    }
+    // if the level 2 inventory was not in the collection of inventories create one
+    if (level2PG == null) {
+      //Asset level2Asset = getPrototype(inventoryPlugin.getSupplyType());
+ //   level2Inv = inventoryPlugin.findOrMakeInventory(level2Asset);
+//    level2PG = (LogisticsInventoryPG)level2Inv.
+//    searchForPropertyGroup(LogisticsInventoryPG.class);
+    }
 
-    int startBucket = tokenPG.convertTimeToBucket(start);
+    // is this right??
+    // use level 2 demand until its 0 and from there use level 6 demand
+    // to create level 2 demand until the end of the level 2 window? 
+
+    int startBucket = level2PG.convertTimeToBucket(start);
     int currentBucket = startBucket;
-    int customerDemandBucket = tokenPG.convertTimeToBucket(getTimeUtils().
+    int customerDemandBucket = level2PG.convertTimeToBucket(getTimeUtils().
                                                            addNDays(start, daysOnHand));
-    int endOfLevelTwoBucket = tokenPG.convertTimeToBucket(endOfLevelTwo);
+    int endOfLevelTwoBucket = level2PG.convertTimeToBucket(endOfLevelTwo);
     double projDemand = -1;
 
     //loop through the buckets until we reach the end of level two
     while (currentBucket < endOfLevelTwoBucket) {
       double combinedDailyDemand = 0;
-      for (int i=0; i < myInventories.size(); i++) {
-        Inventory inv = (Inventory) myInventories.get(i);
-        // should we make a PG collection and keep it around???
-        LogisticsInventoryPG thePG = (LogisticsInventoryPG) ((Inventory)myInventories.get(i)).
-          searchForPropertyGroup(LogisticsInventoryPG.class);
-        // how do we make aggregates??
-        double rawdemand = thePG.getProjectedDemand(customerDemandBucket);
-        // need physical pg so demand = rawdemand * tons or whatever
-        //  combinedDailyDemand = combinedDailyDemand + demand;
+      double demand = level2PG.getProjectedDemand(customerDemandBucket);
+      if (demand != 0) {
+	// use level 2 demand
+	combinedDailyDemand = demand;
+      } else {
+	// create level 2 info from level 6
+	for (int i=0; i < myInventories.size(); i++) {
+          Inventory inv = (Inventory) myInventories.get(i);
+          // should we make a PG collection and keep it around???
+          LogisticsInventoryPG thePG = (LogisticsInventoryPG) ((Inventory)myInventories.get(i)).
+	      searchForPropertyGroup(LogisticsInventoryPG.class);
+          // TODO how do we make aggregates??
+	  // note the buckets boundaries could be different for each inventory
+	  int thisCustomerDemandBucket = 
+	      thePG.convertTimeToBucket(level2PG.convertBucketToTime(customerDemandBucket));
+          double rawdemand = thePG.getProjectedDemand(thisCustomerDemandBucket);
+          // need physical pg so demand = rawdemand * tons or whatever
+          //  combinedDailyDemand = combinedDailyDemand + demand;
+        }
       }
       //if its the first bucket, seed proj demand
       if (projDemand == -1) {
-        projDemand = combinedDailyDemand;
+	projDemand = combinedDailyDemand;
       }
       //check the results for the Day.
       if (projDemand != combinedDailyDemand) {
         //if there's a change in the demand, create a refill projection
-        createAggregateProjectionRefill(tokenPG.convertBucketToTime(startBucket), 
-                                        tokenPG.convertBucketToTime(currentBucket - 1),
-                                        tokenPG.getStartTime(), projDemand);
+        createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+                                        level2PG.convertBucketToTime(currentBucket - 1),
+                                        level2PG.getStartTime(), projDemand);
         //then reset the start bucket  and the new demand 
         startBucket = currentBucket;
         projDemand = combinedDailyDemand;
@@ -237,9 +268,9 @@ public class RefillProjectionGenerator extends InventoryModule {
     // when we get to the end of the level two window create the last
     // projection task (if there is one)
     if (startBucket != currentBucket) {
-      createAggregateProjectionRefill(tokenPG.convertBucketToTime(startBucket), 
-                                      tokenPG.convertBucketToTime(currentBucket - 1),
-                                      tokenPG.getStartTime(), projDemand);      
+      createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+                                      level2PG.convertBucketToTime(currentBucket - 1),
+                                      level2PG.getStartTime(), projDemand);      
     }
   }      
  
