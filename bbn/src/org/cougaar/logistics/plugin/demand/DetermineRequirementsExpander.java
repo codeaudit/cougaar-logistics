@@ -41,7 +41,7 @@ import org.cougaar.glm.ldm.Constants;
  * The default RequirementsExpander for the DemandForecastPlugin.
  *
  * This class expands a determine requirements task into generateProjections tasks for each
- * MEI that has the passed in supply class PG on it.    
+ * MEI that has the passed in supply class PG on it.
  *
  *
  **/
@@ -112,7 +112,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   protected void createAndPublishExpansion(Task parent, Collection subtasks) {
     Iterator subtasksIT = subtasks.iterator();
     while(subtasksIT.hasNext()) {
-      dfPlugin.publishAdd((Task) subtasksIT.next());
+      dfPlugin.publishAdd(subtasksIT.next());
     }
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
@@ -131,9 +131,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     dfPlugin.publishChange(expansion);
   }
 
-  protected void addNewTasksToExpansion(Task parentTask, Collection subtasks) {
 
-  }
 
   protected NewTask createGPTask(Task parentTask, Asset consumer) {
     Vector prefs = new Vector();
