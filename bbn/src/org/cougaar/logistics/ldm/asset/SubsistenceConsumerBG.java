@@ -357,15 +357,14 @@ public class SubsistenceConsumerBG extends ConsumerBG {
           asset = ((AggregateAsset)asset).getAsset();
         }
         String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
-        consumedItems = (ArrayList)cachedDBValues.get(typeId);
+        consumedItems = (List) cachedDBValues.get(typeId);
         if (consumedItems == null){
-          Vector result = parentPlugin.generateRationList();
+          Collection result = parentPlugin.generateRationList();
           
-          if (result == null) {
+          if (result.isEmpty()) {
             logger.debug("getConsumed(): Database query returned EMPTY result set for "+
                          myPG.getMei()+", "+supplyType);
           } else {
-            consumedItems = (ArrayList)parseResults(result);
             cachedDBValues.put(typeId, consumedItems);
           }
         }
@@ -380,19 +379,6 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
   public Collection getConsumed(int x, int y) {
     return getConsumed();
-  }
-
-  protected ArrayList parseResults (Vector result) {
-    logger.debug ("parseACRResult() for consumer "+ myPG.getMei() + " asset type " +supplyType);
-    Asset newAsset;
-    ArrayList items = new ArrayList();
-    Enumeration results = result.elements();
-
-    while (results.hasMoreElements()) {
-      newAsset = (Asset)results.nextElement();
-      items.add(newAsset);
-    }
-    return items;
   }
 
   public PGDelegate copy(PropertyGroup pg) {
