@@ -130,8 +130,7 @@ public class CarrierQuery extends UnitQuery {
 	time=System.currentTimeMillis();
 	if(run.hasCargoTypeTable()){
 	  rs = getResultSet(connection, formFastCargoTypeSql(filterClauses, recentRun));
-	  SortedMap nameToNode  = 
-	    buildCargoProtosFromResult (rs, generator, protoToCargoType, assetNodeToCarrierInstance);
+	  SortedMap nameToNode  = buildCargoProtosFromResult (rs, generator, protoToCargoType, assetNodeToCarrierInstance);
 	  buildCargoProtoTree(assetNodeToCarrierInstance, carrierInstanceToNode, carrierTree);
 	}else{
 	  rs = getResultSet(connection, formFirstCargoTypeSql (filterClauses, recentRun));
@@ -269,10 +268,7 @@ public class CarrierQuery extends UnitQuery {
    * assetNode     -> carrier instance DB UID
    * carrier DBUID -> carrier instance
    */
-  protected void buildCargoProtoTree (Map assetNodeToCarrierInstance, Map carrierToNode, 
-									  Tree tree) {
-	UIDGenerator generator = tree.getGenerator();
-
+  protected void buildCargoProtoTree (Map assetNodeToCarrierInstance, Map carrierToNode, Tree tree) {
 	for (Iterator iter = assetNodeToCarrierInstance.keySet().iterator (); iter.hasNext(); ) {
 	  Node node = (Node) iter.next();
 	  String carrierInstanceDBUID = (String) assetNodeToCarrierInstance.get (node);

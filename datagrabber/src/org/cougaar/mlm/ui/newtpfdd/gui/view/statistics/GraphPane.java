@@ -147,7 +147,6 @@ public class GraphPane extends StatisticsPane {
 			int numThirdDim = 1;
 			Graphable graphableTest = (Graphable) whichTest;
 			boolean hasThirdDim = graphableTest.hasThirdDimension();
-			boolean showMultiple = graphableTest.showMultipleGraphs();
 			
 			if (!hasThirdDim) {
 			  legends = new String [1];

@@ -207,7 +207,6 @@ public class AssetTPFDDQuery extends SqlQuery {
     String conveyanceLeg = DGPSPConstants.CONVEYED_LEG_TABLE + "_" +recentRun;
     String conveyancePrototype = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" +recentRun;
     String conveyanceInstance = DGPSPConstants.CONV_INSTANCE_TABLE + "_" +recentRun;
-    String convoyTable = DGPSPConstants.CONVOY_MEMBER_TABLE + "_" + recentRun;
 
     String clLegID        = conveyanceLeg       + "." + DGPSPConstants.COL_LEGID;
     String clStart        = conveyanceLeg       + "." + DGPSPConstants.COL_STARTTIME;

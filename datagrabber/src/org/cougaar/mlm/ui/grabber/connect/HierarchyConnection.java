@@ -93,20 +93,12 @@ public class HierarchyConnection extends PSPConnection
       "_hierarchy.xml";
   }
 
-  private String getRootTableName(){
-    return getTableName(ORGROOTS_TABLE_NAME);
-  }
-
   private String getOrgTableName(){
     return getTableName(ORG_TABLE_NAME);
   }
 
   private String getNamesTableName(){
     return getTableName(ORGNAMES_TABLE_NAME);
-  }
-
-  private String getDescendTableName(){
-    return getTableName(ORGDESCEND_TABLE_NAME);
   }
 
   /**return the DeXMLableFactory specific to this URL connection**/
@@ -220,14 +212,6 @@ public class HierarchyConnection extends PSPConnection
     }
   }
 
-  /**Change the orgID to the name of the clusterID in the PSP URL -- currently
-   * identical.
-   * @return the clusterName corresponding to the orgID
-   **/
-  private String translateOrgIDToCluster(String orgID){
-    return orgID;
-  }
-  
   protected RunResult prepResult(DeXMLable obj){
     setStatus("Starting");
     HierarchyResult hr = new HierarchyResult(getID(),getRunID());

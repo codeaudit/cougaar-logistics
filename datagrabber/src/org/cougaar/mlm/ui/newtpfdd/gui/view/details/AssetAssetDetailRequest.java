@@ -32,7 +32,7 @@ import java.sql.SQLException;
 
 /**
  * Gets data about assets on a given asset
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/27/01
  **/
@@ -55,10 +55,6 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
   //////////
 
   protected String getSql(DatabaseConfig dbConfig, int runID){
-    String aiTable=getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,runID);
-    String apTable=getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,runID);
-    String cccDimTable=getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,runID);
-
     //For select:
     String aiOwner="ai."+DGPSPConstants.COL_OWNER;
     String apType="ap."+DGPSPConstants.COL_ALP_TYPEID;

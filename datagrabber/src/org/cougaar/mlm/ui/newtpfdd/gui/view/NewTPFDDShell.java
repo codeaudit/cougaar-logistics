@@ -935,7 +935,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     String ccHost = getDocumentBase().getHost();
     if ( ccHost == null || ccHost.length() == 0 )
       ccHost = "localhost";
-    String realHost = getclusterCache().clientGuiSetHost(ccHost);
+    getclusterCache().clientGuiSetHost(ccHost);
     dbConfig = new DatabaseConfig (getclusterCache().getHost());
   }
 	  
@@ -1249,17 +1249,15 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
   }
 
   public void showRouteView(RouteViewRequest rvr){
-    RouteView rv = new RouteView(getDBConfig(),this,getRun().getRunID(), rvr);
+    new RouteView(getDBConfig(),this,getRun().getRunID(), rvr);
   }
 
   public void showAssetDetailView(AssetDetailRequest adr){
-    AssetDetailView adv = new 
-      AssetDetailView(getDBConfig(),getRun().getRunID(), adr);
+    new AssetDetailView(getDBConfig(),getRun().getRunID(), adr);
   }
 
   public void showCarrierDetailView(CarrierDetailRequest cdr){
-    CarrierDetailView cdv = new 
-      CarrierDetailView(getDBConfig(),getRun().getRunID(), cdr);
+    new CarrierDetailView(getDBConfig(),getRun().getRunID(), cdr);
   }
 
   /**

@@ -133,8 +133,6 @@ public class NewLogPlanView extends JPanel
   /** Updates the status line when a node is selected. */
   private void jTreeValueChanged (TreeSelectionEvent evt) {
 	Object node = evt.getPath().getLastPathComponent();
-	String s = evt.isAddedPath() ? "Selected "+node : "";
-	//System.out.println (s);
   }
 
 }
