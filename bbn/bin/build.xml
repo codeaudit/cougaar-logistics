@@ -486,4 +486,23 @@
 		  <fileset dir="${doc}" />
 		</copy>
 	</target>
+
+  <!-- Create the Cougaar overlay -->
+	<target name="create_cougaar_overlay" depends="set-zip-dirs">
+		<delete dir="${zipbase}"/>
+		<antcall target="clean-docs"/>
+		<antcall target="compile"/>
+		<antcall target="dist-module"/>
+		<antcall target="zip-prep"/>
+		<antcall target="zip-copy-bin"/>
+		<antcall target="zip-copy-data"/>
+		<antcall target="zip-copy-configs"/>
+		<antcall target="zip-copy-doc"/>
+		<copy todir="${zipbase}/${module}/lib">
+			<fileset dir="${lib}" includes="${module}*.jar"/>
+		</copy>
+		<zip zipfile="bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
+		<delete dir="${zipbase}"/>
+	</target>
+
 </project>
