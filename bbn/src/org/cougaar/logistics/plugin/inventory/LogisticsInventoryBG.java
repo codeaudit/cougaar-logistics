@@ -248,6 +248,9 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     double demand = getProjectionTaskDemand(task, bucket, start, end);
     if (add){
+      if (bucket >= projectedDemandArray.length) {
+      projectedDemandArray = expandArray(projectedDemandArray);
+      }
       projectedDemandArray[bucket] += demand;
     } else {
       projectedDemandArray[bucket] -= demand;
