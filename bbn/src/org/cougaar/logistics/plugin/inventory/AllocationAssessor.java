@@ -132,7 +132,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       int end_bucket = 180;
       int lastRefillBucket = thePG.getLastRefillRequisitionBucket();
       // bump this one more day - otherwise we get withdraws at the boundary
-      int reorderPeriod = ((int) thePG.getReorderPeriod()) + 1;
+      int reorderPeriod = ((int) thePG.getReorderPeriod()) + 2;
       if (today_bucket < lastRefillBucket) {
         createWithdrawAllocations(today_bucket, lastRefillBucket + reorderPeriod, inventory, thePG);
       }
