@@ -53,8 +53,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     // Bucket will be a knob, this implementation temporary
     private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 1;
     protected LogisticsInventoryPG myPG;
-    protected long startTime;
+    protected transient long startCDay;
     protected long arrivalTime;
+    protected long startTime;
     protected int timeZero;
     private transient LoggingService logger;
     private transient LogisticsInventoryLogger csvLogger = null;
@@ -66,6 +67,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     protected int endOfLevelSixBucket;
     protected ArrayList refillProjections;
+    protected ArrayList overlappingRefillProjections;
     protected ArrayList refillRequisitions;
     protected ArrayList dueOutList;
     // projectedDemandList mirrors dueOutList, each element
@@ -102,6 +104,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         dueOutList = new ArrayList();
         refillProjections = new ArrayList();
         refillRequisitions = new ArrayList();
+	overlappingRefillProjections = new ArrayList();
         projectedDemandArray = new double[180];
         criticalLevelsArray = new double[180];
         inventoryLevelsArray = new double[180];
@@ -116,9 +119,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, long arrivalTime, Date startCDay, InventoryPlugin parentPlugin) {
+    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin) {
         this.startTime = startTime;
-        this.arrivalTime = arrivalTime;
         // Set initial level of inventory from time zero to today.  This assumes that the inventory
         // is created because the existence of demand and the RefillGenerator will be run
         // on this inventory before time has advanced, thus the RefillGenerator will set
@@ -138,7 +140,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         logger = parentPlugin.getLoggingService(this);
         if (logToCSV) {
             csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(), myPG.getOrg(), false, parentPlugin);
-            csvWriter = new LogisticsInventoryFormatter(csvLogger, startCDay, parentPlugin);
+            csvWriter = new LogisticsInventoryFormatter(csvLogger, new Date(startCDay), parentPlugin);
         }
         taskUtils = parentPlugin.getTaskUtils();
         if (logger.isDebugEnabled()) {
@@ -161,11 +163,11 @@ public class LogisticsInventoryBG implements PGDelegate {
     //on set up after rehydration.   It does the minimum initialization
     //that has to be done, even upon rehydration.
     //which does the initial set up when the inventory is created.
-    public void reinitialize(boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
+    public void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin) {
         logger = parentPlugin.getLoggingService(this);
         if (logToCSV) {
             csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(), myPG.getOrg(), true, parentPlugin);
-            csvWriter = new LogisticsInventoryFormatter(csvLogger, startCDay, parentPlugin);
+            csvWriter = new LogisticsInventoryFormatter(csvLogger, new Date(startCDay), parentPlugin);
         }
         taskUtils = parentPlugin.getTaskUtils();
     }
@@ -416,6 +418,18 @@ public class LogisticsInventoryBG implements PGDelegate {
         endOfLevelSixBucket = bucket;
     }
 
+    public void setArrivalTime(long anArrivalTime) {
+	this.arrivalTime = anArrivalTime;
+    }
+
+    public long getArrivalTime() {
+	return arrivalTime;
+    }
+
+    public void setStartCDay(long startCTime) {
+	this.startCDay = startCTime;
+    }
+
     public int getEndOfLevelSixBucket() {
         return endOfLevelSixBucket;
     }
@@ -467,21 +481,32 @@ public class LogisticsInventoryBG implements PGDelegate {
         return taskList;
     }
 
-    // clear the projections (all of them)
+    // clear the projections 
     // and return the removed tasks for comparison
-    public List clearRefillProjectionTasks() {
-      Iterator tasks = refillProjections.iterator();
+    // also keep a list of overlapping refill projection tasks
+    public List clearRefillProjectionTasks(long now) {
       ArrayList removedTaskList = new ArrayList();
-      while (tasks.hasNext()) {
-	Task t = (Task)tasks.next();
-	if (!removedTaskList.contains(t)) {
-	  removedTaskList.add(t);
-	}
+      overlappingRefillProjections.clear();
+      Task t;
+      for (int i = 0; i < refillProjections.size(); i++) {
+	  t = (Task) refillProjections.get(i);
+	  if ((t != null) && (!removedTaskList.contains(t))) {
+	      long start = taskUtils.getStartTime(t);
+	      if (start > now) { 
+		  refillProjections.set(i, null);
+		  removedTaskList.add(t);
+	      } else if ((start < now) && (taskUtils.getEndTime(t) > now)) {
+		  //this task spans now - shorten it		     
+		  overlappingRefillProjections.add(t);
+	      }
+	  }
       }
-      refillProjections.clear();
       return removedTaskList;
     }
 
+    public List getOverlappingRefillProjections() {
+	return (ArrayList) overlappingRefillProjections.clone();
+    }
 
     public ArrayList getRefillRequisitions() {
         return (ArrayList) refillRequisitions.clone();
