@@ -29,7 +29,6 @@ import org.cougaar.glm.plugins.AssetUtils;
 import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.glm.plugins.TaskUtils;
 import org.cougaar.glm.plugins.TimeUtils;
-import org.cougaar.glm.debug.GLMDebug;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -38,7 +37,6 @@ import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
 
@@ -81,18 +79,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
 
     if (gpTask.getPlanElement() != null) {
-      handleExpandedGpTask(gpTask, schedule, consumer, pg);
+      System.out.println(" pg task plan element is of type " + gpTask.getPlanElement());
+      if (gpTask.getPlanElement() instanceof Expansion) {
+        handleExpandedGpTask(gpTask, schedule, consumer, pg);
+      }
     }
     else {
       Collection subTasks = buildTaskList(pg, schedule, gpTask, consumer);
-      String myOrgName =
-          dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-        System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
-                           consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
-                           consumer.getTypeIdentificationPG().getTypeIdentification());
-      }
-
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
       }
@@ -104,6 +97,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
   private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg) {
     Collection publishedTasks = dfPlugin.projectSupplySet(gpTask);
+    if (publishedTasks.isEmpty()) {
+      logger.error("No project supply tasks were found for parent task " + gpTask.toString());
+      return;
+    }
+
     Collection newTasks = buildTaskList(pg, schedule, gpTask, consumer);
 
     Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
@@ -146,13 +144,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
           // is available but there is not matching org act for the time period.
           // (if the orgact is null then the bg returns a null rate)
           if (rate == null)  {
-            //    String myOrgName =
-//               dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-//             if (myOrgName.indexOf("35-ARBN") >= 0) {
-//               System.out.println("------------------ THE RATE is NULL ------------------------  " +
-//                                  consumedItem.getTypeIdentificationPG().getNomenclature()+" - "+
-//                                  consumedItem.getTypeIdentificationPG().getTypeIdentification());
-//             }
             continue;
           }
           logger.info("checking Rate on consumed item " + rate.toString());
@@ -170,7 +161,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     return consumer;
   }
-
 
   /** Create a Time Preference for the Refill Task
    *  Use a Piecewise Linear Scoring Function.
@@ -281,8 +271,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
     logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
-    System.out.println("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
-    dfPlugin.publishAdd(expansion);
+     dfPlugin.publishAdd(expansion);
   }
 
   private void addToAndPublishExpansion(Task parent, Collection subtasks) {
@@ -293,8 +282,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Task task = (Task) subtasksIT.next();
       dfPlugin.publishAdd(task);
       wf.addTask(task);
+      ((NewTask) task ).setWorkflow(wf);
     }
-     dfPlugin.publishChange(expansion);
+    dfPlugin.publishChange(expansion);
   }
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
