@@ -97,7 +97,7 @@ public abstract class PSPWork implements Work, Logger{
   private int runID;
   private int epoch=PENDING;
   private String status=null;
-  private Logger logger=null;
+  protected Logger logger=null;
   private Connection dbConnection;
 
   //Constructors:

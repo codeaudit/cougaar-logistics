@@ -200,6 +200,7 @@ public class TonnageInfo extends Test implements Graphable {
     String itinTable = Controller.getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE,run);
     String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
     String locTable = Controller.getTableName(DGPSPConstants.LOCATIONS_TABLE,run);
+    String cccDimTable = Controller.getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,run);
 
     String weight = DGPSPConstants.COL_WEIGHT;
     String unit = DGPSPConstants.COL_OWNER;
@@ -209,6 +210,7 @@ public class TonnageInfo extends Test implements Graphable {
     String instProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String aggnumber   = assetTable+"."+DGPSPConstants.COL_AGGREGATE;
     String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimProtoid = cccDimTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String instAssetid = assetTable+"."+DGPSPConstants.COL_ASSETID;
     String itinAssetid = itinTable+"."+DGPSPConstants.COL_ASSETID;
     String itinLegid = itinTable+"."+DGPSPConstants.COL_LEGID;
@@ -225,9 +227,10 @@ public class TonnageInfo extends Test implements Graphable {
       (showLocation?(location+", "):"")+
       "sum("+aggnumber+") as quantity,"+
       "sum("+weight+")\n"+
-      "from "+assetTable+", "+protoTable+
+      "from "+assetTable+", "+protoTable+", " + cccDimTable +
       (showLocation?(", "+itinTable+", "+legTable+", "+locTable):"")+"\n"+
-      "where "+instProtoid+" = "+protoProtoid+"\n"+
+      "where "+instProtoid+" = "+protoProtoid+" and\n"+
+      cccDimProtoid+" = "+protoProtoid+"\n"+
       (showLocation?("and "+instAssetid+" = "+itinAssetid+"\n"+
 		     "and "+itinLegid+" = "+legLegid+"\n"+
 		     "and "+legLegType+" = "+DGPSPConstants.LEG_TYPE_TRANSPORTING+"\n"+

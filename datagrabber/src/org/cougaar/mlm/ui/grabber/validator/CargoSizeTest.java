@@ -51,12 +51,14 @@ public class CargoSizeTest extends CargoDimensionTest {
   public static final double MILVAN_HEIGHT = 2.4384; // m
   public static final double MILVAN_WIDTH  = 2.4384; // m  
   public static final double MILVAN_DEPTH  = 6.0706; // m  
+  public static final double MILVAN_AREA   = MILVAN_WIDTH*MILVAN_DEPTH; // m^2  
   public static final double MILVAN_WEIGHT = 22.513; // short tons
   
   public static final double C5_VOLUME = 1042.3; // m3  
   public static final double C5_HEIGHT = 4.11; // m  
-  public static final double C5_WIDTH = 5.79;  // m  
-  public static final double C5_DEPTH = 43.8;  // m  
+  public static final double C5_WIDTH  = 5.79;  // m  
+  public static final double C5_DEPTH  = 43.8;  // m  
+  public static final double C5_AREA   = C5_DEPTH*C5_WIDTH;  // m^2  
   public static final double C5_WEIGHT = 122472.0;  // kg  
 
   public static final boolean BIGGER_THAN_MILVAN = false;
@@ -72,7 +74,7 @@ public class CargoSizeTest extends CargoDimensionTest {
 
   public CargoSizeTest(DBConfig dbConfig, boolean biggerThanAC5){
     super(dbConfig);
-	this.biggerThanAC5 = biggerThanAC5;
+    this.biggerThanAC5 = biggerThanAC5;
   }
 
   //Members:
@@ -106,43 +108,55 @@ public class CargoSizeTest extends CargoDimensionTest {
     }
     try {
       while(rs.next()){
-		String nomenclature = rs.getString(1);
-		double height = rs.getDouble (2);
-		double width = rs.getDouble (3);
-		double depth = rs.getDouble (4);
-		// weight is in grams, we want short tons = 2000 pounds
-		double weight = rs.getDouble (5);
-		double kilograms  = weight/1000.0;
-		double metricTons = kilograms/1000.0;
-		double shortTons = (metricTons)*METRIC_TO_SHORT_TON;
-		double volume = height*width*depth; // cubic meters
+	String nomenclature = rs.getString(1);
+	double height = rs.getDouble (2);
+	double width = rs.getDouble (3);
+	double depth = rs.getDouble (4);
+	double area = rs.getDouble (5);
+	double volume = rs.getDouble (6);
+	double weight = rs.getDouble (7);
+	double kilograms  = weight/1000.0;
+	double metricTons = kilograms/1000.0;
+	double shortTons = (metricTons)*METRIC_TO_SHORT_TON;
 
-		if (biggerThanAC5) {
-		  if (height > C5_HEIGHT ||
-			  width  > C5_WIDTH  ||
-			  depth  > C5_DEPTH  ||
-			  kilograms > C5_WEIGHT)
-			insertRow(l,s,run,nomenclature,height,width,depth,volume,shortTons);
-		}
-		else {
-		  if (height > MILVAN_HEIGHT ||
-			  width  > MILVAN_WIDTH  ||
-			  depth  > MILVAN_DEPTH  ||
-			  shortTons > MILVAN_WEIGHT)
-			insertRow(l,s,run,nomenclature,height,width,depth,volume,shortTons);
-		}
+	if (l.isMinorEnabled())
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"CargoSizeTest - h " + height + 
+		       " w " + width +
+		       " d " + depth +
+		       " a " + area +
+		       " v " + volume +
+		       " weight " + shortTons + " stons");
+
+	if (biggerThanAC5) {
+	  if (height > C5_HEIGHT ||
+	      width  > C5_WIDTH  ||
+	      depth  > C5_DEPTH  ||
+	      area   > C5_AREA  ||
+	      volume > C5_VOLUME  ||
+	      kilograms > C5_WEIGHT)
+	    insertRow(l,s,run,nomenclature,height,width,depth,area,volume,shortTons);
+	}
+	else {
+	  if (height > MILVAN_HEIGHT ||
+	      width  > MILVAN_WIDTH  ||
+	      depth  > MILVAN_DEPTH  ||
+	      area   > MILVAN_AREA  ||
+	      volume > MILVAN_VOLUME  ||
+	      shortTons > MILVAN_WEIGHT)
+	    insertRow(l,s,run,nomenclature,height,width,depth,area,volume,shortTons);
+	}
       }    
 
-	  if (biggerThanAC5) {
-		insertRow(l,s,run,"",0,0,0,0,0);
-		insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0);
-		insertRow(l,s,run,"<b>C5</b>",C5_HEIGHT,C5_WIDTH,C5_DEPTH,C5_VOLUME,(C5_WEIGHT/1000)*METRIC_TO_SHORT_TON);
-	  }
-	  else {
-		insertRow(l,s,run,"",0,0,0,0,0);
-		insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0);
-		insertRow(l,s,run,"<b>MILVAN</b>",MILVAN_HEIGHT,MILVAN_WIDTH,MILVAN_DEPTH,MILVAN_VOLUME,MILVAN_WEIGHT);
-	  }
+      if (biggerThanAC5) {
+	insertRow(l,s,run,"<b>",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>C5</b>",C5_HEIGHT,C5_WIDTH,C5_DEPTH,C5_AREA,C5_VOLUME,(C5_WEIGHT/1000)*METRIC_TO_SHORT_TON);
+      }
+      else {
+	insertRow(l,s,run,"<b>",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
+	insertRow(l,s,run,"<b>MILVAN</b>",MILVAN_HEIGHT,MILVAN_WIDTH,MILVAN_DEPTH,MILVAN_AREA,MILVAN_VOLUME,MILVAN_WEIGHT);
+      }
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "CargoProfileTest.insertResults - Problem walking results.",sqle);

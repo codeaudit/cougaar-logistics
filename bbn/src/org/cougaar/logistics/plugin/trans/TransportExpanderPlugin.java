@@ -442,10 +442,9 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
       Asset truckSizedAsset = 
 	assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
 
-      NewLowFidelityAssetPG lowFiPG = 
-	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
-      lowFiPG.setOriginalAsset (itemProto);
-      attachPG(truckSizedAsset, lowFiPG); // now subobject has pointer back to parent
+      LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
+	itemProto.resolvePG (LowFidelityAssetPG.class);
+      attachPG(truckSizedAsset, currentLowFiAssetPG); // now subobject has pointer back to parent
 
       adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, maxOnTruck);
 
@@ -475,10 +474,9 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 	truckSizedAsset = 
 	  assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
 
-	NewLowFidelityAssetPG lowFiPG = 
-	  (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
-	lowFiPG.setOriginalAsset (itemProto);
-	attachPG(truckSizedAsset, lowFiPG); // now subobject has pointer back to parent
+	LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
+	  itemProto.resolvePG (LowFidelityAssetPG.class);
+	attachPG(truckSizedAsset, currentLowFiAssetPG); // now subobject has pointer back to parent
 
 	adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, totalContrib);
       }
@@ -557,17 +555,11 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     double ratio = tons/aggregateTons;
 
-    double length = originalPhysicalPG.getLength().getMeters();
-    double width  = originalPhysicalPG.getWidth().getMeters();
-    double height = originalPhysicalPG.getHeight().getMeters();
     double area   = originalPhysicalPG.getFootprintArea().getSquareMeters();
     double volume = originalPhysicalPG.getVolume().getCubicMeters();
     double mass   = originalPhysicalPG.getMass().getKilograms();
 
     NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-    newPhysicalPG.setLength(new Distance (length*ratio, Distance.METERS));
-    newPhysicalPG.setWidth (new Distance (width*ratio,  Distance.METERS));
-    newPhysicalPG.setHeight(new Distance (height*ratio, Distance.METERS));
     newPhysicalPG.setMass  (new Mass     (mass*ratio,   Mass.KILOGRAMS ));
 
     newPhysicalPG.setFootprintArea(new Area (area*ratio,   Area.SQUARE_METERS));

@@ -48,50 +48,50 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 
 public class TPFDDQuery extends UnitQuery {
   boolean debug = 
- 	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.TPFDDQuery.debug", 
- 									   "false"));
+    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.TPFDDQuery.debug", 
+				       "false"));
   boolean showSqlTime = 
-	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.TPFDDQuery.showSqlTime", 
-									   "false"));
+    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.TPFDDQuery.showSqlTime", 
+				       "false"));
   
   public TPFDDQuery (DatabaseRun run, FilterClauses filterClauses) {
-	super (run, filterClauses);
+    super (run, filterClauses);
   }
   
   public QueryResponse getResponse (Connection connection) {
-	QueryResponse response = new QueryResponse ();
+    QueryResponse response = new QueryResponse ();
 	
-	// first figure out which run to use
-	int recentRun = run.getRunID ();
+    // first figure out which run to use
+    int recentRun = run.getRunID ();
 
-	Tree cargoTree = new Tree ();
-	UIDGenerator generator = cargoTree.getGenerator ();
-	String unitID = "";
-	Iterator iter=filterClauses.getUnitDBUIDs().iterator();
-	if(iter.hasNext())
-	  unitID=(String)iter.next();
+    Tree cargoTree = new Tree ();
+    UIDGenerator generator = cargoTree.getGenerator ();
+    String unitID = "";
+    Iterator iter=filterClauses.getUnitDBUIDs().iterator();
+    if(iter.hasNext())
+      unitID=(String)iter.next();
 
-	Node cargoRoot = new CargoType (generator, unitID); // could be anything...?
-	cargoTree.setRoot (cargoRoot);
+    Node cargoRoot = new CargoType (generator, unitID); // could be anything...?
+    cargoTree.setRoot (cargoRoot);
 
-	Map instanceToNode = new HashMap ();
+    Map instanceToNode = new HashMap ();
 
-	long totalTime=System.currentTimeMillis();
+    long totalTime=System.currentTimeMillis();
 
-	attachInstances (connection, filterClauses, recentRun, cargoTree, instanceToNode);
-	attachLegs      (connection, filterClauses, recentRun, cargoTree, instanceToNode);
+    attachInstances (connection, filterClauses, recentRun, cargoTree, instanceToNode);
+    attachLegs      (connection, filterClauses, recentRun, cargoTree, instanceToNode);
 	
-	if (showSqlTime)
-	  System.out.println("TPFDDQuery.getResponse total millis:" + (System.currentTimeMillis()-totalTime));
+    if (showSqlTime)
+      System.out.println("TPFDDQuery.getResponse total millis:" + (System.currentTimeMillis()-totalTime));
 
-	response.addTree (cargoTree);
+    response.addTree (cargoTree);
 
-	if (debug) {
-	  System.out.println ("TPFDDQuery.getResponse - cargo tree :");
-	  cargoTree.show ();
-	}
+    if (debug) {
+      System.out.println ("TPFDDQuery.getResponse - cargo tree :");
+      cargoTree.show ();
+    }
 	
-	return response;
+    return response;
   }
 
   /** overriden in FilterQuery ! 
@@ -99,7 +99,7 @@ public class TPFDDQuery extends UnitQuery {
    * @see org.cougaar.mlm.ui.newtpfdd.gui.view.query.FilterQuery#attachInstances
    */
   protected void attachInstances (Connection connection, FilterClauses filterClauses, int recentRun, Tree cargoTree,
-								  Map instanceToNode) {
+				  Map instanceToNode) {
     ResultSet rs;
     long time;
     time=System.currentTimeMillis();
@@ -121,7 +121,7 @@ public class TPFDDQuery extends UnitQuery {
   }
   
   protected void attachLegs (Connection connection, FilterClauses filterClauses, int recentRun, Tree cargoTree,
-							 Map instanceToNode) {
+			     Map instanceToNode) {
     ResultSet rs;
     long time;
     time=System.currentTimeMillis();
@@ -139,40 +139,42 @@ public class TPFDDQuery extends UnitQuery {
   }
   
   protected void attachInstancesFromResult (ResultSet rs, UIDGenerator generator, Tree cargoTree, 
-											Map instanceToNode) {
-	int rows = 0;
-	try{
-	  while(rs.next()){
-		rows++;
-		String id        = rs.getString (1);
-		String proto     = rs.getString (2);
-		String name      = rs.getString (3);
-		String aggnumber = rs.getString (4);
-		String unitName  = rs.getString (5);
-		String protoNomen = rs.getString (6);
-		double weight    = rs.getDouble (7);
-		double width     = rs.getDouble (8);
-		double height    = rs.getDouble (9);
-		double depth     = rs.getDouble (10);
-		if (instanceToNode.get (id) != null) // protect against sql bug (seems to be sql bug)
-		  continue;
+					    Map instanceToNode) {
+    int rows = 0;
+    try{
+      while(rs.next()){
+	rows++;
+	String id        = rs.getString (1);
+	String proto     = rs.getString (2);
+	String name      = rs.getString (3);
+	String aggnumber = rs.getString (4);
+	String unitName  = rs.getString (5);
+	String protoNomen = rs.getString (6);
+	double weight    = rs.getDouble (7);
+	double width     = rs.getDouble (8);
+	double height    = rs.getDouble (9);
+	double depth     = rs.getDouble (10);
+	double area      = rs.getDouble (11);
+	double volume    = rs.getDouble (12);
+	if (instanceToNode.get (id) != null) // protect against sql bug (seems to be sql bug)
+	  continue;
 
-		Node instanceNode = createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen,
-							 weight, width, height, depth);
-		cargoTree.addNode (cargoTree.getRoot(), instanceNode);
-		instanceToNode.put (id, instanceNode);
-	  }
-	  if (debug) 
-		System.out.println ("TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
-	} catch (SQLException e) {
-	  System.out.println ("TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
-	}finally{
-	  if(rs!=null) {
-		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("TPFDDQuery.attachInstancesFromResult - " + 
-							  "closing result set, got sql error : " + e); 
-		}
-	  }
+	Node instanceNode = createCargoInstance (generator, id, name, aggnumber, unitName, protoNomen,
+						 weight, width, height, depth, area, volume);
+	cargoTree.addNode (cargoTree.getRoot(), instanceNode);
+	instanceToNode.put (id, instanceNode);
+      }
+      if (debug) 
+	System.out.println ("TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
+    } catch (SQLException e) {
+      System.out.println ("TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
+    }finally{
+      if(rs!=null) {
+	try { rs.close(); } catch (SQLException e){
+	  System.out.println ("TPFDDQuery.attachInstancesFromResult - " + 
+			      "closing result set, got sql error : " + e); 
 	}
+      }
+    }
   }
 }

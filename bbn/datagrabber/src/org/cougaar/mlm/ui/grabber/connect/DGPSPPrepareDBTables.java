@@ -50,6 +50,7 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
   private boolean makeConveyedLeg=false;
   private boolean makeAssetInstance=false;
   private boolean makeAssetPrototype=false;
+  private boolean makeCargoCatCodeDim=false;
   private boolean makeConveyanceInstance=false;
   private boolean makeConveyancePrototype=false;
   private boolean makeLocations=false;
@@ -80,6 +81,7 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
     makeConveyedLeg=!isTablePresent(c,getTableName(CONVEYED_LEG_TABLE));
     makeAssetInstance=!isTablePresent(c,getTableName(ASSET_INSTANCE_TABLE));
     makeAssetPrototype=!isTablePresent(c,getTableName(ASSET_PROTOTYPE_TABLE));
+    makeCargoCatCodeDim=!isTablePresent(c,getTableName(CARGO_CAT_CODE_DIM_TABLE));
     makeConveyanceInstance=!isTablePresent(c,getTableName
 					   (CONV_INSTANCE_TABLE));
     makeConveyancePrototype=!isTablePresent(c,getTableName
@@ -95,6 +97,7 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
       makeConveyedLeg||
       makeAssetInstance||
       makeAssetPrototype||
+      makeCargoCatCodeDim||
       makeConveyanceInstance||
       makeConveyancePrototype||
       makeLocations||
@@ -154,13 +157,21 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
 		   COL_PARENT_PROTOTYPEID+" VARCHAR(255) NULL,"+//NULL
 		   COL_ASSET_CLASS+" INTEGER NOT NULL,"+
 		   COL_ASSET_TYPE+" INTEGER NOT NULL,"+
+		   COL_ALP_TYPEID+" VARCHAR(255) NOT NULL,"+
+		   COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
+		   COL_IS_LOW_FIDELITY+" VARCHAR(5) NOT NULL"+
+		   ")");
+    if(makeCargoCatCodeDim)
+      prepareTable(s,getTableName(CARGO_CAT_CODE_DIM_TABLE),
+		   "CREATE TABLE "+getTableName(CARGO_CAT_CODE_DIM_TABLE)+" ( "+
+		   COL_PROTOTYPEID+" VARCHAR(255) UNIQUE NOT NULL,"+
 		   COL_WEIGHT+" DOUBLE NOT NULL,"+
 		   COL_WIDTH+" DOUBLE NOT NULL,"+
 		   COL_HEIGHT+" DOUBLE NOT NULL,"+
 		   COL_DEPTH+" DOUBLE NOT NULL,"+
-		   COL_ALP_TYPEID+" VARCHAR(255) NOT NULL,"+
-		   COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
-		   COL_IS_LOW_FIDELITY+" VARCHAR(5) NOT NULL"+
+		   COL_AREA+" DOUBLE NOT NULL,"+
+		   COL_VOLUME+" DOUBLE NOT NULL,"+
+		   COL_CARGO_CAT_CODE+" VARCHAR(3) NOT NULL"+
 		   ")");
     if(makeConveyanceInstance)
       prepareTable(s,getTableName(CONV_INSTANCE_TABLE),

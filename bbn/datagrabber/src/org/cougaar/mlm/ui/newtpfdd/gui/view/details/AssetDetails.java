@@ -47,6 +47,8 @@ public class AssetDetails{
   public static final int DEPTH = 9;
   public static final int AREA = 10;
   public static final int VOLUME = 11;
+  public static final int CCC = 12;
+  public static final int TRANSPORT = 13;
 
   private static double KGS_TO_STONS = 0.0011022927689594355d;
   private static double METERS_TO_FEET = 3.28084d;
@@ -65,7 +67,8 @@ public class AssetDetails{
 					       "Height (ft)",
 					       "Depth (ft)",
 					       "Area (ft^2)",
-					       "Vol (ft^3)"};
+					       "Vol (ft^3)",
+					       "CCC", "Transport"};
   protected static final Class[] columnClasses={String.class,
 						String.class,
 						String.class,
@@ -78,7 +81,9 @@ public class AssetDetails{
 						Double.class,
 						Double.class,
 						Double.class,
-						Double.class};
+						Double.class,
+						String.class,
+						String.class};
   
   //Variables:
   ////////////
@@ -95,6 +100,8 @@ public class AssetDetails{
   private double depth;
   private double area;
   private double volume;
+  private String ccc;
+  private String transport;
   
   //Constructors:
   ///////////////
@@ -134,6 +141,10 @@ public class AssetDetails{
       area=((Double)o).doubleValue()*SQUARE_METERS_TO_SQUARE_FEET;break;     
     case VOLUME:
       volume=((Double)o).doubleValue()*CUBIC_METERS_TO_CUBIC_FEET;break;     
+    case CCC:
+      ccc=(String)o;break;     
+    case TRANSPORT:
+      transport=(String)o;break;     
     }
   }
 
@@ -167,6 +178,10 @@ public class AssetDetails{
       return new Double(area);     
     case VOLUME:
       return new Double(volume);     
+    case CCC:
+      return ccc;
+    case TRANSPORT:
+      return transport;
     }
     return null;
   }

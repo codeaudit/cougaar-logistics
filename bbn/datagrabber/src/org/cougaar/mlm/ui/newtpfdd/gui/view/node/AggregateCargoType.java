@@ -30,6 +30,8 @@ public class AggregateCargoType extends CargoType implements DimensionNode {
   double width;  
   double height;  
   double depth;  
+  double area;  
+  double volume;  
   
     public AggregateCargoType(UIDGenerator generator, String dbuid) {
 	  super (generator, dbuid);
@@ -46,8 +48,10 @@ public class AggregateCargoType extends CargoType implements DimensionNode {
   public void setTotalAggNumber(int n) { totalAggNumber = n;}
   public void incrementTotalAggNumber(int n) { totalAggNumber += n;}
 
-  public double getVolume () { return width*depth*height;  }
-  public double getArea   () { return width*depth;  }
+  public double getVolume () { return volume;  }
+  public void setVolume (double v) { volume = v; }
+  public double getArea   () { return area;  }
+  public void setArea (double a) { area = a; }
   public double getHeight () { return height;  }
   public void setHeight (double h) { height = h; }
   public double getWidth  () { return width;  }
