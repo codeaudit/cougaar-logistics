@@ -84,6 +84,7 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
   protected static final String DEPTH_ATTR = "Depth";
   protected static final String ALP_TYPEID_ATTR = "TypeID";
   protected static final String ALP_NOMEN_ATTR = "Nomen";
+  protected static final String IS_LOW_FIDELITY = "LowFi";
 
   //Variables:
   ////////////
@@ -109,6 +110,7 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
   public String alpTypeID;
   /**type nomenclature, not to be confused with the instance's *item* nomen**/
   public String nomenclature;
+  public boolean isLowFidelity;
 
   //Constructors:
   ///////////////
@@ -127,7 +129,9 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
    * @param w output Writer
    **/
   public void toXML(XMLWriter w) throws IOException{
-    w.sitagln(NAME_TAG, 
+    String isLow = (isLowFidelity ? "true" : "false");
+    //    w.sitagln(NAME_TAG, 
+    w.optagln(NAME_TAG, 
 	      UID_ATTR,UID,
 	      PUID_ATTR,parentUID,
 	      ACLASS_ATTR,Integer.toString(assetClass),
@@ -137,7 +141,8 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
 	      HEIGHT_ATTR,Double.toString(height),
 	      DEPTH_ATTR,Double.toString(depth),
 	      ALP_TYPEID_ATTR,alpTypeID,
-	      ALP_NOMEN_ATTR,nomenclature);
+	      ALP_NOMEN_ATTR,nomenclature,
+	      IS_LOW_FIDELITY,isLow);
   }
 
   //DeXMLable members:
@@ -167,6 +172,7 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
 	depth=Double.parseDouble(attr.getValue(DEPTH_ATTR));
 	alpTypeID=attr.getValue(ALP_TYPEID_ATTR);
 	nomenclature=attr.getValue(ALP_NOMEN_ATTR);
+	isLowFidelity=attr.getValue(IS_LOW_FIDELITY).equalsIgnoreCase("true");
       }else{
 	throw new UnexpectedXMLException("Unexpected tag: "+name);    
       }
