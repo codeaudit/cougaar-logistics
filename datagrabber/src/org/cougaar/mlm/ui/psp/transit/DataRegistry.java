@@ -34,6 +34,7 @@ import org.cougaar.planning.ldm.measure.Latitude;
 import org.cougaar.planning.ldm.measure.Longitude;
 import org.cougaar.planning.ldm.measure.Mass;
 import org.cougaar.planning.ldm.measure.Volume;
+import org.cougaar.planning.ldm.plan.Task;
 
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.*;
@@ -614,7 +615,8 @@ typical_case:
   public static boolean registerCargoInstance(
       Registry toReg, 
       List toCargoIds,
-      Asset instAsset) {
+      Asset instAsset,
+      Task task) {
 
     if (instAsset instanceof AssetGroup) { // happens most of the time
       // divide group into separate assets
@@ -627,14 +629,15 @@ typical_case:
           aiId = registerCargoInstance(toReg, ai);
         } catch (RuntimeException e) {
 	  e.printStackTrace();
-          throw new IllegalArgumentException(
+	  //          throw new IllegalArgumentException(
+	  System.err.println (
               "Unable to expand assetGroup "+
               ((instAsset != null) ?
                ("(UID: "+instAsset.getUID()+")") :
                ("null")) + " element["+i+"]: "+
               ((ai != null) ? 
                ("(UID: "+ai.getUID()+")") :
-               ("null")));
+               ("null")) + " on task " + task);
         }
         toCargoIds.add(aiId);
       }

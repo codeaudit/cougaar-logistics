@@ -337,7 +337,8 @@ public abstract class DataComputer {
 	boolean validCargoID = 
 	  DataRegistry.registerCargoInstance(toReg, 
 					     cargoIds, 
-					     cargoAsset);
+					     cargoAsset,
+					     task);
 
         if (!validCargoID) {
           // invalid cargo?
