@@ -1,0 +1,984 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+                                                            
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+                                                            
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+                                                            
+  <meta name="author" content="Gordon Vidaver">
+                                                            
+  <meta name="GENERATOR" content="Mozilla/4.73 [en] (WinNT; I) [Netscape]">
+  <title>GLMTrans General Documentation</title>
+    
+</head>
+  <body>
+<h1> GLMTrans Documentation</h1>
+               Gordon Vidaver (<a href="mailto:gvidaver@bbn.com">gvidaver@bbn.com</a>
+               , 617 873 3558) <br>
+           September 12th, 2002               
+<p>GLMTrans is a small transportation society for Ultralog that is meant to
+replace the TOPS society from the ALPINE/<a href="http://www.cougaar.org">
+               Cougaar</a>
+               project. It is a lower fidelity system with a much smaller 
+footprint      in  terms of memory, runtime, and classfiles. Other requirements 
+include     very  high reliability and repeatability, in addition to high 
+performance.     It should  be simple and easy to understand, and reuse as 
+many basic components      as possible.  These will include classes from and
+extending those in the<a href="http://www.cougaar.org/projects/vishnu.html">
+             Vishnu</a>
+               (written by DaveMontana, <a href="mailto:dmontana@bbn.com">
+ dmontana@bbn.com</a>
+               ) and Toolkit modules, in addition to the Sequential Backwards 
+  Planning     Plugin, which is part of GLMTrans. &nbsp;Note that there is 
+ also an open    source web site hosted at BBN that supports <a href="http://vishnu.bbn.com">
+            Vishnu</a>
+            . </p>
+<p>GLMTrans does Continental US (CONUS) to theater planning of strategic transportation.
+This typically involves a ground leg in CONUS and one in theater, using trucks
+or railcars, and a sea or air leg in the middle. The tasks come from various
+demand sources, including requests for deployment of unit equipment and ammunition
+supply. </p>
+<p>Consult the <a href="GLMTrans-UsersGuide.html">user's guide</a>
+               for how to start the society, and how to run the tools that
+ analyze     and   visualize the results.</p>
+<h3>Contents</h3>
+<p><a href="#Packaging"><b>Packaging</b></a>
+<br>
+<a href="#Architecture"><b>Architecture</b></a>
+<b><br>
+</b><a href="#Expected_input"><b>Expected Input</b></a>
+<a href="#Expected_input"><b><br>
+</b></a>
+<a href="#Agent_assets"><b>Agent Assets</b></a>
+<a href="#Agent_assets"><b><br>
+</b></a>
+<a href="#Plugins"><b>Plugins</b></a>
+<br>
+     &nbsp;&nbsp;&nbsp; <b><a href="#Transcom">TRANSCOM</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#GlobalSea">GlobalSea</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#GlobalAir">GlobalAir</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#TheaterGround">TheaterGround</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#PlanePacker">PlanePacker</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#ShipPacker">ShipPacker</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#CONUSGround">CONUSGround</a>
+<br>
+     &nbsp;&nbsp;&nbsp; <a href="#OSC">OSC</a>
+<br>
+     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a href="#Transport_Reservations">
+Transport Reservations</a>
+</b><br>
+<a href="#Parameters"><b>Parameters</b></a>
+<a href="#Parameters"><b><br>
+</b></a>
+<b><a href="#Testing">Testing</a>
+          &nbsp;<br>
+<a href="#Adaptivity">Adaptivity</a>
+</b><a href="#Problem_details"><b><br>
+</b></a>
+<b>&nbsp;&nbsp;&nbsp; <a href="#performance_win_with_Level-2">Why is there
+    a performance gain with level 2?</a>
+      &nbsp;&nbsp;&nbsp;<br>
+     &nbsp;&nbsp;&nbsp; <a href="#How_is_adaptivity_triggered">How is adaptivity 
+  triggered?</a>
+</b><br>
+<b><a href="#Performance">Performance</a>
+<br>
+<a href="#Details">Details</a>
+</b><a href="#Details"><b><br>
+</b></a>
+<b>&nbsp;&nbsp;&nbsp; <a href="#Problem_details">Problem Details</a>
+</b><a href="#Problem_details"><b><br>
+</b></a>
+<b>&nbsp;&nbsp;&nbsp; <a href="#Configuration_details">Configuration Details</a>
+</b><br>
+</p>
+<h2><a name="Packaging"></a>
+             Packaging</h2>
+               The GLMTrans society lives in the <b>glmtrans </b>module.
+Related     modules    are the <b>datagrabber </b>module, which contains
+the datagrabber     and the    TPFDD Viewer, and the <b>vishnu </b>module,
+which contains the    reconfigurable    scheduler and the related UltraLog-Vishnu
+bridge plugins.    The datagrabber    is a system that allows a datagrabber
+process to gatherer    information about    a target society (typically GLMTrans,
+or clusters in   the demand society  performing transportation) and aggregate
+it into one  comprehensive, consistent  picture. This information is stored
+in a database,  which is then available  for the TPFDD Viewer to present
+this information  visually. (See the documentation    in the datagrabber
+doc directory.) Click  <a href="http://www.cougaar.org/projects/vishnu.html">
+        here </a>
+              for documentation for the vishnu module.<br>
+<br>
+           Note that the vishnu module is for client plugins and related
+classes.     &nbsp;The  vishnu module interacts with the classes in the vishnuServer 
+  jar,  which is  a separate component developed by BBN. &nbsp;The vishnu 
+server   jar contains  the Vishnu Scheduler.<br>
+<h2><a name="Architecture"></a>
+             Architecture</h2>
+               The GLMTrans society is made up of seven clusters that map 
+to  the   legs   that are planned for each item of cargo<br>
+<br>
+             .               
+<p><img src="GLMTrans_arch.jpg" alt="GLMTrans Cluster Architecture" height="344" width="626">
+<br>
+              The entry point to the society is the <i>TRANSCOM </i>cluster.
+  Below    it  are the <i>GlobalSea </i>and <i>GlobalAir </i>clusters that
+ manage the   planning  of the transportation legs. <br>
+           Below these clusters are four clusters that schedule tasks against 
+    physical   assets : <i>CONUSGround, ShipPacker, PlanePacker, </i>and <i>
+     TheaterGround.     <br>
+           GlobalSea</i> and <i>GlobalAir </i>receive tasks from<i>TRANSCOM.
+  </i>    GlobalSea    sends tasks to<i>CONUSGround, ShipPacker,</i> and
+<i>    TheaterGround,   <br>
+</i>whereas  <i>GlobalAir </i>sends the middle-step tasks to <i>PlanePacker.</i></p>
+<h2><a name="Expected_input"></a>
+             Expected input</h2>
+           Input tasks are expected to have a few basic pieces of information 
+  attached    to them:               
+<ul>
+  <li> An item, aggregate, or asset group of cargo in the direct object</li>
+  <li> A start time preference</li>
+  <li> An end time preference. The end time preference may be structured
+  to have earliest, best, and latest arrival times. This is preferred but
+not  required.</li>
+  <li> A From geolocation</li>
+  <li> A To geolocation</li>
+  <li> A For preposition indicating which unit the task originally comes
+  from.</li>
+  <li>Optionally, input tasks may be tagged with a prep "LOW_FIDELITY"  which 
+    indicates that the task at Level-2 detail and should be handled differently 
+     from Level-6 tasks.<br>
+  </li>
+</ul>
+              The input tasks are expected to be labeled with the Transport 
+ verb   :<br>
+<br>
+<table border="1" cellspacing="1" cellpadding="1" width="590">
+  <tbody>
+    <tr>
+      <td valign="Top" colspan="4">
+      <p><b><font size="2">Task: Verb=Transport</font></b></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="Top" colspan="4">
+      <p><b><font size="2">General description</font></b> : Transport tasks
+       are requests on the transportation system to ship some cargo or transport
+       some group of people from one location to another, starting no earlier
+    than   the departure preference and arriving no later than the arrival
+ preference.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top">
+      <p><b><font size="2">No.</font></b></p>
+      </td>
+      <td width="20%" valign="Top">
+      <p><b><font size="2">Attribute</font></b></p>
+      </td>
+      <td width="49%" valign="Top">
+      <p><b><font size="2">Attribute Details</font></b></p>
+      </td>
+      <td width="25%" valign="Top">
+      <p><b><font size="2">Usage</font></b></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">1</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">DirectObject</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">Asset</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">Represents the  asset (item or items or people) being
+       moved</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">2</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">Preference</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">AspectType = START_TIME </font></p>
+      <p><font size="2">ScoringFunction = nearOrAbove</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The earliest allowed departure time.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">3</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">Preference</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">AspectType = END_TIME </font></p>
+      <p><font size="2">ScoringFunction = VscoringFunction or nearOrBelow</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The arrival preference.  This can be of two forms
+       : an earliest, best, and latest arrival window or a no-later-than
+latest       arrival time.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">4</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left"><font size="2">
+      <p>Preposition = From</p>
+      <p>IndirectObject = &lt;geoloc where the item is moving from&gt;</p>
+      </font></td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The starting location of the item.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">5</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left"><font size="2">
+      <p>Preposition = To</p>
+      <p>IndirectObject = &lt;geoloc where the item is requested to go to&gt;</p>
+      </font></td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The requested destination of the cargo item.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">6</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">Preposition = For</font></p>
+      <p><font size="2">IndirectObject = &lt;String, representing the owner&gt;</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The owner of the cargo item.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="Top">7<br>
+      </td>
+      <td valign="Top">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td valign="Top">
+      <p><font size="2">Preposition = LOW_FIDELITY</font></p>
+      <p><font size="2">IndirectObject = LOW_FIDELITY</font></p>
+      <br>
+      </td>
+      <td valign="Top">
+      <p><font size="2">A tag that indicates the task is a Level 2 task.
+(Optional!)</font></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+              Other tasks generated by GLMTrans include those with a Transit
+  verb:<br>
+<br>
+<table border="1" cellspacing="1" cellpadding="1" width="590">
+  <tbody>
+    <tr>
+      <td valign="Top" colspan="4">
+      <p><b><font size="2">Task: Verb=Transit</font></b></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="Top" colspan="4">
+      <p><b><font size="2">General description</font></b> : Transit tasks
+       are tasks which are related to transport tasks but apply only to the
+  resource     being used and not to the task cargo itself.  That is, these
+  are implied    tasks that represent, for instance, the fueling of a truck
+  before, or the    maintenance required after doing the main Transport task.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top">
+      <p><b><font size="2">No.</font></b></p>
+      </td>
+      <td width="20%" valign="Top">
+      <p><b><font size="2">Attribute</font></b></p>
+      </td>
+      <td width="49%" valign="Top">
+      <p><b><font size="2">Attribute Details</font></b></p>
+      </td>
+      <td width="25%" valign="Top">
+      <p><b><font size="2">Usage</font></b></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">1</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">DirectObject</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">Asset</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">Represents the  asset (item or items or people) being
+       moved</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">2</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">Preference</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">AspectType = START_TIME </font></p>
+      <p><font size="2">ScoringFunction = nearOrAbove</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The earliest allowed departure time.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">3</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">Preference</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">AspectType = END_TIME </font></p>
+      <p><font size="2">ScoringFunction = VscoringFunction or nearOrBelow</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The arrival preference.  This defines an earliest,
+       best, and latest arrival window.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top">
+      <p><font size="2">4</font></p>
+      </td>
+      <td width="20%" valign="Top">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">
+      <p>Preposition = From</p>
+      <p>IndirectObject = &lt;geoloc where the resource is moving from&gt;</p>
+      </font></p>
+      </td>
+      <td width="25%" valign="Top">
+      <p><font size="2">The starting/ending location of the resource.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">5</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td width="49%" valign="Top" align="Left">
+      <p><font size="2">
+      <p>Preposition = To</p>
+      <p>IndirectObject = &lt;geoloc where the resource is moving to&gt;</p>
+      </font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The starting/ending location of the resource.</font></p>
+      </td>
+    </tr>
+    <tr>
+      <td width="6%" valign="Top" align="Left">
+      <p><font size="2">6</font></p>
+      </td>
+      <td width="20%" valign="Top" align="Left">
+      <p><font size="2">PrepositionalPhrase</font></p>
+      </td>
+      <td align="Left" valign="Top" width="49%">
+      <p><font size="2">Preposition = For</font></p>
+      <p><font size="2">IndirectObject = &lt;String, representing the owner&gt;</font></p>
+      </td>
+      <td width="25%" valign="Top" align="Left">
+      <p><font size="2">The owner of the cargo item.</font></p>
+      <p><font size="2"><br>
+      </font></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<h2><a name="Agent_assets"></a>
+            Agent assets</h2>
+               In the following, assets can be populated by either using
+the   <b>   UTILLdmXMLPlugin     </b>or the <b>LDMSqlPlugin </b>and <b>XMLPrototypeProviderPlugin. 
+   </b>  The   option is provided in the ini files. The principle advantage 
+  of the  <b> UTILLdmXMLPlugin   </b>is that it doesn't require a database 
+ connection.                
+<h3> Transcom</h3>
+<i>Transcom </i>has only the null asset as a physical asset. It has <i>  
+ GlobalAir</i>  and <i>GlobalSea </i>as subordinates.               
+<h3> GlobalAir</h3>
+<i>CONUSGround, PlanePacker, </i>and <i>TheaterGround </i>as subordinates. 
+                    
+<h3> GlobalSea</h3>
+<i>CONUSGround, ShipPacker, </i>and <i>TheaterGround </i>as subordinates. 
+                    
+<h3> CONUSGround</h3>
+               34 ton trucks (M872) and 68 ft DODX railcars as assets.  
+            
+<h3> PlanePacker</h3>
+               The plane packer uses <a href="http://www.af.mil/news/factsheets/C_17_Globemaster_III.html">
+              C-17</a>
+               s and <a href="http://www.boeing.com/commercial/747family/index.html">
+            747</a>
+               s.               
+<h3> ShipPacker</h3>
+               The ship packer uses two kindsof ships &#8211; <a href="http://www.msc.navy.mil/inventory/inventory.asp?var=Ammunitionship">
+              Ammo-specific ships</a>
+               and <a href="http://www.msc.navy.mil/inventory/inventory.asp?var=LMSRship">
+              LMSR</a>
+               ships.               
+<h3> TheaterGround</h3>
+               34 ton trucks (M872) and <a href="http://www.fas.org/man/dod-101/sys/land/hets.htm">
+              HET</a>
+               s (capable of carrying tanks and other heavy objects) as assets. 
+                 
+<h2><a name="Plugins"></a>
+             Plugins</h2>
+<h3><a name="Transcom"></a>
+      Transcom</h3>
+               Transcom has two plugins : <b>GLMTransOneToManyExpanderPlugin
+  </b>    and   <b>  TranscomVishnuPlugin</b>. The first expander breaks
+up   unit-sized   incoming    tasks into individual chunks. These may be
+<a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/planning/ldm/asset/AggregateAsset.html">
+              aggregate</a>
+ s. The <b>TranscomVishnuPlugin </b>is an extension of the <b>VishnuAllocatorPlugin 
+       </b>(from the Vishnu module) that uses the Vishnu scheduler to determine
+       whether tasks go by air or sea. If air, the task is allocated to <i>
+    GlobalAir,      </i>if sea, to<i>GlobalSea. &nbsp;</i>
+<h4>GLMTransOneToManyExpanderPlugin</h4>
+<p>The <b>GLMTransOneToManyExpanderPlugin </b>has a number of responsibilities.
+     &nbsp;</p>
+<ul>
+  <li><a name="Level-6_and_Level-2_Time_Horizons"></a>
+ It has to decide whether to handle a task at level-6, level-2, or  "not-now" 
+level of detail. The plugin compares the requested arrival date  of the task 
+against the level 6 time horizon operating mode and the level-2  time horizon. 
+&nbsp;If it is before the level-6 horizon, the task is passed  through untouched. 
+&nbsp;If it is between the level-6 and level-2 times, the task will be converted 
+to a level-2 level of detail and subsequent processing  by lower-level GLMTrans 
+agents will get a performance boost. &nbsp;If the  arrival time is after the
+level-2 horizon, the task is temporarily ignored.  &nbsp;The plugin remembers 
+to wake up a day later (in cougaar time) and review  all level-2 and not-processed 
+tasks. &nbsp;If under this review, a level-2  task should be replanned at 
+level-6, the planning for the original task is  removed, and the task replanned. 
+Similarly, if the task was previously ignored,  the task may be planned at 
+level-2 or 6, depending on the current horizon  values. &nbsp;Typically, under
+stress, the time horizons will be moved closer to now (to the left) so as
+to reduce the amount of work the GLMTrans society will be forced to do. See
+figure below. For further discussion of Adaptivity in the GLMTrans community,
+see <a href="#Adaptivity">here</a>
+        .</li>
+</ul>
+<div align="Center"><img src="VariableTimeHorizon.JPG" alt="Variable Time Horizon graphic illustrating the level-6 and level-2 time horizons" width="925" height="250">
+<br>
+        Figure 1 :&nbsp;       Level-6 and Level-2 Time Horizons and their 
+response to stresses<br>
+</div>
+<ul>
+  <li>It also has to examine the input task to see if it is already at a
+ level-2 level of detail. &nbsp;If so, the task passes on through and is
+obviously  not examined to see if it should be converted to level-2.</li>
+  <li>It has to be sensitive to changes in operating mode, which might make 
+    it reconsider the level-of-detail choices it made for tasks.</li>
+  <li>It figures out a ship route for the cargo to travel, and uses this
+ to make a mode-selection decision. &nbsp;If there is not enough time for
+a ship to travel this distance, plus some time for CONUS and Theater ground
+     transport, than the item goes by air. &nbsp;This is encoded in the business
+     rules used by the next plugin.</li>
+  <li>It also acts as the "front-door" plugin and so has well-formed  tests
+    applied to incoming tasks. Tests applied to incoming tasks are:</li>
+  <ul>
+    <li>Departure and Arrival time preferences should make sense - the ready
+    at, earliest, best, and latest arrival dates should proceed in order.</li>
+    <li>There must be from and to prepositions.</li>
+    <li>There must be valid lat/lon info on the from and to prepositions.<br>
+    </li>
+  </ul>
+</ul>
+<h5><b>Programming details</b></h5>
+<p>The level-2 conversion takes asset groups and aggregates and creates one
+     Level-2 aggregate per cargo type. &nbsp;For instance, there may be oversize,
+     outsize, and bulk cargo in a transport task which specifies an asset
+group     of cargo as a direct object. &nbsp;These types will be go as separate
+ Level-2    tasks through the system, and appear so on the TPFDD.</p>
+<p>An example of how level-2 assets appear on the TPFDD is :<br>
+</p>
+<div align="Center">
+<p><img src="TPFDD_shots_level_6_and_2.jpg" alt="Level 2 info" width="1032" height="776">
+<br>
+</p>
+<p>       Figure 2 :&nbsp;       TPFDD of Level-2 cargo</p>
+</div>
+<p>         Sea routes are calculated from a sea network provided by Ken Anderson.
+   &nbsp;There  is a separate Route Finder component within the GLMTrans
+module    that calculates  the route.&nbsp;</p>
+<p>An example route is (obtained by right-clicking on a cargo instance in 
+    the TPFDD and selecting Display Route) :</p>
+<div align="Center">
+<p><img height="1004" width="1288" alt="Route generated from Netherlands to Turkey" src="Netherlands_To_Turkey.jpg">
+<br>
+</p>
+</div>
+<div align="Center">       Figure 3 :&nbsp; Route calculated by route finder 
+for a ship route from the Netherlands to Turkey, viewable from TPFDD Viewer</div>
+<h4>TranscomVishnuPlugin</h4>
+          This plugin is a Vishnu scheduler client, with it's scheduling
+constraints      represented in an xml file for TRANSCOM.<br>
+<p>These scheduling constraints/business rules are: </p>
+<ul>
+  <li> Tasks which would require the a ship to take the route from source
+     to destination faster than the fastest ship go by air</li>
+  <li> Tasks which allow a ship to take the route from source to destination
+     at a speed slower than the fastest ship go by sea</li>
+  <li> People go by air</li>
+  <li> Transport tasks whose "from" and "to" locations are the same are 
+allocated   to the null asset in <i>TRANSCOM. </i>This insures that prepositioned
+ tasks that   unload at the theater port and stay there appear on the TPFDD.</li>
+</ul>
+          This plugin uses a custom XML processor that converts Cougaar objects 
+    into   the <a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#b">
+          XML  format</a>
+               that the Vishnu scheduling system expects. The types of objects
+   that   are  sent to Vishnu are defined in the <b>Transcom.dff.xml</b>
+file.    For  example,  here's a snipet of the piece of the Transcom.dff.xml
+file   that defines a task:               
+<p>&lt;OBJECTFORMAT name="Transport" is_task="true" is_resource="false" &gt; 
+       <br>
+              &lt;FIELDFORMAT name="id" datatype="string" is_subobject="false"
+   is_globalptr="false"     is_list="false" is_key="true" /&gt; <br>
+              .... <br>
+              &lt;/OBJECTFORMAT&gt; </p>
+<p>This says that objects named "Transport" are tasks (is_task="true"). It's
+       first field is named "id" and it is of type "string." (For more information 
+       about the Vishnu object format, click <a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#b">
+              here</a>
+               .) </p>
+<p>The XML Processor that Transcom uses is called <b>TranscomDataXMLize.</b>
+               It takes tasks and assets and creates XML that looks like
+this:    </p>
+<p>&lt;OBJECT type="Transport"&gt; <br>
+              &lt;FIELD name="id" value="TRANSCOM/996629297256"/&gt; <br>
+              .... <br>
+              &lt;/OBJECT&gt; </p>
+<p>which is in the format that Vishnu expects for data. Each of the four clusters
+that allocates tasks to physical assets use custom data xmlizers that extend
+from <b>TranscomDataXMLize.</b></p>
+<p>Note that the of the modes that the Vishnu client can operate in : client-server, 
+  XML-internal, and direct internal, it currently runs in direct internal 
+mode.<b>    &nbsp;</b>This means that tasks and assets are directly converted 
+from Cougaar objects into Vishnu objects, and Vishnu scheduling assignments 
+represented  as Java objects are directly translated into Cougaar Aggregations 
+and Allocations.<b><br>
+</b></p>
+<h3><a name="GlobalAir"></a>
+      GlobalAir</h3>
+<i>GlobalAir </i>has one plugin : SequentialGlobalAirPlugin. The plugin 
+ extends the base class <b>SequentialPlanningPlugin </b>in the base directory. 
+     It manages the different possible templates that a parent task can be 
+ expanded     into. These are:               
+<ul>
+  <li> G, A, T (ground, air, theater) - if the task goes from a place  that 
+     is not an airbase and is going to a place that is not an airport</li>
+  <li> A, T (air, theater) - if the task goes from an airbase</li>
+  <li> A - if the task goes between airbases</li>
+  <li> T - if the task just goes from one location in theater to another</li>
+</ul>
+               The Sequential planner guarantees that the legs will be planned
+   in  sequence    as defined by their dependencies. For instance, once the
+  theater  leg is  planned, its start time is used as the end time of the
+air  leg.<br>
+<br>
+The Sequential planned plugin attaches information to incoming tasks to be
+expanded in the form of a schedule as a preposition on the task. &nbsp;Each
+item in the schedule is a SequentialScheduleElement, which represents the
+information and smarts necessary to plan that segment of the sequence. &nbsp;The
+SequentialScheduleElement knows which other elements it depends on, so that
+when all dependencies have been planned, it can be planned. &nbsp;It has
+a method (<b>planMe</b> ()) which knows how to create the subtask for that
+segment of the sequence. &nbsp;The plugin notices when subtasks have been
+planned successfully and scan through the SequentialScheduleElements looking
+for elements that are ready to be planned. &nbsp;If they are <b>planMe </b>
+is called on that segment, and the cycle continues until all segments have
+been planned.<br>
+<br>
+GlobalAir and GlobalSea define subclasses of the SequentialScheduleElement
+for each segment of the move : Theater, Air/Sea, and Ground.<br>
+               
+<h3><a name="GlobalSea"></a>
+      GlobalSea</h3>
+<i>GlobalSea </i>is almost identical to <i>GlobalAir, </i>except that  ituses 
+      <b>SequentialGlobalSeaPlugin,</b>which extends <b>SequentialGlobalAirPlugin 
+       </b>to allocate its middle step to the<i>ShipPacker.</i>
+<h3> CONUSGround, PlanePacker, ShipPacker, TheaterGround</h3>
+               These clusters all use variations on the same plugins : <b><a name="TransportExpanderPlugin"></a>
+ TransportExpanderPlugin,        VishnuAggregatorPlugin, </b>and the <b>TransportAllocatorPlugin. 
+</b>      The    VishnuAggregatorPlugin derivatives use different specialized
+ data   xmlizers    that add on fields needed for their specific scheduling
+ problems.   The expander    breaks up incoming tasks, including <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/planning/ldm/asset/AggregateAsset.html">
+              aggregate</a>
+s, into chunks the size of the cluster's carrier <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/planning/ldm/asset/Asset.html">
+              asset</a>
+               . The aggregator aggregates tasks together and assigns them
+ to  a  carrier.     The allocator actually makes the allocation of <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/planning/ldm/plan/MPTask.html">
+              MPTask</a>
+               (multi-parent task) to carrier <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/planning/ldm/asset/Asset.html">
+              asset</a>
+               . <br>
+<h3><a name="CONUSGround"></a>
+      CONUSGround</h3>
+               CONUSGround has two specialized plugins, the <b>GroundVishnuPlugin,
+     </b>    a descendant of <b>VishnuAggregatorPlugin </b>and the <b>GroundTransportAllocatorPlugin. 
+       </b>The <b>GroundVishnuPlugin </b>uses the <b>GenericDataXMLize </b>
+     data    xmlizer  to send data to Vishnu. The two plugins co-operate
+to  specially    process self-propelled  assets. These are not processed
+by the  <b>GroundVishnuPlugin</b>          but are sent straight to the Allocator. 
+ There they are allocated  to  themselves.                 
+<p><u><a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#specs">
+              Vishnu Specs:</a>
+</u><br>
+<i>Optimization Criterion</i> - Make sure all tasks have assigned resources.
+        Minimizes the difference between preferred and actual arrival times.
+     Minimizes setup and wrapup times. <br>
+<i>Delta Criterion</i> - Penalizes assignments that use a new resource  at 
+     each eval, having the overall effect of using as few trucks as possible
+     to  do the job.  Also minimizes the difference between preferred and
+actual     arrival times. <br>
+<i>Task Duration</i> - fixed 8 hours for rail; for trucks, calculate the 
+  duration using the distance between start and end locations and the speed 
+      of the truck <br>
+<i>Setup Duration</i> - fixed 1 hour <br>
+<i>WrapupDuration</i> - same as Task Duration.  This is the time it taks 
+ the asset to make its return trip. <br>
+<i>Resource Unavailable Times</i> - Looks at the resource's role schedule 
+       and makes all entries in the role schedule unavailable <br>
+<i>Task Unavailable Times</i> - Task is available only between its start
+   and end time </p>
+<h3><a name="PlanePacker"></a>
+      PlanePacker</h3>
+            The plane packer uses the <b>GenericVishnuPlugin</b> that extends 
+  the   <b>   CustomVishnuAggregatorPlugin</b>. &nbsp;It's main purpose is 
+ to redefine    the createXMLizer method so that it can make and return the 
+ <b> GenericDataXMLizer    </b>object. &nbsp;This object handles the custom 
+ translation specific to   aircraft scheduling.<br>
+<br>
+<u><a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#specs">  
+ Vishnu  Specs:</a>
+</u><br>
+<i>Optimization Criterion</i> - Make sure all tasks have assigned resources.
+        Minimizes the difference between preferred and actual arrival times.
+     Minimizes setup and wrapup times. <br>
+<i>Delta Criterion</i> - Penalizes assignments that use a new resource  at 
+     each eval, having the overall effect of using as few resources as possible 
+       to do the job.  Also minimizes the difference between preferred and 
+ actual     arrival times. <br>
+<i>Capability Criterion</i> - Assigns people to passenger planes (B747) 
+ and other assets to non-passenger planes <br>
+<i>Task Duration</i> - calculate the duration using the distance between 
+ start and end locations and the speed of the plane <br>
+<i>Setup Duration</i> - fixed 1 hour <br>
+<i>WrapupDuration</i> - fixed 1 hour <br>
+<i>Resource Unavailable Times</i> - Looks at the resource's role schedule 
+       and makes all entries in the role schedule unavailable <br>
+<i>Task Unavailable Times</i> - Task is available only between its start
+   and end time <br>
+<i>Capacity Contributions</i> - passengers are counted toward the total 
+ passenger capacity of the plane, whereas other assets contribute according 
+     to their weight <br>
+<i>Capacity Thresholds</i> - see Capacity Contributions               
+<h3><a name="ShipPacker"></a>
+      ShipPacker</h3>
+            The ship packer uses the <b>SeaVishnuPlugin</b> that extends
+the   <b>   CustomVishnuAggregatorPlugin</b>     . &nbsp;It's main purpose
+is to  redefine  the createXMLizer method so that   it can make and return
+the <b>   SeaDataXMLizer  </b>object. &nbsp;This object   handles the custom
+translation   specific to  ship scheduling.<br>
+<br>
+<u><a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#specs">  
+ Vishnu  Specs</a>
+              :</u><br>
+<i>Optimization Criterion</i> - Make sure all tasks have assigned resources.
+        Minimizes the difference between preferred and actual arrival times.
+     Minimizes setup and wrapup times. <br>
+<i>Delta Criterion</i> - Penalizes assignments that use a new resource  at 
+     each eval, having the overall effect of using as few resources as possible 
+       to do the job.  Also minimizes the difference between preferred and 
+ actual     arrival times. <br>
+<i>Capability Criterion</i> - Assigns ammo to ammo ships and non-ammo  to 
+     other ships <br>
+<i>Task Duration</i> - calculate the duration using the distance between 
+ start and end locations and the speed of the ship <br>
+<i>Setup Duration</i> - fixed 1 hour <br>
+<i>WrapupDuration</i> - same as task duration; represent return journey 
+ of ship <br>
+<i>Resource Unavailable Times</i> - Looks at the resource's role schedule 
+       and makes all entries in the role schedule unavailable <br>
+<i>Task Unavailable Times</i> - Task is available only between its start
+   and end time <br>
+<i>Capacity Contributions</i> - there are two kinds of capacity on a ship: 
+       slots for containers and area for non-containers.  Containers each 
+contribute      to 1 slot of capacity, whereas non-containers contribute according
+to  their    areas <br>
+<i>Capacity Thresholds</i> - see Capacity Contributions               
+<h3><a name="TheaterGround"></a>
+      TheaterGround</h3>
+               TheaterGround is exactly like CONUSGround, except that it
+has   HETs   instead    of rail cars for assets.               
+<p><u><a href="http://www.cougaar.org/projects/vishnu/fulldoc.html#specs">
+              Vishnu Specs:</a>
+</u>See CONUSGround&nbsp;</p>
+<h3><a name="OSC"></a>
+      OSC</h3>
+         Although the OSC agent is not part of the&nbsp;      GLMTrans society, 
+   it  has some plugins that come from the GLMTrans module.<br>
+<br>
+         The AmmoProjectionExpanderPlugin converts incoming Project Supply 
+tasks into <a name="Transport_Reservations"></a>
+Transport Reservations.<br>
+<div align="Center"><img src="Transport_Reservations_Image.JPG" alt="Illustrates conversion of projections into reservations" width="500" height="451">
+<br>
+ Figure 4 :&nbsp; Conversion of Project Supply tasks into Transport Reservations<br>
+<div align="Left"><br>
+The plugin takes the Project Supply tasks and creates Transport Reservations
+with milvans as direct objects. &nbsp;The reservations are monthly deliveries
+of the projected quantity of ammunition, divided into month-sized chunks.
+&nbsp;So for instance if a projection spans three months, three reservations
+will be generated. &nbsp;The manifest items inside the milvans are these
+quantities. The AmmoProjectionExpanderPlugin is essentially a poor-man's
+AmmoPacker. &nbsp;It doesn't attempt to do an optimal job of packing milvans.<br>
+<br>
+Transport Reservations are handled by the GLMTrans community exactly as normal
+transport tasks. &nbsp;Their main difference is semantic - they represent
+reservations of assets for transport use. &nbsp;They will be replaced by
+actual, real transport requests as time progresses.&nbsp;Reservations mark
+specific assets as reserved for future use.&nbsp;<br>
+<br>
+OSC (the AmmoProjectionExpanderPlugin) keeps tracks of overlaps of actuals
+with projections and replans them as necessary. &nbsp;As time moves forward,
+new actuals come in that overlap with existing projections. &nbsp;The AmmoProjectionExpanderPlugin 
+notices this and rescinds and replans the Transport Reservation tasks as necessary.
+&nbsp;This replanning takes two forms:&nbsp;
+<ul>
+  <ul>
+    <li>the ready at date of the reservation task is moved forward to be after
+the actual task's arrival.</li>
+    <li>the tonnage quantity inside the milvan on the direct object of the 
+Transport Reservation will be decremented to be consistent with the time span
+of the task. &nbsp;For example, if the original projection was for 10 tons
+of C380 every month, there will be transport reservations set to arrive at
+the end of each month with 10 tons. &nbsp;If an actual appears 15 days into
+the month of a transport reservation, the amount delivered in the milvan will
+be 5 tons.</li>
+  </ul>
+</ul>
+</div>
+</div>
+<h2><a name="Parameters"></a>
+             Parameters</h2>
+               There are really only three parameters that make any difference
+   in  the   outcome of runs. These are <b>GA</b> (<a href="http://cs.felk.cvut.cz/%7Exobitko/ga/">
+               click here for an introduction to Genetic Algorithms</a>
+               ) parameters :               
+<p>* the number of evaluations (the number of new, randomly generated solutions) 
+       - currently set to 1 <br>
+              * the maximum amount of amount of time the <b>GA</b> is allowed 
+  to  spend    looking for a solution - currently 5 seconds <br>
+              * the population size, set to 5 </p>
+<p>Having the number of evaluations set to 1 means that the <b>GA</b> does 
+       in fact not do any optimization after seeding the population with greedy
+      solutions. Increasing it to larger than one would mean introducing random
+      solutions, and beginning to optimize. Increasing any of the parameters
+   would   increase the quality of the solution of any particular problem
+(truck,   ship,   or plane packing) but would increase run time. </p>
+<h2><a name="Testing"></a>
+            Testing</h2>
+            The main way to do testing of the<b> GLMTrans </b>society independent 
+    of other agents is to use the <b><a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/glm/servlet/GLMStimulatorServlet.html">
+         GLMStimulatorServlet.</a>
+</b>    It can be told to read in any of a number of test input files in 
+the testinput directory.   &nbsp;These files specify different kinds of input
+ tasks, which test different categories of behavior, covering topics like
+ handling of air, sea, and non-moving transport requests.  For more on the
+ GLMStimulatorServlet and how to use it, consult the StimulatorServlet documentation
+ page in the glm/doc directory of the cougaar distribution, which should
+be  <a href="../../glm/doc/StimulatorServlet.html">here</a>
+         .<br>
+<br>
+             Also, there is the <b><a href="https://cvs.ultralog.net/docs/Logistics_bbn_bbn_final_assessment/org/cougaar/logistics/plugin/trans/AssetStimulator.html">
+         AssetStimulator</a>
+</b>plugin which provides a gui which  allows the developer to introduce 
+new assets or assets in change an agent  with click of a button.  This is 
+    helpful when testing plugin responses to  dynamic assets.  (By default, 
+  it  creates a new rail car as a new asset,  and  changes the type id of 
+the  first  physical asset in the cluster to be  X_changed,  where X is the 
+original   name when changing an asset.)          
+<h2><a name="Adaptivity"></a>
+           Adaptivity</h2>
+<b>GLMTrans </b>adapts to stresses by converting incoming level-6 tasks 
+into level-2 tasks. &nbsp;It does this at the TRANSCOM agent only. &nbsp;<a href="#Level-6_and_Level-2_Time_Horizons">
+        See discussion in the TRANSCOM agent above</a>
+        . The TRANSCOM agent uses level-6 and level-2 time horizon operating
+  modes.   &nbsp;These  modes define how many days into the future TRANSCOM
+  will process   tasks at  level-6, level-2, or not at all. &nbsp;Tasks processed
+  at level-2   or that  are ignored are reexamined when either<br>
+<ul>
+  <li>the operating mode values change</li>
+  <li>time moves forward a day</li>
+</ul>
+          When either of these changes occur, TRANSCOM looks through the
+blackboard      for level-2 and not processed tasks and re-examines them
+to see if they    should  be processed at a higher level of detail. Note
+that level-6 tasks    are  not touched -- no information is ever thrown away.
+       
+<h3>Why is the there a <a name="performance_win_with_Level-2"></a>
+        performance win with Level-2?</h3>
+        The performance win for the GLMTrans society comes from the reduced 
+ number   of tasks that flow through the society. During level-2 processing 
+ of incoming   tasks, instead of each task representing the movement of an 
+ individual item,   there are Level-2 tasks representing the movement of a
+ whole unit's deployment   cargo as an aggregate. &nbsp;Per unit, there will
+ be a small number of level-2   tasks, since a unit's cargo is sorted into
+ homogenous cargo category groups,   e.g. Oversize, Outsize, Bulk, etc. &nbsp;<br>
+<br>
+        Having a small number of level-2 tasks per unit greatly reduces the 
+ number   of tasks flowing through the society. &nbsp;There is also a performance
+  win  in that the Vishnu schedulers at each of the leaf agents are being
+asked   to schedule far fewer tasks. &nbsp;The biggest wins are at the ShipPacker
+   and PlanePacker, since those agents will be forced to divide incoming
+tasks    into the largest chunks, compared to the trucking agents. &nbsp;(Incoming
+   level-2 tasks are broken into subtasks whose chunk size is no larger than
+   the size of the smallest carrier asset in the agent. &nbsp;This is done
+by the <a href="#TransportExpanderPlugin"><b>TransportExpanderPlugin</b></a>
+.) &nbsp;So ships being    much larger than trucks, the chunks will be relatively
+much larger, and  so  there will be far fewer subtasks to schedule.     
+  
+<h3><a name="How_is_adaptivity_triggered"></a>
+        How is adaptivity triggered?</h3>
+        There are plays for the TRANSCOM agent that are triggered when the
+ FallingBehind    <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/core/adaptivity/Condition.html">
+        Condition</a>
+         changes. &nbsp;The playbook for TRANSCOM is simple:<br>
+<br>
+        FallingBehind &gt;= 2.0&nbsp; : Level2TimeHorizon = 60&nbsp; : Level6TimeHorizon
+    = 21;<br>
+        FallingBehind == 1.0&nbsp; : Level2TimeHorizon = 225&nbsp; : Level6TimeHorizon
+    = 40;<br>
+        FallingBehind &lt;= 0.5 : Level2TimeHorizon = 225 : Level6TimeHorizon 
+  =  225;<br>
+<br>
+        The condition can come from the either the FallingBehindConditionServlet
+    or any of several PSU condition servlets. &nbsp;The TimeHorizon <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/core/adaptivity/OperatingMode.html">
+        OperatingModes</a>
+         are published by the TRANSCOM agent and watched there for changes. 
+ &nbsp;They   are used in the level-of-detail decision making process applied 
+ to incoming   tasks, see <a href="#Level-6_and_Level-2_Time_Horizons">above</a>
+        .<br>
+<h2><a name="Performance"></a>
+            Performance</h2>
+             Click <a href="GLMTrans_Performance.html">here </a>
+             to learn more about the performance and scalability of GLMTrans. 
+              
+<h2><a name="Details"></a>
+            Details</h2>
+<a name="Problem_details"></a>
+             Problem details -- there are a number of business rules that 
+GLMTrans     uses:               
+<ul>
+  <li> Tasks which begin at an airport or seaport do not have CONUS ground
+       legs. Similarly tasks which end at an airport or seaport have no theater
+      leg.</li>
+  <li> People do not have ground legs.</li>
+</ul>
+               There are a number of business rules that GLMTrans does not
+ follow:                   
+<ul>
+  <li> Unit integrity for ships.</li>
+  <li> ISBs</li>
+  <li>No RSO&amp;I at ports/airbases.</li>
+  <li>It doesn't try one mode and then if that fails try another. For instance, 
+    it doesn't try to schedule something to go by air, and then if that fails, 
+    schedule it to go by sea. &nbsp;This would add complexity to a system 
+meant    to be less complicated than its predecessor.<br>
+  </li>
+</ul>
+<h2><a name="Configuration_details"></a>
+            Configuration details</h2>
+                GLMTrans tries to reduce the number of configuration files
+ necessary      by making several plugins share parameter files. &nbsp;So
+in several places     in the ini files, you will see lines like :<br>
+<br>
+            plugin = org.cougaar.pkg.glmtrans.plugins.GroundVishnuPlugin(envFile={String}GLMT.Transport.env.xml)<br>
+<br>
+            Where the envFile parameter is telling the GroundVishnuPlugin 
+to  use   the   shared parameter file, GLM.Transport.xml. Note that we have
+ to  prefix   some files with "GLM." because they are similar named files
+in configs/common,    and we would have name collision on the config path.
+&nbsp;There is a bug    that hopes for a better approach to name collision
+between communities (<a href="https://www.alpine.bbn.com/bugzilla/show_bug.cgi?id=1445">
+      bug #1445</a>
+         ).<br>
+<br>
+            Note that if a plugin doesn't have an envFile explicity declared
+  for   it,   it will look for a parameter file beginning with the agent
+name.   &nbsp;If     it doesn't find one, it will note that it couldn't,
+but this   is only a  problem   if the plugin needs parameters.<br>
+<br>
+            Similarly there are ldm.xml files that define the resources for 
+ the   different   agents. &nbsp;These are read by the <a href="http://www.cougaar.org/software/9.4.1/javadoc/api/org/cougaar/lib/plugin/UTILLdmXMLPlugin.html">
+            UTILLdmXMLPlugin</a>
+            , which also looks for &lt;agent name&gt;.ldm.xml files. &nbsp;The
+   use   of  this plugin is optional -- you can also use the more traditional
+   XMLPrototypeProviderPlugin    and LDMSQLPlugin plugins to populate agents
+   with assets.<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+</body>
+</html>
