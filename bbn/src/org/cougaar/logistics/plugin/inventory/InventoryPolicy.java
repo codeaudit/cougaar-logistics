@@ -33,6 +33,7 @@ public class InventoryPolicy extends Policy {
   public static final String ReorderPeriod = "ReorderPeriod";
   public static final String HandlingTime = "HandlingTime";
   public static final String TransportTime = "TransportTime";
+  public static final String OrderShipTime = "OrderShipTime";
 
   public InventoryPolicy() {
     StringRuleParameter type = new StringRuleParameter(ResourceType);
@@ -84,6 +85,13 @@ public class InventoryPolicy extends Policy {
       System.out.println(ex);
     }
     Add(tt);
+    IntegerRuleParameter ost = new IntegerRuleParameter(OrderShipTime, 1, 40);
+    try {
+      ost.setValue(new Integer(3));
+    } catch (RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+    Add(ost);
   }
 
   public String getResourceType() {
@@ -197,4 +205,21 @@ public class InventoryPolicy extends Policy {
       System.out.println(ex);
     }
   }
+
+  public int getOrderShipTime() {
+    IntegerRuleParameter param = (IntegerRuleParameter)
+      Lookup(OrderShipTime);
+    return ((Integer)(param.getValue())).intValue();
+  }
+
+  public void setOrderShipTime(int i) {
+    IntegerRuleParameter param = (IntegerRuleParameter)
+      Lookup(OrderShipTime);
+    try {
+      param.setValue(new Integer(i));
+    } catch(RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+  }
+
 }

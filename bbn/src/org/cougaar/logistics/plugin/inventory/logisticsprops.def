@@ -44,6 +44,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	void setLevel(int bucket, double value); \
 	void updateRefillAllocation(Task task); \
 	double getProjectedDemand(int bucket); \
+	double getActualDemand(int bucket); \
 	double getReorderPeriod(); \
 	long convertBucketToTime(int bucket); \
 	int  convertTimeToBucket(long time); \

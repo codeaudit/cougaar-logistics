@@ -74,16 +74,15 @@ public class RefillGenerator extends InventoryModule {
   }
 
   public void calculateRefills(ArrayList touchedInventories, InventoryPolicy policy) {
-    int advanceOrderTime = policy.getHandlingTime() + policy.getTransportTime();
-    int maxLeadTime = policy.getSupplierAdvanceNoticeTime() + advanceOrderTime;
-    int reorderPeriod = policy.getReorderPeriod();
-
+    int orderShipTime = policy.getOrderShipTime();
+    int maxLeadTime = policy.getSupplierAdvanceNoticeTime() + orderShipTime;
+    
     //Should we push now to the end of today? For now we WILL NOT.
     //long today = getTimeUtils().
     //  pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
     long today = inventoryPlugin.getCurrentTimeMillis();
     //start time (k) is today plus OST.
-    long start = getTimeUtils().addNDays(today, advanceOrderTime);
+    long start = getTimeUtils().addNDays(today, orderShipTime);
     
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
@@ -93,35 +92,33 @@ public class RefillGenerator extends InventoryModule {
       //clear the refills
       thePG.clearRefillTasks(new Date(start));
 
- //      int startBucket = thePG.getBucket(start);
-//       // refillDay is start + 1 day (k+1)
-//       int refillDayBucket = startBucket + 1; 
-//       // max lead day is today + maxLeadTime
-//       int maxLeadDayBucket = thePG.getBucket(getTimeUtils().
-//                                              addNDays(today, maxLeadTime));
+      int startBucket = thePG.convertTimeToBucket(start);
+      // refill time is start + 1 bucket (k+1)
+      int refillBucket = startBucket + 1; 
+      // max lead day is today + maxLeadTime
+      int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+                                             addNDays(today, maxLeadTime));
 
-//       //  create the refills
-//       while (refillDayBucket <= maxLeadDayBucket) {
-//         long invLevel = thePG.getLevel(startBucket) - 
-//           thePG.getActualDemand(refillDayBucket);
-//         if (thePG.getCriticalLevel(refillDayBucket) < invLevel) {
-//           thePG.setLevel(refillDayBucket, 0);
-//         } else {
-//           long refillDay = refillDayBucket.getStartTime();
-//           int reorderPeriodEndBucket = thePG.getBucket(getTimeUtils().
-//                                                        addNDays(refillDay,
-//                                                                 reorderPeriod));
-//           double refillQty = generateRefill(invLevel, refillDayBucket, 
-//                                             reorderPeriodEndBucket, thePG);
-//           // make a task for this refill and publish it to glue plugin
-//           // and apply it to the LogisticsInventoryBG
-//           createRefillTask(refillQty, refillDay, anInventory, thePG, today);
-//           thePG.setLevel(refillDayBucket, (invLevel + refillQty));
-//         }
-//         //reset the buckets
-//         startBucket = refillDayBucket;
-//         refillDayBucket = startBucket + 1;
-//       }
+      //  create the refills
+      while (refillBucket <= maxLeadBucket) {
+         double invLevel = thePG.getLevel(startBucket) - 
+          thePG.getActualDemand(refillBucket);
+        if (thePG.getCriticalLevel(refillBucket) < invLevel) {
+          thePG.setLevel(refillBucket, 0);
+        } else {
+          int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
+          double refillQty = generateRefill(invLevel, refillBucket, 
+                                            reorderPeriodEndBucket, thePG);
+          // make a task for this refill and publish it to glue plugin
+          // and apply it to the LogisticsInventoryBG
+          createRefillTask(refillQty, thePG.convertBucketToTime(refillBucket), 
+                           anInventory, thePG, today);
+          thePG.setLevel(refillBucket, (invLevel + refillQty));
+        }
+        //reset the buckets
+        startBucket = refillBucket;
+        refillBucket = startBucket + 1;
+      }
     
     } // done going through inventories
   }
@@ -130,11 +127,11 @@ public class RefillGenerator extends InventoryModule {
                                 int reorderPeriodEndBucket, 
                                 LogisticsInventoryPG thePG) {
     double refillQty = 0;
- //    double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
+    double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
     double demandForPeriod = calculateDemandForPeriod(thePG, 
                                                       refillBucket, 
                                                       reorderPeriodEndBucket);
- //    refillQty = (criticalAtEndOfPeriod - invLevel) + demandForPeriod;
+    refillQty = (criticalAtEndOfPeriod - invLevel) + demandForPeriod;
     return refillQty;
   }
 
@@ -143,8 +140,8 @@ public class RefillGenerator extends InventoryModule {
     double totalDemand = 0.0;
     int currentBucket = refillBucket;
     while (currentBucket <= endOfPeriodBucket) {
-      // double demand = thePG.getDemand(currentBucket);
-//       totalDemand = totalDemand + demand;
+      double demand = thePG.getActualDemand(currentBucket);
+      totalDemand = totalDemand + demand;
       currentBucket = currentBucket + 1;
     }
     return totalDemand;
