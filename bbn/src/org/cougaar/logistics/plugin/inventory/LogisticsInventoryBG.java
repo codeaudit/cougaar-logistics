@@ -712,6 +712,34 @@ public class LogisticsInventoryBG implements PGDelegate {
         Object org;
         Long lastActualSeen;
         long endTime;
+        long startTime;
+        // first run through the projectwithdraws and make the lastActualSeen the
+        // day before the start of the earliest projectwithdraw.  We won't really have
+        // gotten an actual then, but its the only way to make sure that a customer who
+        // ONLY sends projectwithdraws (instead of atleast one withdraw) actually
+        // gets an entry put in the customer has for itself.
+        for (int i = dueOutList.size() - 1; i >= 0; i--) {
+          list = (ArrayList) dueOutList.get(i);
+          if (!list.isEmpty()) {
+            listIter = list.iterator();
+            while (listIter.hasNext()) {
+              task = (Task) listIter.next();
+              if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+                org = TaskUtils.getCustomer(task);
+                startTime = taskUtils.getStartTime(task);
+                // now make end time the bucket before the start time of the first projectwithdraw
+                endTime = startTime - MSEC_PER_BUCKET;
+                lastActualSeen = (Long) customerHash.get(org);
+                if ((lastActualSeen == null) || (endTime < lastActualSeen.longValue())) {
+                  customerHash.put(org, new Long(endTime));
+                }
+              }
+            }
+          }
+        }
+
+        // now reset the customer has values for those customers that really did
+        // send atleast one withdraw task
         for (int i = dueOutList.size() - 1; i >= 0; i--) {
             list = (ArrayList) dueOutList.get(i);
             if (!list.isEmpty()) {
