@@ -267,7 +267,20 @@ public class TaskGanttChart extends GanttChart
 			  lStr + " e " + rStr);
 
     LegNode legNode = (LegNode) leg;
-    String carrier = legNode.getCarrierType () + ": " + legNode.getCarrierName ();
+    String prefix = "";
+
+    if (legNode.getCarrierType () != null &&
+	!legNode.getCarrierType ().equals ("")) {
+      prefix = legNode.getCarrierType () + ": ";
+    }
+
+    String suffix = "";
+
+    if (legNode.getCarrierName () != null) {
+      suffix = legNode.getCarrierName ();
+    }
+
+    String carrier = prefix + suffix;
 
     loz.setLozengeDescription(leg.getDisplayName () + " : " +
 			      location + " [" + lStr + " - " + rStr + "]" + " on " +
