@@ -169,16 +169,16 @@
     
     <!-- jarfiles required by this module, relative to various other paths -->
     <!-- WARNING: Only relative paths work here. -->
-    <property name="compile.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/glm.jar,${target.lib}/toolkit.jar,${target.lib}/util.jar,${target.lib}/albbn.jar,${target.lib}/aggagent.jar,${target.lib}/uiframework.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/servlet.jar"/>
+    <property name="compile.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/glm.jar,${target.lib}/toolkit.jar,${target.lib}/util.jar,${target.lib}/albbn.jar,${target.lib}/aggagent.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/servlet.jar,${target.sys}/openmap.jar"/>
     <!-- Put absolute paths on this list, in the form of a path. -->
     <property name="compile.abs.jarlist" value=""/>
 
     <!-- javadoc package spec for building javadocs -->
-    <property name="javadoc.packages" value="org.cougaar.logistics.ui.stoplight.client,org.cougaar.logistics.ui.stoplight.client.aggregator,org.cougaar.logistics.ui.stoplight.society,org.cougaar.logistics.ui.stoplight.util"/>
+    <property name="javadoc.packages" value="org.cougaar.logistics.ui.stoplight.client,org.cougaar.logistics.ui.stoplight.client.aggregator,org.cougaar.logistics.ui.stoplight.society,org.cougaar.logistics.ui.stoplight.transducer,org.cougaar.logistics.ui.stoplight.transducer.configs,org.cougaar.logistics.ui.stoplight.transducer.dbsupport,org.cougaar.logistics.ui.stoplight.transducer.elements,org.cougaar.logistics.ui.stoplight.ui.components,org.cougaar.logistics.ui.stoplight.ui.components.desktop,org.cougaar.logistics.ui.stoplight.ui.components.desktop.dnd,org.cougaar.logistics.ui.stoplight.ui.components.desktop.osm,org.cougaar.logistics.ui.stoplight.ui.components.drilldown,org.cougaar.logistics.ui.stoplight.ui.components.graph,org.cougaar.logistics.ui.stoplight.ui.components.mthumbslider,org.cougaar.logistics.ui.stoplight.ui.inventory,org.cougaar.logistics.ui.stoplight.ui.map,org.cougaar.logistics.ui.stoplight.ui.map.app,org.cougaar.logistics.ui.stoplight.ui.map.layer,org.cougaar.logistics.ui.stoplight.ui.map.layer.cgmicon,org.cougaar.logistics.ui.stoplight.ui.map.layer.cgmicon.cgm,org.cougaar.logistics.ui.stoplight.ui.map.util,org.cougaar.logistics.ui.stoplight.ui.models,org.cougaar.logistics.ui.stoplight.ui.themes,org.cougaar.logistics.ui.stoplight.ui.util,org.cougaar.logistics.ui.stoplight.util"/>
 
     <!-- Extra jars needed at run / unit-test time. -->
     <!-- WARNING: Only relative paths work here. -->
-    <property name="run.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/glm.jar,${target.lib}/toolkit.jar,${target.lib}/util.jar,${target.lib}/albbn.jar,${target.lib}/aggagent.jar,${target.lib}/uiframework.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/servlet.jar"/>
+    <property name="run.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/glm.jar,${target.lib}/toolkit.jar,${target.lib}/util.jar,${target.lib}/albbn.jar,${target.lib}/aggagent.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/servlet.jar,${target.sys}/openmap.jar"/>
     <!-- Put absolute paths on this list, in the form of a path. -->
     <property name="run.abs.jarlist" value=""/>
     
@@ -186,7 +186,7 @@
 
     <!-- What are the dependencies of this module at compile time -->
     <path id="compile.classpath">
-      <filelist dir="${target.lib}" files="${compile.jarlist}"/>
+      <filelist dir="." files="${compile.jarlist}"/>
       <pathelement path="${compile.abs.jarlist}"/>
     </path>
     
@@ -194,7 +194,7 @@
     <path id="junit.classpath">
       <path location="${module.classes}" />
       <path location="${module.regress}" />
-      <filelist dir="${target.lib}" files="${run.jarlist}"/>
+      <filelist dir="." files="${run.jarlist}"/>
       <pathelement path="${run.abs.jarlist}"/>
       <!-- junit.jar always comes from sys directory -->
       <path location="${target.sys}/junit.jar"/>
@@ -204,7 +204,7 @@
     <path id="javadoc.path">
       <path location="${module.classes}" />
       <path location="${module.regress}" />
-      <filelist dir="${target.lib}" files="${run.jarlist}"/>
+      <filelist dir="." files="${run.jarlist}"/>
       <pathelement path="${run.abs.jarlist}"/>
     </path>
 
