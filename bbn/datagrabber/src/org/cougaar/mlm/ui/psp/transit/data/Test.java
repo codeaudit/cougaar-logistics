@@ -165,10 +165,10 @@ public class Test{
       p1.UID="UID3";
       p1.assetClass=Prototype.ASSET_CLASS_1;
       p1.assetType=Prototype.ASSET_TYPE_ASSET;
-      p1.weight=2;
-      p1.width=3;
-      p1.height=4;
-      p1.depth=5;
+      //      p1.weight=2;
+      //      p1.width=3;
+      //      p1.height=4;
+      //      p1.depth=5;
       p1.alpTypeID="NSN/asdf";
       p1.nomenclature="Box of nails";
       pd1.addPrototype(p1);
