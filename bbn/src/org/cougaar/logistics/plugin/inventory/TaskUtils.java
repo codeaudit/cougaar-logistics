@@ -38,6 +38,9 @@ import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.AspectScorePoint;
+import org.cougaar.planning.ldm.plan.AspectRate;
+import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.measure.*;
 
 import java.text.NumberFormat;
 import java.util.Date;
@@ -193,5 +196,31 @@ public class TaskUtils extends PluginHelper {
     return null;
   }
 
+  public Rate getRate(Task task) {
+    AspectValue best = getPreferenceBest(task, AlpineAspectType.DEMANDRATE);
+    if (best == null)
+      logger.error("TaskUtils.getRate(), Task is not Projection :"+taskDesc(task));
+    return ((AspectRate) best).getRateValue();
+  }
+
+  public double getDailyQuantity(Task task) {
+    if (isProjection(task)) {
+      return getDailyQuantity(getRate(task));
+    } else {
+      return getQuantity(task);
+    }
+  }
+
+  public static double getDailyQuantity(Rate r) {
+    if (r instanceof FlowRate) {
+      return ((FlowRate) r).getGallonsPerDay();
+    } else if (r instanceof CountRate) {
+      return ((CountRate) r).getEachesPerDay();
+    } else if (r instanceof MassTransferRate) {
+      return ((MassTransferRate) r).getShortTonsPerDay();
+    } else {
+      return Double.NaN;
+    }
+  }
 
 }
