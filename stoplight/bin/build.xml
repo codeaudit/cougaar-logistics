@@ -19,6 +19,7 @@
   <mkdir dir="staging"/>
   <mkdir dir="staging/lib"/>
   <mkdir dir="staging/data"/>
+  <mkdir dir="staging/bin"/>
   <delete dir="${build}"/>
   <mkdir dir="${build}"/>
   <javac classpathref="tic.build.overlay.class.path" srcdir="${src}" destdir="${build}"/>
@@ -30,6 +31,8 @@
         <exclude name="**/CVS/**"/>
       </patternset>
     </fileset>
+  </copy>
+  <copy todir="staging/bin">
     <fileset dir="bin">
       <patternset>
 				<include name="*.bat"/>
