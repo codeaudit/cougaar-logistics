@@ -44,6 +44,7 @@ public class InventoryMenuEvent extends ActionEvent
 {
     public final static String MENU_Exit = "Exit";
     public final static String MENU_Connect = "Connect..";
+    public final static String MENU_SaveXML = "Save XML..";
 
     public InventoryMenuEvent(Object source, String command) {
 	super(source,Event.ACTION_EVENT,command);
