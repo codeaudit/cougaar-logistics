@@ -488,13 +488,9 @@ public class DemandForecastPlugin extends ComponentPlugin
       if (o instanceof Task) {
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          // FIXME:  WAITING to hear from Beth before I commit this exclude refill tasks  WAITING
-//          PrepositionalPhrase pp =t.getPrepositionalPhrase(Constants.Preposition.REFILL);
-//          if (pp == null) {
           if(taskUtils.isTaskOfTypeString(t, supplyType)) {
             return (taskUtils.isMyDemandForecastProjection(t,orgName));
           }
-//          }
         }
       }
       return false;
