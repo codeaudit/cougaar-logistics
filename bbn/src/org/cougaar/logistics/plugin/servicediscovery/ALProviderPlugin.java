@@ -1,25 +1,20 @@
 package org.cougaar.logistics.plugin.servicediscovery;
 
 import org.cougaar.servicediscovery.SDFactory;
-import org.cougaar.servicediscovery.SDDomain;
 import org.cougaar.servicediscovery.description.ServiceContract;
 import org.cougaar.servicediscovery.transaction.ServiceContractRelay;
+import org.cougaar.servicediscovery.description.ServiceRequest;
+import org.cougaar.servicediscovery.description.StatusChangeMessage;
+import org.cougaar.servicediscovery.plugin.SDProviderPlugin;
 
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.AspectType;
 
-import org.cougaar.util.UnaryPredicate;
-
-import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.planning.ldm.plan.Preference;
-
-import org.cougaar.glm.ldm.asset.Organization;
-
-import org.cougaar.planning.plugin.legacy.SimplePlugin;
 
 import org.cougaar.logistics.plugin.utils.ALStatusChangeMessage;
 
@@ -31,9 +26,17 @@ import java.util.Date;
 /**
  * <p>Title: </p>
  * <p>Description:
- * This plugin is used by AL providers to respond to ALStatusChangeMessages.
+ * This plugin replies to new service contract relays. Usually,
+ * it will reply with a service contract which exactly matches the
+ * service request. "Just say yes"
+ * Responds to StatusChangeMessages by revoking the service contracts
+ * with matching roles.
+ * Responds to ALStatusChangeMessages.
  * Upon receiving this kind of message, the plugin publishes a change to
  * any affected ServiceContractRelays, with updated ServiceContract end dates.
+ * Also, the plugin will now reply to any new service contract relay with
+ * a service contract with start time == end time (a zero time contract)
+ * as a way to "Just say no".
  * </p>
  * <p>Copyright: Copyright (c) 2003</p>
  * <p>Company: </p>
@@ -41,87 +44,73 @@ import java.util.Date;
  * @version 1.0
  */
 
-public class ALProviderPlugin extends SimplePlugin {
+public class ALProviderPlugin extends SDProviderPlugin {
 
-  private IncrementalSubscription myStatusChangeSubscription;
-  private IncrementalSubscription myServiceContractRelaySubscription;
-  private IncrementalSubscription mySelfOrgSubscription;
-
-  private String myAgentName;
   private LoggingService myLoggingService;
-  private SDFactory mySDFactory;
+  private boolean sayYes;
 
-  private UnaryPredicate mySelfOrgPred = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      if (o instanceof Organization) {
-        Organization org = (Organization) o;
-        if (org.isLocal()) {
-          return true;
-        }
-      }
-      return false;
-    }
-  };
-
-  private UnaryPredicate myServiceContractRelayPred = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      if (o instanceof ServiceContractRelay) {
-        ServiceContractRelay relay = (ServiceContractRelay) o;
-        return (relay.getProviderName().equals(myAgentName));
-      } else {
-        return false;
-      }
-    }
-  };
-
-  private UnaryPredicate statusChangePredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof ALStatusChangeMessage);
-    }
-  };
 
   protected void setupSubscriptions() {
+    sayYes = true;
     myLoggingService =
       (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
-    myStatusChangeSubscription =
-      (IncrementalSubscription) subscribe(statusChangePredicate);
-    myServiceContractRelaySubscription = (IncrementalSubscription) subscribe(myServiceContractRelayPred);
-    mySelfOrgSubscription = (IncrementalSubscription) subscribe(mySelfOrgPred);
-
-    mySDFactory = (SDFactory) getFactory(SDDomain.SD_NAME);
-
-    myAgentName = getBindingSite().getAgentIdentifier().toString();
+    super.setupSubscriptions();
   }
 
-  protected void execute () {
-    if(myStatusChangeSubscription.hasChanged()) {
-      Iterator it = myStatusChangeSubscription.getChangedCollection().iterator();
-      while(it.hasNext()) {
-        ALStatusChangeMessage m = (ALStatusChangeMessage)it.next();
+  protected void handleAddedServiceContractRelay(ServiceContractRelay relay){
+    if(sayYes) {
+      super.handleAddedServiceContractRelay(relay);
+    }
+    //say no by making the end time preference  == the start time preferend
+    else {
+      ServiceRequest serviceRequest = relay.getServiceRequest();
 
-        if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug("ALProviderPlugin found ALStatusChangeMessage, registry updated: " + m.registryUpdated());
+      ArrayList contractPreferences =
+        new ArrayList(serviceRequest.getServicePreferences().size());
+      Preference startPref = null;
+      for (Iterator iterator = serviceRequest.getServicePreferences().iterator();
+           iterator.hasNext();) {
+        Preference requestPreference = (Preference) iterator.next();
+        //remember the start time pref
+        if(requestPreference.getAspectType() == Preference.START_TIME) {
+            startPref = requestPreference;
         }
-        //only proceed if the registry has already been updated to reflect service disruption
-        if(m.registryUpdated()) {
-          Iterator contracts = myServiceContractRelaySubscription.getCollection().iterator();
-          while(contracts.hasNext()) {
-            ServiceContractRelay contractRelay = (ServiceContractRelay)contracts.next();
-            //find the service contract relay with matching role to the service disrupted
-            if(contractRelay.getServiceRequest().getServiceRole().toString().equals(m.getRole())) {
-              //alter the service contract
-              contractRelay.setServiceContract(getAlteredServiceContract(contractRelay, m));
-              publishChange(contractRelay);
-
-              if (myLoggingService.isDebugEnabled()) {
-                myLoggingService.debug("ALProviderPlugin found publishChange contract relay"+
-                                       " provider " + contractRelay.getProviderName() +
-                                       " role "+contractRelay.getServiceContract().getServiceRole().getName());
-              }
-            }
-          }
+        //copy all prefs which are not the end time pref
+        if(requestPreference.getAspectType() != Preference.END_TIME) {
+          Preference contractPreference =
+              getFactory().newPreference(requestPreference.getAspectType(),
+              requestPreference.getScoringFunction(),
+              requestPreference.getWeight());
+          contractPreferences.add(contractPreference);
         }
       }
+      //now put in an end time pref that is the same as the start time
+      if(startPref != null) {
+        Preference contractPreference =
+            getFactory().newPreference(Preference.END_TIME,
+            startPref.getScoringFunction(),
+            startPref.getWeight());
+        contractPreferences.add(contractPreference);
+      }
+    }
+  }
+
+
+  protected void changeServiceContractRelay(ServiceContractRelay contractRelay, StatusChangeMessage m) {
+    if(m instanceof ALStatusChangeMessage) {
+      ALStatusChangeMessage message = (ALStatusChangeMessage)m;
+      contractRelay.setServiceContract(getAlteredServiceContract(contractRelay, message));
+      sayYes = false;
+      publishChange(contractRelay);
+
+      if (myLoggingService.isDebugEnabled()) {
+        myLoggingService.debug("ALProviderPlugin found publishChange contract relay"+
+                               " provider " + contractRelay.getProviderName() +
+                               " role "+contractRelay.getServiceContract().getServiceRole().getName());
+      }
+    }
+    else {
+      super.changeServiceContractRelay(contractRelay, m);
     }
   }
 
@@ -168,12 +157,4 @@ public class ALProviderPlugin extends SimplePlugin {
     return newSc;
   }
 
-  protected Organization getSelfOrg() {
-    for (Iterator iterator = mySelfOrgSubscription.iterator();
-         iterator.hasNext();) {
-      return (Organization) iterator.next();
-    }
-
-    return null;
-  }
 }
