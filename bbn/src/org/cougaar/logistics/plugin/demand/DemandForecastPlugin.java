@@ -632,7 +632,14 @@ public class DemandForecastPlugin extends ComponentPlugin
         asset = ((AggregateAsset) asset).getAsset();
       }
       PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
-      invokeGenProjectionsExp(pg, genProj);
+      //invokeGenProjectionsExp(pg, genProj);
+
+      if (!pgToPredsHash.containsKey(pg)) {
+        addNewPG(pg);
+      }
+
+
+
       // Collection pgInputs = getSubscriptions(pg);
 //       Oplan oplan = getOplan();
 //       //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
@@ -665,25 +672,32 @@ public class DemandForecastPlugin extends ComponentPlugin
           (!sub.getRemovedCollection().isEmpty()) ||
           (!sub.getAddedCollection().isEmpty())) {
 
-        System.out.println("At " + getOrgName() + "-" + getSupplyType() +
-                           "-Subscription w/predicate: " + pred + " has changed: Added: "
-                           + sub.getAddedCollection().size() + " Removed: " +
-                           +sub.getRemovedCollection().size() + " Changed: " +
-                           +sub.getChangedCollection().size());
-        if (pred instanceof ConsumerPredicate) {
-          if ((getOrgName().equals("1-35-ARBN") &&
-              sub.getAddedCollection().size() > 0)) {
-            Asset asset = (Asset) sub.getCollection().iterator().next();
-            if (asset instanceof AggregateAsset) {
-              asset = ((AggregateAsset) asset).getAsset();
-            }
-            String nomen = asset.getTypeIdentificationPG().getNomenclature();
-            System.out.println("-!!-" + getOrgName() + "-" + getSupplyType() + "=First asset added is : " + asset + ":" + nomen);
-          }
-        } else {
-          Collection subPGs = (Collection) subToPGsHash.get(sub);
-          PGs.addAll(subPGs);
+
+        if (logger.isDebugEnabled()) {
+          logger.debug("At " + getOrgName() + "-" + getSupplyType() +
+                       "-Subscription w/predicate: " + pred + " has changed: Added: "
+                       + sub.getAddedCollection().size() + " Removed: " +
+                       +sub.getRemovedCollection().size() + " Changed: " +
+                       +sub.getChangedCollection().size());
         }
+
+
+        /*
+         * TODO: MWD Remove
+         if (pred instanceof ConsumerPredicate) {
+           if ((getOrgName().equals("1-35-ARBN") &&
+               sub.getAddedCollection().size() > 0)) {
+             Asset asset = (Asset) sub.getCollection().iterator().next();
+             if (asset instanceof AggregateAsset) {
+               asset = ((AggregateAsset) asset).getAsset();
+             }
+             String nomen = asset.getTypeIdentificationPG().getNomenclature();
+             System.out.println("-!!-" + getOrgName() + "-" + getSupplyType() + "=First asset added is : " + asset + ":" + nomen);
+           }
+         } else {
+         */
+        Collection subPGs = (Collection) subToPGsHash.get(sub);
+        PGs.addAll(subPGs);
       }
     }
     if (PGs.isEmpty()) {
@@ -768,7 +782,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       ArrayList inputPair = new ArrayList();
       IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
       inputPair.add(pred);
-      inputPair.add(sub);
+      inputPair.add(sub.getCollection());
       pgInputs.add(inputPair);
     }
     return pgInputs;
@@ -790,7 +804,7 @@ public class DemandForecastPlugin extends ComponentPlugin
         //new task a second time when the checkAndProcessHashSubscriptions() kicks off later
         //in the execute run.  So we disarm the added collection here when it is first added
         //to the black board.
-        sub.getAddedCollection().clear();
+        //sub.getAddedCollection().clear();
 
         predToSubHash.put(pred, sub);
       }
