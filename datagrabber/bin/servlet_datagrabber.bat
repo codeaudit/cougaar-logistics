@@ -22,14 +22,15 @@ REM "</copyright>"
 
 REM This script starts the datagrabber.  
 
-REM The datagrabber only needs datagrabber.jar, mm-mysql-2.jar, and the xerces jar
+REM The datagrabber only needs datagrabber.jar, mm-mysql-2.jar, and the xerces jars
 
 REM set CONFIG_FILE=ServletGrabberConfig.xml
 set CONFIG_FILE=ServletConfig.xml
 
 REM set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\datagrabber.jar
 set LIBPATHS=d:/datagrabber/src
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\xerces.jar
+set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\xercesImpl.jar
+set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\xml-apis.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\mm-mysql-2.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\core.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\util.jar
