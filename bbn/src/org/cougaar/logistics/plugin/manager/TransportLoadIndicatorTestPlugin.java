@@ -128,7 +128,7 @@ public class TransportLoadIndicatorTestPlugin extends SimplePlugin {
            iterator.hasNext();) {
         String community = (String) iterator.next();
         LoadIndicator loadIndicator = 
-          new LoadIndicator(this.getClass(), 
+          new LoadIndicator(this, 
                             getBindingSite().getAgentIdentifier().toString(),
                             myUIDService.nextUID(),
                             LoadIndicator.MODERATE_LOAD);
