@@ -80,7 +80,7 @@ public class ShortfallInventoryRule {
 
       if(matches) {
 
-	  ShortfallInventory ruleAppliedInv = new ShortfallInventory(si.getInvID());
+	  ShortfallInventory ruleAppliedInv = new ShortfallInventory(si.getInvID(), si.getUnitOfIssue());
 
 	  if(action.equals(DISCOUNT_ACTION)) {
 	      
