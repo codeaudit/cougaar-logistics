@@ -29,6 +29,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.QuiescenceReportService;
+import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
@@ -388,6 +389,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService q = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
+    AgentIdentificationService ais = (AgentIdentificationService) 
+      getServiceBroker().getService(this, AgentIdentificationService.class, null);
+    q.setAgentIdentificationService(ais);
     if (!turnOffTaskSched) {
       java.io.InputStream is = null;
       try {

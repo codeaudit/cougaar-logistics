@@ -53,6 +53,7 @@ import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.QuiescenceReportService;
+import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.planning.service.LDMService;
@@ -613,6 +614,9 @@ public class InventoryPlugin extends ComponentPlugin
 
     QuiescenceReportService q = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
+    AgentIdentificationService ais = (AgentIdentificationService) 
+      getServiceBroker().getService(this, AgentIdentificationService.class, null);
+    q.setAgentIdentificationService(ais);
     String id = getAgentIdentifier().toString();
     java.io.InputStream is = null;
     try {
