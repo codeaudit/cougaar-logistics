@@ -34,7 +34,7 @@ slots=Asset resource, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin); \
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	double getProjectionTaskDemand(Task task, int bucket, long start, long end); \
 	void addWithdrawRequisition(Task task); \
@@ -89,7 +89,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	Schedule getBufferedTargetLevels(); \
 	ArrayList getActualDemandTasksList(); \
 	long getEffectiveProjectionStart(Task task, long start); \
-	void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin); \
+	void reinitialize(boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin); \
         void clearTargetLevels(int startBucket);
 
 ;;

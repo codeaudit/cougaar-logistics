@@ -858,7 +858,7 @@ public class InventoryPlugin extends ComponentPlugin {
       for (Iterator i = inventories.iterator(); i.hasNext(); ) {
 	  Inventory inv = (Inventory) i.next();
 	  LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-	  logInvPG.reinitialize(logToCSV,this);
+	  logInvPG.reinitialize(logToCSV,new Date(logOPlan.getOplanCday()),this);
 	  addInventory(inv);
     }
   }
@@ -931,7 +931,7 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setResource(resource);
       logInvPG.setOrg(getMyOrganization());
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, getCurrentTimeMillis(), logToCSV, this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, getCurrentTimeMillis(), logToCSV, new Date(logOPlan.getOplanCday()), this);
 
       NewTypeIdentificationPG ti = 
 	(NewTypeIdentificationPG)inventory.getTypeIdentificationPG();

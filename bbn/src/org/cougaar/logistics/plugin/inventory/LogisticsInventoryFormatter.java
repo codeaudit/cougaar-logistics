@@ -38,6 +38,7 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
@@ -94,23 +95,40 @@ public class LogisticsInventoryFormatter {
     public final static String AR_ESTIMATED_STR = "ESTIMATED";
     public final static String AR_REPORTED_STR = "REPORTED";
 
+    public final static String SUBSISTENCE_SUPPLY_TYPE = "Subsistence";
+    public final static String BULK_POL_SUPPLY_TYPE = "BulkPOL";
+    public final static String PACKAGED_POL_SUPPLY_TYPE = "PackagedPOL";
+    public final static String AMMUNITION_SUPPLY_TYPE = "Ammunition";
+    public final static String CONSUMABLE_SUPPLY_TYPE = "Consumable";
+
+    public final static String SUBSISTENCE_UNIT = "Meals";
+    public final static String BULK_POL_UNIT = "Gallons";
+    public final static String PACKAGED_POL_UNIT = "Packages";
+    public final static String AMMUNITION_UNIT = "Rounds";
+    public final static String CONSUMABLE_UNIT = "Packages";
+    
+
     protected LoggingService logger;
     protected TaskUtils taskUtils;
     protected long cycleStamp=-0L;
     protected Writer output;
 
+    protected Date startCDay;
+
     LogisticsInventoryPG logInvPG;
 
-    public LogisticsInventoryFormatter(Writer writeOutput, InventoryPlugin invPlugin){
+    public LogisticsInventoryFormatter(Writer writeOutput, Date startingCDay, InventoryPlugin invPlugin){
 	logger = invPlugin.getLoggingService(this);
 	output = writeOutput;
 	taskUtils = invPlugin.getTaskUtils();
+	startCDay = startingCDay;
     }
 
-    public LogisticsInventoryFormatter(Writer writeOutput, LoggingService aLogger){
+    public LogisticsInventoryFormatter(Writer writeOutput, LoggingService aLogger, Date startingCDay){
 	logger = aLogger;
 	output = writeOutput;
 	taskUtils = new TaskUtils(aLogger);
+	startCDay = startingCDay;
     }
 
     protected static String buildTaskPrefixString(Task aTask) {
@@ -548,6 +566,9 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("INVENTORY LEVELS: END");
     }
 
+
+    
+
     protected void logToXMLOutput(Asset invAsset,
 				  Organization anOrg,
 				  ArrayList withdrawList,
@@ -562,7 +583,11 @@ public class LogisticsInventoryFormatter {
 	cycleStamp = aCycleStamp;
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
-	writeNoCycleLn("<" + INVENTORY_DUMP_TAG + " org=" + orgId + " item=" + assetName + ">");
+	String header ="<" + INVENTORY_DUMP_TAG + " org=" + orgId + " item=" + assetName;
+	
+	header = header + " unit=" + getUnitForAsset(invAsset) + " cDay=" + startCDay.getTime() + ">";
+
+	writeNoCycleLn(header);
 	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
 	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,aCycleStamp);
 	logResupplyToXMLOutput(resupplyList,projResupplyList,aCycleStamp);
@@ -681,6 +706,29 @@ public class LogisticsInventoryFormatter {
 		logger.error("Exception trying to write to Writer: " + output, e);
 	    }
 	}
+    }
+
+    protected static String getUnitForAsset(Asset invAsset) {
+	SupplyClassPG pg = (SupplyClassPG)invAsset.searchForPropertyGroup(SupplyClassPG.class);
+	String supplyType = pg.getSupplyType();
+
+	if(supplyType.equals(SUBSISTENCE_SUPPLY_TYPE)) {
+	    return SUBSISTENCE_UNIT;
+	}
+	else if(supplyType.equals(BULK_POL_SUPPLY_TYPE)) {
+	    return BULK_POL_UNIT;
+	}
+	else if(supplyType.equals(PACKAGED_POL_SUPPLY_TYPE)) {
+	    return PACKAGED_POL_UNIT;
+	}
+	else if(supplyType.equals(AMMUNITION_SUPPLY_TYPE)) {
+	    return AMMUNITION_UNIT;
+	}
+	else if(supplyType.equals(CONSUMABLE_SUPPLY_TYPE)) {
+	    return CONSUMABLE_UNIT;
+	}
+	
+	return "UNKNOWN UNIT"; 
     }
 }
 

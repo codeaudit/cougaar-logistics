@@ -126,7 +126,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
 
-  public void initialize(long startTime, int criticalLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin) {
+  public void initialize(long startTime, int criticalLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
     this.startTime = startTime;
     // Set initial level of inventory from time zero to today.  This assumes that the inventory
     // is created because the existence of demand and the RefillGenerator will be run
@@ -146,7 +146,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),false,parentPlugin);
-	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
+	csvWriter = new LogisticsInventoryFormatter(csvLogger, startCDay, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
 
@@ -168,11 +168,11 @@ public class LogisticsInventoryBG implements PGDelegate {
     //on set up after rehydration.   It does the minimum initialization
     //that has to be done, even upon rehydration.  
     //which does the initial set up when the inventory is created.
-  public void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin) {
+  public void reinitialize(boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),true,parentPlugin);
-	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
+	csvWriter = new LogisticsInventoryFormatter(csvLogger,startCDay, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
   }
