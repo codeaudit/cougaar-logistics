@@ -20,12 +20,18 @@
  */
 package org.cougaar.logistics.plugin.trans.base;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
+
+import org.cougaar.core.thread.Schedulable;
+import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.service.BlackboardService;
@@ -136,6 +142,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public final int ASSET_CLASS_10 = 10;
   public final int ASSET_CLASS_CONTAINER = 11;
   public final int ASSET_CLASS_PERSON = 12;
+  public final long DAY_IN_MILLIS = 24*60*60*1000l;
 
   public void localSetup() {     
     super.localSetup();
@@ -297,6 +304,37 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return true;
   }
 
+  public void handleTask(Task parentTask) {
+    int mode = getMode (parentTask);
+    if (isDebugEnabled()) {
+      debug (".getSubtasks - mode for task " + parentTask.getUID () + " is " + 
+	    ((mode==LEVEL_6_MODE) ? "LEVEL_6" : ((mode==LEVEL_2_MODE) ? "LEVEL_2" : "DONT_PROCESS")));
+    }
+
+    if (mode == DONT_PROCESS_MODE) {
+      synchronized (alarmMutex) { // alarm.expire will try to clear currentAlarm so must synchronize on it
+	if (currentAlarm == null) {
+	  startAgainIn (DAY_IN_MILLIS);
+	}
+	else {
+	  if (isDebugEnabled ()) {
+	    debug (getName() + ".getSubtasks - not starting new alarm.");
+	  }
+	}
+      }
+
+      if (isWarnEnabled ()) {
+	warn (getName() + ".getSubtasks - ignoring " + parentTask.getUID() + " for now (= " +
+	      new Date(alarmService.currentTimeMillis()) + "), will revisit at " +
+	      new Date(currentAlarm.getExpirationTime ()));
+      }
+
+      return;
+    }
+    else 
+      super.handleTask(parentTask);
+  }
+
   int i = 0;
 
   /**
@@ -327,8 +365,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     if (isInfoEnabled())
       info (".getSubtasks - received task " + (i++) + " total.");
 
+    int mode = getMode (parentTask);
     if (isDebugEnabled()) {
-      int mode = getMode (parentTask);
       debug (".getSubtasks - mode for task " + parentTask.getUID () + " is " + 
 	     ((mode==LEVEL_6_MODE) ? "LEVEL_6" : ((mode==LEVEL_2_MODE) ? "LEVEL_2" : "DONT_PROCESS")));
     }
@@ -400,9 +438,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	      " + level6 days " + level6Day);
       return LEVEL_2_MODE;
     }
-    // DONT_PROCESS_MODE is not currently supported
-    //    return DONT_PROCESS_MODE;
-    return LEVEL_2_MODE;
+    return DONT_PROCESS_MODE;
   }
 
   protected Set [] sortAssetsByCategory (Collection assets) {
@@ -990,6 +1026,94 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return vector;
   }
 
+  /** Buffering runnable wants to restart later */
+  public void startAgainIn (long millis) {
+    if (isWarnEnabled())
+      warn (getName () + " asking to be restarted in " + millis);
+
+    if (currentAlarm != null)
+      currentAlarm.cancel ();
+
+    alarmService.addAlarm (currentAlarm = new BufferingAlarm (millis));
+  }
+
+  /** Alarm for when buffering runnable wants to restart later */
+  class BufferingAlarm implements Alarm {
+    long clockExpireTime;
+    boolean expired = false;
+
+    public BufferingAlarm (long ticksToWait) {
+      clockExpireTime = alarmService.currentTimeMillis() + ticksToWait; // based on wall clock time
+    }
+
+    /** @return absolute time (in milliseconds) that the Alarm should
+     * go off.  
+     * This value must be implemented as a fixed value.
+     **/
+    public long getExpirationTime() {
+      return clockExpireTime;
+    }
+  
+    /** 
+     * Called by the cluster clock when clock-time >= getExpirationTime().
+     * The system will attempt to Expire the Alarm as soon as possible on 
+     * or after the ExpirationTime, but cannot guarantee any specific
+     * maximum latency.
+     * NOTE: this will be called in the thread of the cluster clock.  
+     * Implementations should make certain that this code does not block
+     * for a significant length of time.
+     * If the alarm has been canceled, this should be a no-op.
+     **/
+    public synchronized void expire() {
+      if (!expired) {
+	synchronized (alarmMutex) { // getSubtasks will check to see if one exists, so must synchronize
+	  currentAlarm = null;
+	}
+
+	expired = true;
+
+	String name = getName()+"_restartThread";
+
+	if (isWarnEnabled())
+	  warn (getName () + " restarting thread " + getBufferingThread() + 
+		" for " + name);
+
+	schedulable = 
+	  threadService.getThread (this, 
+				   new Runnable () {
+				       public void run() {
+					 // review the known task list
+					 processTasks (new ArrayList(myInputTaskCallback.getSubscription().getCollection()));
+				       }
+				     }, 
+				   name);
+	schedulable.start();
+      }
+    }
+
+    /** @return true IFF the alarm has rung (expired) or was canceled. **/
+    public boolean hasExpired() { 
+      return expired;
+    }
+
+    /** 
+     * Can be called by a client to cancel the alarm.  May or may not remove
+     * the alarm from the queue, but should prevent expire from doing anything.
+     * @return false IF the the alarm has already expired or was already canceled.
+     **/
+    public synchronized boolean cancel() {
+      boolean was = expired;
+      expired=true;
+      return was;
+    }
+
+    public String toString() {
+      return "<BufferingAlarm "+clockExpireTime+
+        (expired?"(Expired) ":" ")+
+        "for "+GLMTransOneToManyExpanderPlugin.this.toString()+">";
+    }
+  }
+
   /** 
    * <pre>
    * NOTE : This is called magically by reflection from BindingUtility.setServices 
@@ -1027,4 +1151,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   protected GLMPreference glmPrefHelper;
   protected AssetUtil glmAssetHelper;
   protected PortLocatorImpl portLocator;
+  protected Alarm currentAlarm;
+  protected Schedulable schedulable; 
+  protected Object alarmMutex = new Object();
 }
