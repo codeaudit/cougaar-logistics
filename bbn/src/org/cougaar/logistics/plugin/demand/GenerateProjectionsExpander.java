@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -22,28 +22,23 @@
 package org.cougaar.logistics.plugin.demand;
 
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
-import org.cougaar.glm.ldm.plan.Service;
+import org.cougaar.glm.plugins.AssetUtils;
 import org.cougaar.glm.plugins.TaskUtils;
+import org.cougaar.logistics.plugin.inventory.MaintainedItem;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.ldm.asset.FuelConsumerBG;
 import org.cougaar.logistics.ldm.asset.FuelConsumerPG;
 import org.cougaar.logistics.ldm.asset.NewFuelConsumerPG;
-import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.PGDelegate;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
+import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.measure.Rate;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.ScoringFunction;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.Verb;
+import org.cougaar.planning.ldm.plan.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -53,7 +48,7 @@ import java.util.Vector;
  * <pre>
  * The default ProjectionsExpander for the DemandForecastPlugin.
  *
- * This class expands a generate projections task into ProjectSupply tasks for all the 
+ * This class expands a generate projections task into ProjectSupply tasks for all the
  * resource components (Parts,fuel,ammo) of the supply class needed by the GP's MEI.
  *
  *
@@ -65,7 +60,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   public GenerateProjectionsExpander(DemandForecastPlugin dfPlugin) {
     super(dfPlugin);
   }
-
   /**
    * Expand the passed in GenerateProjectins task into the requisite ProjectSupply
    * tasks - one for each resource need of this MEI/Asset determined by the
@@ -83,14 +77,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // asset.getBG
 
 //     FuelConsumerBG bg = new FuelConsumerBGImpl("foo", new Service("bar"), "shebop");
-    NewFuelConsumerPG pg = 
-      (NewFuelConsumerPG)getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
+    NewFuelConsumerPG pg =
+        (NewFuelConsumerPG)getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
 //     pg.setMei(anAsset);
     pg.setService("bar");
     pg.setTheater("shebop");
     FuelConsumerBG bg = new FuelConsumerBG(pg);
     pg.setFuelBG(bg);
 //     pg.initialize(this);
+
     Collection items = bg.getConsumed();
     Collection subTasks = new ArrayList();
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
@@ -101,61 +96,205 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       while (scheduleElements.hasMoreElements()) {
         ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
         rate = bg.getRate(consumedItem, (List) ose.getObject());
-        subTasks.add(createProjectSupplyTask(gpTask, consumedItem, consumer, ose.getStartTime(),
-                                             ose.getEndTime(), rate, 0.0));
+        subTasks.add(createProjectSupplyTask(gpTask,  consumer, consumedItem, ose.getStartTime(),
+                                             ose.getEndTime(), rate));
       }
-      publishAddExpansion(subTasks, gpTask, consumer);
+      createAndPublishExpansion(gpTask, subTasks);
     }
   }
 
-  private void publishAddExpansion(Collection subTasks, Task gpTask, Asset consumer) {
-    // build a work flow and publish the expansion
+
+  /** Create a Time Preference for the Refill Task
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  FIXME !!!! start The earliest time this preference can have
+   *  @param aspectType The AspectType of the preference- should be start_time or end_time
+   *  @return Preference The new Time Preference
+   **/
+  private Preference createTimePreference(long bestDay, int aspectType) {
+    //TODO - really need last day in theatre from an OrgActivity -
+    long end = dfPlugin.getOplan().getEndDay().getTime();
+    //double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
+    // TODO:  fix this what should it be?????
+    double daysBetween = ((end - bestDay)  / 86400000);
+    //Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+    // define alpha .25
+    double alpha = .25;
+    Vector points = new Vector();
+   // long early = TimeUtils.subtractNDays(bestDay, 1);
+    TimeUtils t = dfPlugin.getTimeUtils();
+    long early = t.subtractNDays(bestDay, 1);
+    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
+    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
+//                                                        alpha, aspectType);
+    long late = dfPlugin.getTimeUtils().addNDays(bestDay, 1);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
+
+    points.addElement(earliest);
+    points.addElement(best);
+    points.addElement(first_late);
+    points.addElement(latest);
+    ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
+    return getPlanningFactory().newPreference(aspectType, timeSF);
+
+
+    // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
+    //return prefs;
   }
 
 
-  protected Task createProjectSupplyTask(Task gpTask, Asset consumedItem,
-                                   Object consumer, long start, long end, Rate rate,
-                                   double multiplier)
+  /** Create FOR, TO, MAINTAIN, and OFTYPE prepositional phrases
+   *  for use by the subclasses.
+   * @param consumer the consumer the task supports
+   * FIXME time - used to find the OPlan and the geoloc for the TO preposition
+   * @return Vector of PrepostionalPhrases
+   **/
+  protected Vector createPrepPhrases(Object consumer, Task parentTask)
   {
 
-    Vector prepPhrases = createPrepPhrases();
-    // TODO:  find out what the multiplier is
-    Vector prefs = createPreferences(start, end, rate, multiplier);
-    PlanningFactory planFactory = getPlanningFactory();
-    NewTask newtask = planFactory.newTask();
+    Vector prepPhrases = new Vector();
 
-    newtask.setPrepositionalPhrases(gpTask.getPrepositionalPhrases());
-    newtask.setPreferences(prefs.elements());
-    newtask.setDirectObject(consumedItem);
-    newtask.setVerb(new Verb(Constants.Verb.PROJECTSUPPLY));
-    // TODO:  What is this, need to ask.
-    newtask.setCommitmentDate(new Date(end));
-    newtask.setParentTask(gpTask);
-    newtask.setPlan(gpTask.getPlan());
-    return newtask;
+    prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType()));
+    prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, dfPlugin.getMyOrganization()));
 
+    GeolocLocation geoloc = getGeolocLocation(parentTask, dfPlugin.getCurrentTimeMillis());
+    if (geoloc != null) {
+      prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
+    }
+    else { // Try to use HomeLocation
+      try {
+        geoloc = (GeolocLocation)dfPlugin.getMyOrganization().getMilitaryOrgPG().getHomeLocation();
+        prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
+      } catch (NullPointerException npe) {
+        logger.error("demandTaskPrepPhrases(), Unable to find Location for Transport");
+      }
+    }
+
+    if (consumer != null) {
+      MaintainedItem itemID;
+      if (consumer instanceof Asset) {
+        TypeIdentificationPG tip = ((Asset)consumer).getTypeIdentificationPG();
+        ItemIdentificationPG iip = ((Asset)consumer).getItemIdentificationPG();
+        if (iip != null) {
+          itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
+                                                           iip.getItemIdentification(), tip.getNomenclature(),
+                                                           dfPlugin);
+        } else {
+          itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
+                                                           null, tip.getNomenclature(), dfPlugin);
+        }
+      } else {
+        itemID = MaintainedItem.findOrMakeMaintainedItem("Other", consumer.toString(), null, null, dfPlugin);
+      }
+      prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.MAINTAINING, itemID));
+    }
+
+    return prepPhrases;
   }
 
-  private Vector createPrepPhrases() {
+  protected GeolocLocation getGeolocLocation(Task parent_task, long time) {
+    Enumeration geolocs = AssetUtils.getGeolocLocationAtTime(dfPlugin.getMyOrganization(), time);
+    if (geolocs.hasMoreElements()) {
+      GeolocLocation geoloc = (GeolocLocation)geolocs.nextElement();
+//    GLMDebug.DEBUG("GenerateSupplyDemandExpander", clusterId_, "At "+TimeUtils.dateString(time)+ " the geoloc is "+geoloc);
+      return geoloc;
+    }
     return null;
   }
 
-  private Vector createPreferences(long start, long end, Rate rate, double mult) {
-    // TODO: review this and make sure it is still applicable.
-    ScoringFunction score;
-    Vector prefs = new Vector();
-    PlanningFactory planFactory = getPlanningFactory();
-    score = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.START_TIME, start));
-    prefs.addElement(planFactory.newPreference(AspectType.START_TIME, score));
 
-    score = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.END_TIME, end));
-    prefs.addElement(planFactory.newPreference(AspectType.END_TIME, score));
-
-    prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
-    prefs.addElement(TaskUtils.createDemandMultiplierPreference(planFactory, mult));
-    return prefs;
+  protected void createAndPublishExpansion(Task parent, Collection subtasks) {
+    Iterator subtasksIT = subtasks.iterator();
+    while(subtasksIT.hasNext()) {
+      dfPlugin.publishAdd(subtasksIT.next());
+    }
+    Workflow wf = buildWorkflow(parent, subtasks);
+    Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
+    dfPlugin.publishAdd(expansion);
   }
 
+  protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
+    Expansion expansion = (Expansion) parent.getPlanElement();
+    NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
+    Iterator subtasksIT = subtasks.iterator();
+    while(subtasksIT.hasNext()) {
+      Task task = (Task) subtasksIT.next();
+      dfPlugin.publishAdd(task);
+      wf.addTask(task);
+    }
+    dfPlugin.publishChange(expansion);
+  }
+
+  protected void addNewTasksToExpansion(Task parentTask, Collection subtasks) {
+
+  }
+
+  private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start, long end, Rate rate) {
+    NewTask newTask = getPlanningFactory().newTask();
+    newTask.setParentTask(parentTask);
+    newTask.setPlan(parentTask.getPlan());
+    newTask.setDirectObject(consumedItem);
+    newTask.setVerb(Verb.getVerb(Constants.Verb.PROJECTSUPPLY));
+
+    Vector prefs = new Vector();
+    prefs.addElement(TaskUtils.createDemandRatePreference(getPlanningFactory(), rate));
+    // start and end from schedule element
+    prefs.addElement(createTimePreference(start, AspectType.START_TIME));
+    prefs.addElement(createTimePreference(end, AspectType.END_TIME));
+    newTask.setPreferences(prefs.elements());
+
+    Enumeration parentPhrases = parentTask.getPrepositionalPhrases();
+    Vector childPhrases = createPrepPhrases(consumer, parentTask);
+    if (parentPhrases.hasMoreElements()) {
+      newTask.setPrepositionalPhrases(addPrepositionalPhrase(parentPhrases, childPhrases).elements());
+    }
+    else {
+      newTask.setPrepositionalPhrases(childPhrases.elements());
+    }
+
+    return newTask;
+  }
+
+  /**
+   *  Build a workflow from a vector of tasks.
+   * @param parent parent task of workflow
+   * @param subtasks workflow tasks
+   * @return Workflow
+   **/
+  public Workflow buildWorkflow(Task parent, Collection subtasks) {
+    NewWorkflow wf = getPlanningFactory().newWorkflow();
+    wf.setParentTask(parent);
+    wf.setIsPropagatingToSubtasks(true);
+    NewTask t;
+    Iterator subtasksIT = subtasks.iterator();
+    while(subtasksIT.hasNext()) {
+      t = (NewTask) subtasksIT.next();
+      t.setWorkflow(wf);
+      wf.addTask(t);
+    }
+    return wf;
+  }
+
+  private PrepositionalPhrase newPrepositionalPhrase(String preposition,
+   Object io) {
+    NewPrepositionalPhrase pp = getPlanningFactory().newPrepositionalPhrase();
+    pp.setPreposition(preposition);
+    pp.setIndirectObject(io);
+    return pp;
+  }
+
+  private Vector addPrepositionalPhrase(Enumeration enum, Collection childPhrases) {
+    Vector phrases = new Vector();
+    while (enum.hasMoreElements()) {
+      phrases.addElement(enum.nextElement());
+    }
+    phrases.addAll(childPhrases);
+    return phrases;
+  }
 }
 
 
