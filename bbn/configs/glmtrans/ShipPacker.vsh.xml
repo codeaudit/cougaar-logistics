@@ -166,17 +166,14 @@
 </CAPABILITY>
 <TASKUNAVAIL>
 <OPERATOR operation="list" >
-<OPERATOR operation="interval" >
-<LITERAL value="start_time" type="variable" datatype="datetime" />
-<OPERATOR operation="-" >
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="earliestArrival" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-<LITERAL value="duration" type="variable" datatype="number" />
-</OPERATOR>
-</OPERATOR>
+ <OPERATOR operation="interval" >
+  <LITERAL value="start_time" type="variable" datatype="datetime" />
+    <OPERATOR operation="get" >
+     <LITERAL value="task" type="variable" datatype="task" />
+     <LITERAL value="earliestArrival" type="constant" datatype="string" />
+     <LITERAL value="" type="variable" datatype="datetime" />
+    </OPERATOR>
+  </OPERATOR>
 <OPERATOR operation="interval" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
