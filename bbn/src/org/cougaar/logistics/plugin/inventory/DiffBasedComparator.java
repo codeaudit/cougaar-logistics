@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.HashMap;
 
 /** The Refill Comparator Module is responsible for deciding whether to
  *  rescind all previous refills and publish all new refills generated
@@ -50,7 +51,9 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
    **/
   public DiffBasedComparator(InventoryPlugin imPlugin) {
     super(imPlugin);
-    logger.debug("DiffBasedComparator LOADED!!!!!");
+    if (logger.isDebugEnabled()) {
+      logger.debug("DiffBasedComparator LOADED!!!!!");
+    }
   }
 
   /** Compares the old and new Refill tasks.
@@ -63,29 +66,78 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
    *  @param inv The Inventory the Refills are refilling.
    **/
   public void compareRefills(ArrayList newRefills, ArrayList oldRefills, Inventory inv) {
-    //Rescind all old Refill Tasks
-    Iterator oldIter = oldRefills.iterator();
-    while (oldIter.hasNext()) {
-      Task oldRefill = (Task) oldIter.next();
-      // check for a null in the refills list!
-      if (oldRefill != null) {
-	  // clean out the reference in the maintain inventory workflow
-	  ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
-	inventoryPlugin.publishRemove(oldRefill);
-      }
-    }
 
     //Process all new Refill Tasks
     LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
 	searchForPropertyGroup(LogisticsInventoryPG.class);
+    if (logger.isDebugEnabled()) {
+      logger.debug("DiffSupply handling "+
+                   thePG.getResource().getTypeIdentificationPG().getTypeIdentification());
+    }
+
+    // Create bucket map from oldRefills for easy access during the compare
+    HashMap publishedTaskMap = new HashMap();
+    Task oldRefill=null;
+    Iterator oldIter = oldRefills.iterator();
+    while (oldIter.hasNext()) {
+      oldRefill = (Task)oldIter.next();
+      if (oldRefill != null) {
+        int bucket = thePG.convertTimeToBucket(getTaskUtils().getEndTime(oldRefill), false);
+        publishedTaskMap.put(new Integer(bucket), oldRefill);
+      }
+    }
+
+    // Compare new refills to old (published) refills
+    Task newRefill=null, publishedRefill=null, updatedTask=null;
     Iterator newIter = newRefills.iterator();
     while (newIter.hasNext()) {
-      Task newRefill = (Task) newIter.next();
-      // apply the Task to the LogisticsInventoryBG
-      thePG.addRefillRequisition(newRefill);
-      // hook the task in with the MaintainInventory workflow and publish
-      inventoryPlugin.publishRefillTask(newRefill, inv);
+      newRefill = (Task) newIter.next();
+      int bucket = thePG.convertTimeToBucket(getTaskUtils().getEndTime(newRefill), false);
+      publishedRefill=(Task)publishedTaskMap.get(new Integer(bucket));
+      if (publishedRefill == null) {
+        // No published refill for the bucket, just publish the new refill
+        if (logger.isDebugEnabled()) {
+          logger.debug("DiffSupply "+getTimeUtils().dateString(thePG.convertBucketToTime(bucket))+" - "+
+                       "no refills on this day, add new task");
+        }
+        thePG.addRefillRequisition(newRefill);
+        inventoryPlugin.publishRefillTask(newRefill, inv);
+      } else {
+        // found a published refill for the bucket
+        oldRefills.remove(publishedRefill);
+        updatedTask = getTaskUtils().changeTask(publishedRefill, newRefill);
+        if (updatedTask == null) {// null indicates tasks are identical
+          if (logger.isDebugEnabled()) {
+            logger.debug("DiffSupply "+getTimeUtils().dateString(thePG.convertBucketToTime(bucket))+" - "+
+                         "new task identical to published task.");
+          }
+          thePG.addRefillRequisition(publishedRefill);
+        } else {// changeTask() returned the updated task
+          if (logger.isDebugEnabled()) {
+            logger.debug("DiffSupply "+getTimeUtils().dateString(thePG.convertBucketToTime(bucket))+" - "+
+                         "changed published task to match new task");
+          }
+          inventoryPlugin.publishChange(updatedTask);
+          thePG.addRefillRequisition(updatedTask);
+        }
+      }
     }
+
+    //Rescind all old Refill Tasks that have not been accounted for
+    oldIter = oldRefills.iterator();
+    while (oldIter.hasNext()) {
+      oldRefill = (Task) oldIter.next();
+      // check for a null in the refills list!
+      if (oldRefill != null) {
+        // clean out the reference in the maintain inventory workflow
+        if (logger.isDebugEnabled()) {
+          logger.debug("DiffSupply Remove unwanted published task from previous plan "+
+                       getTaskUtils().taskDesc(oldRefill));
+        }
+        ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+	inventoryPlugin.publishRemove(oldRefill);
+      }
+    }      
   }
 
  /** Compares the old and new Refill Projection tasks.
@@ -103,14 +155,25 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
                                        ArrayList oldRefillProjs,
                                        Inventory inv) {
 
+    LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
+	searchForPropertyGroup(LogisticsInventoryPG.class);
+
+    if (logger.isDebugEnabled()) {
+      logger.debug("DiffProj handling "+
+                   thePG.getResource().getTypeIdentificationPG().getTypeIdentification());
+    }
     // Check for an empty schedule
     if ((newRefillProjs == null) || newRefillProjs.isEmpty()) {
       // Rescind any tasks that were not accounted for
-      logger.debug("publishChangeProjection(), New Task List empty: "+newRefillProjs);
+      if (logger.isDebugEnabled()) {
+        logger.debug("DiffProj, New Task List empty: "+newRefillProjs);
+      }
       Iterator list  = oldRefillProjs.iterator();
       while (list.hasNext()) {
         Task oldRefill = (Task)list.next();
-        logger.debug("DIFF ********** Removing task --> \n"+getTaskUtils().taskDesc(oldRefill));
+        if (logger.isDebugEnabled()) {
+          logger.debug("DiffProj \n"+getTaskUtils().taskDesc(oldRefill));
+        }
         if (oldRefill != null) {
 	  // clean out the reference in the maintain inventory workflow
 	  ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
@@ -119,9 +182,6 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
       }
       return;
     }
-
-    LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
-	searchForPropertyGroup(LogisticsInventoryPG.class);
 
     Schedule publishedSchedule = getTaskUtils().newObjectSchedule(oldRefillProjs);
     Schedule newTaskSchedule = getTaskUtils().newObjectSchedule(newRefillProjs);
@@ -141,7 +201,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         ((NewSchedule)newTaskSchedule).removeScheduleElement(ose);
       }
       else {
-        logger.error("publishChangeProjection(), Bad Schedule: "+newTaskSchedule);
+        logger.error("DiffProj, Bad Schedule: "+newTaskSchedule);
         return;
       }
       // Get overlapping schedule elements from start to end of new task
@@ -153,25 +213,31 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         Task saveTask = published_task;
         ((NewSchedule)publishedSchedule).removeScheduleElement(ose);
 
-        thePG.removeWithdrawProjection(published_task);
-        logger.debug(" Comparing plublished task  "+getTaskUtils().taskDesc(published_task)+
-                     " with \n"+getTaskUtils().taskDesc(new_task));
+//         logger.debug(" Comparing plublished task  "+getTaskUtils().taskDesc(published_task)+
+//                      " with \n"+getTaskUtils().taskDesc(new_task));
         // changeTask returns the changed published task if the 2 tasks are different and 
         // null if the tasks are identical.
         published_task = getTaskUtils().changeTask(published_task, new_task);
         if (published_task != null) {
-          logger.debug("DIFF ********** Replaced task with ---> \n"+ getTaskUtils().taskDesc(published_task));
+          if (logger.isDebugEnabled()) {
+            logger.debug("DiffProj published task changed "+ getTaskUtils().taskDesc(published_task));
+          }
           inventoryPlugin.publishChange(published_task);
           thePG.addRefillProjection(published_task);
         }else{ // published and new task are the same, so add the published task back into the BG
           thePG.addRefillProjection(saveTask);
+          if (logger.isDebugEnabled()) {
+            logger.debug("DiffProj published task identical to new task");
+          }
         }
       }
       else {
-        // no task exists that covers this timespan, publish it
+        // no task exists that covers this timespan, publish it and
         // apply the Task to the LogisticsInventoryBG
-        logger.debug("No task exists that covers this timespan, publish task "+
-                     getTaskUtils().taskDesc(new_task));
+        if (logger.isDebugEnabled()) {
+          logger.debug("No task exists that covers this timespan, publish task "+
+                       getTaskUtils().taskDesc(new_task));
+        }
         thePG.addRefillProjection(new_task);
         // hook the task in with the MaintainInventory workflow and publish
         inventoryPlugin.publishRefillTask(new_task, inv);
@@ -181,7 +247,10 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
     Enumeration e = publishedSchedule.getAllScheduleElements();
     while (e.hasMoreElements()) {
       Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
-      logger.debug("DIFF ********** Removing task --> \n"+getTaskUtils().taskDesc(task));
+      if (logger.isDebugEnabled()) {
+        logger.debug("DiffProj Remove unwanted published task from previous plan "+
+                     getTaskUtils().taskDesc(task));
+      }
       ((NewWorkflow)task.getWorkflow()).removeTask(task);
       inventoryPlugin.publishRemove(task);
     }
