@@ -347,6 +347,9 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	thePG.removeWithdrawProjection(aTask);
         if (!aTask.isDeleted()) {
           removedProjections = true;
+        } else {
+          Inventory inventory = inventoryPlugin.findOrMakeInventory(thePG.getResource());
+          inventoryPlugin.touchInventoryWithDeletions(inventory);
         }
       }
     }
@@ -447,6 +450,8 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	if (inventory != null) {
           if (!wdrawTask.isDeleted()) {
             inventoryPlugin.touchInventory(inventory);
+          } else {
+            inventoryPlugin.touchInventoryWithDeletions(inventory);
           }
 	  logInvPG = (LogisticsInventoryPG)
 	    inventory.searchForPropertyGroup(LogisticsInventoryPG.class);

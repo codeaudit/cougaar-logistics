@@ -95,6 +95,9 @@ public class InventoryPlugin extends ComponentPlugin
   protected HashMap inventoryHash;
   protected HashMap inventoryInitHash;
   protected HashSet touchedInventories;
+  // inventoriesWithDeletions used to refresh snapshots.  
+  // Ensures correct graphs during deletion periods.
+  protected HashSet inventoriesWithDeletions;
   // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private boolean touchedChangedProjections = false;
@@ -167,6 +170,7 @@ public class InventoryPlugin extends ComponentPlugin
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
     touchedInventories = new HashSet();
+    inventoriesWithDeletions = new HashSet();
     //backwardFlowInventories = new HashSet();
     touchedProjections = false;
     startTime = currentTimeMillis();
@@ -556,9 +560,12 @@ public class InventoryPlugin extends ComponentPlugin
         takeInventorySnapshot(backwardFlowTouched);
       }
       takeInventorySnapshot(getTouchedInventories());
+      takeInventorySnapshot(getInventoriesWithDeletions());
 
-      // touchedInventories should not be cleared until the end of transaction
+      // touchedInventories and inventoriesWithDeletions should not be cleared until 
+      // the end of transaction
       touchedInventories.clear();
+      inventoriesWithDeletions.clear();
       //backwardFlowInventories.clear(); //###
       touchedProjections = false;
       touchedChangedProjections = false;
@@ -1424,6 +1431,16 @@ public class InventoryPlugin extends ComponentPlugin
     return inventoryHash.values();
   }
 
+  public void touchInventoryWithDeletions(Inventory inventory) {
+    if (!inventoriesWithDeletions.contains(inventory)) {
+      inventoriesWithDeletions.add(inventory);
+    }
+  }
+
+  public Collection getInventoriesWithDeletions() {
+    return inventoriesWithDeletions;
+  }
+
   public void takeInventorySnapshot(Collection inventories) {
     Inventory inv;
     Iterator inv_it = inventories.iterator();
@@ -1809,6 +1826,11 @@ public class InventoryPlugin extends ComponentPlugin
         invPG.removeRefillRequisition(removed);
       } else {
         invPG.removeRefillProjection(removed);
+      }
+      if (removed.isDeleted()) {
+        touchInventoryWithDeletions(inventory);
+      } else {
+        touchInventory(inventory);
       }
     }
   }
