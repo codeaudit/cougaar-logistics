@@ -32,6 +32,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
+import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
@@ -97,15 +98,12 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   private boolean processedDetReq = false;
 
-
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String SUPPLY_PG_CLASS = "SUPPLY_PG_CLASS";
   public final String REQ_EXPANDER = "REQ_EXPANDER";
   public final String PROJ_EXPANDER = "PROJ_EXPANDER";
 
-  private transient ArrayList newRefills = new ArrayList();
-
-
+  LogisticsOPlan logOPlan = null;
 
   public void load() {
     super.load();
@@ -267,17 +265,46 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
     }
 
+    // get the Logistics OPlan (our homegrown version with specific dates).
+    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
+      Iterator opIt = logisticsOPlanSubscription.iterator();
+      if (opIt.hasNext()) {
+        //we only expect to have one
+        logOPlan = (LogisticsOPlan) opIt.next();
+      }
+    }
+
+    //Update the Allocation results on new or changed GP PlanElements
+    if (genProjPESubscription.hasChanged()) {
+      if (!genProjPESubscription.getAddedCollection().isEmpty()) {
+        generateProjectionsExpander.updateAllocationResults(genProjPESubscription.getAddedCollection());
+      }
+      if (!genProjPESubscription.getChangedCollection().isEmpty()) {
+        generateProjectionsExpander.updateAllocationResults(genProjPESubscription.getChangedCollection());
+      }
+    } 
+
+    //Update the Allocation results on new or changed DR PlanElements
+    if (detReqPESubscription.hasChanged()) {
+      if (!detReqPESubscription.getAddedCollection().isEmpty()) {
+        determineRequirementsExpander.updateAllocationResults(detReqPESubscription.getAddedCollection());
+      }
+      if (!detReqPESubscription.getChangedCollection().isEmpty()) {
+        determineRequirementsExpander.updateAllocationResults(detReqPESubscription.getChangedCollection());
+      }
+    } 
+
   }
 
 
   private IncrementalSubscription orgActivities;
-
   private IncrementalSubscription oplanSubscription;
-
   private IncrementalSubscription detReqSubscription;
-
+  private IncrementalSubscription detReqPESubscription;
   private IncrementalSubscription genProjSubscription;
-
+  private IncrementalSubscription genProjPESubscription;
+  private IncrementalSubscription projectSupplySubscription;
+  private IncrementalSubscription logisticsOPlanSubscription;
 
   /** Subscription for the Organization(s) in which this plugin resides **/
   private IncrementalSubscription selfOrganizations;
@@ -296,14 +323,22 @@ public class DemandForecastPlugin extends ComponentPlugin
     oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
 
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
+    detReqPESubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPEPredicate(supplyType, taskUtils));
 
     genProjSubscription = null;
     assetsWithPGSubscription = null;
 
     if (supplyClassPG != null) {
-      genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyClassPG));
-      assetsWithPGSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
+      genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
+      assetsWithPGSubscription = (IncrementalSubscription) 
+        getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
     }
+
+    genProjPESubscription = (IncrementalSubscription) 
+      blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
+    projectSupplySubscription = (IncrementalSubscription) 
+      blackboard.subscribe(new ProjectSupplyPredicate(supplyType, taskUtils));
+    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -322,19 +357,16 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   };
 
-
+  /** Predicate defining expandable Determine Reqs. **/
   private static class DetReqPredicate implements UnaryPredicate {
     private String supplyType;
     private TaskUtils taskUtils;
-
+    
     public DetReqPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
     } // constructor
 
-    /**
-     *  Predicate defining expandable Determine Reqs.
-     **/
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
@@ -346,32 +378,86 @@ public class DemandForecastPlugin extends ComponentPlugin
     } // execute
   } // DetReqPredicate
 
-
-  private static class GenProjPredicate implements UnaryPredicate {
-
-    private Class supplyPGClass;
-
-    public GenProjPredicate(Class pgClass) {
-      this.supplyPGClass = pgClass;
+  /** Predicate defining Determine Reqs PlanElements created in this plugin.  **/
+  private static class DetReqPEPredicate implements UnaryPredicate {
+    private String supplyType;
+    private TaskUtils taskUtils;
+    
+    public DetReqPEPredicate(String type, TaskUtils utils) {
+      this.supplyType = type;
+      this.taskUtils = utils;
     } // constructor
 
-    /**
-     *  Predicate defining expandable Determine Reqs.
-     **/
+    public boolean execute(Object o) {
+      if (o instanceof PlanElement) {
+        Task t = ((PlanElement)o).getTask();
+        if (t.getVerb().equals(Constants.Verb.DETERMINEREQUIREMENTS)) {
+          return taskUtils.isTaskOfType(t, supplyType);
+        } // if
+      } // if
+      return false;
+    } // execute
+  } // DetReqPEPredicate
+
+  /** Predicate defining expandable Determine Reqs. **/
+  private static class GenProjPredicate implements UnaryPredicate {
+    private String supplyType;
+    private TaskUtils taskUtils;
+    public GenProjPredicate(String type, TaskUtils utils) {
+      this.supplyType = type;
+      this.taskUtils = utils;
+    } // constructor
+
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
-          Asset asset = t.getDirectObject();
-          if (asset instanceof AggregateAsset) {
-            asset = ((AggregateAsset) asset).getAsset();
-          }
-          return (asset.searchForPropertyGroup(supplyPGClass) != null);
+          return taskUtils.isTaskOfTypeString(t, supplyType);
         }
       }
       return false;
     } // execute
   } // GenProjPredicate
+
+  /** Predicate defining GenerateProjection PEs that this plugin created. **/
+  private static class GenProjPEPredicate implements UnaryPredicate {
+    private String supplyType;
+    private TaskUtils taskUtils;
+    public GenProjPEPredicate(String type, TaskUtils utils) {
+      this.supplyType = type;
+      this.taskUtils = utils;
+    } 
+    
+    public boolean execute(Object o) {
+      if (o instanceof PlanElement) {
+        Task t = ((PlanElement)o).getTask();
+        if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
+          return taskUtils.isTaskOfTypeString(t, supplyType);
+        }
+      }
+      return false;
+    } 
+  } // end GenProjPEPredicate
+  
+  /** Predicate defining ProjectSupply tasks that this plugin created. **/
+  private static class ProjectSupplyPredicate implements UnaryPredicate {
+    private String supplyType;
+    private TaskUtils taskUtils;
+    public ProjectSupplyPredicate(String type, TaskUtils utils) {
+      this.supplyType = type;
+      this.taskUtils = utils;
+    } 
+    
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task t = (Task) o;
+        if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
+          return taskUtils.isTaskOfTypeString(t, supplyType);
+        }
+      }
+      return false;
+    } 
+  } // end SupplyTaskPredicate
 
 
   private static class AssetOfTypePredicate implements UnaryPredicate {
@@ -396,6 +482,12 @@ public class DemandForecastPlugin extends ComponentPlugin
     } // execute
   } // DetReqPredicate
 
+  /** Selects the LogisticsOPlan objects **/
+  private static class LogisticsOPlanPredicate implements UnaryPredicate{
+    public boolean execute(Object o) {
+      return o instanceof LogisticsOPlan;
+    }
+  }
 
   /**
    * Filters out tasks that already have PEs -- fix for bug #1695
@@ -667,11 +759,6 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     // Publish new task
     publishAdd(subtask);
-
-    if ((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
-        (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
-      newRefills.add(subtask);
-    }
   }
 
 
@@ -724,6 +811,16 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   public Class getSupplyClassPG() {
       return supplyClassPG;
+  }
+
+  // get the first day in theater
+  public long getLogOPlanStartTime() {
+    return logOPlan.getStartTime();
+  }
+  
+  // get the last day in theater
+  public long getLogOPlanEndTime() {
+    return logOPlan.getEndTime();
   }
 
   public Collection getPredicates(PropertyGroup pg) {
