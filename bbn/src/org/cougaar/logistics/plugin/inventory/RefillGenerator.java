@@ -141,6 +141,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
 	int firstLegalRefillBucket =
 	    thePG.convertTimeToBucket(inventoryPlugin.getRefillStartTime(),false) + orderShipTime;
+        thePG.clearTargetLevels(firstLegalRefillBucket);
 
         double prevTarget = 0;
 

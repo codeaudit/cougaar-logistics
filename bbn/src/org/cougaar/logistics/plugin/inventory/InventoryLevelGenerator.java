@@ -163,7 +163,7 @@ public class InventoryLevelGenerator extends InventoryModule {
                    startBucket);
     }
 
-    thePG.clearTargetLevels(startBucket);
+//     thePG.clearTargetLevels(startBucket);
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int lastDemandBucket = thePG.getLastDemandBucket();
     double lastTarget;
@@ -239,7 +239,6 @@ public class InventoryLevelGenerator extends InventoryModule {
      //                                               reorderPeriodEndBucket-1);
 
     targetLevel = criticalAtEndOfPeriod + demandForPeriod + .0005;
-
     return targetLevel;
   }
 
