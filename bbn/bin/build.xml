@@ -17,7 +17,7 @@
 <!-- Also note that Ant will require optional.jar in its lib, and possibly junit.jar -->
 <!-- =======================================================================-->
 
-<project name="ADAPTLOG" default="compile" basedir="../">
+<project name="LOGISTICS" default="compile" basedir="../">
 
         <!-- Per user properties can be specified here. In particular,
 	use this to specify the Jikes compiler, with properties:
@@ -27,10 +27,10 @@
 	<property file="${user.home}/.ant.properties" />
 
 	<!-- Set some global properties -->
-	<property name="lib" value="../lib" />
+	<property name="lib" value="c:\alp\cougaarHEAD\lib" />
 
 	<!-- Third party jar files go in CIP/sys -->
-	<property name="sys" value="../sys" />
+	<property name="sys" value="c:\alp\cougaarHEAD\sys" />
 
 	<property name="src" value="./src" />
 	<property name="testsrc" value="./regress" />
@@ -49,7 +49,7 @@
 	<!-- Single module Javadocs go in doc/javadoc -->
 	<property name="build.javadocs" value="./doc/javadoc" />
 
-	<!--	<property name="build.compiler" value="classic"-->
+	<!-- <property name="build.compiler" value="classic"/>  -->
 	<property name="build.compiler" value="jikes"/>
 	<property name="build.compiler.warnings" value="true"/>
 	<property name="build.compiler.emacs" value="true"/>
@@ -61,10 +61,10 @@
 	
 	<!-- Name of the module being compiled -->
 	<!-- determines jar file name, etc -->
-	<property name="module" value="adaptlog" />
+	<property name="module" value="al_bbn" />
 
 	<!-- Label for Javadocs, etc -->
-	<property name="UpModule" value="ADAPTLOG" />
+	<property name="UpModule" value="LOGISTICS" />
 
 	<!-- Specify which packages to include for Javadoc purposes -->
 	<property name="packages" value="org.cougaar.*" />
@@ -73,7 +73,7 @@
 	<!-- Note that no effort is made to build any of these jars
 	or even see if they exist -->
 	<!-- Change name of this path to match the module name as approp -->
-	<path id="adaptlog.classpath">
+	<path id="al_bbn.classpath">
            <pathelement location="${lib}/core.jar" />
 	   <pathelement location="${lib}/planserver.jar" />
 	   <pathelement location="${lib}/util.jar" />
@@ -84,6 +84,7 @@
 	   <pathelement location="${sys}/openmap.jar" />
 	   <pathelement location="${sys}/fesi-111.jar" />
 	   <pathelement location="${sys}/jcchart451K.jar" />
+	   <pathelement location="${sys}/servlet.jar" />
 	</path>
 
 	<!-- Set this to the comma separate list of class files to run rmic on -->
