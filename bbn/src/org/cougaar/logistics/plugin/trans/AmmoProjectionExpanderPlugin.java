@@ -889,9 +889,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       }
 
       if (!ownWorkflow (reservedTask)) {
-	error (".handleTask - huh? reserved task " + reservedTask.getUID () + 
-	       " not a member of it's own workflow " + reservedTask.getWorkflow () + 
-	       "\nuids " + uidsWorkflow(reservedTask));
+	  if (isInfoEnabled()) {
+	      info (".handleTask - huh? reserved task " + reservedTask.getUID () + 
+		    " not a member of it's own workflow " + reservedTask.getWorkflow () + 
+		    "\nuids " + uidsWorkflow(reservedTask));
+	  }
       }
 
       updateMap (reservedToActual, actual, reservedTask);
