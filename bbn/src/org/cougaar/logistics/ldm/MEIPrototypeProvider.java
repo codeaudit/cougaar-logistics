@@ -362,6 +362,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
       packagedpg.initialize(this);
       anAsset.setPropertyGroup(packagedpg);
+      NewRepairPartConsumerPG partpg = 
+	(NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
+      partpg.setMei(anAsset);
+      partpg.setService(service);
+      partpg.setTheater(THEATER);
+      partpg.setRepairPartBG(new RepairPartConsumerBG(partpg));
+      partpg.initialize(this);
+      anAsset.setPropertyGroup(partpg);
     } // if
   } // fillProperties
 
