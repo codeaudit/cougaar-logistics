@@ -45,6 +45,8 @@ import java.util.Vector;
 class Filler {
   double MIN_DELTA = 0.0001; // 1/10000 of a pound
 
+  protected long ONE_DAY_MILLIS = 24*60*60*1000;
+
   private static final String UNKNOWN = "UNKNOWN";
   private Sizer _sz;
 
@@ -128,10 +130,30 @@ class Filler {
           earliest = taskEarlyDate.getTime();
         }
 
-        AspectScorePoint aspEnd = sf.getDefinedRange().getRangeEndPoint();
+        AspectScorePoint aspEnd  = sf.getDefinedRange().getRangeEndPoint();
+        AspectScorePoint aspBest = sf.getBest();
+
+	// restrict the window of time within which we'll aggregate tasks together
+	// to be 
+	//
+	//   ready at->best date + one day 
+	//
+	// instead of 
+	//
+	//   ready at->latest arrival
+	//
+	// because that can have problems when we replan
+	// tasks without plan elements (happens when all aggregations of an mptask get
+	// removed when any parent is removed). Resulting task has too narrow a time 
+	// window, since the replanned transport task will have an arrival window of 
+	// now->best date, and now could potentially be too close to the best date.
+
+        Date taskBestDate = new Date((long) aspBest.getValue() + ONE_DAY_MILLIS);
         Date taskLateDate = new Date((long) aspEnd.getValue());
-        if (taskLateDate.getTime() < latest) {
-          latest = taskLateDate.getTime();
+	if (taskBestDate.getTime() > taskLateDate.getTime())
+	  taskBestDate = taskLateDate;
+        if (taskBestDate.getTime() < latest) {
+          latest = taskBestDate.getTime();
         }
 
         amount += provided;
