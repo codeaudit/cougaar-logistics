@@ -155,11 +155,19 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         while (scheduleElements.hasMoreElements()) {
           ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
           rate = getRate(pg, consumedItem, (List) ose.getObject());
-          // FIXME:  Should we report a warning or is this normal????
-          // this is happening at both ends of the schedule where the MEI
-          // is available but there is not matching org act for the time period.
+          // A null rate can happen at both ends of the schedule where the MEI
+          // is available but there is no matching org act for the time period.
           // (if the orgact is null then the bg returns a null rate)
           if (rate == null)  {
+            continue;
+          }
+          if (getTaskUtils().getDailyQuantity(rate) <= 0.0) {
+            if (logger.isWarnEnabled()) {
+              logger.warn(getAssetUtils().getAssetIdentifier(consumedItem)+" on "+
+                          getAssetUtils().getAssetIdentifier(consumer)+" has a zero rate for period "+
+                          getTimeUtils().dateString(ose.getStartTime())+" - "+
+                          getTimeUtils().dateString(ose.getEndTime()));
+            }
             continue;
           }
           logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
