@@ -228,7 +228,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 customerHash.put(org, new Long(endTime));
             }
         }
-        int bucket = convertTimeToBucket(endTime, true);
+        int bucket = convertTimeToBucket(endTime, false);
         while (bucket >= dueOutList.size()) {
             dueOutList.add(new ArrayList());
         }
@@ -318,7 +318,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public void addRefillRequisition(Task task) {
         long endTime = getEndTime(task);
-        int bucket = convertTimeToBucket(endTime, true);
+        int bucket = convertTimeToBucket(endTime, false);
         while (bucket >= refillRequisitions.size()) {
             refillRequisitions.add(null);
         }
@@ -349,7 +349,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 lastSeen = time;
             }
         }
-        return convertTimeToBucket(lastSeen, true);
+        return convertTimeToBucket(lastSeen, false);
     }
 
     private int getInitialLevelDemandEndBucket() {
@@ -412,7 +412,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         // return the bucket after the first seen actual's end time bucket
         // consistent with getEffectiveProjectionStart
-        return (convertTimeToBucket(firstSeen, true) + 1);
+        return (convertTimeToBucket(firstSeen, false) + 1);
     }
 
     public int getLastRefillRequisition() {
@@ -426,7 +426,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 		for(int j=0; j < refills.size() ; j++) {
 		    Task task = (Task) refills.get(j);
 		    //taskUtils.getEndTime() returns the preference (the best time)
-		    int endBucket = convertTimeToBucket(taskUtils.getEndTime(task),true);
+		    int endBucket = convertTimeToBucket(taskUtils.getEndTime(task),false);
 		    lastRefill = Math.max(endBucket,lastRefill);
 		}
 		//Put above for loop and code in to replace line below this 
@@ -470,7 +470,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         if (start == 0L) {
             return;
         }
-        int bucket_start = convertTimeToBucket(start, true);
+        int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
 
         while (bucket_end >= refillProjections.size()) {
@@ -701,7 +701,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
 	//No critical level before we arrive in theatre.
 	//We're not supposed to order refills before we arrive in theatre.
-	int arrivalTimeBucket = convertTimeToBucket(arrivalTime,true);
+	int arrivalTimeBucket = convertTimeToBucket(arrivalTime,false);
 	for (int i=0; i<arrivalTimeBucket; i++) {
 	    criticalLevelsArray[i] = 0.0;
 	}
@@ -1066,7 +1066,7 @@ public class LogisticsInventoryBG implements PGDelegate {
      *  in which it falls
      */
     public long truncateToBucketStart(long aTime) {
-        int bucket = convertTimeToBucket(aTime, true);
+        int bucket = convertTimeToBucket(aTime, false);
         return convertBucketToTime(bucket);
     }
 

@@ -75,7 +75,7 @@ public class InventoryLevelGenerator extends InventoryModule {
     // long today = inventoryPlugin.getCurrentTimeMillis();
 //     // max lead day is today + maxLeadTime
 //     int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-// 						  addNDays(today, inventoryPlugin.getMaxLeadTime()), true);
+// 						  addNDays(today, inventoryPlugin.getMaxLeadTime()), false);
 //     if ((refill == null) && (bucket > maxLeadBucket)) {
 //       refill = thePG.getRefillProjection(bucket);
 //     }

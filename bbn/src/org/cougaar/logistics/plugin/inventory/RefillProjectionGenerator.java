@@ -176,14 +176,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       if(startDay < inventoryPlugin.getRefillStartTime()) {
         startDay = inventoryPlugin.getRefillStartTime();
       }
-      int startBucket = thePG.convertTimeToBucket(startDay, true);
+      int startBucket = thePG.convertTimeToBucket(startDay, false);
       long now = inventoryPlugin.currentTimeMillis();
       if (now > startDay) {
 	  startDay = now;
 	  // OLD - Now that were keeping the old projected demand in the past we 
 	  // only plan from now on.
 	  //	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
-	  startBucket = thePG.convertTimeToBucket(startDay, true) + inventoryPlugin.getOrderShipTime();
+	  startBucket = thePG.convertTimeToBucket(startDay, false) + inventoryPlugin.getOrderShipTime();
       }
 
       // clear all of the projections
@@ -209,11 +209,11 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       int currentBucket = startBucket;
 //       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
 //                                                            addNDays(startDay, daysOnHand), true);
-      int customerDemandBucket = thePG.convertTimeToBucket(startDay, true) + daysOnHand;
+      int customerDemandBucket = thePG.convertTimeToBucket(startDay, false) + daysOnHand;
  
       double projDemand = 0;
       double nextProjDemand = 0;
-      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix, true);
+      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix, false);
       thePG.setEndOfLevelSixBucket(endOfLevelSixBucket);
       
       //get the initial demand for the customer for startBucket + daysOnHand

@@ -90,9 +90,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     public Collection generateAllAllocationPhases() {
       Iterator defPhasesIt = allocated.iterator();
       long taskStartTime = getTaskUtils().getStartTime(task);
-      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime,true);
+      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime,false);
       long taskEndTime = getTaskUtils().getEndTime(task);
-      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime,false);
+      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime,true);
 
       int lastBucket = taskStartBucket;
 
@@ -216,10 +216,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
               inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       long inventoryStart = thePG.getStartTime();
       long today = Math.max(inventoryStart, currentTime);
-      today_bucket = thePG.convertTimeToBucket(today, true);
+      today_bucket = thePG.convertTimeToBucket(today, false);
       reconcileThePast(today_bucket, thePG);
       int end_bucket = thePG.getLastDemandBucket();
-      int endOfLevel2Bucket = thePG.convertTimeToBucket(endOfLevel2, true);
+      int endOfLevel2Bucket = thePG.convertTimeToBucket(endOfLevel2, false);
       if (end_bucket > endOfLevel2Bucket) {
         end_bucket = endOfLevel2Bucket;
       }
@@ -554,7 +554,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Iterator keysIt = keys.iterator();
     while (keysIt.hasNext()) {
       Object org = keysIt.next();
-      int countedBucket = thePG.convertTimeToBucket(((Long)customerHash.get(org)).longValue(), true) + 1;
+      int countedBucket = thePG.convertTimeToBucket(((Long)customerHash.get(org)).longValue(), false) + 1;
       int currentBucket = 0;
       // loop through the buckets in the inventory
       while (currentBucket < countedBucket) {
