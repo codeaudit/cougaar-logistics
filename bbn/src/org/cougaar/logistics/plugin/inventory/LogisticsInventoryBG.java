@@ -129,8 +129,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     while (bucket_end >= dueOutList.size()) {
       dueOutList.add(new ArrayList());
     }
-//  System.out.println("Task start: "+TimeUtils.dateString(start)+" end  : "+TimeUtils.dateString(end));
-//  System.out.println("bucket start "+bucket_start+", bucket end "+bucket_end);
+    System.out.println("Task start: "+TimeUtils.dateString(start)+" end  : "+TimeUtils.dateString(end));
+    System.out.println("bucket start "+bucket_start+", bucket end "+bucket_end);
     for (int i=bucket_start; i < bucket_end; i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
       list.add(task);
@@ -155,6 +155,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     list.add(task);
   }
 
+  // ******* HERE LIES A BUG
+  // Boundary condition bug - daily projected demands do not
+  // jive when comparing daily buckets to 3-day buckets
   // Updates the running demand sum per bucket
   private void updateProjectedDemandList(Task task, int bucket,
 					 long start, long end) {
@@ -268,7 +271,14 @@ public class LogisticsInventoryBG implements PGDelegate {
     Vector new_elements = new Vector();
     QuantityScheduleElement qse;
     long bucket_zero_time = convertBucketToTime(0);
-    for (int i=0; i < projectedDemandArray.length; i++) {
+    int demand_end = projectedDemandArray.length;
+    for (int i=projectedDemandArray.length-1; i >= 0; i--){
+      if (projectedDemandArray[i] > 0.0) {
+	demand_end = i;
+	break;
+      }
+    }
+    for (int i=0; i <= demand_end ; i++) {
       long start = bucket_zero_time+(MSEC_PER_BUCKET*i);
       long end = start + MSEC_PER_BUCKET;
       try {
