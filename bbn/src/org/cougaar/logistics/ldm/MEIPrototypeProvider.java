@@ -64,6 +64,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   public static final String LEVEL2 = "Level2";
 
   private String service = null;
+  private String echelon = null;
   private static final String LEVEL2TOGGLE = "-Level2";
   // By default, do level 2
   private boolean level2Off = false;
@@ -156,7 +157,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       queryService = getBlackboardQueryService(this);
       factory = getPlanningFactory();
       if (queryService == null) {
-        logger.error("Unable to get query service");
+        if (logger.isErrorEnabled()) {
+          logger.error("Unable to get query service");
+        }
       }
     }
     Vector params = getParameters();
@@ -193,7 +196,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           proto = asset.getPrototype();
         } // if
         if (proto == null) {
-          logger.error("no prototype for "+asset);
+          if (logger.isErrorEnabled()) {
+            logger.error("no prototype for "+asset);
+          }
         } // if
         if ((proto != null) && (!good_prototypes.contains(proto))) {
           TypeIdentificationPG tip = asset.getTypeIdentificationPG();
@@ -203,10 +208,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
               getLDM().cachePrototype(type_id, proto);
               good_prototypes.add(proto);
             } else {
-              logger.error("cannot rehydrate "+proto+" no typeId");
+              if (logger.isErrorEnabled()) {
+                logger.error("cannot rehydrate "+proto+" no typeId");
+              }
             }
           } else {
-            logger.error("cannot rehydrate "+proto+" no typeIdPG");
+            if (logger.isErrorEnabled()) {
+              logger.error("cannot rehydrate "+proto+" no typeIdPG");
+            }
           }
         }
       }
@@ -243,8 +252,17 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
         configured = true;
       } else {
-        logger.error("Organization has no Service :"+
-                     myOrg.getItemIdentificationPG().getItemIdentification());
+        if (logger.isErrorEnabled()) {
+          logger.error("Organization has no Service :"+
+                       myOrg.getItemIdentificationPG().getItemIdentification());
+        }
+      }
+      echelon = myOrg.getMilitaryOrgPG().getEchelon();
+      if (echelon == null) {
+        if (logger.isErrorEnabled()) {
+          logger.error("Organization has no echelon, will not produce Ammunition demand:"+
+                       myOrg.getItemIdentificationPG().getItemIdentification());
+        }
       }
     } else if (logger.isInfoEnabled())
       logger.info("No self orgs from query service?");
@@ -292,7 +310,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
     String query = (String) fileParameters_.get ("UnitConsumption");
     if (query == null) {
-      logger.error("checkLevel2MEIConsumption() query is null ");
+      if (logger.isErrorEnabled()) {
+        logger.error("checkLevel2MEIConsumption() query is null ");
+      }
       return result;
     }
     query = substituteOrgName(query, getAgentIdentifier().toString());
@@ -315,7 +335,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         result[FUEL]=convertConsumptionElement(row[FUEL]);
       }
     } catch (Exception ee) {
-      logger.error ( "in checkLevel2MeiConsumption(), DB query failed.Query= "+query);
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in checkLevel2MeiConsumption(), DB query failed.Query= "+query);
+      }
     }
     return result;
   }
@@ -355,8 +377,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         result[FUEL]=convertConsumptionElement(row[FUEL]);
       } // if else
     } catch (Exception ee) {
-      logger.error ( "in checkMeiConsumption(), DB query failed.Query= "+query);
-
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in checkMeiConsumption(), DB query failed.Query= "+query);
+      }
     } // try
 
     return result;
@@ -369,7 +392,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         res = false;
       }
     } catch (Exception e) {
-      logger.error ( "in convertConsumptionElement(), convert failed; ele= "+ele);
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in convertConsumptionElement(), convert failed; ele= "+ele);
+      }
     }
     return res;
   }
@@ -379,7 +404,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     try {
       res = consumed[type];
     } catch (Exception e) {
-      logger.error ( "in consumes(), array access failed");
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in consumes(), array access failed");
+      }
     }
     return res;
   }
@@ -643,17 +670,23 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (!configured) {
       configure();
       if (!configured) {
-        logger.error("makePrototype() plugin missing myOrganization");
+        if (logger.isErrorEnabled()) {
+          logger.error("makePrototype() plugin missing myOrganization");
+        }
         return null;
       }
     }
     if ((class_hint != null) &&  !class_hint.getName().equals(MEI_STRING)) {
-      logger.error("make prototype How did we get this far?? "+class_hint);
+      if (logger.isErrorEnabled()) {
+        logger.error("make prototype How did we get this far?? "+class_hint);
+      }
       return null;
     }
 
     if (!configured) {
-      logger.error("makePrototype("+type_name+","+class_hint+") PlugIn not configured yet");
+      if (logger.isErrorEnabled()) {
+        logger.error("makePrototype("+type_name+","+class_hint+") PlugIn not configured yet");
+      }
       return null;
     }
 
@@ -752,8 +785,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           nomen = (String) row[0];
         }
       } catch (Exception ee) {
-        logger.error("retrieveFromDB(), DB query failed. query= "+query+
-                     "\n ERROR "+ee);
+        if (logger.isErrorEnabled()) {
+          logger.error("retrieveFromDB(), DB query failed. query= "+query+
+                       "\n ERROR "+ee);
+        }
         return null;
       }
     }
@@ -778,8 +813,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
     String query = createACRQuery (asset, asset_type, service, theater);
     if (query == null) {
-      logger.error("lookupAssetConsumptionRate() Invalid ACR query for "+
-                   asset_type+service);
+      if (logger.isErrorEnabled()) {
+        logger.error("lookupAssetConsumptionRate() Invalid ACR query for "+
+                     asset_type+service);
+      }
       return null;
     } // if
     if (logger.isDebugEnabled())
@@ -799,7 +836,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         return null;
       } // if
     } catch (Exception ee) {
-      logger.error ( "in lookupAssetConsumptionRate(), DB query failed.Query= "+query);
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in lookupAssetConsumptionRate(), DB query failed.Query= "+query);
+      }
       return null;
     } // try
 //     return parseACRResults (result, asset_type);
@@ -810,8 +849,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     Vector result = null;
     String query = (String) fileParameters_.get (LEVEL2 + supply_type + "Rate");
     if (query == null) {
-      logger.error("lookupLevel2AssetConsumptionRate() ACR query is null for "+
-                   LEVEL2+supply_type);
+      if (logger.isErrorEnabled()) {
+        logger.error("lookupLevel2AssetConsumptionRate() ACR query is null for "+
+                     LEVEL2+supply_type);
+      }
       return null;
     }
     query = substituteOrgName(query, agent);
@@ -830,7 +871,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         return null;
       }
     } catch (Exception ee) {
-      logger.error ( "in lookupLevel2AssetConsumptionRate(), DB query failed.Query= "+query);
+      if (logger.isErrorEnabled()) {
+        logger.error ( "in lookupLevel2AssetConsumptionRate(), DB query failed.Query= "+query);
+      }
       return null;
     }
     return result;
@@ -853,7 +896,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     try {
       division = typeID.substring (0, indx);
     } catch (Exception exc) {
-      logger.error(" ########### "+typeID+" "+exc.getMessage());
+      if (logger.isErrorEnabled()) {
+        logger.error(" ########### "+typeID+" "+exc.getMessage());
+      }
       exc.printStackTrace();
       return null;
     }
@@ -862,7 +907,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (logger.isDebugEnabled())
       logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+
                  ", consumer_Id:"+consumer_id);
-    return substituteNSN (query, consumer_id);
+    if (asset_type.equals("Ammunition")) {
+      String tmpQuery = substituteNSN(query, consumer_id);
+      return substituteEchelon(tmpQuery);
+    } else {
+      return substituteNSN (query, consumer_id);
+    }
   } // createACRQuery
 
   /** Replaces the ":nsn" in the query with the actual NSN.
@@ -884,6 +934,24 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     //System.JTEST.out.println ("The string AFTER the substitution was " + query);
     return query;
   } // substituteNSN
+
+  /** Replaces the ":echelon" in the ammunition query with the actual value.
+   * @param q query string
+   * @return new query
+   **/
+  public String substituteEchelon (String q) {
+    String query=null;
+    if ((q != null) && (echelon != null)) {
+      int idx = q.indexOf(":echelon");
+      if (idx != -1) {
+        query = q.substring(0, idx) + "'"+echelon+"'";
+        if (q.length() > idx+8) {
+          query += q.substring(idx+8);
+        }
+      }
+    }
+    return query;
+  }
 
   //#002
   public String substituteSupplyType (String q, String supplyType) {
