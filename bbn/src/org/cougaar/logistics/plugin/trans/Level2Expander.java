@@ -294,7 +294,9 @@ public class Level2Expander extends Level2TranslatorModule {
     } else if (pe instanceof Expansion) {
       republishExpansionWithTask(parent, childTask);
     } else if (pe instanceof Disposition) {
-      logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
+      if(logger.isDebugEnabled()) {
+	logger.debug("Level2Expander:expandLevel2Task: Expanding an already disposed task");
+      }
       removeDisposition(parent);
       createAndPublishExpansion(parent, childTask);
     } else if (logger.isErrorEnabled()) {
