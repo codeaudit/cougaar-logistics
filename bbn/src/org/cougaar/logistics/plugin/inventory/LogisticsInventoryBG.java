@@ -105,6 +105,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     projectedDemandArray = new double[180];
     criticalLevelsArray  = new double[180];
     inventoryLevelsArray = new double[180];
+    Arrays.fill(criticalLevelsArray,Double.NEGATIVE_INFINITY);
     durationArray = new Duration[15];
     for (int i=0; i <= 14; i++) {
       durationArray[i] = Duration.newDays(0.0+i);
@@ -696,6 +697,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   public void takeSnapshot(Inventory inventory) {
     ArrayList tmpProjWdraw = new ArrayList();
     ArrayList tmpWdraw = new ArrayList();
+    ArrayList tmpProjResupply = new ArrayList();
+
     Iterator due_outs;
     for (int i=0; i < dueOutList.size(); i++) {
       due_outs = ((ArrayList)dueOutList.get(i)).iterator();
@@ -712,23 +715,35 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     projWithdrawList =tmpProjWdraw;
     withdrawList = tmpWdraw;
-    projSupplyList = (ArrayList)refillProjections.clone();
+    
+    Iterator projResupplyIt = refillProjections.iterator();
+    while(projResupplyIt.hasNext()) {
+	Task task = (Task) projResupplyIt.next();
+	if(!tmpProjResupply.contains(task)) {
+	    tmpProjResupply.add(task);
+	}
+    }
+
+    projSupplyList = tmpProjResupply;
     supplyList = (ArrayList)refillRequisitions.clone();
+
     QuantityScheduleElement qse;
     Vector list = new Vector();
     long start = convertBucketToTime(0);
     for (int i=0; i < criticalLevelsArray.length; i++) {
-      list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
-							  start, start+MSEC_PER_BUCKET));
-      start += MSEC_PER_BUCKET;
+	if(criticalLevelsArray[i] >= 0.0) {
+	    list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
+								start, start+MSEC_PER_BUCKET));
+	}
+	start += MSEC_PER_BUCKET;
     }
     bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(), 
 							    PlanScheduleType.OTHER);
     start = convertBucketToTime(0);
     list.clear();
     for (int i=0; i < inventoryLevelsArray.length; i++) {
-      list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
-							  start, start+MSEC_PER_BUCKET));
+	    list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
+								start, start+MSEC_PER_BUCKET));
       start += MSEC_PER_BUCKET;
     }
     bufferedInventoryLevels = GLMFactory.newQuantitySchedule(list.elements(), 

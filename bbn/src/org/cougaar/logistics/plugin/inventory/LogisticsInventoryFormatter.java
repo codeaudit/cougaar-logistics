@@ -82,7 +82,7 @@ public class LogisticsInventoryFormatter {
 
 
     public final static String TASKS_TYPE="TASKS";
-    public final static String PROJ_TASKS_TYPE="PROJ_TASKS";
+    public final static String PROJ_TASKS_TYPE="PROJTASKS";
     public final static String ARS_TYPE="ARS";
     public final static String PROJ_ARS_TYPE="PROJ_ARS";
     public final static String LEVELS_TYPE="LEVELS";
@@ -175,7 +175,6 @@ public class LogisticsInventoryFormatter {
 	    ar = pe.getEstimatedResult();
 	}
 	if(ar != null) {
-	    logger.warn("Hey we have an allocation Result");
 	    String taskStr = buildTaskPrefixString(aTask);
 	    taskStr = taskStr + resultType + ",";
 	    if(ar.isSuccess()) {
@@ -200,7 +199,7 @@ public class LogisticsInventoryFormatter {
 		    double[] results = (double[])phasedResults.nextElement();
 		    String outputStr = taskStr;
 		    if(startInd == -1) {
-			outputStr += ",,";
+			outputStr += ",";
 		    } 
 		    else {
 			outputStr += getDateString(results[startInd],expandTimestamp) + ",";
@@ -514,7 +513,7 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASK_ARS_TAG + " type=ARS>");
 	logAllocationResults(resupplyList,aCycleStamp,false);
 	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASK_ARS_TAG + ">");
-	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + "type=PROJ_ARS>");
+	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
 	logAllocationResults(projResupplyList,aCycleStamp,false);
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + ">");
 
