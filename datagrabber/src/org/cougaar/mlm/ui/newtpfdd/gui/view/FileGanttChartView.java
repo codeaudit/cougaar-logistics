@@ -32,6 +32,8 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -135,15 +137,22 @@ public class FileGanttChartView extends SimpleGanttChartView {
           "Requires \".csv\" filename parameter");
     }
     verbose = false;
-    filename = args[0];
+    filename = args[0].trim();
   }
 
   // override for non-file input
   protected BufferedReader openFile() throws IOException {
-    InputStream is =
-      ("-".equals(filename) ?
-       System.in :
-       (new FileInputStream(filename)));
+    InputStream is;
+    if ("-".equals(filename)) {
+      is = System.in;
+    } else {
+      URI uri = URI.create(filename);
+      if (uri.isAbsolute()) {
+        is = uri.toURL().openStream();
+      } else {
+        is = new FileInputStream(filename);
+      }
+    }
     return
       new BufferedReader(
           new InputStreamReader(is));
@@ -153,10 +162,21 @@ public class FileGanttChartView extends SimpleGanttChartView {
     // parse file into map of (inst -> List(String[5]))
     Map m = new HashMap(); 
     BufferedReader f = openFile();
+    boolean inHttpHeader = false;
     for (int i = 0; ; i++) {
       String l = f.readLine();
       if (l == null) {
         break;
+      }
+      if (i == 0 && l.startsWith("HTTP 200")) {
+        inHttpHeader = true;
+        continue;
+      }
+      if (inHttpHeader) {
+        if (l.trim().length() == 0) {
+          inHttpHeader = false;
+        }
+        continue;
       }
       String sa[];
       try {
