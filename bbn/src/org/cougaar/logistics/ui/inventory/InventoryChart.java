@@ -35,21 +35,17 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 
 import com.klg.jclass.chart.JCChart;
-import com.klg.jclass.chart.JCPickListener;
 import com.klg.jclass.chart.data.JCDefaultDataSource;
 import com.klg.jclass.util.swing.JCExitFrame;
 import com.klg.jclass.chart.JCFillStyle;
 import com.klg.jclass.chart.JCAxis;
 import com.klg.jclass.chart.JCAxisTitle;
-import com.klg.jclass.chart.JCDataIndex;
-import com.klg.jclass.chart.JCPickEvent;
+import com.klg.jclass.chart.JCPickListener;
 import com.klg.jclass.chart.EventTrigger;
 import com.klg.jclass.chart.JCChartListener;
 
-
 import com.klg.jclass.util.legend.JCLegend;
 import com.klg.jclass.util.legend.JCMultiColLegend;
-
 
 import com.klg.jclass.chart.ChartDataView;
 import com.klg.jclass.chart.ChartDataViewSeries;
@@ -59,8 +55,6 @@ import com.klg.jclass.chart.ChartText;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
-
-import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
@@ -75,8 +69,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  *
  **/
 
-public abstract class InventoryChart extends JPanel
-  implements JCPickListener {
+public abstract class InventoryChart extends JPanel {
 
     protected JCChart chart=null;
     protected InventoryData inventory=null;
@@ -124,7 +117,6 @@ public abstract class InventoryChart extends JPanel
 					     EventTrigger.CUSTOMIZE));
 
 	// allow user to display labels using right mouse click
-	chart.addPickListener(this);
 	chart.setTrigger(1, new EventTrigger(Event.META_MASK, EventTrigger.PICK));
 
 	// set header and legend to black
@@ -174,43 +166,12 @@ public abstract class InventoryChart extends JPanel
 	chart.removeChartListener(listener);
     }
 
-    public void pick(JCPickEvent e) {
-	JCDataIndex dataIndex = e.getPickResult();
-	// check for all the possible failures
-	if (dataIndex == null) {
-	    logger.warn("WARNING: dataIndex is null");
-	    return;
-	}
-	ChartDataView chartDataView = dataIndex.getDataView();
-	if (chartDataView == null) {
-	    logger.warn("WARNING: chartDataView is null");
-	    return;
-	}
-	int seriesIndex = dataIndex.getSeriesIndex();
-	int pt = dataIndex.getPoint();
-	if (pt < 0 || seriesIndex < 0) {
-	    
-	    logger.warn("WARNING: series or point index is null");
-	    return;
-	}
-	
+    public void addPickListener(JCPickListener listener) {
+	chart.addPickListener(listener);
+    }
 
-	// temporary until chart data view to data model correspondence is working
-	//ChartDataModel dataModel = (ChartDataModel)dataViews.get(chartDataView);
-
-	ChartDataModel dataModel = chartDataView.getDataSource();
-
-	if (dataModel == null) {
-	    logger.warn("WARNING: data model is null");
-	    return;
-	}
-	
-	// user has picked a valid point
-	//double[] x = dataModel.getXSeries(seriesIndex);
-	//double[] y = dataModel.getYSeries(seriesIndex);
-	
-	//MWD just gets info doesn't do anything yet.  Copied
-	//from glm version.
+    public void removePickListener(JCPickListener listener) {
+	chart.removePickListener(listener);
     }
 
     private void resetAxes() {
