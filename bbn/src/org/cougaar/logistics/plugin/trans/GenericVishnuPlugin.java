@@ -71,11 +71,12 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
       foundMaxAssetValues = true;
     }
 
-    if (!impossibleTasks.isEmpty ())
+    if (!impossibleTasks.isEmpty () && isInfoEnabled()) {
       info (getName () + 
-			  ".handleImpossibleTasks - failing " + 
-			  impossibleTasks.size () + 
-			  " tasks.");
+	    ".handleImpossibleTasks - failing " + 
+	    impossibleTasks.size () + 
+	    " tasks.");
+    }
 
     for (Iterator iter = impossibleTasks.iterator (); iter.hasNext ();) {
       Task task = (Task) iter.next ();
@@ -108,16 +109,18 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
 	       " knots (" + format.format(maxSpeed*NM_TO_MILE) + " mph).\n");
       }
       else {
-	warn (getName () + ".handleImpossibleTasks - impossible task : " + task.getUID() + 
-	       "\ndistance from " + from +
-	       " to " + to +
-	       " is great-circle " + format.format(great) +
-	       " nm, (" + format.format(great*NM_TO_MILE) + 
-	       " miles) \narrival-departure is " + format.format(time) + " hrs so" +
-	       " speed would have to be at least " + format.format(speed) + 
-	       " knots (" + format.format(speed*NM_TO_MILE) + " mph).\n" +
-	       "But this is not greater than the speed of the fastest asset : " + format.format(maxSpeed) + 
-	       " knots (" + format.format(maxSpeed*NM_TO_MILE) + " mph).  So should be OK.\n");
+	if (isWarnEnabled ()) {
+	  warn (getName () + ".handleImpossibleTasks - impossible task : " + task.getUID() + 
+		"\ndistance from " + from +
+		" to " + to +
+		" is great-circle " + format.format(great) +
+		" nm, (" + format.format(great*NM_TO_MILE) + 
+		" miles) \narrival-departure is " + format.format(time) + " hrs so" +
+		" speed would have to be at least " + format.format(speed) + 
+		" knots (" + format.format(speed*NM_TO_MILE) + " mph).\n" +
+		"But this is not greater than the speed of the fastest asset : " + format.format(maxSpeed) + 
+		" knots (" + format.format(maxSpeed*NM_TO_MILE) + " mph).  So should be OK.\n");
+	}
       }
 
       Asset directObject = task.getDirectObject();
@@ -149,7 +152,9 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
     }
 
     if (stopOnFailure && !impossibleTasks.isEmpty()) {
-      info (getName() + ".handleImpossibleTasks - stopping on failure!");
+      if (isWarnEnabled ()) {
+	warn (getName() + ".handleImpossibleTasks - stopping on failure!");
+      }
       System.exit (-1);
     }
   }
@@ -181,8 +186,9 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
       }
     }
 
-    if (isDebugEnabled())
+    if (isDebugEnabled()) {
       debug (getName () + " - max speed " + maxSpeed + " area " + maxAreaCap + " weight " + maxWeightCap);
+    }
   }
 
   /**

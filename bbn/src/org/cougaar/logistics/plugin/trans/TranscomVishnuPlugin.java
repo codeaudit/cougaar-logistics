@@ -56,7 +56,7 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
 	"NullNomen";
 
     } catch(Exception e) {
-      warn ("got really unexpected exception " + e);
+      error ("got really unexpected exception " + e);
     } 
   }
 
@@ -67,8 +67,9 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
    */
   public void handleNewAssets(Enumeration newAssets) {
     super.handleNewAssets (newAssets);
-    if (isInfoEnabled())
+    if (isInfoEnabled()) {
       info (".handleNewAssets - got called with " + myNewAssets.size() + " assets.");
+    }
 
     for (Iterator iter = myNewAssets.iterator (); iter.hasNext (); ) {
       String name = "";
@@ -77,17 +78,20 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       try {
 	if (asset instanceof Organization) {
 	  name = getOrganizationRole(asset);
-	  if (isDebugEnabled())
+	  if (isDebugEnabled()) {
 	    debug (".handleNewAssets - " + asset + "'s name is " + name);
+	  }
 	}
 	else {
 	  name = asset.getTypeIdentificationPG().getNomenclature();
-	  if (isDebugEnabled())
+	  if (isDebugEnabled()) {
 	    debug (".handleNewAssets - " + asset + " is NOT an org.");
+	  }
 	}
       } catch (Exception e) {
-	if (isDebugEnabled())
+	if (isDebugEnabled()) {
 	  logger.debug (".handleNewAssets - " + asset + " was strange - ", e);
+	}
       }
 
       if (name != null) {
@@ -114,23 +118,26 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       return "NO_PROVIDERS";
 
     if (providers.size () > 1) {
-      if (isDebugEnabled()) 
+      if (isDebugEnabled()) {
 	debug ("TranscomDataXMLize.getOrganizationRole - NOTE - org " + org + " has multiple providers.\n");
+      }
       return "MANY_PROVIDERS";
     }
 	  
     if (providers.isEmpty ()) {
-      if (isDebugEnabled()) 
+      if (isDebugEnabled()) {
 	debug ("TranscomDataXMLize.getOrganizationRole - Note - no providers for " + org + ", relationships are " +
 	      providers);
+      }	
       return "NO_PROVIDERS";
     }
 
     Relationship relationToSuperior = (Relationship) providers.iterator().next();
     Role subRoleA  = relationToSuperior.getRoleA();
     Role subRoleB = relationToSuperior.getRoleB();
-    if (isDebugEnabled())
+    if (isDebugEnabled()) {
       debug ("TranscomDataXMLize.getOrganizationRole - org " + org + " - roleA " + subRoleA + " roleB " + subRoleB);
+    }
     // don't want the converse one - it seems random which org gets to be A and which B
     return (subRoleA.getName().startsWith ("Converse") ? subRoleB.getName () : subRoleA.getName());
   }

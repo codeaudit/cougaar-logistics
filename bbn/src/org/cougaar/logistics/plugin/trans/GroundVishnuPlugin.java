@@ -47,7 +47,7 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
 	MAX_DISTANCE=getMyParams().getIntParam ("MAX_DISTANCE");
       if (getMyParams ().hasParam ("complainAboutMissingMovabilityPG"))
 	complainAboutMissingMovabilityPG=getMyParams().getBooleanParam ("complainAboutMissingMovabilityPG");
-    } catch (Exception e) { warn ("got unexpected exception " + e); }
+    } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
   }
 
   /** 
@@ -73,10 +73,12 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
 
     boolean val = !isSelfPropelled;
 
-    if (isDebugEnabled() && val)
+    if (isDebugEnabled() && val) {
       debug (getName () + ".interestingTask - interested in " + t.getUID());
-    if (isDebugEnabled() && !val)
+    }
+    if (isDebugEnabled() && !val) {
       debug (getName () + ".interestingTask - IGNORING self-propelled " + t.getUID());
+    }
 	
     return val;
   }
@@ -126,8 +128,9 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
     if (move_prop != null) {
       String cargocatcode = move_prop.getCargoCategoryCode();
       if ((cargocatcode != null) && (cargocatcode.charAt(0) == 'R')) {
-	if (isDebugEnabled())
+	if (isDebugEnabled()) {
 	  debug (getName() + ".isSelfPropelled - found self-propelled vehicle on task " + t.getUID());
+	}
 	return true;
       }
     }
