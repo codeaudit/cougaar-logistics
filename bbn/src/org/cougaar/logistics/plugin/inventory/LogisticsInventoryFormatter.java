@@ -302,7 +302,7 @@ public class LogisticsInventoryFormatter {
 	outputStr += reorderLevel.getQuantity() + ",";
 	if(invLevelsInRange.isEmpty()) {
 	    if(logger.isWarnEnabled()) {
-		//logger.warn("logLevel:no inventory level in range " + outputStr);
+		logger.warn("logLevel:no inventory level in range " + outputStr);
 	    }
 	    writeln(outputStr);
 	}
