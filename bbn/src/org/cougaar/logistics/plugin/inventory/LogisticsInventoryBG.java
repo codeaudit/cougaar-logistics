@@ -177,46 +177,14 @@ public class LogisticsInventoryBG implements PGDelegate {
     taskUtils = parentPlugin.getTaskUtils();
   }
 
-  public void addWithdrawProjectionAllocation(Task task) {
-    AllocationResult result = task.getPlanElement().getEstimatedResult();
-    Iterator it = null;
-    if (result.isPhased()) {
-      it = result.getPhasedAspectValueResults().iterator();
-    } else {
-      ArrayList tmp = new ArrayList();
-      tmp.add(result.getAspectValueResults());
-      it = tmp.iterator();
-    }
-    while (it.hasNext()) {
-      AspectValue phase[] = (AspectValue[]) it.next();
-      int start = 0;
-      int end = 0;
-      for (int i=0; i <phase.length;i++) {
-        AspectValue aValue = phase[i];
-        if (aValue.getAspectType() == AspectType.END_TIME) {
-          end = convertTimeToBucket((long) aValue.getValue());
-        } else if (aValue.getAspectType() == AspectType.START_TIME) {
-          start = convertTimeToBucket((long) aValue.getValue());
-        }
-      }
-      while (end >= dueOutList.size()) {
-        dueOutList.add(new ArrayList());
-      }
-      for (; start < end; start++) {
-        ArrayList list = (ArrayList)dueOutList.get(start);
-        list.add(task);
-      }
-    }
-  }
-
   public void addWithdrawProjection(Task task) {
     // Adding projections mean changed critical levels and
     // target levels.  Set boolean to recompute critical
     // levels and clear targetLevelsList for CSV logging
     compute_critical_levels = true;
     targetLevelsList.clear();
-    long start = getStartTime(task);
-    long end = getEndTime(task);
+    long start = taskUtils.getStartTime(task);
+    long end = taskUtils.getEndTime(task);
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
     if (bucket_end >= projectedDemandArray.length) {
@@ -235,7 +203,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addWithdrawRequisition(Task task) {
-    long endTime = getEndTime(task);
+    long endTime = taskUtils.getEndTime(task);
     Object org = TaskUtils.getCustomer(task);
     if (org != null) {
       Long lastActualSeen = (Long)customerHash.get(org);
@@ -263,8 +231,8 @@ public class LogisticsInventoryBG implements PGDelegate {
       list_itr = list.iterator();
       while (list_itr.hasNext()) {
 	task = (Task)list_itr.next();
-	long start = getStartTime(task);
-	long end = getEndTime(task);
+	long start = taskUtils.getStartTime(task);
+	long end = taskUtils.getEndTime(task);
 	updateProjectedDemandList(task, i, start, end, true);
       }
     }
@@ -274,6 +242,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   // Boundary condition bug - daily projected demands do not
   // jive when comparing daily buckets to 3-day buckets
   // Updates the running demand sum per bucket
+  // AHF 7/31/02 - The bug actually is in the adding of the projection for multiple day buckets
+  //  see bug #1823
   private void updateProjectedDemandList(Task task, int bucket, long start, long end, boolean add) {
 
     double demand = getProjectionTaskDemand(task, bucket, start, end);
@@ -301,11 +271,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     return 0.0;
   }
-  // Beth,  Because allocation results on Withdraw tasks can change,
-  // from one transaction to the next, I do not know which bucket to
-  // look in for this task.  Is there a better way of doing this?
-  // Do you want to treat Withdraws the way we treat ProjectWithdraws?
-  // (remove, readd)
+
   public void removeWithdrawRequisition(Task task) {
     for (int i=0; i < dueOutList.size(); i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
@@ -325,10 +291,6 @@ public class LogisticsInventoryBG implements PGDelegate {
       list = (ArrayList)dueOutList.get(i);
       list.remove(task);
     }
-  }
-
-  public void removeWithdrawProjectionAllocation(Task task) {
-    removeWithdrawProjection(task);
   }
 
   public void addRefillRequisition(Task task) {
@@ -551,8 +513,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void updateWithdrawProjection(Task task) {
-    removeWithdrawProjectionAllocation(task);
-    addWithdrawProjectionAllocation(task);
+    removeWithdrawProjection(task);
+    addWithdrawProjection(task);
   }
 
   public double getProjectedDemand(int bucket) {
@@ -737,7 +699,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	  task = (Task)listIter.next();
 	  if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
 	    org = TaskUtils.getCustomer(task);
-	    endTime = getEndTime(task);
+	    endTime = taskUtils.getEndTime(task);
 	    lastActualSeen = (Long)customerHash.get(org);
 	    if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
 	      customerHash.put(org, new Long(endTime));
@@ -822,8 +784,8 @@ public class LogisticsInventoryBG implements PGDelegate {
       // if for some reason we have a pe but no ar return the pref
       return PluginHelper.getEndTime(task);
     }
-  }
-    
+  }    
+
   private double[] expandArray(double[] doubleArray) {
     double biggerArray[] = new double[(int)(doubleArray.length*1.5)];
     for (int i=0; i < doubleArray.length; i++) {
