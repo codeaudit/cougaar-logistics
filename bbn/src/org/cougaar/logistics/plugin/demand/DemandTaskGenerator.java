@@ -181,8 +181,8 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
       //TODO: MWD Remove debug statements:
-      if ((getOrgName() != null) &&
-          (getOrgName().trim().equals("1-35-ARBN"))) {
+      if ((dgPlugin.getOrgName() != null) &&
+          (dgPlugin.getOrgName().trim().equals("1-35-ARBN"))) {
         System.out.println("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
       }    
     while (subtasksIT.hasNext()) {
