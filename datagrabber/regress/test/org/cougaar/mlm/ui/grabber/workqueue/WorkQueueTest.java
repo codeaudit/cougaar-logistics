@@ -6,6 +6,11 @@
 package test.org.cougaar.mlm.ui.grabber.workqueue;
 
 import junit.framework.TestCase;
+import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
+import org.cougaar.mlm.ui.grabber.workqueue.Work;
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+import org.cougaar.mlm.ui.grabber.logger.StdLogger;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 /*
 import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 import org.cougaar.mlm.ui.grabber.workqueue.Work;
@@ -20,9 +25,6 @@ public class WorkQueueTest extends TestCase {
         super(name);
     }
 
-    public void testTmp() {}
-
-/*
     public void testBasic() {
         WorkQueue wq = new WorkQueue(new StdLogger(), null);
         assertTrue(wq.getWorkIDToStatusMap().isEmpty());
@@ -63,7 +65,4 @@ public class WorkQueueTest extends TestCase {
         });
         assertTrue(wq.isBusy());
     }
-*/
-
-
 }
