@@ -20,20 +20,14 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import com.bbn.vishnu.scheduling.Reusable;
-import com.bbn.vishnu.scheduling.SchObject;
-
 import java.util.Date;
 
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
-
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.log.Logger;
-
-import org.w3c.dom.Element;
 
 /**
  * Create either an XML document in the Vishnu Data format or Vishnu objects from ALP objects. <p>
