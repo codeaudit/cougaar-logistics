@@ -1,3 +1,4 @@
+
 require "set"
 
 module ACME	
@@ -94,42 +95,56 @@ module ACME
         baseline_name = @archive.group_baseline
         baseline = @archive.open_prior_archive(baseline_name)
         baseline_name = "Missing Baseline" if baseline.nil?
-        shortfall_files.uniq.each do |shortfall_file|
-          benchmark_pattern = Regexp.new(File.basename(shortfall_file.name))
-          benchmark_file = nil
-          benchmark_file = baseline.files_with_name(benchmark_pattern)[0] unless baseline.nil?
-          report_name = "Sh-" + File.basename(shortfall_file.name, ".xml").gsub(/[^A-Z0-9]/, "")
-
-          @archive.add_report(report_name, @plugin.plugin_configuration.name) do |report|
+        if (shortfall_files.size > 0)
+          @archive.add_report("SHORT", @plugin.plugin_configuration.name) do |report|
+          result = SUCCESS
+          shortfall_files.uniq.each do |shortfall_file|
+            benchmark_pattern = Regexp.new(File.basename(shortfall_file.name))
+            benchmark_file = nil
+            benchmark_file = baseline.files_with_name(benchmark_pattern)[0] unless baseline.nil?
             data = get_file_data(File.new(shortfall_file.name))
             next if data.agents.empty?
             
             benchmark_data = nil
             benchmark_data = get_file_data(File.new(benchmark_file.name)) unless benchmark_file.nil?
-            result = analyze(data, benchmark_data)
-            
-            if result == SUCCESS then
-              report.success
-            elsif result == PARTIAL then
-              report.partial_success
-            else
-              report.failure
-            end
-            output = html_output(data, report_name, baseline_name)
-            outfile = "#{report_name}.html"
-            report.open_file(outfile, "text/html", "Agent shortfall tests for #{report_name}") do |file|
-              file.puts output
-            end
+            r = analyze(data, benchmark_data)
+            result = r if result < r
 
-            output = create_description
-            report.open_file("shortfall_description.html", "text/html", "Shortfall Report Description") do |file|
+            outfile = "S-#{File.basename(shortfall_file.name, ".xml").gsub(/[^A-Z0-9]/, "")}"
+            outfile += "-#{result_string(result)}.html"
+            output = html_output(data, outfile, baseline_name)            
+            report.open_file(outfile, "text/html", "Agent shortfall tests") do |file|
               file.puts output
             end
-              puts "#{Time.now}:  Done writing files"
+          end
+
+          if result == SUCCESS then
+            report.success
+          elsif result == PARTIAL then
+            report.partial_success
+          else
+            report.failure
+          end
+
+          output = create_description
+          report.open_file("shortfall_description.html", "text/html", "Shortfall Report Description") do |file|
+            file.puts output
+          end
+            puts "#{Time.now}:  Done writing files"
           end
         end
       end
-      
+
+      def result_string(r)
+        str = "FAIL"
+        if r == SUCCESS
+          str = "SUCCESS"
+        elsif r == PARTIAL
+          str == "PARTIAL_SUCCESS"
+        end
+        return str
+      end
+        
       def get_file_data(file)
         data = FileData.new([], {}, [])
         curr_agent = nil
