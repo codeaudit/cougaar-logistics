@@ -23,6 +23,7 @@ package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -63,6 +64,8 @@ public class RefillComparator extends InventoryModule {
       Task oldRefill = (Task) oldIter.next();
       // check for a null in the refills list!
       if (oldRefill != null) {
+	  // clean out the reference in the maintain inventory workflow
+	  ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
 	inventoryPlugin.publishRemove(oldRefill);
       }
     }
@@ -101,6 +104,8 @@ public class RefillComparator extends InventoryModule {
       // add in a check for a null - nulls and tasks are put in the
       // refill lists so make sure we don't publish null!
       if (oldRefillProj != null) {
+	  // remove this from the workflow's sub task list first
+	  ((NewWorkflow)oldRefillProj.getWorkflow()).removeTask(oldRefillProj);
 	inventoryPlugin.publishRemove(oldRefillProj);
       }
     }
