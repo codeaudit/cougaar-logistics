@@ -1,0 +1,11 @@
+####################################################
+# Rule to insert Level2TranslatorPlugin to OSC agent
+
+level2translator = "org.cougaar.logistics.plugin.trans.Level2TranslatorPlugin"
+
+  society.agents["OSC"].add_component do |c|
+      c.classname = level2translator
+      c.add_argument("SUPPLY_TYPE=Ammunition")
+  end
+ 
+
