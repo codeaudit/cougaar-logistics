@@ -30,10 +30,14 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Writer;
 
+import java.nio.*;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.cougaar.planning.ldm.measure.Mass;
 
 import org.xml.sax.Attributes;
 
@@ -63,19 +67,26 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
   //Variables:
   ////////////
 
-  public UID UID;
+  public UID UID; 
   /**item nomenclature, not to be confused with the proto's *type* nomen**/
   public String itemNomen;
   public long aggregateNumber;
   public String prototypeUID;
-  public String ownerID;
+  public String ownerID; // counts as UID
   /**if a Container, MilVan, or Pallet**/
-  public UID manifestUID;
+  public UID manifestUID; // not written/read
   public boolean hasManifest;
   public List nomenclatures;
   public List typeIdentifications;
   public List weights;
   public String name;
+
+  public static int numUID = 2;
+  public static int numString = 3;
+  public static int numLong = 1;
+  public static int numBoolean = 1;
+  public static int numInt = 1; // all manifest lists are the same length
+  public static int maxStringLength = 40;
 
   //Constructors:
   ///////////////
@@ -229,6 +240,156 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
     if (numToRead > 0) weights = new ArrayList(numToRead);
     for (int i = 0; i < numToRead; i++)
       weights.add (in.readObject()); // should be instances of Mass
+  }
+
+  /**
+   * Mandatory writeExternal method. 
+   * @serialData 
+   *             
+   */
+  public int writeToBuffer(int index, 
+			   List agentNames,
+			   int [] uidAgentIndex,
+			   long [] uidLong,
+			   char [] instanceStringBuffer,
+			   long [] instanceLongBuffer,
+			   int [] instanceIntBuffer,
+			   boolean [] instanceBooleanBuffer
+			   ) throws IOException {
+    // UIDs
+    int agentIndex;
+    if ((agentIndex = agentNames.indexOf(UID.getOwner().intern())) == -1) {
+      agentNames.add (UID.getOwner().intern());
+      agentIndex = agentNames.indexOf(UID.getOwner());
+    }
+
+    uidAgentIndex[index*numUID] = agentIndex;
+    uidLong[index*numUID] = UID.getId();
+
+    if ((agentIndex = agentNames.indexOf(ownerID.intern())) == -1) {
+      agentNames.add (ownerID.intern());
+      agentIndex = agentNames.indexOf(ownerID);
+    }
+
+    uidAgentIndex[(index*numUID)+1] = agentIndex;
+    uidLong[(index*numUID)+1] = 0;
+
+    // Strings
+    String nomen = (itemNomen != null) ? itemNomen : "no_nomen";
+    System.arraycopy (nomen.toCharArray(), 0, 
+		      instanceStringBuffer, (index*numString + 0)*maxStringLength, 
+		      nomen.length());
+
+    String proto = (prototypeUID != null) ? prototypeUID : "no_proto";
+
+    System.arraycopy (proto.toCharArray(), 0, 
+		      instanceStringBuffer, (index*numString + 1)*maxStringLength, 
+		      proto.length());
+
+    String name2 = (name != null) ? name : "no_name";
+
+    System.arraycopy (name2.toCharArray(), 0, 
+		      instanceStringBuffer, (index*numString + 2)*maxStringLength, 
+		      name2.length());
+
+    // longs
+
+    instanceLongBuffer[index*numLong] = aggregateNumber;
+
+    // booleans
+
+    instanceBooleanBuffer[index*numBoolean] = hasManifest;
+
+    // ints
+
+    if (hasManifest) 
+      instanceIntBuffer[index*numInt] = nomenclatures.size();
+
+    return instanceIntBuffer[index*numInt];
+  }
+
+  public int writeToManifestBuffers(int index, 
+				    char [] nomenStringBuffer,
+				    char [] typeIDStringBuffer,
+				    double [] weightDoubleBuffer) {
+    Iterator iter2 = typeIdentifications.iterator();
+    Iterator iter3 = weights.iterator();
+    for (Iterator iter = nomenclatures.iterator(); iter.hasNext(); ) {
+      String nomen  = (String) iter.next();
+      String typeID = (String) iter2.next ();
+      Mass weight   = (Mass)   iter3.next ();
+
+      System.arraycopy (nomen.toCharArray(), 0, 
+			nomenStringBuffer, (index)*maxStringLength, 
+			nomen.length());
+
+      System.arraycopy (typeID.toCharArray(), 0, 
+			typeIDStringBuffer, (index)*maxStringLength, 
+			typeID.length());
+
+      weightDoubleBuffer[index++] = weight.getKilograms ();
+    }
+    return index;
+  }
+
+  public int readFromBuffer(
+			     int index, 
+			     int manifestsSoFar,
+			     List agentNames,
+			     int [] uidAgentIndex,
+			     long [] uidLong,
+			     CharBuffer charBuffer, 
+			     long [] instanceLongBuffer,
+			     int [] instanceIntBuffer,
+			     boolean [] instanceBooleanBuffer,
+			     CharBuffer nomenCharBuffer,
+			     CharBuffer typeIDCharBuffer,
+			     double [] weightDoubleBuffer) {
+    // UIDs
+    UID     = new UID((String) agentNames.get(uidAgentIndex[index*numUID]), 
+		      uidLong[index*numUID]);
+    ownerID = (String) agentNames.get(uidAgentIndex[(index*numUID)+1]);
+
+    // Strings
+    char temp [] = new char [maxStringLength];
+    charBuffer.get(temp);
+    itemNomen = new String(temp).trim();
+
+    charBuffer.get(temp);
+    prototypeUID = new String(temp).trim();
+
+    charBuffer.get(temp);
+    name = new String(temp).trim();
+
+    // longs
+
+    aggregateNumber = instanceLongBuffer[(index*numLong)];
+
+    // booleans 
+
+    hasManifest     = instanceBooleanBuffer[(index*numBoolean)];
+
+    // ints
+
+    int numNomens = instanceIntBuffer[index*numInt];
+
+    if (hasManifest) {
+      nomenclatures = new ArrayList ();
+      typeIdentifications = new ArrayList ();
+      weights       = new ArrayList ();
+
+      for (int i = 0; i < numNomens; i++) {
+	nomenCharBuffer.get(temp);
+	nomenclatures.add (new String(temp).trim());
+
+	typeIDCharBuffer.get(temp);
+	typeIdentifications.add (new String(temp).trim());
+
+	weights.add (new Mass (weightDoubleBuffer[manifestsSoFar + i], Mass.KILOGRAMS));
+      }
+    }
+
+    return manifestsSoFar + numNomens;
   }
 
   //Inner Classes:

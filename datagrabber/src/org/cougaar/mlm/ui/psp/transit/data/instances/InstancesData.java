@@ -27,7 +27,15 @@ import org.cougaar.planning.servlet.data.xml.*;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.io.Externalizable;
 import java.io.Serializable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+import java.nio.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,7 +52,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class InstancesData implements XMLable, DeXMLable, Serializable{
+public class InstancesData implements XMLable, DeXMLable, Serializable /*Externalizable */ {
 
   //Constants:
 
@@ -150,6 +158,143 @@ public class InstancesData implements XMLable, DeXMLable, Serializable{
     }
   }
   //Inner Classes:
+
+  /**
+   * Mandatory writeExternal method. <p>
+   *
+   * Does all the writing manually -- creates type specific buffers to store
+   * Leg fields in, and writes them once at the end of the method.  Massive
+   * speed up compared to hitting the socket repeatedly. <p>
+   *
+   * Note also that it's speeded up by having all strings be 40 
+   * characters long.  This may come back to bite us later, if any are proved to be longer. <p>
+   *
+   * That is, I don't have to parse every character, I can just jump forward in the string
+   * buffer 40 characters at a time, slurp them up into a string, and continue.
+   */
+  public void writeExternal(ObjectOutput out) throws IOException {
+    try {
+    int numInstances = instances.values().size();
+    out.writeInt (numInstances);
+    
+    //    System.out.println ("Writing " + numInstances + " instances.");
+
+    char [] instanceStringBuffer = new char [numInstances * Instance.numString * Instance.maxStringLength];
+    long [] instanceLongBuffer   = new long [numInstances * Instance.numLong];
+    int  [] instanceIntBuffer    = new int  [numInstances * Instance.numInt];
+    boolean [] instanceBooleanBuffer = new boolean [numInstances * Instance.numBoolean];
+
+    Iterator iter = getInstancesIterator();
+    int index = 0;
+    int totalManifestItems = 0;
+
+    List agentNames   = new ArrayList ();
+    int [] uidAgentIndex = new int  [numInstances*Instance.numUID];
+    long [] uidLong      = new long [numInstances*Instance.numUID];
+
+    while(iter.hasNext()){
+      Instance instance = (Instance)iter.next();
+      totalManifestItems = instance.writeToBuffer (index++, 
+						   agentNames,
+						   uidAgentIndex,
+						   uidLong,
+						   instanceStringBuffer, 
+						   instanceLongBuffer, 
+						   instanceIntBuffer, 
+						   instanceBooleanBuffer);
+    }
+
+    char [] nomenStringBuffer  = new char [totalManifestItems * Instance.maxStringLength];
+    char [] typeIDStringBuffer = new char [totalManifestItems * Instance.maxStringLength];
+    double [] weightDoubleBuffer = new double [totalManifestItems];
+
+    index = 0;
+    iter = getInstancesIterator();
+    while(iter.hasNext()){
+      Instance instance = (Instance)iter.next();
+      if (instance.hasManifest)
+	index = instance.writeToManifestBuffers (index, 
+						 nomenStringBuffer, typeIDStringBuffer, weightDoubleBuffer);
+    }
+
+    //    System.out.println ("AgentNames is " + agentNames);
+    //    System.out.println ("instance string is " + new String (instanceStringBuffer));
+    //    System.out.println ("nomen string is " + new String (nomenStringBuffer));
+
+    out.writeObject(agentNames);
+    out.writeObject(uidAgentIndex);
+    out.writeObject(uidLong);
+    out.writeObject(instanceStringBuffer);
+    out.writeObject(instanceLongBuffer);
+    out.writeObject(instanceIntBuffer);
+    out.writeObject(instanceBooleanBuffer);
+    out.writeObject(nomenStringBuffer);
+    out.writeObject(typeIDStringBuffer);
+    out.writeObject(weightDoubleBuffer);
+    } catch (Exception e) { e.printStackTrace (); }
+  }
+
+  /**
+     * Mandatory readExternal method. Will read in the data that we wrote out
+     * in the writeExternal method. MUST BE IN THE SAME ORDER and type as we
+     * wrote it out. By the time, readExternal is called, an object of this 
+     * class has already been created using the public no-arg constructor,
+     * so this method is used to restore the data to all of the fields of the 
+     * newly created object.
+     *
+     * Reads from type-specific buffers to get field info.  Calls leg's readFromBuffer
+     * to take the fields it needs from the buffers.
+     */
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    int numInstances = in.readInt ();
+
+    List agentNames   = (List) in.readObject ();
+    int  [] uidAgentIndex = (int  []) in.readObject ();
+    long [] uidLong       = (long []) in.readObject ();
+
+    char [] instanceStringBuffer   = (char [])    in.readObject();
+    long [] instanceLongBuffer     = (long [])    in.readObject();
+    int  [] instanceIntBuffer      = (int  [])    in.readObject();
+    boolean [] instanceBooleanBuffer  = (boolean []) in.readObject();
+
+    char   [] nomenStringBuffer  = (char [])    in.readObject();
+    char   [] typeIDStringBuffer = (char [])    in.readObject();
+    double [] weightDoubleBuffer = (double [])  in.readObject();
+
+    CharBuffer charBuffer = CharBuffer.allocate (instanceStringBuffer.length);
+    String temp = new String(instanceStringBuffer);
+    charBuffer.put (temp);
+    charBuffer.rewind();
+
+    CharBuffer nomenBuffer = CharBuffer.allocate (nomenStringBuffer.length);
+    temp = new String(nomenStringBuffer);
+    nomenBuffer.put (temp);
+    nomenBuffer.rewind();
+
+    CharBuffer typeIDBuffer = CharBuffer.allocate (typeIDStringBuffer.length);
+    temp = new String(typeIDStringBuffer);
+    typeIDBuffer.put (temp);
+    typeIDBuffer.rewind();
+
+    int manifestsSoFar = 0;
+    for (int i = 0; i < numInstances; i++) {
+      Instance instance = new Instance ();
+      manifestsSoFar = instance.readFromBuffer (i, 
+						manifestsSoFar,
+						agentNames,
+						uidAgentIndex,
+						uidLong,
+						charBuffer,
+						instanceLongBuffer,
+						instanceIntBuffer,
+						instanceBooleanBuffer,
+						nomenBuffer,
+						typeIDBuffer,
+						weightDoubleBuffer);
+      addInstance (instance);
+      //      System.out.println ("Leg #" + i + " is\n" + li);
+    }
+  }
 
   private static final long serialVersionUID = 998172342837427164L;
 }
