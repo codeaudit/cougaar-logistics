@@ -77,7 +77,7 @@ public class AssetDetailView extends JFrame{
 
     setContentPane(content);
     setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-    setSize(800,600);
+    setSize(900,600);
     show();
   }
 
