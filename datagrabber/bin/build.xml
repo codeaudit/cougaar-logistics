@@ -24,7 +24,7 @@
   </target>
 
   <target name="compile">
-        <javac  deprecation="true" 
+        <javac  deprecation="false" 
                 debug="true" 
                 optimize="false" 
                 srcdir="${src}" 
