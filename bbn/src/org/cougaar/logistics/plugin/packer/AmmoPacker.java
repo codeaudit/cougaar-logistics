@@ -30,7 +30,7 @@ import java.util.Collection;
  * AmmoPacker - handles packing ammo supply requests
  *
  */
-public class AmmoPacker extends Packer {
+public class AmmoPacker extends ALPacker {
 
   /**
    * AmmoPacker - constructor
