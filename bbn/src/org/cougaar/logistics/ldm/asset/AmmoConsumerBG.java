@@ -99,7 +99,9 @@ public class AmmoConsumerBG extends ConsumerBG {
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule(orgColl);
    	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
       } else {
- 	logger.error("getParameterSchedule: unknown predicate");
+        if (logger.isErrorEnabled()) {
+          logger.error("getParameterSchedule: unknown predicate");
+        }
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
@@ -114,8 +116,10 @@ public class AmmoConsumerBG extends ConsumerBG {
       return r;
     }
     if (params == null) {
-      logger.error("getRate() params null for "+
-		   asset.getTypeIdentificationPG().getNomenclature());
+      if (logger.isErrorEnabled()) {
+        logger.error("getRate() params null for " +
+                     asset.getTypeIdentificationPG().getNomenclature());
+      }
 //       if (myOrgName.indexOf("35-ARBN") >= 0) {
 // 	System.out.println("getRate() params null for "+
 // 			   asset.getTypeIdentificationPG().getNomenclature());
@@ -125,23 +129,29 @@ public class AmmoConsumerBG extends ConsumerBG {
     Double qty = (Double)params.get(0);
     OrgActivity orgAct = (OrgActivity)params.get(1);
     if (orgAct == null) {
-      logger.debug("getRate() orgAct null for "+
-		   asset.getTypeIdentificationPG().getNomenclature());
+      if (logger.isDebugEnabled()) {
+        logger.debug("getRate() orgAct null for " +
+                     asset.getTypeIdentificationPG().getNomenclature());
+      }
 
       return r;
     }
     HashMap map = (HashMap) consumptionRates.get(asset);
     if (map == null) {
-      logger.error("getRate()  no Ammo consumption for "+
-		   asset.getTypeIdentificationPG().getNomenclature());
+      if (logger.isErrorEnabled()) {
+        logger.error("getRate()  no Ammo consumption for " +
+                     asset.getTypeIdentificationPG().getNomenclature());
+      }
 
       return r;
     }
 
     Double d = (Double) map.get(orgAct.getOpTempo().toUpperCase());
     if (d == null) {
-      logger.error("getRate() consumption rate null for "+
-		   asset.getTypeIdentificationPG().getNomenclature());
+      if (logger.isErrorEnabled()) {
+        logger.error("getRate() consumption rate null for " +
+                     asset.getTypeIdentificationPG().getNomenclature());
+      }
 
       return r;
     }
@@ -167,8 +177,10 @@ public class AmmoConsumerBG extends ConsumerBG {
           Vector result = parentPlugin.lookupAssetConsumptionRate(asset, supplyType, 
                                                                   myPG.getService(), myPG.getTheater());
           if (result == null) {
-            logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-                         myPG.getMei()+", "+supplyType);
+            if (logger.isDebugEnabled()) {
+              logger.debug("getConsumed(): Database query returned EMPTY result set for " +
+                           myPG.getMei() + ", " + supplyType);
+            }
           } else {
             consumptionRates = parseResults(result);
             cachedDBValues.put(key, consumptionRates);
@@ -177,8 +189,11 @@ public class AmmoConsumerBG extends ConsumerBG {
       }
     }
     if (consumptionRates == null) {
-      logger.debug("No consumption rates for "+myPG.getMei()+" at "+
-                   parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification());
+      if (logger.isDebugEnabled()) {
+        logger.debug("No consumption rates for " + myPG.getMei() + " at " +
+                     parentPlugin.getMyOrg().getItemIdentificationPG()
+                     .getItemIdentification());
+      }
       consumptionRates = new HashMap();
     }
     return consumptionRates.keySet();
@@ -201,24 +216,31 @@ public class AmmoConsumerBG extends ConsumerBG {
     Object row[];
 
     for (int i=0; results.hasMoreElements(); i++) {
-      row = (Object [])results.nextElement();
+      row = (Object[]) results.nextElement();
       mei_nsn = (String) row[0];
-      logger.debug("Ammo: parsing results for MEI nsn: " + mei_nsn);
-      typeid = "DODIC/"+(String) row[1];
+      if (logger.isDebugEnabled()) {
+        logger.debug("Ammo: parsing results for MEI nsn: " + mei_nsn);
+      }
+      typeid = "DODIC/" + (String) row[1];
       newAsset = parentPlugin.getPrototype(typeid);
       if (newAsset != null) {
-	optempo = (String) row[2];
-	dcr = ((BigDecimal) row[3]).doubleValue();
-	map = (HashMap)ratesMap.get(newAsset);
-	if (map == null) {
-	  map = new HashMap();
-	  ratesMap.put(newAsset, map);
-	}
-	map.put(optempo.toUpperCase(), new Double(dcr));
-	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
-		     ", DCR "+dcr+", Optempo "+optempo);
+        optempo = (String) row[2];
+        dcr = ((BigDecimal) row[3]).doubleValue();
+        map = (HashMap) ratesMap.get(newAsset);
+        if (map == null) {
+          map = new HashMap();
+          ratesMap.put(newAsset, map);
+        }
+        map.put(optempo.toUpperCase(), new Double(dcr));
+        if (logger.isDebugEnabled()) {
+          logger.debug("parseResult() for " + newAsset + ", MEI " + mei_nsn +
+                       ", DCR " + dcr + ", Optempo " + optempo);
+        }
       } else {
-	logger.error("parseResults() Unable to get prototype for "+typeid);
+        if (logger.isErrorEnabled()) {
+          logger.error("parseResults() Unable to get prototype for " +
+                       typeid);
+        }
       }
     }
     return ratesMap;
