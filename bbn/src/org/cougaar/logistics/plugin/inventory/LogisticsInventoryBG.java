@@ -497,6 +497,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     targetLevelsList.set(bucket, new Double(value));
   }
 
+
+  public void clearTargetLevels(int startBucket) {
+    // Clear target levels from the given bucket to end of array
+    int len = targetLevelsList.size();
+    for (int i=startBucket; i < len; i++) {
+      targetLevelsList.set(i, null);
+    }
+  }
+
   public void updateRefillRequisition(Task task) {
     removeRefillRequisition(task);
     addRefillRequisition(task);
