@@ -425,14 +425,23 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
-
   public double getTotalQuantity(Task task) {
+    return getTotalQuantity(task,getStartTime(task),getEndTime(task));   
+  }
+
+
+  public double getTotalQuantity(Task task,long startTime, long endTime ) {
     if (isProjection(task)) {
-      double time_spanned = getEndTime(task) - getStartTime(task);
-      Rate rate = getRate(task);
-      Duration d = Duration.newMilliseconds((double)time_spanned);
-      Scalar scalar = (Scalar)rate.computeNumerator(d);
-      return getDouble(scalar);
+      double time_spanned = endTime - startTime;
+      if(time_spanned > 0) {
+	  Rate rate = getRate(task);
+	  Duration d = Duration.newMilliseconds((double)time_spanned);
+	  Scalar scalar = (Scalar)rate.computeNumerator(d);
+	  return getDouble(scalar);
+      }
+      else {
+	  return 0.0d;
+      }
     } else {
       return getQuantity(task);
     }
