@@ -71,49 +71,49 @@ import java.util.*;
 public class InventoryPlugin extends ComponentPlugin
     implements UtilsProvider {
 
-  private boolean initialized = false;
-//  private boolean firstTimeThrough = true;
-  private DomainService domainService;
-  private NodeIdentificationService nodeIdService;
-  private LoggingService logger;
-  private UIDService uidService = null;
-  private TaskUtils taskUtils;
-  private TimeUtils timeUtils;
-  private AssetUtils AssetUtils;
+  protected boolean initialized = false;
+//  protected boolean firstTimeThrough = true;
+  protected DomainService domainService;
+  protected NodeIdentificationService nodeIdService;
+  protected LoggingService logger;
+  protected UIDService uidService = null;
+  protected TaskUtils taskUtils;
+  protected TimeUtils timeUtils;
+  protected AssetUtils AssetUtils;
   protected ScheduleUtils scheduleUtils;
-  private HashMap pluginParams;
+  protected HashMap pluginParams;
   protected HashMap inventoryHash;
     //  protected HashMap inventoryInitHash;
   protected HashSet touchedInventories;
   // inventoriesWithDeletions used to refresh snapshots.
   // Ensures correct graphs during deletion periods.
   protected HashSet inventoriesWithDeletions;
-  // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
-  private boolean touchedProjections;
-  private boolean touchedChangedProjections = false;
+  // protected HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
+  protected boolean touchedProjections;
+  protected boolean touchedChangedProjections = false;
   protected String supplyType;
-    //  private String inventoryFile;
-//   private boolean fillToCapacity; Will be added bug #1482
-//   private boolean maintainAtCapacity; Will be added bug #1482
+    //  protected String inventoryFile;
+//   protected boolean fillToCapacity; Will be added bug #1482
+//   protected boolean maintainAtCapacity; Will be added bug #1482
   protected DetReqAggHandler detReqHandler;
   protected Organization myOrganization;
-  private String myOrgName;
-  private ExpanderModule supplyExpander;
+  protected String myOrgName;
+  protected ExpanderModule supplyExpander;
   protected AllocatorModule externalAllocator;
-  private RefillGeneratorModule refillGenerator;
-  private RefillProjectionGeneratorModule refillProjGenerator;
-  private ComparatorModule refillComparator;
-  private AllocationAssessor allocationAssessor;
-  private LogisticsPlanModule logisticsPlan;
+  protected RefillGeneratorModule refillGenerator;
+  protected RefillProjectionGeneratorModule refillProjGenerator;
+  protected ComparatorModule refillComparator;
+  protected AllocationAssessor allocationAssessor;
+  protected LogisticsPlanModule logisticsPlan;
   protected long startTime;
-  private long cycleStamp;
+  protected long cycleStamp;
   protected boolean logToCSV = false;
   protected transient ArrayList newRefills = new ArrayList();
-  private boolean rehydrateInvs = false;
-  private boolean OMChange = false;
-  private long prevLevel6;
-  private boolean turnOnTaskSched=false;
-  private int prepoArrivalOffset=3;
+  protected boolean rehydrateInvs = false;
+  protected boolean OMChange = false;
+  protected long prevLevel6;
+  protected boolean turnOnTaskSched=false;
+  protected int prepoArrivalOffset=3;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
@@ -136,7 +136,7 @@ public class InventoryPlugin extends ComponentPlugin
   protected LogisticsOPlan logOPlan = null;
 
   // Policy variables
-  private InventoryPolicy inventoryPolicy = null;
+  protected InventoryPolicy inventoryPolicy = null;
   protected int criticalLevel = 3;
   protected int reorderPeriod = 3;
   protected long bucketSize = TimeUtils.MSEC_PER_DAY;
@@ -233,7 +233,7 @@ public class InventoryPlugin extends ComponentPlugin
     return supplyType;
   }
 
-//   private String getInventoryFileName() {
+//   protected String getInventoryFileName() {
 //     return inventoryFile;
 //   }
 
@@ -597,7 +597,7 @@ public class InventoryPlugin extends ComponentPlugin
     supplyExpander.checkCommStatusAlarms();
   }
 
-  private boolean processRemoves() {
+  protected boolean processRemoves() {
     if (logger.isDebugEnabled()) {
       logger.debug("Agent: " + getAgentIdentifier().toString() + " Processing Subscription Removes["+supplyType+"]");
     }
@@ -693,9 +693,9 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
 
-  private class EnclosedPredicate implements UnaryPredicate {
-    private RelationshipSchedule schedule;
-    private Role role;
+  protected class EnclosedPredicate implements UnaryPredicate {
+    protected RelationshipSchedule schedule;
+    protected Role role;
     HasRelationships other;
     long start, end;
 
@@ -717,7 +717,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private class EnclosedSchedPredicate implements UnaryPredicate {
+  protected class EnclosedSchedPredicate implements UnaryPredicate {
     long start;
     long end;
     public EnclosedSchedPredicate(long start, long end) {
@@ -863,7 +863,7 @@ public class InventoryPlugin extends ComponentPlugin
     //return unprovidedTasks;
   }
 
-  private List getSplitTimes(Task task, HashMap providerSched) {
+  protected List getSplitTimes(Task task, HashMap providerSched) {
     ArrayList splits = new ArrayList();
     long start = TaskUtils.getStartTime(task);
     long end = TaskUtils.getEndTime(task);
@@ -1014,73 +1014,73 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   /** Subscription for aggregatable support requests. **/
-  private IncrementalSubscription detReqSubscription;
+  protected IncrementalSubscription detReqSubscription;
 
   /** Subscription for the aggregated support request **/
   protected IncrementalSubscription aggMILSubscription;
 
   /** Subscription for the MIL tasks **/
-  private IncrementalSubscription milSubscription;
+  protected IncrementalSubscription milSubscription;
 
   /** Subscription for the Organization(s) in which this plugin resides **/
-  private IncrementalSubscription selfOrganizations;
+  protected IncrementalSubscription selfOrganizations;
 
   /** Subscription for incoming Supply tasks **/
-  private TaskScheduler supplyTaskScheduler;
-//  private IncrementalSubscription supplyTaskSubscription;
+  protected TaskScheduler supplyTaskScheduler;
+//  protected IncrementalSubscription supplyTaskSubscription;
 
   /** Subscription for incoming Projection tasks **/
-  private TaskScheduler projectionTaskScheduler;
-//  private IncrementalSubscription projectionTaskSubscription;
+  protected TaskScheduler projectionTaskScheduler;
+//  protected IncrementalSubscription projectionTaskSubscription;
 
   /** Subscription for Allocations on outgoing Refill (Supply & ProjectSupply) tasks **/
-  private IncrementalSubscription refillAllocationSubscription;
+  protected IncrementalSubscription refillAllocationSubscription;
 
   /** Subscription for my Refill (Supply & ProjectSupply) tasks **/
-  private IncrementalSubscription refillSubscription;
+  protected IncrementalSubscription refillSubscription;
 
   /** Subscription for my Non-Refill (Supply & ProjectSupply) tasks **/
-  private IncrementalSubscription nonrefillSubscription;
+  protected IncrementalSubscription nonrefillSubscription;
 
   /** Subscription for Supply/ProjectSupply Expansions **/
-  private IncrementalSubscription expansionSubscription;
+  protected IncrementalSubscription expansionSubscription;
 
   /** Subscription for InventoryPolicy **/
-  private IncrementalSubscription inventoryPolicySubscription;
+  protected IncrementalSubscription inventoryPolicySubscription;
 
   /** Subscription for OPlan object **/
-  private IncrementalSubscription oplanSubscription;
+  protected IncrementalSubscription oplanSubscription;
 
   /** Subscription for Withdraw tasks created by this plugin **/
-  private IncrementalSubscription withdrawTaskSubscription;
+  protected IncrementalSubscription withdrawTaskSubscription;
 
   /** Subscription for ProjectWithdraw tasks created by this plugin **/
-  private IncrementalSubscription projectWithdrawTaskSubscription;
+  protected IncrementalSubscription projectWithdrawTaskSubscription;
 
   /** Subscription for MaintainInventory Expansion PlanElements created by this plugin**/
-  private IncrementalSubscription MIExpansionSubscription;
+  protected IncrementalSubscription MIExpansionSubscription;
 
   /** Subscription for MaintainInventory Expansion for Top level MI task (Aggregate task) **/
-  private IncrementalSubscription MITopExpansionSubscription;
+  protected IncrementalSubscription MITopExpansionSubscription;
 
   /** Subscription for DetermineRequirements of type MaintainInventory Expansion **/
-  private IncrementalSubscription DetReqInvExpansionSubscription;
+  protected IncrementalSubscription DetReqInvExpansionSubscription;
 
   /** special subscription to oms only used in subsistence to deal with the level2 -> level6
    *  issue that occurs because subsistence does not generate level 2 tasks
    **/
-  private IncrementalSubscription Level6OMSubscription;
+  protected IncrementalSubscription Level6OMSubscription;
 
     //Org Activity subscription
-  private IncrementalSubscription orgActSubscription;
+  protected IncrementalSubscription orgActSubscription;
 
   /** Subscription for CommStatus object **/
-  private IncrementalSubscription commStatusSub;
+  protected IncrementalSubscription commStatusSub;
 
   /** Subscription for removed dispositions, need to reconcile with prediction tasks **/
-  private IncrementalSubscription dispositions;
+  protected IncrementalSubscription dispositions;
 
-  private IncrementalSubscription shortfallSummary;
+  protected IncrementalSubscription shortfallSummary;
 
   protected void setupSubscriptions() {
     if (!getBlackboardService().didRehydrate()) {
@@ -1205,7 +1205,7 @@ public class InventoryPlugin extends ComponentPlugin
 //        subscribe(new ProjectionTaskPredicate(supplyType, id, taskUtils));
   }
 
-  private static class OrgActivitiesPredicate implements UnaryPredicate {
+  protected static class OrgActivitiesPredicate implements UnaryPredicate {
     public OrgActivitiesPredicate() {
     }
     public boolean execute(Object o) {
@@ -1216,7 +1216,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
+  protected static UnaryPredicate orgsPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof Organization) {
         return ((Organization) o).isSelf();
@@ -1225,7 +1225,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   };
 
-  private static class ShortfallSumPredicate implements UnaryPredicate {
+  protected static class ShortfallSumPredicate implements UnaryPredicate {
 
     String supplyType;
 
@@ -1242,7 +1242,7 @@ public class InventoryPlugin extends ComponentPlugin
   };
 
 
-  private static class SupplyTaskPredicate
+  protected static class SupplyTaskPredicate
       implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
@@ -1263,7 +1263,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
 
-  private static class ProjectionTaskPredicate
+  protected static class ProjectionTaskPredicate
       implements TaskSchedulingPolicy.Predicate {
     String supplyType;
     String orgName;
@@ -1285,9 +1285,9 @@ public class InventoryPlugin extends ComponentPlugin
   /**
    Passes DetermineRequirements tasks of type MaintainInventory.
    **/
-  private static class DetInvReqPredicate implements UnaryPredicate {
+  protected static class DetInvReqPredicate implements UnaryPredicate {
 
-    private TaskUtils taskUtils;
+    protected TaskUtils taskUtils;
 
     public DetInvReqPredicate(TaskUtils aTaskUtils) {
       taskUtils = aTaskUtils;
@@ -1305,7 +1305,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   /** Grab the Expansion of DetReq MaintainInventory and update ARs **/
-  private static class DetReqInvExpansionPredicate implements UnaryPredicate {
+  protected static class DetReqInvExpansionPredicate implements UnaryPredicate {
     private TaskUtils taskUtils;
 
     public DetReqInvExpansionPredicate(TaskUtils aTaskUtils) {
@@ -1326,7 +1326,7 @@ public class InventoryPlugin extends ComponentPlugin
   /**
    Selects the per-inventory MaintainInventory tasks.
    **/
-  private static class MILPredicate implements UnaryPredicate {
+  protected static class MILPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
@@ -1343,7 +1343,7 @@ public class InventoryPlugin extends ComponentPlugin
    * be looking for the same task - but since the results are checked and only
    * changed if there's a difference it shouldn't be too bad.
    **/
-  private static class MITopExpansionPredicate implements UnaryPredicate {
+  protected static class MITopExpansionPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       if (o instanceof Expansion) {
         Task parent = ((Expansion) o).getTask();
@@ -1360,7 +1360,7 @@ public class InventoryPlugin extends ComponentPlugin
   /**
    Selects the aggregate MaintainInventory task
    **/
-  private static class AggMILPredicate implements UnaryPredicate {
+  protected static class AggMILPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
@@ -1373,7 +1373,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   /** Selects the MaintainInventory Expansions we create **/
-  private static class MIExpansionPredicate implements UnaryPredicate {
+  protected static class MIExpansionPredicate implements UnaryPredicate {
     String supplyType;
     TaskUtils taskUtils;
 
@@ -1408,7 +1408,7 @@ public class InventoryPlugin extends ComponentPlugin
   /**
    Selects the Oplan objects
    **/
-  private static class OplanPredicate implements UnaryPredicate {
+  protected static class OplanPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       return o instanceof Oplan;
     }
@@ -1418,7 +1418,7 @@ public class InventoryPlugin extends ComponentPlugin
    Passes Inventory assets that have a valid LogisticsInventoryPG
    **/
 
-  private static class InventoryPredicate implements UnaryPredicate {
+  protected static class InventoryPredicate implements UnaryPredicate {
     String supplyType;
 
     public InventoryPredicate(String type) {
@@ -1441,7 +1441,7 @@ public class InventoryPlugin extends ComponentPlugin
       return false;
     }
 
-    private String getAssetType(LogisticsInventoryPG invpg) {
+    protected String getAssetType(LogisticsInventoryPG invpg) {
       Asset a = invpg.getResource();
       if (a == null) return null;
       SupplyClassPG pg = (SupplyClassPG)
@@ -1564,7 +1564,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private class ExpansionPredicate implements UnaryPredicate {
+  protected class ExpansionPredicate implements UnaryPredicate {
     String supplyType;
     String orgName;
     TaskUtils taskUtils;
@@ -1591,7 +1591,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private class InventoryPolicyPredicate implements UnaryPredicate {
+  protected class InventoryPolicyPredicate implements UnaryPredicate {
     String type;
 
     public InventoryPolicyPredicate(String type) {
@@ -1642,7 +1642,7 @@ public class InventoryPlugin extends ComponentPlugin
     return tasksWithoutPEs;
   }
 
-  private class WithdrawPredicate implements UnaryPredicate {
+  protected class WithdrawPredicate implements UnaryPredicate {
     String supplyType;
 
     public WithdrawPredicate(String type) {
@@ -1662,7 +1662,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private class ProjectWithdrawPredicate implements UnaryPredicate {
+  protected class ProjectWithdrawPredicate implements UnaryPredicate {
     String supplyType;
 
     public ProjectWithdrawPredicate(String type) {
@@ -1682,7 +1682,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private class OperatingModePredicate implements UnaryPredicate {
+  protected class OperatingModePredicate implements UnaryPredicate {
     String supplyType;
     String level;
 
@@ -1702,11 +1702,11 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private void expandIncomingRequisitions(Collection tasks) {
+  protected void expandIncomingRequisitions(Collection tasks) {
     supplyExpander.expandAndDistributeRequisitions(tasks);
   }
 
-  private boolean expandIncomingProjections(Collection tasks) {
+  protected boolean expandIncomingProjections(Collection tasks) {
     return supplyExpander.expandAndDistributeProjections(tasks);
   }
 
@@ -1714,7 +1714,7 @@ public class InventoryPlugin extends ComponentPlugin
    Add some inventories to the inventoryHash.
    Method called during rehydration to populate inventory hash
    **/
-  private void addRehydratedInventories(Collection inventories) {
+  protected void addRehydratedInventories(Collection inventories) {
     for (Iterator i = inventories.iterator(); i.hasNext();) {
       Inventory inv = (Inventory) i.next();
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
@@ -1753,13 +1753,13 @@ public class InventoryPlugin extends ComponentPlugin
     inventoryHash.put(item, inventory);
   }
 
-  private void removeInventories(Enumeration inventories) {
+  protected void removeInventories(Enumeration inventories) {
     while (inventories.hasMoreElements()) {
       removeInventory((Inventory) inventories.nextElement());
     }
   }
 
-  private void removeInventory(Inventory inventory) {
+  protected void removeInventory(Inventory inventory) {
     String item = getInventoryType(inventory);
     inventoryHash.remove(item);
   }
@@ -1964,7 +1964,7 @@ public class InventoryPlugin extends ComponentPlugin
    Read the Plugin parameters(Accepts key/value pairs)
    Initializes supplyType and inventoryFile
    **/
-  private HashMap readParameters() {
+  protected HashMap readParameters() {
     Collection p = getParameters();
 
     if (p.isEmpty()) {
@@ -2015,7 +2015,7 @@ public class InventoryPlugin extends ComponentPlugin
     return map;
   }
 
-//   private String getInventoryFile(String type) {
+//   protected String getInventoryFile(String type) {
 //     String result = null;
 //     // if defined in plugin argument list
 //     String inv_file = null;
@@ -2035,7 +2035,7 @@ public class InventoryPlugin extends ComponentPlugin
 //     return result;
 //   }
 
-  private String getAgentPrefix(String agentId) {
+  protected String getAgentPrefix(String agentId) {
       int i=agentId.indexOf(".");
       if(i<=0) {
 	  return agentId;
@@ -2045,7 +2045,7 @@ public class InventoryPlugin extends ComponentPlugin
       }
   }
 
-  private String getClusterSuffix(String clusterId) {
+  protected String getClusterSuffix(String clusterId) {
     String result = null;
     int i = clusterId.lastIndexOf("-");
     if (i == -1) {
@@ -2166,7 +2166,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private Organization getMyOrganization(Enumeration orgs) {
+  protected Organization getMyOrganization(Enumeration orgs) {
     Organization myOrg = null;
     // look for this organization
     if (orgs.hasMoreElements()) {
@@ -2405,7 +2405,7 @@ public class InventoryPlugin extends ComponentPlugin
     return alarm;
   }
   //
-  private void processDetReq(Collection addedDRs) {
+  protected void processDetReq(Collection addedDRs) {
     // with one oplan we should only have one DR for MI.
     Iterator drIt = addedDRs.iterator();
     if (drIt.hasNext()) {
@@ -2437,7 +2437,7 @@ public class InventoryPlugin extends ComponentPlugin
     return actionableInvs;
   }
 
-  private void rebuildPGCustomerHash() {
+  protected void rebuildPGCustomerHash() {
     Collection changedInventories = getTouchedInventories();
     Iterator invIter = changedInventories.iterator();
     Inventory inventory;
@@ -2450,7 +2450,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private boolean didOrgRelationshipsChange() {
+  protected boolean didOrgRelationshipsChange() {
     boolean relSchedChange=false;
     if (selfOrganizations.hasChanged())  {
       Set changeReports = selfOrganizations.getChangeReports(getMyOrganization());
@@ -2602,7 +2602,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private final class CougTimeAlarm implements Alarm {
+  protected final class CougTimeAlarm implements Alarm {
     private long expirationTime;
     private boolean expired = false;
 
@@ -2641,7 +2641,7 @@ public class InventoryPlugin extends ComponentPlugin
       return was;
     }
   }
-  private void testBG() {
+  protected void testBG() {
     Iterator inv_it = inventoryHash.values().iterator();
     Inventory inv;
     LogisticsInventoryPG logInvPG = null;
