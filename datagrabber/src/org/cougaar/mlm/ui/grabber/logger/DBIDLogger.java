@@ -31,7 +31,7 @@ import java.util.Date;
  *
  * @since 2/01/01
  **/
-public class DBIDLogger implements IDLogger{
+public class DBIDLogger extends AbstractLogger implements IDLogger{
 
   //Constants:
   ///////////
@@ -49,8 +49,7 @@ public class DBIDLogger implements IDLogger{
   //Variables:
   ////////////
 
-  protected int verbosityLevel=NORMAL;
-  protected DBConfig dbConfig;
+    protected DBConfig dbConfig;
   protected Statement statement;
   
   private StringBuffer sb=new StringBuffer();
@@ -96,13 +95,7 @@ public class DBIDLogger implements IDLogger{
     verbosityLevel=level;
   }
 
-  public boolean isWarningEnabled   () { return verbosityLevel <= WARNING; }
-  public boolean isImportantEnabled () { return verbosityLevel <= IMPORTANT; }
-  public boolean isNormalEnabled    () { return verbosityLevel <= NORMAL; }
-  public boolean isMinorEnabled     () { return verbosityLevel <= MINOR; }
-  public boolean isTrivialEnabled   () { return verbosityLevel <= TRIVIAL; }
-
-  //Actions:
+    //Actions:
 
   protected int incSeqNumber(){
     return curSeq++;

@@ -26,12 +26,7 @@ package org.cougaar.mlm.ui.grabber.logger;
  *
  * @since 2/01/01
  **/
-public class StdLogger implements IDLogger{
-
-  //Variables:
-  ////////////
-
-  int verbosityLevel=NORMAL;
+public class StdLogger extends AbstractLogger implements IDLogger{
 
   //Constructors:
   ///////////////
@@ -48,12 +43,6 @@ public class StdLogger implements IDLogger{
   public void setVerbosityLevel(int level){
     verbosityLevel=level;
   }
-
-  public boolean isWarningEnabled   () { return verbosityLevel <= WARNING; }
-  public boolean isImportantEnabled () { return verbosityLevel <= IMPORTANT; }
-  public boolean isNormalEnabled    () { return verbosityLevel <= NORMAL; }
-  public boolean isMinorEnabled     () { return verbosityLevel <= MINOR; }
-  public boolean isTrivialEnabled   () { return verbosityLevel <= TRIVIAL; }
 
   private static String pad(String s, int l){
     StringBuffer sb = new StringBuffer(s);
