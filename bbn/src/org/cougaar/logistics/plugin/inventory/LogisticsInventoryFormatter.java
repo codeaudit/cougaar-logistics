@@ -39,6 +39,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
@@ -620,19 +621,10 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("INVENTORY LEVELS: END");
     }
 
-    protected void logToXMLOutput(Asset invAsset,
-				  Organization anOrg,
-				  ArrayList withdrawList,
-				  ArrayList projWithdrawList,
-				  ArrayList countedDemandList,
-				  ArrayList resupplyList,
-				  ArrayList projResupplyList,
-				  Schedule  reorderLevels,
-				  Schedule  inventoryLevels,
-				  Schedule  targetLevels,
-				  boolean humanReadable,
-				  long aCycleStamp) {
-	cycleStamp = aCycleStamp;
+    protected void logHeaderStartToXMLOutput(Asset invAsset,
+					     Organization anOrg,
+					     boolean level2Inv,
+					     boolean humanReadable){
 
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
@@ -648,6 +640,25 @@ public class LogisticsInventoryFormatter {
 
 	header = header + " unit=" + getUnitForAsset(invAsset);
 
+	TypeIdentificationPG typeIdPG = invAsset.getTypeIdentificationPG();
+	if (typeIdPG == null) {
+	    logger.warn("No typeIdentificationPG for asset");
+	}
+
+	String nomenclature = typeIdPG.getNomenclature();
+
+	if(nomenclature==null){
+	    nomenclature = assetName;
+	    if(level2Inv) {
+		SupplyClassPG supplyPG = (SupplyClassPG)invAsset.searchForPropertyGroup(SupplyClassPG.class);
+		if (supplyPG != null) {
+		    nomenclature = supplyPG.getSupplyType();
+		}
+	    }
+	} 
+
+	header = header+" nomenclature=" + nomenclature;
+
 	if(humanReadable) {
 	    header = header+" cDay="+(new Date(startCDay.getTime()))+ ">";
 	}
@@ -656,17 +667,39 @@ public class LogisticsInventoryFormatter {
 	}
 
 	writeNoCycleLn(header);
-	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
-	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,humanReadable,aCycleStamp);
-	logResupplyToXMLOutput(resupplyList,projResupplyList,humanReadable,aCycleStamp);
-	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,humanReadable,aCycleStamp);
-
+    }
+    
+    protected void logHeaderEndToXMLOutput(boolean humanReadable) {
 	if(humanReadable) {
 	    writeNoCycleLn("</" + INVENTORY_HEADER_PERSON_READABLE_TAG + ">");
 	}
 	else {
 	    writeNoCycleLn("</" + INVENTORY_HEADER_GUI_TAG + ">");
 	}
+    }
+
+    protected void logToXMLOutput(Asset invAsset,
+				  Organization anOrg,
+				  ArrayList withdrawList,
+				  ArrayList projWithdrawList,
+				  ArrayList countedDemandList,
+				  ArrayList resupplyList,
+				  ArrayList projResupplyList,
+				  Schedule  reorderLevels,
+				  Schedule  inventoryLevels,
+				  Schedule  targetLevels,
+				  boolean level2Inv,
+				  boolean humanReadable,
+				  long aCycleStamp) {
+	cycleStamp = aCycleStamp;
+
+	logHeaderStartToXMLOutput(invAsset,anOrg,level2Inv,humanReadable);
+
+	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
+	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,humanReadable,aCycleStamp);
+	logResupplyToXMLOutput(resupplyList,projResupplyList,humanReadable,aCycleStamp);
+	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,humanReadable,aCycleStamp);
+	logHeaderEndToXMLOutput(humanReadable);
     }
     
 
@@ -680,6 +713,7 @@ public class LogisticsInventoryFormatter {
 				  Schedule  reorderLevels,
 				  Schedule  inventoryLevels,
 				  Schedule  targetLevels,
+				  boolean level2Inv,
 				  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 	writeNoCycleLn("<" + INVENTORY_DUMP_TAG + ">");
@@ -687,12 +721,12 @@ public class LogisticsInventoryFormatter {
 			  projWithdrawList,countedDemandList,
 			  resupplyList,projResupplyList,
 			  reorderLevels,inventoryLevels,targetLevels,
-			  true,aCycleStamp);
+			  level2Inv,true,aCycleStamp);
 	logToXMLOutput(invAsset,anOrg,withdrawList,
 			  projWithdrawList,countedDemandList,
 			  resupplyList,projResupplyList,
 			  reorderLevels,inventoryLevels,targetLevels,
-			  false,aCycleStamp);
+			  level2Inv,false,aCycleStamp);
 	writeNoCycleLn("</" + INVENTORY_DUMP_TAG + ">");
 	try {
 	    output.flush();
@@ -718,6 +752,7 @@ public class LogisticsInventoryFormatter {
 			   logInvPG.getBufferedCritLevels(),
 			   logInvPG.getBufferedInvLevels(),
 			   logInvPG.getBufferedTargetLevels(),
+			   logInvPG.getIsLevel2(),
 			   aCycleStamp);
 	}
     }
