@@ -122,7 +122,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
   public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
 
-  public final int NUM_TRANSPORT_CLASSES = 6;
+  public final int NUM_TRANSPORT_CLASSES = 9;
   public final int ASSET_CLASS_UNKNOWN = 0;
   public final int ASSET_CLASS_1 = 1;
   public final int ASSET_CLASS_2 = 2;
@@ -377,30 +377,38 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     categories[3] = new HashSet();
     categories[4] = new HashSet();
     categories[5] = new HashSet();
-
-    Set category;
+    categories[6] = new HashSet();
+    categories[7] = new HashSet();
+    categories[8] = new HashSet();
 
     for (Iterator iter = assets.iterator(); iter.hasNext();) { 
       GLMAsset asset = (GLMAsset) iter.next();
       String ccc = getCategory(asset);
 
-      if (ccc.charAt(0) == 'R')
-	categories[4].add(asset);
-      else {
-	switch (ccc.charAt(1)) {
-	case '0': // non-air
+      switch (ccc.charAt(1)) {
+      case '0': // non-air
+	if (ccc.charAt(0) == 'R')
+	  categories[4].add(asset);
+	else
 	  categories[0].add(asset); break;
-	case '1': // outsized
+      case '1': // outsized
+	if (ccc.charAt(0) == 'R')
+	  categories[5].add(asset);
+	else
 	  categories[1].add(asset); break;
-	case '2': // oversized
+      case '2': // oversized
+	if (ccc.charAt(0) == 'R')
+	  categories[6].add(asset);
+	else
 	  categories[2].add(asset); break;
-	default: // bulk or unknown
-	  if (asset instanceof Container)
-	    categories[5].add (asset);
-	  else
-	    categories[3].add(asset);
-	  break;
-	}
+      default: // bulk or unknown
+	if (asset instanceof Container)
+	  categories[8].add (asset);
+	else if (ccc.charAt(0) == 'R')
+	  categories[7].add(asset);
+	else
+	  categories[3].add(asset);
+	break;
       }
     }
 
@@ -419,12 +427,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     try {
       NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-      CargoCatCodeDimensionPG cccd = setDimensions (newPhysicalPG, uniformAssets);
+      CargoCatCodeDimensionPG cccd = setDimensions (parentTask, newPhysicalPG, uniformAssets);
       lowFiPG.setCCCDim(cccd);
 
       lowFiAsset = 
 	(GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "Level2Prototype", 
-					       "Level2_" + /*getNextID() + "_" +*/ getTransportType(cccd));
+					       "Level2_" + getTransportType(cccd) + "_" + getNextID());
       ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("Level2Aggregate");
 
       lowFiPG.setOriginalAsset (lowFiAsset); // now subobject can have a pointer back to parent
@@ -466,22 +474,20 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   /** return a human-readable string to indicate transport type */
   protected String getTransportType (CargoCatCodeDimensionPG cccd) {
     String ccc = cccd.getCargoCatCode ();
-
-    if (ccc.charAt(0) == 'R')
-      return "Roadable";
+    String suffix = (ccc.charAt(0) == 'R') ? "_Roadable" : "";
 
     switch (ccc.charAt(1)) {
     case '0': // non-air
-      return "Non-air Transport";
+      return "Non-air Transport" + suffix;
     case '1': // outsized
-      return "Outsized";
+      return "Outsized" + suffix;
     case '2': // oversized
-      return "Oversized";
+      return "Oversized" + suffix;
     default: // bulk or unknown
       if (cccd.getIsContainer())
-	return "Container";
+	return "Container" + suffix;
       else
-	return "bulk";
+	return "Bulk" + suffix;
     }
   }
 
@@ -577,7 +583,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * @param realAssets to sum
    * @param physicalPG to set with their aggregate dimensions
    **/
-  protected CargoCatCodeDimensionPG setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
+  protected CargoCatCodeDimensionPG setDimensions (Task parentTask, NewPhysicalPG physicalPG, Collection realAssets) {
     double length = 0.0;
     double width  = 0.0;
     double area   = 0.0;
@@ -618,7 +624,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	volume = itemPhysicalPG.getVolume().getCubicMeters() * q;
 	mass   = itemPhysicalPG.getMass().getKilograms() * q;
 	
-	addToDimension (ccc, q, itemPhysicalPG, cccdPG); //cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
+	if (area == 0.0d || volume == 0.0d || mass == 0.0d)
+	  warn (".setDimensions - asset " + firstItem + 
+		" for task " + parentTask.getUID() + " has a zero dimension.");
+		
+	addToDimension (ccc, q, itemPhysicalPG, cccdPG);
 
 	if (baseAsset instanceof Container)
 	  cccdPG.setIsContainer(true);
@@ -638,11 +648,18 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	else {
 	  // it doesn't make sense to display aggregate length, width, height,
 	  // since they won't correspond to area and volume
-	  area   += itemPhysicalPG.getFootprintArea().getSquareMeters();
-	  volume += itemPhysicalPG.getVolume().getCubicMeters();
-	  mass   += itemPhysicalPG.getMass().getKilograms();
+	  double itemArea   = itemPhysicalPG.getFootprintArea().getSquareMeters();
+	  double itemVolume = itemPhysicalPG.getVolume().getCubicMeters();
+	  double itemMass   = itemPhysicalPG.getMass().getKilograms();
+	  area   += itemArea;
+	  volume += itemVolume;
+	  mass   += itemMass;
 
-	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdPG); //cccdBulkPG, cccdOversizePG, cccdOutsizePG, cccdNonAirPG);
+	  if (itemArea == 0.0d || itemVolume == 0.0d || itemMass == 0.0d)
+	    warn (".setDimensions - asset " + asset + 
+		  " for task " + parentTask.getUID() + " has a zero dimension.");
+
+	  addToDimension (ccc, 1.0, itemPhysicalPG, cccdPG);
 	}
       }
       if (last instanceof Container)
