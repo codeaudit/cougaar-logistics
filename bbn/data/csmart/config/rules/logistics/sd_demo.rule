@@ -1,0 +1,48 @@
+####################################################
+# Rule to insert/replace SD servlets and plugins
+
+
+new_plugin1 = "org.cougaar.logistics.plugin.servicediscovery.ALDynamicSDClientPlugin"
+old_plugin1 = "org.cougaar.servicediscovery.plugin.SDClientPlugin"
+new_plugin2 = "org.cougaar.logistics.plugin.servicediscovery.ALProviderPlugin"
+old_plugin2 = "org.cougaar.servicediscovery.plugin.SDProviderPlugin"
+new_plugin3 = "org.cougaar.logistics.plugin.servicediscovery.ALRegistrationPlugin"
+old_plugin3 = "org.cougaar.servicediscovery.plugin.SDRegistrationPlugin"
+sd_servlet = "org.cougaar.logistics.servlet.SDUseCaseServlet"
+relationship_servlet = "org.cougaar.logistics.ui.servicediscovery.RelationshipScheduleServletComponent"
+
+society.each_agent do |agent|
+  agent.each_component do |c|
+    case c.classname
+     when old_plugin1 
+       c.classname = new_plugin1
+       c.name =~ /^.*\((.*)\)$/
+       c.name = "#{new_plugin1}(#$1)"
+     when old_plugin2 
+       c.classname = new_plugin2
+       c.name =~ /^.*\((.*)\)$/
+       c.name = "#{new_plugin2}(#$1)"
+     when old_plugin3 
+       c.classname = new_plugin3
+       c.name =~ /^.*\((.*)\)$/
+       c.name = "#{new_plugin3}(#$1)"
+    end
+  end
+  re = /^.*Provider.*$/
+  agent.each_facet(:role) do |facet|
+    if re.match(facet[:role])
+      agent.add_component do |c|
+        c.classname = sd_servlet
+        c.priority = 'COMPONENT'
+        c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+      end
+    end
+  end
+  agent.add_component do |c|
+    c.classname = relationship_servlet
+    c.add_argument("org.cougaar.logistics.ui.servicediscovery.RelationshipScheduleServlet")
+    c.add_argument("/relationship_schedule")
+    c.priority = 'COMPONENT'
+    c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+  end
+end
