@@ -222,10 +222,43 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 //                               inventoryPlugin.getSupplyType() + " for item:"+
 //                               debugItem);
 	    if(refillBucket < firstLegalRefillBucket) {
-		if(logger.isWarnEnabled()) {
-		    logger.warn("At " + inventoryPlugin.getOrgName() +
-				"-" + myItemId + ":" +
-				" not ordering a refill on day when we've fallen below critical level, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+		double criticalLevel = thePG.getCriticalLevel(refillBucket);
+		
+		String refillBucketTime = getTimeUtils().dateString(thePG.convertBucketToTime(refillBucket));
+
+		if((criticalLevel <= 0) || (invLevel <= 0)) {
+		    if((criticalLevel < 0) && logger.isWarnEnabled()) {
+			logger.warn("At " + inventoryPlugin.getOrgName() +
+				    "-" + inventoryPlugin.getSupplyType() +
+				    "-Item:" + myItemId + ":" +
+				    "Critical Level is " + criticalLevel + 
+				    " and inventory level is " + invLevel + "!" );
+		    }
+		    else if (logger.isDebugEnabled()) {
+			logger.debug("At " + inventoryPlugin.getOrgName() +
+				     "-" + inventoryPlugin.getSupplyType() +
+				     "-Item:" + myItemId + ":" +
+				     "Critical Level is " + criticalLevel + 
+				     " and inventory level is " + invLevel + "!" );
+		    }
+		}
+		//if the drop below critical level is greater than 5% then log a warning otherwise
+		//a debug message
+		else if((criticalLevel - invLevel) > (0.20 * criticalLevel)) {
+		    if(logger.isDebugEnabled()) {
+			logger.debug("At " + inventoryPlugin.getOrgName() +
+				    "-" + inventoryPlugin.getSupplyType() +
+				    "-Item:" + myItemId + ":" +
+				    " not ordering a refill on day " + refillBucketTime +
+				    " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+		    }
+		}
+		else if (logger.isDebugEnabled()) {
+		    logger.debug("At " + inventoryPlugin.getOrgName() +
+				 "-" + inventoryPlugin.getSupplyType() +
+				 "-Item:" + myItemId + ":" +
+				 " not ordering a refill on day " + refillBucketTime +
+				 " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
 		}
 	    }
             else if(refillQty > 0.00) {
