@@ -25,13 +25,15 @@ import  org.cougaar.mlm.ui.grabber.config.DBConfig;
 import  org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import  org.cougaar.mlm.ui.grabber.controller.Controller;
 
+import java.util.*;
+
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 
 /**
  * Looks for prototypes with repeated ALP nomenclature
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/26/01
  **/
@@ -78,9 +80,8 @@ public class RepeatNomenclatureTest extends Test{
     String pNomenclature2 = abbrev2+"."+DGPSPConstants.COL_ALP_NOMENCLATURE;
 
     String sqlQuery =
-      "select "+pPrototype1+", "+pNomenclature2+"\n"+
-      "from "+protoTable+" "+abbrev1+", "+protoTable+" "+abbrev2+"\n"+
-      "where "+pPrototype1+" <> "+pPrototype2+" and "+pNomenclature1+" = "+pNomenclature2+"\n"+
+      "select "+pPrototype1+", "+pNomenclature1+"\n"+
+      "from "+protoTable+" "+abbrev1+"\n"+
       "order by "+pNomenclature1;
 
     return sqlQuery;
@@ -100,6 +101,9 @@ public class RepeatNomenclatureTest extends Test{
 					")");
   }
 
+    /** keeps track of duplicates in a map, 
+     * then if any nomen key maps to a list with more than one prototype, these get inserted as rows
+     */
   protected void insertResults (Logger l, Statement s, int run) {
     String prototype, name = null;
     ResultSet rs=null;
@@ -107,6 +111,11 @@ public class RepeatNomenclatureTest extends Test{
     
     try {
       sql = getQuery(run);
+
+      if (l.isMinorEnabled()) {
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,".insertResults - sql was " + sql);
+      }
+	  
       rs=s.executeQuery(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
@@ -115,12 +124,32 @@ public class RepeatNomenclatureTest extends Test{
     }
     
     try {
+	Map nameToProto = new HashMap ();
+
       while(rs.next()){
 	prototype = rs.getString(1);
 	name = rs.getString(2);
 
-	insertRow (l, s, run, prototype, name);
+	List protoList = null;
+	if ((protoList = (List) nameToProto.get (name)) == null) {
+	    nameToProto.put (name, (protoList=new ArrayList()));
+	}
+
+	protoList.add (prototype);
       }	
+
+      List keys = new ArrayList(nameToProto.keySet());
+      Collections.sort (keys);
+
+      for (Iterator iter = keys.iterator(); iter.hasNext(); ){
+	  String foundName = (String) iter.next();
+	  List protos = (List) nameToProto.get(foundName);
+	  if (protos.size () > 1) {
+	      for (Iterator iter2 = protos.iterator(); iter2.hasNext(); ) 
+		  insertRow (l, s, run, (String) iter2.next(), foundName);
+	  }
+      }
+
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "RepeatNomenclatureTest.insertResults - Problem walking results.",sqle);
