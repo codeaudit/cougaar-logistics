@@ -20,8 +20,8 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import com.bbn.vishnu.objects.Reusable;
-import com.bbn.vishnu.objects.SchObject;
+import com.bbn.vishnu.scheduling.Reusable;
+import com.bbn.vishnu.scheduling.SchObject;
 
 import java.util.Date;
 
