@@ -126,7 +126,6 @@ public class LogisticsInventoryServlet
    */
   private static class InventoryGetter {
     
-    private String myID;
     public String desiredAssetName = "";
     ServletOutputStream out;
     

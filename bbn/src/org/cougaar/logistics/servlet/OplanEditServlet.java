@@ -57,7 +57,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
   private ArrayList orgActivities = new ArrayList();
   
   private HashMap modifiedOrgActivities = new HashMap();
-  private HashSet changedOplans = new HashSet();
+  //private HashSet changedOplans = new HashSet();
 
 
   protected ClusterIdentifier agentId;
@@ -567,12 +567,12 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       orgActivity.setOpTempo(modifiedOrgActivity.getOpTempo());
       orgActivity.setTimeSpan(modifiedOrgActivity.getTimeSpan());
 
-      boolean status = blackboard.publishChange(orgActivity);
       /*
-      System.out.println("Publish status of " + status + " for " + orgActivity);
-      System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
-                         orgActivity.getTimeSpan().getStartDate() + " " +
-                         orgActivity.getTimeSpan().getEndDate());
+	boolean status = blackboard.publishChange(orgActivity);
+	System.out.println("Publish status of " + status + " for " + orgActivity);
+	System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
+	orgActivity.getTimeSpan().getStartDate() + " " +
+	orgActivity.getTimeSpan().getEndDate());
       */
     }
     /*
