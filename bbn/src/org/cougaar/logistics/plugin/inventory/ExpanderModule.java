@@ -59,8 +59,16 @@ public interface ExpanderModule {
   /**
    * Given removed Supply tasks, remove Withdraw child task from
    * the inventory's behavior group.
+   * (Ray) The above lies. The tasks are actually withdraw tasks.
    **/
   void handleRemovedRequisitions(Collection tasks);
+
+  /**
+   * (Ray) Given removed Supply tasks, remove their expansions. This
+   * is not the same as handleRemovedRequisitions, which actually
+   * removes withdraw tasks, not requisitions.
+   **/
+  void handleRemovedRealRequisitions(Collection tasks);
   
   /** 
    * Given changed Supply tasks, Withdraw tasks are updated and
@@ -80,4 +88,3 @@ public interface ExpanderModule {
    **/
   void updateAllocationResult(IncrementalSubscription sub);
 }
-

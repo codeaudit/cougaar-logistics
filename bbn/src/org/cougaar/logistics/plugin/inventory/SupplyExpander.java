@@ -24,45 +24,42 @@ package org.cougaar.logistics.plugin.inventory;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.blackboard.Transaction;
+import org.cougaar.core.component.Component;
+import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.TaskScoreTable;
-import org.cougaar.planning.ldm.plan.Verb;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.NewWorkflow;
-import org.cougaar.planning.ldm.plan.AspectRate;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.Allocation;
-import org.cougaar.planning.ldm.plan.AllocationResultAggregator;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Workflow;
-
+import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.util.UID;
+//import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.logistics.ldm.Constants;
-import org.cougaar.glm.ldm.asset.Inventory;
-
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.plan.Allocation;
+import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.AllocationResultAggregator;
+import org.cougaar.planning.ldm.plan.AspectRate;
+import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.NewPlanElement;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.Preference;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.ScoringFunction;
-
-import org.cougaar.planning.plugin.util.PluginHelper;
-
+import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.TaskScoreTable;
+import org.cougaar.planning.ldm.plan.Verb;
+import org.cougaar.planning.ldm.plan.Workflow;
 import org.cougaar.planning.plugin.util.AllocationResultHelper;
-
+import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.UnaryPredicate;
-
-import org.cougaar.glm.ldm.asset.Organization;
-
-import org.cougaar.core.component.Component;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.component.ServiceBroker;
 
 public class SupplyExpander extends InventoryModule implements ExpanderModule {
 
@@ -183,6 +180,28 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
         }
     }
 
+  private static class SupplyTaskKey {
+    private long endTime;
+    private Object customer;
+    private int hc;
+
+    public SupplyTaskKey(Task aTask) {
+      endTime = TaskUtils.getEndTime(aTask);
+      customer = TaskUtils.getCustomer(aTask);
+      hc = ((int) endTime) ^ ((int) (endTime >> 32)) ^ customer.hashCode();
+    }
+    public int hashCode() {
+      return hc;
+    }
+    public boolean equals(Object o) {
+      if (o instanceof SupplyTaskKey) {
+        SupplyTaskKey that = (SupplyTaskKey) o;
+        return this.endTime == that.endTime && this.customer.equals(that.customer);
+      }
+      return false;
+    }
+  }
+
     protected static final long MSEC_PER_MIN =  60 * 1000;
     protected static final long MSEC_PER_HOUR = MSEC_PER_MIN *60;
     public static final long  DEFAULT_ORDER_AND_SHIPTIME = 24 * MSEC_PER_HOUR; // second day
@@ -199,6 +218,8 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 
   private MessageAddress clusterId;
 
+  private Map supplyTaskOfTaskKey;
+  private Map supplyTaskKeyOfTaskUID = new HashMap();
 
     public SupplyExpander(InventoryPlugin imPlugin) {
 	super(imPlugin);
@@ -231,7 +252,45 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	Task aTask, wdrawTask;
 	Iterator taskIter = tasks.iterator();
 	while (taskIter.hasNext()) {
-	    aTask = (Task)taskIter.next();
+	    aTask = (Task) taskIter.next();
+            SupplyTaskKey key = getSupplyTaskKey(aTask);
+            Task existingTask = getExistingTask(key);
+            if (isPrediction(aTask)) {
+              if (existingTask != null) {
+                if (logger.isWarnEnabled()) {
+                  logger.warn("SupplyExpander rescinding redundant prediction: " + aTask);
+                } else if (logger.isDebugEnabled()) {
+                  logger.debug("SupplyExpander rescinding unnecessary predicton: " + aTask);
+                }
+                inventoryPlugin.publishRemove(aTask); // Probably a bug
+                continue;
+              }
+              if (logger.isDebugEnabled()) {
+                logger.debug("SupplyExpander adding prediction: " + aTask);
+              }
+              putExistingTask(key, aTask);
+            } else {
+              putExistingTask(key, aTask); // Regardless of what follows, this is now the prevailing task for this slot
+              if (existingTask != null && isPrediction(existingTask)) {
+                // Maybe we can use the withdraw of the prediction
+                NewPlanElement pe = (NewPlanElement) existingTask.getPlanElement();
+                inventoryPlugin.publishRemove(existingTask);
+                if (logger.isDebugEnabled()) {
+                  logger.debug("SupplyExpander replacing prediction with: " + aTask);
+                }
+                if (pe != null) {
+                  pe.resetTask(aTask);
+                  // Cause the existing estimated AllocationResult of the expansion to be sent for the new task.
+                  Transaction.noteChangeReport(pe, new PlanElement.EstimatedResultChangeReport());
+                  inventoryPlugin.publishChange(pe);
+                  continue;     // No need to process the task itself
+                }
+              } else {
+                if (logger.isDebugEnabled()) {
+                  logger.debug("Adding supply task " + aTask);
+                }
+              }
+            }
 	    wdrawTask = expandDemandTask(aTask, createWithdrawTask(aTask));
 	    logInvPG = getLogisticsInventoryPG(wdrawTask);
 	    if (logInvPG != null) {
@@ -242,14 +301,31 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     }
 
   public void handleRemovedRequisitions(Collection tasks) {
-    LogisticsInventoryPG thePG;
-    Task aTask;
     Iterator taskIter = tasks.iterator();
     while (taskIter.hasNext()) {
-      aTask = (Task)taskIter.next();
-      thePG = getLogisticsInventoryPG(aTask);
+      Task aTask = (Task)taskIter.next();
+      LogisticsInventoryPG thePG = getLogisticsInventoryPG(aTask);
       if (thePG != null) {
 	thePG.removeWithdrawRequisition(aTask);
+      }
+    }
+  }
+
+  public void handleRemovedRealRequisitions(Collection tasks) {
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      Task aTask = (Task)taskIter.next();
+      SupplyTaskKey key = getSupplyTaskKey(aTask);
+      Task existingTask = getExistingTask(key);
+      if (existingTask != null) {
+        if (logger.isDebugEnabled()) {
+          if (isPrediction(existingTask)) {
+            logger.debug("SupplyExpander removing prediction: " + existingTask);
+          } else {
+            logger.debug("SupplyExpander removing requisition: " + existingTask);
+          }
+        }
+        removeExistingTask(key);
       }
     }
   }
@@ -361,6 +437,57 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	}
     }
 
+
+  private static boolean isPrediction(Task aTask) {
+    PrepositionalPhrase for_pp = aTask.getPrepositionalPhrase(Constants.Preposition.FOR);
+    String forOrgName = (String) for_pp.getIndirectObject();
+    String fromOrgName = aTask.getSource().toString();
+    return !forOrgName.equals(fromOrgName);
+  }
+
+  /**
+   * Create the supplyTaskMap if necessary. We populate the map with
+   * the current prevailing task for every particular customer/time.
+   * The prevailing task is always the one task having a PlanElement
+   * (Expansion). No further checking is required
+   **/
+  private synchronized Map getSupplyTaskOfTaskKey() {
+    if (supplyTaskOfTaskKey == null) {
+      supplyTaskOfTaskKey = new HashMap();
+      Iterator i = inventoryPlugin.getSupplyTaskSubscription().iterator();
+      while (i.hasNext()) {
+        Task aTask = (Task) i.next();
+        // Ignore tasks without plan elements for now; they will be processed later.
+        if (aTask.getPlanElement() == null) continue;
+        SupplyTaskKey key = getSupplyTaskKey(aTask);
+        supplyTaskOfTaskKey.put(key, aTask);
+        supplyTaskKeyOfTaskUID.put(aTask.getUID(), key);
+      }
+    }
+    return supplyTaskOfTaskKey;
+  }
+
+  private Task getExistingTask(SupplyTaskKey key) {
+    return (Task) getSupplyTaskOfTaskKey().get(key);
+  }
+
+  private void putExistingTask(SupplyTaskKey key, Task aTask) {
+    getSupplyTaskOfTaskKey().put(key, aTask);
+  }
+
+  private void removeExistingTask(SupplyTaskKey key) {
+    getSupplyTaskOfTaskKey().remove(key);
+  }
+
+  private SupplyTaskKey getSupplyTaskKey(Task aTask) {
+    UID uid = aTask.getUID();
+    SupplyTaskKey key = (SupplyTaskKey) supplyTaskKeyOfTaskUID.get(uid);
+    if (key == null) {
+      key = new SupplyTaskKey(aTask);
+      supplyTaskKeyOfTaskUID.put(uid, key);
+    }
+    return key;
+  }
 
   private Task expandDemandTask(Task parentTask, Task withdrawTask) {
     Vector expand_tasks = new Vector();

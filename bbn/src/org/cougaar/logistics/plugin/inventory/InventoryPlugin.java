@@ -49,6 +49,7 @@ import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.planning.service.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
@@ -237,10 +238,11 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   public LoggingService getLoggingService(Object requestor) {
-    return (LoggingService)
-        getServiceBroker().getService(requestor,
-                                      LoggingService.class,
-                                      null);
+    LoggingService ls = (LoggingService) 
+      getServiceBroker().getService(requestor,
+				    LoggingService.class,
+				    null);
+    return LoggingServiceWithPrefix.add(ls, getAgentIdentifier() + ": ");
   }
 
 
@@ -318,6 +320,8 @@ public class InventoryPlugin extends ComponentPlugin
       boolean touchedRemovedProjections =
           supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
+      // The following is here because the above lies about what it does
+      supplyExpander.handleRemovedRealRequisitions(supplyTaskSubscription.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
       // If its the first time we've gotten this far we now have our policy, org and others.
@@ -325,18 +329,20 @@ public class InventoryPlugin extends ComponentPlugin
       // If its the first time through use the underlying subscription collection
       // instead of the added list.
       if (firstTimeThrough) {
-        Enumeration newReqs = supplyTaskSubscription.elements();
-        ArrayList newReqsCollection = new ArrayList();
-        while (newReqs.hasMoreElements()) {
-          newReqsCollection.add(newReqs.nextElement());
-        }
-        expandIncomingRequisitions(getTasksWithoutPEs(newReqsCollection));
-        Enumeration newProjReqs = projectionTaskSubscription.elements();
-        ArrayList newProjReqsCollection = new ArrayList();
-        while (newProjReqs.hasMoreElements()) {
-          newProjReqsCollection.add(newProjReqs.nextElement());
-        }
-        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
+//         Enumeration newReqs = supplyTaskSubscription.elements();
+//         ArrayList newReqsCollection = new ArrayList();
+//         while (newReqs.hasMoreElements()) {
+//           newReqsCollection.add(newReqs.nextElement());
+//         }
+//         expandIncomingRequisitions(getTasksWithoutPEs(newReqsCollection));
+//         Enumeration newProjReqs = projectionTaskSubscription.elements();
+//         ArrayList newProjReqsCollection = new ArrayList();
+//         while (newProjReqs.hasMoreElements()) {
+//           newProjReqsCollection.add(newProjReqs.nextElement());
+//         }
+//         touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
+        expandIncomingRequisitions(getTasksWithoutPEs(supplyTaskSubscription));
+        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
         firstTimeThrough = false;
       } else {
         Collection addedSupply = supplyTaskSubscription.getAddedCollection();
@@ -1190,12 +1196,13 @@ public class InventoryPlugin extends ComponentPlugin
    Initializes supplyType and inventoryFile
    **/
   private HashMap readParameters() {
-    final String errorString = "InventoryPlugin requires 1 parameter, Supply Type.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin(" + SUPPLY_TYPE + "=BulkPOL, ENABLE_CSV_LOGGING=true);";
     Collection p = getParameters();
 
     if (p.isEmpty()) {
       if (logger.isErrorEnabled()) {
-        logger.error(errorString);
+        logger.error("No parameters: InventoryPlugin requires 1 parameter, Supply Type.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("
+                     +SUPPLY_TYPE
+                     +"=BulkPOL, ENABLE_CSV_LOGGING=true)");
       }
       return null;
     }
@@ -1213,7 +1220,9 @@ public class InventoryPlugin extends ComponentPlugin
     supplyType = (String) map.get(SUPPLY_TYPE);
 //      inventoryFile = (String)map.get(INVENTORY_FILE);
     if (supplyType == null && logger.isErrorEnabled()) {
-      logger.error(errorString);
+      logger.error("No SUPPLY_TYPE parameter: InventoryPlugin requires 1 parameter, Supply Type.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("
+                   +SUPPLY_TYPE
+                   +"=BulkPOL, ENABLE_CSV_LOGGING=true)");
     }
     String loggingEnabled = (String) map.get(ENABLE_CSV_LOGGING);
     if ((loggingEnabled != null) &&
@@ -1485,6 +1494,10 @@ public class InventoryPlugin extends ComponentPlugin
 
   public MessageAddress getClusterId() {
     return getAgentIdentifier();
+  }
+
+  public IncrementalSubscription getSupplyTaskSubscription() {
+    return supplyTaskSubscription;
   }
 
   //
