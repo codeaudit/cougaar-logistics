@@ -65,6 +65,7 @@ class Filler {
   private AllocationResultDistributor _ard;
 
   public static double TRANSPORT_TONS;
+  ALPacker packer = null;
 
   Filler(Sizer sz, GenericPlugin gp, AggregationClosure ac,
          AllocationResultDistributor ard,
@@ -74,6 +75,9 @@ class Filler {
     _ac = ac;
     _ard = ard;
     _pa = pa;
+
+    if (gp instanceof ALPacker)
+      packer = (ALPacker) gp;
   }
 
   /**
@@ -174,6 +178,7 @@ class Filler {
     if (_gp.getLoggingService().isDebugEnabled())
       _gp.getLoggingService().debug("Filler.handleUnplanned - replanning " + unplanned.getUID());
     List agglist = new ArrayList();
+    // packer.subtractTaskFromReceiver (unplanned);
     agglist.add(unplanned);
     double loadedQuantity = createMPTask(agglist);
     return loadedQuantity;
@@ -276,6 +281,10 @@ class Filler {
           receiverID = itemIdentificationPG.getItemIdentification();
         }
       }
+
+      _gp.getLoggingService().info("Adding - " + task.getUID () + " for "+ receiver + " - " + typeID + " - " + quantity);
+      packer.addToReceiver (receiverID, typeID, quantity);
+
       receivers.add(receiverID);
     }
 
@@ -288,7 +297,6 @@ class Filler {
     contentsPG.setReceivers(receivers);
     container.setContentsPG(contentsPG);
   }
-
 }
 
 

@@ -237,7 +237,14 @@ abstract public class GenericPlugin extends SimplePlugin {
     processChangedTasks(myAllTasks.getChangedList());
 
     processRemovedTasks(myAllTasks.getRemovedList());
+    
+    if (myLoggingService.isInfoEnabled()) {
+      myLoggingService.info("Reporting on ammo quantity per receiver per type.");
+      reportQuantities ();
+    }
   }
+
+  protected void reportQuantities () {}
 
   /**
    * processNewTasks - called during execute to handle new tasks.
@@ -317,14 +324,15 @@ abstract public class GenericPlugin extends SimplePlugin {
    */
   public boolean testInstance(Object arg, String ty) {
     boolean test = true;
+
     try {
       test = (Class.forName(ty)).isInstance(arg);
     } catch (ClassNotFoundException e) {
       getLoggingService().error(e.getMessage(), e);
       test = false;
-    } finally {
-      return test;
-    }
+    } 
+
+    return test;
   }
 
   /**

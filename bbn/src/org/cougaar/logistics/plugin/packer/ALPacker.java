@@ -27,6 +27,13 @@
 package org.cougaar.logistics.plugin.packer;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
+
+import org.cougaar.glm.ldm.Constants;
+
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AllocationResultDistributor;
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -34,6 +41,7 @@ import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.NewWorkflow;
 import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.Sortings;
@@ -43,7 +51,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 /**
@@ -55,6 +68,7 @@ public abstract class ALPacker extends GenericPlugin {
   private int REMOVE_TASKS = 0;
   private double ADD_TONS = 0;
   private double REMOVE_TONS = 0;
+  Map receiverToType = new HashMap();
 
   /**
    * Packer - constructor
@@ -228,14 +242,14 @@ public abstract class ALPacker extends GenericPlugin {
    */
   public void processRemovedTasks(Enumeration removedTasks) {
     boolean anyRemoved = false;
-
+    Set toSubtract = new HashSet();
     while (removedTasks.hasMoreElements()) {
       anyRemoved = true;
       Task task = (Task) removedTasks.nextElement();
 
       if (getLoggingService().isInfoEnabled()) {
         getLoggingService().info("Packer: Got a removed task - " +
-                                 task.getUID() +
+                                 task +
                                  " from " + task.getSource());
       }
 
@@ -248,8 +262,25 @@ public abstract class ALPacker extends GenericPlugin {
                                  ", aggregated quantity from removed SUPPLY tasks: " +
                                  REMOVE_TONS + " tons.");
       }
+
+      /*
+      Expansion exp = (Expansion) task.getPlanElement();
+      if (exp == null) {
+	if (getLoggingService().isInfoEnabled()) {
+	  getLoggingService().info("Packer - no plan element for remove task " + task.getUID()+ " so subtracting it.");
+	}
+	toSubtract.add (task);
+      }
+      else {
+	Enumeration subtaskEnum = exp.getWorkflow().getTasks();
+	for (;subtaskEnum.hasMoreElements();) {
+	  toSubtract.add(subtaskEnum.nextElement());
+	}
+      }
+      */
     }
 
+    /*
     if (anyRemoved) {
       Collection unplannedInternal = getBlackboardService().query(new UnaryPredicate() {
         public boolean execute(Object obj) {
@@ -263,7 +294,33 @@ public abstract class ALPacker extends GenericPlugin {
       }
       );
 
+      // any tasks we're going to put back into milvans, don't subtract from our totals
+      toSubtract.removeAll(unplannedInternal);
       handleUnplanned(unplannedInternal);
+
+    }
+    */
+
+    Set unplannedInternal = new HashSet();
+    for (Iterator iter = allInternalTasks.getCollection().iterator(); iter.hasNext(); ) {
+	Task internalTask = (Task) iter.next ();
+	if (internalTask.getPlanElement() == null) {
+	    unplannedInternal.add (internalTask);
+	}
+    }
+
+    toSubtract = new HashSet(allInternalTasks.getRemovedCollection());
+
+    unplannedInternal.removeAll (toSubtract);
+    handleUnplanned(unplannedInternal);
+    toSubtract.addAll (unplannedInternal);
+
+    if (getLoggingService().isInfoEnabled()) {
+      getLoggingService().info("Packer - subtracting " + toSubtract.size () + " tasks.");
+    }
+
+    for (Iterator iter = toSubtract.iterator(); iter.hasNext(); ) {
+      subtractTaskFromReceiver ((Task)iter.next());
     }
   }
 
@@ -273,6 +330,10 @@ public abstract class ALPacker extends GenericPlugin {
 
     for (Iterator iter = unplanned.iterator(); iter.hasNext();) {
       Task task = (Task) iter.next();
+      if (getLoggingService().isInfoEnabled()) {
+	  getLoggingService().info("Packer: replanning " + task.getUID());
+      }
+
       ArrayList copy = new ArrayList();
       copy.add(task);
       AggregationClosure ac = getAggregationClosure(copy);
@@ -336,9 +397,36 @@ public abstract class ALPacker extends GenericPlugin {
     return totalPacked;
   }
 
+  protected IncrementalSubscription allInternalTasks;
+
   protected void setupSubscriptions() {
     super.setupSubscriptions();
     ProportionalDistributor.DEFAULT_PROPORTIONAL_DISTRIBUTOR.setLoggingService(getLoggingService());
+    /*
+    unplannedInternalTasks = (IncrementalSubscription) subscribe(new UnaryPredicate() {
+        public boolean execute(Object obj) {
+	    if (obj instanceof Task) {
+		Task task = (Task) obj;
+		return ((task.getPrepositionalPhrase(GenericPlugin.INTERNAL) != null) &&
+			task.getPlanElement() == null);
+	    }
+	    return false;
+        }
+    }
+								 );
+
+    */
+
+    allInternalTasks = (IncrementalSubscription) subscribe(new UnaryPredicate() {
+        public boolean execute(Object obj) {
+	    if (obj instanceof Task) {
+		Task task = (Task) obj;
+		return (task.getPrepositionalPhrase(GenericPlugin.INTERNAL) != null);
+	    }
+	    return false;
+        }
+    }
+							   );
   }
 
   protected void updateAllocationResult(IncrementalSubscription planElements) {
@@ -449,6 +537,103 @@ public abstract class ALPacker extends GenericPlugin {
      */
     public boolean equals(Object o) {
       return (o.getClass() == SortByEndTime.class);
+    }
+  }
+
+  protected void addToReceiver (String receiverID, String type, double newQuantity) {
+    Map typeToQuantity = (Map) receiverToType.get (receiverID);
+    if (typeToQuantity == null) {
+      receiverToType.put (receiverID, typeToQuantity=new HashMap());
+    }
+
+    Double currentQ = (Double) typeToQuantity.get (type);
+    double current = 0;
+
+    if (currentQ != null) {
+      current = currentQ.doubleValue();
+    }
+    
+    typeToQuantity.put (type, new Double (current + newQuantity));
+  }
+
+  private static final String UNKNOWN = "UNKNOWN";
+  protected void subtractTaskFromReceiver (Task task) {
+    TypeIdentificationPG typeIdentificationPG =
+      task.getDirectObject().getTypeIdentificationPG();
+    String typeID;
+    if (typeIdentificationPG != null) {
+      typeID = typeIdentificationPG.getTypeIdentification();
+      if ((typeID == null) || (typeID.equals(""))) {
+	typeID = UNKNOWN;
+      }
+
+    } else {
+      typeID = UNKNOWN;
+    }
+    Object receiver =
+      task.getPrepositionalPhrase(Constants.Preposition.FOR);
+
+    if (receiver != null)
+      receiver = ((PrepositionalPhrase) receiver).getIndirectObject();
+
+    String receiverID;
+
+    // Add field with recipient
+    if (receiver == null) {
+      receiverID = UNKNOWN;
+      getLoggingService().error("Filler.addContentsInfo - Task " + task.getUID() + " had no FOR prep.");
+    } else if (receiver instanceof String) {
+      receiverID = (String) receiver;
+    } else if (!(receiver instanceof Asset)) {
+      receiverID = UNKNOWN;
+    } else {
+      ItemIdentificationPG itemIdentificationPG =
+	((Asset) receiver).getItemIdentificationPG();
+      if ((itemIdentificationPG == null) ||
+	  (itemIdentificationPG.getItemIdentification() == null) ||
+	  (itemIdentificationPG.getItemIdentification().equals(""))) {
+	receiverID = UNKNOWN;
+      } else {
+	receiverID = itemIdentificationPG.getItemIdentification();
+      }
+    }
+
+    double quantity = task.getPreferredValue(AspectType.QUANTITY);
+
+    getLoggingService().info("Subtracting - " + task.getUID () + " for "+ 
+			     receiverID + " - " + typeID + " - " + quantity);
+
+    subtractFromReceiver (receiverID, typeID, quantity);
+  }
+
+  protected void subtractFromReceiver (String receiverID, String type, double newQuantity) {
+    Map typeToQuantity = (Map) receiverToType.get (receiverID);
+    if (typeToQuantity == null) {
+      receiverToType.put (receiverID, typeToQuantity=new HashMap());
+    }
+
+    Double currentQ = (Double) typeToQuantity.get (type);
+    double current = 0;
+
+    if (currentQ != null) {
+      current = currentQ.doubleValue();
+    }
+    
+    typeToQuantity.put (type, new Double (current - newQuantity));
+  }
+
+  protected void reportQuantities () {
+    for (Iterator iter = receiverToType.keySet().iterator (); iter.hasNext(); ) {
+      Object receiver = iter.next();
+      Map typeToQuantity = (Map) receiverToType.get(receiver);
+      if (typeToQuantity == null) {
+        getLoggingService().error("ALPacker: no type->quantity map for " + receiver);
+      }
+      Set types = new TreeSet(typeToQuantity.keySet()); // sorted
+      for (Iterator iter2 = types.iterator (); iter2.hasNext(); ) {
+	Object type = iter2.next();
+        getLoggingService().info("\t" + receiver + " : " + type + " - " + typeToQuantity.get(type));
+      }
     }
   }
 
