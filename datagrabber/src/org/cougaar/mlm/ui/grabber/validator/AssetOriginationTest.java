@@ -158,14 +158,16 @@ public class AssetOriginationTest extends Test{
       
       for (Iterator one = unitToMap.keySet().iterator(); one.hasNext();) {
 	String unitKey = (String)one.next();
-	Map startlocToCount = (Map)unitToMap.get(unitKey);
-	if (startlocToCount.size() > 1) {
-	  for (Iterator two = startlocToCount.keySet().iterator(); two.hasNext();) {
-	    String startloc = (String)two.next();
-	    int count = ((Integer)startlocToCount.get(startloc)).intValue();
-	    insertRow(l,s,run,unitKey,startloc,(String)locIDToName.get(startloc),count);
+	if (!unitKey.startsWith ("OSC")) { // skip OSC items - during deletion, they can come in at different times
+	  Map startlocToCount = (Map)unitToMap.get(unitKey);
+	  if (startlocToCount.size() > 1) {
+	    for (Iterator two = startlocToCount.keySet().iterator(); two.hasNext();) {
+	      String startloc = (String)two.next();
+	      int count = ((Integer)startlocToCount.get(startloc)).intValue();
+	      insertRow(l,s,run,unitKey,startloc,(String)locIDToName.get(startloc),count);
+	    }
 	  }
-	}	
+	}
       }    
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
