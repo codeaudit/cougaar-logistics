@@ -45,7 +45,7 @@ import java.util.List;
  *
  * @since 2/12/01
  **/
-public abstract class Run implements ResultHandler, Logger{
+public abstract class Run implements ResultHandler, Logger, DBConnectionProvider{
 
   //Constants:
   ////////////
@@ -114,10 +114,9 @@ public abstract class Run implements ResultHandler, Logger{
 
   private String status="Initialized";
   protected ResultQueue resultQ;
-  List dbConnections = new ArrayList();
-  int dbConnectionRequest = 0;
 
-  private Connection dbConnection;
+  protected Connection dbConnection;
+  protected DBConnectionProvider connectionProvider;
   private IDLogger logger;
   private int epoch=EPOCH_INITIALIZING;
   /**This is temporary, condition only becomes warning upon completion**/
@@ -155,22 +154,11 @@ public abstract class Run implements ResultHandler, Logger{
   }
 
   /** 
-   * round-robin connection choice 
+   * DBConnectionProvider interface methods - delegates to connection provider
    */
-  public Connection getDBConnection(){
-    //return dbConnection;
-    
-    Connection connection;
-    connection = (Connection) dbConnections.get(dbConnectionRequest);
-
-    dbConnectionRequest = (dbConnectionRequest+1) % dbConnections.size ();
-
-    return connection;
-  }
-
-  public int getNumDBConnections () { return dbConnections.size(); }
-
-  public List getAllDBConnections () { return dbConnections; }
+  public Connection getDBConnection(){ return connectionProvider.getDBConnection(); }
+  public int  getNumDBConnections () { return connectionProvider.getNumDBConnections(); }
+  public List getAllDBConnections () { return connectionProvider.getAllDBConnections(); }
 
   public int getEpoch(){
     return epoch;
@@ -218,14 +206,8 @@ public abstract class Run implements ResultHandler, Logger{
     this.dgConfig=dgConfig;
   }
 
-  /*
-  public void setDBConnection(Connection dbConnection){
-    this.dbConnection=dbConnection;
-  }
-  */
-
-  public void addDBConnection(Connection dbConnection) {
-    dbConnections.add (dbConnection);
+  public void setDBConnectionProvider (DBConnectionProvider connectionProvider) {
+    this.connectionProvider = connectionProvider;
   }
 
   public void setLogger(IDLogger l){
