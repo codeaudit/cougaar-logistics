@@ -84,7 +84,7 @@ public abstract class ALPacker extends GenericPlugin {
    * @return PreferenceAggregator
    */
   public PreferenceAggregator getPreferenceAggregator() {
-    return new DefaultPreferenceAggregator();
+    return new DefaultPreferenceAggregator(getAlarmService());
   }
 
   /**
@@ -148,10 +148,15 @@ public abstract class ALPacker extends GenericPlugin {
     if ((tonsPacked > tonsReceived + 0.1) || (tonsPacked < tonsReceived - 0.1)) {
       if (getLoggingService().isErrorEnabled()) {
         getLoggingService().warn("Packer - received " + tonsReceived + " tons but packed " + tonsPacked +
-                                 " tons, (total received " + ADD_TONS + " vs total packed " + Filler.TRANSPORT_TONS +
+                                 " tons, (total received " + ADD_TONS + " vs total packed "
+                                 + Filler.TRANSPORT_TONS +
                                  ") for tasks : ");
-        for (Iterator iter = tasks.iterator(); iter.hasNext();)
-          getLoggingService().warn("\t" + ((Task) iter.next()).getUID());
+        Task t = null;
+        for (Iterator iter = tasks.iterator(); iter.hasNext();) {
+          t = (Task) iter.next();
+          getLoggingService().warn("\t" + t.getUID());
+          getLoggingService().warn(" Quanty : " + t.getPreferredValue(AspectType.QUANTITY));
+        }
       }
     }
   }
@@ -228,7 +233,6 @@ public abstract class ALPacker extends GenericPlugin {
 
     for (Iterator iter = unplanned.iterator(); iter.hasNext();) {
       Task task = (Task) iter.next();
-
       ArrayList copy = new ArrayList();
       copy.add(task);
       AggregationClosure ac = getAggregationClosure(copy);
@@ -243,7 +247,6 @@ public abstract class ALPacker extends GenericPlugin {
   /**
    * doPacking - packs specified set of supply tasks.
    * Assumes that it's called within an open/close transaction.
-   *
    * @param tasks ArrayList with the tasks which should be packed
    * @param sortfun BinaryPredicate to be used in sorting the tasks
    * @param prefagg PreferenceAggregator for setting the start/end times on the

@@ -28,15 +28,10 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.measure.Mass;
-import org.cougaar.planning.ldm.plan.AllocationResultDistributor;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.ContextOfOplanIds;
-import org.cougaar.planning.ldm.plan.NewMPTask;
-import org.cougaar.planning.ldm.plan.Plan;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +51,6 @@ class Filler {
   private AggregationClosure _ac;
 
   private PreferenceAggregator _pa;
-
   /**
    * The AllocationResultDistributor that should be used on
    * any Containers created by this Filler
@@ -79,21 +73,28 @@ class Filler {
    * This is the driving function in the whole packing process.
    */
   public double execute() {
-    boolean finished = false;
+    //boolean finished = false;
     double tonsPacked = 0;
 
     if (_gp.getLoggingService().isInfoEnabled())
       _gp.getLoggingService().info("Filler.execute - entered.");
     int numTasks = 0;
     int numParents = 0;
-    while (!finished) {
+
+    // while there's still ammo to put in milvans
+    while (_sz.moreTasksInQueue()) {
       // initialize the aggregation
       ArrayList agglist = new ArrayList();
       double amount = 0.0;
-      while (_ac.getQuantity() - amount > 0.0) {
-        Task t = _sz.provide(_ac.getQuantity() - amount);
-        if (t == null) {
-          finished = true;
+      double earliest = 0.0;
+      double latest = java.lang.Double.POSITIVE_INFINITY;
+
+      // while our milvan is not yet full and there is more ammo left to pack
+      while (_ac.getQuantity() - amount > 0.0 && _sz.moreTasksInQueue()) {
+        // ask the sizer for what an amount that would fill the milvan
+        Task t = _sz.provide(_ac.getQuantity() - amount, earliest, latest);
+        if (t == null) { // the next task is outside the earliest->latest window
+          //	    finished = true;
           break;
         }
         numTasks++;
@@ -102,10 +103,22 @@ class Filler {
         // some amount towards our overall amount
         double provided = t.getPreferredValue(AspectType.QUANTITY);
 
-        if (!_ac.validTask(t)) {
-          _gp.getLoggingService().error("Filler.execute: AggregationClosure rejected " +
-                                        " task - " + t);
-          continue;
+        _gp.getLoggingService().info("Filler.execute - adding " + provided +
+                                     " to agg list vs " + (_ac.getQuantity() - amount) + " amount " +
+                                     amount);
+
+        Preference endDatePref = t.getPreference(AspectType.END_TIME);
+        ScoringFunction sf = endDatePref.getScoringFunction();
+        AspectScorePoint aspStart = sf.getDefinedRange().getRangeStartPoint();
+        Date taskEarlyDate = new Date((long) aspStart.getValue());
+        if (taskEarlyDate.getTime() > earliest) {
+          earliest = taskEarlyDate.getTime();
+        }
+
+        AspectScorePoint aspEnd = sf.getDefinedRange().getRangeEndPoint();
+        Date taskLateDate = new Date((long) aspEnd.getValue());
+        if (taskLateDate.getTime() < latest) {
+          latest = taskLateDate.getTime();
         }
 
         amount += provided;
@@ -118,6 +131,13 @@ class Filler {
         TRANSPORT_TONS += loadedQuantity;
         tonsPacked += loadedQuantity;
       }
+      _gp.getLoggingService().info("Filler.execute - aggregating together " + agglist.size() + " parents:");
+      for (Iterator iter = agglist.iterator(); iter.hasNext();) {
+        Task task = (Task) iter.next();
+        _gp.getLoggingService().info("Filler.execute - " + task.getUID() +
+                                     " end date " + new Date((long) task.getPreferredValue(AspectType.END_TIME)));
+      }
+
     }
 
     if (numTasks != numParents)
@@ -179,6 +199,7 @@ class Filler {
                                     " tasks to be agggregated, but only " +
                                     mpt.getComposition().getParentTasks().size() +
                                     " tasks as parents of " + mpt.getUID());
+    //System.out.println( " FILLER : what is the loadedQuantity " + loadedQuantity);
     return loadedQuantity;
   }
 

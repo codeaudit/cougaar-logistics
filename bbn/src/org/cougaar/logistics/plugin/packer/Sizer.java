@@ -24,6 +24,7 @@ package org.cougaar.logistics.plugin.packer;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.measure.Mass;
+import org.cougaar.planning.ldm.plan.AspectScorePoint;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
@@ -36,6 +37,7 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
@@ -59,7 +61,6 @@ class Sizer {
   static public final int MAX_UNIT = 1;
 
   private static Logger logger = Logging.getLogger(Sizer.class);
-
   /**
    * How much of the quantity remains in the current task
    */
@@ -103,18 +104,27 @@ class Sizer {
   }
 
   /**
+   * there's more ammo left if the queue has something in it OR
+   * we're on the last task (_curTask) and there's ammo left in it
+   */
+  public boolean moreTasksInQueue() {
+    return !_tasks.isEmpty() || (_remainder > 0);
+  }
+
+  /**
    * The Filler will request some amount of quantity from the
    * Sizer.
    * This method will return a Task whose quantity is <= to requestedAmt,
    * or null if there are no more tasks to be packed.
    */
-  Task provide(double requestedAmt) {
+  Task provide(double requestedAmt, double earliest, double latest) {
     Task ret = null;
 
     // first, if we've gotten a request, we need to check
     // to see if the _curTask has anything left in it...
     if (_remainder == 0.0) {
       if ((_curTask = getNextTask()) != null) {
+        // there is now one less task in _tasks b/c of getNextTask call
         Mass taskMass = getTaskMass(_curTask, _quantityType);
         _remainder = taskMass.getShortTons();
 
@@ -125,13 +135,34 @@ class Sizer {
         }
         _expansionQueue = new ArrayList();
       } else {
-        return null;
+        logger.error("Sizer.provide : ERROR - no current task...");
+        return null; // should never happen
       }
     }
+
+    // return null if the current task is either completely before or after
+    // the arrival window of the milvan we're aggregating
+
+    Preference endDatePref = _curTask.getPreference(AspectType.END_TIME);
+    ScoringFunction sf = endDatePref.getScoringFunction();
+    AspectScorePoint aspStart = sf.getDefinedRange().getRangeStartPoint();
+    Date taskEarlyDate = new Date((long) aspStart.getValue());
+    if (taskEarlyDate.getTime() > latest) {
+      return null;
+    }
+
+    AspectScorePoint aspEnd = sf.getDefinedRange().getRangeEndPoint();
+    Date taskLateDate = new Date((long) aspEnd.getValue());
+    if (taskLateDate.getTime() < earliest) {
+      return null;
+    }
+
+
     // precondition:  _curTask is bound to a Task and remainder >= 0.0
     // remainder can be == 0.0 because some Plugin developers make such
     // tasks instead of rescinding requests.
-
+    //System.out.println(" _remainder is " + _remainder + " requestedAmt " + requestedAmt);
+    // if (_remainder < (requestedAmt + 0.1))
     if (_remainder <= requestedAmt) {
       // we are going to use up the entire _curTask and need to
       // take care of the expansion
@@ -222,7 +253,10 @@ class Sizer {
 
     //BOZO
     nt.setPreferences(new Vector(prefs).elements());
-
+    // TODO delme
+    double provided = nt.getPreferredValue(AspectType.QUANTITY);
+    if (provided != size)
+      logger.info("requested " + size + " != quantity pref " + provided);
     return nt;
   }
 
@@ -233,7 +267,6 @@ class Sizer {
    * @see GenericPlugin#createExpansion
    */
   private void makeExpansion(Task expandme, ArrayList subtasks) {
-
     _gp.createExpansion(subtasks.iterator(), expandme);
   }
 

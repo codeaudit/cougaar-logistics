@@ -23,14 +23,20 @@ package org.cougaar.logistics.plugin.packer;
 
 //utils
 
+import org.cougaar.core.service.AlarmService;
+import org.cougaar.lib.util.UTILPreference;
 import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.ldm.plan.AspectScorePoint;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -42,15 +48,17 @@ import java.util.Iterator;
 public class DefaultPreferenceAggregator implements PreferenceAggregator {
   // Start time is set to 40 days prior to the specified end time
   private static long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
-  private static long START_DECREMENT = 40 * MILLIS_PER_DAY;
+  private AlarmService alarmService;
 
-  /* Increments added to specified end time to come up with an earliest,
-   * best, and latest for TOPS. Distribution specified by
-   * tops team
-   */
-  private static long EARLIEST_INCREMENT = -(21 * MILLIS_PER_DAY);
-  private static long BEST_INCREMENT = 0 * MILLIS_PER_DAY;
-  private static long LATEST_INCREMENT = 0 * MILLIS_PER_DAY;
+  //TODO:  find out which logger class to use
+  //private Logger logger;
+  private UTILPreference prefHelper = new UTILPreference(logger);
+  private static Logger logger = Logging.getLogger(DefaultPreferenceAggregator.class);
+
+  public DefaultPreferenceAggregator(AlarmService alarmService) {
+    this.alarmService = alarmService;
+    // this.logger = logger;
+  }
 
   /**
    * Will create a preference as follows:
@@ -61,40 +69,42 @@ public class DefaultPreferenceAggregator implements PreferenceAggregator {
    * input tasks.
    */
   public ArrayList aggregatePreferences(Iterator tasks, PlanningFactory rootFactory) {
-
     ArrayList prefs = new ArrayList();
-    double endTime = java.lang.Double.POSITIVE_INFINITY;
+    double best = java.lang.Double.POSITIVE_INFINITY;
+    double earliest = 0.0;
+    double latest = java.lang.Double.POSITIVE_INFINITY;
     double startTime = 0.0;
     double quantity = 0.0;
 
     // find values for endTime and quantity
     while (tasks.hasNext()) {
       Task t = (Task) tasks.next();
+      Date taskBest = prefHelper.getBestDate(t);
+      if (taskBest.getTime() < best)
+        best = taskBest.getTime();
 
-      // replaced min with this CWG
-      if (t.getPreferredValue(AspectType.END_TIME) < endTime) {
-        endTime = t.getPreferredValue(AspectType.END_TIME);
+      Preference endDatePref = t.getPreference(AspectType.END_TIME);
+      ScoringFunction sf = endDatePref.getScoringFunction();
+      AspectScorePoint aspStart = sf.getDefinedRange().getRangeStartPoint();
+      Date taskEarlyDate = new Date((long) aspStart.getValue());
+      if (taskEarlyDate.getTime() > earliest) {
+        earliest = taskEarlyDate.getTime();
       }
-
-      // replaced min with this CWG
-      if (t.getPreferredValue(AspectType.START_TIME) > startTime) {
-        startTime = t.getPreferredValue(AspectType.START_TIME);
+      AspectScorePoint aspEnd = sf.getDefinedRange().getRangeEndPoint();
+      Date taskLateDate = new Date((long) aspEnd.getValue());
+      if (taskLateDate.getTime() < latest) {
+        latest = taskLateDate.getTime();
       }
       quantity += t.getPreferredValue(AspectType.QUANTITY);
     }
 
-    // make the START_TIME preference
-    // this is a placeholder for more faithful logic later...
-    // [1999/11/15:goldman]
-    //
-    // MSB 1-25-2000 : Make Start time 40 days before end_time
-    startTime = endTime - START_DECREMENT;
-
+    //TODO: change this to be latestStart = min END_TIME - OST, earliestStart Tomorrow
+    startTime = alarmService.currentTimeMillis() + MILLIS_PER_DAY;
+    // System.out.println(" PREFERENCEAGG--> agg quant is " + quantity);
+    //startTime = getStartOfPeriod();
     prefs.add(makeStartPreference(startTime, rootFactory));
-
     // make the endTime preference...
-    prefs.add(makeEndPreference(endTime, rootFactory));
-
+    prefs.add(makeEndPreference(earliest, best, latest, rootFactory));
     prefs.add(makeQuantityPreference(quantity, rootFactory));
     return prefs;
   }
@@ -119,21 +129,30 @@ public class DefaultPreferenceAggregator implements PreferenceAggregator {
    * separate earliest, best, and latest for TOPS. Picked 1 day out
    * of the blue (with help from Gordon
    */
-  private Preference makeEndPreference(double endDate, PlanningFactory rootFactory) {
+  private Preference makeEndPreference(double earliest, double best, double latest, PlanningFactory rootFactory) {
 
-    AspectValue earliest =
-        AspectValue.newAspectValue(AspectType.END_TIME, endDate + EARLIEST_INCREMENT);
+    AspectValue earliestAV =
+        AspectValue.newAspectValue(AspectType.END_TIME, earliest);
 
-    AspectValue best =
-        AspectValue.newAspectValue(AspectType.END_TIME, endDate + BEST_INCREMENT);
+    AspectValue bestAV =
+        AspectValue.newAspectValue(AspectType.END_TIME, best);
 
-    AspectValue latest =
-        AspectValue.newAspectValue(AspectType.END_TIME, endDate + LATEST_INCREMENT);
+    AspectValue latestAV =
+        AspectValue.newAspectValue(AspectType.END_TIME, latest);
 
     ScoringFunction sf =
-        ScoringFunction.createVScoringFunction(earliest, best, latest);
+        ScoringFunction.createVScoringFunction(earliestAV, bestAV, latestAV);
     Preference pref = rootFactory.newPreference(AspectType.END_TIME, sf);
     return pref;
+  }
+
+  private long getStartOfPeriod() {
+    long timeIn = alarmService.currentTimeMillis();
+    //truncate to the whole number that represents the period num since the start of time.
+    long periods = (long) (timeIn / MILLIS_PER_DAY);
+    //Multiply it back to which gives the start of the period.
+    long timeOut = timeIn * MILLIS_PER_DAY;
+    return timeOut;
   }
 }
 
