@@ -225,6 +225,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
     ownerID      = ((String) in.readObject()).intern();
 
     //    manifestUID = ((String) in.readObject()).intern();
+    hasManifest = in.readBoolean();
 
     int numToRead = in.readInt();
     if (numToRead > 0) nomenclatures = new ArrayList(numToRead);
