@@ -385,7 +385,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       ArrayList phases = (ArrayList)td.getAllocationPhases();
       if (phases.isEmpty()) {
         //if we totally fail
-        createFailedAllocation(task, inv);
+        createFailedAllocation(task, inv, thePG);
         return;
       }
       int rollupEnd = ((AllocPhase) phases.get(phases.size() - 1)).endBucket;
@@ -420,12 +420,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           rollupQty = rollupQty + ((aPhase.endBucket - aPhase.startBucket) * aPhase.amount);
           thisPhase[0] = AspectValue.newAspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
           thisPhase[1] = AspectValue.newAspectValue(AspectType.START_TIME, thePG.convertBucketToTime(aPhase.startBucket));
-          thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis(), thePG);
+          thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis());
           // add this phase to our phased results list
           phasedResults.add(thisPhase);
         }
         avs[2] = getDemandRateAV(rollupQty, thePG.convertBucketToTime(rollupEnd) - 
-				 thePG.convertBucketToTime( rollupStart), thePG);
+				 thePG.convertBucketToTime( rollupStart));
       }
       
       AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
@@ -513,34 +513,36 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    **/
   private void createLateAllocation(Task withdraw, long end,
                                     Inventory inv, LogisticsInventoryPG thePG) {
-    int aspectTypes[] = {AspectType.END_TIME, AspectType.QUANTITY};
-    double results[] = {(double) end, getTaskUtils().getPreference(withdraw, AspectType.QUANTITY)};
+    AspectValue avs[] = new AspectValue[2];
+    avs[0] = AspectValue.newAspectValue(AspectType.END_TIME, end);
+    avs[1] = AspectValue.newAspectValue(AspectType.QUANTITY,
+                                        getTaskUtils().getPreference(withdraw, AspectType.QUANTITY));
     AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
-      newAllocationResult(0.9, true, aspectTypes, results);
+      newAllocationResult(0.9, true, avs);
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
 
 
-  private void createFailedAllocation(Task task, Inventory inventory) {
+  private void createFailedAllocation(Task task, Inventory inventory, LogisticsInventoryPG thePG) {
       // make the failed time the day after the end of the oplan
       long failed_time = inventoryPlugin.getOPlanEndTime() + TimeUtils.MSEC_PER_DAY;
-      int aspectTypes[];
-      double results[];
+      AspectValue avs[];
+
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-	  aspectTypes = new int[]{AspectType.END_TIME, AspectType.QUANTITY};
-	  double qty = PluginHelper.getPreferenceBestValue(task, AspectType.QUANTITY);
-	  results = new double[]{failed_time, qty};
+        avs = new AspectValue[2];
+        avs[0] = AspectValue.newAspectValue(AspectType.END_TIME, failed_time);
+        avs[1] = AspectValue.newAspectValue(AspectType.QUANTITY,
+                                            PluginHelper.getPreferenceBestValue(task, AspectType.QUANTITY));
       } else {
-	  // projection... set start and end to failed_time
-	  aspectTypes = new int[]{AspectType.START_TIME, 
-				  AspectType.END_TIME, AlpineAspectType.DEMANDRATE};
-	  double qty = PluginHelper.getPreferenceBestValue(task, 
-							   AlpineAspectType.DEMANDRATE);
-	  results = new double[]{failed_time, failed_time, qty};
+        // projection... set start and end to failed_time and set the rate to the pref over 1 bucket
+        avs = new AspectValue[3];
+        avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, failed_time);
+        avs[1] = AspectValue.newAspectValue(AspectType.END_TIME, failed_time);
+        avs[2] = getDemandRateAV(PluginHelper.getPreferenceBestValue(task, AlpineAspectType.DEMANDRATE),
+                                 thePG.getBucketMillis());
       }
       AllocationResult failed = 
-	  inventoryPlugin.getPlanningFactory().newAllocationResult(0.9, false, 
-							     aspectTypes, results);
+	  inventoryPlugin.getPlanningFactory().newAllocationResult(0.9, false, avs);
       PlanElement prevPE = task.getPlanElement();
       if (prevPE == null) {
 	  Allocation alloc = inventoryPlugin.getPlanningFactory().
@@ -608,7 +610,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
   }
 
-  public AspectValue getDemandRateAV(double amount, long millis, LogisticsInventoryPG thePG) {
+  public AspectValue getDemandRateAV(double amount, long millis) {
     AspectValue demandRateAV = null; 
     Duration dur = new Duration(millis, Duration.MILLISECONDS);
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
