@@ -162,7 +162,7 @@ public class RelationshipScheduleServlet
 
             Organization myOrg = getMyOrganization();
 
-            getStartEndDay();
+            getStartEndDay(myOrg);
 
             String orgId = myOrg.getItemIdentificationPG().getItemIdentification();
 
@@ -376,8 +376,9 @@ public class RelationshipScheduleServlet
         }
 
 
-        protected void getStartEndDay() {
+        protected void getStartEndDay(Organization myOrg) {
             startCDay = null;
+	    endCDay = null;
 
             // get oplan
 
@@ -399,6 +400,57 @@ public class RelationshipScheduleServlet
                 endCDay = plan.getEndDay();
                 //psc.getServerPluginSupport().unsubscribeForSubscriber(oplanSubscription);
             }
+	    // This should really hardly ever happen unless you call the servlet too early - this is the bug fix for bug #13687
+	    else {				
+		getStartEndDayFromRelSchedule(myOrg);
+	    }
+
+        }
+
+
+        protected void getStartEndDayFromRelSchedule(Organization myOrg) {
+            RelationshipSchedule relSched = myOrg.getRelationshipSchedule();
+
+            Collection roles = getAllRelationshipRoles(myOrg);
+
+            Iterator roleIT = roles.iterator();
+
+            int ctr = 1;
+            int colorCtr = 0;
+
+	    long relStartTime=Long.MAX_VALUE;
+	    long relEndTime=Long.MIN_VALUE;
+
+            while (roleIT.hasNext()) {
+                Role role = (Role) roleIT.next();
+
+                /** TODO: do you want to filter out the SUPERIOR/SUBORDINATE Relatioships?
+                 if(!((role.getName().equals(Relationships.SUPERIOR)) ||
+                 (role.getName().equals(Relationships.SUBORDINATE)))) {
+
+                 **/
+
+                Collection relationships = relSched.getMatchingRelationships(role);
+
+                Iterator relIT = relationships.iterator();
+
+
+
+                while (relIT.hasNext()) {
+                    Relationship r = (Relationship) relIT.next();
+                    HasRelationships hr = relSched.getOther(r);
+                    if (hr instanceof Organization) {
+                        Organization o = (Organization) hr;
+                        String orgId = o.getItemIdentificationPG().getItemIdentification();
+                        relStartTime = Math.min(r.getStartDate().getTime(),relStartTime);
+                        relEndTime = Math.max(r.getEndDate().getTime(),relEndTime); 
+                    }
+
+                }
+            }
+
+	    startCDay = new Date(relStartTime);
+	    endCDay = new Date(relEndTime);
 
         }
 
