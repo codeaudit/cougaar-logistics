@@ -825,15 +825,16 @@ public class FilterQuery extends TPFDDQuery {
     String cpConvType    = DGPSPConstants.COL_CONVEYANCE_TYPE;
     String cpNomen       = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String aggNumber     = DGPSPConstants.COL_AGGREGATE;
+    String isLowFi       = DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String sqlQuery = 
-      "select " + "d2."+cLegID + ", " + "d2."+cLegStart + ", " + "d2."+cLegEnd + ", " + "d2."+cLegReadyAt + ", " + 
+      "select " + "d2."+cLegID + ", " + "d2."+cLegStart + ", " + "d2."+cLegEnd + ", " + "d2."+cLegReadyAt + ",\n" + 
       "d2."+l1geoloc + ", " + "d2."+l1name + ",\n" + 
-      "d2."+l2geoloc + ", " + "d2."+l2name + ", " + 
-      "d2."+cpConvType + ", " + "d2."+cLegType + ", " + "d2."+assetInstanceID +
-      ",\n" + "d2."+ciConvID + ", " + "d2."+instanceProto + ", " + "d2."+cpNomen + ", " + 
-      "d2."+ciBumper + ", " + "d2."+assetInstanceOwner + ", " + "d2."+aggNumber +
-      " from " + derivedTable + " d2" + 
+      "d2."+l2geoloc + ", " + "d2."+l2name + ",\n" + 
+      "d2."+cpConvType + ", " + "d2."+cLegType + ", " + "d2."+assetInstanceID + ",\n"+
+      "d2."+ciConvID + ", " + "d2."+instanceProto + ", " + "d2."+cpNomen + ",\n" + 
+      "d2."+ciBumper + ", " + "d2."+assetInstanceOwner + ", " + "d2."+aggNumber + ", " + "d2."+isLowFi+
+      "\nfrom " + derivedTable + " d2" + 
       filterClauses.getWhereSql ("d2."+assetInstanceOwner, "d2."+cpPrototypeID, "d2."+ciConvID, 
 				 "d2."+instanceProto, "d2."+assetInstanceID) +
       "\norder by " + assetInstanceID + ", " + cLegStart;

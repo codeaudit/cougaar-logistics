@@ -322,7 +322,8 @@ public class UnitQuery extends SqlQuery {
     try{
       int total = 0;
       String prevReadyAt = null;
-		
+      Map assetToLeg = new HashMap ();
+
       while(rs.next()){
 	total++;
 		
@@ -339,7 +340,13 @@ public class UnitQuery extends SqlQuery {
 	String assetid   = rs.getString (11);
 	String nomen     = rs.getString (14);
 	String bumperno  = rs.getString (15);
-		
+
+	boolean isLowFi   = rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY).equals("true");
+
+	if(debug){
+	  System.out.println ("UnitQuery.attachLegsFromResult - isLowFi was " + isLowFi + "/" + rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY));
+	}
+
 	if (legtype != DGPSPConstants.LEG_TYPE_POSITIONING && legtype != DGPSPConstants.LEG_TYPE_RETURNING) {
 	  if (readyAt.equals (start) && prevReadyAt != null)
 	    readyAt = prevReadyAt;
@@ -358,7 +365,17 @@ public class UnitQuery extends SqlQuery {
 	    if (debug && false)
 	      System.out.println ("UnitQuery.attachInstancesFromResult - parent instance " + instanceNode);
 
-	    cargoTree.addNode (instanceNode.getUID(), legNode);
+	    if (isLowFi) {
+	      Node currentLegNode = findLegNode(assetToLeg, assetid, startLoc, endLoc);
+	      if (currentLegNode == null) {
+		registerLegNode (assetToLeg, assetid, startLoc, endLoc, legNode);
+		cargoTree.addNode (instanceNode.getUID(), legNode);
+	      }
+	      else
+		rollUpLegNode (legNode, currentLegNode);
+	    }
+	    else 
+	      cargoTree.addNode (instanceNode.getUID(), legNode);
 	  }
 	}
 	else {
@@ -380,8 +397,73 @@ public class UnitQuery extends SqlQuery {
     }
   }
 
+  /** 
+   * Assumes that there will never be multiple, different paths 
+   * for different subobjects of a level 2 original asset 
+   **/
+  protected void registerLegNode (Map assetToLeg, String assetid, String startLoc, String endLoc, Node currentLegNode) {
+    Map startToLegNode = (Map) assetToLeg.get (assetid);
+
+    if (startToLegNode == null) {
+      assetToLeg.put     (assetid,  (startToLegNode = new HashMap ()));
+    }
+    else {
+      Node possibleLegNode = (Node) startToLegNode.get (startLoc);
+      if (possibleLegNode != null)
+	System.err.println ("UnitQuery.registerLegNode - error, found existing leg for asset " + assetid + 
+			    " starting at " + startLoc);
+    }
+
+    if (debug)
+      System.out.println ("UnitQuery.registerLegNode - register " + assetid + " at " + startLoc + " with leg " + currentLegNode);
+
+    startToLegNode.put (startLoc, currentLegNode);
+
+    if (debug)
+      System.out.println ("UnitQuery.registerLegNode - maps now : assetToLeg - " + assetToLeg);
+  }
+
+  protected Node findLegNode (Map assetToLeg, String assetid, String startLoc, String endLoc) {
+    Map startToLegNode = (Map) assetToLeg.get (assetid);
+    if (startToLegNode == null) {
+      if (debug)
+	System.out.println ("UnitQuery.findLegNode - for " + assetid + " no entry found.");
+      return null;
+    }
+
+    Node found = (Node) startToLegNode.get (startLoc);
+    if (debug) {
+      System.out.println ("UnitQuery.findLegNode - for " + assetid + " at " + startLoc + " got leg " + found);
+      if (found == null)
+	System.out.println ("UnitQuery.findLegNode - maps now : assetToLeg - " + assetToLeg);
+    }
+    
+    return found;
+  }
+
+  protected void rollUpLegNode (Node newLeg, Node currentLegNode) {
+    if (debug)
+      System.out.println ("UnitQuery.rollUpLegNode - current " + currentLegNode + " new " + newLeg);
+
+    if (newLeg.getActualStart().getTime() < currentLegNode.getActualStart().getTime())
+      currentLegNode.setActualStart(newLeg.getActualStart());
+    if (newLeg.getActualEnd().getTime ()  > currentLegNode.getActualEnd().getTime ())
+      currentLegNode.setActualEnd  (newLeg.getActualEnd ());
+
+    Date newReadyAt  = newLeg.getReadyAt();
+    Date newEarlyEnd = newLeg.getEarlyEnd();
+    Date newLateEnd  = newLeg.getLateEnd();
+
+    if ((newReadyAt != null) && (newReadyAt.getTime() < currentLegNode.getReadyAt().getTime()))
+      currentLegNode.setReadyAt(newReadyAt);
+    if ((newEarlyEnd != null) && (newEarlyEnd.getTime() < currentLegNode.getEarlyEnd().getTime()))
+      currentLegNode.setEarlyEnd(newEarlyEnd);
+    if ((newLateEnd != null) && (newLateEnd.getTime() < currentLegNode.getLateEnd().getTime()))
+      currentLegNode.setLateEnd(newLateEnd);
+  }
+
   protected void attachConveyancesFromResult (ResultSet rs, UIDGenerator generator, 
-											  Map protoToNode, Tree tree) {
+					      Map protoToNode, Tree tree) {
 	try{
 	  int total = 0;
 	  while(rs.next()){
@@ -776,13 +858,14 @@ public class UnitQuery extends SqlQuery {
     String instanceProto      = DGPSPConstants.COL_PROTOTYPEID;
     String cpNomen            = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String ciBumper           = DGPSPConstants.COL_BUMPERNO;
+    String isLowFi            = DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String sqlQuery = 
-      "select " + cLegID + ", " + cLegStart + ", " + cLegEnd + ", " + cLegReadyAt + ", " + 
-      l1geoloc + ", " + l1name + ", " + l2geoloc + ", " + l2name + ", " + 
-      cpConvType + ", " + cLegType + ", " + assetInstanceID + ", " + 
-      ciConvID + ", " + instanceProto + ", " + cpNomen + ", " + ciBumper +
-      " from " + derivedTable + " " +
+      "select " + cLegID + ", " + cLegStart + ", " + cLegEnd + ", " + cLegReadyAt + ",\n" + 
+      l1geoloc + ", " + l1name + ", " + l2geoloc + ", " + l2name + ",\n" + 
+      cpConvType + ", " + cLegType + ", " + assetInstanceID + ",\n" + 
+      ciConvID + ", " + instanceProto + ", " + cpNomen + ", " + ciBumper + ", " + isLowFi +
+      "\nfrom " + derivedTable + " " +
       filterClauses.getUnitWhereSql (assetInstanceOwner) + 
       "\norder by " + assetInstanceID + ", " + cLegStart;
     
