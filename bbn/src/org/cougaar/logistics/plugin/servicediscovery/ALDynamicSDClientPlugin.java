@@ -95,6 +95,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       myLoggingService.debug(getAgentIdentifier() +
                              " handleChangedServiceContractRelays " +changedRelays.size());
     }
+
     for (Iterator iterator = changedRelays.iterator();
 	   iterator.hasNext();) {
       ServiceContractRelay relay = (ServiceContractRelay)iterator.next();
@@ -107,7 +108,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                  + relay.getServiceRequest().getServiceRole());
         }
         serviceRequestHistories.remove(relay.getServiceRequest().getServiceRole().toString());
-	return;
+	continue;
       }
 
       //only take action if you are the client agent
