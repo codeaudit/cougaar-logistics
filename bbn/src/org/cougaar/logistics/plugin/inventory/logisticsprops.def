@@ -105,7 +105,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin); \
         void clearTargetLevels(int startBucket); \
 	void recalculateInitialLevel(); \
-	ShortfallInventory checkForShortfall(String invID); \
+	ShortfallInventory checkForShortfall(String invID,String unitOfIssue); \
 	String getItemName();
 
 ;;
