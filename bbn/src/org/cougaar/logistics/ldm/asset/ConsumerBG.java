@@ -48,17 +48,6 @@ public abstract class ConsumerBG implements PGDelegate {
 
   public abstract PGDelegate copy(PGDelegate del);
 
-  private Schedule createConsumerSchedule(Collection col) {
-    ScheduledContentPG scp;
-    int qty;
-    Asset consumer, asset;
-    Iterator list = col.iterator();
-    while (list.hasNext()) {
-      asset = (Asset)list.next();
-    }
-    return null;
-  }
-
   /**
    *  Org Activities Predicate
    **/
