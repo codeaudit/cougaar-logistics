@@ -129,6 +129,8 @@ public class SeaDataXMLize extends GenericDataXMLize {
    * NOTE : should call isContainer first!
    */
   protected boolean isAmmo (GLMAsset asset) {
+      return asset.hasContentsPG ();
+      /*
     String unit = "";
     try{
       if (asset.hasForUnitPG())
@@ -137,8 +139,10 @@ public class SeaDataXMLize extends GenericDataXMLize {
       return false;
     }
 	
-    return unit.equals ("OSC") || unit.equals ("IOC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
+    return unit.equals("191-ORDBN") || unit.equals ("OSC") || unit.equals ("IOC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
+      */
   }
+
 
   protected double getContainerCapacity (GLMAsset asset) {
     return (asset.hasContainPG()) ?
