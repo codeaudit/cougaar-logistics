@@ -204,11 +204,22 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     
 	// make form for inputing annotation and kicking off run
     
-    h.p("<form action=\"" + getURL(COM_ANNORUN) + "\" method=\"get\" name=\"myform\">" +
+    h.p("<table>" +
+	"<tr>" +
+	"<td>With Annotation</td>" + 
+	"<td>" +
+	"<form action=\"" + getURL(COM_ANNORUN) + "\" method=\"get\" name=\"myform\">" +
    	"<input type=\"text\" name=\"annotation\" align=\"top\" maxlength=\""+maxAnnotationLength+"\""+
-	" size=\""+(maxAnnotationLength+10)+"\"><br>"+
+	" size=\""+(maxAnnotationLength+10)+"\">" + 
+	"</td>"+
+	"</tr>" +
+	"<tr>" +
+	"<td colspan='2' align='center'>"+
    	"<input type=\"submit\" value=\"Start New Run\" align=\"middle\">"+
-   	"</form>");
+   	"</form>" + 
+	"</td>" +
+	"</tr>" +
+	"</table>");
  
     h.eCenter();
     footer(h);
@@ -292,6 +303,7 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
       }
       // Annotation string - 
       h.tDataBuffer(rs.getString(5));
+      h.eRowBuffer();
     }
 
     h.closeBuffer();
