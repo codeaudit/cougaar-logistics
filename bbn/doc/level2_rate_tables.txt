@@ -1,0 +1,69 @@
+Instructions for generating the data for the level 2 rate tables. Note 
+that this data is derived from data already existing in the database.
+This is done so that repeated queries will not have to be done at runtime.
+However, this means that the data needs to be regenerated whenever the 
+base data changes.
+
+Step 1:
+
+Generate the level_2_fuel_rate data by running level2fuel.sql in 
+DB-Visualizer or another tool. 
+
+Extract the results and save in the file level_2_fuel_rate_new.csv.
+
+
+Step 2:
+
+Generate the level_2_ammo_rate data by running level2ammo.sql in 
+DB-Visualizer or another tool. 
+
+Extract the results and save in the file level_2_ammo_rate_new.csv.
+
+
+Step 3:
+
+Generate the level_2_spares data by successively running level2spare_dcr.sql,
+level2spare_weight.sql, and level2spare_cube.sql in DB-Visualizer or 
+another tool. 
+
+Extract the results, combine the data, and save in the file 
+level_2_spares_new.csv.
+
+A simple way to combine the data is to paste the data into Excel; copy 
+all of the DCR columns, the agg_tons_per_day column from the weight data, and 
+the agg_cubic_feet_per_day column from the cube data into another sheet;
+and save that as CSV. Make sure the columns are formatted correctly.
+
+
+Step 4:
+
+Make sure the data records end with commas:
+
+   lastcomma.pl level_2_fuel_rate_new.csv > level_2_fuel_rate_new2.csv
+   lastcomma.pl level_2_ammo_rate_new.csv > level_2_ammo_rate_new2.csv
+   lastcomma.pl level_2_spares_new.csv > level_2_spares_new2.csv
+
+Make sure the data files are in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the files into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the files as:
+
+  level_2_fuel_rate.csv
+  level_2_ammo_rate.csv
+  level_2_spares.csv
+
+
+Step 5:
+
+Make sure the files are different from the current ones (using, for example,
+diff). You can ignore any that are not.
+
+
+Step 6:
+
+Copy the updated files to appropriate place in your source tree (this was
+dbms/data/csv at the time of writing).
+
+
+

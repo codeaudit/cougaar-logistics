@@ -1,0 +1,32 @@
+Instructions for generating the data for the unit_consumption table. Note 
+that this data is derived from data already existing in the database.
+This is done so that repeated queries will not have to be done at runtime.
+However, this means that the data needs to be regenerated whenever the 
+base data changes.
+
+Step 1:
+
+Run the script get-unit-consumption.sql in DB-Visualizer or your favorite tool
+to extract the data. Note that this may take a while.
+
+Save the data as the file unit_consumption_new.csv.
+
+
+Step 2: 
+
+Make sure the data records end with commas:
+
+   lastcomma.pl unit_consumption_new.csv  > unit_consumption_new2.csv
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as unit_consumption.csv.
+
+
+Step 3:
+
+Copy the file to appropriate place in your source tree (this was
+dbms/data/csv at the time of writing).
+
