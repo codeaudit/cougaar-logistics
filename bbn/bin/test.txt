@@ -11,3 +11,4 @@ test of email notification
 
 hello world
 foo
+foo
