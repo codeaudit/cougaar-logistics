@@ -57,7 +57,7 @@ public class ArrivalTimePrecisionTest extends Test{
   static final String COL_NUMBER = "number";
   static final String COL_MEAN = "mean";
   static final String COL_STDDEV = "stddev";
-  static final SimpleDateFormat format = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
+  SimpleDateFormat format = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
   static final int MILLIS_PER_HOUR = 60 * 60 * 1000;
 
   //Variables:
@@ -307,7 +307,7 @@ public class ArrivalTimePrecisionTest extends Test{
 				 Map unitToNumAssets,
 				 Map unitToMean,
 				 Map unitToStdDev) throws SQLException {
-    String aggregateMean = computeAggregateMean(unitToNumAssets, unitToMean);
+    String aggregateMean = computeAggregateMean(l, unitToNumAssets, unitToMean);
     int aggregateStdDev  = computeAggregateStdDev(unitToNumAssets, unitToStdDev);
 
     insertRow(l, s, run,
@@ -357,7 +357,7 @@ public class ArrivalTimePrecisionTest extends Test{
   }
 
   // Computes the aggregate arrival mean over all units
-  protected String computeAggregateMean(Map unitToNumAssets, Map unitToMean) {
+  protected String computeAggregateMean(Logger l, Map unitToNumAssets, Map unitToMean) {
     String retval = null;
     long sum = 0;
     long totalAssets = 0;
@@ -367,6 +367,11 @@ public class ArrivalTimePrecisionTest extends Test{
 	String unit = (String) iter.next();
 	int unitNumAssets = ((Integer) unitToNumAssets.get(unit)).intValue();
 	String unitArrivalMean = (String) unitToMean.get(unit);
+	if (unitToMean.get (unit) == null) {
+	  l.logMessage(Logger.ERROR,Logger.DB_WRITE,
+		       "ArrivalTimePrecisionTest.computeAggregateMean - no mean for unit " + unit);
+	}
+
 	long meanL = format.parse(unitArrivalMean).getTime();
 	sum += unitNumAssets * meanL;
 	totalAssets += unitNumAssets;
