@@ -10,6 +10,7 @@
 <FIELDFORMAT name="name" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="type" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="isPerson" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="distance" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 </OBJECTFORMAT>
 <OBJECTFORMAT name="Asset" is_task="false" is_resource="true" >
 <FIELDFORMAT name="id" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="true" />
