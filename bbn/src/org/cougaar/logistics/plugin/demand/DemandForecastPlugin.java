@@ -281,7 +281,10 @@ public class DemandForecastPlugin extends ComponentPlugin
                     " not ready to process tasks yet." +
                     " my org is: " + myOrganization);
       }
-      logger.error("DemandForecastPlugin: myOrganization is null, not ready to process tasks for " +ais.getMessageAddress().toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("DemandForecastPlugin: myOrganization is null, not ready to process tasks for " +
+                     ais.getMessageAddress().toString());
+      }
       return;
     }
 
@@ -441,7 +444,9 @@ public class DemandForecastPlugin extends ComponentPlugin
       try {
         is = getConfigFinder().open ("demandSchedPolicy.xml");
       } catch (Exception e) {
-        logger.error ("Could not find file demandSchedPolicy.xml");
+        if (logger.isErrorEnabled()) {
+          logger.error("Could not find file demandSchedPolicy.xml");
+        }
       }
       genProjTaskScheduler = new TaskScheduler
         (new GenProjPredicate (supplyType, taskUtils),
@@ -668,9 +673,14 @@ public class DemandForecastPlugin extends ComponentPlugin
       try {
         supplyClassPG = Class.forName(supplyClassPGStr);
       } catch (Exception e) {
-        logger.error("Problem loading SUPPLY_PG_CLASS-" + supplyClassPGStr +
-                     "- exeception: " + e);
-        logger.error(errorString);
+        if (logger.isErrorEnabled()) {
+          logger.error("Problem loading SUPPLY_PG_CLASS-" +
+                       supplyClassPGStr +
+                       "- exeception: " + e);
+        }
+        if (logger.isErrorEnabled()) {
+          logger.error(errorString);
+        }
         supplyClassPG = null;
       }
     }
@@ -1045,11 +1055,18 @@ public class DemandForecastPlugin extends ComponentPlugin
         Class cls = Class.forName(expanderClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         DetReqExpanderIfc expander = (DetReqExpanderIfc) constructor.newInstance(initArgs);
-        logger.info("Using RequirementsExpander " + expanderClass);
+        if (logger.isInfoEnabled()) {
+          logger.info("Using RequirementsExpander " + expanderClass);
+        }
         return expander;
       } catch (Exception e) {
-        logger.error(e + " Unable to create RequirementsExpander instance of " + expanderClass + ". " +
-                     "Loading default org.cougaar.logistics.plugin.projection.DetermineRequirementsExpander");
+        if (logger.isErrorEnabled()) {
+          logger.error(e +
+                       " Unable to create RequirementsExpander instance of " +
+                       expanderClass +
+                       ". " +
+                       "Loading default org.cougaar.logistics.plugin.projection.DetermineRequirementsExpander");
+        }
       }
     }
     return new DetermineRequirementsExpander(this);
@@ -1072,11 +1089,18 @@ public class DemandForecastPlugin extends ComponentPlugin
         Class cls = Class.forName(expanderClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         GenProjExpanderIfc expander = (GenProjExpanderIfc) constructor.newInstance(initArgs);
-        logger.info("Using ProjectionsExpander " + expanderClass);
+        if (logger.isInfoEnabled()) {
+          logger.info("Using ProjectionsExpander " + expanderClass);
+        }
         return expander;
       } catch (Exception e) {
-        logger.error(e + " Unable to create ProjectionsExpander instance of " + expanderClass + ". " +
-                     "Loading default org.cougaar.logistics.plugin.projections.GenerateProjectionsExpander");
+        if (logger.isErrorEnabled()) {
+          logger.error(e +
+                       " Unable to create ProjectionsExpander instance of " +
+                       expanderClass +
+                       ". " +
+                       "Loading default org.cougaar.logistics.plugin.projections.GenerateProjectionsExpander");
+        }
       }
     }
     return new GenerateProjectionsExpander(this);
@@ -1187,7 +1211,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     Schedule paramSchedule = null;
 
     if(projectSpan.getEndTime() <= projectSpan.getStartTime()) {
-	logger.error("Was going to call getParameterSchedule, but the projectSpan spans a zero time span!");
+      if (logger.isErrorEnabled()) {
+        logger.error("Was going to call getParameterSchedule, but the projectSpan spans a zero time span!");
+      }
     }
     else {
 	Class parameters[] = {Collection.class, TimeSpan.class};

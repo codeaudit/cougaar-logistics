@@ -72,7 +72,9 @@ public class InventoryPolicy extends Policy {
     try {
       id.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error(ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error(ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(id);
@@ -80,7 +82,9 @@ public class InventoryPolicy extends Policy {
     try {
       type.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("ResourceType-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("ResourceType-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(type);
@@ -88,7 +92,9 @@ public class InventoryPolicy extends Policy {
     try {
       arrivalDate.setValue(null);
     } catch (RuleParameterIllegalValueException ex) {
-      logger.debug("SupplierArrivalTime-" + ex.toString());
+      if (logger.isDebugEnabled()) {
+        logger.debug("SupplierArrivalTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(arrivalDate);
@@ -96,7 +102,9 @@ public class InventoryPolicy extends Policy {
     try {
       type.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("InventoryManagerSpecifier-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("InventoryManagerSpecifier-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(specifier);
@@ -104,7 +112,9 @@ public class InventoryPolicy extends Policy {
     try {
       cl.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("CriticalLevel-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("CriticalLevel-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(cl);
@@ -112,7 +122,9 @@ public class InventoryPolicy extends Policy {
     try {
       st.setValue(new Integer(1));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("SupplierAdvanceNoticeTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("SupplierAdvanceNoticeTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(st);
@@ -120,7 +132,9 @@ public class InventoryPolicy extends Policy {
     try {
       of.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("ReorderPeriod-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("ReorderPeriod-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(of);
@@ -128,7 +142,9 @@ public class InventoryPolicy extends Policy {
     try {
       ht.setValue(new Integer(0));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("HandlingTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("HandlingTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(ht);
@@ -136,7 +152,9 @@ public class InventoryPolicy extends Policy {
     try {
       tt.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("TransportTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("TransportTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(tt);
@@ -144,7 +162,9 @@ public class InventoryPolicy extends Policy {
     try {
       ost.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("OrderShipTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("OrderShipTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
     Add(ost);
@@ -152,14 +172,18 @@ public class InventoryPolicy extends Policy {
     try {
       bucket.setValue(new Long(TimeUtils.MSEC_PER_DAY));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("BucketSize-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("BucketSize-" + ex.toString());
+      }
     }
     Add(bucket);
     BooleanRuleParameter fillToCap = new BooleanRuleParameter(FillToCapacity, false);
     try {
       fillToCap.setValue(new Boolean(false));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("FillToCapacity-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("FillToCapacity-" + ex.toString());
+      }
     }
     Add(fillToCap);
   }
@@ -177,7 +201,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting AgentID-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting AgentID-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -195,7 +221,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting ResourceType-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting ResourceType-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -229,7 +257,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(arrivalTimeStr);
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting SupplierArrivalTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting SupplierArrivalTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -248,7 +278,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting InventoryManagerSpecifier-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting InventoryManagerSpecifier-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -266,7 +298,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting CriticalLevel-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting CriticalLevel-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -284,7 +318,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting SupplierAdvanceNoticeTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting SupplierAdvanceNoticeTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -302,7 +338,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting ReorderPeriod-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting ReorderPeriod-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -320,7 +358,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting HandlingTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting HandlingTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -338,7 +378,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Setting TransportTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting TransportTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -356,7 +398,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      logger.error("Settting OrderShipTime-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Settting OrderShipTime-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -374,7 +418,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Long(l));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("Setting BucketSize-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting BucketSize-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
@@ -392,7 +438,9 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Boolean(b));
     } catch (RuleParameterIllegalValueException ex) {
-      logger.error("Setting FillToCapacity-" + ex.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("Setting FillToCapacity-" + ex.toString());
+      }
       // Print exception, waiting for a static logger
     }
   }
