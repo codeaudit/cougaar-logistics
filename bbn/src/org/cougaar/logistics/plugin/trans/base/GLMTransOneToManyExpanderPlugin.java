@@ -349,6 +349,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
   public void processTasks (java.util.List tasks) {
       super.processTasks (getPrunedTaskList(tasks));
+      
+      if (isWarnEnabled()) {
+	  warn ("Finished processing " + tasks.size() + " tasks at " + new Date(alarmService.currentTimeMillis()));
+      }
   }
 
     protected List getPrunedTaskList (List tasks) {
