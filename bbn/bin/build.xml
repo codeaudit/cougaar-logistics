@@ -61,7 +61,7 @@
 	
 	<!-- Name of the module being compiled -->
 	<!-- determines jar file name, etc -->
-	<property name="module" value="al_bbn" />
+	<property name="module" value="Logistics_bbn_bbn" />
 
 	<!-- Label for Javadocs, etc -->
 	<property name="UpModule" value="LOGISTICS" />
@@ -73,7 +73,7 @@
 	<!-- Note that no effort is made to build any of these jars
 	or even see if they exist -->
 	<!-- Change name of this path to match the module name as approp -->
-	<path id="al_bbn.classpath">
+	<path id="Logistics_bbn_bbn.classpath">
            <pathelement location="${lib}/core.jar" />
 	   <pathelement location="${lib}/planserver.jar" />
 	   <pathelement location="${lib}/util.jar" />
