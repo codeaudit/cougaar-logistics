@@ -54,6 +54,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public static final long TASK_TRANSMISSION_DELAY = 1000*60*60;
   private static Asset MILVAN_PROTOTYPE = null;
   public static String START = "Start";
+  protected Map childToParent = new HashMap ();
 
   public TaskUtils taskUtils;
 
@@ -747,9 +748,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     for (Iterator iter = reservedToActual.keySet().iterator(); iter.hasNext(); ) {
       Task reserved = (Task)iter.next ();
       Task actual   = (Task) reservedToActual.get(reserved);
+      Task reservedParent = getParentTask (reserved);
       synchronized (reserved.getWorkflow ()) {
         if (ownWorkflow (reserved)) {
-          dealWithReservedTask (actual, reserved);
+          dealWithReservedTask (actual, reserved, reservedParent);
         }
         else if (isInfoEnabled()) {
           info ("reserved task " + reserved.getUID () +
@@ -758,6 +760,34 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
         }
       }
     }
+  }
+
+  /** 
+   * Queries the blackboard for the parent task of the child... 
+   * Stores result in a cache for better performance.
+   * The query is needed since the child task only has a UID reference and
+   * not an actual reference to the parent task.
+   */
+  protected Task getParentTask (final Task child) {
+    Task parent = (Task) childToParent.get(child); // use a cache since query is expensive
+    if (parent != null)
+      return parent;
+
+    Collection parents = blackboard.query (new UnaryPredicate () {
+        public boolean execute (Object obj) {
+          if (obj instanceof Task) {
+            return (((Task) obj).getUID().equals (child.getParentTaskUID()));
+          }
+          else return false;
+        }
+      });
+
+    if (parents.isEmpty()) 
+      return null;
+    parent = (Task) parents.iterator().next(); // only one parent - not an MPTask
+    childToParent.put (child, parent);
+
+    return parent;
   }
 
   protected List getPrunedTaskList (List tasks) {
@@ -987,7 +1017,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   protected boolean transportDateWithinReservedWindow (Task transport, Task reserved){
     Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
-    //Date reservedBest  = prefHelper.getBestDate  (reserved);
 
     Date best          = prefHelper.getBestDate  (transport);
 
@@ -1004,15 +1033,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     return true;
   }
-
-  /*
-  protected String reportTransportDate (Task reserved){
-  Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
-  Date reservedBest  = prefHelper.getBestDate  (reserved);
-
-  return " ready "+reservedReady+ " -> " + reservedBest;
-  }
-  */
 
   protected void updateMap (Map reservedToActual, Task actual, Task reserved) {
     Task foundActual;
@@ -1060,7 +1080,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * @param task actual transport task
    * @param reservedTask reserved transport task to be replaced
    */
-  protected void dealWithReservedTask (Task task, Task reservedTask) {
+  protected void dealWithReservedTask (Task task, Task reservedTask, Task reservedParent) {
     // preconditions
     if (isReservedTask (task))
       error ("arg - task "  + task.getUID () + " is a reserved task.");
@@ -1068,16 +1088,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (!isReservedTask (reservedTask))
       error ("arg - task "  + reservedTask.getUID () + " is not a reserved task.");
 
-    /** this is unnecessary now, since check done in processTasks */
-    /*
-    if (!ownWorkflow (reservedTask)) {
-    error ("huh? reserved task " + reservedTask.getUID () + " not a member of it's own workflow " + reservedTask.getWorkflow () +
-    "\nuids " + uidsWorkflow(reservedTask));
-    error ("assuming it will be removed -- returning.");
-
-    return;
-    }
-    */
     NewWorkflow tasksWorkflow = (NewWorkflow) reservedTask.getWorkflow ();
 
     if (tasksWorkflow == null) {
@@ -1102,7 +1112,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     }
 
     double factor = (double)daysLeft/(double)currentDays;
-    if (factor > 0) {
+    if (factor > 0) { // if the actual doesn't completely cover the period of the projection
       Asset deliveredAsset =
           getTrimmedDirectObject (reservedTask.getDirectObject(), factor);
 
@@ -1168,26 +1178,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     int numTasksAfter = numTasksInWorkflow (tasksWorkflow);
 
     if (numTasksAfter == 0) {
-      final Task reservedCopy = reservedTask;
-      if (isInfoEnabled ()) {
-        info ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
-      }
-      Collection parents = blackboard.query (new UnaryPredicate () {
-        public boolean execute (Object obj) {
-          if (obj instanceof Task) {
-            return (((Task) obj).getUID().equals (reservedCopy.getParentTaskUID()));
-          }
-          else return false;
-        }
-      }
-      );
-
-      if (!parents.isEmpty()) { // I guess if the task is being removed, the parent could be missing from the blackboard
-        Task parent = (Task) parents.iterator ().next();
-        PlanElement exp = parent.getPlanElement();
+      if (reservedParent != null) { // I guess if the task is being removed, the parent could be missing from the blackboard
+        PlanElement exp = reservedParent.getPlanElement();
         if (exp == null) {
           if (isWarnEnabled ()) {
-            warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
+            warn ("found task " + reservedParent.getUID () + " verb " + reservedParent.getVerb() + " that had no plan element.");
           }
         }
         else {
@@ -1195,13 +1190,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
           if (isInfoEnabled ()) {
             info ("removing expansion of task " + exp.getTask().getUID());
           }
-          //	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
-          AllocationResult ar = makeSuccessfulDisposition(parent);
+          AllocationResult ar = makeSuccessfulDisposition(reservedParent);
           Disposition disposition =
-              ldmf.createDisposition(parent.getPlan(), parent, ar);
+              ldmf.createDisposition(reservedParent.getPlan(), reservedParent, ar);
           publishAdd (disposition);
           if (isInfoEnabled ())
-            info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
+            info (" task " + reservedParent.getUID () + " verb " + reservedParent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
         }
       }
     }
