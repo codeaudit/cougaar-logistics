@@ -28,11 +28,15 @@ public class WorkGroupTest extends TestCase {
         WorkGroup grp = new WorkGroup(new WorkQueue(new StdLogger(), new MyResultHandler()), new ResultQueue(new StdLogger()));
         assertTrue(grp.isEmpty());
         assertEquals("", grp.getDesc(1));
+        assertEquals(0, grp.size());
     }
 
-    public void testAdd() {
+    public void testAddRemove() {
         WorkGroup grp = new WorkGroup(new WorkQueue(new StdLogger(), new MyResultHandler()), new ResultQueue(new StdLogger()));
         grp.add(1, "foo");
         assertEquals("foo", grp.getDesc(1));
+        assertEquals(1, grp.size());
+        grp.remove(1);
+        assertEquals(0, grp.size());
     }
 }
