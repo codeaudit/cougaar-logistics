@@ -169,7 +169,7 @@
 <LITERAL value="" type="variable" datatype="boolean" />
 </OPERATOR>
 </OPERATOR>
-<OPERATOR operation="!=" >
+<OPERATOR operation="&lt;&gt;" >
 <OPERATOR operation="get" >
 <LITERAL value="resource" type="variable" datatype="resource" />
 <LITERAL value="type" type="constant" datatype="string" />
@@ -181,15 +181,15 @@
 </OPERATOR>
 </CAPABILITY>
 <TASKUNAVAIL>
-<OPERATOR operation="list" >
-<OPERATOR operation="interval" >
-<LITERAL value="start_time" type="variable" datatype="datetime" />
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="departure" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-</OPERATOR>
+ <OPERATOR operation="list" >
+  <OPERATOR operation="interval" >
+   <LITERAL value="start_time" type="variable" datatype="datetime" />
+    <OPERATOR operation="get" >
+     <LITERAL value="task" type="variable" datatype="task" />
+     <LITERAL value="departure" type="constant" datatype="string" />
+     <LITERAL value="" type="variable" datatype="datetime" />
+    </OPERATOR>
+   </OPERATOR>
 <OPERATOR operation="interval" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />

@@ -164,7 +164,7 @@
 <LITERAL value="" type="variable" datatype="boolean" />
 </OPERATOR>
 </OPERATOR>
-<OPERATOR operation="!=" >
+<OPERATOR operation="&lt;&gt;" >
 <OPERATOR operation="get" >
 <LITERAL value="resource" type="variable" datatype="resource" />
 <LITERAL value="type" type="constant" datatype="string" />
