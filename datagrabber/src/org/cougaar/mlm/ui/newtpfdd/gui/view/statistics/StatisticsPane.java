@@ -157,7 +157,7 @@ public class StatisticsPane extends JPanel implements ActionListener{
 	int runID=fin_runID;
 	Statement s=fin_s;
         public Object construct() {
-	  getValidator().runTest(logger,s,runID,idx);    
+	  getValidator().runTest(logger,shell.getDBConfig(),runID,idx);    
 	  return null;
         }
         //Runs on the event-dispatching thread.
