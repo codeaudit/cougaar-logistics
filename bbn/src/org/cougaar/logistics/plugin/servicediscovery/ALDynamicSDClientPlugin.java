@@ -495,7 +495,9 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     TimeInterval requestedTimeInterval;
     ArrayList serviceRequestRecords;
     
-    ServiceRequestHistory(Role requestedRole, TimeInterval requestedTimeInterval,
+    
+    ServiceRequestHistory(Role requestedRole, 
+			  TimeInterval requestedTimeInterval,
 			  ServiceRequestRecord firstRequestRecord) {
       this.requestedRole = requestedRole;
       this.requestedTimeInterval = requestedTimeInterval;
@@ -586,8 +588,11 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
   }
     
   protected static class ServiceRequestPredicate implements UnaryPredicate {
-    ServiceRequestHistory serviceRequestHistory;
-    Collection uncoveredTimeIntervals;
+    private transient ServiceRequestHistory serviceRequestHistory;
+    private transient Collection uncoveredTimeIntervals;
+
+    public ServiceRequestPredicate() {
+    }
 
     public ServiceRequestPredicate(ServiceRequestHistory srh,
 				   Collection uti) {
