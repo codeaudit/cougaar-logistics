@@ -47,7 +47,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class Instance implements XMLable, DeXMLable, Externalizable {
+public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
 
   //Constants:
   ////////////
@@ -336,23 +336,44 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
   public int writeToManifestBuffers(int index, 
 				    char [] nomenStringBuffer,
 				    char [] typeIDStringBuffer,
+				    char [] receiverStringBuffer,
 				    double [] weightDoubleBuffer) {
     Iterator iter2 = typeIdentifications.iterator();
     Iterator iter3 = weights.iterator();
+    Iterator iter4 = receivers.iterator();
+
     for (Iterator iter = nomenclatures.iterator(); iter.hasNext(); ) {
       String nomen  = (String) iter.next();
+      if (nomen == null) nomen = "no_nomen";
+      int nomenLen = (nomen.length() > maxStringLength) ? maxStringLength : nomen.length();
+
       String typeID = (String) iter2.next ();
+      if (typeID == null) nomen = "no_type";
+      int typeLen = (typeID.length() > maxStringLength) ? maxStringLength : typeID.length();
+
       Mass weight   = (Mass)   iter3.next ();
+
+      String receiver = (String) iter4.next ();
+      if (receiver == null) nomen = "no_receiver";
+      int receiverLen = (receiver.length() > maxStringLength) ? maxStringLength : receiver.length();
 
       System.arraycopy (nomen.toCharArray(), 0, 
 			nomenStringBuffer, (index)*maxStringLength, 
-			nomen.length());
+			nomenLen);
 
       System.arraycopy (typeID.toCharArray(), 0, 
 			typeIDStringBuffer, (index)*maxStringLength, 
-			typeID.length());
+			typeLen);
 
-      weightDoubleBuffer[index++] = weight.getKilograms ();
+      System.arraycopy (receiver.toCharArray(), 0, 
+			receiverStringBuffer, (index)*maxStringLength, 
+			receiverLen);
+
+      if (weight != null)
+	  weightDoubleBuffer[index] = weight.getKilograms ();
+      else
+	  weightDoubleBuffer[index] = 0.0d;
+      index++;
     }
     return index;
   }
@@ -369,6 +390,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
 			     boolean [] instanceBooleanBuffer,
 			     CharBuffer nomenCharBuffer,
 			     CharBuffer typeIDCharBuffer,
+			     CharBuffer receiverCharBuffer,
 			     double [] weightDoubleBuffer) {
     // UIDs
     UID     = new UID((String) agentNames.get(uidAgentIndex[index*numUID]), 
@@ -401,6 +423,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
     if (hasManifest) {
       nomenclatures = new ArrayList ();
       typeIdentifications = new ArrayList ();
+      receivers     = new ArrayList ();
       weights       = new ArrayList ();
 
       for (int i = 0; i < numNomens; i++) {
@@ -410,11 +433,36 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
 	typeIDCharBuffer.get(temp);
 	typeIdentifications.add (new String(temp).trim());
 
+	receiverCharBuffer.get(temp);
+	receivers.add (new String(temp).trim());
+
 	weights.add (new Mass (weightDoubleBuffer[manifestsSoFar + i], Mass.KILOGRAMS));
       }
     }
 
     return manifestsSoFar + numNomens;
+  }
+
+  public String toString () {
+    StringBuffer buffer = new StringBuffer();
+    
+    buffer.append ("UID     " + UID);buffer.append("\n");
+    buffer.append ("nomen   " + itemNomen);buffer.append("\n");
+    buffer.append ("name    " + name);buffer.append("\n");
+    buffer.append ("aggre # " + aggregateNumber);buffer.append("\n");
+    buffer.append ("prototypeUID " + prototypeUID);buffer.append("\n");
+    buffer.append ("ownerID      " + ownerID);buffer.append("\n");
+
+    if (nomenclatures != null) {
+	for (int i = 0; i < nomenclatures.size(); i++) {
+	    buffer.append ("m #" + i + " nomen  " + nomenclatures.get(i));buffer.append("\n");
+	    buffer.append ("m #" + i + " type   " + typeIdentifications.get(i));buffer.append("\n");
+	    buffer.append ("m #" + i + " receiv " + receivers.get(i));buffer.append("\n");
+	    buffer.append ("m #" + i + " weight " + weights.get(i));buffer.append("\n");
+	}
+    }
+
+    return buffer.toString();
   }
 
   //Inner Classes:

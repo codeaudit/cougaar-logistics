@@ -52,7 +52,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class InstancesData implements XMLable, DeXMLable, Serializable /*Externalizable */ {
+public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Externalizable {
 
   //Constants:
 
@@ -194,7 +194,7 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
 
     while(iter.hasNext()){
       Instance instance = (Instance)iter.next();
-      totalManifestItems = instance.writeToBuffer (index++, 
+      int numInManifest = instance.writeToBuffer (index++, 
 						   agentNames,
 						   uidAgentIndex,
 						   uidLong,
@@ -202,19 +202,33 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
 						   instanceLongBuffer, 
 						   instanceIntBuffer, 
 						   instanceBooleanBuffer);
+      totalManifestItems += numInManifest;
+
+      if (instance.hasManifest && numInManifest == 0)
+	  System.err.println ("Huh? Instance " + instance.UID + 
+			      " says it has a manifest, but 0 items in the list.");
     }
 
     char [] nomenStringBuffer  = new char [totalManifestItems * Instance.maxStringLength];
     char [] typeIDStringBuffer = new char [totalManifestItems * Instance.maxStringLength];
     double [] weightDoubleBuffer = new double [totalManifestItems];
+    char [] receiversStringBuffer = new char [totalManifestItems * Instance.maxStringLength];
 
     index = 0;
     iter = getInstancesIterator();
+    int i = 0;
     while(iter.hasNext()){
       Instance instance = (Instance)iter.next();
+
+      //      System.out.println ("total manifest items " + totalManifestItems);
+
       if (instance.hasManifest)
 	index = instance.writeToManifestBuffers (index, 
-						 nomenStringBuffer, typeIDStringBuffer, weightDoubleBuffer);
+						 nomenStringBuffer, 
+						 typeIDStringBuffer, 
+						 receiversStringBuffer,
+						 weightDoubleBuffer);
+      //      System.out.println ("Intance #" + i++ + " is\n" + instance);
     }
 
     //    System.out.println ("AgentNames is " + agentNames);
@@ -230,6 +244,7 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
     out.writeObject(instanceBooleanBuffer);
     out.writeObject(nomenStringBuffer);
     out.writeObject(typeIDStringBuffer);
+    out.writeObject(receiversStringBuffer);
     out.writeObject(weightDoubleBuffer);
     } catch (Exception e) { e.printStackTrace (); }
   }
@@ -259,6 +274,8 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
 
     char   [] nomenStringBuffer  = (char [])    in.readObject();
     char   [] typeIDStringBuffer = (char [])    in.readObject();
+    char   [] receiverStringBuffer = (char [])  in.readObject();
+
     double [] weightDoubleBuffer = (double [])  in.readObject();
 
     CharBuffer charBuffer = CharBuffer.allocate (instanceStringBuffer.length);
@@ -276,6 +293,11 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
     typeIDBuffer.put (temp);
     typeIDBuffer.rewind();
 
+    CharBuffer receiverBuffer = CharBuffer.allocate (receiverStringBuffer.length);
+    temp = new String(receiverStringBuffer);
+    receiverBuffer.put (temp);
+    receiverBuffer.rewind();
+
     int manifestsSoFar = 0;
     for (int i = 0; i < numInstances; i++) {
       Instance instance = new Instance ();
@@ -289,10 +311,10 @@ public class InstancesData implements XMLable, DeXMLable, Serializable /*Externa
 						instanceIntBuffer,
 						instanceBooleanBuffer,
 						nomenBuffer,
-						typeIDBuffer,
+						typeIDBuffer,receiverBuffer,
 						weightDoubleBuffer);
       addInstance (instance);
-      //      System.out.println ("Leg #" + i + " is\n" + li);
+      //      System.out.println ("Intance #" + i + " is\n" + instance);
     }
   }
 
