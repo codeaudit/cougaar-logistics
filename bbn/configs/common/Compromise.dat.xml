@@ -8,7 +8,7 @@
     <directobject>
      <asset id="bulkPOL-1">NSN/9130010315816</asset>	
     </directobject>
-    <for>FCS-C2V-0.MCG1.1-UA.ARMY.MIL-FCS-C2V-1</for>
+    <for>FCS-C2V-0.MCG1.1-UA.ARMY.MIL</for>
     <oftype>BulkPOL</oftype>
     <to>
       <geoloc>KIROVABAD-ALFA</geoloc> 
