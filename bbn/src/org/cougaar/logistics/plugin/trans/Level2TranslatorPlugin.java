@@ -385,13 +385,6 @@ public class Level2TranslatorPlugin extends ComponentPlugin
       doTranslate = (translateOn.equals("true"));
     }
 
-    //MWD Is this right
-    /*
-    if(supplyType == null) {
-      supplyType = "Ammunition";
-    }
-    */
-
     if ((supplyType == null) &&
         logger.isErrorEnabled()) {
       logger.error(errorString);
