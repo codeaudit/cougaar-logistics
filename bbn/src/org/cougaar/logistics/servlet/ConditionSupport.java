@@ -29,8 +29,8 @@ import org.cougaar.planning.ldm.LDMServesPlugin;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.SchedulerService;
+import org.cougaar.core.service.wp.WhitePagesService;
 
 import org.cougaar.planning.servlet.BlackboardServletSupport;
 
@@ -53,19 +53,22 @@ public class ConditionSupport extends BlackboardServletSupport {
       String path,
       MessageAddress agentId,
       BlackboardQueryService blackboardQuery,
-      NamingService ns,
       LoggingService logger,
       BlackboardService blackboard,
       ConfigFinder configFinder,
       PlanningFactory ldmf,
       LDMServesPlugin ldm,
       SchedulerService scheduler,
+      WhitePagesService wp,
       String conditionName) {
-    super (path, agentId, blackboardQuery, ns, logger, blackboard, configFinder, ldmf, ldm, scheduler);
+    super (path, agentId, blackboardQuery, logger, blackboard, configFinder, ldmf, ldm, scheduler);
+    this.wp = wp;
     this.conditionName = conditionName;
 
     publishCondition ();
   }
+
+  public WhitePagesService getWhitePagesService() { return wp; }
 
   /** publishes the condition to blackboard, if the condition service is available. */
   public void publishCondition () {
@@ -94,5 +97,6 @@ public class ConditionSupport extends BlackboardServletSupport {
   protected String getConditionName () { return conditionName; }
 
   protected ConditionServlet.DoubleCondition condition;
+  protected WhitePagesService wp;
   protected String conditionName;
 }

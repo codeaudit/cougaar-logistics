@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 
 import org.cougaar.core.servlet.SimpleServletSupport;
+import org.cougaar.core.wp.ListAllAgents;
 
 import org.cougaar.planning.ldm.asset.Asset;
 
@@ -94,7 +95,7 @@ public class ConditionWorker
     if (setAllAgents) {
       format = FORMAT_HTML;
 
-      List knownAgents = support.getAllEncodedAgentNames();
+      List knownAgents = getAllEncodedAgentNames();
       List validAgents = new ArrayList ();
       for (Iterator iter = knownAgents.iterator(); iter.hasNext(); ) {
 	String agentName = (String) iter.next();
@@ -170,6 +171,19 @@ public class ConditionWorker
     }
 
     writeResponse (responseData, response.getOutputStream(), request, support, format);
+  }
+
+  protected List getAllEncodedAgentNames() {
+    try {
+      // do full WP list (deprecated!)
+      Set s = ListAllAgents.listAllAgents(support.getWhitePagesService());
+      // URLEncode the names and sort
+      List l = ListAllAgents.encodeAndSort(s);
+      return l;
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "List all agents failed", e);
+    }
   }
 
   protected static class ResponseData implements XMLable, Serializable {

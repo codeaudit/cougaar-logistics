@@ -38,8 +38,8 @@ import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.DomainService;
-import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.SchedulerService;
+import org.cougaar.core.service.wp.WhitePagesService;
 
 import org.cougaar.planning.servlet.BlackboardServletComponent;
 import org.cougaar.core.servlet.SimpleServletSupport;
@@ -129,16 +129,19 @@ public class ConditionComponent extends BlackboardServletComponent {
         path,
         agentId,
         blackboardQuery,
-        ns,
 	log,
         getBlackboardService(),
 	getConfigFinder(),
 	((PlanningFactory)getDomainService().getFactory("planning")),
 	getLDMService().getLDM(),
 	getSchedulerService(),
+        wp,
 	conditionName);
   }
 
+  public final void setWhitePagesService(WhitePagesService wp) {
+    this.wp = wp;
+  }
   public final void setDomainService(DomainService s) {
     domainService = s;
   }
@@ -177,6 +180,7 @@ public class ConditionComponent extends BlackboardServletComponent {
     }
   }
 
+  protected WhitePagesService wp = null;
   protected DomainService domainService = null;
   protected ConditionService conditionService;
   protected ParamParser paramParser = new ParamParser();
