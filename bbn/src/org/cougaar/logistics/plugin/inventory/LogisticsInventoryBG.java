@@ -482,6 +482,21 @@ public class LogisticsInventoryBG implements PGDelegate {
     return projectedDemandArray[bucket];
   }
 
+  public Collection getProjectedDemandTasks(int bucket) {
+    ArrayList projDemand = new ArrayList();
+    if (bucket >= dueOutList.size()) {
+      return projDemand;
+    }
+    Iterator dueOutIter = ((ArrayList)dueOutList.get(bucket)).iterator();
+    while (dueOutIter.hasNext()) {
+      Task task = (Task)dueOutIter.next();
+      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+        projDemand.add(task);
+      }
+    }
+    return projDemand;
+  }
+
   public double getActualDemand(int bucket) {
     if (bucket >= dueOutList.size()) {
       return 0.0;
