@@ -3,7 +3,7 @@
 <!DOCTYPE Policy SYSTEM "Policy.ldm.dtd" []>
 
 <Policies>
- <Policy name="ArmyFeedingPolicy" type="org.cougaar.logistics.plugin.policy.LogClassIPolicy">
+ <Policy name="ArmyFeedingPolicy" type="org.cougaar.logistics.ldm.policy.FeedingPolicy">
     <RuleParam name="MealPolicy">
       <RangeSet value="">
         <RangeValue min="0"  max="20">
