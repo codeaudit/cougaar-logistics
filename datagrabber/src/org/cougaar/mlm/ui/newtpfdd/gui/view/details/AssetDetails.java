@@ -45,6 +45,13 @@ public class AssetDetails{
   public static final int WIDTH = 7;
   public static final int HEIGHT = 8;
   public static final int DEPTH = 9;
+  public static final int AREA = 10;
+  public static final int VOLUME = 11;
+
+  private static double KGS_TO_STONS = 0.0011022927689594355d;
+  private static double METERS_TO_FEET = 3.28084d;
+  private static double SQUARE_METERS_TO_SQUARE_FEET = 10.763867d;
+  private static double CUBIC_METERS_TO_CUBIC_FEET = 35.314667d;
 
   protected static final String[] columnNames={"Owner",
 					       "Type",
@@ -53,10 +60,12 @@ public class AssetDetails{
 					       "Number",
 					       "Asset Class",
 					       /*"Asset Type",*/
-					       "Weight (kg)",
-					       "Width (m)",
-					       "Height (m)",
-					       "Depth (m)"};
+					       "Weight (stons)",
+					       "Width (ft)",
+					       "Height (ft)",
+					       "Depth (ft)",
+					       "Area (ft^2)",
+					       "Vol (ft^3)"};
   protected static final Class[] columnClasses={String.class,
 						String.class,
 						String.class,
@@ -64,6 +73,8 @@ public class AssetDetails{
 						Integer.class,
 						String.class,
 						/*Integer.class,*/
+						Double.class,
+						Double.class,
 						Double.class,
 						Double.class,
 						Double.class,
@@ -82,6 +93,8 @@ public class AssetDetails{
   private double width;
   private double height;
   private double depth;
+  private double area;
+  private double volume;
   
   //Constructors:
   ///////////////
@@ -110,13 +123,17 @@ public class AssetDetails{
       assetType=((Integer)o).intValue;break;
       */
     case WEIGHT:
-      weight=((Double)o).doubleValue()/1000;break;
+      weight=(((Double)o).doubleValue()/1000)*KGS_TO_STONS;break;
     case WIDTH:
-      width=((Double)o).doubleValue();break;
+      width=((Double)o).doubleValue()*METERS_TO_FEET;break;
     case HEIGHT:
-      height=((Double)o).doubleValue();break;
+      height=((Double)o).doubleValue()*METERS_TO_FEET;break;
     case DEPTH:
-      depth=((Double)o).doubleValue();break;     
+      depth=((Double)o).doubleValue()*METERS_TO_FEET;break;     
+    case AREA:
+      area=((Double)o).doubleValue()*SQUARE_METERS_TO_SQUARE_FEET;break;     
+    case VOLUME:
+      volume=((Double)o).doubleValue()*CUBIC_METERS_TO_CUBIC_FEET;break;     
     }
   }
 
@@ -146,6 +163,10 @@ public class AssetDetails{
       return new Double(height);
     case DEPTH:
       return new Double(depth);     
+    case AREA:
+      return new Double(area);     
+    case VOLUME:
+      return new Double(volume);     
     }
     return null;
   }
