@@ -27,6 +27,12 @@ package org.cougaar.mlm.ui.grabber.validator;
 
 import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.controller.FailureRunResult;
+
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+import org.cougaar.mlm.ui.grabber.workqueue.ResultHandler;
+import org.cougaar.mlm.ui.grabber.workqueue.Work;
+import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -51,6 +57,7 @@ public class Validator{
   public static final int MIN_TEST_CATEGORY=ERROR_TESTS;
 
   protected Test[] tests;
+  private WorkQueue workQ;
 
   //Variables:
   ////////////
@@ -465,32 +472,114 @@ public class Validator{
   }
 
   /** test has a ONE based index, 0 is reserved for 'all tests'**/
-  public void runTest(HTMLizer h, Statement s, int run, int test){
+  public void runTest(final HTMLizer h, Statement s, int run, int test){
     // keep track of whether this category has been run
     if (isTestCategory(test))
       ResultTable.updateStatus(h,s,this,run,test);
 
+    workQ = new WorkQueue(h, new ResultHandler () {
+	public void handleResult(Result r) {
+	  if (h.isTrivialEnabled ()) {
+	    h.logMessage (Logger.TRIVIAL, Logger.GENERIC, "Returned " + r);
+	  }
+	  if (h.isMinorEnabled ()) {
+	    h.logMessage (Logger.MINOR, Logger.GENERIC, 
+			  "Now " + workQ.getNumActiveWork () + 
+			  " active tests, " + workQ.getNumWorkWaitingOnQueue () + 
+			  " waiting to be worked on.");
+	  }
+	  if (r instanceof FailureRunResult) {
+	    if (h.isWarningEnabled ()) {
+	      h.logMessage (Logger.WARNING, Logger.GENERIC, "Stopping all work because of failure : " + r);
+	    }
+	    workQ.haltAllWork (); // stop on any failure
+	  }
+	}      
+      });
+
     List l = getTestIndicesForTestType(test);
     for(int i=0;i<l.size();i++){
       int idx=((Integer)l.get(i)).intValue();
-      try {
-	getTest(idx).prepare(h,s,run);
-      } catch (Exception e) {
-	h.logMessage(Logger.WARNING, Logger.GENERIC,
-		     "Problem running test - could not prepare test "+getTest(idx).getDescription() + 
-		     ". Exception was " + e);
-	//	e.printStackTrace();
+      Work work = new TestWork (100+i, s, idx, getDescription (idx), h, run, this);
+      if (h.isMinorEnabled()) {
+	h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
       }
-      try {
-	ResultTable.updateStatus(h,s,this,run,idx);
-      } catch (RuntimeException e) {
-	h.logMessage(Logger.WARNING, Logger.GENERIC,
-		     "Problem running test - could not update status for test "+getTest(idx).getDescription());
+      workQ.enque (work);
+    }
+
+    while (workQ.isBusy ()) {
+      synchronized (this) {
+	try {wait(5000);} catch (Exception e) {e.printStackTrace();}
       }
     }
+
     h.p("<BR><B>Finished Validating</B>");
   }
-  
+
+  public class TestWork implements Work {
+    int id;
+    boolean halt = false;
+    Statement statement;
+    String testName;
+    int testIndex;
+    HTMLizer htmlizer;
+    int run;
+    Validator validator;
+
+    public TestWork (int id, Statement statement, int testIndex, String testName, HTMLizer htmlizer, int run,
+		     Validator validator) { 
+      this.id = id; 
+      this.statement = statement;
+      this.testName = testName;
+      this.testIndex = testIndex;
+      this.htmlizer = htmlizer;
+      this.run = run;
+      this.validator = validator;
+    }
+
+    public int getID() { return id; }
+    public String getStatus() { return "doing test " + this; }
+    public void halt() { halt = true;}
+    public Result perform(Logger l) { 
+      if (doTest ()) {
+	return new Result () { 
+	    public int getID () { return id; }
+	    public String toString () { return "Successful run of test \"" + testName + "\" on run #" + run; }
+	  };
+      } else {
+	return new FailureRunResult (id, run, "running test " + this, false);
+      }
+    }
+
+    protected boolean doTest () {
+      try {
+	if (!halt) {
+	  getTest(testIndex).prepare(htmlizer,statement,run);
+	}
+      } catch (Exception e) {
+	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
+			    "Problem running test - could not prepare test "+testName +
+			    ". Exception was " + e);
+	e.printStackTrace();
+	return false;
+      }
+      try {
+	synchronized (validator) { // don't update tables at same time
+	  if (!halt) {
+	    ResultTable.updateStatus(htmlizer,statement,validator,run,testIndex);
+	  }
+	}
+      } catch (RuntimeException e) {
+	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
+			    "Problem running test - could not update status for test "+testName);
+	return false;
+      }
+      return true;
+    }
+
+    public String toString () { return "Test Work : " + testName;  }
+  }
+
   /** test has a ONE based index, 0 is reserved for 'all tests'**/
   public void displayTest(Statement s, HTMLizer h, int run, int test){
     List l = getTestIndicesForTestType(test);
