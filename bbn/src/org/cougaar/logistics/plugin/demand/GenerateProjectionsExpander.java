@@ -197,6 +197,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     long late = dfPlugin.getTimeUtils().addNDays(bestDay, 1);
     long end = dfPlugin.getLogOPlanEndTime();
     double daysBetween = ((end - bestDay) / 86400000);
+
+    // Negative value here is bad. Note that end==bestDay is OK. This case 
+    // is handled below, where we skip adding the end AspectScorePoint
+    if (daysBetween < 0.0) {
+      if (logger.isWarnEnabled())
+	logger.warn(dfPlugin.getClusterId() + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
+    }
+    
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
@@ -208,10 +216,35 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
 
-    points.addElement(earliest);
+    // Don't add the early point if best is same time or earlier
+    if (bestDay > early) {
+      points.addElement(earliest);
+    } else if (bestDay == early) {
+      if (logger.isInfoEnabled()) {
+	logger.info(dfPlugin.getClusterId() + ".createTimePref skipping early point: best == early (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
+      }
+    } else {
+      if (logger.isWarnEnabled()) {
+	logger.warn(dfPlugin.getClusterId() + ".createTimePref skipping early point: best < early (OplanStart)! bestDay: " + new Date(bestDay) + ", early: " + new Date(early) + ". AspectType: " + aspectType);
+      }
+    }
+
     points.addElement(best);
     points.addElement(first_late);
-    points.addElement(latest);
+
+    // Only add the "late" point if it's value is later than first_late
+    if (end > late) {
+      points.addElement(latest);
+    } else if (logger.isInfoEnabled()) {
+      // Note that this case is equivalent to any daysBetween value <= 1.0,
+      // including the case above where daysBetween < 0.0
+
+      // If bestDay == end, this is almost certainly an end Preference, where the preference
+      // is OplanEnd. So best+1 is necessarily > end
+      // check aspectType == AspectType.END_TIME
+      logger.info(dfPlugin.getClusterId() + ".createTimePref skipping end point: end <= late! end: " + new Date(end) + ", late: " + new Date(late) + ((bestDay==end && aspectType == AspectType.END_TIME) ? ". A Task EndPref where best==OplanEnd." : ". AspectType: " + aspectType));
+    }
+
     ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
     return getPlanningFactory().newPreference(aspectType, timeSF);
 

@@ -506,6 +506,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
     double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
+
+    // Negative daysBetween will cause bogus results
+    if (end <= bestDay) {
+      if (logger.isWarnEnabled()) {
+	logger.warn("createRefillTimePref has invalid OplanEnd <= bestDay! OplanEnd: " + new Date(end) + ", best: " + new Date(bestDay));
+      }
+    }
+
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
@@ -522,10 +530,31 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
                                                    (alpha + late_score));
 
-    points.addElement(earliest);
+    if (start < bestDay) {
+      points.addElement(earliest);
+    } else if (start == bestDay) {
+      if (logger.isInfoEnabled()) {
+	logger.info("createRefillTimePref skipping start == best: " + new Date(start) + ((aspectType == AspectType.START_TIME) ? ". Case of Start Pref==startTime." : ". AspectType=" + aspectType));
+      }
+    } else {
+      if (logger.isWarnEnabled()) {
+	logger.warn("createRefillTimePref skipping start: start > bestDay! Best: " + new Date(bestDay) + ", Start: " + new Date(start) + ", AspectType: " + aspectType);
+      }
+    }
     points.addElement(best);
     points.addElement(first_late);
-    points.addElement(latest);
+
+    // Only add the end point if it is not earlier and therefore invalid
+    // Note that I'm allowing end==late though that's probably usually
+    // not what we intended
+    if (end >= (bestDay + thePG.getBucketMillis())) {
+      points.addElement(latest);
+    } else {
+      if (logger.isWarnEnabled()) {
+	logger.warn("createRefillTimePref skipping end < best+bucketSize. End: " + new Date(end) + ", best+bucket: " + new Date(bestDay + thePG.getBucketMillis()) + ". AspectType: " + aspectType);
+      }
+    }
+
     ScoringFunction timeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getPlanningFactory().
