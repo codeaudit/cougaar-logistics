@@ -327,7 +327,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in LOW fidelity mode. d.o. is " + parentTask.getDirectObject());
 
-      Set [] categories = sortAssetsByCategory(expandAsset(parentTask.getDirectObject()));
+      Set [] categories = sortAssetsByCategory(expandAsset(parentTask, parentTask.getDirectObject()));
 
       for (int i = 0; i < NUM_TRANSPORT_CLASSES; i++) {
 	if (!categories[i].isEmpty())
@@ -339,7 +339,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in HIGH fidelity mode. d.o. is " + parentTask.getDirectObject());
 
-      Vector itemsToMove = expandAsset((Asset)parentTask.getDirectObject());
+      Vector itemsToMove = expandAsset(parentTask, (Asset)parentTask.getDirectObject());
 
       for (int i = 0; i < itemsToMove.size (); i++) {
 	Task subTask = makeTask (parentTask, (Asset) itemsToMove.elementAt(i), null);
@@ -623,7 +623,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	
       if (itemPhysicalPG == null) {
 	if (!baseAsset.hasPersonPG()) {
-	  warn (".setDimensions - asset " + firstItem + 
+	  warn (".setDimensions - for task " + parentTask.getUID() + " asset " + firstItem + 
 		"'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
 	}
 	else if (isDebugEnabled ()) {
@@ -905,7 +905,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * @param asset
    * @return A vector of assets that this asset has been broken into.
    **/
-  public Vector expandAsset(Asset asset) {
+  public Vector expandAsset(Task task, Asset asset) {
     if (myExpandAggregates) {
       if (isDebugEnabled())
 	debug (getName() + ".expandAsset - expanding aggregate asset " + asset);
