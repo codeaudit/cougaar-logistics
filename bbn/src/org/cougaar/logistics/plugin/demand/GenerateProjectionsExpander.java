@@ -27,12 +27,11 @@ import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.plugins.AssetUtils;
 import org.cougaar.glm.plugins.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
-import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
@@ -84,7 +83,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (!items.isEmpty()) {
       for (Iterator iterator = items.iterator(); iterator.hasNext();) {
         consumedItem = (Asset) iterator.next();
-        
+
         Enumeration scheduleElements = schedule.getAllScheduleElements();
         Rate rate;
         // for every item consumed, walk the schedule elements and get the rates
@@ -96,7 +95,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
           // is available but there is not matching org act for the time period.
           // (if the orgact is null then the bg returns a null rate)
           if (rate == null)  {
-         //    String myOrgName = 
+            //    String myOrgName =
 //               dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
 //             if (myOrgName.indexOf("35-ARBN") >= 0) {
 //               System.out.println("------------------ THE RATE is NULL ------------------------  " +
@@ -111,8 +110,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         }
       }
     }
-     String myOrgName = 
-	    dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    String myOrgName =
+        dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
     if (myOrgName.indexOf("35-ARBN") >= 0) {
       System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
                          consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
@@ -128,7 +127,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, 
                                           TaskUtils.getPreference(gpTask, AspectType.START_TIME));
       AllocationResult dispAR =
-        getPlanningFactory().newAllocationResult(1.0, true, avs);
+          getPlanningFactory().newAllocationResult(1.0, true, avs);
       Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
       dfPlugin.publishAdd(disp);
     }
@@ -152,7 +151,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     double late_score = .0033 * daysBetween;
     // define alpha .25
     double alpha = .25;
-    
+
     Vector points = new Vector();
     AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
     AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
