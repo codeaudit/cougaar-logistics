@@ -85,13 +85,13 @@ public class CargoDimensionTest extends Test implements Graphable {
 
   /**Get header strings for the table**/
   public String[] getHeaders(){
-    String[] headers={"Cargo Type","Height (m)","Width (m)","Depth (m)","Volume (m^3)","Weight (Short Tons)"};
+    String[] headers={"Cargo Type","Height (m)","Width (m)","Depth (m)","Area (m^2)","Volume (m^3)","Weight (Short Tons)"};
     return headers;
   }
 
   /**Get the types of the columns of the table**/
   public int[] getTypes(){
-    int[] types={TYPE_STRING,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE};
+    int[] types={TYPE_STRING,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE,TYPE_DOUBLE};
     return types;
   }
 
@@ -117,13 +117,14 @@ public class CargoDimensionTest extends Test implements Graphable {
 
   protected void createTable(Statement s, int run) throws SQLException{
     s.executeUpdate("CREATE TABLE "+getTableName(run)+" ( "+
-					DGPSPConstants.COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
-					DGPSPConstants.COL_HEIGHT+" DOUBLE NOT NULL,"+
-					DGPSPConstants.COL_WIDTH+" DOUBLE NOT NULL,"+
-					DGPSPConstants.COL_DEPTH+" DOUBLE NOT NULL,"+
-					COL_VOLUME+" DOUBLE NOT NULL,"+
-					DGPSPConstants.COL_WEIGHT+" DOUBLE NOT NULL"+
-					")");
+		    DGPSPConstants.COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
+		    DGPSPConstants.COL_HEIGHT+" DOUBLE NOT NULL,"+
+		    DGPSPConstants.COL_WIDTH+" DOUBLE NOT NULL,"+
+		    DGPSPConstants.COL_DEPTH+" DOUBLE NOT NULL,"+
+		    DGPSPConstants.COL_AREA+" DOUBLE NOT NULL,"+
+		    DGPSPConstants.COL_VOLUME+" DOUBLE NOT NULL,"+
+		    DGPSPConstants.COL_WEIGHT+" DOUBLE NOT NULL"+
+		    ")");
   }
 
   protected void insertResults (Logger l, Statement s, int run) {
@@ -140,15 +141,16 @@ public class CargoDimensionTest extends Test implements Graphable {
     }
     try {
       while(rs.next()){
-		String nomenclature = rs.getString(1);
-		double height = rs.getDouble (2);
-		double width  = rs.getDouble (3);
-		double depth  = rs.getDouble (4);
-		double volume = height*width*depth;
-		// weight is in grams, we want short tons = 2000 pounds
-		double weight = (rs.getDouble (5)/1000000.0)*METRIC_TO_SHORT_TON;
+	String nomenclature = rs.getString(1);
+	double height = rs.getDouble (2);
+	double width  = rs.getDouble (3);
+	double depth  = rs.getDouble (4);
+	double area   = rs.getDouble (5);
+	double volume = rs.getDouble (6);
+	// weight is in grams, we want short tons = 2000 pounds
+	double weight = (rs.getDouble (7)/1000000.0)*METRIC_TO_SHORT_TON;
 		
-		insertRow(l,s,run,nomenclature,height,width,depth,volume,weight);
+	insertRow(l,s,run,nomenclature,height,width,depth,area,volume,weight);
       }    
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
@@ -158,27 +160,34 @@ public class CargoDimensionTest extends Test implements Graphable {
   
   protected String getQuery (int run) {
     String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
+    String cccDimTable = Controller.getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,run);
     String nomenclature = protoTable+"."+DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String height = protoTable+"."+DGPSPConstants.COL_HEIGHT;
-    String width = protoTable+"."+DGPSPConstants.COL_WIDTH;
-    String depth = protoTable+"."+DGPSPConstants.COL_DEPTH;
-    String weight = protoTable+"."+DGPSPConstants.COL_WEIGHT;
+    String height = DGPSPConstants.COL_HEIGHT;
+    String width  = DGPSPConstants.COL_WIDTH;
+    String depth  = DGPSPConstants.COL_DEPTH;
+    String weight = DGPSPConstants.COL_WEIGHT;
+    String area   = DGPSPConstants.COL_AREA;
+    String volume = DGPSPConstants.COL_VOLUME;
+    String protoProto  = protoTable +"."+DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimProto = cccDimTable+"."+DGPSPConstants.COL_PROTOTYPEID;
 
     String sqlQuery =
-      "select "+nomenclature+"," + height + "," + width + "," + depth + "," + weight + "\n"+
-      "from "+protoTable+"\n"+
+      "select "+nomenclature+"," + height + "," + width + "," + depth + "," + weight + "," + area + "," + volume + "\n"+
+      "from "+protoTable+", " + cccDimTable +"\n"+
+      "where " + protoProto + "=" + cccDimProto + "\n" +
       "order by "+nomenclature;
 
     if (debug)
-	  System.out.println("\n"+sqlQuery);
+      System.out.println("\n"+sqlQuery);
 
     return sqlQuery;
   }
   
   protected void insertRow(Logger l, Statement s, int run,
-						   String nomenclature, 
-						   double height, double width, double depth, 
-						   double volume, double weight) throws SQLException {
+			   String nomenclature, 
+			   double height, double width, double depth, 
+			   double area,
+			   double volume, double weight) throws SQLException {
     String sql = null;
     try {
       StringBuffer sb=new StringBuffer();
@@ -189,13 +198,15 @@ public class CargoDimensionTest extends Test implements Graphable {
       sb.append(DGPSPConstants.COL_HEIGHT + ",");
       sb.append(DGPSPConstants.COL_WIDTH + ",");
       sb.append(DGPSPConstants.COL_DEPTH + ",");
-      sb.append(COL_VOLUME + ",");
+      sb.append(DGPSPConstants.COL_AREA + ",");
+      sb.append(DGPSPConstants.COL_VOLUME + ",");
       sb.append(DGPSPConstants.COL_WEIGHT);
       sb.append(") VALUES('");
       sb.append(nomenclature + "',");
       sb.append(dbConfig.getDBDouble(height) + ",");
       sb.append(dbConfig.getDBDouble(width) + ",");
       sb.append(dbConfig.getDBDouble(depth) + ",");
+      sb.append(dbConfig.getDBDouble(area) + ",");
       sb.append(dbConfig.getDBDouble(volume) + ",");
       sb.append(dbConfig.getDBDouble(weight));
       sb.append(")");
