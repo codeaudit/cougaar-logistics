@@ -22,6 +22,8 @@
 package org.cougaar.logistics.ldm;
 
 import org.cougaar.logistics.ldm.asset.Level2Ammunition;
+import org.cougaar.logistics.ldm.asset.Level2AmmoConsumerBG;
+import org.cougaar.logistics.ldm.asset.Level2FuelConsumerBG;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -62,7 +64,8 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
     Boolean protoProvider = (Boolean) myParams_.get("PrototypeProvider");
     if ((protoProvider == null) || (protoProvider.booleanValue())) {
       if (class_hint == null) {
-        if (typeid.startsWith("NSN/") || typeid.startsWith("DODIC/") || typeid.startsWith("Level2")) {
+        if (typeid.startsWith("NSN/") || typeid.startsWith("DODIC/") ||
+            typeid.startsWith(MEIPrototypeProvider.LEVEL2)) {
           return true;
         } // if
       } else {
@@ -74,10 +77,12 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
             class_name.equals("Consumable") ||
             class_name.equals("PackagedPOL"))) {
           return true;
-        } else if (typeid.startsWith("Level2") && class_name.equals("Level2Ammunition")) {
+        } else if (typeid.startsWith(MEIPrototypeProvider.LEVEL2) &&
+            (class_name.equals(Level2AmmoConsumerBG.LEVEL2AMMUNITION) ||
+            class_name.equals(Level2FuelConsumerBG.LEVEL2BULKPOL))) {
           return true;
-        }// if
-      } // if
+        }
+      }// if
     } // if
     logger.debug("CanHandle(), Unable to provider Prototype." +
                  " ProtoProvider = " + protoProvider + ", typeid= " + typeid);
@@ -92,7 +97,9 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
       if (class_name.equals(MEIPrototypeProvider.MEI_STRING)) {
         return null;
       }
-      if (!(class_name.equals("Ammunition") || class_name.equals("Level2Ammunition") ||
+      if (!(class_name.equals("Ammunition") ||
+          class_name.equals(Level2AmmoConsumerBG.LEVEL2AMMUNITION) ||
+          class_name.equals(Level2FuelConsumerBG.LEVEL2BULKPOL) ||
           class_name.equals("BulkPOL") ||
           class_name.equals("Consumable") ||
           class_name.equals("PackagedPOL"))) {
@@ -117,8 +124,8 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
         } // if
       } else if (type_name.startsWith("DODIC/")) {
         class_name = "Ammunition";
-      } else if (type_name.startsWith("Level2")) {
-        class_name = "Level2Ammunition";
+      } else if (type_name.startsWith(MEIPrototypeProvider.LEVEL2)) {
+        class_name = type_name;
       } else {
         logger.error("make prototype How did we get this far?? " + class_hint);
         return null;
@@ -216,9 +223,9 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
       //query = "select " + consumer_id + ", nomenclature from header where nsn='"+my_consumer_id+"'";
 
       logger.debug("For consumable, use query " + query);
-    } else if (type.equals("Level2Ammunition")) {
-      pgs = parseLevel2Ammunition();
-      nomen = "Level2Ammunition asset";
+    } else if (type.startsWith(MEIPrototypeProvider.LEVEL2)) {
+      pgs = addLevel2Pgs(type);
+      nomen = type + " asset";
       if (pgs != null) {
         propertyGroupTable.put (type_id, pgs);
       }
@@ -315,11 +322,19 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
     return pgs;
   } // parsePackagedPOLRow
 
-  private Vector parseLevel2Ammunition () {
+  private Vector addLevel2Pgs (String type) {
     Vector pgs = new Vector();
     NewSupplyClassPG supply_pg = PropertyGroupFactory.newSupplyClassPG();
-    supply_pg.setSupplyClass("ClassVAmmunition");
-    supply_pg.setSupplyType("Ammunition");
+
+    if (type.equals(Level2AmmoConsumerBG.LEVEL2AMMUNITION)) {
+      supply_pg.setSupplyClass("ClassVAmmunition");
+      supply_pg.setSupplyType("Ammunition");
+    }
+    else if (type.equals(Level2FuelConsumerBG.LEVEL2BULKPOL)) {
+      supply_pg.setSupplyClass("ClassIIIPOL");
+      supply_pg.setSupplyType("BulkPOL");
+    }
+    else throw new IllegalArgumentException("Don't know anything about this type :" + type);
     pgs.add(supply_pg);
     return pgs;
   }

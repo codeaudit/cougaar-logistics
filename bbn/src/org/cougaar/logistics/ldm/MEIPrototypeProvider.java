@@ -29,7 +29,6 @@ import org.cougaar.glm.ldm.QueryLDMPlugin;
 import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.NewMovabilityPG;
-import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.glm.ldm.plan.Service;
 import org.cougaar.logistics.ldm.asset.*;
@@ -260,18 +259,49 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     return false;
   }
 
+  protected boolean[] checkLevel2MeiConsumption() {
+    // by default, assume false
+    boolean result[] = {false, false, false, false };
+    // not implemented yet
+    result[PKG_POL]= false;
+    result[SPARES]= false;
+
+    String query = (String) fileParameters_.get ("UnitConsumption");
+    if (query == null) {
+      logger.error("checkLevel2MEIConsumption() query is null ");
+      return result;
+    }
+    query = substituteOrgName(query, getAgentIdentifier().toString());
+    Vector qresult = null;
+    try {
+      qresult = executeQuery (query);
+      logger.debug("checkLevel2MEIConsumption() execute query: " +query);
+      if (qresult.isEmpty()) {
+        // TODO:  this should be a warn, but we are currently getting one and
+        // I have asked Gary to look into it.  After that, we should switch back.
+        logger.debug ("No results returned for Level2MEIConsumption query:  " + query);
+      } else {
+        Object row[] = (Object[])qresult.firstElement();
+        result[AMMO]=convertConsumptionElement(row[AMMO]);
+        // not implemented yet
+        //result[PKG_POL]=convertConsumptionElement(row[PKG_POL]);
+        //result[SPARES]=convertConsumptionElement(row[SPARES]);
+        result[FUEL]=convertConsumptionElement(row[FUEL]);
+      }
+    } catch (Exception ee) {
+      logger.error ( "in checkLevel2MeiConsumption(), DB query failed.Query= "+query);
+    }
+    return result;
+  }
+
   protected  boolean[] checkMeiConsumption(Asset asset) {
     // The default is that the MEI consumes all 4 classes.
     // This prevents problems if the table hasn't been updated for
     // a new MEI.
     boolean result[] = {true, true, true, true };
 
-    if (asset instanceof Level2MEIAsset)   {
-      result[AMMO] = true;
-      result[PKG_POL]= false;
-      result[SPARES]= false;
-      result[FUEL]= false;
-      return result;
+    if (asset instanceof Level2MEIAsset) {
+      return checkLevel2MeiConsumption();
     }
 
     String type_id = asset.getTypeIdentificationPG().getTypeIdentification();
@@ -348,7 +378,13 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           fuelpg.setMei(a);
           fuelpg.setService(service);
           fuelpg.setTheater(THEATER);
-          fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
+          if (anAsset instanceof Level2MEIAsset) {
+            fuelpg.setFuelBG(new Level2FuelConsumerBG(fuelpg));
+            //This cargo category code means, "do not transport me."
+            setNoTransportCargoCode(anAsset);
+          } else {
+            fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
+          }
           fuelpg.initialize(this);
           anAsset.setPropertyGroup(fuelpg);
           addedPG = true;
@@ -356,7 +392,6 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         if (consumes(consumed, AMMO) && anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {
           logger.debug("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
                        getAgentIdentifier());
-
           NewAmmoConsumerPG ammopg =
               (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
           ammopg.setMei(a);
@@ -364,11 +399,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           ammopg.setTheater(THEATER);
           if (anAsset instanceof Level2MEIAsset) {
             ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
-            //This cargo category codes says, "do not transport me."
-            NewMovabilityPG mpg = (NewMovabilityPG) getLDM().getFactory().createPropertyGroup(MovabilityPG.class);
-            mpg.setMoveable(false);
-            mpg.setCargoCategoryCode("000");
-            anAsset.setPropertyGroup(mpg);
+            //This cargo category code means, "do not transport me."
+            setNoTransportCargoCode(anAsset);
           } else {
             ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
           }
@@ -408,6 +440,18 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           publishChange(a);
         }
       }
+    }
+  }
+
+  private void setNoTransportCargoCode(Asset anAsset) {
+    MovabilityPG pg = (MovabilityPG) anAsset.searchForPropertyGroup(MovabilityPG.class);
+    if (pg.getCargoCategoryCode() == null) {
+      NewMovabilityPG newpg = (NewMovabilityPG) getLDM().getFactory().createPropertyGroup(MovabilityPG.class);
+      newpg.setMoveable(false);
+      newpg.setCargoCategoryCode("000");
+      anAsset.setPropertyGroup(newpg);
+      // or should we use this method
+      //anAsset.addOtherPropertyGroup();
     }
   }
 
@@ -602,15 +646,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public Vector lookupLevel2AssetConsumptionRate(String agent, Asset asset, String supply_type) {
     Vector result = null;
-
     String query = (String) fileParameters_.get (LEVEL2 + supply_type + "Rate");
     if (query == null) {
-      logger.error("lookupAssetConsumptionRate() ACR query is null for "+
+      logger.error("lookupLevel2AssetConsumptionRate() ACR query is null for "+
                    LEVEL2+supply_type);
       return null;
     }
     query = substituteOrgName(query, agent);
-    logger.debug("lookupAssetConsumptionRate() ACR query for "+ LEVEL2 + supply_type + " = "+query);
+    logger.debug("lookupLevel2AssetConsumptionRate() ACR query for "+ LEVEL2 + supply_type + " = "+query);
     try {
       result = executeQuery (query);
       logger.debug ("in lookupLevel2AssetConsumptionRate() query complete for asset "+
@@ -627,6 +670,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     }
     return result;
   }
+
   public String generateMEIQueryParameter
       (Asset asset, String asset_type, Service service) {
     String typeID = asset.getTypeIdentificationPG().getTypeIdentification();
