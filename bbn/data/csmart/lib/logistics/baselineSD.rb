@@ -17,9 +17,9 @@ parameters:
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
   - script: $CIP/csmart/lib/isat/datagrabber_include.rb
-  - script: $CIP/csmart/lib/logistics/sdDataDump.rb
+  - script: $CIP/csmart/lib/logistics/postSDData.rb
   - script: $CIP/csmart/lib/logistics/providerAvail.rb
-  - script: $CIP/csmart/lib/logistics/relationship.rb
+  - script: $CIP/csmart/lib/logistics/preSDData.rb
 
 =end
 
