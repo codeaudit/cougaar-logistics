@@ -86,6 +86,7 @@ import org.cougaar.planning.ldm.plan.WorkflowImpl;
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.MPTask;
+import org.cougaar.core.service.LoggingService;
 
 /**
  * Takes PROJECT_SUPPLY tasks 
@@ -105,11 +106,19 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   public TaskUtils taskUtils;
 
+
+  /** 
+   * rely upon load-time introspection to set these services - 
+   * don't worry about revokation.
+   */
+  public void setLoggingService(LoggingService bs) {
+      super.setLoggingService(bs);
+      taskUtils = new TaskUtils(logger);
+  }
+
+
   public void localSetup () {
     super.localSetup ();
-
-    taskUtils = new TaskUtils(logger);
-
 
     try {
       if (getMyParams ().hasParam ("CHUNK_DAYS"))
@@ -1093,6 +1102,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 					    reservedTask.getPreferences(),
 					    reservedTask.getPriority(),
 					    reservedTask.getSource());
+      replacement.setContext(reservedTask.getContext());
 
       if (isInfoEnabled ())
 	info ("Reserved task " + reservedTask.getUID () + 
