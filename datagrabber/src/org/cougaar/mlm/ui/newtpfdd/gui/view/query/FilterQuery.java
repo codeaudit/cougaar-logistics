@@ -175,6 +175,7 @@ public class FilterQuery extends TPFDDQuery {
 	String proto = rs.getString (3);
 	int aggNumber = rs.getInt (4);
 	String owner = rs.getString (5);
+	// skip column 6 - instanceID - needed for distinct sql option
 	double weight    = rs.getDouble (7);
 	double width     = rs.getDouble (8);
 	double height    = rs.getDouble (9);
@@ -945,6 +946,8 @@ public class FilterQuery extends TPFDDQuery {
     String prototypeWidth  = DGPSPConstants.COL_WIDTH;
     String prototypeHeight = DGPSPConstants.COL_HEIGHT;
     String prototypeDepth  = DGPSPConstants.COL_DEPTH;
+    String area   = DGPSPConstants.COL_AREA;
+    String volume = DGPSPConstants.COL_VOLUME;
     
     String instanceOwner  = DGPSPConstants.COL_OWNER;
     String instanceID     = DGPSPConstants.COL_ASSETID;
@@ -956,7 +959,7 @@ public class FilterQuery extends TPFDDQuery {
     String sqlQuery = 
       "select distinct " + typeID + ", " + nomen + ", " + proto + ", " + 
       instanceAggNumber + ", " + instanceOwner + ", " + instanceID + //This is needed for distinct!
-      ", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +
+      ", " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth + ", " + area + ", " + volume +
       "\nfrom " + derivedTable +
       filterClauses.getWhereSql (instanceOwner, cpPrototypeID, ciConvID, proto, instanceID) +
       //      "\ngroup by " + typeID + ((aggregateByUnit) ? ", " + instanceOwner : "") +
@@ -1064,7 +1067,7 @@ public class FilterQuery extends TPFDDQuery {
     String sqlQuery = 
       "select distinct m." + typeID + ", m." + nomen + ", m." + typeID + 
       ",\"1\", d."+ instanceOwner + ", m." + instanceID + ", \nm." + 
-      DGPSPConstants.COL_WEIGHT + ",\"1\""+",\"1\""+",\"1\""+
+      DGPSPConstants.COL_WEIGHT + ",\"1\""+",\"1\""+",\"1\""+",\"1\""+",\"1\""+
       "\nfrom " + manifestTable + " m, " + derivedTable + " d \n" +
       filterClauses.getWhereSql (instanceOwner, cpPrototypeID, ciConvID, proto, instanceID) +
       "\nand " + manifestAssetID + " = " + derivedAssetID +
