@@ -166,12 +166,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if (end_bucket > endOfLevel2Bucket) {
 	end_bucket = endOfLevel2Bucket;
       }
-      int firstProjectBucket = thePG.getFirstProjectWithdrawBucket();
-      if (firstProjectBucket == -1) {
-	  firstProjectBucket = today_bucket;
-      }
       createAllocations(today_bucket, end_bucket, inventory, thePG);
-      allocateEarlyProjections(firstProjectBucket, inventory, thePG);
+      allocateEarlyProjections(inventory, thePG);
     }
   }
 
@@ -198,8 +194,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Task withdraw;
 
     // DEBUG
-//     String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-//     String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+    //     String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    //     String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+ 
+    
 
 
     // loop through the buckets in the inventory
@@ -451,39 +449,47 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  Allocate these with yes or best.
    *  Note that projections that span the not counted and counted projection
    *  windows are not allocated here.
-   *  @param countedBucket Process projections up to this bucket
    *  @param inv The Inventory we are processing
    *  @param the PG This is the PG for the Inventory we are processing
    **/
-  private void allocateEarlyProjections(int countedBucket, Inventory inventory, 
-                                        LogisticsInventoryPG thePG) {
+  private void allocateEarlyProjections(Inventory inventory, LogisticsInventoryPG thePG) {
 //      String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-//      String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+    //String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
 
-    int currentBucket = 0;
-    // loop through the buckets in the inventory
-    while (currentBucket < countedBucket) {
-      Collection wdprojs = thePG.getProjectedDemandTasks(currentBucket);
-      Iterator wdpIter = wdprojs.iterator();
-      while(wdpIter.hasNext()) {
-        Task withdrawProj = (Task)wdpIter.next();
-        double endTimePref = getTaskUtils().getPreference(withdrawProj, AspectType.END_TIME);
-        //make sure there is an end time pref AND that the
-        //bucket of the end time pref is not equal to or past the countedBucket
-	//Since endTime is not inclusive of the bucket it falls in decrement by 1
-        // countedBucket is the firstCountedProjection - if the projection spans both
-        //the uncounted and counted windows - dont blindly allocate it here ... it should
-        // be picked up by the counted projections allocation method.
-        if ((endTimePref != Double.NaN) &&
-	    ((thePG.convertTimeToBucket((long)endTimePref, true) -1) < countedBucket)) {
-            if (withdrawProj.getPlanElement() == null) {
-              createBestAllocation(withdrawProj, inventory, thePG);
+    HashMap customerHash = thePG.getCustomerHash();
+    Set keys = customerHash.keySet();
+    Iterator keysIt = keys.iterator();
+    while (keysIt.hasNext()) {
+      Object org = keysIt.next();
+      int countedBucket = thePG.convertTimeToBucket(((Long)customerHash.get(org)).longValue(), true) + 1;
+      int currentBucket = 0;
+      // loop through the buckets in the inventory
+      while (currentBucket < countedBucket) {
+        Collection wdprojs = thePG.getProjectedDemandTasks(currentBucket);
+        Iterator wdpIter = wdprojs.iterator();
+        while(wdpIter.hasNext()) {
+          Task withdrawProj = (Task)wdpIter.next();
+          Object customerOrg = TaskUtils.getCustomer(withdrawProj);
+            if (customerOrg.equals(org)) {
+              double endTimePref = getTaskUtils().getPreference(withdrawProj, AspectType.END_TIME);
+              //make sure there is an end time pref AND that the
+              //bucket of the end time pref is not equal to or past the countedBucket
+              //Since endTime is not inclusive of the bucket it falls in decrement by 1
+              // countedBucket is the firstCountedProjection - if the projection spans both
+              //the uncounted and counted windows - dont blindly allocate it here ... it should
+              // be picked up by the counted projections allocation method.
+              if ((endTimePref != Double.NaN) &&
+                  ((thePG.convertTimeToBucket((long)endTimePref, true) -1) < countedBucket)) {
+                if (withdrawProj.getPlanElement() == null) {
+                  createBestAllocation(withdrawProj, inventory, thePG);
+                }
+                // if it already has a pe we could check it - but for now we won't
+              }
             }
-            // if it already has a pe we could check it - but for now we won't
-	}
+        }
+        //bump the bucket
+        currentBucket = currentBucket + 1;
       }
-      //bump the bucket
-      currentBucket = currentBucket + 1;
     }
   }
 

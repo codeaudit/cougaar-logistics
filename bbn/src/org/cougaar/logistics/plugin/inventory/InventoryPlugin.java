@@ -218,6 +218,7 @@ public class InventoryPlugin extends ComponentPlugin
 				    null);
   }
   
+
   protected void execute() {
     //clear our new refill list
     newRefills.clear();
@@ -329,97 +330,98 @@ public class InventoryPlugin extends ComponentPlugin
         }
 	Collection changedProjections = projectionTaskSubscription.getChangedCollection();
 	if (!changedProjections.isEmpty()) {
-	    supplyExpander.updateChangedProjections(changedProjections);
-            touchedChangedProjections = true;
-            // System.out.println("Touched changed projections in " + getAgentIdentifier() +
-//                                " type is" + getSupplyType());
+          supplyExpander.updateChangedProjections(changedProjections);
+          touchedChangedProjections = true;
+          // System.out.println("Touched changed projections in " + getAgentIdentifier() +
+          //                                " type is" + getSupplyType());
 	}
       }
-
-        // call the Refill Generators if we have new demand
-        if (! getTouchedInventories().isEmpty()) {
-	  //check to see if we have new projections
-	  if (touchedProjections || touchedRemovedProjections || touchedChangedProjections) {
-            //check to see if the OM changed.  If it did process all inventories
-            //since we probably ignored some demand tasks before the change
-            if (OMChange) {
-              refillProjGenerator.calculateRefillProjections(getInventories(), 
-                                                             criticalLevel, 
-                                                             getEndOfLevelSix(), 
-                                                             getEndOfLevelTwo(), 
-                                                             refillComparator);
-            } else {
-              refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
-                                                             criticalLevel, 
-                                                             getEndOfLevelSix(), 
-                                                             getEndOfLevelTwo(), 
-                                                             refillComparator);
-            }
-	  }
- 	  refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
-          externalAllocator.allocateRefillTasks(newRefills);
-          
-          //we might get new demand where we don't need to generate any new refills
-          // such as small demand from the stimulator servlet - when this happens we
-          // need to kick the allocation assessor to allocate the withdraws
-          allocationAssessor.reconcileInventoryLevels(getActionableInventories());
-         
-        } 
-	//        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
-	//        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
-
-        // if we are in downward flow ONLY check the withdraw expansion results
-        // note we may go through the whole list multiple times - but this seems like the
-        // simplest fix to get rid of places where we miss change reports because the AA
-        // compares previous results to new ones and leaves the old ones if they are equal.
-        // note that the updates only occur if the reported result is not equal to the estimated
-        // so we will not be waking up the whole chain by checking these more than once.
-	HashSet backwardFlowTouched = null;
-        if (getTouchedInventories().isEmpty()) {
-          supplyExpander.updateAllocationResult(expansionSubscription);
-	  backwardFlowTouched = 
-            externalAllocator.updateAllocationResult(refillAllocationSubscription); 
-          // if the OM changed, process ALL inventories for demand projections and 
-          // allocation results since some results were likely ignored before
-          // the OM level 6 window changed.
+      
+      // call the Refill Generators if we have new demand
+      if (! getTouchedInventories().isEmpty()) {
+        // update the inventory customer hash tables when we have new demand
+        rebuildPGCustomerHash();
+        //check to see if we have new projections
+        if (touchedProjections || touchedRemovedProjections || touchedChangedProjections) {
+          //check to see if the OM changed.  If it did process all inventories
+          //since we probably ignored some demand tasks before the change
           if (OMChange) {
             refillProjGenerator.calculateRefillProjections(getInventories(), 
                                                            criticalLevel, 
                                                            getEndOfLevelSix(), 
                                                            getEndOfLevelTwo(), 
                                                            refillComparator);
-            externalAllocator.allocateRefillTasks(newRefills);
-            allocationAssessor.reconcileInventoryLevels(getInventories()); 
           } else {
-            allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
-          }
-        } else {
-          // if the we are not in backwards flow but the OM changed
-          // process ARs anyway because we may not get woken up again to 
-          // process them if they have all come in already     
-          if (OMChange) {
-            allocationAssessor.reconcileInventoryLevels(getInventories());
+            refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
+                                                           criticalLevel, 
+                                                           getEndOfLevelSix(), 
+                                                           getEndOfLevelTwo(), 
+                                                           refillComparator);
           }
         }
-          
-        // update the Maintain Inventory Expansion results
-        PluginHelper.updateAllocationResult(MIExpansionSubscription);
-        PluginHelper.updateAllocationResult(MITopExpansionSubscription);
-        PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
-	  
-	if (backwardFlowTouched != null) {
-	  takeInventorySnapshot(backwardFlowTouched);
-	}
-	takeInventorySnapshot(getTouchedInventories());
+        refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
+        externalAllocator.allocateRefillTasks(newRefills);
         
-        // touchedInventories should not be cleared until the end of transaction
-        touchedInventories.clear();
-	//backwardFlowInventories.clear(); //###
-        touchedProjections = false;
-        touchedChangedProjections = false;
-        OMChange = false;
-        //testBG();
-        //     }
+        //we might get new demand where we don't need to generate any new refills
+        // such as small demand from the stimulator servlet - when this happens we
+        // need to kick the allocation assessor to allocate the withdraws 
+        allocationAssessor.reconcileInventoryLevels(getActionableInventories());
+        
+      } 
+      //        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
+      //        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
+      
+      // if we are in downward flow ONLY check the withdraw expansion results
+      // note we may go through the whole list multiple times - but this seems like the
+      // simplest fix to get rid of places where we miss change reports because the AA
+      // compares previous results to new ones and leaves the old ones if they are equal.
+      // note that the updates only occur if the reported result is not equal to the estimated
+      // so we will not be waking up the whole chain by checking these more than once.
+      HashSet backwardFlowTouched = null;
+      if (getTouchedInventories().isEmpty()) {
+        supplyExpander.updateAllocationResult(expansionSubscription);
+        backwardFlowTouched = 
+          externalAllocator.updateAllocationResult(refillAllocationSubscription); 
+        // if the OM changed, process ALL inventories for demand projections and 
+        // allocation results since some results were likely ignored before
+        // the OM level 6 window changed.
+        if (OMChange) {
+          refillProjGenerator.calculateRefillProjections(getInventories(), 
+                                                         criticalLevel, 
+                                                         getEndOfLevelSix(), 
+                                                         getEndOfLevelTwo(), 
+                                                         refillComparator);
+          externalAllocator.allocateRefillTasks(newRefills);
+          allocationAssessor.reconcileInventoryLevels(getInventories()); 
+        } else {
+          allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
+        }
+      } else {
+        // if the we are not in backwards flow but the OM changed
+        // process ARs anyway because we may not get woken up again to 
+        // process them if they have all come in already     
+        if (OMChange) {
+          allocationAssessor.reconcileInventoryLevels(getInventories());
+        }
+      }
+      
+      // update the Maintain Inventory Expansion results
+      PluginHelper.updateAllocationResult(MIExpansionSubscription);
+      PluginHelper.updateAllocationResult(MITopExpansionSubscription);
+      PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
+      
+      if (backwardFlowTouched != null) {
+        takeInventorySnapshot(backwardFlowTouched);
+      }
+      takeInventorySnapshot(getTouchedInventories());
+      
+      // touchedInventories should not be cleared until the end of transaction
+      touchedInventories.clear();
+      //backwardFlowInventories.clear(); //###
+      touchedProjections = false;
+      touchedChangedProjections = false;
+      OMChange = false;
+      //testBG();
     }
   }
 
@@ -1460,6 +1462,19 @@ public class InventoryPlugin extends ComponentPlugin
       actionableInvs.remove(inventory);
     }
     return actionableInvs;
+  }
+
+  private void rebuildPGCustomerHash() {
+    Collection changedInventories = getTouchedInventories();
+    Iterator invIter = changedInventories.iterator();
+    Inventory inventory;
+    LogisticsInventoryPG thePG;
+    while (invIter.hasNext()) {
+      inventory = (Inventory)invIter.next();
+      thePG = (LogisticsInventoryPG)
+	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+      thePG.rebuildCustomerHash();
+    }
   }
 
   /**

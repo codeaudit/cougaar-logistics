@@ -222,20 +222,20 @@ public class ExternalAllocator extends InventoryModule {
         }
       }
     }
-    rebuildPGCustomerHash();
+    //rebuildPGCustomerHash();
     return backwardFlowInventories;
   }
 
-  private void rebuildPGCustomerHash() {
-    Collection changedInventories = inventoryPlugin.getTouchedInventories();
-    Iterator invIter = changedInventories.iterator();
-    Inventory inventory;
-    LogisticsInventoryPG thePG;
-    while (invIter.hasNext()) {
-      inventory = (Inventory)invIter.next();
-      thePG = (LogisticsInventoryPG)
-	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-      thePG.rebuildCustomerHash();
-    }
-  }
+//   private void rebuildPGCustomerHash() {
+//     Collection changedInventories = inventoryPlugin.getTouchedInventories();
+//     Iterator invIter = changedInventories.iterator();
+//     Inventory inventory;
+//     LogisticsInventoryPG thePG;
+//     while (invIter.hasNext()) {
+//       inventory = (Inventory)invIter.next();
+//       thePG = (LogisticsInventoryPG)
+// 	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+//       thePG.rebuildCustomerHash();
+//     }
+//   }
 }

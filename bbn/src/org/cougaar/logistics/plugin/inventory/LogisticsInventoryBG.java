@@ -728,7 +728,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 org = TaskUtils.getCustomer(task);
                 startTime = taskUtils.getStartTime(task);
                 // now make end time the bucket before the start time of the first projectwithdraw
-                endTime = startTime - MSEC_PER_BUCKET;
+                endTime = startTime - (MSEC_PER_BUCKET * 2);
                 lastActualSeen = (Long) customerHash.get(org);
                 if ((lastActualSeen == null) || (endTime < lastActualSeen.longValue())) {
                   customerHash.put(org, new Long(endTime));
@@ -759,12 +759,17 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
     }
 
-    public void logAllToCSVFile(long aCycleStamp) {
-        if (csvLogger != null) {
-            csvWriter.logToExcelOutput(myPG,
-                                       aCycleStamp);
-        }
+  public HashMap getCustomerHash() {
+    return customerHash;
+  }
+    
+
+  public void logAllToCSVFile(long aCycleStamp) {
+    if (csvLogger != null) {
+          csvWriter.logToExcelOutput(myPG,
+                                     aCycleStamp);
     }
+  }
 
     public long getStartTime() {
         return startTime;
