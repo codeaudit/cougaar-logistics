@@ -180,6 +180,18 @@ public class TaskUtils extends PluginHelper {
     return getPreferenceBestValue(task, AspectType.QUANTITY);
   }
 
+  /** @param task
+   *  @return Value of the FOR Preposition if available, else null
+   */
+  public static Object getCustomer(Task task) {
+    PrepositionalPhrase pp_for = task.getPrepositionalPhrase(Constants.Preposition.FOR);
+    Object org;
+    if (pp_for != null) {
+      org = pp_for.getIndirectObject();
+      return org;
+    }
+    return null;
+  }
 
 
 }

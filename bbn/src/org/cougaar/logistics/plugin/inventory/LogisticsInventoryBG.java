@@ -93,15 +93,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   private void addDueOut(Task task) {
     long endTime = PluginHelper.getEndTime(task);
-    // The customer code should be broken out into a utility method.  
-    // The new design needs the customer in more places than just the BG.
-    // Do you think we could add getCustomer() to the PluginHelper?
-    PrepositionalPhrase pp_for = task.getPrepositionalPhrase(Constants.Preposition.FOR);
-    Object org;
-    if (pp_for != null) {
-      org = pp_for.getIndirectObject();
-      // We know that SRA is using a String as FOR DO 
-      // but can we assume that for all Supply tasks?
+    Object org = TaskUtils.getCustomer(task);
+    if (org != null) {
       Long lastActualSeen = (Long)customerHash.get(org);
       if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
 	customerHash.put(org, new Long(endTime));
