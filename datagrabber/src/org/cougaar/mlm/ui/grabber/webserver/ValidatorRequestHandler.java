@@ -63,12 +63,14 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
   public static final int COM_RUN_TEST=2;
   public static final int COM_DISPLAY_TEST=3;
   public static final int COM_CLEAR_TEST=4;
+  public static final int COM_RUN_WARN_AND_ERROR=5;
 
   private static String[]COMMANDS={"unknown",
 				   "main",
 				   "runtest",
 				   "displaytest",
-				   "cleartest"};
+				   "cleartest",
+				   "runwarnanderror"};
 
   //Variables:
   ////////////
@@ -124,6 +126,8 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
       sendMainMenu(h,s);break;
     case COM_RUN_TEST:
       sendRunTest(h,s);break;
+    case COM_RUN_WARN_AND_ERROR:
+      sendRunWarnAndErrorTest(h,s);break;
     case COM_DISPLAY_TEST:
       sendDisplayTest(h,s);break;
     case COM_CLEAR_TEST:
@@ -385,6 +389,23 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
       }
       h.eRow();
     }
+  }
+
+  protected void sendRunWarnAndErrorTest(HTMLizer h, Statement s) {
+    header(h,
+	   "Run Test: "+
+	   validator.getTestTypeString(Validator.WARNING_TESTS)+" and " + 
+	   validator.getTestTypeString(Validator.ERROR_TESTS)+
+	   " for run("+run+")");
+
+    h.sCenter();
+    h.dismissLink();
+
+    validator.runTest(h,connectionProvider,run,Validator.WARNING_TESTS);
+    validator.runTest(h,connectionProvider,run,Validator.ERROR_TESTS);
+
+    h.eCenter();
+    emptyFooter(h);
   }
 
   protected void sendRunTest(HTMLizer h, Statement s) 
