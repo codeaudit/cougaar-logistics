@@ -131,8 +131,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   }
 
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
-    UTILFilterCallback myCallback = new UTILExpandableTaskCallback (bufferingThread, logger);
-    return myCallback;
+    myInputTaskCallback = new UTILExpandableTaskCallback (bufferingThread, logger);
+    return myInputTaskCallback;
   } 
 
   /** 

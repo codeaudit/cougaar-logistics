@@ -64,6 +64,35 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
   
   protected void setDataXMLizer (GenericDataXMLize xmlizer) { dataXMLizer = xmlizer; }
 
+  java.util.Set seen = new java.util.HashSet ();
+    
+  public void processTasks (java.util.List tasks) {
+      java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+      Collection removed = myWorkflowCallback.getSubscription().getRemovedCollection();
+
+      for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	  Task task = (Task) iter.next();
+	  if (removed.contains(task)) {
+	      if (isInfoEnabled()) {
+		  info ("ignoring task on removed list " + task.getUID());
+	      }
+	  }
+	  else {
+	      if (seen.contains(task.getUID())) {
+		  if (isInfoEnabled()) {
+		      info ("ignoring already processed " + task.getUID());
+		  }
+	      }
+	      else {
+		  seen.add (task.getUID());
+		  prunedTasks.add (task);
+	      }
+	  }
+      }
+      super.processTasks (prunedTasks);
+  }
+
   /** prints out date info on failure */
   protected void handleImpossibleTasks (Collection impossibleTasks) {
     if (!foundMaxAssetValues) {

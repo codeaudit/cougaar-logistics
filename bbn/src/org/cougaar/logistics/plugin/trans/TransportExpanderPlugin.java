@@ -153,6 +153,28 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     return val;
   }
 
+  public void processTasks (java.util.List tasks) {
+      super.processTasks (getPrunedTaskList(tasks));
+  }
+
+    protected List getPrunedTaskList (List tasks) {
+	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+
+	for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	    Task task = (Task) iter.next();
+	    if (removed.contains(task)) {
+		if (isInfoEnabled()) {
+		    info ("ignoring task on removed list " + task.getUID());
+		}
+	    }
+	    else
+		prunedTasks.add (task);
+	}
+	return prunedTasks;
+    }
+
   /**
    * Breaks up task aggregates into truck sized chunks if bigger
    * than biggest truck.  This is defined by a parameter : maxTruckContainWeight

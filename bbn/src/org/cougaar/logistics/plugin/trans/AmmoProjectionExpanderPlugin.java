@@ -650,6 +650,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	    ".processTasks - processing " + tasks.size() + " tasks.");
     }
 
+    tasks = getPrunedTaskList (tasks);
+
     Map reservedToActual = new HashMap ();
     for (int i = 0; i < tasks.size (); i++) {
       Task task = (Task) tasks.get (i);
@@ -666,6 +668,25 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       dealWithReservedTask (actual, reserved);
     }
   }
+
+    protected List getPrunedTaskList (List tasks) {
+	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+	
+	for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	    Task task = (Task) iter.next();
+	    if (removed.contains(task)) {
+		if (isInfoEnabled()) {
+		    info ("ignoring task on removed list " + task.getUID());
+		}
+	    }
+	    else
+		prunedTasks.add (task);
+	}
+
+	return prunedTasks;
+    }
 
   /**
    * find matching reservation transport task

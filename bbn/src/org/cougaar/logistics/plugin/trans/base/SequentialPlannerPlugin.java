@@ -124,7 +124,9 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   public void processTasks(List tasks) {
     if (isInfoEnabled())
       info(getName () + ".processTasks called - with " + tasks.size() + " tasks.");
-	  
+
+    tasks = getPrunedTaskList (tasks);
+
     for (int i = 0; i < tasks.size (); i++) {
       if (isDebugEnabled())
 	debug(getName () + ".processTasks calling handleTask - " + (Task) tasks.get (i));
@@ -133,6 +135,23 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
   }  
     
+    protected List getPrunedTaskList (List tasks) {
+	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+
+	for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	    Task task = (Task) iter.next();
+	    if (removed.contains(task)) {
+		if (isInfoEnabled()) {
+		    info ("ignoring task on removed list " + task.getUID());
+		}
+	    }
+	    else
+		prunedTasks.add (task);
+	}
+	return prunedTasks;
+    }
 
   // handleTask creates an empty schedule and attaches it to the parent task. It also creates 
   // an expansion which starts empty and initiates a "planning cycle".
@@ -379,15 +398,16 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   protected UTILAllocationCallback getAllocCallback    () { return myAllocCallback; }
     
   public boolean interestingNotification(Task t) { 
+      boolean interest = interestingTask (t);
     if (isDebugEnabled()) {
-      if (interestingTask (t)) {
+      if (interest) {
 	debug(getName()+": noticing expansion I made of " + t.getUID() + " changed.");
       }
       else {
 	debug(getName()+": ignoring expansion made by GLMTransTranscomExpander of " + t.getUID());
       }
     }
-    return interestingTask (t); 
+    return interest; 
   }
   public boolean needToRescind (Allocation alloc) { return false; }
   public boolean handleRescindedAlloc (Allocation alloc) { return false; }
@@ -456,7 +476,10 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	if (isDebugEnabled()) 
 	  debug(getName () + ".handleSuccessfulAlloc - checking element " + sse + 
 	       (sse.isPlanned() ? " is planned " : " not yet planned"));
-	if (isDebugEnabled()) debug(getName () + "------doing final planning of element " + sse);
+	if (isInfoEnabled()) {
+	    info(getName () + ".handleSuccessfulAlloc - final planning of element " + sse + 
+		 " b/c sibling task completed : " + uid);
+	}
 	sse.finishPlan(alloc, this);
 	//debug("***Removing "+uid);
 	//TaskToSSE.remove(uid);

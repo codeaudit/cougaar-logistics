@@ -20,7 +20,7 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import java.util.Vector;
+import java.util.*;
 
 import org.cougaar.core.plugin.PluginBindingSite;
 
@@ -74,6 +74,28 @@ public class AmmoLowFidelityExpanderPlugin extends UTILExpanderPluginAdapter {
 
     return true;
   }
+
+  public void processTasks (java.util.List tasks) {
+      super.processTasks (getPrunedTaskList(tasks));
+  }
+
+    protected List getPrunedTaskList (List tasks) {
+	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+
+	for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	    Task task = (Task) iter.next();
+	    if (removed.contains(task)) {
+		if (isInfoEnabled()) {
+		    info ("ignoring task on removed list " + task.getUID());
+		}
+	    }
+	    else
+		prunedTasks.add (task);
+	}
+	return prunedTasks;
+    }
 
   /**
    * Implemented for UTILExpanderPlugin interface
