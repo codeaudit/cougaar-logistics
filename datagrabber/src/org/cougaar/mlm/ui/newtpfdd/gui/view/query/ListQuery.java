@@ -327,9 +327,10 @@ public class ListQuery extends CarrierQuery {
     String nomen  = DGPSPConstants.COL_ALP_NOMENCLATURE;
     String instanceOwner = DGPSPConstants.COL_OWNER;
     String instanceID    = DGPSPConstants.COL_ASSETID;
-    
+    String isLowFi = DGPSPConstants.COL_IS_LOW_FIDELITY;
+
     String sqlQuery = 
-      "select distinct m." + typeID + ",m." + nomen + ",m." + typeID + 
+      "select distinct m." + typeID + ",m." + nomen + ",m." + typeID + ", \"false\"" +
       "\nfrom " + manifestTable + " m, " + assetInstanceTable + " a \n" +
       filterClauses.getUnitWhereSql (instanceOwner) +
       "\nand a." + instanceID + "=m." +instanceID +
