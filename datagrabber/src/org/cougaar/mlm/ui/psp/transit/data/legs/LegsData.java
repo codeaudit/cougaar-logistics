@@ -41,6 +41,8 @@ import java.nio.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import org.xml.sax.Attributes;
 
@@ -55,6 +57,7 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
 
   //Tags:
   public static final String NAME_TAG = "Legs";
+  boolean useCompression = true;
   //Attr:
 
   //Variables:
@@ -66,7 +69,10 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
   ///////////////
 
   public LegsData(){
-    legs = new HashMap(89);
+    legs = new HashMap(8192);
+    if ("false".equals(System.getProperty ("org.cougaar.mlm.ui.psp.transit.data.legs.LegsData.useCompression"))) {
+      useCompression = false;
+    }
   }
 
   //Members:
@@ -199,17 +205,60 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
       index = li.writeToAssetBuffer (index, assetStringBuffer);
     }
 
-    out.writeObject(legStringBuffer);
+    if (useCompression) {
+      System.err.println ("Writing " + numLegs + " legs, leg String.");
+      compressCharArray(legStringBuffer, out);
+    }
+    else {
+      out.writeObject(legStringBuffer);
+    }
+
     out.writeObject(legLongBuffer);
     out.writeObject(legIntBuffer);
     out.writeObject(legBooleanBuffer);
-    out.writeObject(assetStringBuffer);
+
+    if (useCompression) {
+      System.err.println ("Writing " + numLegs + " legs, asset String.");
+      compressCharArray(assetStringBuffer, out);
+    }
+    else {
+      out.writeObject(legStringBuffer);
+    }
 
     //    System.out.println ("legString " + new String(legStringBuffer));
     //    System.out.println ("legLong   " + legLongBuffer);
     //    System.out.println ("legInt    " + legIntBuffer);
     //    System.out.println ("legBoolean  " + legBooleanBuffer);
     //    System.out.println ("assetString " + new String(assetStringBuffer));
+  }
+
+  protected byte [] compressCharArray (char [] chars, ObjectOutput objectOutput) {
+    // Encode a String into bytes
+    String inputString = new String (chars);
+    try {
+      byte[] input = inputString.getBytes("UTF-8");
+
+      // Compress the bytes
+      byte[] output = new byte[2*chars.length+256];
+      Deflater compresser = new Deflater();
+      compresser.setInput(input);
+      compresser.finish();
+      int compressedDataLength = compresser.deflate(output);
+
+      System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
+
+      objectOutput.writeInt (compressedDataLength); // write compressed length
+      objectOutput.writeInt (chars.length);         // write uncompressed length
+      objectOutput.write    (output, 0, compressedDataLength);
+
+      return output;
+    }
+    catch (Exception e) {
+      System.err.println ("Got exception serializing " + chars);
+      System.err.println ("It was " + e);
+      e.printStackTrace();
+      return new byte[0];
+    }
   }
 
     /**
@@ -224,23 +273,56 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
      * to take the fields it needs from the buffers.
      */
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    System.err.println ("readExternal.");
+
     int numLegs = in.readInt ();
 
-    char [] legStringBuffer   = (char [])    in.readObject();
+    // fill char buffer with leg Strings --------------------------------
+
+    char [] legStringBuffer = null;
+    String legStringString  = null;
+    int legStringBufferLength = 0;
+
+    if (useCompression) {
+      legStringString = inflateCharArrayToString (in);
+      legStringBufferLength = legStringString.length();
+    }
+    else {
+      legStringBuffer = (char [])    in.readObject();
+      legStringBufferLength = legStringBuffer.length;
+      legStringString = new String(legStringBuffer);
+    }
+
+    CharBuffer charBuffer = CharBuffer.allocate (legStringBufferLength);
+    charBuffer.put (legStringString);
+    charBuffer.rewind();
+
+    // get longs, ints, and booleans --------------------------------
+
     long [] legLongBuffer     = (long [])    in.readObject();
     int  [] legIntBuffer      = (int  [])    in.readObject();
     boolean [] legBooleanBuffer  = (boolean []) in.readObject();
-    char [] assetStringBuffer = (char [])    in.readObject();
 
-    CharBuffer charBuffer = CharBuffer.allocate (legStringBuffer.length);
-    String temp = new String(legStringBuffer);
-    charBuffer.put (temp);
-    charBuffer.rewind();
+    // fill asset char buffer with leg asset ids --------------------------------
+
+    char [] assetStringBuffer = null;
+    String assetStringString  = null;
+    int assetStringBufferLength = 0;
+
+    if (useCompression) {
+      assetStringString = inflateCharArrayToString (in);
+      assetStringBufferLength = assetStringString.length();
+    }
+    else {
+      assetStringBuffer = (char [])    in.readObject();
+      assetStringBufferLength = assetStringBuffer.length;
+      assetStringString = new String(assetStringBuffer);
+    }
+
     //    System.out.println ("orig size " + legStringBuffer.length + " temp " + temp + " char Buffer is " + charBuffer);
 
-    CharBuffer assetCharBuffer = CharBuffer.allocate (assetStringBuffer.length);
-    temp = new String (assetStringBuffer);
-    assetCharBuffer.put (temp);
+    CharBuffer assetCharBuffer = CharBuffer.allocate (assetStringBufferLength);
+    assetCharBuffer.put (assetStringString);
     assetCharBuffer.rewind();
     //    System.out.println ("orig size " + assetStringBuffer.length + " temp " + temp + 
     //			" asset char Buffer is " + assetCharBuffer);
@@ -259,6 +341,35 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
 			 assetCharBuffer);
       addLeg (li);
       //      System.out.println ("Leg #" + i + " is\n" + li);
+    }
+  }
+
+  protected String inflateCharArrayToString (ObjectInput input) {
+    try {
+      int compressedDataLength   = input.readInt (); // read length
+      int uncompressedDataLength = input.readInt (); // uncompressed length
+
+      System.err.println ("inflateCharArray - inflating " + 
+			  compressedDataLength + " bytes, uncompressed " + 
+			  uncompressedDataLength);
+
+      byte [] output = new byte [compressedDataLength];
+      input.readFully (output, 0, compressedDataLength);
+     
+      Inflater decompresser = new Inflater();
+      decompresser.setInput(output, 0, compressedDataLength);
+
+      byte[] result = new byte[uncompressedDataLength];
+      int resultLength = decompresser.inflate(result);
+      decompresser.end();
+
+      // Decode the bytes into a String
+      String outputString = new String(result);
+      return outputString;
+    } catch (Exception e) {
+      System.err.println ("Got exception inflating from stream, it was " + e);
+      e.printStackTrace();
+      return "";
     }
   }
 
