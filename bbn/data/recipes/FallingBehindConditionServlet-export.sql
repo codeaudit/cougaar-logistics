@@ -24,7 +24,7 @@ REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VAL
 REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Target Component Selection Query',4.000000000000000000000000000000,'recipeQueryAllAgents');
 REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Type of Insertion',7.000000000000000000000000000000,'plugin');
 REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Value 1',5.000000000000000000000000000000,'org.cougaar.logistics.servlet.ConditionServlet');
-REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Value 2',3.000000000000000000000000000000,'/CPUSettingServlet');
+REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Value 2',3.000000000000000000000000000000,'/FallingBehindConditionSettingServlet');
 REPLACE INTO lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0005FallingBehindConditionServlet','Value 3',1.000000000000000000000000000000,'conditionName=FallingBehind');
 UNLOCK TABLES;
 
