@@ -185,16 +185,19 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 	  //	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
 	  startBucket = thePG.convertTimeToBucket(startDay, true) + inventoryPlugin.getOrderShipTime();
       }
+
       // clear all of the projections
       //oldProjections.addAll(thePG.clearRefillProjectionTasks(startDay));
-      oldProjections.addAll(thePG.clearRefillProjectionTasks(now));
+      long cutoffTime = now + ((inventoryPlugin.getOrderShipTime() + 1) * thePG.getBucketMillis());
+
+      oldProjections.addAll(thePG.clearRefillProjectionTasks(cutoffTime));
       //grab the overlapping tasks and change their end time
       ArrayList projectionsToCut = (ArrayList) thePG.getOverlappingRefillProjections();
       Iterator toCut = projectionsToCut.iterator();
       while(toCut.hasNext()) {
 	  Task taskToCut = (Task) toCut.next();
 	  if (taskToCut != null) {
-	      Preference new_end = createRefillTimePreference(now, 
+	      Preference new_end = createRefillTimePreference(cutoffTime, 
 							      inventoryPlugin.getOPlanArrivalInTheaterTime(),
 							      AspectType.END_TIME, thePG);
 	      ((NewTask)taskToCut).setPreference(new_end);
