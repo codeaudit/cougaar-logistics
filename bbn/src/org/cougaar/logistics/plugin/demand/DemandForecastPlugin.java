@@ -1142,25 +1142,37 @@ public class DemandForecastPlugin extends ComponentPlugin
                                        Collection pgInputs,
                                        TimeSpan projectSpan) {
     Schedule paramSchedule = null;
-    Class parameters[] = {Collection.class, TimeSpan.class};
-    Object arguments[] = {pgInputs, projectSpan};
-    Method m = null;
-    try {
-      m = supplyClassPG.getMethod("getParameterSchedule", parameters);
-    } catch (NoSuchMethodException e) {
-      e.printStackTrace();
-    } catch (SecurityException e) {
-      e.printStackTrace();
+
+    if(projectSpan.getEndTime() <= projectSpan.getStartTime()) {
+	logger.error("Was going to call getParameterSchedule, but the projectSpan spans a zero time span!");
     }
-    try {
-      paramSchedule = (Schedule) m.invoke(pg, arguments);
-      return paramSchedule;
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-    } catch (InvocationTargetException e) {
-      e.printStackTrace();
+    else {
+	Class parameters[] = {Collection.class, TimeSpan.class};
+	Object arguments[] = {pgInputs, projectSpan};
+	Method m = null;
+	try {
+	    if (!supplyClassPG.isInstance(pg)) {
+		throw new IllegalArgumentException("PG is not an instanceof of "+supplyClassPG+": "+pg);
+	    }
+	    m = supplyClassPG.getMethod("getParameterSchedule", parameters);
+	    paramSchedule = (Schedule) m.invoke(pg, arguments);
+	    return paramSchedule;
+	} catch(Exception e) {
+	    e.printStackTrace();
+	}
+	/*** TODO: MWD take out extra exceptions
+	} catch (NoSuchMethodException e) {
+	    e.printStackTrace();
+	} catch (SecurityException e) {
+	    e.printStackTrace();
+	} catch (IllegalAccessException e) {
+	    e.printStackTrace();
+	} catch (IllegalArgumentException e) {
+	    e.printStackTrace();
+	} catch (InvocationTargetException e) {
+	    e.printStackTrace();
+	}
+	**/
     }
     return new ScheduleImpl();
   }
