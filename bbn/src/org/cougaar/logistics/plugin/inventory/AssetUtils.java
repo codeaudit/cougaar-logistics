@@ -56,12 +56,6 @@ public class AssetUtils {
     private transient Logger logger;
     private transient InventoryPlugin invPlugin;
 
-  /** Cache for isAssetOfType. Keys are Strings, values are either
-   * null (unknown), an Asset class (the type), or Object (== assetFail).
-   **/
-  private static final HashMap assetTypes  = new HashMap(89);
-  private static final Object assetFail = new Object();
-
     public AssetUtils(InventoryPlugin aPlugin) {
 	invPlugin = aPlugin;
 	if(invPlugin == null) {

@@ -136,9 +136,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     // Contract: the inventory for yesterday is always valid because initially it is
     // set by the behavior group of the inventory.
     timeZero = (int)((startTime/MSEC_PER_BUCKET) - 1);
-    int now_bucket = convertTimeToBucket(now);
     
-
     //Initialize with initial level since the refill generator won't start setting inv levels
     //until the first day it processes which is today + OST - so depending on OST it could be a while.
     inventoryLevelsArray[0] = myPG.getInitialLevel();

@@ -115,15 +115,12 @@ public class RefillGenerator extends InventoryLevelGenerator {
 	//clear the refills
 	oldRefills.addAll(thePG.clearRefillTasks(new Date(today)));
 
-        int inventoryBucket = thePG.convertTimeToBucket(today);
-        int startBucket = thePG.convertTimeToBucket(start);
+	int startBucket = thePG.convertTimeToBucket(start);
         // refill time is start + 1 bucket (k+1)
         int refillBucket = startBucket + 1; 
         // max lead day is today + maxLeadTime
         int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
 						      addNDays(today, maxLeadTime));
-
-
 	double prevTarget = 0;
 
         //calculate inventory levels for time ZERO through start (today + OST)
@@ -177,8 +174,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 	      // and apply it to the LogisticsInventoryBG
 	      Task theRefill = createRefillTask(refillQty, 
 						thePG.convertBucketToTime(refillBucket), 
-						anInventory, thePG, 
-						today, orderShipTime);
+						thePG, today, orderShipTime);
 	      newRefills.add(theRefill);
 	      invLevel = invLevel + refillQty;
       
@@ -216,19 +212,17 @@ public class RefillGenerator extends InventoryLevelGenerator {
   /** Make a Refill Task 
    *  @param quantity The quantity of the Refill Task
    *  @param endDay  The desired delivery date of the Refill Task
-   *  @param inv  The Inventory this Refill Task is resupplying
    *  @param thePG  The LogisticsInventoryPG for the Inventory.
    *  @param today  Time representing now to use as the earliest possible delivery
    *  @param ost The OrderShipTime used to calculate the CommitmentDate
    *  @return Task The new Refill Task
    **/
   private Task createRefillTask(double quantity, long endDay, 
-                                Inventory inv, LogisticsInventoryPG thePG, 
+                                LogisticsInventoryPG thePG, 
                                 long today, int ost) {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.Supply);
-    //newRefill.setDirectObject(inv);
     newRefill.setDirectObject(thePG.getResource());
     //set the commitment date to endDay - ost.
     newRefill.setCommitmentDate(new Date(getTimeUtils().subtractNDays(endDay, ost)));
@@ -384,7 +378,6 @@ public class RefillGenerator extends InventoryLevelGenerator {
         level = thePG.getLevel(startBucket - 1) -
           thePG.getActualDemand(startBucket);
       }
-      int lastReqBucket = thePG.getLastRefillRequisition();
       double committedRefill = findCommittedRefill(startBucket, thePG, false);
       thePG.setLevel(startBucket, (level + committedRefill) );
       startBucket = startBucket + 1;

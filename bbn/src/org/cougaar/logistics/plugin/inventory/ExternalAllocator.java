@@ -90,7 +90,7 @@ public class ExternalAllocator extends InventoryModule {
 	Organization provider = findBestSource(task);
 	if (provider != null) {
 	  if(verifyBeforeAllocation(task,provider)){
-	    AllocationResult estAR =  createPredictedAllocationResult(task,provider);
+	    AllocationResult estAR =  createPredictedAllocationResult(task);
             Allocation alloc;
             //either make an allocation or reset the estimated AR on the
             // already existing pe - mostly likely to happen if a task's prefs
@@ -129,7 +129,7 @@ public class ExternalAllocator extends InventoryModule {
 	return inventoryPlugin.getRootFactory().createAllocation(t.getPlan(), t, a, null, r);
     }
 
-    private AllocationResult createPredictedAllocationResult(Task task, Organization provider) {
+    private AllocationResult createPredictedAllocationResult(Task task) {
 	//MWD in the future this will have to generate the expected result
 	//from the predictor.
 	return new AllocationResultHelper(task, null).getAllocationResult(0.25, true);

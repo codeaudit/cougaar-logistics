@@ -23,9 +23,6 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.*;
 
-import org.cougaar.core.agent.*;
-import org.cougaar.glm.ldm.asset.*;
-import org.cougaar.planning.ldm.asset.*;
 import org.cougaar.glm.plugins.FileUtils;
 import org.cougaar.glm.plugins.ScheduleUtils;
 
@@ -33,7 +30,11 @@ import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.ScheduledContentPG;
 import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
+import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.planning.ldm.plan.*;
@@ -744,7 +745,7 @@ public class InventoryPlugin extends ComponentPlugin {
 		 (LogisticsInventoryPG) 
 		 inv.searchForPropertyGroup(LogisticsInventoryPG.class);
 	     if (logInvpg != null) {
-		 String type = getAssetType(inv, logInvpg);
+		 String type = getAssetType(logInvpg);
 		 if (supplyType.equals(type)) {
 		     return true;    
 		 }
@@ -753,8 +754,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	 return false;
      }
      
-     private String getAssetType(Inventory inventory, 
-				 LogisticsInventoryPG invpg) {
+     private String getAssetType(LogisticsInventoryPG invpg) {
 	 Asset a = invpg.getResource();
 	 if (a == null) return null;
 	 SupplyClassPG pg = (SupplyClassPG) 

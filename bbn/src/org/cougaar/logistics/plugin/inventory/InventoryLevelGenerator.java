@@ -115,22 +115,26 @@ public class InventoryLevelGenerator extends InventoryModule {
             try {
               refillQty = ar.getValue(AspectType.QUANTITY);
             } catch (IllegalArgumentException iae) {
-	      System.err.println ("findCommittedRefill - The refill task " + 
-				  refill.getUID() + "'s plan element has an allocation result without a quantity : " + ar);
-            } catch (Exception e) {
-	      if (ar == null) {
-		System.err.println ("This would blow our minds.");
-	      }
-	      else 
-		System.err.println(" Task is " + getTaskUtils().taskDesc(refill) );
-		e.printStackTrace();
+		if (logger.isErrorEnabled()) { 
+		    logger.error("findCommittedRefill - The refill task " + 
+				 refill.getUID() + 
+				 "'s plan element has an allocation result without a quantity : " + ar);
+		}
+	    } catch (Exception e) {
+	      if (ar == null && logger.isErrorEnabled()) {
+		logger.error("This would blow our minds.");
+	      } else {
+		  if (logger.isErrorEnabled()) {
+		      logger.error(" Task is " + getTaskUtils().taskDesc(refill) );
+		      e.printStackTrace();
+		  }
 	      }
 	    }
-	    return refillQty;
-	  
 	  }
+	  return refillQty;
 	}
       }
+    }
     // if we did not find a match return 0.0
     return refillQty;
   }

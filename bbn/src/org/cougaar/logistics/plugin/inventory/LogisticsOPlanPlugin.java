@@ -21,17 +21,16 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.agent.ClusterIdentifier;
+
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.core.domain.RootFactory;
 import org.cougaar.core.service.DomainService;
 
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.plugin.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;

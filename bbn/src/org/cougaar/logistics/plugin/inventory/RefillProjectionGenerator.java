@@ -200,7 +200,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
 	  if (projDemand > 0.0) {
 	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
 						 thePG.convertBucketToTime(currentBucket),
-						 projDemand, anInventory, thePG);
+						 projDemand, thePG);
 	    refillProjections.add(refill);
 	  }
           //then reset the start bucket and the new demand 
@@ -219,7 +219,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
 	if (projDemand > 0.0) {
 	  Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
 						   thePG.convertBucketToTime(currentBucket),
-						   projDemand, anInventory, thePG);
+						   projDemand, thePG);
 	  refillProjections.add(lastRefill);
 	}
       }
@@ -340,17 +340,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param start The start time for the Task
    *  @param end The end time for the Task
    *  @param demand The demandrate value of the task
-   *  @param inv  The inventory Asset this Task is refilling.
    *  @param thePG  The Property Group of the Inventory Asset
    *  @return Task The new Projection Refill
    **/
   private Task createProjectionRefill(long start, long end,
-                                      double demand, Inventory inv, 
-                                      LogisticsInventoryPG thePG) {
+                                      double demand, LogisticsInventoryPG thePG) {
     //create a projection refill task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
-    //newRefill.setDirectObject(inv);
     newRefill.setDirectObject(thePG.getResource());
     newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
                            demand, thePG);

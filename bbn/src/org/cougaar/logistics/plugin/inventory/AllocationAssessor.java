@@ -192,9 +192,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 				 Inventory inv, LogisticsInventoryPG thePG) {
     int currentBucket = todayBucket;
     double qty = 0;
-    double runningQty = 0;
-    double todayLevel, yesterdayLevel, todayRefill, testLevel, testQty;
-    AllocationResult result = null;
+    double todayLevel, todayRefill, testLevel, testQty;
     Task withdraw;
 
     // DEBUG
@@ -332,7 +330,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
 	    if (task.getPlanElement() != null) {
 		// previously allocated WITHDRAW task -- update plan element if needed
-		checkPlanElement(task, thePG);
+		checkPlanElement(task);
 	    } else {
 		// previously un-allocated WITHDRAW task
 		createBestAllocation(task, inv, thePG);
@@ -563,9 +561,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  This is called if we want to give a best result - so if the previous
    *  result was not best we will change it.
    *  @param withdraw The Withdraw Task we are allocating against the Inventory
-   *  @param thePG  The PG for the Inventory this allocation is against.
    **/
-  private void checkPlanElement(Task withdraw, LogisticsInventoryPG thePG) {
+  private void checkPlanElement(Task withdraw) {
     //if this task already has a pe - make sure the results are consistent
     // with best.
     PlanElement pe = withdraw.getPlanElement();

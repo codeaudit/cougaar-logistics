@@ -23,7 +23,6 @@ package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.core.agent.ClusterIdentifier;
 
-import java.lang.Class;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
