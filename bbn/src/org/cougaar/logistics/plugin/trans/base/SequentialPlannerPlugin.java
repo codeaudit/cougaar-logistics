@@ -390,11 +390,13 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
       // Get the next failed task
       SubTaskResult str = (SubTaskResult)failed_it.next();
       Task failed_e_task = str.getTask();
-	    
-      error(getName() + ".handleFailedExpansion - Failed task : " + failed_e_task + 
-	    "\n\twith pe " + failed_e_task.getPlanElement ());
-      error("\nPref-Aspect comparison : ");
-      expandHelper.showPlanElement (failed_e_task);
+
+      if (isInfoEnabled()) {
+        info(getName() + ".handleFailedExpansion - Failed task : " + failed_e_task +
+                "\n\twith pe " + failed_e_task.getPlanElement ());
+        info("\nPref-Aspect comparison : ");
+        expandHelper.showPlanElement (failed_e_task);
+      }
     }
     if (isInfoEnabled()) info(getName () + "---handleFailedExpansion: E");
   }
@@ -558,8 +560,8 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
     AllocationResult AR = alloc.getReportedResult() == null ? alloc.getEstimatedResult() : alloc.getReportedResult(); 
     if (!AR.isSuccess ()) {
-      if (isWarnEnabled())
-	warn(getName () + ".handleSuccessfulAlloc - WARNING : planning of leg for task " + alloc.getTask ().getUID () + 
+      if (isInfoEnabled())
+	info(getName () + ".handleSuccessfulAlloc - WARNING : planning of leg for task " + alloc.getTask ().getUID () +
 	     " failed, not continuing to next leg.");
       return;
     }
