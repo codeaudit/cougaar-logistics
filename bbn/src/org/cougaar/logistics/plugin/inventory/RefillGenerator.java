@@ -228,7 +228,8 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 		String refillBucketTime = getTimeUtils().dateString(thePG.convertBucketToTime(refillBucket));
 
 		if((criticalLevel <= 0) || (invLevel <= 0)) {
-		    if((criticalLevel < -1E-8) && logger.isWarnEnabled()) {
+		    //		    if((criticalLevel < -1E-8) && logger.isWarnEnabled()) {
+		    if((criticalLevel < 0) && logger.isWarnEnabled()) {
 			// Accounts for rounding errors
 			logger.warn("At " + inventoryPlugin.getOrgName() +
 				    "-" + inventoryPlugin.getSupplyType() +
