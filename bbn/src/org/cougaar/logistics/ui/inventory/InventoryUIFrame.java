@@ -44,6 +44,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 
+import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 /** 
  * <pre>
@@ -69,6 +70,9 @@ public class InventoryUIFrame extends JFrame
     private Container contentPane;
 
     JTextArea editPane;
+
+    InventoryLevelChart levelChart;
+    InventoryData       inventory;
 
 
     InventorySelectionPanel selector;
@@ -104,7 +108,7 @@ public class InventoryUIFrame extends JFrame
         JScrollPane areaScrollPane = new JScrollPane(editPane);
         areaScrollPane.setVerticalScrollBarPolicy(
                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        areaScrollPane.setPreferredSize(new Dimension(600,400));
+        areaScrollPane.setPreferredSize(new Dimension(700,200));
         areaScrollPane.setBorder(
             BorderFactory.createCompoundBorder(
                 BorderFactory.createCompoundBorder(
@@ -114,9 +118,13 @@ public class InventoryUIFrame extends JFrame
 
 	JButton parseButton = new JButton("Parse");
 	parseButton.addActionListener(this);
-	contentPane.add(parseButton,BorderLayout.NORTH);
+	contentPane.add(parseButton,BorderLayout.WEST);
 
-	contentPane.add(areaScrollPane,BorderLayout.CENTER);
+	levelChart = new InventoryLevelChart();
+	levelChart.setPreferredSize(new Dimension(700,250));
+
+	contentPane.add(levelChart,BorderLayout.CENTER);
+	contentPane.add(areaScrollPane,BorderLayout.NORTH);
 
 	selector = new InventorySelectionPanel(this);
 	selector.addInventorySelectionListener(this);
@@ -152,7 +160,8 @@ public class InventoryUIFrame extends JFrame
 	}
 	else if(e.getActionCommand().equals("Parse")) {
 	  System.out.println("Parsing");
-	    parser.parseString(editPane.getText());
+	    inventory = parser.parseString(editPane.getText());
+	    levelChart.setData(inventory);
 	}
     }
 

@@ -69,7 +69,7 @@ public class InventoryLevel extends InventoryScheduleElement {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
 	
 	double aReorderLevel = (new Double(subStrings[REORDER_LEVEL_INDEX])).doubleValue();
-	double anInventoryLevel = (new Double(subStrings[REORDER_LEVEL_INDEX])).doubleValue();
+	double anInventoryLevel = (new Double(subStrings[INVENTORY_LEVEL_INDEX])).doubleValue();
 	long aStartTime = -0L;
 	String startTimeStr = subStrings[START_TIME_INDEX].trim();
 	if(!(startTimeStr.equals(""))) {

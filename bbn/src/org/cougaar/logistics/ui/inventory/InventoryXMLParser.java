@@ -49,12 +49,13 @@ public class InventoryXMLParser
 	tagStack = new Stack();
     }
 
-    public void parseString(String xmlInput){
+    public InventoryData parseString(String xmlInput){
 	ctr=0;
 	inventory=null;
 	lines = xmlInput.split("\\n");
 	System.out.println("Number of Lines=" + lines.length);
 	parse();
+	return inventory;
     }
 
     private void parse() {
@@ -72,6 +73,10 @@ public class InventoryXMLParser
 		else {
 		    parseSchedule();
 		}
+	    }
+	    else {
+		System.out.println("Unparseable line: " + currentString);
+		ctr++;
 	    }
 	}	
     }
@@ -133,14 +138,16 @@ public class InventoryXMLParser
 	    elements.add(parseString(currentString,type));
 	    currentString = lines[++ctr];
 	}
+	
 	InventoryScheduleHeader header = new InventoryScheduleHeader(name,
 								     type,
 								     elements);
+	inventory.addSchedule(header);
+
 	System.out.println("Parsed Schedule " + name 
 			   + " there were " + (ctr - ctrIn) +
 			   " lines of type " + typeStr);
 
-	inventory.addSchedule(header);
     }
 	
     private InventoryScheduleElement parseString(String elementString,
@@ -174,5 +181,8 @@ public class InventoryXMLParser
 	}
 	ctr++;
     }
+
+
+
 }
 
