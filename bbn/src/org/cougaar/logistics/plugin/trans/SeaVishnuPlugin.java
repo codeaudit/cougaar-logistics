@@ -73,6 +73,8 @@ public class SeaVishnuPlugin extends GenericVishnuPlugin {
 				glmPrepHelper.makePrepositionalPhrase(ldmf,
 								      Constants.Preposition.VIA,
 								      route));
+    glmPrepHelper.removePrepNamed(mainTask, GLMTransConst.SEAROUTE); // not necessary now that we put it on the VIA prep
+
     return mainTask;
   }
 
