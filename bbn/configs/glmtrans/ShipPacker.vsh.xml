@@ -73,13 +73,7 @@
 <LITERAL value="arrival" type="constant" datatype="string" />
 <LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
-<OPERATOR operation="+" >
 <LITERAL value="duration" type="variable" datatype="number" />
-<OPERATOR operation="*" >
-<LITERAL value="48.0" type="constant" datatype="number" />
-<LITERAL value="3600.0" type="constant" datatype="number" />
-</OPERATOR>
-</OPERATOR>
 </OPERATOR>
 </BESTTIME>
 <TASKDURATION>
@@ -155,13 +149,10 @@
 <OPERATOR operation="list" >
 <OPERATOR operation="interval" >
 <LITERAL value="start_time" type="variable" datatype="datetime" />
-<OPERATOR operation="-" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="earliestArrival" type="constant" datatype="string" />
+<LITERAL value="departure" type="constant" datatype="string" />
 <LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-<LITERAL value="duration" type="variable" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="interval" >
