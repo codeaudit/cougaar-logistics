@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.cougaar.mlm.ui.newtpfdd.util.PathString;
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
 import org.cougaar.mlm.ui.newtpfdd.util.ExceptionTools;
