@@ -97,6 +97,12 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     }
   };  	
 
+  private static UnaryPredicate logisticsOPlanPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return o instanceof LogisticsOPlan;
+    }
+  };
+
   public void load() {
     super.load();
     logger = getLoggingService(this);
@@ -119,18 +125,39 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     oplans = (IncrementalSubscription)getBlackboardService().subscribe(new OplanPredicate());
     selfOrganizations = (IncrementalSubscription) getBlackboardService().subscribe(orgsPredicate);
 
-    if(getBlackboardService().didRehydrate()) {
+    Collection anyOplans = getBlackboardService().query(new OplanPredicate());
+
+    if((anyOplans != null) &&
+       (!(anyOplans.isEmpty())) &&
+       getBlackboardService().didRehydrate()) {
       getLogisticsOPlans();
       doUpdateOplans();
     }
   }
 
   private void getLogisticsOPlans() {
-    Collection c = getBlackboardService().query(new UnaryPredicate() {
-      public boolean execute(Object o) {
-	return o instanceof LogisticsOPlan;
+
+
+    Collection c = getBlackboardService().query(logisticsOPlanPredicate);
+    if (myOrganization == null) {
+      myOrganization = getMyOrganization(selfOrganizations.elements());
+      if (myOrganization != null) {
+	clusterId = myOrganization.getClusterPG().getClusterIdentifier();
       }
-    });
+    }
+    int waited = 0;
+    while (c.isEmpty()) {
+      try {
+	logger.error("starting to sleep for oplan objects at "+waited+" seconds at "+clusterId);
+	Thread.currentThread().sleep(3000);
+	waited=waited+3;
+      } catch (Exception ex) {
+	logger.error("Exception sleeping for OPlan "+ex);
+	ex.printStackTrace();
+      }
+      c = getBlackboardService().query(logisticsOPlanPredicate);
+    }
+    logger.debug("Got the OPlan at "+clusterId);
     for (Iterator i = c.iterator(); i.hasNext(); ) {
       LogisticsOPlan loplan = (LogisticsOPlan) i.next();
       oplanHash.put(loplan.getOplanUID(), loplan);
@@ -178,6 +205,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 	  loplan = new LogisticsOPlan(clusterId, oplan);
 	  oplanHash.put(oplanUID, loplan);
 	  getBlackboardService().publishAdd(loplan);
+	  logger.debug("Published LogisticsOPlan "+loplan+" for "+clusterId);
 	}
       }
     }
@@ -233,4 +261,5 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
   }
 
 }
+
 
