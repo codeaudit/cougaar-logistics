@@ -100,6 +100,7 @@ public class LogisticsInventoryFormatter {
     }
 
     protected void logTask(Task aTask,boolean expandTimestamp) {
+	if(aTask == null){ return; }
 	String taskStr = buildTaskPrefixString(aTask);
 	taskStr = taskStr + getDateString(taskUtils.getStartTime(aTask),expandTimestamp) + ",";
 	taskStr = taskStr + getDateString(taskUtils.getEndTime(aTask),expandTimestamp) + ",";
@@ -117,6 +118,7 @@ public class LogisticsInventoryFormatter {
     }
 
     protected void logAllocationResult(Task aTask, boolean expandTimestamp) {
+	if(aTask == null) {return;}
 	PlanElement pe = aTask.getPlanElement();
 	if(pe == null) { return; }
 	String resultType="REPORTED";
