@@ -176,13 +176,19 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   public void setupSubscriptions() {
 
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
-
     //TODO: MWD Remove
     //UnaryPredicate orgActivityPred = new OrgActivityPred();
     //orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
     //oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
 
+  }
+
+  //Temp debugging task if Expansion turns out to be dispostion
+  public boolean checkIfTaskOnBlackboard(Task task) {
+    Collection tasks = blackboard.query(
+                                        new TaskOnBlackboardPredicate(task));
+    return !tasks.isEmpty();
   }
 
   private void checkDateOfBlackboard() {
@@ -203,6 +209,22 @@ public class DemandGeneratorPlugin extends ComponentPlugin
                      new Date(lastTaskTime) + " the current society time is " +
                      new Date(getCurrentTimeMillis()));
       }
+    }
+  }
+
+  /** Debugging task to see if orphaned tasks **/
+  private static class TaskOnBlackboardPredicate implements UnaryPredicate {
+    private Task task;
+    public TaskOnBlackboardPredicate(Task aTask) {
+      super();
+      task = aTask;
+    }
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task compareTask = (Task) o;
+        return (task.getUID().equals(compareTask.getUID()));
+      }
+      return false;
     }
   }
 

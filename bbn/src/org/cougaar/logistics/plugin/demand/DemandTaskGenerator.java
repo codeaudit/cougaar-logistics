@@ -114,8 +114,9 @@ public class DemandTaskGenerator extends DemandGeneratorModule
         }
       }
       if(!supplyTasks.isEmpty()){
-        addToAndPublishExpansion(gpTask,supplyTasks);
-        demandTasks.addAll(supplyTasks);
+        if(addToAndPublishExpansion(gpTask,supplyTasks)) {
+          demandTasks.addAll(supplyTasks);
+        }
       }
     }
 
@@ -204,8 +205,39 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       return 0.0;
   }
 
-  protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
-    Expansion expansion = (Expansion) parent.getPlanElement();
+  //Method to check if children in hash still on blackboard if parent gp
+  //hash a disposition
+  protected void checkForOrphans(Task gpTask) {
+      HashMap assetMap = (HashMap) projHash.get(gpTask);
+      Iterator assetsIt = assetMap.keySet().iterator();
+      while (assetsIt.hasNext()) {
+        Asset consumed = (Asset) assetsIt.next();
+        Collection projTasks = (Collection) (assetMap.get(consumed));
+        Iterator taskIt = projTasks.iterator();
+        while (taskIt.hasNext()) {
+          Task projTask = (Task) taskIt.next();
+          if(dgPlugin.checkIfTaskOnBlackboard(projTask)) {
+            if(logger.isErrorEnabled()) {
+              logger.error("Parent task has Disposition.   Orphaned task = " + getTaskUtils().taskDesc(projTask));
+            }
+          }
+        }
+      }
+  }
+  
+
+  protected boolean addToAndPublishExpansion(Task parent, Collection subtasks) {
+    Expansion expansion=null;
+    try {
+      expansion = (Expansion) parent.getPlanElement();
+    }
+    catch(ClassCastException ex) {
+      if(logger.isErrorEnabled()) {
+        logger.error("ClassCastException.  Unexpected disposition on gpTask that was found as parent in ProjectSupplies.  Bug# 13670 GP Task = " + parent,ex);
+        checkForOrphans(parent);
+        return false;
+      }
+    }
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
       //TODO: MWD Remove debug statements:
@@ -221,6 +253,8 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       dgPlugin.publishAdd(task);
     }
     dgPlugin.publishChange(expansion);
+
+    return true;
   }
 
 
