@@ -93,7 +93,8 @@ public class TreeUtilities
     /**
      * Saves a structure to a XML file.
      *
-     * @param
+     * @param s The Structure to be saved
+     * @param fileName the file to write the XMLized Structure to
      */
     public static void saveToFile(Structure s, String fileName)
     {

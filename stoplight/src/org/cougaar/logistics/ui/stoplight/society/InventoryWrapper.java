@@ -96,7 +96,7 @@ public class InventoryWrapper {
    */
    
   /**
-   *  @returns A schedule of all the SUCCESSFUL supply elements
+   *  @return A schedule of all the SUCCESSFUL supply elements
    */
   public Schedule getDueInSchedule() {
     if (logInvPG == null) {
@@ -107,7 +107,7 @@ public class InventoryWrapper {
   }
   
   /**
-   *  @returns A schedule of all the supply elements
+   *  @return A schedule of all the supply elements
    */
   public Schedule getRequestedDueInSchedule() {
     if (logInvPG == null) {
@@ -118,7 +118,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the supply elements whose outcome is unknown
+   *  @return A schedule of all the supply elements whose outcome is unknown
    */
   public Schedule getUnconfirmedDueInSchedule() {
     if (logInvPG == null) {
@@ -152,7 +152,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the projection supply elements that are AFTER the switch over day
+   *  @return A schedule of all the projection supply elements that are AFTER the switch over day
    */
   public Schedule getProjectedRequestedDueInSchedule() {
     if (logInvPG == null) {
@@ -188,7 +188,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the SUCCESSFUL projection supply elements that are AFTER the switch over day
+   *  @return A schedule of all the SUCCESSFUL projection supply elements that are AFTER the switch over day
    */
   public Schedule getProjectedDueInSchedule() {
     if (logInvPG == null) {
@@ -232,7 +232,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the projection supply elements that are BEFORE the switch over day
+   *  @return A schedule of all the projection supply elements that are BEFORE the switch over day
    */
   public Schedule getInactiveProjectedRequestedDueInSchedule() {
     if (logInvPG == null) {
@@ -268,7 +268,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the SUCCESSFUL projection supply elements that are BEFORE the switch over day
+   *  @return A schedule of all the SUCCESSFUL projection supply elements that are BEFORE the switch over day
    */
   public Schedule getInactiveProjectedDueInSchedule() {
     if (logInvPG == null) {
@@ -337,7 +337,7 @@ public class InventoryWrapper {
    */
    
   /**
-   *  @returns A schedule of all the SUCCESSFUL Demand elements
+   *  @return A schedule of all the SUCCESSFUL Demand elements
    */
   public Schedule getDueOutSchedule() {
     if (logInvPG == null)
@@ -347,7 +347,7 @@ public class InventoryWrapper {
   }
   
   /**
-   *  @returns A schedule of all the Demand elements
+   *  @return A schedule of all the Demand elements
    */
   public Schedule getRequestedDueOutSchedule() {
     if (logInvPG == null)
@@ -357,7 +357,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the SUCCESSFUL projection Demand elements
+   *  @return A schedule of all the SUCCESSFUL projection Demand elements
    */
   public Schedule getProjectedDueOutSchedule() {
     if (logInvPG == null)
@@ -393,7 +393,7 @@ public class InventoryWrapper {
   }
     
   /**
-   *  @returns A schedule of all the projection Demand elements
+   *  @return A schedule of all the projection Demand elements
    */
   public Schedule getProjectedRequestedDueOutSchedule() {
     if (logInvPG == null)
@@ -423,7 +423,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the INACTIVE SUCCESSFUL projection Demand elements
+   *  @return A schedule of all the INACTIVE SUCCESSFUL projection Demand elements
    */
   public Schedule getInactiveProjectedDueOutSchedule() {
     if (logInvPG == null)
@@ -491,7 +491,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *  @returns A schedule of all the INACTIVE projection Demand elements
+   *  @return A schedule of all the INACTIVE projection Demand elements
    */
   public Schedule getInactiveProjectedRequestedDueOutSchedule() {
     if (logInvPG == null)
@@ -563,7 +563,7 @@ public class InventoryWrapper {
   }
 
   /**
-   *   @returns a list of all the tasks that are COMPLETELY inactive.  Pieces of the tasks in activeDemand may be
+   *   @return a list of all the tasks that are COMPLETELY inactive.  Pieces of the tasks in activeDemand may be
    *        inactive as well.
    */
   private Collection getInactiveDemand(Collection allDemand, Collection activeDemand) {

@@ -154,7 +154,7 @@ public class AssessmentQueryGenerator extends QueryGenerator
     * @param timeout period to wait for non-monitored queries
     * @param monitor use a persistent query and monitor results if true
     *
-    * @returns String containing any error messages generated during query
+    * @return String containing any error messages generated during query
     */
   public String generateQuery(final VariableInterfaceManager vim,
                             final Runnable postQueryRunnable,
