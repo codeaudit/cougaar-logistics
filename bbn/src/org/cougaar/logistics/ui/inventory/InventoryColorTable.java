@@ -46,7 +46,7 @@ public class InventoryColorTable {
 	   new Color(255,0,0));  //red?
 
     twoPut(RequisitionsChartDataModel.REQUISITION_SERIES_LABEL,
-	   new Color(0,255,0));  //green?
+	   new Color(0,230,0));  //green?
 
     twoPut(RequisitionsChartDataModel.REQUISITION_ALLOCATION_SERIES_LABEL,
 	   new Color(200,255,200));  //light green?
