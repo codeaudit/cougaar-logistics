@@ -21,6 +21,7 @@
  
 package org.cougaar.logistics.ui.inventory;
 
+
 import java.util.Vector;
 import java.util.Hashtable;
 
@@ -35,15 +36,23 @@ import javax.swing.JTabbedPane;
 import javax.swing.JOptionPane;
 import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
+import javax.swing.Box;
+import javax.swing.JFileChooser;
 
 import java.awt.Container;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.StringWriter;
+import java.io.IOException;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -74,6 +83,7 @@ public class InventoryUIFrame extends JFrame
     private Container contentPane;
 
     JTextArea editPane;
+    JFileChooser fileChooser;
 
     MultiChartPanel     multiChart;
     InventoryData       inventory;
@@ -82,7 +92,7 @@ public class InventoryUIFrame extends JFrame
 
 
     InventorySelectionPanel selector;
-  InventoryXMLParser parser;
+    InventoryXMLParser parser;
 
     public InventoryUIFrame() {
 	super("Inventory GUI");
@@ -93,6 +103,7 @@ public class InventoryUIFrame extends JFrame
 	parser = new InventoryXMLParser();
 	logger = Logging.getLogger(this);
 	contentPane = getRootPane().getContentPane();
+	fileChooser = new JFileChooser(".");
 	// fills frame
 	doMyLayout();
 	dataSource=null;
@@ -131,8 +142,21 @@ public class InventoryUIFrame extends JFrame
                 areaScrollPane.getBorder()));
 
 	JButton parseButton = new JButton("Parse");
+	JButton dataButton = new JButton("Data");
+	JButton hrButton = new JButton("Readable Data");
 	parseButton.addActionListener(this);
-	editPanel.add(parseButton,BorderLayout.NORTH);
+	dataButton.addActionListener(this);
+	hrButton.addActionListener(this);
+
+	JPanel buttonPanel = new JPanel();
+	buttonPanel.setLayout(new FlowLayout());
+	buttonPanel.add(dataButton);
+	buttonPanel.add(Box.createHorizontalStrut(20));
+	buttonPanel.add(hrButton);
+	buttonPanel.add(Box.createHorizontalStrut(20));
+	buttonPanel.add(parseButton);
+	
+	editPanel.add(buttonPanel,BorderLayout.NORTH);
 	editPanel.add(areaScrollPane,BorderLayout.CENTER);
 
 	multiChart = new MultiChartPanel();
@@ -152,8 +176,11 @@ public class InventoryUIFrame extends JFrame
 	
 	JMenu file = new JMenu("File");
 	JMenuItem quit = new JMenuItem(InventoryMenuEvent.MENU_Exit);
+	JMenuItem save = new JMenuItem(InventoryMenuEvent.MENU_SaveXML);
 	quit.addActionListener(this);
+	save.addActionListener(this);
 	file.add(quit);
+	file.add(save);
 	retval.add(file);
     
 	JMenu connection = new JMenu("Connection");
@@ -173,10 +200,46 @@ public class InventoryUIFrame extends JFrame
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_Connect)) {
 	    connectToServlet();
 	}
+	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_SaveXML)) {
+	    int retval = fileChooser.showSaveDialog(this);
+	    if(retval == fileChooser.APPROVE_OPTION) {
+		File saveFile = fileChooser.getSelectedFile();
+		try{
+		    FileWriter fw = new FileWriter(saveFile);
+		    fw.write(editPane.getText());
+		    fw.flush();
+		    fw.close();
+		}
+		catch(IOException ioe) {
+		    throw new RuntimeException(ioe);
+		}
+	    }
+		
+	}
 	else if(e.getActionCommand().equals("Parse")) {
 	    logger.info("Parsing");
-	    inventory = parser.parseString(editPane.getText());
+	    inventory = parser.parseString(dataSource.getCurrentInventoryData());
 	    multiChart.setData(inventory);
+	}
+	else if(e.getActionCommand().equals("Data")) {
+	    editPane.setText(dataSource.getCurrentInventoryData());
+	}
+	else if(e.getActionCommand().equals("Readable Data")) {
+	    String xmlString = dataSource.getCurrentInventoryData();
+	    if((inventory == null) ||
+	       (xmlString == null) ||
+	       (xmlString.trim().equals(""))) {
+		return;
+	    }
+	    StringWriter writer = new StringWriter();
+	    try {
+		inventory.writeHRString(writer);
+		writer.flush();
+	    }
+	    catch(IOException ioe) {
+		throw new RuntimeException(ioe);
+	    }
+	    editPane.setText(writer.toString());
 	}
     }
 
@@ -204,9 +267,9 @@ public class InventoryUIFrame extends JFrame
 	}
 	else if(e.getID() == InventorySelectionEvent.INVENTORY_SELECT) {
 	    String invXML = dataSource.getInventoryData(e.getOrg(),
-							e.getAssetName());
+						 e.getAssetName());
 	    editPane.setText(invXML);
-	    inventory = parser.parseString(editPane.getText());
+	    inventory = parser.parseString(invXML);
 	    multiChart.setData(inventory);	    
 	}
     }
