@@ -131,6 +131,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
        getBlackboardService().didRehydrate()) {
       getLogisticsOPlans();
       doUpdateOplans();
+      publishLogOplanObjects();
     }
   }
 
