@@ -69,6 +69,13 @@ public class DataGathererPSPConfig extends PSPConfig{
     this.includeTransitLegs = includeTransitLegs;
   }
 
+  public DataGathererPSPConfig (DataGathererPSPConfig other) {
+    this.urlConnection      = other.urlConnection;
+    this.includeTransitLegs = other.includeTransitLegs;
+    this.sessionID          = other.sessionID;
+    // don't do the query - that will be set later
+  }
+
   //Members:
   //////////
   
