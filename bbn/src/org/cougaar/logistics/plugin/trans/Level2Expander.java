@@ -111,17 +111,13 @@ public class Level2Expander extends Level2TranslatorModule {
 
     if (lastActualSeen >= endTime) {
       doneLevel2Task = level2Task;
-      //If alreadyDisposed and still done we don't want to re-dispose. Just because its after the last actual seen
-      if (alreadyDisposed) {
-	  return null;
-      }
     } else {
       long countedStartTime = Math.max(startTime, lastActualSeen);
       double totalL6BaseQty = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
       Rate origL2Rate = getTaskUtils().getRate(level2Task);
       double origL2BaseQty = deriveTotalQty(countedStartTime, endTime, level2Task);
 //
-      
+
       double toleranceFactor = 0.10;  // for ammo within 200 lbs
 
       if ((origL2BaseQty - totalL6BaseQty) < toleranceFactor) {
@@ -337,7 +333,7 @@ public class Level2Expander extends Level2TranslatorModule {
 
    /**
     * Define an ARA that can deal with the expansion of a
-    * Level2 ProjectSupply task to a Ready For Transport Level 2 ProjectSupply Task. 
+    * Level2 ProjectSupply task to a Ready For Transport Level 2 ProjectSupply Task.
     * Mostly, we just clone the result of the single chile Ready for Transport ProjectSupply
     * task.
     **/
