@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * Contains all the tests and knows how to kick them off
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/27/01
  **/
@@ -95,6 +95,7 @@ public class Validator{
     t.add(new TonnageInfo(dbConfig,true,false,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,true,false));
+    t.add(new ManifestInfo(dbConfig));
     //    t.add(new TonnageInfo(dbConfig,true,true,true,true));
     //    t.add(new TonnageInfo(dbConfig,false,false,false,true));
     //    t.add(new TonnageInfo(dbConfig,false,true,false,true));
