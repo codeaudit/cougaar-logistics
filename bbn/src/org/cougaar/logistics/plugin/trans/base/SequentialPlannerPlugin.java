@@ -176,7 +176,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     NewWorkflow wf = ldmf.newWorkflow();
     wf.setParentTask(t);
     ((NewTask)t).setWorkflow(wf);
-    wf.setAllocationResultAggregator (new UTILAllocationResultAggregator());
+    //    wf.setAllocationResultAggregator (new UTILAllocationResultAggregator());
     return wf;
   }
     
