@@ -94,6 +94,8 @@ public class InventoryConnectionManager implements InventoryDataSource
 	return null;
     }
 
+    public String getCurrentInventoryData() { return invXMLStr; };
+
     public String getInventoryData(String orgName, String assetName) {
 	InputStream is = null;
 	String orgURL = (String)orgURLs.get(orgName);
