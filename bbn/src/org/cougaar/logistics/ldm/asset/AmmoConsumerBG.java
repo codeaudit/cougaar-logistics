@@ -153,7 +153,11 @@ public class AmmoConsumerBG extends ConsumerBG {
           asset = ((AggregateAsset)asset).getAsset();
         }
         String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
-        consumptionRates = (HashMap)cachedDBValues.get(typeId);
+
+	String echelon = parentPlugin.getMyOrg().getMilitaryOrgPG().getEchelon();
+	String key = typeId + "-" + echelon;
+
+        consumptionRates = (HashMap)cachedDBValues.get(key);
         if (consumptionRates == null){
           Vector result = parentPlugin.lookupAssetConsumptionRate(asset, supplyType, 
                                                                   myPG.getService(), myPG.getTheater());
@@ -162,7 +166,7 @@ public class AmmoConsumerBG extends ConsumerBG {
                          myPG.getMei()+", "+supplyType);
           } else {
             consumptionRates = parseResults(result);
-            cachedDBValues.put(typeId, consumptionRates);
+            cachedDBValues.put(key, consumptionRates);
           }
         }
       }
