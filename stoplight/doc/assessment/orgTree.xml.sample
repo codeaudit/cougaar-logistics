@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<structure>
+  <a name="hierarchy">
+    <val>Organization</val>
+  </a>
+  <list>
+    <a name="UID">
+      <val>All Units</val>
+    </a>
+    <list>
+      <a name="UID">
+        <val>NCA</val>
+      </a>
+      <list>
+        <a name="UID">
+          <val>HNS</val>
+        </a>
+      </list>
+      <list>
+        <a name="UID">
+          <val>USEUCOM</val>
+        </a>
+        <list>
+          <a name="UID">
+            <val>USAEUR</val>
+          </a>
+          <list>
+            <a name="UID">
+              <val>5-CORPS</val>
+            </a>
+            <list>
+              <a name="UID">
+                <val>3-SUPCOM-HQ</val>
+              </a>
+              <list>
+                <a name="UID">
+                  <val>27-TCBN-MVTCTRL</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>16-CSG</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>18-MAINTBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>226-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>263-FLDSVC-CO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>77-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>227-SUPPLYCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>106-TCBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>238-POL-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>15-PLS-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>372-CGO-TRANSCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>594-MDM-TRKCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>485-CSB</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>596-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>26-SSCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>592-ORDCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>588-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>102-POL-SUPPLYCO</val>
+                    </a>
+                  </list>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>208-SCCO</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>19-MMC</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>7-CSG</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>125-ORDBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>452-ORDCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>529-ORDCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>71-MAINTBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>240-SSCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>597-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>317-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>71-ORDCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>565-RPRPTCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>181-TCBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>41-POL-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>377-HVY-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>51-MDM-TRKCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>316-POL-SUPPLYBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>900-POL-SUPPLYCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>515-POL-TRKCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>561-SSBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>541-POL-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>584-MAINTCO</val>
+                    </a>
+                  </list>
+                </list>
+              </list>
+            </list>
+            <list>
+              <a name="UID">
+                <val>5-CORPS-REAR</val>
+              </a>
+              <list>
+                <a name="UID">
+                  <val>69-ADABDE</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>286-ADA-SCCO</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>130-ENGBDE</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>244-ENGBN-CBTHVY</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>52-ENGBN-CBTHVY</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>30-MEDBDE</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>11-AVN-RGT</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>12-AVNBDE</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>18-MPBDE</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>22-SIGBDE</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>205-MIBDE</val>
+                </a>
+              </list>
+            </list>
+            <list>
+              <a name="UID">
+                <val>5-CORPS-ARTY</val>
+              </a>
+              <list>
+                <a name="UID">
+                  <val>41-FABDE</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>2-4-FABN-MLRS</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>3-13-FABN-155</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-27-FABN</val>
+                  </a>
+                </list>
+              </list>
+            </list>
+            <list>
+              <a name="UID">
+                <val>1-AD</val>
+              </a>
+              <list>
+                <a name="UID">
+                  <val>DISCOM-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>123-MSB</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>2-BDE-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>40-ENGBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-35-ARBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>2-6-INFBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>47-FSB</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>4-27-FABN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-6-INFBN</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>AVNBDE-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>127-DASB</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-501-AVNBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-1-CAVSQDN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>2-501-AVNBN</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>DIVARTY-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>1-94-FABN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>25-FABTRY-TGTACQ</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>1-AD-DIV</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>1-4-ADABN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>141-SIGBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>501-MPCO</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>501-MIBN-CEWI</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>69-CHEMCO</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>1-BDE-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>1-37-ARBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>16-ENGBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>501-FSB</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-36-INFBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>2-37-ARBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>2-3-FABN</val>
+                  </a>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>3-BDE-1-AD</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>4-1-FABN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>125-FSB</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-41-INFBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>2-70-ARBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>1-13-ARBN</val>
+                  </a>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>70-ENGBN</val>
+                  </a>
+                </list>
+              </list>
+            </list>
+            <list>
+              <a name="UID">
+                <val>21-TSC-HQ</val>
+              </a>
+              <list>
+                <a name="UID">
+                  <val>29-SPTGP</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>51-MAINTBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>512-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>5-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>343-SUPPLYCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>574-SSCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>18-PERISH-SUBPLT</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>191-ORDBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>24-ORDCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>23-ORDCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>720-EODDET</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>702-EODDET</val>
+                    </a>
+                  </list>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>200-MMC</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>RSA</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>37-TRANSGP</val>
+                </a>
+                <list>
+                  <a name="UID">
+                    <val>6-TCBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>632-MAINTCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>110-POL-SUPPLYCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>416-POL-TRKCO</val>
+                    </a>
+                  </list>
+                </list>
+                <list>
+                  <a name="UID">
+                    <val>28-TCBN</val>
+                  </a>
+                  <list>
+                    <a name="UID">
+                      <val>68-MDM-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>109-MDM-TRKCO</val>
+                    </a>
+                  </list>
+                  <list>
+                    <a name="UID">
+                      <val>66-MDM-TRKCO</val>
+                    </a>
+                  </list>
+                </list>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>AWR-2</val>
+                </a>
+              </list>
+              <list>
+                <a name="UID">
+                  <val>7-TCGP-TPTDD</val>
+                </a>
+              </list>
+            </list>
+          </list>
+        </list>
+      </list>
+      <list>
+        <a name="UID">
+          <val>OSC</val>
+        </a>
+      </list>
+      <list>
+        <a name="UID">
+          <val>TRANSCOM</val>
+        </a>
+        <list>
+          <a name="UID">
+            <val>GlobalAir</val>
+          </a>
+          <list>
+            <a name="UID">
+              <val>PlanePacker</val>
+            </a>
+          </list>
+        </list>
+        <list>
+          <a name="UID">
+            <val>GlobalSea</val>
+          </a>
+          <list>
+            <a name="UID">
+              <val>TheaterGround</val>
+            </a>
+          </list>
+          <list>
+            <a name="UID">
+              <val>CONUSGround</val>
+            </a>
+          </list>
+          <list>
+            <a name="UID">
+              <val>ShipPacker</val>
+            </a>
+          </list>
+        </list>
+      </list>
+      <list>
+        <a name="UID">
+          <val>NATO</val>
+        </a>
+        <list>
+          <a name="UID">
+            <val>JSRCMDSE</val>
+          </a>
+        </list>
+      </list>
+      <list>
+        <a name="UID">
+          <val>DLAHQ</val>
+        </a>
+      </list>
+      <list>
+        <a name="UID">
+          <val>FORSCOM</val>
+        </a>
+      </list>
+    </list>
+  </list>
+</structure>
