@@ -27,13 +27,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.cougaar.planning.ldm.plan.Task;
-
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+
 
 /** 
  * <pre>
@@ -44,34 +41,37 @@ import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
  *
  * There is a one to one correspondance between these and the inventories
  * managed by an inventory plugin.   Most of the logging is invoked by
- * the LogisticsInventoryBG.  This is the keeper of most of the data
- * structures associated with an Inventory asset and this is the info
- * we want to log.
+ * the LogisticsInventoryBG.  The LogisticsInventoryWriter nows how to
+ * write to one of these streams.
  *
  * 
- *
+ * @see LogisticsInventoryWriter
  * @see LogisticsInventoryBG
  *
  **/
 
-public class LogisticsInventoryLogger {
+public class LogisticsInventoryLogger extends FileWriter{
 
     protected static String datestamp=null;
     protected static String baseDir=null;
     protected String fileId;
-    protected int logCtr;
 
     protected LoggingService logger;
-    protected FileWriter writer;
-    protected TaskUtils taskUtils;
 
-    public LogisticsInventoryLogger(Asset invAsset, 
-				    Organization anOrg, 
-				    InventoryPlugin invPlugin){
-
+    public LogisticsInventoryLogger(File aFile, 
+				    boolean append, 
+				    InventoryPlugin invPlugin) throws IOException {
+	super(aFile,append);
 	logger = invPlugin.getLoggingService(this);
-	initializeClass();
-	taskUtils = invPlugin.getTaskUtils();
+    }
+
+    public static LogisticsInventoryLogger 
+	createInventoryLogger(Asset invAsset, 
+			      Organization anOrg, 
+			      InventoryPlugin invPlugin){
+	LogisticsInventoryLogger newLogger=null;
+	LoggingService classLogger = invPlugin.getLoggingService(LogisticsInventoryLogger.class);
+	initializeClass(classLogger);
 	//Initialize the file to COUGAAR_WORKSPACE\inventory\organizationid\datestamp\NSNinv.csv
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String pathId = baseDir + File.separator + "inventory" + File.separator + orgId + File.separator + datestamp;
@@ -79,25 +79,24 @@ public class LogisticsInventoryLogger {
 	File csvFile = new File(fileId);
 	try {
 	    csvFile.mkdirs();
-	    writer = new FileWriter(csvFile,false);
+	    newLogger = new LogisticsInventoryLogger(csvFile,false,invPlugin);
 	}
 	catch(Exception e) {
-	    logger.error("Error creating csv file " + fileId, e);
-	    writer=null;
+	    classLogger.error("Error creating csv file " + fileId, e);
 	}	    
-	logCtr = 0;
+
+	return newLogger;
+
     }
 
 
     protected void finalize() throws Throwable {
-	if(writer != null) {
-	    writer.flush();
-	    writer.close();
-	}
+	flush();
+	close();
 	super.finalize();
     }
 
-    private void initializeClass() {
+    private static void initializeClass(LoggingService classLogger) {
 	if(datestamp == null) {
 	    GregorianCalendar now = new GregorianCalendar();
 	    datestamp = "" + now.get(Calendar.YEAR);
@@ -106,66 +105,11 @@ public class LogisticsInventoryLogger {
 	    baseDir = System.getProperty("org.cougaar.workspace");
 	    if((baseDir == null) ||
 	       (baseDir.equals(""))) {
-		logger.error("System property org.cougaar.workspace is null, please set cougaar workspace");
+		classLogger.error("System property org.cougaar.workspace is null, please set cougaar workspace");
 		baseDir = ".";
 	    }
 	}
     }
-
-    public void logToCSVFile(ArrayList dueOuts){
-	logDueOuts(dueOuts);
-	incrementCycleCtr();
-    }
-    
-    protected void logDueOuts(ArrayList dueOuts) {
-	write("DUE_OUTS:START");
-	writeNoCtr("CYCLE,END TIME,VERB,FOR,QTY");
-	for(int i=0; i < dueOuts.size(); i++) {
-	    ArrayList bin = (ArrayList) dueOuts.get(i);
-	    write("Bin #" + i);
-	    for(int j=0; j < bin.size(); j++) {
-		Task aDueOut = (Task) bin.get(j);
-		Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
-		String dueOutStr = endDate.toString() + "," + aDueOut.getVerb() + ",";
-		PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
-		Object org;
-		    if (pp_for != null) {
-			org = pp_for.getIndirectObject();
-			dueOutStr = dueOutStr + org + ",";
-		    }
-		    if(taskUtils.isSupply(aDueOut)) {
-			dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
-		    }
-		    //We have to get the Rate if its a projection....MWD
-		    
-		    write(dueOutStr);
-	    }
-	}
-	write("DUE_OUTS:END");
-    } 
-
-
-    public void write(String csvString) {
-	if(writer != null)
-	    writeNoCtr(logCtr + "," + csvString);
-    }
-
-    public void writeNoCtr(String aString) {
-	if(writer != null) {
-	    try {
-		writer.write(aString);
-	    }
-	    catch(IOException e) {		
-		logger.error("Exception trying to write to csvWriter: " + fileId, e);
-		writer=null;
-	    }
-	}
-    }
-
-    public void incrementCycleCtr() {
-	logCtr++;
-    }
-
 
 }
 

@@ -55,6 +55,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   private boolean initialized;
   private LoggingService logger;
   private LogisticsInventoryLogger csvLogger=null;
+  private LogisticsInventoryFormatter csvWriter=null;
   // customerHash holds the time(long) of the last actual is seen
   // for each customer
   private HashMap customerHash;
@@ -90,7 +91,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     timeZero = (int)(startTime/MSEC_PER_BUCKET);
     logger = parentPlugin.getLoggingService(this);
     if(false) {
-	csvLogger = new LogisticsInventoryLogger(myPG.getResource(),parentPlugin.getMyOrganization(),parentPlugin);
+	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),parentPlugin.getMyOrganization(),parentPlugin);
+	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
     logger.debug("Start day: "+TimeUtils.dateString(today));
@@ -194,39 +196,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     // shifting Refills and Projections in the dueIn list
   }
 
-  public void logAllToCSVFile() {
+  public void logAllToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
-	  logDueOutsToCSVFile();
-	  csvLogger.incrementCycleCtr();
+	  logDueOutsToCSVFile(aCycleStamp);
       }
   }
 
-  private void logDueOutsToCSVFile() {
+  private void logDueOutsToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
-	  csvLogger.write("DUE_OUTS:START");
-	  csvLogger.writeNoCtr("CYCLE,END TIME,VERB,FOR,QTY");
-	  for(int i=0; i < dueOutList.size(); i++) {
-	      ArrayList bin = (ArrayList) dueOutList.get(i);
-	      csvLogger.write("Bin #" + i);
-	      for(int j=0; j < bin.size(); j++) {
-		  Task aDueOut = (Task) bin.get(j);
-		  Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
-         	  String dueOutStr = endDate.toString() + "," + aDueOut.getVerb() + ",";
-		  PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
-		  Object org;
-		  if (pp_for != null) {
-		      org = pp_for.getIndirectObject();
-		      dueOutStr = dueOutStr + org + ",";
-		  }
-		  if(taskUtils.isSupply(aDueOut)) {
-		      dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
-		  }
-		  //We have to get the Rate if its a projection....MWD
-
-		  csvLogger.write(dueOutStr);
-	      }
-	  }
-	  csvLogger.write("DUE_OUTS:END");
+	  csvWriter.logToExcelOutput(dueOutList,aCycleStamp);
       }
   }
 
