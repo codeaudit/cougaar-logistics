@@ -78,10 +78,6 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
   protected static final String PUID_ATTR = "PUID";
   protected static final String ACLASS_ATTR = "AClass";
   protected static final String ATYPE_ATTR = "AType";
-  protected static final String WEIGHT_ATTR = "Weight";
-  protected static final String WIDTH_ATTR = "Width";
-  protected static final String HEIGHT_ATTR = "Height";
-  protected static final String DEPTH_ATTR = "Depth";
   protected static final String ALP_TYPEID_ATTR = "TypeID";
   protected static final String ALP_NOMEN_ATTR = "Nomen";
   protected static final String IS_LOW_FIDELITY = "LowFi";
@@ -99,17 +95,12 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
   public int assetClass;
   /**use ASSET_TYPE constants**/
   public int assetType;
-  /**weight in grams**/
-  public double weight;
-  /**width in meters**/
-  public double width;
-  /**height in meters**/
-  public double height;
-  /**depth in meters**/
-  public double depth;
+
+  /**type id, e.g. NSN**/
   public String alpTypeID;
   /**type nomenclature, not to be confused with the instance's *item* nomen**/
   public String nomenclature;
+  /**indicates whether is a level-2 aggregate**/
   public boolean isLowFidelity;
 
   //Constructors:
@@ -130,16 +121,11 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
    **/
   public void toXML(XMLWriter w) throws IOException{
     String isLow = (isLowFidelity ? "true" : "false");
-    //    w.sitagln(NAME_TAG, 
     w.optagln(NAME_TAG, 
 	      UID_ATTR,UID,
 	      PUID_ATTR,parentUID,
 	      ACLASS_ATTR,Integer.toString(assetClass),
 	      ATYPE_ATTR,Integer.toString(assetType),
-	      WEIGHT_ATTR,Double.toString(weight),
-	      WIDTH_ATTR,Double.toString(width),
-	      HEIGHT_ATTR,Double.toString(height),
-	      DEPTH_ATTR,Double.toString(depth),
 	      ALP_TYPEID_ATTR,alpTypeID,
 	      ALP_NOMEN_ATTR,nomenclature,
 	      IS_LOW_FIDELITY,isLow);
@@ -166,10 +152,6 @@ public class Prototype implements XMLable, DeXMLable, Serializable{
 	parentUID=attr.getValue(PUID_ATTR);
 	assetClass=Integer.parseInt(attr.getValue(ACLASS_ATTR));
 	assetType=Integer.parseInt(attr.getValue(ATYPE_ATTR));
-	weight=Double.parseDouble(attr.getValue(WEIGHT_ATTR));
-	width=Double.parseDouble(attr.getValue(WIDTH_ATTR));
-	height=Double.parseDouble(attr.getValue(HEIGHT_ATTR));
-	depth=Double.parseDouble(attr.getValue(DEPTH_ATTR));
 	alpTypeID=attr.getValue(ALP_TYPEID_ATTR);
 	nomenclature=attr.getValue(ALP_NOMEN_ATTR);
 	isLowFidelity=attr.getValue(IS_LOW_FIDELITY).equalsIgnoreCase("true");
