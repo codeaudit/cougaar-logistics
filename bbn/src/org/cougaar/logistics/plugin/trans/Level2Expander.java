@@ -117,6 +117,10 @@ public class Level2Expander extends Level2TranslatorModule {
 //
 
       if (totalL6BaseQty >= origL2BaseQty) {
+        if((totalL6BaseQty - origL2BaseQty) > 1) {
+          logger.warn("level2Task " + level2Task + " has a total qty of " + origL2BaseQty +
+                      " which is exceeded by the level 6 tasks with a summed total qty of " + totalL6BaseQty);
+        }
         doneLevel2Task = level2Task;
       } else {
         double durationMillis = (endTime - countedStartTime);
