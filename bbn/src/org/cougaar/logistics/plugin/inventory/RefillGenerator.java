@@ -180,10 +180,10 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
             if (thePG.getFillToCapacity()) {
               double capacity = thePG.getCapacity();
               if (targetLevel > capacity) {
-                logger.warn("Refill quantity for inventory: "+
+                logger.warn("Target Level of "+targetLevel+" for inventory: "+
                             thePG.getResource().getTypeIdentificationPG().getTypeIdentification()+
                             " at "+getMyOrganization()+
-                            " was clipped to meet capacity");
+                            " was clipped to meet capacity of "+capacity);
               }
               targetLevel = capacity;
             }
