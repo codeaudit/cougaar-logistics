@@ -78,21 +78,20 @@
 	or even see if they exist -->
 	<!-- Change name of this path to match the module name as approp -->
 	<path id="albbn.classpath">
-           <pathelement location="${lib}/core.jar" />
+     <pathelement location="${lib}/core.jar" />
 	   <pathelement location="${lib}/planserver.jar" />
 	   <pathelement location="${lib}/util.jar" />
 	   <pathelement location="${lib}/toolkit.jar" />
 	   <pathelement location="${lib}/planning.jar" />
-           <pathelement location="${lib}/vishnu.jar" />
-           <pathelement location="${sys}/vishnuServer.jar" />
-           <pathelement location="${lib}/glm.jar" />
-           <pathelement location="${lib}/glmtrans.jar" />
+     <pathelement location="${lib}/vishnu.jar" />
+     <pathelement location="${lib}/glm.jar" />
+     <pathelement location="${sys}/vishnuServer.jar" />
 	   <pathelement location="${sys}/xerces.jar" />
 	   <pathelement location="${sys}/openmap.jar" />
 	   <pathelement location="${sys}/fesi-111.jar" />
-	   <pathelement location="${clib}/build.jar" />
 	   <pathelement location="${sys}/jcchart.jar" />
 	   <pathelement location="${sys}/servlet.jar" />
+	   <pathelement location="${clib}/build.jar" />
 	</path>
 
 	<!-- Set this to the comma separate list of class files to run rmic on -->
