@@ -226,8 +226,12 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     newTask.setDirectObject(consumed);
     newTask.setVerb(Verb.getVerb(Constants.Verb.SUPPLY));
 
+    
 
     newTask.setPreferences(prefs.elements());
+
+    //bug#2974
+    newTask.setContext(parentTask.getContext());
 
     newTask.setCommitmentDate(new Date(end));
 
