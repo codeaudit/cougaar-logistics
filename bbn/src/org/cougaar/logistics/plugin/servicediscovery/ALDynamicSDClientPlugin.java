@@ -34,6 +34,8 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 import org.cougaar.util.UnaryPredicate;
 
 //import org.cougaar.glm.ldm.Constants;
@@ -195,7 +197,8 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	  requestedTimeInterval.subtractInterval(providedTimeInterval);
 
 	UnaryPredicate servicePredicate = 
-	  new ServiceRequestPredicate(srh, uncoveredTimeIntervals);
+	  new ServiceRequestPredicate(getAgentIdentifier().toString(),
+				      srh, uncoveredTimeIntervals);
 
         queryServices(relay.getServiceContract().getServiceRole(), null,
 		      servicePredicate);
@@ -622,16 +625,21 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     }
   }
     
-  //protected static class ServiceRequestPredicate implements UnaryPredicate {
-  protected class ServiceRequestPredicate implements UnaryPredicate {
+  protected static class ServiceRequestPredicate implements UnaryPredicate {
+    private static Logger logger = 
+      Logging.getLogger(ServiceRequestPredicate.class);
+
     private transient ServiceRequestHistory serviceRequestHistory;
     private transient Collection uncoveredTimeIntervals;
+    private transient String clientName;
 
     public ServiceRequestPredicate() {
     }
 
-    public ServiceRequestPredicate(ServiceRequestHistory srh,
+    public ServiceRequestPredicate(String cn,
+				   ServiceRequestHistory srh,
 				   Collection uti) {
+      clientName = cn;
       uncoveredTimeIntervals = uti;
       serviceRequestHistory = srh;
     }
@@ -652,32 +660,31 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 
 	  if (!serviceRequestHistory.containsRequest(providerName, 
 						     timeInterval)) {
-	    if (myLoggingService.isDebugEnabled()) {
-	      myLoggingService.debug(getAgentIdentifier() + 
-				     " ServiceRequestPredicate passed " + 
-				     providerName +
-				     " for " + 
-				     new Date(timeInterval.getStartTime()) +
-				     " to " + 
-				     new Date(timeInterval.getEndTime()));
+	    if (logger.isDebugEnabled()) {
+	      logger.debug(clientName + " ServiceRequestPredicate passed " + 
+			   providerName +
+			   " for " + 
+			   new Date(timeInterval.getStartTime()) +
+			   " to " + 
+			   new Date(timeInterval.getEndTime()));
 	    }
 	    return true;
 	  } 
 	} 
-
-	if (myLoggingService.isDebugEnabled()) {
-	  myLoggingService.debug(getAgentIdentifier() + 
-				 " ServiceRequestPredicate returned false for " + 
-				 providerName);
+	
+	if (logger.isDebugEnabled()) {
+	  logger.debug(clientName + 
+		       "ServiceRequestPredicate returned false for " + 
+		       providerName);
 	}
-	  // All intervals previously asked for
+	// All intervals previously asked for
 	return false;
       } else {
 	return false;
       }
     }
   }
-
+  
   /** returns null if start/end time preference not specified **/
   private static TimeInterval getPreferenceTimeInterval(Collection servicePreferences) {
     long start = 
