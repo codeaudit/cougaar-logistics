@@ -69,5 +69,10 @@ public class ConsumerPredicate implements UnaryPredicate {
     }
     return false;
   }
+
+  public int hashCode() {
+    return itemName.hashCode();
+  }
+
 }
 
