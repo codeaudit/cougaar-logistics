@@ -73,26 +73,6 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 public class GraphPane extends StatisticsPane {
 
   boolean debug = true;
-  
-  private final Font    iInformalFontBig = new Font("SansSerif", Font.ITALIC, 20);
-  private final Font    iFormalFontBig   = new Font("Serif", Font.BOLD, 20);
-  private final Font    iNegativeFontBig   = new Font("Courier", Font.PLAIN, 20);
-
-  private final Font    iInformalFont    = new Font("SansSerif", Font.ITALIC, 12);
-  private final Font    iFormalFont      = new Font("Serif", Font.BOLD, 12);
-  private final Font    iNegativeFont      = new Font("Courier", Font.PLAIN, 12);
-
-  private final Font [] iFonts    =  {iInformalFont,    iFormalFont,    iNegativeFont};
-  private final Font [] iBigFonts =  {iInformalFontBig, iFormalFontBig, iNegativeFontBig};
-
-  // Colors
-
-  private final Color [] iBackgroundColors =  {new Color(255, 255, 200), new Color(204, 204, 204), Color.black};
-  private final Color [] iForegroundColors =  {Color.black, new Color(0,0,128), Color.white};
-
-  //Constants:
-  ////////////
-
   public String getName () { return "Run Charts"; }
 
   //Variables:

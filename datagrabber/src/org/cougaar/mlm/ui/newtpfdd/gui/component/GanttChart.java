@@ -68,9 +68,6 @@ public class GanttChart extends Container
 
   private boolean myHaveRightSideLabels = false;
 
-  private Slider myRightSideVerticalScroller = null;
-  private LabelPanel myRightSideLabelPanel = null;
-
   private int myNumVisibleRows;
 
   private Runnable fixScroller = new Runnable() {

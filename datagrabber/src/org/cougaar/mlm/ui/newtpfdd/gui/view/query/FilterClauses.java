@@ -258,8 +258,6 @@ public class FilterClauses {
 	String convInstanceTable    = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String convInstanceID       = convInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
 
-	String convProtoTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
-
 	String joinsToCarrierInstance = "\nand " + instanceID + " = " + itinID +
 	  "\nand " + itinLeg + " = " + cLegID +
 	  "\nand " + cLegConvID + " = " + convInstanceID;

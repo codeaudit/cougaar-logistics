@@ -54,7 +54,6 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 
   private TaskGanttChart gc;
   private ControlBar cb;
-  private long last;
   protected TaskModel taskModel;
 
   boolean debug = 

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.2 2002-08-07 19:58:02 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.3 2002-08-07 21:17:33 tom Exp $ */
 
  /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -21,7 +21,6 @@ import java.security.AccessControlException;
 public class Debug extends OutputHandler
 {
     private static boolean debug;
-    private static final long DAY_MILLSEC = 1000 * 3600 * 24;
     private static Debug debugHandler = null;
     
     static

@@ -26,7 +26,7 @@ import  org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
 /**
  * Contains the fields of data about a given carrier.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 5/3/01
  **/
@@ -48,7 +48,6 @@ public class CarrierDetails{
   public static final int VOLCAP = 9;
 
   private static double KGS_TO_STONS = 0.0011022927689594355d;
-  private static double METERS_TO_FEET = 3.28084d;
   private static double SQUARE_METERS_TO_SQUARE_FEET = 10.763867d;
   //  private static double CUBIC_METERS_TO_CUBIC_FEET = 35.314667d;
   private static double LITERS_TO_CUBIC_FEET = 0.035315d;
@@ -80,7 +79,6 @@ public class CarrierDetails{
   //Variables:
   ////////////
   private String owner;
-  private String homeBase;
   private int convType;
   private String prototype;
   private String protoName;

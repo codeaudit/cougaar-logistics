@@ -38,7 +38,6 @@ public class TaskGanttChart extends GanttChart
   private int destinationLozengeSize;
 
   public static final int DAYLEN = 1000 * 3600 * 24;
-  private long last;
   private TaskModel taskModel;
   protected static final int DECORATOR_CIRCLE_ANCHOR_LEFT = 0;
   protected static final int DECORATOR_CIRCLE_ANCHOR_RIGHT = 1;

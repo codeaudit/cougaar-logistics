@@ -39,11 +39,6 @@ public class ClusterCache
 
     // Vector of valid cluster IDs
     private Vector clusterNames = null;
-
-    // Vector of clusters from which we'll allow Organization Itineraries
-    // because corresponding carrier ones from corresponding leaf clusters are
-    // broken or something
-    private Vector allowOrgNames = null;
     
     // Hashtable mapping cluster IDs to URL
     private Hashtable clusterURLs;

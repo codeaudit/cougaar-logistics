@@ -42,7 +42,6 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.derived.PrepareDerivedTables;
 
 public class SqlQuery implements Query {
-  private static final String GATHERER = "gatherer";
   private static final String VISHNU = "vishnu";
   private static final String MYSQL = "mysql";
   private static final int NO_DISK_SPACE = 28; // mysql error code for out of memory

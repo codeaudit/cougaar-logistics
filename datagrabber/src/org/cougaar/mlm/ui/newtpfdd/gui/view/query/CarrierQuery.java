@@ -56,7 +56,6 @@ public class CarrierQuery extends UnitQuery {
     public static final int DEPTH_ITIN = 3;
     public static final int DEPTH_LEAF = 4;
     
-    private int treeDepth = DEPTH_LEAF;
 
   boolean debug = 
 	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.CarrierQuery.debug", 
@@ -689,8 +688,6 @@ public class CarrierQuery extends UnitQuery {
   protected String formCargoInstanceSql (FilterClauses filterClauses, int recentRun, boolean protoParentNull) {
 	String convInstanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String convInstanceID   = convInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
-
-	String convProtoTable   = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
 
 	String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
 	String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;

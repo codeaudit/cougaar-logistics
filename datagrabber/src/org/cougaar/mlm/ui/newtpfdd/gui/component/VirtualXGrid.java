@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/VirtualXGrid.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/VirtualXGrid.java,v 1.2 2002-08-07 21:17:32 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -23,8 +23,6 @@ public class VirtualXGrid extends VirtualXComponent
   private long myVirtualXOrigin = 0;
   private long myVirtualXInterval = 150;
   private int myYInterval = 21;
-  private static Dimension myPreferredSize = new Dimension(400,300);
-
   private long myCurrTimeVX = 0;
 
   private Paint pastTimeStiples;

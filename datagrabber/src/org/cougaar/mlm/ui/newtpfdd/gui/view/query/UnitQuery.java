@@ -912,8 +912,6 @@ public class UnitQuery extends SqlQuery {
 	String conveyanceInstanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String conveyancePrototypeTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
 
-	String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;
-
 	String instanceProto     = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
 
 	String assetInstanceOwner = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;

@@ -74,12 +74,11 @@ import com.bbn.openmap.layer.location.BasicLocation;
 
 /**
  * Displays a route layer in openmap
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/19/01
  **/
 public class RouteLayer extends Layer implements MapMouseListener {
-  private static final Stroke thinStroke=new BasicStroke(5);
   private static final int PIXEL_DISTANCE=Integer.getInteger("PIXEL_DISTANCE",10).intValue();
 
   protected NewTPFDDShell shell;

@@ -122,8 +122,6 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
   private AssetUsageView assetUsageView = null;
   private JScrollPane debugScroller = null;
   private JScrollPane statusScroller = null;
-  private JLabel startupLabel = null;
-  private OutputHandler messageHandler = null;
 
   // data store
   private ClusterCache clusterCache;

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.2 2002-08-07 20:58:53 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.3 2002-08-07 21:17:32 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -58,10 +58,7 @@ public class LabelPanel extends Container
     // Rendering
     private static final int myHMargin = 4; // 2;
     private static final int myVMargin = 4;
-    private Font useFont;
     private FontMetrics fontMetrics = null;
-    private int saveMaxLen = -1;
-    private int saveMaxLenInPixels = -1;
     public int maxLength = 0;
     private Color myDefaultBackground = new Color((float) 0.6, (float) 0.6, (float) 0.6);
 

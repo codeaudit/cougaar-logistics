@@ -90,8 +90,6 @@ public class DataGathererServlet
   /** DEBUG forced to off! **/
   public static final boolean DEBUG = false;
 
-  private final String myPath = "/DataGatherer";
-
   protected ServletWorker createWorker () {
     return new DataGathererWorker (this);
   }

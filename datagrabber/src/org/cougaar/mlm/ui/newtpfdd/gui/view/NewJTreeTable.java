@@ -102,7 +102,6 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
   
   private AwareMenuItem TPFDDItem;
   private AwareMenuItem carrierTPFDDItem;
-  private AwareMenuItem TPFDDAndLogPlanItem;
   private AwareMenuItem filterItem;
   private AwareMenuItem assetRouteItem;
   private AwareMenuItem carrierRouteItem;

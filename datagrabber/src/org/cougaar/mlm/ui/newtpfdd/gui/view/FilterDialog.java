@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.2 2002-08-07 21:17:32 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -88,7 +88,6 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
     private JCheckBox ivjrollupCheckBox = null;
     private JButton ivjincludeHierarchyButton = null;
     private JButton getManifestInfoButton = null;
-    private JButton ivjunitButton = null;
 
     private JLabel ivjcargoTypeLabel = null;
     private JLabel ivjcarrierTypeLabel = null;
@@ -121,7 +120,6 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
     // user code members
     private ButtonGroup carrierRadioGroup;
     private ButtonGroup cargoRadioGroup;
-    private Hashtable unitManifests = null;
     private Vector listeners;
 
   boolean debug = 

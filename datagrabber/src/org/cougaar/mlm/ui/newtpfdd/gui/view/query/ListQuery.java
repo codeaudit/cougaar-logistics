@@ -58,7 +58,6 @@ public class ListQuery extends CarrierQuery {
     public static final int DEPTH_LEAF = 4;
     
     private String unitID = null;
-    private int treeDepth = DEPTH_LEAF;
 
   boolean debug = 
 	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.ListQuery.debug", 
