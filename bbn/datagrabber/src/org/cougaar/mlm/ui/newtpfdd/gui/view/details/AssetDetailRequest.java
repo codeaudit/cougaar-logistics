@@ -97,6 +97,7 @@ public abstract class AssetDetailRequest{
     ad.setValueAt(ccc,AssetDetails.CCC);
 
     String transport;
+
     switch (ccc.charAt(1)) {
     case '0': // non-air
       transport = "Non-Air";
@@ -113,6 +114,12 @@ public abstract class AssetDetailRequest{
     default:
       transport = "Unknown";
     }
+
+    if (transport.charAt(0) == 'U')
+      transport = "Roadable";
+    else if (ccc.charAt(0) == 'R')
+      transport += "_Roadable"; 
+
     ad.setValueAt(transport,AssetDetails.TRANSPORT);
 
     return ad;
