@@ -622,11 +622,13 @@ public class LogisticsInventoryFormatter {
   protected ArrayList buildParentTaskArrayList(ArrayList tasks) {
     ArrayList parentList = new ArrayList(tasks.size());
     for (int i = 0; i < tasks.size(); i++) {
-      Task parentTask = ((Task) tasks.get(i)).getWorkflow().getParentTask();
+      Task parentTask = null;
+      if (((Task)tasks.get(i)).getWorkflow() != null)
+	parentTask = ((Task) tasks.get(i)).getWorkflow().getParentTask();
       if (parentTask != null) {
         parentList.add(parentTask);
       } else {
-        logger.error("Problem deriving parent task from task");
+        logger.error("Problem deriving parent task from task " + tasks.get(i));
       }
     }
     return parentList;

@@ -911,7 +911,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
           info ("skipping reserved task " + reserved.getUID () + " with no parent on blackboard.");
 	}
       }
-      else {
+      else if (reserved.getWorkflow() == null) {
+	if (isInfoEnabled()) {
+          info ("skipping reserved task " + reserved.getUID () + " with no workflow.");
+	}
+      } else {
 	synchronized (reserved.getWorkflow ()) {
 	  if (ownWorkflow (reserved)) {
 	    dealWithReservedTask (actual, reserved, reservedParent);
@@ -1562,6 +1566,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   protected boolean taskInWorkflow (Task task, Workflow workflow) {
+    if (workflow == null)
+      return false;
     String [] uidsInWorkflow = ((WorkflowImpl)workflow).getTaskIDs ();
     boolean found = false;
     for (int i = 0; i < uidsInWorkflow.length && !found; i++)

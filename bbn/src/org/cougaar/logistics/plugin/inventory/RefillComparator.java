@@ -70,7 +70,9 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
       // check for a null in the refills list!
       if (oldRefill != null) {
         // clean out the reference in the maintain inventory workflow
-        ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+        NewWorkflow nw = (NewWorkflow)oldRefill.getWorkflow();
+	if (nw != null)
+	  nw.removeTask(oldRefill);
         inventoryPlugin.publishRemove(oldRefill);
       }
     }
@@ -114,7 +116,9 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
       // refill lists so make sure we don't publish null!
       if (oldRefillProj != null) {
         // remove this from the workflow's sub task list first
-        ((NewWorkflow)oldRefillProj.getWorkflow()).removeTask(oldRefillProj);
+        NewWorkflow nw = (NewWorkflow)oldRefillProj.getWorkflow();
+	if (nw != null)
+	  nw.removeTask(oldRefillProj);
         inventoryPlugin.publishRemove(oldRefillProj);
       }
     }

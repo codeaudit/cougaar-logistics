@@ -1121,7 +1121,9 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
     if (exp != null) { // fix for bug #13417
       try {
-	((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	NewWorkflow nw = (NewWorkflow)exp.getWorkflow ();
+	if (nw != null)
+	  nw.removeTask (spe.getTask());
 	publishRemove (spe.getTask());
       } catch (IllegalArgumentException iae) {
 	error (getName () + " - task " + spe.getTask().getUID () + 
