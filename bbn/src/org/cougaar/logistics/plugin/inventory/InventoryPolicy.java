@@ -41,6 +41,7 @@ public class InventoryPolicy extends Policy {
   public static final String TransportTime = "TransportTime";
   public static final String OrderShipTime = "OrderShipTime";
   public static final String BucketSize = "BucketSize";
+  public static final String FillToCapacity = "FillToCapacity";
 
   public InventoryPolicy() {
     StringRuleParameter id = new StringRuleParameter(AgentID);
@@ -123,6 +124,13 @@ public class InventoryPolicy extends Policy {
       exception = ex.toString();
     }
     Add(bucket);
+    BooleanRuleParameter fillToCap = new BooleanRuleParameter(FillToCapacity, false);
+    try {
+      fillToCap.setValue(new Boolean(false));
+    } catch (RuleParameterIllegalValueException ex) {
+      exception = ex.toString();
+    }
+    Add(fillToCap);
   }
 
   public String getAgentID() {
@@ -299,6 +307,24 @@ public class InventoryPolicy extends Policy {
       Lookup(BucketSize);
     try {
       param.setValue(new Long(l));
+    } catch (RuleParameterIllegalValueException ex) {
+      exception = ex.toString();
+      // Print exception, waiting for a static logger
+    }
+  }
+
+  public boolean getFillToCapacity() {
+    BooleanRuleParameter param = (BooleanRuleParameter)
+      Lookup(FillToCapacity);
+    return ((Boolean)(param.getValue())).booleanValue();
+  }
+
+  public void setFillToCapacity(boolean b) {
+    String exception;
+    BooleanRuleParameter param = (BooleanRuleParameter)
+      Lookup(FillToCapacity);
+    try {
+      param.setValue(new Boolean(b));
     } catch (RuleParameterIllegalValueException ex) {
       exception = ex.toString();
       // Print exception, waiting for a static logger
