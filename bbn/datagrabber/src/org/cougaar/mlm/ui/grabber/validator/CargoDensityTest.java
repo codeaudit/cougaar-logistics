@@ -119,18 +119,19 @@ public class CargoDensityTest extends CargoDimensionTest {
 	double width = rs.getDouble (3);
 	double depth = rs.getDouble (4);
 	// weight is in grams, we want short tons = 2000 pounds
-	double weight = rs.getDouble (5);
+	double area = rs.getDouble (5);
+	double volume   = rs.getDouble (6);
+	double weight = rs.getDouble (7);
 	double kilograms  = weight/1000.0;
 	double metricTons = kilograms/1000.0;
 	double shortTons = (metricTons)*METRIC_TO_SHORT_TON;
-	double volume = height*width*depth; // meters
 
 	if (kilograms/volume > DENSITY_OF_LEAD)
-	  insertRow(l,s,run,nomenclature,height,width,depth,volume,shortTons);
+	  insertRow(l,s,run,nomenclature,height,width,depth,area,volume,shortTons);
       }    
-      insertRow(l,s,run,"<b></b>",0,0,0,0,0);
-      insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0);
-      insertRow(l,s,run,"<b>LEAD</b>",0,0,0,1,(DENSITY_OF_LEAD/1000)*METRIC_TO_SHORT_TON);
+      insertRow(l,s,run,"<b></b>",0,0,0,0,0,0);
+      insertRow(l,s,run,"<b>Compared with : </b>",0,0,0,0,0,0);
+      insertRow(l,s,run,"<b>LEAD</b>",0,0,0,0,1,(DENSITY_OF_LEAD/1000)*METRIC_TO_SHORT_TON);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "CargoProfileTest.insertResults - Problem walking results.",sqle);
