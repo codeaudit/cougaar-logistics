@@ -147,6 +147,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     int today_bucket;
     Inventory inventory;
     LogisticsInventoryPG thePG;
+    long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
     while (inv_list.hasNext()) {
       // clear out the trailing pointers every time we get another inventory
       trailingPointersHash = new HashMap();;
@@ -159,6 +160,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       today_bucket = thePG.convertTimeToBucket(today);
       reconcileThePast(today_bucket, thePG);
       int end_bucket = thePG.getLastDemandBucket();
+      int endOfLevel2Bucket = thePG.convertTimeToBucket(endOfLevel2);
+      if (end_bucket > endOfLevel2Bucket) {
+	end_bucket = endOfLevel2Bucket;
+      }
       int firstProjectBucket = thePG.getFirstProjectWithdrawBucket();
       if (firstProjectBucket == -1) {
 	  firstProjectBucket = today_bucket;
@@ -364,6 +369,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       int aspectTypes[];
       
       Task task = td.getTask();
+      long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
+      long endOfTask = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+      // Do not process tasks whose end times are beyond level 2
+      if (endOfTask > endOfLevel2) {
+	return;
+      }
       
       //initialize the rollup array depending on the verb --sigh...
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
