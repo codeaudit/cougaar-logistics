@@ -38,6 +38,32 @@ fuelBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
 	Collection getConsumed(); \
 	PGDelegate copy(PropertyGroup del);
 
+[AmmoConsumerPG]
+slots=Asset mei, \
+      String service, \
+      String theater
+delegates=AmmoConsumerBG ammoBG
+
+ammoBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
+	List getPredicates(); \
+	Schedule getParameterSchedule(Collection col, TimeSpan span); \
+	Rate getRate(Asset asset, List params); \
+	Collection getConsumed(); \
+	PGDelegate copy(PropertyGroup del);
+
+[PackagedPOLConsumerPG]
+slots=Asset mei, \
+      String service, \
+      String theater
+delegates=PackagedPOLConsumerBG packagedPOLBG
+
+packagedPOLBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
+	List getPredicates(); \
+	Schedule getParameterSchedule(Collection col, TimeSpan span); \
+	Rate getRate(Asset asset, List params); \
+	Collection getConsumed(); \
+	PGDelegate copy(PropertyGroup del);
+
 ;;
 ;; examples
 ;;
