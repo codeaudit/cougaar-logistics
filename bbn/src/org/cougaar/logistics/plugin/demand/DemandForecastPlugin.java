@@ -1157,16 +1157,20 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   /**
-   * Returns a subset of project supply tasks for the given parent generate
-   * projection task UID.
+   * Returns a subset of project supply tasks for a given asset, for a given parent generate
+   * projection task's UID.
    * @param parentTask the generate projects tasks that was expanded
    * @return all project supply tasks of the parent generate projections task
    */
-  public Collection projectSupplySet(final Task parentTask) {
+  public Collection projectSupplySet(final Task parentTask, final Asset consumedItem) {
     return filter(new UnaryPredicate() {
       public boolean execute(Object o) {
         Task t = (Task) o;
-        return t.getParentTaskUID().equals(parentTask.getUID());
+        if (t.getParentTaskUID().equals(parentTask.getUID())) {
+          Asset a = t.getDirectObject();
+          return a.equals(consumedItem);
+        }
+        return false;
       }
     });
   }
