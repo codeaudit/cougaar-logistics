@@ -107,6 +107,18 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
 	       "This is greater than the speed of the fastest asset : " + format.format(maxSpeed) + 
 	       " knots (" + format.format(maxSpeed*NM_TO_MILE) + " mph).\n");
       }
+      else {
+	warn (getName () + ".handleImpossibleTasks - impossible task : " + task.getUID() + 
+	       "\ndistance from " + from +
+	       " to " + to +
+	       " is great-circle " + format.format(great) +
+	       " nm, (" + format.format(great*NM_TO_MILE) + 
+	       " miles) \narrival-departure is " + format.format(time) + " hrs so" +
+	       " speed would have to be at least " + format.format(speed) + 
+	       " knots (" + format.format(speed*NM_TO_MILE) + " mph).\n" +
+	       "But this is not greater than the speed of the fastest asset : " + format.format(maxSpeed) + 
+	       " knots (" + format.format(maxSpeed*NM_TO_MILE) + " mph).  So should be OK.\n");
+      }
 
       Asset directObject = task.getDirectObject();
       GLMAsset baseAsset = null;
