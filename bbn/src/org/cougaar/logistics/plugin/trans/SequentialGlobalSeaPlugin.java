@@ -99,6 +99,18 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
   }
 
   /** 
+   * overridden from sequentialglobalairplugin 
+   */
+  protected boolean allNecessaryAssetsReportedMiddleStep () {
+    Object org = findOrgWithRole(GLMTransConst.SHIP_PACKER_ROLE);
+    if (org == null) {
+      org = findOrgWithRole(GLMTransConst.AMMO_SHIP_PACKER_ROLE);
+    }
+
+    return (org != null);
+  }
+
+  /** 
    * An asset is an ammo container if it has a contents pg, since
    * only the Ammo Packer put a contents pg on a container.
    *
@@ -126,17 +138,26 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
    * The choice will be affected by the how long it takes
    * to get from POE to POD.
    * </pre>
+   * @param ignoredTask is ignored in this method
    */
-  protected Location [] getPOEandPOD (Task parentTask, Task subtask) {
+  protected Location [] getPOEandPOD (Task parentTask, Task ignoredTask) {
     Location [] locs = new Location[2];
-    
+
     if (useSeaRoutes) {
       TransportationRoute route = (TransportationRoute)
 	glmPrepHelper.getIndirectObject(parentTask, GLMTransConst.SEAROUTE);
 
       locs[0] = route.getSource().getGeolocLocation();
       locs[1] = route.getDestination().getGeolocLocation();
+
+      if (isInfoEnabled()) {
+	info (getName () + ".getPOEandPOD - getting route from " + parentTask.getUID() + 
+	      " it starts at " + locs[0] + 
+	      " and ends at " + locs[1] +
+	      " isAmmo " + isAmmo((GLMAsset) parentTask.getDirectObject ()));
+      }
     } else { // just use great circle calcs
+      warn ("not using searoutes?");
       locs[0] = getPOENearestToFromLocMiddleStep (parentTask);
       locs[1] = getPOD(parentTask);
     }

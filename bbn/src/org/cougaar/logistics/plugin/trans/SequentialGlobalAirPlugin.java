@@ -122,6 +122,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   //private static final String SAND = "SAND";
   public static int CONUS_THEATER_DIVIDING_LONGITUDE = 
     Integer.getInteger("SequentialGlobalAirPlugin.CONUS_THEATER_DIVIDING_LONGITUDE",25).intValue();
+  public int numTheaterGroundAgents = 2;
 
   public void localSetup() {     
     super.localSetup();
@@ -132,6 +133,12 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       }
       else {
 	bestDateBackoff = ONE_HOUR; 
+      }
+      if (getMyParams().hasParam ("numTheaterGroundAgents")) {
+	numTheaterGroundAgents = getMyParams().getIntParam("numTheaterGroundAgents");
+      }
+      else {
+	numTheaterGroundAgents = 2;  // by default we run with the TRANSCOM-20 society
       }
     } catch (Exception e) { warn ("got really unexpected exception " + e); }
 
@@ -459,6 +466,57 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       return null;
     }
     return organicAir;
+  }
+
+  boolean warnedBefore = false;
+  protected boolean allNecessaryAssetsReported () {
+    Organization conusGround = findOrgWithRole(GLMTransConst.CONUS_GROUND_ROLE);
+    if (conusGround == null) {
+      if (isInfoEnabled())
+	info ("conus ground subord is missing.");
+
+      return false;
+    }
+
+    if (!allNecessaryAssetsReportedMiddleStep()) {
+      if (isInfoEnabled())
+	info ("middle (air/sea) subord is missing.");
+
+      return false;
+    }
+
+    Organization theater = findOrgWithRole(GLMTransConst.THEATER_MCC_ROLE);
+    if (theater == null) {
+      if (isInfoEnabled())
+	info ("theater subord is missing.");
+
+      return false;
+    }
+
+    List orgs = (List) roleToOrg.get (GLMTransConst.THEATER_MCC_ROLE); // sets roleToOrg
+    if (orgs.size () < numTheaterGroundAgents) {
+      if (isWarnEnabled() && !warnedBefore) {
+	warn ("only " + orgs.size() + 
+	      " theater subords have reported, expecting " + numTheaterGroundAgents +
+	      ". " +
+	      "Set numTheaterGroundAgents to 1 in GLMT.Transcom.env.xml in configs/glmtrans " +
+	      "if running in TRANSCOM-7 configuration. " +
+	      "2 is correct for the TRANSCOM-20 configuration.");
+	warnedBefore = true;
+      }
+
+      shouldRefreshOrgList = true; // let's try again later -- see findOrgWithRole
+
+      return false;
+    }
+      
+    return true;
+  }
+
+  /** overridden in sequentialglobalseaplugin */
+  protected boolean allNecessaryAssetsReportedMiddleStep () {
+    Organization middleOrg = findOrgWithRole(GLMTransConst.ORGANIC_AIR_ROLE);
+    return (middleOrg != null);
   }
 
   protected abstract static class ElementBase extends SequentialScheduleElement {

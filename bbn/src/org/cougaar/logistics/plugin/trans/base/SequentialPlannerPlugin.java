@@ -82,10 +82,12 @@ import org.cougaar.util.UnaryPredicate;
  **/
 public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   implements UTILAllocationListener, UTILAssetListener, UTILExpansionListener {
+  protected List delayedTasks = new ArrayList ();
     
   Map childToParentUID = new HashMap();
   Map taskToSSE = new HashMap();       
   boolean tryToReplanOverlaps = false;
+  protected long waitTime = 10000; // millis
 
   public void localSetup() {     
     super.localSetup();
@@ -127,20 +129,55 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     
   public boolean interestingTask(Task t) { return true; }
     
-  public void processTasks(List tasks) {
-    if (isInfoEnabled())
-      info(getName () + ".processTasks called - with " + tasks.size() + " tasks.");
+  protected void execute() {
+    super.execute ();
 
-    tasks = getPrunedTaskList (tasks);
-
-    for (int i = 0; i < tasks.size (); i++) {
-      if (isDebugEnabled())
-	debug(getName () + ".processTasks calling handleTask - " + (Task) tasks.get (i));
-		
-      handleTask ((Task) tasks.get (i));
+    if (!delayedTasks.isEmpty ()) {
+      processTasks (new ArrayList());
     }
-  }  
-    
+  }
+
+  /** 
+   * If necessary subordinates have not reported yet, accumulates tasks into
+   * a delayedTasks list, and asks to be kicked again in 10 seconds, by which
+   * time hopefully the subordinates have reported.
+   *
+   * Solves the race condition between tasks showing up and subordinates showing up.
+   * @param tasks to process
+   */
+  public void processTasks (List tasks) {
+    if (!allNecessaryAssetsReported()) { // if need subordinates aren't there yet, way 10 seconds
+      delayedTasks.addAll (tasks);
+
+      if (logger.isInfoEnabled()) {
+	logger.info (getName() + " - necessary subords have not reported, so waiting " + waitTime + 
+		     " millis to process " + delayedTasks.size () + 
+		     " tasks.");
+      }
+
+      examineBufferAgainIn (waitTime); // wait 10 seconds and check again
+    }
+    else { // ok, all subords are here, lets go!
+      if (logger.isInfoEnabled()) {
+	logger.info (getName() + 
+		     " - all necessary subords have reported, so processing " + tasks.size() + 
+		     " tasks.");
+      }
+
+      tasks.addAll (delayedTasks);
+      delayedTasks.clear();
+
+      tasks = getPrunedTaskList (tasks);
+
+      for (int i = 0; i < tasks.size (); i++) {
+	if (isDebugEnabled())
+	  debug(getName () + ".processTasks calling handleTask - " + (Task) tasks.get (i));
+		
+	handleTask ((Task) tasks.get (i));
+      }
+    }
+  }
+
   /** probably unnecessary */
   protected List getPrunedTaskList (List tasks) {
     java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
@@ -158,6 +195,10 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	prunedTasks.add (task);
     }
     return prunedTasks;
+  }
+
+  protected boolean allNecessaryAssetsReported () {
+    return true;
   }
 
   /**
