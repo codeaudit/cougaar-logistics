@@ -33,7 +33,7 @@ import java.sql.Types;
 
 /**
  * Abstract base class for data tests
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/26/01
  **/
@@ -81,6 +81,8 @@ public abstract class Test{
   public static final int TYPE_ROUTE = TYPE_STRING;
   public static final int TYPE_TONNAGE = 100; // doubles for tonnage test (no fractions)
   public static final int TYPE_TONNAGE_THREE_DIGITS = 101; // doubles for tonnage test three digits after decimal
+
+    public static final double DELTA=0.0001d; // the precision of our double equality test
 
   //Variables:
   ////////////
@@ -373,14 +375,21 @@ public abstract class Test{
       case Types.DOUBLE:
 	double first  = rs1.getDouble(column);
 	double second = rs2.getDouble(column);
-	x = new Double(first).compareTo(new Double(second));
+
+	if (first > second + DELTA) 
+	    retval=GREATERTHAN;
+	else if (first < second - DELTA)
+	    retval=LESSTHAN;
+
+	//	x = new Double(first).compareTo(new Double(second));
 	if (logger.isMinorEnabled()) {
 	  logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
 			    "Comparing rs 1 column " + column + " value " + first + 
-			    " is " + ((x<0) ? "<" : ((x>0) ? ">" : "==")) +
+			    //			    " is " + ((x<0) ? "<" : ((x>0) ? ">" : "==")) +
+			    " is " + ((retval==LESSTHAN) ? "<" : ((retval==GREATERTHAN) ? ">" : "==")) +
 			    " rs 2 column " + column + " value " + second);
 	}
-	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
+	//	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
 	break;
       default:
 	logger.logMessage(Logger.WARNING,Logger.DB_WRITE,
@@ -396,6 +405,63 @@ public abstract class Test{
     return retval;
   }
 
+
+    protected void logRow (Logger logger, ResultSet rs) {
+	int numCols;
+	try {
+	    numCols = rs.getMetaData().getColumnCount();
+	} catch(SQLException e){
+	    logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			      "Problem getting column count from meta-data.",e);
+	    return;
+	}
+     
+	StringBuffer buf = new StringBuffer();
+
+	for (int i = 0; i < numCols; i++) {
+	    buf.append(" | ");
+	    
+	    buf.append(getCol(logger, rs, (i+1)));
+	}
+
+	buf.append("|");
+
+	if (logger.isMinorEnabled ())
+	    logger.logMessage(Logger.MINOR,Logger.DB_WRITE,buf.toString());
+    }
+
+    protected String getCol (Logger logger, ResultSet rs, int column) {
+	int columnType;
+	
+	try { columnType = rs.getMetaData().getColumnType(column); }
+	catch(SQLException e){
+	    logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			      "Problem getting column type from meta-data for column " + column, e);
+	    return "meta-data-error";
+	}
+
+	try {
+	    switch (columnType) {
+	    case Types.CHAR:
+	    case Types.VARCHAR:
+		return rs.getString(column);
+	    case Types.INTEGER:
+		return "" + rs.getInt(column);
+	    case Types.DOUBLE:
+		return "" + rs.getDouble(column);
+	    default:
+		logger.logMessage(Logger.WARNING,Logger.DB_WRITE,
+				  "Logging column with type " + columnType+ " that is unsupported.");
+		return "bad_col_type";
+	    }
+	} 
+	catch (SQLException sqle) {
+	    logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			      "Problem logging columns.",sqle);
+	}
+
+	return "sql_error";
+    }
 
     protected String getRomanClass (int i)
     {

@@ -35,7 +35,7 @@ import java.util.HashMap;
 
 /**
  * Cargo, broken down by asset class
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/26/01
  **/
@@ -49,6 +49,12 @@ public class UnitCargoByClassTest extends UnitCargoAmountTest{
 
   boolean groupByUnit;
   boolean groupByType;
+
+    public static final int UNIT  = 1;
+    public static final int CLASS = 2;
+    public static final int TYPE  = 3;
+    public static final int MOVED = 4;
+
   protected boolean debug = 
 	"true".equals (System.getProperty("org.cougaar.mlm.ui.grabber.validator.UnitCargoByClassTest.debug", "false"));
   
@@ -198,9 +204,42 @@ public class UnitCargoByClassTest extends UnitCargoAmountTest{
 	return ((groupByUnit) ? "by_unit" : "") +
 	  ((groupByType) ? "by_type" : ""); 
   }
+
+  /**
+   * <pre>
+   * The crucial test to determine whether two rows are equal
+   * in tests from two different runs.
+   *
+   * It does this by iterating over the columns in each row
+   * and comparing them in each result set.
+   * </pre>
+   * @param logger to log errors to
+   * @param hasLine1 is there a row in the first result set
+   * @param hasLine2 is there a row in the second result set
+   * @param columns many columns to compare
+   */
+  public int linesEqual(Logger logger,
+			ResultSet rs1, boolean hasLine1, 
+			ResultSet rs2, boolean hasLine2,
+			int columns) {
+    if (!hasLine1 && !hasLine2) return EQUALTO;
+    if (!hasLine1 && hasLine2) return GREATERTHAN;
+    if (hasLine1 && !hasLine2) return LESSTHAN;
+
+    int [] types = getTypes ();
+
+    int result = columnCompare(logger, rs1, rs2, UNIT);
+
+    if (result != EQUALTO) {
+	return CONFLICT;
+    }
+
+    result = columnCompare(logger, rs1, rs2, MOVED);
+
+    if (result != EQUALTO) {
+	return CONFLICT;
+    }
+
+    return result;
+  }
 }
-
-
-
-
-

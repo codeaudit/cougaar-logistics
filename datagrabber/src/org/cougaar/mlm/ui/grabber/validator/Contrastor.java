@@ -36,7 +36,7 @@ import java.util.List;
 
 /**
  * Contains all the tests and knows how to kick them off
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/27/01
  *
@@ -420,11 +420,17 @@ public class Contrastor extends Validator{
       rs=s.executeQuery(sql);
       int columns = rs.getMetaData().getColumnCount();
       sb.append(sql);
-      sb.append(" order by ");
+      sb.append("\norder by ");
       for (int i=1; i<=columns;i++) {
 	sb.append(i+",");
       }
       sb.deleteCharAt(sb.length()-1);
+
+      if (l.isMinorEnabled()) {
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"Contrastor.grabTestResults - sql was " +
+		       sb.toString());
+      }
+	  
       //System.out.println("Check: "+sb.toString());
       rs=s.executeQuery(sb.toString());
     } catch (SQLException sqle) {

@@ -37,7 +37,7 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Looks for missing people
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/26/01
  **/
@@ -288,8 +288,22 @@ public class TonnageInfo extends AbstractTonnageInfo implements Graphable {
       }
     }
       
-    return columnCompare(logger, rs1, rs2, tonnageColumn+1);
+    int result = columnCompare(logger, rs1, rs2, tonnageColumn+1);
+
+    if (result != EQUALTO) {
+	if (logger.isMinorEnabled()) {
+	    logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
+			      "TonnageInfo.linesEqual - not equal for compared rows : ");
+	    logRow (logger,rs1);
+	    logRow (logger,rs2);
+	}
+	result = CONFLICT;
+    }
+
+    return result;
   }
+
+    
 }
 
 
