@@ -70,7 +70,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private HashMap inventoryHash;
   private HashMap inventoryInitHash;
   private ArrayList touchedInventories;
-    private boolean touchedProjections;
+  private boolean touchedProjections;
   private String supplyType;
   private String inventoryFile;
   private UnaryPredicate dueOutPredicate;
@@ -87,6 +87,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private RefillGenerator refillGenerator;
   private RefillProjectionGenerator refillProjGenerator;
   private RefillComparator refillComparator;
+  private AllocationAssessor allocationAssessor;
   private long startTime;
   private long cycleStamp;
   private boolean logToCSV=false;
@@ -119,6 +120,7 @@ public class InventoryPlugin extends ComponentPlugin {
     refillGenerator = new RefillGenerator(this);
     refillProjGenerator = new RefillProjectionGenerator(this);
     refillComparator = new RefillComparator(this);
+    allocationAssessor = new AllocationAssessor(this,getRole(supplyType));
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
     touchedInventories = new ArrayList();
@@ -207,7 +209,7 @@ public class InventoryPlugin extends ComponentPlugin {
 					   refillComparator);
       } else { // Backwards Flow
 	externalAllocator.updateAllocationResult(refillAllocationSubscription);
-     // AllocationAssessor.reconcileInventoryLevels(getTouchedInventories());
+        allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
 	supplyExpander.updateAllocationResult(expansionSubscription);
       }
 						       
