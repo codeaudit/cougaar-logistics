@@ -239,6 +239,7 @@ public class Controller extends Thread implements ResultHandler, DBConnectionPro
     return connection;
   }
 
+  public Statement createStatement () throws SQLException { return getDBConnection().createStatement(); }
   public int getNumDBConnections () { return dbConnections.size(); }
 
   public List getAllDBConnections () { return dbConnections; }

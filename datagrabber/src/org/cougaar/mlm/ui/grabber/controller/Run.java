@@ -35,6 +35,7 @@ import org.cougaar.mlm.ui.grabber.config.DataGrabberConfig;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
@@ -157,6 +158,9 @@ public abstract class Run implements ResultHandler, Logger, DBConnectionProvider
    * DBConnectionProvider interface methods - delegates to connection provider
    */
   public Connection getDBConnection(){ return connectionProvider.getDBConnection(); }
+  public Statement  createStatement() throws SQLException { 
+    return connectionProvider.getDBConnection().createStatement(); 
+  }
   public int  getNumDBConnections () { return connectionProvider.getNumDBConnections(); }
   public List getAllDBConnections () { return connectionProvider.getAllDBConnections(); }
 
