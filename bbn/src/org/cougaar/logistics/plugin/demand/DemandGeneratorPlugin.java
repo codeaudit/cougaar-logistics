@@ -397,8 +397,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
                                                          time, time + stepPeriod);
         //TODO: MWD Remove debug statements:
         if ((getOrgName() != null) &&
-            (getOrgName().trim().equals("1-35-ARBN"))) {
-          System.out.println("I'm waking up - new period starts " + new Date(planTime) +
+            (getOrgName().trim().equals("1-35-ARBN")) &&
+            (logger.isDebugEnabled())) {
+          logger.debug("I'm waking up - new period starts " + new Date(planTime) +
                              " and step (start,dur) is (" + new Date(time) +
                              "," + stepPeriod + ")" +
                              " and Num of projections for " + getOrgName() +

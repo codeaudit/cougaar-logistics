@@ -199,8 +199,9 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     Iterator subtasksIT = subtasks.iterator();
       //TODO: MWD Remove debug statements:
       if ((dgPlugin.getOrgName() != null) &&
-          (dgPlugin.getOrgName().trim().equals("1-35-ARBN"))) {
-        logger.shout("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
+          (dgPlugin.getOrgName().trim().equals("1-35-ARBN")) &&
+          (logger.isDebugEnabled())) {
+        logger.debug("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
       }
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
