@@ -140,6 +140,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     List subTasks = new ArrayList();
     Asset consumedItem;
 
+    if (schedule == null) {
+      return subTasks;
+    }
+
     if (!items.isEmpty()) {
       for (Iterator iterator = items.iterator(); iterator.hasNext();) {
         consumedItem = (Asset) iterator.next();

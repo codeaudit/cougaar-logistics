@@ -101,8 +101,12 @@ public class RepairPartConsumerBG extends ConsumerBG {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof OrgActivityPred) {
+        Collection orgColl = (Collection)list.next();
+        if ((orgColl == null) || (orgColl.isEmpty())) {
+          return null;
+        }
 	Schedule orgActSched = 
-	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
+	  parentPlugin.getScheduleUtils().createOrgActivitySchedule(orgColl);
    	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
       } else {
  	logger.error("getParameterSchedule: unknown predicate");

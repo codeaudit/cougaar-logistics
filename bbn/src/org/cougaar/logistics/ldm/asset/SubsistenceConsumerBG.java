@@ -105,20 +105,30 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof OrgActivityPred) {
+        Collection orgColl = (Collection)list.next();
+        if ((orgColl == null) || (orgColl.isEmpty())) {
+          return null;
+        }
         Schedule orgActSched =
-            parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
+            parentPlugin.getScheduleUtils().createOrgActivitySchedule(orgColl);
    	params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(orgActSched, span));
 //      if (myOrgName.indexOf("35-ARBN") >= 0) {
 //        System.out.println("getParamSched() OrgActSched "+orgActSched);
 //      }
       } else if (predicate instanceof LogisticsOPlanPredicate) {
         Collection oplanColl = (Collection)list.next();
+        if ((oplanColl == null) || (oplanColl.isEmpty())) {
+          return null;
+        }        
         Iterator it = oplanColl.iterator();
         if (it.hasNext()) {
           logOPlan = (LogisticsOPlan)it.next();
         }
       } else if (predicate instanceof FeedingPolicyPred) {
         Collection fpColl = (Collection) list.next();
+        if ((fpColl == null) || (fpColl.isEmpty())) {
+          return null;
+        }
         Iterator it = fpColl.iterator();
         Schedule sched;
         if (it.hasNext()) {
