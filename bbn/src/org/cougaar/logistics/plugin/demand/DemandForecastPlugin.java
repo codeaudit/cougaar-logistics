@@ -743,16 +743,14 @@ public class DemandForecastPlugin extends ComponentPlugin
         }
         Collection subPGs = (Collection) subToPGsHash.get(sub);
         if (subPGs == null) {
-          if (logger.isErrorEnabled()) {
-            String errString = "Subscription fired in the hash table at " + getOrgName() + ", but there are no PGs in the other hash tables that correspond. The Predicate is " + pred.getClass().getName() + ".";
-            if (pred == orgActivities) {
-              errString += "  It turns out to be the orgActivities String.";
+          if (subPGs == null) {
+            if ((sub != orgActivities) && (logger.isErrorEnabled())) {
+              String errString = "Subscription fired in the hash table at " + getOrgName() + ", but there are no PGs in the other hash tables that correspond. The Predicate is " + pred.getClass().getName() + ".";
+              logger.error(errString);
             }
-            logger.error(errString);
+          } else {
+            PGs.addAll(subPGs);
           }
-
-        } else {
-          PGs.addAll(subPGs);
         }
       }
     }
