@@ -116,7 +116,7 @@ public class InventoryUIFrame extends JFrame
   protected InventoryXMLParser parser;
 
   protected boolean showInitialShortfall=true;
-  protected boolean initialDisplayCDay=false;
+  protected boolean initialDisplayCDay=true;
 
   public InventoryUIFrame(HashMap params) {
     super("Inventory GUI");
