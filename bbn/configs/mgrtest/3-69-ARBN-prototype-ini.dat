@@ -1,0 +1,30 @@
+[Prototype]     Organization
+
+[UIC]           "UIC/3-69-ARBN"
+
+[Relationship]
+Superior        "1BDE"              ""
+        
+[TypeIdentificationPG]                      
+TypeIdentification          String  "UTC/RTOrg"
+Nomenclature                String  "3/69 Armored BN"
+AlternateTypeIdentification String  "SRC/17375L000"
+
+[ClusterPG]
+ClusterIdentifier	ClusterIdentifier "3-69-ARBN"
+
+[OrganizationPG]
+Roles                Collection<Role>   "Combat"
+
+[MilitaryOrgPG]
+UIC	                   String   "WAQ1AA"
+Echelon                    String  "05"
+UTC			   String   ""
+SRC                        String   "17375L000"
+
+
+
+
+
+
+

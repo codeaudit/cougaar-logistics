@@ -1,0 +1,24 @@
+[Prototype]     Organization
+        
+[UIC]           "UIC/1BDE"
+
+[Relationship]
+Superior        "3ID"               ""
+        
+[TypeIdentificationPG]                      
+TypeIdentification          String  "UTC/RTOrg"
+Nomenclature                String  "1st BDE"
+AlternateTypeIdentification String  "SRC/87042L200"
+
+[ClusterPG]
+ClusterIdentifier	ClusterIdentifier "1BDE"
+
+
+[OrganizationPG]
+Roles                Collection<Role>   "Headquarters"
+
+[MilitaryOrgPG]
+UIC	                   String   "WAQNA1"
+Echelon                    String   "7"
+UTC			   String   ""
+SRC                        String   "87042L200"

@@ -1,0 +1,31 @@
+[Prototype]     Organization
+
+[UIC]           "UIC/3ID"
+
+[Relationship]
+Supporting      "1BDE"              "StrategicTransportationProvider"
+Supporting      "3-69-ARBN"         "StrategicTransportationProvider"
+        
+[TypeIdentificationPG]                      
+TypeIdentification          String  "UTC/RTOrg"
+Nomenclature                String  "3rd Infantry Division"
+AlternateTypeIdentification String  "SRC/87004L200"
+
+[ClusterPG]
+ClusterIdentifier	ClusterIdentifier "3ID"
+
+[OrganizationPG]
+Roles                Collection<Role>   "StrategicTransportationProvider"
+
+[MilitaryOrgPG]
+UIC                   String   "WAQJA1"
+Echelon               String   "08"
+UTC                   String   ""
+SRC                         String   "87004L200"
+# the following two lines are examples of syntax only - someone should
+# put the correct values here.
+IsReserve		boolean	"true"
+HomeLocation	GeolocLocation "GeolocCode=BBNV, IcaoCode=String KBOS"
+
+[CSSCapabilityPG]
+Capabilities	Collection<CSSCapability> "MOS/36E Count=20units Duration=1days, Transportation Mass=100tons Duration=1weeks"

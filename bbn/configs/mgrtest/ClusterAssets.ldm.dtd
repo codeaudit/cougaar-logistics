@@ -1,0 +1,26 @@
+
+<!ELEMENT clusterassets (prototype*, instance*)>
+
+<!ELEMENT prototype (object)>
+<!ATTLIST prototype name CDATA #REQUIRED>
+
+<!ELEMENT instance (schedule)>
+<!ATTLIST instance id ID #REQUIRED>
+<!ATTLIST instance prototype CDATA #REQUIRED>
+
+<!ELEMENT schedule EMPTY>
+<!ATTLIST schedule start CDATA #REQUIRED>
+<!ATTLIST schedule end CDATA #REQUIRED>
+
+<!ELEMENT object (property*)>
+<!ATTLIST object id ID #REQUIRED>
+<!ATTLIST object class CDATA #REQUIRED>
+
+<!ELEMENT field EMPTY>
+<!ATTLIST field name ID #REQUIRED>
+<!ATTLIST field type CDATA #REQUIRED>
+<!ATTLIST field value CDATA #REQUIRED>
+
+<!ELEMENT property (field*)>
+<!ATTLIST property id ID #REQUIRED>
+<!ATTLIST property class CDATA #REQUIRED>

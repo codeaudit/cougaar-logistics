@@ -1,0 +1,7 @@
+<!ELEMENT Propagations (Propagation)*>
+<!ELEMENT Propagation (TransferablePropagation)>
+<!ELEMENT TransferablePropagation (relation | role)*>
+<!ATTLIST TransferablePropagation class CDATA #REQUIRED>
+<!ELEMENT relation (#PCDATA)>
+<!ELEMENT role (#PCDATA)>
+

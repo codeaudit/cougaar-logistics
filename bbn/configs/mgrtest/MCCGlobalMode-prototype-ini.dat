@@ -1,0 +1,23 @@
+[Prototype]     Organization
+        
+[UIC]           "UIC/MCCGlobalMode"
+
+[Relationship]
+Supporting      "3ID"        "StrategicTransportationProvider"
+
+[TypeIdentificationPG]                      
+TypeIdentification              String               "UTC/RTOrg"
+Nomenclature                    String               "MCCGlobalMode Cluster"
+AlternateTypeIdentification     String               "SRC/87004L100100"
+
+[ClusterPG]
+ClusterIdentifier	ClusterIdentifier "MCCGlobalMode"
+
+[OrganizationPG]
+Roles                    Collection<Role>       "TransportationProvider, StrategicTransportationProvider"
+
+[MilitaryOrgPG]
+UIC                   String   "WAQJA1"
+Echelon                     String  "08"
+UTC                   String   ""
+SRC                         String   "87004L100100"
