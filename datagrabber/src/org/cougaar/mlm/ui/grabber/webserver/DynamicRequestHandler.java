@@ -26,6 +26,7 @@ import org.cougaar.mlm.ui.grabber.logger.DBIDLogger;
 import org.cougaar.mlm.ui.grabber.config.WebServerConfig;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 
+import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.controller.Controller;
 import org.cougaar.mlm.ui.grabber.controller.Run;
 import org.cougaar.mlm.ui.grabber.validator.*;
@@ -292,6 +293,38 @@ public abstract class DynamicRequestHandler extends RequestHandler{
   protected void emptyFooter(HTMLizer h){
     h.print("</BODY>\n"+
 	     "</HTML>\n");
+  }
+
+  protected void getSizes(Statement s, String sql, Map runToOwners, Map runToAssets) throws SQLException {
+    ResultSet rs=s.executeQuery(sql);
+
+    Set runIDs = new HashSet ();
+
+    while(rs.next()){
+      int runID=rs.getInt(1);
+      runIDs.add (new Integer(runID));
+    }
+
+    for(Iterator iter = runIDs.iterator(); iter.hasNext(); ) {
+      Integer runID = (Integer) iter.next(); 
+      
+      String perRunSQL = "select count(distinct " + 
+	DGPSPConstants.COL_OWNER + "), count(*)" + 
+	"\nfrom " + 
+	Controller.getTableName (DGPSPConstants.ASSET_INSTANCE_TABLE, runID.intValue());
+
+      try {
+	ResultSet perRunResultSet=s.executeQuery(perRunSQL);
+	while(perRunResultSet.next()){
+	  int owners=perRunResultSet.getInt(1);
+	  int assets=perRunResultSet.getInt(2);
+	  runToOwners.put (runID, new Integer(owners));
+	  runToAssets.put (runID, new Integer(assets));
+	}
+      } catch (Exception e) {
+	//System.out.println ("got exception on query\n" + perRunSQL + "\nexception was:\n" + e);
+      }
+    }
   }
 
   //Static members:

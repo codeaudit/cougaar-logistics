@@ -212,6 +212,8 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
   protected void sendMainMenu(HTMLizer h, Statement s1, Statement s2) 
     throws IOException, SQLException{
 
+    //    System.out.println ("ComparisonRequestHandler.sendMainMenu called.");
+
     if(compone>0 && comptwo>0 && compone!=comptwo){
       sendRunMenu(h,s1);
     }else{
@@ -221,6 +223,8 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected String getRunListSql(){
     StringBuffer sb=new StringBuffer();
+    //    System.out.println ("ComparisonRequestHandler.getRunListSql called.");
+
     sb.append("SELECT ");
     sb.append(Controller.COL_RUNID);
     sb.append(", ");
@@ -245,6 +249,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void sendValidationMenu(HTMLizer h, Statement s1, Statement s2)
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.sendValidationMenu called.");
     header(h,"Comparator Menu");
     
     //if(run<1)
@@ -289,13 +294,20 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void outputRunTable(HTMLizer h, Statement s)
     throws IOException, SQLException{
-    ResultSet rs=s.executeQuery(getRunListSql());
 
+    Map runToOwners = new HashMap ();
+    Map runToAssets = new HashMap ();
+
+    getSizes(s, getRunListSql(), runToOwners, runToAssets);
+    ResultSet rs=s.executeQuery(getRunListSql());
+    
     h.sTable();
     h.sRow();
     h.tHead("Run");
     h.tHead("Run started");
     h.tHead("Run Completed");
+    h.tHead("Units");
+    h.tHead("Assets");
     h.tHead("Status");
     h.tHead("Action");
     h.eRow();
@@ -310,6 +322,12 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
       h.tData(r);
       h.tData(sDate);
       h.tData(eDate);
+
+      Object numOwners = runToOwners.get(new Integer(r));
+      Object numAssets = runToAssets.get(new Integer(r));
+      h.tData((numOwners == null) ? "N/A" : numOwners.toString());
+      h.tData((numAssets == null) ? "N/A" : numAssets.toString());
+
       h.tData(getURL(WebServerConfig.CONTROLLER,
 		     ControllerRequestHandler.COM_LISTLOG,
 		     "?run="+r),
@@ -329,6 +347,11 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
     Set testStatusCore = ResultTable.getDiffStatus(h,s1,Validator.CORE_TESTS, baseline);
     Set testStatusAll =  ResultTable.getDiffStatus(h,s1,Validator.ALL_TESTS, baseline);
 
+    Map runToOwners = new HashMap ();
+    Map runToAssets = new HashMap ();
+
+    getSizes(s1, getRunListSql(), runToOwners, runToAssets);
+
     ResultSet rs=s1.executeQuery(getRunListSql());
     List runs = new ArrayList();
     while(rs.next()) {
@@ -342,6 +365,8 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
     h.tHead("Run");
     h.tHead("Run started");
     h.tHead("Run Completed");
+    h.tHead("Units");
+    h.tHead("Assets");
     h.tHead("Status");
     StringBuffer str = new StringBuffer();
     str.append("Baseline:<form><select name=\"baseline\">");
@@ -372,6 +397,12 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 		       r+""));
 	h.tData(sDate);
 	h.tData(eDate);
+
+	Object numOwners = runToOwners.get(new Integer(r));
+	Object numAssets = runToAssets.get(new Integer(r));
+	h.tData((numOwners == null) ? "N/A" : numOwners.toString());
+	h.tData((numAssets == null) ? "N/A" : numAssets.toString());
+
 	h.tData(getURL(WebServerConfig.CONTROLLER,
 		   ControllerRequestHandler.COM_LISTLOG,
 		       "?run="+r),
@@ -427,6 +458,8 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void sendRunMenu(HTMLizer h, Statement s)
     throws IOException, SQLException{
+
+    //    System.out.println ("ComparisonRequestHandler.sendRunMenu called.--->");
 
     header(h,"Comparator Menu For Runs "+compone+" and "+comptwo);
     h.sCenter();
@@ -488,6 +521,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
   
   protected void outputTests(HTMLizer h, Statement s, int testtype)
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.outputTests called.--->");
     h.sRow();
     h.tHead(contrastor.getTestTypeString(testtype));
     h.tData("["+
@@ -555,6 +589,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void outputTests(HTMLizer h, Statement s, int testtype, HashMap hm)
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.outputTests called.--->");
     h.sRow();
     h.tHead(contrastor.getTestTypeString(testtype),0);
     h.tData("["+
@@ -620,6 +655,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void sendRunTest(HTMLizer h, Statement s1, Statement s2, Statement s3) 
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.sendRunTest called.--->");
     //Parse the query:
     if(compone==-1||comptwo==-1||test<Validator.MIN_TEST_CATEGORY){
       sendInvalidQuery(h);
@@ -659,6 +695,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void sendDisplayTest(HTMLizer h, Statement s) 
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.sendDisplayTest called.--->");
     //Parse the query:
     if(compone==-1||comptwo==-1||test<Validator.MIN_TEST_CATEGORY){
       sendInvalidQuery(h);
@@ -677,6 +714,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
   protected void sendClearTest(HTMLizer h, Statement s) 
     throws IOException, SQLException{
+    //    System.out.println ("ComparisonRequestHandler.sendClearTest called.--->");
     //Parse the query:
     if(compone==-1||comptwo==-1||test<Validator.MIN_TEST_CATEGORY){
       sendInvalidQuery(h);

@@ -264,37 +264,6 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     h.eTable();
   }
 
-  protected void getSizes(Statement s, String sql, Map runToOwners, Map runToAssets) throws SQLException {
-    ResultSet rs=s.executeQuery(sql);
-
-    Set runIDs = new HashSet ();
-
-    while(rs.next()){
-      int runID=rs.getInt(1);
-      runIDs.add (new Integer(runID));
-    }
-
-    for(Iterator iter = runIDs.iterator(); iter.hasNext(); ) {
-      Integer runID = (Integer) iter.next(); 
-      
-      String perRunSQL = "select count(distinct " + 
-	DGPSPConstants.COL_OWNER + "), count(*)" + 
-	"\nfrom " + 
-	Controller.getTableName (DGPSPConstants.ASSET_INSTANCE_TABLE, runID.intValue());
-
-      try {
-	ResultSet perRunResultSet=s.executeQuery(perRunSQL);
-	while(perRunResultSet.next()){
-	  int owners=perRunResultSet.getInt(1);
-	  int assets=perRunResultSet.getInt(2);
-	  runToOwners.put (runID, new Integer(owners));
-	  runToAssets.put (runID, new Integer(assets));
-	}
-      } catch (Exception e) {
-	//System.out.println ("got exception on query\n" + perRunSQL + "\nexception was:\n" + e);
-      }
-    }
-  }
 
   protected Map getDiskSpacePerRun (Statement s)
     throws IOException,SQLException {
