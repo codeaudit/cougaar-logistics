@@ -88,8 +88,10 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     try{
       instancePS = getInstancePreparedStatement (c);
       manifestPS = getManifestPreparedStatement (c);
-      logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
-		 getClusterName()+" instance created prepared statements.");
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+		   getClusterName()+" instance created prepared statements.");
+      }
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not create Statement",e);
       return;
@@ -110,9 +112,27 @@ public class DGPSPInstanceConnection extends DGPSPConnection
 
       if ((num +1) % 1000 == 0) {
 	try{
-	  logMessage(Logger.MINOR,Logger.DB_WRITE,
-		     getClusterName()+" executing a prepared batch of a thousand instances, " + num + " so far ");
+	  if (isMinorEnabled()) {
+	    logMessage(Logger.MINOR,Logger.DB_WRITE,
+		       getClusterName()+" executing a prepared batch of a thousand instances, " + num + " so far ");
+	  }
 	  instancePS.executeBatch();
+	} catch(SQLException e){
+	  if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
+	    // this well happen, since the same asset UID may appear in multiple agents
+	    logMessage(Logger.WARNING,Logger.DB_WRITE,"While executing batch, got SQL Error - " + e);
+	    e.printStackTrace ();
+	  }
+	}
+
+	// we don't want an SQLException in instancePS to interfere with the manifest prepared statement
+	// so we put them in separate try-catch blocks
+
+	try{
+	  if (isMinorEnabled()) {
+	    logMessage(Logger.MINOR,Logger.DB_WRITE,
+		       getClusterName()+" executing a prepared batch of a thousand instances, " + num + " so far ");
+	  }
 	  manifestPS.executeBatch();
 	}catch(SQLException e){
 	  if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
@@ -127,9 +147,21 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     }
 
     try{
-      logMessage(Logger.MINOR,Logger.DB_WRITE,
-		 getClusterName()+" executing the last prepared batch, " + num + " total instances done.");
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.DB_WRITE,
+		   getClusterName()+" executing the last prepared batch, " + num + " total instances done.");
+      }
+
       instancePS.executeBatch();
+    }catch(SQLException e){
+      if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
+	// this well happen, since the same asset UID may appear in multiple agents
+	logMessage(Logger.WARNING,Logger.DB_WRITE,"SQL Error - " + e);
+	e.printStackTrace ();
+      }
+    }
+
+    try{
       manifestPS.executeBatch();
     }catch(SQLException e){
       if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
@@ -139,10 +171,11 @@ public class DGPSPInstanceConnection extends DGPSPConnection
       }
     }
 
-    if(unsuccessful>0)
+    if(unsuccessful>0) {
       logMessage(Logger.WARNING,Logger.DB_WRITE,
 		 getClusterName()+" could not add "+unsuccessful+
 		 " instances(s)");
+    }
 
     try { 
       instancePS.close();
@@ -280,7 +313,9 @@ public class DGPSPInstanceConnection extends DGPSPConnection
       }
     }
     setStatus("Done");
-    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
+    if (isMinorEnabled()) {
+      logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
+    }
     return irr;
   }
 
