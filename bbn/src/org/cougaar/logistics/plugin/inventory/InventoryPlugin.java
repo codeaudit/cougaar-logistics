@@ -129,6 +129,7 @@ public class InventoryPlugin extends ComponentPlugin
   private int criticalLevel = 3;
   private int reorderPeriod = 3;
   private long bucketSize = TimeUtils.MSEC_PER_DAY;
+  private boolean fillToCapacity = false;
 
   public void load() {
     super.load();
@@ -1087,6 +1088,7 @@ public class InventoryPlugin extends ComponentPlugin
 	((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
       }
       logInvPG.setCapacity(levels[0]);
+      logInvPG.setFillToCapacity(fillToCapacity);
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
       logInvPG.setOrg(getMyOrganization());
@@ -1342,6 +1344,11 @@ public class InventoryPlugin extends ComponentPlugin
       if (bucket >= TimeUtils.MSEC_PER_HOUR) {
 	bucketSize = bucket;
 	changed = true;
+      }
+      boolean ftc = pol.getFillToCapacity();
+      if (ftc != fillToCapacity) {
+        fillToCapacity = ftc;
+        changed = true;
       }
     }
     return changed;
