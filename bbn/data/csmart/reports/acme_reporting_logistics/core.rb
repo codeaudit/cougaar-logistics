@@ -1,4 +1,5 @@
 require "./plugins/acme_reporting_logistics/DeletionLogs"
+require "./plugins/acme_reporting_logistics/ShortfallTest"
 
 module ACME
   module Plugins
@@ -30,6 +31,8 @@ module ACME
         begin
           DeletionLogs.new(archive, @plugin, @ikko).perform
           puts "DELETIONS"
+          ShortfallTest.new(archive, @plugin, @ikko).perform
+          puts "SHORTFALL"
         rescue
           puts $!
           puts $!.backtrace
