@@ -306,6 +306,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	Task projWdraw = (Task)wdIter.next();
 	start = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.START_TIME);
 	end = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.END_TIME);
+	if(logger.isDebugEnabled() && projWdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	  logger.debug("\n AA.determineProjectionAllocations got a WITHDRAW task... start is: " +
+		       start + " end is: " + end + "current bucket time is: " +
+		       thePG.convertBucketToTime(currentBucket));
+	}
 	qty = thePG.getProjectionTaskDemand(projWdraw, currentBucket, start, end);
 	testQty = runningQty + qty;
 	testLevel = yesterdayLevel - testQty + todayRefill;
