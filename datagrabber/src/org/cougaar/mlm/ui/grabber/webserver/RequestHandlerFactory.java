@@ -100,7 +100,7 @@ public class RequestHandlerFactory implements HttpConstants{
   //InnerClasses:
   ///////////////
 
-  protected static class ErrorRequestHandler extends RequestHandler{
+  public static class ErrorRequestHandler extends RequestHandler{
     protected int error;
     protected String desc;
     public ErrorRequestHandler(WebServerConfig config,
