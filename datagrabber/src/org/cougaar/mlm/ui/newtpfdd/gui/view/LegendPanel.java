@@ -28,7 +28,7 @@ import javax.swing.JPanel;
 import org.cougaar.mlm.ui.newtpfdd.gui.component.TPFDDColor;
 
 public class LegendPanel extends JPanel {
-  private static final Dimension myPreferredSize = new Dimension(500,25);
+  private static final Dimension myPreferredSize = new Dimension(600,25);
   public LegendPanel() {
     this.setBackground(TPFDDColor.TPFDDDarkGray);
 	add(new Legend ()); // so we get a panel centered inside another panel
@@ -39,12 +39,11 @@ public class LegendPanel extends JPanel {
 
 	public void paint(Graphics g) {
 	  g.setColor(Color.white);
-	  int width  = this.getSize ().width;
 	  int height = this.getSize ().height*3/4;
 
 	  int boxHeight = 10;
-	  int boxWidth  = 50;
-	  int itemWidth = 100;
+	  int boxWidth  = 60;
+	  int itemWidth = 120;
 	  int leftOffset = boxWidth+10;
 	  int margin = 5;
 	
@@ -52,6 +51,7 @@ public class LegendPanel extends JPanel {
 	  g.drawString("Air", leftOffset+(1*itemWidth)+margin, height);
 	  g.drawString("Sea", leftOffset+(2*itemWidth)+margin, height);
 	  g.drawString("Ground", leftOffset+(3*itemWidth)+margin, height);
+	  g.drawString("Level-2", leftOffset+(4*itemWidth)+margin, height);
 
 	  int top = height;
 	  int bottom = height-boxHeight;
@@ -67,6 +67,9 @@ public class LegendPanel extends JPanel {
 
 	  g.setColor(TPFDDColor.TPFDDDullerYellow);
 	  g.fillRect(leftOffset+(3*itemWidth)-boxWidth, bottom, boxWidth, boxHeight);
+
+	  g.setColor(Color.black);
+	  g.fillRect(leftOffset+(4*itemWidth)-boxWidth, bottom, boxWidth, boxHeight);
 
 	}
   }
