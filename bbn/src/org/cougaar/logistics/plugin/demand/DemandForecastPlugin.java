@@ -358,7 +358,6 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     UnaryPredicate orgActivityPred = new OrgActivityPred();
     orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
-    predToSubHash.put(orgActivityPred, orgActivities);
 
     oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
 
@@ -708,6 +707,7 @@ public class DemandForecastPlugin extends ComponentPlugin
           Collection subsPGs = (Collection) subToPGsHash.get(sub);
           subsPGs.remove(pg);
           if (subsPGs.isEmpty()) {
+            blackboard.unsubscribe(sub);
             subToPGsHash.remove(sub);
             predToSubHash.remove(pred);
           }
