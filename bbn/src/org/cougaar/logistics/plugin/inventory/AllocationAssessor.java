@@ -239,7 +239,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param thePG The PG for the Inventory Asset we are working with.
    **/
   public void reconcileThePast(int today_bucket, LogisticsInventoryPG thePG) {
-    calculateInventoryLevels(0, today_bucket, thePG);
+    calculateInventoryLevels(thePG.getStartBucket(), today_bucket, thePG);
   }
 
 
