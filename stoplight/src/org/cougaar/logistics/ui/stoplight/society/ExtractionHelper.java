@@ -1037,6 +1037,7 @@ public class ExtractionHelper
       f.setTimeZone(TimeZone.getTimeZone(timezone_property));
       c_time_msec = f.parse(cdate_property).getTime();
     } catch (ParseException e) {
+      Logger logger = Logging.currentLogger();
       if (logger.isErrorEnabled())
         logger.warn("Error: could not parse CDate -> " + cdate_property);
       return 0l;
