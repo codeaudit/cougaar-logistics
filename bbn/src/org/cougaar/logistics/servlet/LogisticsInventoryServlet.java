@@ -76,6 +76,7 @@ public class LogisticsInventoryServlet
   private SimpleServletSupport support;
   private AlarmService         alarmService;
   private LoggingService       logger;
+  private boolean              printOrgActs;
 
 
   public void setSimpleServletSupport(SimpleServletSupport support) {
@@ -90,12 +91,16 @@ public class LogisticsInventoryServlet
     this.alarmService = anAlarmService;
   }
 
+  public void setPrintOrgActs(boolean enableOrgActs) {
+    this.printOrgActs = enableOrgActs;
+  }
+
   public void doGet(
 		    HttpServletRequest request,
 		    HttpServletResponse response) throws IOException, ServletException
   {
     // create a new "InventoryGetter" context per request
-    InventoryGetter ig = new InventoryGetter(support,alarmService,logger);
+    InventoryGetter ig = new InventoryGetter(support,alarmService,logger,printOrgActs);
     ig.execute(request, response);
   }
 
@@ -104,7 +109,7 @@ public class LogisticsInventoryServlet
 		    HttpServletResponse response) throws IOException, ServletException
   {
     // create a new "InventoryGetter" context per request
-    InventoryGetter ig = new InventoryGetter(support,alarmService,logger);
+    InventoryGetter ig = new InventoryGetter(support,alarmService,logger,printOrgActs);
     try {
 	ig.execute(request, response);
     } catch (Exception e) {
@@ -136,6 +141,7 @@ public class LogisticsInventoryServlet
     SimpleServletSupport support;
     AlarmService         alarmService;
     LoggingService       logger;
+    boolean              printOrgActs;
 
 
     final public static String ASSET = "ASSET";
@@ -143,10 +149,12 @@ public class LogisticsInventoryServlet
 
     public InventoryGetter(SimpleServletSupport aSupport,
 			   AlarmService         anAlarmService,
-			   LoggingService        aLoggingService) {
+			   LoggingService       aLoggingService,
+			   boolean              enableOrgActs) {
       this.support = aSupport;
       this.alarmService = anAlarmService;
       this.logger = aLoggingService;
+      this.printOrgActs = enableOrgActs;
     }
 
     /*
@@ -392,8 +400,14 @@ public class LogisticsInventoryServlet
     }
 
     protected TimeSpanSet getOrgActivities() {
-      Collection orgActCollect = support.queryBlackboard(orgActivityPred());
-      TimeSpanSet orgActivities = new TimeSpanSet(orgActCollect);
+      TimeSpanSet orgActivities=null;
+      if(printOrgActs) {
+     	  Collection orgActCollect = support.queryBlackboard(orgActivityPred());
+    	  orgActivities = new TimeSpanSet(orgActCollect);
+      }
+      else {
+	      orgActivities = new TimeSpanSet();
+      }
       return orgActivities;
     }
 

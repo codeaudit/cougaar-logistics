@@ -23,6 +23,7 @@ package org.cougaar.logistics.servlet;
 
 import java.lang.reflect.Method;
 import java.lang.ClassNotFoundException;
+import java.util.List;
 
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.LoggingService;
@@ -44,6 +45,41 @@ import javax.servlet.Servlet;
 
 
 public class LogisticsInventoryServletComponent extends SimpleServletComponent {
+
+    public final static String PRINT_ORG_ACTIVITIES = "PRINT_ORG_ACTIVITIES";
+    
+
+    protected boolean printOrgActs=false;
+
+ /**
+   * Save our Servlet's configurable path, for example
+   * "/test".
+   * <p>
+   * This is only set during initialization and is constant
+   * for the lifetime of the Servlet.
+   */
+  public void setParameter(Object o) {
+
+    super.setParameter(o);
+    List l = (List)o;
+
+    if(l.size() == 3) {
+	Object o3 = l.get(2);
+	if(!(o3 instanceof String)) {
+	    throw new IllegalArgumentException("Expecting third optional argument as a string, not ("+o3+")");
+	}
+	String[] keyAndValue = ((String) o3).split("=");
+	if((keyAndValue.length == 2) &&
+	   (keyAndValue[0].trim().equals(PRINT_ORG_ACTIVITIES)) &&
+	   (!(keyAndValue[1].trim().equals("")))) {
+	    printOrgActs = keyAndValue[1].trim().toLowerCase().equals("true");
+	}
+	else {
+	    throw new IllegalArgumentException("Optional thirg argument should be " + PRINT_ORG_ACTIVITIES + "=<true or false>");
+	}
+
+    }
+  }
 
     protected Servlet createServlet() {
 
@@ -97,6 +133,19 @@ public class LogisticsInventoryServletComponent extends SimpleServletComponent {
 				       "Unable to set alarm service: "+
 				       e.getMessage());
 	}
+
+
+	// set the alarm service
+	try {
+	    invServe.setPrintOrgActs(printOrgActs);
+	} catch (Exception e) {
+	    throw new RuntimeException(
+				       "Unable to set print org activities boolean: "+
+				       e.getMessage());
+	}
+
+
+	
 	
 	return invServe;
 
