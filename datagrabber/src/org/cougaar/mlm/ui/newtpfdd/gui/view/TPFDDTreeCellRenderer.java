@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TPFDDTreeCellRenderer.java,v 1.3 2002-08-07 20:58:53 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TPFDDTreeCellRenderer.java,v 1.4 2002-08-09 14:47:39 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -60,16 +60,17 @@ public class TPFDDTreeCellRenderer extends JLabel implements TreeCellRenderer
 	if ( value instanceof Node )
 	    setText(((Node)value).getDisplayName());
 
-	if ( hasFocus )
+	if ( hasFocus ) {
 	    setForeground(Color.cyan);
-	else if ((value instanceof CarrierType) && ((CarrierType)value).isSelfPropelled ()) {
+	} else if ((value instanceof CarrierType) && ((CarrierType)value).isSelfPropelled ()) {
 	  setForeground(TPFDDColor.TPFDDDullerYellow);
 	}
 	else if ((value instanceof CargoType) && ((CargoType)value).isLowFi ()) {
 	  setForeground(Color.black);
 	}
-	else
+	else {
 	  setForeground(Color.white);
+    }
 
 	// setFont(defaultFont);
 

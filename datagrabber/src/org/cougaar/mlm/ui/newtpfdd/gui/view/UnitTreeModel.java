@@ -86,9 +86,9 @@ public class UnitTreeModel extends TaskModel {
 	    return false;
 	  boolean leaf = !((Node)node).hasChildren ();
 
-	  if (leaf) 
+	  if (leaf) {
 		return leaf;
-	  else if (node instanceof Org) {
+	  } else if (node instanceof Org) {
 		// if my child is not an org, I'm a leaf
 		//		return !(myTree.getChild(org, 0) instanceof Org);
 		boolean retval = (getChildCount (node) == 0);

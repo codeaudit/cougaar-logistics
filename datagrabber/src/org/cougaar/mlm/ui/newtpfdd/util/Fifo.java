@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Fifo.java,v 1.2 2002-08-07 19:58:02 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Fifo.java,v 1.3 2002-08-09 14:47:39 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -31,10 +31,11 @@ public class Fifo
 	boolean noGood = false;
 
 	synchronized(internal) {
-	    if ( internal.indexOf(o) == -1 )
+	    if ( internal.indexOf(o) == -1 ) {
 		internal.addFirst(o);
-	    else
+	    } else {
 		noGood = true;
+        }
 	}
     }
 

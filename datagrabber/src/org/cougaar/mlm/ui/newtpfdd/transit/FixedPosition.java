@@ -41,10 +41,11 @@ public class FixedPosition implements Position{
     this.lon=(float)lon;
   }
   public FixedPosition(String name, float lat, float lon){
-    if(name != null)
+    if(name != null) {
       this.name=name.intern();
-    else
+    } else {
       this.name=null;
+    }
     this.lat=lat;
     this.lon=lon;
   }

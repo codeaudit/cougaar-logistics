@@ -784,10 +784,11 @@ public class UnitQuery extends SqlQuery {
     String cLegStart   = conveyedLegTable + "." + DGPSPConstants.COL_STARTTIME;
     String wherePrefix = 
       filterClauses.getUnitWhereSql (instanceOwner);
-    if (wherePrefix.equals(""))
+    if (wherePrefix.equals("")) {
       wherePrefix = "\nwhere ";
-    else
+    } else {
       wherePrefix += "\nand ";
+    }
 	
     String sqlQuery = 
       "select distinct " + instanceID + ", " + instanceProto + ", " + instanceName + ", " + instanceAggNumber + ", " +
@@ -844,10 +845,11 @@ public class UnitQuery extends SqlQuery {
     String cLegStart   = conveyedLegTable + "." + DGPSPConstants.COL_STARTTIME;
     String wherePrefix = 
       filterClauses.getUnitWhereSql (instanceOwner);
-    if (wherePrefix.equals(""))
+    if (wherePrefix.equals("")) {
       wherePrefix = "\nwhere ";
-    else
+    } else {
       wherePrefix += "\nand ";
+    }
 	
     String sqlQuery = 
       "select distinct " + instanceID + ", " + prototypeParentProto + ", " + instanceName + ", " + instanceAggNumber + ", " +

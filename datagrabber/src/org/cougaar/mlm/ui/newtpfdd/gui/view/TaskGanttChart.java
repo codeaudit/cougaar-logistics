@@ -268,15 +268,17 @@ public class TaskGanttChart extends GanttChart
     String longName;
 
     if (taskModel instanceof AssetModel) {
-      if (legNode.getFromCode().equals(legNode.getToCode()))
+      if (legNode.getFromCode().equals(legNode.getToCode())) {
 	shortName = legNode.getFromCode();
-      else
+      } else {
 	shortName = legNode.getFromCode() + "->" + legNode.getToCode();
+    }
 
-      if (legNode.getFromName().equals(legNode.getToName()))
+    if (legNode.getFromName().equals(legNode.getToName())) {
 	longName = legNode.getFromName();
-      else
+    } else {
 	longName = legNode.getFromName() + "->" + legNode.getToName();
+    }
     } else {
       shortName = legNode.getCarrierName ();
       longName  = legNode.getCarrierType () + ": " + shortName;

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/OutputHandler.java,v 1.1 2002-05-14 20:41:08 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/OutputHandler.java,v 1.2 2002-08-09 14:47:39 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -62,10 +62,11 @@ public class OutputHandler
 
     public static void out(String message, boolean preamble, boolean newLine)
     {
-	if ( globalHandler != null )
+	if ( globalHandler != null ) {
 	    globalHandler.putMessage(message, preamble, newLine);
-	else
+	} else{
 	    System.err.println("[OH:out: Warning: no global handler] " + message);
+    }
     }
 
     public static void out(String message)
