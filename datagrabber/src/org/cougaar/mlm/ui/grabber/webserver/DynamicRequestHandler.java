@@ -42,7 +42,7 @@ import java.text.SimpleDateFormat;
 /**
  * Abstract base class for Handlers for requests for commands 
  * to dynamic pages
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 3/3/01
  **/
@@ -141,6 +141,13 @@ public abstract class DynamicRequestHandler extends RequestHandler{
   }
   
   protected void sendContent(PrintStream ps) throws IOException{
+    if (dbConnection == null) { // check if db connection was made successfully
+      HTMLizer h=new HTMLizer(ps);
+      header(h, "Could not connect to database.  Check configuration.");
+      footer(h);
+      return;
+    }
+    
     Statement s=getStatement(ps);
     if(s==null)
       return;
