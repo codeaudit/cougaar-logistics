@@ -1297,14 +1297,12 @@ typical_case:
       Prototype.ASSET_CLASS_PERSON :
       Prototype.ASSET_CLASS_UNKNOWN;
 
-    /*
     if (value == Prototype.ASSET_CLASS_UNKNOWN) {
       LowFidelityAssetPG lowFiUID = (LowFidelityAssetPG)
 	a.resolvePG (LowFidelityAssetPG.class);
       if (lowFiUID != null)
 	return lowFiUID.getCCCDim().getAssetClass ();
     }
-    */
 
     return value;
   }
