@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/ProducerImpl.java,v 1.2 2002-08-08 19:23:15 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/ProducerImpl.java,v 1.3 2002-08-15 14:19:05 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -73,7 +73,7 @@ public class ProducerImpl implements Producer
 
     public void addNotify(Object[] elements)
     {
-	if ( suspended || consumers.size() == 0 )
+	if ( stopNow() )
 	    return;
 	for ( int i = 0; i < elements.length; i++ ) {
             if ( elements[i] == null ) {
@@ -87,7 +87,7 @@ public class ProducerImpl implements Producer
 
     public void deleteNotify(Object[] elements)
     {
-	if ( suspended || consumers.size() == 0 )
+	if ( stopNow() )
 	    return;
 	for ( int i = 0; i < elements.length; i++ ) {
             if ( elements[i] == null ) {
@@ -101,7 +101,7 @@ public class ProducerImpl implements Producer
 
     public void changeNotify(Object[] elements)
     {
-	if ( suspended || consumers.size() == 0 )
+	if ( stopNow() )
 	    return;
 	for ( int i = 0; i < elements.length; i++ ) {
             if ( elements[i] == null ) {
@@ -111,6 +111,10 @@ public class ProducerImpl implements Producer
 	    for ( Iterator e = consumers.iterator(); e.hasNext(); )
 		((Consumer)(e.next())).fireChange(elements[i]);
 	}
+    }
+
+    private boolean stopNow() {
+        return suspended || consumers.size() == 0;
     }
 
     public void addConsumer(Consumer consumer)
