@@ -41,23 +41,28 @@ public class InventoryLevel extends InventoryScheduleElement {
 
     protected double reorderLevel;
     protected double inventoryLevel;
+    protected Double targetLevel;
 
     public static final int START_TIME_INDEX=CSV_START_INDEX + 1;
     public static final int END_TIME_INDEX=CSV_START_INDEX + 2;
     public static final int REORDER_LEVEL_INDEX=CSV_START_INDEX + 3;
     public static final int INVENTORY_LEVEL_INDEX=CSV_START_INDEX + 4;
+    public static final int TARGET_LEVEL_INDEX=CSV_START_INDEX + 5;
 
     public InventoryLevel(double aReorderLevel,
 			  double anInventoryLevel,
+			  Double aTargetLevel,
 			  long aStartTime, 
 			  long anEndTime) {
 	super(aStartTime,anEndTime);
 	reorderLevel = aReorderLevel;
 	inventoryLevel = anInventoryLevel;
+	targetLevel = aTargetLevel;
     }
 
     public double getReorderLevel() { return reorderLevel; }
     public double getInventoryLevel() { return inventoryLevel; }
+    public Double getTargetLevel() { return targetLevel;}
 
     public String toString() {
 	return super.toString() + ",reorderLevel=" + getReorderLevel() + 
@@ -70,6 +75,14 @@ public class InventoryLevel extends InventoryScheduleElement {
 	
 	double aReorderLevel = (new Double(subStrings[REORDER_LEVEL_INDEX])).doubleValue();
 	double anInventoryLevel = (new Double(subStrings[INVENTORY_LEVEL_INDEX])).doubleValue();
+	Double aTargetLevel;
+	if((subStrings.length == TARGET_LEVEL_INDEX) ||
+	   (subStrings[TARGET_LEVEL_INDEX].trim().equals(""))) {
+	    aTargetLevel = null;
+	}
+	else {
+	    aTargetLevel = new Double(subStrings[TARGET_LEVEL_INDEX]);
+	}
 	long aStartTime = -0L;
 	String startTimeStr = subStrings[START_TIME_INDEX].trim();
 	if(!(startTimeStr.equals(""))) {
@@ -79,6 +92,7 @@ public class InventoryLevel extends InventoryScheduleElement {
 	
 	InventoryLevel newLevel = new InventoryLevel(aReorderLevel,
 						     anInventoryLevel,
+						     aTargetLevel,
 						     aStartTime,
 						     anEndTime);
 
