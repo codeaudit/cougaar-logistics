@@ -647,6 +647,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 					     directObject,
 					     getAgentIdentifier());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
+    ((NewTask)newtask).setContext(parentTask.getContext());
 
     if (unitPG == null) {
       // Next four lines create a Property Group for unit and attach it to all assets attached to task

@@ -121,6 +121,7 @@ public class AmmoLowFidelityExpanderPlugin extends UTILExpanderPluginAdapter {
 					     parentTask,
 					     directObject,
 					     getAgentIdentifier());
+    ((NewTask)newtask).setContext(parentTask.getContext());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
     // mark the new task as an aggregate low fi task
     glmPrepHelper.addPrepToTask (newtask, 

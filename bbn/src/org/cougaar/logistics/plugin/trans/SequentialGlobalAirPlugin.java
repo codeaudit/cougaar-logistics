@@ -465,6 +465,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 						  parentTask,
 						  parentTask.getDirectObject(),
 						  myPlugin.publicGetMessageAddress());
+      new_task.setContext(parentTask.getContext());
+
       // find the theater org
 			
       Organization theater = plugin.findOrgWithRole(GLMTransConst.THEATER_MCC_ROLE);
@@ -615,6 +617,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 						  parentTask,
 						  parentTask.getDirectObject(),
 						  myPlugin.publicGetMessageAddress());
+      new_task.setContext(parentTask.getContext());
 
       Vector getDependencies = getDependencies();
 
@@ -728,6 +731,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 						  parentTask,
 						  parentTask.getDirectObject(),
 						  myPlugin.publicGetMessageAddress());
+      new_task.setContext(parentTask.getContext());
 
       if (!getDependencies().isEmpty()) {
 	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);

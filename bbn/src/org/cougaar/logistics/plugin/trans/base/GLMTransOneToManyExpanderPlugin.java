@@ -1021,6 +1021,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 					     parentTask,
 					     directObject,
 					     getAgentIdentifier());
+    ((NewTask)newtask).setContext(parentTask.getContext());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
 
     // Next four lines create a Property Group for unit and attach it to all assets attached to task
