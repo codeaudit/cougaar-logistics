@@ -180,14 +180,14 @@ public class ExternalAllocator extends InventoryModule {
     }
 
 
-  public void updateAllocationResult(IncrementalSubscription sub) {
+  public void updateAllocationResult(Collection sub) {
     // Set up the affected inventories for the AllocationAssessor
     Task refill;
     Asset asset;
     Allocation alloc;
     Inventory inventory;
     LogisticsInventoryPG logInvPG;
-    Iterator refill_list = sub.getAddedCollection().iterator();
+    Iterator refill_list = sub.iterator(); // ###
     while (refill_list.hasNext()) {
       alloc = (Allocation) refill_list.next();
       //      refill = (Task)refill_list.next();
@@ -201,9 +201,10 @@ public class ExternalAllocator extends InventoryModule {
       } else {
 	logInvPG.updateRefillRequisition(refill);
       }
-      inventoryPlugin.touchInventory(inventory);
+      if (PluginHelper.updatePlanElement(alloc)) {
+        inventoryPlugin.publishChange(alloc);
+      }
     }
-    PluginHelper.updateAllocationResult(sub);
     rebuildPGCustomerHash();
   }
 

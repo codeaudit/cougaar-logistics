@@ -76,7 +76,8 @@ public class InventoryPlugin extends ComponentPlugin {
   private HashMap pluginParams;
   private HashMap inventoryHash;
   private HashMap inventoryInitHash;
-  private ArrayList touchedInventories;
+  private HashSet touchedInventories;
+  private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private String supplyType;
   private String inventoryFile;
@@ -137,7 +138,8 @@ public class InventoryPlugin extends ComponentPlugin {
     allocationAssessor = new AllocationAssessor(this,getRole(supplyType));
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
-    touchedInventories = new ArrayList();
+    touchedInventories = new HashSet();
+    backwardFlowInventories = new HashSet();
     touchedProjections = false;
     startTime = currentTimeMillis();
 
@@ -297,20 +299,20 @@ public class InventoryPlugin extends ComponentPlugin {
 	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
 					   refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
-        } else { // Backwards Flow
-          externalAllocator.updateAllocationResult(refillAllocationSubscription);
-          allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
-          supplyExpander.updateAllocationResult(expansionSubscription);
-          // update the Maintain Inventory Expansion results
-          PluginHelper.updateAllocationResult(MIExpansionSubscription);
-          PluginHelper.updateAllocationResult(MITopExpansionSubscription);
-          PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
-        }
-        
+        } 
+        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
+        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
+        supplyExpander.updateAllocationResult(getActionableExpansions());
+        // update the Maintain Inventory Expansion results
+        PluginHelper.updateAllocationResult(MIExpansionSubscription);
+        PluginHelper.updateAllocationResult(MITopExpansionSubscription);
+        PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
+	  
         takeInventorySnapshot(getTouchedInventories());
         
         // touchedInventories should not be cleared until the end of transaction
         touchedInventories.clear();
+	backwardFlowInventories.clear(); //###
         touchedProjections = false;
         //testBG();
       }
@@ -1246,6 +1248,49 @@ public class InventoryPlugin extends ComponentPlugin {
         }
       }
     }
+  }
+
+  // We only want to process AllocationResults for inventories with unchanged demand
+  // Sort through Refill Allocation results to find all inventories in backward flow.
+  // Save off inventory for later use by AllocationAssessor and return actionableARs.
+  private Collection getActionableRefillAllocations(){
+    ArrayList actionableARs = new ArrayList();
+    Task refill;
+    Asset asset;
+    Allocation alloc;
+    Inventory inventory;
+    Iterator alloc_list = refillAllocationSubscription.getChangedCollection().iterator();
+    while (alloc_list.hasNext()) {
+      alloc = (Allocation)alloc_list.next();
+      refill = alloc.getTask();
+      asset = (Asset)refill.getDirectObject();
+      inventory = findOrMakeInventory(asset);
+      if (!touchedInventories.contains(inventory)) {
+	actionableARs.add(alloc);
+	backwardFlowInventories.add(inventory);
+      }
+    }
+    return actionableARs;
+  }
+
+  // get the actionable expansions to process.
+  private Collection getActionableExpansions() {
+    ArrayList actionableExp = new ArrayList();
+    Task task;
+    Asset asset;
+    Expansion exp;
+    Inventory inventory;
+    Iterator exp_list = expansionSubscription.getChangedCollection().iterator();
+    while (exp_list.hasNext()) {
+      exp = (Expansion)exp_list.next();
+      task = exp.getTask();
+      asset = (Asset)task.getDirectObject();
+      inventory = findOrMakeInventory(asset);
+      if (!touchedInventories.contains(inventory)) {
+	actionableExp.add(exp);
+      }
+    }
+    return actionableExp;
   }
 
   /**
