@@ -1126,7 +1126,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         return (long) PluginHelper.getStartTime(pe.getEstimatedResult());
     }
 
-    private long getEndTime(Task task) {
+    protected long getEndTime(Task task) {
         PlanElement pe = task.getPlanElement();
         // If the task has no plan element then return the EndTime Pref
         if (pe == null) {
