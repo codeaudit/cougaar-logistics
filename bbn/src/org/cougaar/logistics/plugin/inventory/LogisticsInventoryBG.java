@@ -24,6 +24,7 @@ import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Duration;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
+import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
@@ -685,10 +686,34 @@ public class LogisticsInventoryBG implements PGDelegate {
     if (pe == null) {
       return PluginHelper.getEndTime(task);
     }
-    AllocationResultHelper helper = new AllocationResultHelper(task, pe);
-    return (long)PluginHelper.getEndTime(helper.getAllocationResult());
-  }
+    //AllocationResultHelper helper = new AllocationResultHelper(task, pe);
+    //return (long)PluginHelper.getEndTime(helper.getAllocationResult());
 
+    //try to use the reported result - but if its null - use the 
+    // estimated result
+    AllocationResult ar = null;
+    if (pe.getReportedResult() != null) {
+      ar = pe.getReportedResult();
+    } else {
+      ar = pe.getEstimatedResult();
+    }
+    // make sure that we got atleast a valid reported OR estimated allocation result
+    if (ar != null) {
+      double resultTime;
+      // make sure END_TIME is specified - otherwise use START_TIME
+      // UniversalAllocator plugin only gives start times
+      if (ar.isDefined(AspectType.END_TIME)) {
+        resultTime = ar.getValue(AspectType.END_TIME);
+      } else {
+        resultTime = ar.getValue(AspectType.START_TIME);
+      }
+      return (long) resultTime;
+    } else {
+      // if for some reason we have a pe but no ar return the pref
+      return PluginHelper.getEndTime(task);
+    }
+  }
+    
   private double[] expandArray(double[] doubleArray) {
     double biggerArray[] = new double[(int)(doubleArray.length*1.5)];
     for (int i=0; i < doubleArray.length; i++) {
