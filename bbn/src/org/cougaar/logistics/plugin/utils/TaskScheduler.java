@@ -121,8 +121,10 @@ public class TaskScheduler {
     for (int i = 0; i < policy.numPriorities(); i++) {
       int numPhases = policy.numPhases (i);
       if (numPhases == 0)
-        logger.error ("There are no phases for priority " + i +
-                      " in a task scheduler.");
+	if(logger.isErrorEnabled()) {
+          logger.error ("There are no phases for priority " + i +
+                        " in a task scheduler.");
+        }
       lists[i] = new ArrayList [numPhases];
       for (int j = 0; j < numPhases; j++)
         lists[i][j] = new ArrayList();
@@ -145,7 +147,9 @@ public class TaskScheduler {
    * whether or not they access any tasks that cycle
    */
   public void initForExecuteCycle() {
-    logger.debug("in initForExecuteCycle");
+    if(logger.isDebugEnabled()) {
+      logger.debug("in initForExecuteCycle");
+    }
     for (int i = 0; i < addedLists.length; i++) {
       addItems (addedLists[i], subscriptions[i].getAddedCollection());
       addItems (changedLists[i], subscriptions[i].getChangedCollection());
@@ -159,7 +163,9 @@ public class TaskScheduler {
     lists[0].addAll (items);
     if (! items.isEmpty()) {
       currentPhase = 0;
-      logger.debug("in TaskScheduler addItems, calling clearQuiescentState");
+      if(logger.isDebugEnabled()) {
+        logger.debug("in TaskScheduler addItems, calling clearQuiescentState");
+      }
       quiescence.clearQuiescentState (this);
     }
   }
@@ -168,7 +174,9 @@ public class TaskScheduler {
    * Plugins call this at end of execute cycle
    */
   public void finishedExecuteCycle() {
-    logger.debug("in finishedExecuteCycle");
+    if(logger.isDebugEnabled()) {
+      logger.debug("in finishedExecuteCycle");
+    }
     if (isEmpty())
       return;
     shiftCollections();
@@ -176,11 +184,15 @@ public class TaskScheduler {
     // only requeue for execution if more to do
     if (currentPhase < policy.getOrdering().length) {
       blackboard.signalClientActivity();
-      logger.debug("in finishedExecuteCycle, currentPhase: " + currentPhase +
-                   " policy.getOrdering().length: " + policy.getOrdering().length);
+      if(logger.isDebugEnabled()) {
+        logger.debug("in finishedExecuteCycle, currentPhase: " + currentPhase +
+		     " policy.getOrdering().length: " + policy.getOrdering().length);
+      }
     } else {
       resetCurrentPhase();
-      logger.debug("in TaskScheduler addItems, calling setQuiescentState");
+      if(logger.isDebugEnabled()) {
+        logger.debug("in TaskScheduler addItems, calling setQuiescentState");
+      }
       quiescence.setQuiescentState (this);
     }
     updateStorage();

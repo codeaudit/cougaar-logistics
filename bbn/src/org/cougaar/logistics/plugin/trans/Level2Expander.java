@@ -125,10 +125,13 @@ public class Level2Expander extends Level2TranslatorModule {
       double toleranceFactor = 0.10;  // for ammo within 200 lbs
 
       if ((origL2BaseQty - totalL6BaseQty) < toleranceFactor) {
-        if((totalL6BaseQty - origL2BaseQty) > 2.0) {
+
+        if(((totalL6BaseQty - origL2BaseQty) > 2.0) &&
+	   (logger.isWarnEnabled())){
           logger.warn("level2Task " + level2Task + " has a total qty of " + origL2BaseQty +
                       " which is exceeded by the level 6 tasks with a summed total qty of " + totalL6BaseQty);
         }
+
 	//If already disposed we still want to redispose in case there has been a qty change
         doneLevel2Task = level2Task;
       } else {
@@ -207,7 +210,9 @@ public class Level2Expander extends Level2TranslatorModule {
             }
             **/
           } else {
-            logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
+	    if(logger.isErrorEnabled()) {
+	      logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
+	    }
           }
         }
       }
@@ -289,7 +294,9 @@ public class Level2Expander extends Level2TranslatorModule {
     } else if (pe instanceof Expansion) {
       republishExpansionWithTask(parent, childTask);
     } else if (pe instanceof Disposition) {
-      logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
+      if(logger.isWarnEnabled()) {
+        logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
+      }
       removeDisposition(parent);
       createAndPublishExpansion(parent, childTask);
     } else if (logger.isErrorEnabled()) {

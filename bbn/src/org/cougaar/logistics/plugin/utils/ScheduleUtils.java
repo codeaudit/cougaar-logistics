@@ -184,19 +184,25 @@ public class ScheduleUtils {
         consumer = asset.getPrototype();
       }
       if (consumer == null) {
-        logger.error("Missing prototype on asset: "+asset);
+	if(logger.isErrorEnabled()) {
+          logger.error("Missing prototype on asset: "+asset);
+	}
         continue;
       }
       Schedule roleSched = asset.getRoleSchedule().getAvailableSchedule();
       if (roleSched == null) {
-        logger.error("Missing RoleSchedule on asset: "+asset);
+	if(logger.isErrorEnabled()) {
+          logger.error("Missing RoleSchedule on asset: "+asset);
+	}
         continue;
       }
       long start = roleSched.getStartTime();
       long end = roleSched.getEndTime();
       if (start >= end-1) {
-        logger.error("Bad schedule time(s): start "+TimeUtils.dateString(start)+
-                     ", end "+TimeUtils.dateString(end)+" for asset: "+asset);
+	if(logger.isErrorEnabled()) {
+          logger.error("Bad schedule time(s): start "+TimeUtils.dateString(start)+
+                      ", end "+TimeUtils.dateString(end)+" for asset: "+asset);
+	}
         continue;
       }
       // ScheduleUtils schedule methods have a granularity - so 1000 = 1 sec
@@ -243,7 +249,9 @@ public class ScheduleUtils {
     int num_params = scheds.size();
     ObjectScheduleElement[] intervals = new ObjectScheduleElement[num_params];
     Enumeration[] enums = new Enumeration[num_params];
-    logger.debug("getMergedSchedule "+num_params + " num params");
+    if(logger.isDebugEnabled()) {
+      logger.debug("getMergedSchedule "+num_params + " num params");
+    }
     ObjectScheduleElement ose;
     long start = TimeSpan.MAX_VALUE;
     for (int ii = 0; ii < num_params; ii++) {
@@ -306,7 +314,9 @@ public class ScheduleUtils {
       start = end;
     }
     mergedSchedule = newObjectSchedule(result_sched.elements());
-    logger.debug("getMergedSchedule created mergedSchedule "+result_sched.size());
+    if(logger.isDebugEnabled()) {
+      logger.debug("getMergedSchedule created mergedSchedule "+result_sched.size());
+    }
     return mergedSchedule;
   }
 
@@ -340,7 +350,9 @@ public class ScheduleUtils {
       }
       orgActSchedule = newObjectSchedule(schedElements.elements());
     } else {
-      logger.error("createOrgActivitySchedule passed empty collection");
+      if(logger.isErrorEnabled()) {
+        logger.error("createOrgActivitySchedule passed empty collection");
+      }
     }
     return orgActSchedule;
   }
