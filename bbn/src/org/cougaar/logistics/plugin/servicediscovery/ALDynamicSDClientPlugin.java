@@ -511,13 +511,13 @@ class TimeInterval {
     Iterator it = desiredCoverageIntervals.iterator();
     while(it.hasNext()) {
       TimeInterval current = (TimeInterval) it.next();
-      ret.addAll(current.substractInterval(interval));
+      ret.addAll(current.subtractInterval(interval));
     }
     return ret;
   }
 
 
-  Collection substractInterval(TimeInterval interval) {
+  Collection subtractInterval(TimeInterval interval) {
     ArrayList ret = new ArrayList();
 
     //intervals are not overlapping
@@ -628,7 +628,7 @@ class ServiceRequestHistory{
         Iterator oldUnrequested = unRequestedTimeIntervals.iterator();
         while(oldUnrequested.hasNext()) {
           TimeInterval oldCurrent = (TimeInterval)oldUnrequested.next();
-          newUnrequestedTimeIntervals.addAll(oldCurrent.substractInterval(current.requestedTimeInterval));
+          newUnrequestedTimeIntervals.addAll(oldCurrent.subtractInterval(current.requestedTimeInterval));
         }
         unRequestedTimeIntervals = newUnrequestedTimeIntervals;
       }
