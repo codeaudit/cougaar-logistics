@@ -138,6 +138,11 @@ public class InventoryUIFrame extends JFrame
     initializeUIFrame(readParameters(args));
   }
 
+  public InventoryUIFrame(String[] args, String frameTitle) {
+    super(frameTitle);
+    initializeUIFrame(readParameters(args));
+  }
+
 
   protected void initializeUIFrame(HashMap params) {
     addWindowListener(new WindowAdapter() {
