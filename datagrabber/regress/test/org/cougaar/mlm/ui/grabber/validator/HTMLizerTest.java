@@ -100,4 +100,33 @@ public class HTMLizerTest extends TestCase {
         h.a("http://google.com/", "Google");
         assertEquals("<A HREF=\"http://google.com/\">Google</A>\n", ((MyPrintStream)h.getStream()).get());
     }
+
+    public void testP() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.p("foo");
+        assertEquals("<p>foo</p>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testCenter() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.sCenter();
+        h.eCenter();
+        assertEquals("<CENTER>\n</CENTER>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testFont() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.sFont("blue");
+        h.eFont();
+        assertEquals("<FONT COLOR=blue>\n</FONT>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testRow() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.sRow();
+        h.eRow();
+        assertEquals("<TR>\n</TR>\n", ((MyPrintStream)h.getStream()).get());
+    }
 }
+
+
