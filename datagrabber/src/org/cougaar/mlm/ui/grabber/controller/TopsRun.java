@@ -91,6 +91,8 @@ public class TopsRun extends Run{
 
   private Set hConfigs;
 
+  //  boolean doInstancesWithLegsAndPopulation = true;
+
   //Constructors:
   ///////////////
 
@@ -138,13 +140,14 @@ public class TopsRun extends Run{
     case EPOCH_INIT_SESSIONS:
       return processResultsInitSessions();
     case EPOCH_OBTAIN_LEGS:
+    case EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS:
       return processResultsObtainLegs();
-    case EPOCH_OBTAIN_INSTANCES:
-      return processResultsObtainInstances();
+      //    case EPOCH_OBTAIN_INSTANCES:
+      //      return processResultsObtainInstances();
     case EPOCH_OBTAIN_PROTOTYPES:
       return processResultsObtainPrototypes();
-    case EPOCH_OBTAIN_POPULATIONS:
-      return processResultsObtainPopulations();
+      //    case EPOCH_OBTAIN_POPULATIONS:
+      //      return processResultsObtainPopulations();
     case EPOCH_OBTAIN_LOCATIONS:
       return processResultsObtainLocations();
     case EPOCH_OBTAIN_ROUTES:
@@ -376,10 +379,15 @@ public class TopsRun extends Run{
   }
 
   //OBTAIN_LEGS:
-
   protected void obtainLegs(){
     setAutoCommitFalse ();
-    setEpoch(EPOCH_OBTAIN_LEGS);
+    //    if (doInstancesWithLegsAndPopulation) {
+      setEpoch(EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS);
+      //    }
+      //    else {
+      //      setEpoch(EPOCH_OBTAIN_LEGS);
+      //    }
+
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
     while(iter.hasNext()){
       String cluster=(String)iter.next();
@@ -387,14 +395,37 @@ public class TopsRun extends Run{
 	clusterToDGPSPConfig.get(cluster);
       workGroup.add(startDGPSPLegConnection(dgc),
 		    cluster);
+
+      //      if (doInstancesWithLegsAndPopulation) {
+	DataGathererPSPConfig dgc2= new DataGathererPSPConfig (dgc);
+	workGroup.add(startDGPSPInstanceConnection(dgc2),
+		      cluster);
+
+	DataGathererPSPConfig dgc3= new DataGathererPSPConfig (dgc);
+	workGroup.add(startDGPSPPopulationConnection(dgc3),
+		      cluster);
+	//      }
     }
   }
 
+  /** 
+   * if we're doing one phase at a time, 
+   *  after getting legs we get instances
+   *
+   * if we're doing legs, instances, and populations all in one set
+   *  after getting legs, instances, and populations we get prototypes
+   */
   protected boolean processResultsObtainLegs(){
-    boolean ret=genericWarningProcessResults("Obtained Leg information");
+    boolean ret=genericWarningProcessResults("Obtained Leg, Instances, and Population information");
+
     if(workGroup.isEmpty()) {
       setAutoCommitTrue (); // commit leg batches
-      obtainInstances();
+      //      if (doInstancesWithLegsAndPopulation) {
+	obtainPrototypes ();
+	//      }
+	//      else {
+	//	obtainInstances();
+	//      }
     }
     return ret;
   }
@@ -414,6 +445,8 @@ public class TopsRun extends Run{
     }
   }
 
+  /** after getting instances we get prototypes */
+  /*
   protected boolean processResultsObtainInstances(){
     //Later we may want to process the container information by setting up
     //to query another PSP based on the manifestUIDs returned by
@@ -426,6 +459,7 @@ public class TopsRun extends Run{
     }
     return ret;
   }
+  */
 
   protected void setAutoCommitFalse () {
     try { 
@@ -466,10 +500,17 @@ public class TopsRun extends Run{
     }
   }
 
+  /** After getting prototypes we get locations */
   protected boolean processResultsObtainPrototypes(){
     boolean ret=genericWarningProcessResults("Obtained prototype information");
-    if(workGroup.isEmpty())
-      obtainPopulations();
+    if(workGroup.isEmpty()) {
+      //      if (doInstancesWithLegsAndPopulation) {
+	obtainLocations();
+	//      }
+	//      else {
+	//	obtainPopulations();
+	//      }
+    }
     return ret;
   }
 
@@ -487,13 +528,22 @@ public class TopsRun extends Run{
     }
   }
 
+  /** After getting populations we get prototypes */
+  /*
   protected boolean processResultsObtainPopulations(){
     boolean ret=genericWarningProcessResults
       ("Obtained population information");
-    if(workGroup.isEmpty())
-      obtainLocations();
+    if(workGroup.isEmpty()) {
+      if (doInstancesWithLegsAndPopulation) {
+	obtainPrototypes();
+      }
+      else {
+	obtainLocations();
+      }
+    }
     return ret;
   }
+  */
 
   //OBTAIN_LOCATIONS:
 

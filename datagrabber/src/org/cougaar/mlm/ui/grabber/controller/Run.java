@@ -65,6 +65,7 @@ public abstract class Run implements ResultHandler, Logger{
   public static final int EPOCH_DGPSP_POST_PASS = 13;
   public static final int EPOCH_PREPARE_DERIVED_TABLES = 14;
   public static final int EPOCH_COMPLETED = 15;
+  public static final int EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS = 16;
 
   public static final String[] EPOCHS={"Initializing",
 				       "Preparing DB",
@@ -81,7 +82,8 @@ public abstract class Run implements ResultHandler, Logger{
 				       "Close Sessions",
 				       "Processing DGPSP",
 				       "Prepare Derived Tables",
-				       "Completed"};
+				       "Completed",
+				       "Getting Legs, Instances, and Populations"};
 
   //Conditions:
 
