@@ -128,7 +128,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     try {
       blackboard.openTransaction();
       col = blackboard.query(availabilityPred);
-
+      blackboard.closeTransaction();
       if (!col.isEmpty()) {
         Iterator it = col.iterator();
         AvailabilityChangeMessage message = (AvailabilityChangeMessage) it.next();
@@ -145,8 +145,11 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
           printForm(req, out);
         } else {
           AvailabilityChangeMessage message = new AvailabilityChangeMessage(Role.getRole(role),
-                                                                            false, new MutableTimeSpan(), isAvailable);
+                                                                            false, new MutableTimeSpan(),
+                                                                            isAvailable);
+          blackboard.openTransaction();
           blackboard.publishAdd(message);
+          blackboard.closeTransaction();
           printChangeInfo(message, true, out);
         }
       }
@@ -186,7 +189,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   private void printForm(HttpServletRequest req, PrintWriter out) {
     String tableHeader;
-    String optionString = "";
+    StringBuffer optionString = new StringBuffer();
     StringBuffer elements = new StringBuffer();
 
     tableHeader = "<p>\n" + "<table border>"
@@ -200,7 +203,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
         client = "Yes";
       }
       elements.append("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
-      optionString = "<option value=\"" + role + "\">" + role + "</option>" + "\n";
+      optionString.append("<option value=\"" + role + "\">" + role + "</option>" + "\n");
     }
     out.print(tableHeader + elements.toString() + "</table>");
     out.print("<form method=\"GET\" action=\"" +
@@ -208,7 +211,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
               "\">\n" +
               "Select role: " +
               "<select size=1 name=\"" + ROLE_PARAMETER + "\">\n" +
-              optionString +
+              optionString.toString() +
               "</select>" +
               "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"available\">Available" +
               "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"unavailable\">Unavailable<BR>" +
