@@ -47,6 +47,10 @@ class Filler {
 
   protected long ONE_DAY_MILLIS = 24*60*60*1000;
 
+  // no two tasks can have arrival dates farther than this time apart and
+  // be on the same milvan
+  protected long MAX_GROUP_DAYS = 5;
+
   private static final String UNKNOWN = "UNKNOWN";
   private Sizer _sz;
 
@@ -124,14 +128,21 @@ class Filler {
 
         Preference endDatePref = t.getPreference(AspectType.END_TIME);
         ScoringFunction sf = endDatePref.getScoringFunction();
-        AspectScorePoint aspStart = sf.getDefinedRange().getRangeStartPoint();
-        Date taskEarlyDate = new Date((long) aspStart.getValue());
-        if (taskEarlyDate.getTime() > earliest) {
-          earliest = taskEarlyDate.getTime();
-        }
 
-        AspectScorePoint aspEnd  = sf.getDefinedRange().getRangeEndPoint();
-        AspectScorePoint aspBest = sf.getBest();
+        AspectScorePoint aspStart = sf.getDefinedRange().getRangeStartPoint();
+        AspectScorePoint aspBest  = sf.getBest();
+        AspectScorePoint aspEnd   = sf.getDefinedRange().getRangeEndPoint();
+
+        Date taskEarlyDate = new Date((long) aspStart.getValue());
+        Date taskBestDateMinusFiveDays = new Date((long) aspBest.getValue() - 
+						  MAX_GROUP_DAYS*ONE_DAY_MILLIS);
+
+	// no earlier than earliest arrival, but no more than 5 days before best
+	if (taskBestDateMinusFiveDays.getTime() < taskEarlyDate.getTime())
+	  taskBestDateMinusFiveDays = taskEarlyDate;
+        if (taskBestDateMinusFiveDays.getTime() > earliest) {
+          earliest = taskBestDateMinusFiveDays.getTime();
+        }
 
 	// restrict the window of time within which we'll aggregate tasks together
 	// to be 
@@ -148,12 +159,14 @@ class Filler {
 	// window, since the replanned transport task will have an arrival window of 
 	// now->best date, and now could potentially be too close to the best date.
 
-        Date taskBestDate = new Date((long) aspBest.getValue() + ONE_DAY_MILLIS);
         Date taskLateDate = new Date((long) aspEnd.getValue());
-	if (taskBestDate.getTime() > taskLateDate.getTime())
-	  taskBestDate = taskLateDate;
-        if (taskBestDate.getTime() < latest) {
-          latest = taskBestDate.getTime();
+        Date taskBestDatePlusOneDay = new Date((long) aspBest.getValue() + ONE_DAY_MILLIS);
+
+	// no later than late date, but no more than one day after best
+	if (taskBestDatePlusOneDay.getTime() > taskLateDate.getTime())
+	  taskBestDatePlusOneDay = taskLateDate;
+        if (taskBestDatePlusOneDay.getTime() < latest) {
+          latest = taskBestDatePlusOneDay.getTime();
         }
 
         amount += provided;
