@@ -462,8 +462,11 @@ public class UnitQuery extends SqlQuery {
       currentLegNode.setEarlyEnd(newEarlyEnd);
     if ((newLateEnd != null) && (newLateEnd.getTime() < currentLegNode.getLateEnd().getTime()))
       currentLegNode.setLateEnd(newLateEnd);
-    currentLegNode.setCarrierType(currentLegNode.getCarrierType() + ", " +
-				  newLeg.getCarrierType());
+
+    if (newLeg.getCarrierType().indexOf(currentLegNode.getCarrierType()) == -1)
+      currentLegNode.setCarrierType(currentLegNode.getCarrierType() + ", " +
+				    newLeg.getCarrierType());
+
     currentLegNode.setCarrierName(currentLegNode.getCarrierName() + ", " +
 				  newLeg.getCarrierName());
   }
