@@ -232,7 +232,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
     NewWorkflow wf  = ldmf.newWorkflow();
     wf.setParentTask(t);
-    ((NewTask)t).setWorkflow(wf);
+    ((NewTask)subtask).setWorkflow(wf);
     wf.addTask (subtask);
 
     Expansion   exp = ldmf.createExpansion(t.getPlan(), t, wf, null);
