@@ -30,7 +30,7 @@ MeiConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARE
 # Level2
 Level2BulkPOLRate=select optempo, gallons_per_day from level_2_fuel_rate where org_id = :org
 Level2AmmunitionRate=select optempo, tons_per_day from level_2_ammo_rate where org_id = :org
-
+UnitConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from UNIT_CONSUMPTION where ORG_ID = :org
 
 # AirForce
 #
