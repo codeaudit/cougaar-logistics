@@ -243,7 +243,7 @@
 		if="has.src">
 		
 		<!-- Need build.jar -->
-		<available property="have.buildjar" file="${lib}/build.jar"/>
+		<available property="have.buildjar" file="${clib}/build.jar"/>
 		
 		<!-- Check if defrunner is required -->
 		<uptodate property="defrunner.notRequired">
