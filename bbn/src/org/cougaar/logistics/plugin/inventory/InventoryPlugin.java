@@ -30,28 +30,22 @@ import org.cougaar.core.adaptivity.OMCRange;
 import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.OperatingMode;
 import org.cougaar.core.adaptivity.OperatingModeImpl;
-import org.cougaar.core.blackboard.CollectionSubscription;
+import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.service.DomainService;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.service.QuiescenceReportService;
-import org.cougaar.glm.ldm.asset.Inventory;
-import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
-import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.glm.ldm.asset.ScheduledContentPG;
-import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.core.service.*;
+import org.cougaar.glm.ldm.asset.*;
 import org.cougaar.glm.plugins.FileUtils;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.utils.TaskScheduler;
 import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
+import org.cougaar.logistics.servlet.CommStatus;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
@@ -63,15 +57,7 @@ import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 /** The InventoryPlugin is the Glue of inventory management.
  *  It handles all blackboard services for its modules,
@@ -238,6 +224,10 @@ public class InventoryPlugin extends ComponentPlugin
     return true;
   }
 
+  public BlackboardService getBBService() {
+    return getBlackboardService();
+  }
+
   public void publishAddExpansion(Expansion expansion) {
     PluginHelper.publishAddExpansion(getBlackboardService(), expansion);
   }
@@ -394,6 +384,10 @@ public class InventoryPlugin extends ComponentPlugin
       //touchedRemovedProjections boolean for use later.
       boolean touchedRemovedProjections = processRemoves();
       Collection addedSupply = supplyTaskScheduler.getAddedCollection();
+
+      if (! commStatusSub.isEmpty()) {
+        supplyExpander.determineCommStatus(commStatusSub, addedSupply);
+      }
       TimeSpan timeSpan = null;
       if (turnOnTaskSched) {
         timeSpan = supplyTaskScheduler.getCurrentTimeSpan();
@@ -586,6 +580,7 @@ public class InventoryPlugin extends ComponentPlugin
         touchedInventories.clear();
       }
     }
+    supplyExpander.checkCommStatusAlarms();
   }
 
   private boolean processRemoves() {
@@ -597,6 +592,10 @@ public class InventoryPlugin extends ComponentPlugin
       supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
     supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
     handleRemovedRefills(refillSubscription.getRemovedCollection());
+    Collection removedDispositions = dispositions.getRemovedCollection();
+    if (! removedDispositions.isEmpty()) {
+      supplyExpander.handleRemovedDispositions(removedDispositions);
+    }
     return touchedRemovedProjections;
   }
 
@@ -724,6 +723,11 @@ public class InventoryPlugin extends ComponentPlugin
    **/
   private IncrementalSubscription Level6OMSubscription;
 
+  /** Subscription for CommStatus object **/
+  private IncrementalSubscription commStatusSub;
+
+  /** Subscription for removed dispositions, need to reconcile with prediction tasks **/
+  private IncrementalSubscription dispositions;
 
   protected void setupSubscriptions() {
     if (!getBlackboardService().didRehydrate()) {
@@ -771,6 +775,8 @@ public class InventoryPlugin extends ComponentPlugin
     MIExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new MIExpansionPredicate(supplyType, taskUtils));
     MITopExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new MITopExpansionPredicate());
     DetReqInvExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
+    commStatusSub = (IncrementalSubscription) blackboard.subscribe(new CommStatusPredicate());
+    dispositions = (IncrementalSubscription) blackboard.subscribe(new DispositionsPredicate(supplyType, taskUtils));
 
     if (getAgentIdentifier() == null && logger.isErrorEnabled()) {
       logger.error("No agentIdentifier ... subscriptions need this info!!  In plugin: " + this);
@@ -1078,6 +1084,32 @@ public class InventoryPlugin extends ComponentPlugin
               //}
             }
           }
+        }
+      }
+      return false;
+    }
+  }
+
+  static class CommStatusPredicate implements UnaryPredicate {
+    public boolean execute(Object o) {
+      return o instanceof CommStatus;
+    }
+  }
+
+  static class DispositionsPredicate implements UnaryPredicate {
+    String type_;
+    TaskUtils taskUtils;
+
+    public DispositionsPredicate(String type, TaskUtils aTaskUtils) {
+      type_ = type;
+      taskUtils = aTaskUtils;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof Disposition) {
+        Task task = ((Disposition) o).getTask();
+        if (task.getVerb().equals(Constants.Verb.SUPPLY) && taskUtils.isDirectObjectOfType(task, type_)) {
+          return true;
         }
       }
       return false;
@@ -1908,6 +1940,24 @@ public class InventoryPlugin extends ComponentPlugin
     return supplyTaskScheduler;
   }
 
+  public Collection getCommStatusSubscription() {
+    return commStatusSub;
+  }
+  public Collection getSupplyTasks() {
+    return supplyTaskScheduler.getAllTasksCollection();
+  }
+
+  public Alarm addAlarm(long timeOut) {
+    Alarm alarm = new CougTimeAlarm(timeOut);
+    alarmService.addAlarm(alarm);
+    return alarm;
+  }
+
+  public Alarm addRealTimeAlarm(long timeOut) {
+    Alarm alarm = new CougTimeAlarm(timeOut);
+    alarmService.addRealTimeAlarm(alarm);
+    return alarm;
+  }
   //
   private void processDetReq(Collection addedDRs) {
     // with one oplan we should only have one DR for MI.
@@ -1980,10 +2030,6 @@ public class InventoryPlugin extends ComponentPlugin
     return logOPlan.getEndTime();
   }
 
-  protected ExpanderModule getExpanderModule() {
-    return new SupplyExpander(this);
-  }
-
   protected AllocatorModule getAllocatorModule() {
     return new ExternalAllocator(this, getRole(supplyType));
   }
@@ -2021,6 +2067,34 @@ public class InventoryPlugin extends ComponentPlugin
     return new RefillComparator(this);
   }
 
+  protected ExpanderModule getExpanderModule() {
+     ExpanderModule em;
+     String expanderClass = (String) pluginParams.get("EXPANDER");
+     if (expanderClass == null) {
+       em = new SupplyExpander(this);
+     } else {
+       if (expanderClass.indexOf('.') == -1) {
+         expanderClass = "org.cougaar.logistics.plugin.inventory." + expanderClass;
+       }
+       try {
+         Class[] paramTypes = {this.getClass()};
+         Object[] initArgs = {this};
+         Class cls = Class.forName(expanderClass);
+         Constructor constructor = cls.getConstructor(paramTypes);
+         em = (ExpanderModule) constructor.newInstance(initArgs);
+       } catch (Exception e) {
+         logger.error(e + " Unable to create Expander instance of " + expanderClass + ". " +
+                      "Loading default org.cougaar.logistics.plugin.inventory.SupplyExpander");
+         em = new SupplyExpander(this);
+       }
+     }
+    if (logger.isInfoEnabled()) {
+      expanderClass = em.getClass().toString();
+      logger.info("Using expander " + expanderClass);
+    }
+    return em;
+  }
+
   /**
    Self-Test
    **/
@@ -2044,6 +2118,45 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
+  private final class CougTimeAlarm implements Alarm {
+    private long expirationTime;
+    private boolean expired = false;
+
+    public CougTimeAlarm(long expiration) {
+      this.expirationTime = expiration;
+    }
+
+    public long getExpirationTime() {
+      return expirationTime;
+    }
+
+    public synchronized void expire() {
+      if (!expired) {
+        expired = true;
+        BlackboardService bb = getBlackboardService();
+        if (bb != null) {
+          bb.signalClientActivity();
+        } else {
+          if (logger != null && logger.isWarnEnabled()) {
+            logger.warn(
+                "Alarm to trigger at " + (new Date(expirationTime)) + " has expired," +
+                " but the blackboard service is null.  Plugin " +
+                " model state is " + getModelState());
+          }
+        }
+      }
+    }
+
+    public synchronized boolean hasExpired() {
+      return expired;
+    }
+
+    public synchronized boolean cancel() {
+      boolean was = expired;
+      expired = true;
+      return was;
+    }
+  }
   private void testBG() {
     Iterator inv_it = inventoryHash.values().iterator();
     Inventory inv;
