@@ -271,18 +271,16 @@ public class LogisticsInventoryBG implements PGDelegate {
     refillRequisitions.set(bucket, task);
   }
 
-  public int getLastRefillRequisitionBucket() {
-    int last = (refillRequisitions.size() - 1);
-    if (refillRequisitions.get(last) != null) {
-      return last;
-    } else {
-      Object validLast = null;
-      while (validLast == null) {
-        last = last -1;
-        validLast = refillRequisitions.get(last);
+  public int getLastWithdrawBucket() {
+    Iterator list = customerHash.values().iterator();
+    long lastSeen = 0;
+    while (list.hasNext()) {
+      long time = ((Long)list.next()).longValue();
+      if (lastSeen < time) {
+	lastSeen = time;
       }
-      return last;
     }
+    return convertTimeToBucket(lastSeen);
   }
 
   public void addRefillProjection(Task task) {
