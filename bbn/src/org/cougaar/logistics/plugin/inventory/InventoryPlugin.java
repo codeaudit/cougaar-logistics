@@ -384,16 +384,16 @@ public class InventoryPlugin extends ComponentPlugin
 //           logger.warn("ORG RELATIONSHIPS CHANGED");
           Collection unallocRefill = null;
           if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-            unallocRefill = getTaskUtils().getUnallocatedTasks(refillSubscription, 
-                                                               Constants.Verb.Supply);
+            unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription, 
+										       Constants.Verb.Supply));
             if (!unallocRefill.isEmpty()){
               logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
               externalAllocator.allocateRefillTasks(unallocRefill);
             }
           }
           if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-            unallocRefill = getTaskUtils().getUnallocatedTasks(refillSubscription,
-                                                               Constants.Verb.ProjectSupply);
+            unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription,
+										       Constants.Verb.ProjectSupply));
             if (!unallocRefill.isEmpty()) {
               logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
               externalAllocator.allocateRefillTasks(unallocRefill);
