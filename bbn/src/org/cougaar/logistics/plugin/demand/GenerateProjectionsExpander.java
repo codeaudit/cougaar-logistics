@@ -105,16 +105,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Asset asset = (Asset) iterator.next();
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
       if (publishedTasks.isEmpty()) {
-        logger.debug("No project supply tasks were found for parent task " + gpTask.toString() +
-                     " and consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
         continue;
       }
       assetList.clear();
       assetList.add(asset);
-      logger.debug("Handling consumed item "+dfPlugin.getAssetUtils().getAssetIdentifier(asset));
+      logger.debug("Handling consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
       Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
-      Schedule newTasksSched =  newObjectSchedule(newTasks);
+      Schedule newTasksSched = newObjectSchedule(newTasks);
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
       addToAndPublishExpansion(gpTask, diffedTasks);
     }
@@ -307,7 +305,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
                                           long end, Rate rate) {
-    logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
+    //logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
@@ -470,7 +468,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   protected Collection diffProjections(Schedule published_schedule, Schedule newtask_schedule) {
     // Check for an empty schedule
     if (newtask_schedule.isEmpty()) {
-      logger.error("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
+      // Rescind any tasks that were not accounted for
+      logger.debug("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
+      Enumeration e = published_schedule.getAllScheduleElements();
+      while (e.hasMoreElements()) {
+        Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
+        logger.debug(printProjection("********** Removing task --> \n", task));
+        publishRemoveFromExpansion(task);
+      }
       return Collections.EMPTY_LIST;
     }
 
@@ -558,11 +563,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
-        logger.debug("Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+        logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
                      " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
         published_task = changeTask(published_task, new_task);
         if (published_task != null) {
-          logger.debug(printProjection("Replaced task with ---> :", published_task));
+          logger.debug(printProjection("********** Replaced task with ---> \n", published_task));
           dfPlugin.publishChange(published_task);
         }
       }
@@ -575,14 +580,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Enumeration e = published_schedule.getAllScheduleElements();
     while (e.hasMoreElements()) {
       Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
-      logger.debug(printProjection("remove", task));
+      logger.debug(printProjection("********** Removing task --> \n", task));
       publishRemoveFromExpansion(task);
     }
-    for (Iterator iterator = add_tasks.iterator(); iterator.hasNext();) {
-      Task task = (Task) iterator.next();
-      logger.debug(printProjection("add", task));
-    }
-
     return add_tasks;
   }
 
