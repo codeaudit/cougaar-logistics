@@ -61,8 +61,8 @@ OrgActivityQuery.mysql = \
 select DISTINCT ATTRIBUTE_NAME, \
     ORG_ID, \
     ATTRIBUTE_VALUE, \
-    START_CDAY, \
-    END_CDAY, \
+    START_HOUR, \
+    END_HOUR, \
     STAGE_NUM \
  FROM oplan_agent_attr ATTR, \
       oplan OP \
