@@ -429,13 +429,15 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
       }
 
       String itemID = 
-	itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
+	//	itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
+	getUniqueID (itemProto);
+
       Asset truckSizedAsset = 
 	assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", itemID);
 
-      NewLowFidelityAssetUIDPG lowFiPG = 
-	(NewLowFidelityAssetUIDPG)ldmf.createPropertyGroup(LowFidelityAssetUIDPG.class);
-      lowFiPG.setUID (itemProto.getUID().toString());
+      NewLowFidelityAssetPG lowFiPG = 
+	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
+      lowFiPG.setOriginalAsset (itemProto);
       attachPG(truckSizedAsset, lowFiPG); // now subobject has pointer back to parent
 
       adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, maxOnTruck);
@@ -461,15 +463,15 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     if (totalContrib > 0.00001 || originalWasTiny) {
       Asset truckSizedAsset;
       if (mustExpand) {
-	String itemID = 
-	  itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
+	String itemID = getUniqueID (itemProto);
+	// itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
 
 	truckSizedAsset = 
 	  assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", itemID);
 
-	NewLowFidelityAssetUIDPG lowFiPG = 
-	  (NewLowFidelityAssetUIDPG)ldmf.createPropertyGroup(LowFidelityAssetUIDPG.class);
-	lowFiPG.setUID (itemProto.getUID().toString());
+	NewLowFidelityAssetPG lowFiPG = 
+	  (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
+	lowFiPG.setOriginalAsset (itemProto);
 	attachPG(truckSizedAsset, lowFiPG); // now subobject has pointer back to parent
 
 	adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, totalContrib);
@@ -537,7 +539,8 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
   int uniqueID = 0;
 
   protected String getUniqueID (Asset boxProto) {
-    return boxProto.getTypeIdentificationPG().getTypeIdentification() + "_" + uniqueID++;
+    return boxProto.getTypeIdentificationPG().getTypeIdentification() + "_" + 
+      ((PluginBindingSite)getBindingSite()).getAgentIdentifier() + "_" + uniqueID++;
   }
   
   protected void adjustDimensions (GLMAsset asset, PhysicalPG originalPhysicalPG, double tons) {
