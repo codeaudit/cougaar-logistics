@@ -65,7 +65,7 @@ public class RequisitionsChartDataModel
     protected String reqARScheduleName;
 
     public static final String REQUISITION_SERIES_LABEL="Requisition";
-    public static final String REQUISITION_ALLOCATION_SERIES_LABEL="Requisition Allocation";
+    public static final String REQUISITION_ALLOCATION_SERIES_LABEL="Requisition Response";
     public static final String REQUISITION_LEGEND="";
 
     public RequisitionsChartDataModel(String aReqScheduleName,

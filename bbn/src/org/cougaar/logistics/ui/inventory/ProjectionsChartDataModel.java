@@ -79,7 +79,7 @@ public class ProjectionsChartDataModel
     protected double projYValues[][];
 
     public static final String PROJECTION_SERIES_LABEL="Projection";
-    public static final String PROJECTION_ALLOCATION_SERIES_LABEL="Projection Allocation";
+    public static final String PROJECTION_ALLOCATION_SERIES_LABEL="Projection Response";
     public static final String PROJECTION_LEGEND="";
 
     public ProjectionsChartDataModel(String aProjScheduleName,
