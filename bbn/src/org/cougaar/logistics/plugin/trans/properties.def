@@ -32,9 +32,18 @@
 package=org.cougaar.logistics.plugin.trans
 skeletonBase=org.cougaar.planning.ldm.asset.AssetSkeletonBase
 hasDataQuality=false
+import= org.cougaar.glm.ldm.asset.*
 
 [LowFidelityAssetPG]
 doc=Carries copy of low fidelity asset, so it can be associated with other low-fi assets that are part of the same glob
-slots=Asset originalAsset
+slots=Asset originalAsset, Collection<CargoCatCodeDimensionPG> CCCDims
 originalAsset.doc=the original low-fidelity asset
+CCCDims.doc=the list of dimensions per per cargo category code in the aggregate
+
+[CargoCatCodeDimensionPG]
+doc=Has dimension info
+slots=PhysicalPG dimensions, String cargoCatCode
+dimensions.doc=dimensions for this cargo cat code
+cargoCatCode.doc=cargo cat code for this chunk of level-2 aggregate.  May only have one letter set if multiple assets have \
+different cargo cat codes but same transportation category (e.g. outsize).
 
