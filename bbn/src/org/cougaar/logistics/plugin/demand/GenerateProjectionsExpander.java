@@ -80,6 +80,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     consumer = convertAggregateToAsset(consumer);
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
 
+    dfPlugin.updateStartAndEndTimes();
+
     PlanElement pe = gpTask.getPlanElement();
     if ((pe != null) && !(pe instanceof Disposition)) {
       if (pe instanceof Expansion) {
