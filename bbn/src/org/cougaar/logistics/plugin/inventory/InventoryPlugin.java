@@ -596,8 +596,6 @@ public class InventoryPlugin extends ComponentPlugin
     boolean touchedRemovedProjections =
       supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
     supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
-    // The following is here because the above lies about what it does
-    supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
     handleRemovedRefills(refillSubscription.getRemovedCollection());
     return touchedRemovedProjections;
   }
