@@ -85,7 +85,7 @@
 		<RangeValue min="-1" max="-1">
 			 <RuleParam name="Condition">
           <KeySet value="">
-	      <KeyValue key="OrgActivity" value="Employment_CSS"/>
+	      <KeyValue key="OrgActivity" value="Employment-CSS"/>
 	      <KeyValue key="OPTEMPO" value="HIGH"/>
     	    </KeySet>
   	 </RuleParam>
@@ -211,7 +211,7 @@
 		<RangeValue min="-1" max="-1">
 			 <RuleParam name="Condition">
           <KeySet value="">
-	      <KeyValue key="OrgActivity" value="Deployment_prepo"/>
+	      <KeyValue key="OrgActivity" value="Deployment-Prepo"/>
     	    </KeySet>
   	 </RuleParam>
 </RangeValue>
