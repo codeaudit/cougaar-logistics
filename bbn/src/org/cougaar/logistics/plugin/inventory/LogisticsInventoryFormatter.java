@@ -109,7 +109,12 @@ public class LogisticsInventoryFormatter {
     protected void logTask(Task aTask,boolean expandTimestamp) {
 	if(aTask == null){ return; }
 	String taskStr = buildTaskPrefixString(aTask);
-	taskStr = taskStr + getDateString(TaskUtils.getStartTime(aTask),expandTimestamp) + ",";
+	if(TaskUtils.getPreferenceBest(aTask, AspectType.START_TIME) == null) {
+	    taskStr+= ",,";
+	}
+	else {
+	    taskStr = taskStr + getDateString(TaskUtils.getStartTime(aTask),expandTimestamp) + ",";
+	}
 	taskStr = taskStr + getDateString(TaskUtils.getEndTime(aTask),expandTimestamp) + ",";
 	//This is qty for supply, daily rate for projection
 	taskStr = taskStr + taskUtils.getDailyQuantity(aTask);
