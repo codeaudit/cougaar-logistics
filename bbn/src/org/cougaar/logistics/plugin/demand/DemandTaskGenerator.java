@@ -403,6 +403,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     }
     long theBadPast = bucketStart - 1;
     long latestTime = dgPlugin.getLogOPlanEndTime();
+    long firstLateTime = bestTime + dgPlugin.getPeriod();
 
     double bucketsBetween = ((latestTime - bestTime) / dgPlugin.getPeriod()) - 1;
 //Use .0033 as a slope for now
@@ -418,14 +419,20 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     AspectScorePoint best = new AspectScorePoint
         (AspectValue.newAspectValue(aspectType, bestTime), 0.0);
     AspectScorePoint first_late = new AspectScorePoint
-        (AspectValue.newAspectValue(aspectType, bestTime + dgPlugin.getPeriod()), alpha);
+        (AspectValue.newAspectValue(aspectType, firstLateTime), alpha);
     AspectScorePoint latest = new AspectScorePoint
         (AspectValue.newAspectValue(aspectType, latestTime), alpha + lateScore);
 
     points.addElement(badest);
     points.addElement(earliest);
     points.addElement(best);
-    points.addElement(first_late);
+    if(firstLateTime < latestTime) {
+	points.addElement(first_late);
+    } else if (logger.isInfoEnabled()) {
+      // Note that this case can happen when near the end of stage 4 in the UAas its on 
+	//last day of demand before the new org activity has been issued
+      logger.info(dgPlugin.getOrgName() + ".createTimePref skipping firstLate point: latest <= firstLate! latest: " + new Date(latestTime) + ", firstLate: " + new Date(firstLateTime) + ((bestTime==latestTime && aspectType == AspectType.END_TIME) ? ". A Task EndPref where bestTime==OplanEnd." : ". AspectType: " + aspectType));
+    }
     points.addElement(latest);
 
     ScoringFunction score = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
