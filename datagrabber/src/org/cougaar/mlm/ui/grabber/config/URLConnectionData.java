@@ -29,7 +29,7 @@ import org.xml.sax.Attributes;
 
 /**
  * Produces URL necessary for a given PSP
- * @author Benjamin Lubin; last modified by: $Author: ahelsing $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2//01
  **/
@@ -66,10 +66,11 @@ public class URLConnectionData implements XMLable, DeXMLable{
   protected boolean usePSPs=false; // use servlets by default
   protected long timeout=DEFAULT_TIMEOUT; // two minutes
 
-  //Constructors:
-  ///////////////
-
   public URLConnectionData(){}
+
+  public URLConnectionData(String host,  int port, String clusterName, String pspPackage, String pspID, boolean transferByXML, boolean usePSPs, long timeout){
+      this("http", host, port, clusterName, pspPackage, pspID, transferByXML, usePSPs, timeout);
+  }
 
   public URLConnectionData(String protocol,
 			   String host,
@@ -81,24 +82,6 @@ public class URLConnectionData implements XMLable, DeXMLable{
 			   boolean usePSPs,
 			   long timeout){    
     this.protocol=protocol;
-    this.host=host;
-    this.port=port;
-    this.clusterName=clusterName;
-    this.pspPackage=pspPackage;
-    this.pspID=pspID;
-    this.transferByXML=transferByXML;
-    this.usePSPs=usePSPs;
-    this.timeout=timeout;
-  }
-
-  public URLConnectionData(String host,
-			   int port,
-			   String clusterName,
-			   String pspPackage,
-			   String pspID,
-			   boolean transferByXML,
-			   boolean usePSPs,
-			   long timeout){    
     this.host=host;
     this.port=port;
     this.clusterName=clusterName;
