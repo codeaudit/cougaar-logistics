@@ -40,6 +40,8 @@ import org.cougaar.glm.ldm.asset.*;
 
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.util.AssetUtil;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetUIDPG;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetUIDPGImpl;
 
 import org.cougaar.mlm.ui.psp.transit.data.instances.*;
 import org.cougaar.mlm.ui.psp.transit.data.legs.*;
@@ -660,6 +662,18 @@ typical_case:
 
     // get the cargo id
     String instId = instAsset.getUID().toString();
+
+
+    LowFidelityAssetUIDPG lowFiUID = (LowFidelityAssetUIDPG)
+      instAsset.resolvePG (LowFidelityAssetUIDPG.class);
+
+    if (lowFiUID == null) {
+      System.out.println ("registerCargoInstance - no low fi pg for asset " + instId);
+    }
+    else {
+      System.out.println ("registerCargoInstance - found low fi pg for asset " + instId);
+      instId = lowFiUID.getUID().toString();
+    }
 
     // check if cargo instance is registered
     if (toReg.cargoInstances.getInstance(instId) == null) {
