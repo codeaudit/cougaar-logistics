@@ -88,11 +88,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     return true;
   }
-  public void handleTask(Task t) {
-    super.handleTask(t);
-    //    if (t.getWorkflow() != null)
-    //      warn ((t.getWorkflow ().isPropagatingToSubtasks ()) ? " workflow is propagating " : "not prop");
-  }
 
   int total = 0;
 
@@ -110,29 +105,75 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Asset supplyAsset = parentTask.getDirectObject();
 
     Preference pref = prefHelper.getPrefWithAspectType (parentTask, AlpineAspectType.DEMANDRATE);
-    double rate = prefHelper.getPreferenceBestValue (pref)*SECS_PER_DAY; // base number is in quantity per second!
+    double ratePerSec = prefHelper.getPreferenceBestValue (pref); // base number is in quantity per second!
+    double ratePerDay = ratePerSec*SECS_PER_DAY; 
 
     Date readyAt = prefHelper.getReadyAt   (parentTask);
     Date early   = getEarlyDate (parentTask);
     Date best    = prefHelper.getBestDate  (parentTask);
     Date late    = getLateDate  (parentTask);
 
+    if (early.getTime () < readyAt.getTime ())
+      early = readyAt;
+    if (best.getTime () < readyAt.getTime ())
+      best = readyAt;
+
     long window = best.getTime () - readyAt.getTime();
+    long originalWindowInDays = window/MILLIS_PER_DAY;
     long numSubtasks = window/(CHUNK_DAYS*MILLIS_PER_DAY);
     if (window - (numSubtasks * CHUNK_DAYS*MILLIS_PER_DAY) != 0)
       numSubtasks++;
 
-    if (isDebugEnabled ())
-      debug (getName () + ".getSubtasks - task " + parentTask.getUID () + 
+    if (isInfoEnabled ())
+      info (getName () + ".getSubtasks - task " + parentTask.getUID () + 
 	     " from " + readyAt + 
 	     " to " + best + 
 	     " will produce " + numSubtasks + " subtasks.");
 
     // create one subtask for every chunk set of days, with an asset that is the total
-    // delivered over the period = days*rate
+    // delivered over the period = days*ratePerDay
+    double daysSoFar = 0;
+    int totalQuantity = 0;
+    int targetQuantity = (int) (((double) (window/1000l))*ratePerSec);
+    Date lastBestDate = readyAt;
+
+    if (isInfoEnabled ())
+      info (getName () + ".getSubtasks - task " + parentTask.getUID () + " target quantity " + targetQuantity + 
+	    " windowInSec " + window/1000l + " rate/sec " + ratePerSec);
 
     for (int i = 0; i < (int) numSubtasks; i++) {
-      Asset deliveredAsset = createDeliveredAsset (parentTask, supplyAsset, rate, CHUNK_DAYS);
+      boolean onLastTask = (window/MILLIS_PER_DAY) < CHUNK_DAYS;
+      double daysToChunk = (onLastTask) ? window/MILLIS_PER_DAY : CHUNK_DAYS;
+
+      if (isInfoEnabled () && onLastTask)
+	info ("on last task - days " + daysToChunk + " since " + window/MILLIS_PER_DAY + " < " + CHUNK_DAYS);
+
+      daysSoFar += daysToChunk;
+      window    -= ((long)daysToChunk)*MILLIS_PER_DAY;
+      int quantity = (int) (daysToChunk * ratePerDay);
+      if (onLastTask && ((totalQuantity + quantity) != targetQuantity)) {
+	if (isInfoEnabled ())
+	  info (" task " + parentTask.getUID () + 
+		" adjusting quantity from " +quantity + 
+		" to " + (targetQuantity - totalQuantity) + 
+		" total is " + totalQuantity);
+	quantity = targetQuantity - totalQuantity;
+      }
+      else if (isInfoEnabled ())
+	info (".getSubtasks - task " + parentTask.getUID () + " quantity is " + quantity + 
+	      " chunk days " + daysToChunk+ " rate " + ratePerDay);
+      if (quantity < 1) {
+	error (".getSubtasks - task " + parentTask.getUID () + 
+	       " gets a quantity of zero, ratePerDay was " + ratePerDay + 
+	       " chunk days " +daysToChunk);
+      }
+
+      AggregateAsset deliveredAsset = createDeliveredAsset (parentTask, supplyAsset, quantity);
+      totalQuantity += deliveredAsset.getQuantity ();
+
+      if (deliveredAsset.getQuantity () != quantity) {
+	error (".getSubtasks - task " + parentTask.getUID () + " quantities don't match");
+      }
 
       // set item id pg to show it's a reservation, and not a normal task's asset
 
@@ -156,9 +197,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       deliveredAsset.setItemIdentificationPG (newItemIDPG);
     
       Task subTask = makeTask (parentTask, deliveredAsset);
-      long bestTime = early.getTime() + ((i+1)*CHUNK_DAYS*MILLIS_PER_DAY);
-      if (bestTime > best.getTime())
+      long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
+      if (bestTime > best.getTime()) {
+	if (isInfoEnabled())
+	  info (getName () + 
+		".getSubtasks - had to correct bestTime, was " + new Date (bestTime) + 
+		" now " + best);
 	bestTime = best.getTime();
+      }
 
       if (isDebugEnabled ())
 	debug (getName () + ".getSubtasks - making task " + subTask.getUID() + 
@@ -173,8 +219,18 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
       prepHelper.removePrepNamed (subTask, Constants.Preposition.REFILL);
-
+      prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
+      lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
+    }
+
+    // post condition
+    if (totalQuantity != targetQuantity) {
+      if (isWarnEnabled ())
+	warn (getName () + " total quantity " + totalQuantity + 
+	      " != original total " + targetQuantity +
+	      " = window " + originalWindowInDays + 
+	      " * ratePerDay " + ratePerDay);
     }
 
     return childTasks;
@@ -206,7 +262,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   /** create aggregate asset aggregating the direct object's prototype **/
-  protected Asset createDeliveredAsset (Task originalTask, Asset originalAsset, double rate, long chunkDays) {
+  protected AggregateAsset createDeliveredAsset (Task originalTask, Asset originalAsset, int quantity) {
     Asset prototype = originalAsset.getPrototype ();
 
     if (prototype == null) {
@@ -245,16 +301,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       }
     }
 
-    int quantity = (int) (((double) chunkDays) * rate);
-
-    if (quantity < 1) {
-      error ("createDeliveredAsset - task " + originalTask.getUID () + 
-	     " gets a quantity of zero, rate was " + rate + 
-	     " chunk days " +chunkDays);
-    }
-
-    AggregateAsset deliveredAsset = (AggregateAsset)
-      ldmf.createAggregate(prototype, (int) ((double) chunkDays * rate));
+    AggregateAsset deliveredAsset = (AggregateAsset) ldmf.createAggregate(prototype, quantity);
 
     return deliveredAsset;
   }
