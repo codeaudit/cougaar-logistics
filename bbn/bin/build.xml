@@ -516,8 +516,6 @@ ARCHIVE_TIME=${build.time}
       <fileset dir="${configs}" />
     </copy>
 		<mkdir dir="${zipbase}/${module}/lib"/>
-		<jar jarfile="${zipbase}/${module}/lib/albbn_config.jar" basedir="configs_staging/"/>
-		<signjar jar="${zipbase}/${module}/lib/albbn_config.jar" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<antcall target="zip-copy-doc"/>
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
