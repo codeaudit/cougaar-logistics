@@ -37,12 +37,25 @@
 		<jar jarfile="${jar}" baseDir="${build}"/>
 	</target>
 
-	<target name="create_cougaar_overlay">
+  <target name="create-overlay-manifest">
+    <tstamp>
+      <format property="build.time" pattern="MM/dd/yyyy hh:mm aa"/>
+    </tstamp>
+    <mkdir dir="Manifest"/>
+    <echo file="Manifest/${ant.project.name}.txt" append="no">NAME=${ant.project.name}
+ARCHIVE_TIME=${build.time}
+</echo>
+    </target>
+
+	<target name="create_cougaar_overlay" depends="create-overlay-manifest">
 		<mkdir dir="staging/lib"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<move file="${jar}" todir="staging/lib"/>
+		<move todir="staging/Manifest">
+			<fileset dir="Manifest"/>
+		</move>
 		<zip zipfile="Logistics_datagrabber_overlay.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>

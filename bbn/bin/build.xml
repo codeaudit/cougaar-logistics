@@ -492,10 +492,18 @@
 
 
   <!-- Create the Cougaar overlay -->
-	<!-- <property environment="env"/> -->
-	<!-- <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/> -->
 
-	<target name="create_cougaar_overlay" depends="set-zip-dirs">
+  <target name="create-overlay-manifest">
+    <tstamp>
+      <format property="build.time" pattern="MM/dd/yyyy hh:mm aa"/>
+    </tstamp>
+    <mkdir dir="Manifest"/>
+    <echo file="Manifest/${ant.project.name}.txt" append="no">NAME=${ant.project.name}
+ARCHIVE_TIME=${build.time}
+</echo>
+    </target>
+
+	<target name="create_cougaar_overlay" depends="set-zip-dirs,create-overlay-manifest">
 		<delete dir="${zipbase}"/>
 		<antcall target="clean-docs"/>
 		<antcall target="compile"/>
@@ -509,6 +517,9 @@
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
 		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
+      <move todir="${zipbase}/${module}/Manifest"> 
+        <fileset dir="Manifest"/>
+      </move>
 		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<zip zipfile="Logistics_bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
