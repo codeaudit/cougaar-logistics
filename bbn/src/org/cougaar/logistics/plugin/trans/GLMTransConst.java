@@ -42,6 +42,7 @@ public class GLMTransConst {
   public static final String NULL = "NO TRANSPORT";
 
   public static final String LOW_FIDELITY = "LOW_FIDELITY";
+  public static final String LOW_FIDELITY_PROTOTYPE = "Level2Prototype";
   public static final String PREREQ_TASK = "PREREQ_TASK";
 
   /** GLOBAL SEA **/

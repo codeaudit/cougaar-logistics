@@ -220,6 +220,15 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     double itemWeight = 0.01;
     try {
       itemWeight = itemAsset.getPackagePG().getPackMass ().getTons();
+      if (itemWeight < 0.00001) {
+	try {
+	  itemWeight = itemAsset.getPhysicalPG().getMass ().getTons();
+	} catch (Exception ee) {
+	  if (!itemAsset.hasPersonPG ())
+	    warn (".getItemContribution - WARNING - unable to determine " + 
+		  itemAsset.getUID () + "'s weight.");
+	}
+      }
     } catch (Exception e) {
       try {
 	itemWeight = itemAsset.getPhysicalPG().getMass ().getTons();
@@ -428,12 +437,10 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 	       " m " + itemProto.getPhysicalPG().getMass   ().getTons() + " tons, ");
       }
 
-      String itemID = 
-	//	itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
-	getUniqueID (itemProto);
+      String itemID = getUniqueID (itemProto);
 
       Asset truckSizedAsset = 
-	assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", itemID);
+	assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
 
       NewLowFidelityAssetPG lowFiPG = 
 	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
@@ -464,10 +471,9 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
       Asset truckSizedAsset;
       if (mustExpand) {
 	String itemID = getUniqueID (itemProto);
-	// itemProto.getItemIdentificationPG().getItemIdentification() + "_subobject_" + idSuffix++;
 
 	truckSizedAsset = 
-	  assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", itemID);
+	  assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
 
 	NewLowFidelityAssetPG lowFiPG = 
 	  (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
@@ -492,7 +498,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
   }
 
   void test () {
-    GLMAsset original = (GLMAsset) ldmf.createInstance ("LowFidelityPrototype", "low_original");
+    GLMAsset original = (GLMAsset) ldmf.createInstance (GLMTransConst.LOW_FIDELITY_PROTOTYPE, "low_original");
 
     debug (".test original " + original.getUID () + " - " + original + 
 	   " mass before " + original.getPhysicalPG().getMass().getKilograms());

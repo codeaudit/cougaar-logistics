@@ -251,7 +251,7 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
     while (totalContrib > maxCap) {  
       Task newtask;
       Asset truckSizedAsset = 
-	assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", getUniqueID(itemProto));
+	assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, getUniqueID(itemProto));
       adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, maxOnTruck);
 
       subtasks.add (newtask = makeTask (task, truckSizedAsset, unitPG));
@@ -271,7 +271,7 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
       Asset truckSizedAsset;
       if (mustExpand) {
 	truckSizedAsset = 
-	  assetHelper.createInstance (ldmProtoCache, "LowFidelityPrototype", getUniqueID(itemProto));
+	  assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, getUniqueID(itemProto));
 	adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, totalContrib);
       }
       else
@@ -465,19 +465,22 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
     if (maxcontain[0] < maxAreaCapacity && maxcontain[0] > 0 && 
 	(maxcontain[0] > 0)) {
       maxAreaCapacity   = maxcontain[0];
-      warn ("Max Area now " + maxAreaCapacity);
+      if (isInfoEnabled())
+	info ("Max Area now " + maxAreaCapacity);
     }
 
     if (maxcontain[1] < maxVolumeCapacity && maxcontain[1] > 0 &&
 	(maxcontain[1] > 0)) {
       maxVolumeCapacity = maxcontain[1];
-      warn ("Max Volume now " + maxVolumeCapacity);
+      if (isInfoEnabled())
+	info ("Max Volume now " + maxVolumeCapacity);
     }
 
     if (maxcontain[2] < maxContainerCapacity && maxcontain[2] > 0 &&
 	(maxcontain[2] > 0)) {
       maxContainerCapacity = maxcontain[2];
-      warn ("Max container now " + maxContainerCapacity);
+      if (isInfoEnabled())
+	info ("Max container now " + maxContainerCapacity);
     }
   }
 

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -85,9 +85,23 @@ import org.cougaar.glm.ldm.asset.TransportationRoute;
  * @see UTILExpanderPluginAdapter
  */
 public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter implements BlackboardPlugin {
-  public static final Integer LOW_FIDELITY  = new Integer(0);
-  public static final Integer HIGH_FIDELITY = new Integer(1);
-  public static final String  FIDELITY_KNOB = "FidelityKnob";
+  /** VTH operating modes */
+  protected OperatingMode level2Horizon, level6Horizon;
+
+  public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
+  public final Integer LEVEL_2_MAX = new Integer(80);
+  public final Integer LEVEL_6_MIN = new Integer(20);
+  public final Integer LEVEL_6_MAX = new Integer(180);
+  public final int LEVEL_6_MODE = 0;
+  public final int LEVEL_2_MODE = 1;
+  /** currently not supported **/
+  public final int DONT_PROCESS_MODE = 2;
+  public final long MILLIS_PER_DAY = 24*60*60*1000; 
+
+  public final String  LEVEL_2_TIME_HORIZON = "Level2TimeHorizon";
+  public final Integer LEVEL_2_TIME_HORIZON_DEFAULT = LEVEL_2_MAX;
+  public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
+  public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
 
   public void localSetup() {     
     super.localSetup();
@@ -107,18 +121,28 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     portLocator.setFactory (ldmf); // tell route finder the ldm factory to use
   }
 
-   public void setupFilters () {
-     super.setupFilters ();
-     portLocator = new PortLocatorImpl (this, logger);
-   }
+  /** create the port locator */
+  public void setupFilters () {
+    super.setupFilters ();
+    portLocator = new PortLocatorImpl (this, logger);
+  }
 
-  protected OperatingMode mode;
-
-  /** create and publish Fidelity Knob Operating Mode */
+  /** create and publish level-2 and 6 VTH Operating Modes */
   protected void setupOperatingModes () {
-    OMCRange range = new IntRange (LOW_FIDELITY.intValue(), HIGH_FIDELITY.intValue());
-    OMCRangeList rangeList = new OMCRangeList (range);
-    publishAdd (mode = new OperatingModeImpl (FIDELITY_KNOB, rangeList, HIGH_FIDELITY));
+    OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
+    OMCRangeList rangeList = new OMCRangeList (level2Range);
+    publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
+						       LEVEL_2_TIME_HORIZON_DEFAULT));
+
+    OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
+    rangeList = new OMCRangeList (level6Range);
+    publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
+						       LEVEL_6_TIME_HORIZON_DEFAULT));
+
+    if(logger.isInfoEnabled())
+      logger.info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
+		   "level 2 time horizon is " + level2Horizon + 
+		   " and level 6 is " + level6Horizon);
   }
   
   protected static class IntRange extends OMCRange {
@@ -128,12 +152,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   /** 
    * Implemented for UTILGenericListener interface
    *
-   * Look for tasks that
-   * 1) Have TRANSPORT as their verb
+   * Look for tasks that have TRANSPORT as their verb
    *
    * @param t Task to check for interest
    * @return boolean true if task is interesting
-   * @see org.cougaar.lib.callback.UTILGenericListener
    */
 
   public boolean interestingTask(Task t) {
@@ -141,14 +163,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     if (isDebugEnabled() &&
 	hasTransportVerb) {
       debug (getName () + 
-	    " : interested in expandable task " + 
-	    t + " with direct obj " + 
-	    t.getDirectObject ());
+	     " : interested in expandable task " + 
+	     t + " with direct obj " + 
+	     t.getDirectObject ());
     }
     if (isDebugEnabled() && !hasTransportVerb) 
       debug(getName () + 
-	   " : Ignoring task " + t.getUID () + 
-	   " with verb " + t.getVerb());
+	    " : Ignoring task " + t.getUID () + 
+	    " with verb " + t.getVerb());
 
     return hasTransportVerb;
   }
@@ -217,15 +239,35 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   }
 
   /**
+   * <pre>
    * Implemented for UTILExpanderPlugin interface
    *
    * Break up tasks into constituent parts.
+   *
+   * There are three possible paths a task can take:
+   * 
+   * 1) If the task is already a LEVEL 2 task, attaches a lowFiAssetPG to the asset and 
+   * passes it through.
+   * 2) If the task's dates and the operating mode VTH determine it should be handled
+   * in level-2 mode, create a level-2 task from the original
+   * 3) If the task should be handled in level-6, expand it's d.o. as usual
+   * 4) TBD - perhaps, in the future, we'll ignore tasks that are far into the future
+   * until the current time advances far enough.  This would require the buffering thread
+   * to wake up periodically, however, using the alarm service.  Hmmm...
+   *
+   * There is also the possibility of rescinding level 2 and replanning as level 6.  
+   * That would be real work though.
+   * </pre>
+   * @return Vector of subtasks of parentTask
    */
   public Vector getSubtasks(Task parentTask) {
     Vector childTasks = new Vector ();
 
-    if (isDebugEnabled()) 
-      debug (".getSubtasks - mode is " + mode);
+    if (isDebugEnabled()) {
+      int mode = getMode (parentTask);
+      debug (".getSubtasks - mode for task " + parentTask.getUID () + " is " + 
+	     ((mode==LEVEL_6_MODE) ? "LEVEL_6" : ((mode==LEVEL_2_MODE) ? "LEVEL_2" : "DONT_PROCESS")));
+    }
 
     // if the incoming task is already a low fidelity task, we don't need to do anything to it
     if (prepHelper.hasPrepNamed(parentTask, GLMTransConst.LOW_FIDELITY)) {
@@ -241,9 +283,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	       " by attaching low fi pg to it's d.o. - " + lowFiAsset);
       childTasks.addElement (subTask);
     }
-    else if (mode.getValue ().equals(LOW_FIDELITY) && 
-	     !isPersonTask(parentTask) &&
-	     (parentTask.getDirectObject() instanceof AssetGroup)) {
+    else if ((getMode(parentTask) == LEVEL_2_MODE) && 
+	     ((parentTask.getDirectObject() instanceof AssetGroup)     || // it doesn't make sense to aggregate
+	      (parentTask.getDirectObject() instanceof AggregateAsset) || // an individual item asset
+	      !isPersonTask(parentTask))) {
       if (isDebugEnabled()) 
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in LOW fidelity mode. d.o. is " + parentTask.getDirectObject());
@@ -266,12 +309,33 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return childTasks;
   }
 
+  /** 
+   * Decide the mode the task should be processed in, depending on when it asks to be done,
+   * and comparing that time against the current time and the level 2 and 6 time horizons
+   * 
+   * @return either LEVEL_6_MODE, LEVEL_2_MODE, or DONT_PROCESS_MODE (currently not supported)
+   */
+  protected int getMode (Task parentTask) {
+    long bestTime = prefHelper.getBestDate(parentTask).getTime();
+    long currentTime = getAlarmService().currentTimeMillis();
+    long level6Day = ((Integer)level6Horizon.getValue()).longValue();
+    long level2Day = ((Integer)level2Horizon.getValue()).longValue();
+    if (bestTime < currentTime + level6Day*MILLIS_PER_DAY)
+      return LEVEL_6_MODE;
+    else if (bestTime < currentTime + level2Day*MILLIS_PER_DAY)
+      return LEVEL_2_MODE;
+    // DONT_PROCESS_MODE is not currently supported
+    //    return DONT_PROCESS_MODE;
+    return LEVEL_2_MODE;
+  }
+
+  /** create level 2 task by aggregating the contents of the direct object **/
   protected Vector getLowFidelityTask (Task parentTask) {
     Vector retval = new Vector ();
     Task newTask = null;
 
     GLMAsset lowFiAsset = 
-      (GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "LowFidelityPrototype", "LowFi_" + getNextID());
+      (GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "Level2Prototype", "Level2_" + getNextID());
     NewLowFidelityAssetPG lowFiPG = 
       (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
     lowFiPG.setOriginalAsset (lowFiAsset);
@@ -287,7 +351,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       logger.error ("problem processing " + asset, e);
     }
 
-    ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("LowFidelityAggregate");
+    ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("Level2Aggregate");
 
     if (isDebugEnabled())
       debug ("getLowFidelityTask - created low fi asset " + 
@@ -297,7 +361,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     newTask = makeTask (parentTask, lowFiAsset, getOriginalOwner(parentTask));
 
-      // mark the new task as an aggregate low fi task
+    // mark the new task as an aggregate low fi task
     prepHelper.addPrepToTask (newTask, 
 			      prepHelper.makePrepositionalPhrase(ldmf,
 								 GLMTransConst.LOW_FIDELITY,
@@ -308,6 +372,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return retval;
   }
 
+  /** 
+   * Recovers owner of task's d.o. from either a FOR prep on the task
+   * or the owner part of UID of the d.o.
+   * @param parentTask task to examine
+   * @return owner of the task = which unit sent the task, owns the asset
+   */
   protected String getOriginalOwner (Task parentTask) {
     if (!glmPrepHelper.hasPrepNamed (parentTask,Constants.Preposition.FOR)) {
       Asset directObject = parentTask.getDirectObject();
@@ -326,6 +396,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
   /** 
    * Since FOR preps are lost a custom property is added to determine unit
+   *
+   * @param asset to attach PG to
+   * @param thisPG pg to attach to asset
    */
   public void attachPG(Asset asset, PropertyGroup thisPG) {
     if (asset instanceof AssetGroup) {
@@ -344,6 +417,13 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     }
   }
 
+  /** 
+   * <pre>
+   * Tries to determine if direct object is a person aggregate.
+   * 
+   * Can be tricky since sometimes the d.o. is a group of aggregates.
+   * </pre>
+   */
   protected boolean isPersonTask (Task parentTask) {
     Asset asset = parentTask.getDirectObject();
     if (asset instanceof AggregateAsset) {
@@ -373,7 +453,17 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return id++;
   }
 
-  /** assumes all will be people or not */
+  /**
+   * <pre>
+   * Takes a collection of assets and sets the dimensions of the physical pg
+   * to be their sum, in area, volume, and weight.
+   *
+   * It doesn't make sense to aggregate length, width, and height, since they
+   * wouldn't correspond to area and volume.
+   * </pre>
+   * @param realAssets to sum
+   * @param physicalPG to set with their aggregate dimensions
+   **/
   protected void setDimensions (NewPhysicalPG physicalPG, Collection realAssets) {
     double length = 0.0;
     double width  = 0.0;
@@ -393,7 +483,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 		"'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
 	else if (isDebugEnabled ())
 	  debug (".setDimensions - NOTE : asset " + firstItem + 
-		"'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
+		 "'s base asset " + (GLMAsset)aggAsset.getAsset() + " has no physical PG.");
       }
       else {
 	long quantity = aggAsset.getQuantity();
@@ -414,9 +504,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	if (itemPhysicalPG == null)
 	  error ("Asset " + asset + " doesn't have a physical PG.");
 	else {
-	  length += itemPhysicalPG.getLength().getMeters();
-	  width  += itemPhysicalPG.getWidth().getMeters();
-	  height += itemPhysicalPG.getHeight().getMeters();
+	  // it doesn't make sense to display aggregate length, width, height,
+	  // since they won't correspond to area and volume
+	  //	  length += itemPhysicalPG.getLength().getMeters();
+	  //	  width  += itemPhysicalPG.getWidth().getMeters();
+	  //	  height += itemPhysicalPG.getHeight().getMeters();
 	  area   += itemPhysicalPG.getFootprintArea().getSquareMeters();
 	  volume += itemPhysicalPG.getVolume().getCubicMeters();
 	  mass   += itemPhysicalPG.getMass().getKilograms();
@@ -486,6 +578,19 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return newtask;
   }
 
+  /** 
+   * <pre>
+   * Attaches two preps to task : SEAROUTE and SEAROUTE_DISTANCE 
+   *
+   * SEAROUTE will appear in the TPFDD Viewer as the path of the ship, if the 
+   * item goes by ship.  SEAROUTE_DISTANCE is used by the TRANSCOM vishnu scheduler
+   * to make the sea-vs-air decision.  (Specifically, it decides if at a reasonable
+   * ship speed (~15 knots), the task could be completed in the time allowed by ship,
+   * and if so, decides to send the item by ship.)
+   * </pre>
+   * @param parentTask - used to calculate the route (using the from-to pair)
+   * @param subtask - task to attach the preps to
+   */
   protected void attachRoute (Task parentTask, Task subtask) {
     TransportationRoute route = portLocator.getRoute (parentTask);
 
