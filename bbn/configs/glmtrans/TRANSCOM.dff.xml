@@ -1,0 +1,25 @@
+<?xml version='1.0'?>
+<PROBLEM name="TRANSCOM" >
+<DATAFORMAT>
+<OBJECTFORMAT name="Transport" is_task="true" is_resource="false" >
+<FIELDFORMAT name="id" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="true" />
+<FIELDFORMAT name="arrival" datatype="datetime" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="departure" datatype="datetime" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="from" datatype="geoloc" is_subobject="true" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="to" datatype="geoloc" is_subobject="true" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="name" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="type" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="isPerson" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="distance" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+</OBJECTFORMAT>
+<OBJECTFORMAT name="Asset" is_task="false" is_resource="true" >
+<FIELDFORMAT name="id" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="true" />
+<FIELDFORMAT name="name" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="type" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+</OBJECTFORMAT>
+<OBJECTFORMAT name="geoloc" is_task="false" is_resource="false" >
+<FIELDFORMAT name="geolocCode" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="latlong" datatype="latlong" is_subobject="true" is_globalptr="false" is_list="false" is_key="false" />
+</OBJECTFORMAT>
+</DATAFORMAT>
+</PROBLEM>
