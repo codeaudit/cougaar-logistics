@@ -87,9 +87,38 @@ public class AssessmentDataSource
         }
       }
 
+      doSecureUserAuthInit();
       createPSPInterface();
       createItemTrees();
       createOrgTrees();
+    }
+
+    // Invoke the NAI security code, if available
+    private static void doSecureUserAuthInit() {
+      String securityUIClass = System.getProperty("org.cougaar.ui.userAuthClass");
+    
+      if (securityUIClass == null) {
+        securityUIClass = "org.cougaar.core.security.userauth.UserAuthenticatorImpl";
+      }
+    
+      Class cls = null;
+      try {
+        cls = Class.forName(securityUIClass);
+      } catch (ClassNotFoundException e) {
+        System.err.println("Not using secure User Authentication: " + securityUIClass);
+      } catch (ExceptionInInitializerError e) {
+        System.err.println("Unable to use secure User Authentication: " + securityUIClass + ". " + e);
+      } catch (LinkageError e) {
+        System.err.println("Not using secure User Authentication: " + securityUIClass);
+      }
+    
+      if (cls != null) {
+        try {
+          cls.newInstance();
+        } catch (Exception e) {
+          System.err.println("Error using secure User Authentication (" + securityUIClass + "): "+ e);
+        }
+      }
     }
 
     /** Array of strings that represent blackjack metric types */
