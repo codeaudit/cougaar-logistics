@@ -16,8 +16,8 @@ public class LozengeRow extends Container
     private GanttChart gc;
     private String label = "N/A";
 
-  protected Node assetInstanceNode;
-  public Node getCargoInstanceNode () { return assetInstanceNode; }
+  protected DBUIDNode assetInstanceNode;
+  public DBUIDNode getCargoInstanceNode () { return assetInstanceNode; }
 
     private ArrayList lozengeList = new ArrayList();
 
@@ -30,7 +30,7 @@ public class LozengeRow extends Container
 	setLayout(null);
     }
 
-    public LozengeRow (GanttChart gc, Node assetInstanceNode) {
+    public LozengeRow (GanttChart gc, DBUIDNode assetInstanceNode) {
 	this();
 	this.gc = gc;
 	addMouseListener(gc);
