@@ -24,6 +24,13 @@ import java.io.StreamTokenizer;
  * 
  * (-0 indicates no top data at that time at that host)
  * Numbers represent percentage CPU usage.
+ *
+ * Arguments : number of samples, seconds between samples, and host file to get hosts from
+ *
+ * Typical Usage : 
+ *  java -classpath albbn.jar org.cougaar.logistics.plugin.utils.TopRunnerFromHosts 2 5 $CIP/operator/s1-hosts.xml > results.csv
+ *
+ * (Here it asks for 2 samples, 5 seconds apart, reading from the s1-hosts.xml file.)
  */ 
 public class TopRunnerFromHosts extends TopRunner {
   public TopRunnerFromHosts (int samples, long period, String machine, Map timeToResult) {
