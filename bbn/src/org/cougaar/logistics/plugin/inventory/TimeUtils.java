@@ -48,12 +48,12 @@ public class TimeUtils {
 
     private transient Logger logger;
 
-    public TimeUtils(InventoryPlugin aPlugin) {
-	if(aPlugin == null) {
+    public TimeUtils(UtilsProvider provider) {
+	if(provider == null) {
 	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
 	}
 	else {
-	    logger = (Logger)aPlugin.getLoggingService(this);
+	    logger = (Logger)provider.getLoggingService(this);
 	}
     }
 

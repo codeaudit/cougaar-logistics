@@ -54,21 +54,21 @@ public class AssetUtils {
 
 
     private transient Logger logger;
-    private transient InventoryPlugin invPlugin;
+    private transient UtilsProvider utilProvider;
 
-    public AssetUtils(InventoryPlugin aPlugin) {
-	invPlugin = aPlugin;
-	if(invPlugin == null) {
+    public AssetUtils(UtilsProvider provider) {
+	utilProvider = provider;
+	if(utilProvider == null) {
 	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
 	}
 	else {
-	    logger = (Logger)invPlugin.getLoggingService(this);
+	    logger = (Logger)utilProvider.getLoggingService(this);
 	}
     }
 
 
     public AssetUtils(Logger aLogger) {
-	invPlugin = null;
+	utilProvider = null;
 	logger = aLogger;
 	if(logger == null) {
 	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();

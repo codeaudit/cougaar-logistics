@@ -57,19 +57,19 @@ import org.cougaar.glm.ldm.asset.SupplyClassPG;
 public class TaskUtils extends PluginHelper implements Serializable { // revisit making Serializable later...
 
     private transient Logger logger;
-    private transient InventoryPlugin invPlugin;
+    private transient UtilsProvider utilProvider;
     private transient AssetUtils assetUtils;
 
-    public TaskUtils(InventoryPlugin aPlugin) {
+    public TaskUtils(UtilsProvider provider) {
 	super();
-	invPlugin = aPlugin;
-	logger = (Logger)invPlugin.getLoggingService(this);
-	assetUtils = invPlugin.getAssetUtils();
+	utilProvider = provider;
+	logger = (Logger)utilProvider.getLoggingService(this);
+	assetUtils = utilProvider.getAssetUtils();
     }
 
     public TaskUtils(LoggingService aLogger) {
 	super();
-	invPlugin = null;
+	utilProvider = null;
 	logger = (Logger)aLogger;
 	assetUtils = new AssetUtils(aLogger);
     }
@@ -306,7 +306,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       }
   }
 
-    public TimeUtils getTimeUtils() {return invPlugin.getTimeUtils();}
+    public TimeUtils getTimeUtils() {return utilProvider.getTimeUtils();}
 }
 
 
