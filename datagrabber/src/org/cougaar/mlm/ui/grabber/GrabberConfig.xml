@@ -10,6 +10,7 @@
   <ViewRefresh>300</ViewRefresh>
   <CompletionPSP>
    <URLConnection>
+    <Protocol>http</Protocol>
     <Host>SOMEHOST</Host>
     <Port>5555</Port>
     <ClusterName>TRANSCOM</ClusterName>
@@ -28,6 +29,7 @@
  </DBConfig>
  <HierarchyPSP Society="Tops">
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host></Host>
    <Port></Port>
    <ClusterName>transcom</ClusterName>
@@ -43,6 +45,7 @@
   <Cluster>XVIIICorps</Cluster>
   <Cluster>VIICorps</Cluster>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host></Host>
    <Port></Port>
    <ClusterName></ClusterName>
@@ -54,6 +57,7 @@
  </HierarchyPSP>
  <DataGathererPSP>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host></Host>
    <Port></Port>
    <ClusterName></ClusterName>

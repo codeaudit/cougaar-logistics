@@ -10,6 +10,7 @@
   <ViewRefresh>120</ViewRefresh>
   <CompletionPSP>
    <URLConnection>
+    <Protocol>http</Protocol>
     <Host>sandwich.alpine.bbn.com</Host>
     <Port>8800</Port>
     <ClusterName>TRANSCOM</ClusterName>
@@ -32,6 +33,7 @@
  </DBConfig>
  <HierarchyPSP Society="Tops">
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>sandwich.alpine.bbn.com</Host>
    <Port>8800</Port>
    <ClusterName>TRANSCOM</ClusterName>
@@ -46,6 +48,7 @@
                VirtualRootName="Higher Authority">
   <Cluster>USEUCOM</Cluster>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>sandwich.alpine.bbn.com</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>
@@ -57,6 +60,7 @@
  </HierarchyPSP>
  <DataGathererPSP>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>sandwich.alpine.bbn.com</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>

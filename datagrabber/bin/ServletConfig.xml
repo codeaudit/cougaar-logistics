@@ -13,6 +13,7 @@
 <!--   <Cluster>89-TKCO-CGO</Cluster> -->
 <!--   <Cluster>GlobalSea</Cluster>-->
    <URLConnection>
+    <Protocol>http</Protocol>
     <Host>localhost</Host>
     <Port>8800</Port>
     <ClusterName>TRANSCOM</ClusterName>
@@ -35,6 +36,7 @@
   <Cluster>TRANSCOM</Cluster>
 <!--  <Cluster>89-TKCO-CGO</Cluster>-->
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>localhost</Host>
    <Port>8800</Port>
    <ClusterName>TRANSCOM</ClusterName>
@@ -49,6 +51,7 @@
                VirtualRootName="Higher Authority">
   <Cluster>CENTCOM-HHC</Cluster>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>localhost</Host>
    <Port>8800</Port>
    <ClusterName>CENTCOM-HHC</ClusterName>
@@ -61,6 +64,7 @@
  </HierarchyPSP>
  <DataGathererPSP>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>localhost</Host>
    <Port>8800</Port>
    <ClusterName>CENTCOM-HHC</ClusterName>

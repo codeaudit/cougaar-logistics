@@ -10,6 +10,7 @@
   <ViewRefresh>120</ViewRefresh>
   <CompletionPSP>
    <URLConnection>
+    <Protocol>http</Protocol>
     <Host>{TOPSHost}</Host>
     <Port>8800</Port>
     <ClusterName>TRANSCOM</ClusterName>
@@ -33,6 +34,7 @@
  <HierarchyPSP Society="Tops">
   <Cluster>TRANSCOM</Cluster>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>{TOPSHost}</Host>
    <Port>8800</Port>
    <ClusterName>TRANSCOM</ClusterName>
@@ -47,6 +49,7 @@
                VirtualRootName="Higher Authority">
   <Cluster>USEUCOM</Cluster>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>{TOPSHost}</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>
@@ -58,6 +61,7 @@
  </HierarchyPSP>
  <DataGathererPSP>
   <URLConnection>
+   <Protocol>http</Protocol>
    <Host>{TOPSHost}</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>

@@ -29,7 +29,7 @@ import org.xml.sax.Attributes;
 
 /**
  * Produces URL necessary for a given PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: ahelsing $
  *
  * @since 2//01
  **/
@@ -39,6 +39,7 @@ public class URLConnectionData implements XMLable, DeXMLable{
   ////////////
 
   public static final String NAME_TAG = "URLConnection";
+  public static final String PROTOCOL_TAG = "Protocol";
   public static final String HOST_TAG = "Host";
   public static final String PORT_TAG = "Port";
   public static final String CLUSTER_TAG = "ClusterName";
@@ -54,6 +55,7 @@ public class URLConnectionData implements XMLable, DeXMLable{
   //Variables:
   ////////////
 
+  protected String protocol="http";
   protected String host=null;
   protected int port=0;
   protected String clusterName=null;
@@ -68,6 +70,26 @@ public class URLConnectionData implements XMLable, DeXMLable{
   ///////////////
 
   public URLConnectionData(){}
+
+  public URLConnectionData(String protocol,
+			   String host,
+			   int port,
+			   String clusterName,
+			   String pspPackage,
+			   String pspID,
+			   boolean transferByXML,
+			   boolean usePSPs,
+			   long timeout){    
+    this.protocol=protocol;
+    this.host=host;
+    this.port=port;
+    this.clusterName=clusterName;
+    this.pspPackage=pspPackage;
+    this.pspID=pspID;
+    this.transferByXML=transferByXML;
+    this.usePSPs=usePSPs;
+    this.timeout=timeout;
+  }
 
   public URLConnectionData(String host,
 			   int port,
@@ -94,6 +116,7 @@ public class URLConnectionData implements XMLable, DeXMLable{
 
   public URLConnectionData(URLConnectionData ucd, String clusterName){
     this.clusterName=clusterName;
+    this.protocol=ucd.protocol;
     this.host=ucd.host;
     this.port=ucd.port;
     this.pspPackage=ucd.pspPackage;
@@ -106,6 +129,10 @@ public class URLConnectionData implements XMLable, DeXMLable{
 
   //Members:
   //////////
+
+  public String getProtocol(){
+    return protocol;
+  }
 
   public String getHost(){
     return host;
@@ -154,14 +181,14 @@ public class URLConnectionData implements XMLable, DeXMLable{
   public long getTimeout () { return timeout; }
 
   /**
-   * PSP URL: "http://"+ host+":"+port+"/$"+clusterName+"/"+
+   * PSP URL: protocl +"://"+ host+":"+port+"/$"+clusterName+"/"+
    * PSP_Package+"/"+PSP_id;
    **/
   public String getURL(){
     String pspPackage = getPSPPackage();
     boolean hasPackage = (pspPackage.length () > 0);
 
-    return "http://" + getHost() +":"+ Integer.toString(getPort())
+    return protocol + "://" + getHost() +":"+ Integer.toString(getPort())
       +"/$"+ getClusterName() +
       ((hasPackage) ? ("/"+ pspPackage) : "") +"/"+ getPSPID();
   }
@@ -175,6 +202,7 @@ public class URLConnectionData implements XMLable, DeXMLable{
    **/
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(NAME_TAG);
+    w.tagln(PROTOCOL_TAG,protocol);
     w.tagln(HOST_TAG,host);
     w.tagln(PORT_TAG,port);
     w.tagln(CLUSTER_TAG,clusterName);
@@ -202,6 +230,8 @@ public class URLConnectionData implements XMLable, DeXMLable{
     throws UnexpectedXMLException{
     try{
       if(name.equals(NAME_TAG)){
+      }else if(name.equals(PROTOCOL_TAG)){
+	protocol=data;
       }else if(name.equals(HOST_TAG)){
 	host=data;
       }else if(name.equals(PORT_TAG)){
