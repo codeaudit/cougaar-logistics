@@ -337,8 +337,24 @@ public class InventoryPlugin extends ComponentPlugin {
           supplyExpander.updateAllocationResult(expansionSubscription);
 	  backwardFlowTouched = 
 	      externalAllocator.updateAllocationResult(refillAllocationSubscription); 
-	  allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
+          
+          allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
         }
+
+        // Kludge for now to make sure that all Subsistence withdraw tasks
+        // get allocated.  Bug is that when falling behind conditions change,
+        // some withdraw task's are ignored, but nothing necessarily kicks the inventory later
+        // when we come out of falling behind to allocated hose withdraw tasks since
+        // no level 2 work is done for Subsistence.
+        // Try to limit the amount of times we do this using the changed list from the
+        // level 6 om subscription.
+        if ((getSupplyType().equals("Subsistence")) 
+            && (! Level6OMSubscription.getChangedCollection().isEmpty()) &&
+            (((Integer)level6Horizon.getValue()).equals(LEVEL_6_MAX)) ) {
+          System.out.println("Reconciling all inventory levels at: " + getAgentIdentifier());
+          allocationAssessor.reconcileInventoryLevels(getInventories());
+        }
+        
         // update the Maintain Inventory Expansion results
         PluginHelper.updateAllocationResult(MIExpansionSubscription);
         PluginHelper.updateAllocationResult(MITopExpansionSubscription);
@@ -406,6 +422,12 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for DetermineRequirements of type MaintainInventory Expansion **/
   private IncrementalSubscription DetReqInvExpansionSubscription;
 
+  /** special subscription to oms only used in subsistence to deal with the level2 -> level6
+   *  issue that occurs because subsistence does not generate level 2 tasks
+   **/
+  private IncrementalSubscription Level6OMSubscription;
+  
+
   protected void setupSubscriptions() {
     if (! getBlackboardService().didRehydrate()) {
       setupOperatingModes();
@@ -435,6 +457,9 @@ public class InventoryPlugin extends ComponentPlugin {
                        level2Horizon + " level 6 OM is: " + level6Horizon);
         }
       }
+    }
+    if (getSupplyType().equals("Subsistence")) {
+      Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     }
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
