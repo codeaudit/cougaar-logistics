@@ -295,7 +295,7 @@ public class MultiChartPanel extends JPanel
 
     public void changeChart(JCChartEvent jce) {
 	JCChart source = (JCChart)jce.getSource();
-	String headerText =  ((JLabel) source.getHeader()).getText();
+	//String headerText =  ((JLabel) source.getHeader()).getText();
 	JCAxis axis = jce.getModifiedAxis();
 	if(!axis.isVertical()) {
 	    removeAllChartListeners();
@@ -371,12 +371,6 @@ public class MultiChartPanel extends JPanel
 	// add 1 to month as it numbers them from 0
 	int month = tmpC.get(Calendar.MONTH) + 1;
 	
-	String time="";
-
-	String qty="";
-
-
-
 	String label = "Date: " + month + "/" +
 	    tmpC.get(Calendar.DAY_OF_MONTH) + "/" +
 	    tmpC.get(Calendar.YEAR) + " " +
