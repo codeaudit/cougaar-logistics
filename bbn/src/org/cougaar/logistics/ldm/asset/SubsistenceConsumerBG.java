@@ -96,7 +96,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
-      if (predicate instanceof ConsumerPredicate) {
+      if (predicate instanceof MilitaryPersonPred) {
 	Schedule consumerSched = 
 	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
 // 	if (myOrgName.indexOf("35-ARBN") >= 0) {
@@ -116,7 +116,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 	if (it.hasNext()) {
 	  logOPlan = (LogisticsOPlan)it.next();
 	}
-      } else if (predicate instanceof FeedingPolicy) {
+      } else if (predicate instanceof FeedingPolicyPred) {
 	Collection fpColl = (Collection) list.next();
 	Iterator it = fpColl.iterator();
 	if (it.hasNext()) {
@@ -126,7 +126,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 	  params.add(getWaterPolicySchedule(feedingPolicy));
 	}
       } else {
- 	logger.error("getParameterSchedule: unknown predicate");
+ 	logger.error("getParameterSchedule: unknown predicate "+predicate);
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
