@@ -65,6 +65,9 @@ public class LogisticsInventoryFormatter {
 
     public final static String INVENTORY_DUMP_TAG="INVENTORY_DUMP";
 
+    public final static String INVENTORY_HEADER_PERSON_READABLE_TAG="INVENTORY_HEADER_READABLE";
+    public final static String INVENTORY_HEADER_GUI_TAG="INVENTORY_HEADER_GUI";
+
     public final static String SUPPLY_TASKS_TAG="SUPPLY_TASKS";
     public final static String WITHDRAW_TASKS_TAG="WITHDRAW_TASKS";
     public final static String PROJECTSUPPLY_TASKS_TAG="PROJECTSUPPLY_TASKS";
@@ -407,6 +410,57 @@ public class LogisticsInventoryFormatter {
 	logAllocationResults(tasks,aCycleStamp,true,isCountedAR);
     } 
 
+
+    protected void xmlLogLevels(Schedule reorderLevels,
+				Schedule inventoryLevels,
+				Schedule targetLevels,
+				boolean  humanReadable,
+				long aCycleStamp) {
+	if(humanReadable) {
+	    writeNoCycleLn("<START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL>");
+	}
+	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,humanReadable);
+    } 
+
+
+    protected void xmlLogProjections(ArrayList tasks,boolean isCountedTask,boolean humanReadable, long aCycleStamp) {
+	if(humanReadable) {
+	    writeNoCycleLn("<PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE>");
+	}
+	logTasks(tasks,aCycleStamp,humanReadable,isCountedTask);
+    } 
+    
+    
+    protected void xmlLogNonProjections(ArrayList tasks,
+					boolean humanReadable,
+					long aCycleStamp) {
+	if(humanReadable) {
+	    writeNoCycleLn("<PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,QTY>");
+	}
+	logTasks(tasks,aCycleStamp,humanReadable,false);
+    } 
+    
+
+    protected void xmlLogProjectionARs(ArrayList tasks,
+				       boolean isCountedAR, 
+				       boolean humanReadable,
+				       long aCycleStamp) {
+	if(humanReadable) {
+	    writeNoCycleLn("<PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR DAILY RATE>");
+	}
+	logAllocationResults(tasks,aCycleStamp,humanReadable,isCountedAR);
+    } 
+
+
+    protected void xmlLogNonProjectionARs(ArrayList tasks,
+					  boolean humanReadable,
+					  long aCycleStamp) {
+	if(humanReadable) {
+	    writeNoCycleLn("<PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR QTY>");
+	}
+	logAllocationResults(tasks,aCycleStamp,humanReadable,false);
+    } 
+
     protected ArrayList buildParentTaskArrayList(ArrayList tasks) {
 	ArrayList parentList = new ArrayList(tasks.size());
 	for(int i=0; i < tasks.size() ; i++ ) {
@@ -566,7 +620,47 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("INVENTORY LEVELS: END");
     }
 
+    protected void logToXMLOutput(Asset invAsset,
+				  Organization anOrg,
+				  ArrayList withdrawList,
+				  ArrayList projWithdrawList,
+				  ArrayList countedDemandList,
+				  ArrayList resupplyList,
+				  ArrayList projResupplyList,
+				  Schedule  reorderLevels,
+				  Schedule  inventoryLevels,
+				  Schedule  targetLevels,
+				  boolean humanReadable,
+				  long aCycleStamp) {
+	cycleStamp = aCycleStamp;
 
+	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
+	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
+	
+	String header;
+
+	if(humanReadable) {
+	    header ="<" + INVENTORY_HEADER_PERSON_READABLE_TAG + " org=" + orgId + " item=" + assetName;
+	}
+	else {
+	    header ="<" + INVENTORY_HEADER_GUI_TAG + " org=" + orgId + " item=" + assetName;	    
+	}
+
+	header = header + " unit=" + getUnitForAsset(invAsset) + " cDay=" + startCDay.getTime() + ">";
+
+	writeNoCycleLn(header);
+	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
+	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,humanReadable,aCycleStamp);
+	logResupplyToXMLOutput(resupplyList,projResupplyList,humanReadable,aCycleStamp);
+	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,humanReadable,aCycleStamp);
+
+	if(humanReadable) {
+	    writeNoCycleLn("</" + INVENTORY_HEADER_PERSON_READABLE_TAG + ">");
+	}
+	else {
+	    writeNoCycleLn("</" + INVENTORY_HEADER_GUI_TAG + ">");
+	}
+    }
     
 
     protected void logToXMLOutput(Asset invAsset,
@@ -581,17 +675,17 @@ public class LogisticsInventoryFormatter {
 				  Schedule  targetLevels,
 				  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
-	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
-	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
-	String header ="<" + INVENTORY_DUMP_TAG + " org=" + orgId + " item=" + assetName;
-	
-	header = header + " unit=" + getUnitForAsset(invAsset) + " cDay=" + startCDay.getTime() + ">";
-
-	writeNoCycleLn(header);
-	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
-	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,aCycleStamp);
-	logResupplyToXMLOutput(resupplyList,projResupplyList,aCycleStamp);
-	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,aCycleStamp);
+	writeNoCycleLn("<" + INVENTORY_DUMP_TAG + ">");
+	logToXMLOutput(invAsset,anOrg,withdrawList,
+			  projWithdrawList,countedDemandList,
+			  resupplyList,projResupplyList,
+			  reorderLevels,inventoryLevels,targetLevels,
+			  true,aCycleStamp);
+	logToXMLOutput(invAsset,anOrg,withdrawList,
+			  projWithdrawList,countedDemandList,
+			  resupplyList,projResupplyList,
+			  reorderLevels,inventoryLevels,targetLevels,
+			  false,aCycleStamp);
 	writeNoCycleLn("</" + INVENTORY_DUMP_TAG + ">");
 	try {
 	    output.flush();
@@ -624,62 +718,64 @@ public class LogisticsInventoryFormatter {
     protected void logDemandToXMLOutput(ArrayList withdrawList,
 					ArrayList projWithdrawList,
 					ArrayList countedProjWithdrawList,
+					boolean humanReadable,
 					long aCycleStamp) {
 
 	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
 	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
 
 	writeNoCycleLn("<" + SUPPLY_TASKS_TAG + " type=TASKS>");
-	logTasks(supplyList,aCycleStamp,false,false);
+	xmlLogNonProjections(supplyList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + SUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + WITHDRAW_TASKS_TAG + " type=TASKS>");
-	logTasks(withdrawList,aCycleStamp,false,false);
+	xmlLogNonProjections(withdrawList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + WITHDRAW_TASKS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projSupplyList,aCycleStamp,false,false);
+	xmlLogProjections(projSupplyList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + PROJECTSUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTWITHDRAW_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projWithdrawList,aCycleStamp,false,false);
+	xmlLogProjections(projWithdrawList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + PROJECTWITHDRAW_TASKS_TAG + ">");
 	writeNoCycleLn("<" + COUNTED_PROJECTWITHDRAW_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(countedProjWithdrawList,aCycleStamp,false,true);
+	xmlLogProjections(countedProjWithdrawList,true,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + SUPPLY_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(supplyList,aCycleStamp,false,false);
+	xmlLogNonProjectionARs(supplyList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + SUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + WITHDRAW_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(withdrawList,aCycleStamp,false,false);
+	xmlLogNonProjectionARs(withdrawList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + WITHDRAW_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projSupplyList,aCycleStamp,false,false);
+	xmlLogProjectionARs(projSupplyList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + PROJECTSUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projWithdrawList,aCycleStamp,false,false);
+	xmlLogProjectionARs(projWithdrawList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(countedProjWithdrawList,aCycleStamp,false,true);
+	xmlLogProjectionARs(countedProjWithdrawList,true,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 
     }
 
     protected void logResupplyToXMLOutput(ArrayList resupplyList,
 					  ArrayList projResupplyList,
+					  boolean humanReadable,
 					  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASKS_TAG + " type=TASKS>");
-	logTasks(resupplyList,aCycleStamp,false,false);
+	xmlLogNonProjections(resupplyList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projResupplyList,aCycleStamp,false,false);
+	xmlLogProjections(projResupplyList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(resupplyList,aCycleStamp,false,false);
+	xmlLogNonProjectionARs(resupplyList,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projResupplyList,aCycleStamp,false,false);
+	xmlLogProjectionARs(projResupplyList,false,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + ">");
 
     }
@@ -687,9 +783,10 @@ public class LogisticsInventoryFormatter {
     protected void logLevelsToXMLOutput(Schedule reorderLevels,
 					Schedule inventoryLevels,
 					Schedule targetLevels,
+					boolean humanReadable,
 					long aCycleStamp) {
 	writeNoCycleLn("<" + INVENTORY_LEVELS_TAG + " type=LEVELS>");
-	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,false);
+	xmlLogLevels(reorderLevels,inventoryLevels,targetLevels,humanReadable,aCycleStamp);
 	writeNoCycleLn("</" + INVENTORY_LEVELS_TAG + ">");
     }
 
