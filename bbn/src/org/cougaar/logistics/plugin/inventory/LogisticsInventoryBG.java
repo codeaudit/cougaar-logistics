@@ -72,6 +72,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   private HashMap customerHash;
   private TaskUtils taskUtils;
 
+  protected int       endOfLevelSixBucket;
   protected ArrayList refillProjections;
   protected ArrayList refillRequisitions;
   protected ArrayList dueOutList;
@@ -112,6 +113,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     withdrawList = new ArrayList();
     projSupplyList = new ArrayList();
     supplyList = new ArrayList();
+    endOfLevelSixBucket = 1;
   }
 
 
@@ -240,6 +242,10 @@ public class LogisticsInventoryBG implements PGDelegate {
    *  been rescinded or changed.
    *  @param task  The ProjectWithdraw task being removed
    **/
+  //  WARNING - BUG may be in this code
+  //  called from the SupplyExpander assuming that this task has not already
+  //  been allocated. If it has already been allocated, then may be removing
+  //  it from the wrong buckets and incorrectly updating the projected demand array
   public void removeWithdrawProjection(Task task) {
     compute_critical_levels = true;
     long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
@@ -273,7 +279,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public int getLastWithdrawBucket() {
     Iterator list = customerHash.values().iterator();
-    long lastSeen = 0;
+    long lastSeen = convertBucketToTime(1);
     while (list.hasNext()) {
       long time = ((Long)list.next()).longValue();
       if (lastSeen < time) {
@@ -281,6 +287,30 @@ public class LogisticsInventoryBG implements PGDelegate {
       }
     }
     return convertTimeToBucket(lastSeen);
+  }
+
+  public int getFirstProjectWithdrawBucket() {
+    Iterator list = customerHash.values().iterator();
+    long firstSeen = convertBucketToTime(dueOutList.size()-1);
+    while (list.hasNext()) {
+      long time = ((Long)list.next()).longValue();
+      if (firstSeen > time) {
+	firstSeen = time;
+      }
+    }
+    return convertTimeToBucket(firstSeen);
+  }
+
+  public int getLastDemandBucket() {
+    return dueOutList.size()-1;
+  }
+
+  public void setEndOfLevelSixBucket(int bucket) {
+    endOfLevelSixBucket = bucket;
+  }
+
+  public int getEndOfLevelSixBucket() {
+    return endOfLevelSixBucket;
   }
 
   public void addRefillProjection(Task task) {
@@ -432,7 +462,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public double getProjectedDemand(int bucket) {
 
-    if (bucket > projectedDemandArray.length) {
+    if ((bucket >= projectedDemandArray.length) ||
+	(bucket < 0)) {
       return 0.0;
     }
     return projectedDemandArray[bucket];
@@ -451,14 +482,18 @@ public class LogisticsInventoryBG implements PGDelegate {
       if (taskUtils.isProjection(task)) {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-	start = getProjectedDemandStart(task, start);
-	long end_of_bucket = (convertBucketToTime(bucket + 1) - 1);
-	if ((start < end) &&
-	    (start < end_of_bucket)) {
+	start = getEffectiveProjectionStart(task, start);
+	if (isValidProjectionTaskInBucket(start, end, bucket)) {
 	  int days_spanned = getDaysSpanned(bucket, start, end);
 	  rate = taskUtils.getRate(task);
-	  scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
-	  actualDemand += taskUtils.getDouble(scalar);	
+	  try {
+	    scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
+	    actualDemand += taskUtils.getDouble(scalar);	
+	  } catch(Exception e) {
+	    logger.error(taskUtils.taskDesc(task)+
+			 " Start: "+TimeUtils.dateString(start)+
+			 " days_spanned: "+days_spanned);
+	  }
 	}
       } else {
 	actualDemand += taskUtils.getQuantity(task);
@@ -475,11 +510,11 @@ public class LogisticsInventoryBG implements PGDelegate {
     Iterator dueOutIter = ((ArrayList)dueOutList.get(bucket)).iterator();
     while (dueOutIter.hasNext()) {
       Task task = (Task)dueOutIter.next();
-      if (taskUtils.isProjection(task)) {
+      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-	start = getProjectedDemandStart(task, start);
-	if (start < end) {
+	start = getEffectiveProjectionStart(task, start);
+	if (isValidProjectionTaskInBucket(start, end, bucket)) {
           demand.add(task);
         }
       } else {
@@ -489,6 +524,18 @@ public class LogisticsInventoryBG implements PGDelegate {
     return demand;
   }
 
+  private boolean isValidProjectionTaskInBucket(long start, long end, int bucket) {
+    long end_of_bucket = (convertBucketToTime(bucket + 1) - 1);
+    if ((start >= end) // task is entirely before swithover day
+	|| (end_of_bucket <= start))// task effectively starts outside current bucket
+      {
+	// ignore task
+	return false;
+      }
+    else {
+      return true;
+    }
+  }   
 
   private int getDaysSpanned(int bucket, long start, long end) {
     long bucket_start = convertBucketToTime(bucket);
@@ -502,7 +549,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     return Math.ceil((double)reorderPeriod/(double)(MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY));
   }
 
-  private long getProjectedDemandStart(Task task, long start) {
+  /** 
+      Ignore projected demand that occurs before customer switchover day.
+   **/
+  private long getEffectiveProjectionStart(Task task, long start) {
     long firstProjectionDay;
     Object org = taskUtils.getCustomer(task);
     if (org != null) {
@@ -554,11 +604,13 @@ public class LogisticsInventoryBG implements PGDelegate {
 	listIter = list.iterator();
 	while (listIter.hasNext()) {
 	  task = (Task)listIter.next();
-	  org = TaskUtils.getCustomer(task);
-	  endTime = getEndTime(task);
-	  lastActualSeen = (Long)customerHash.get(org);
-	  if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
-	    customerHash.put(org, new Long(endTime));
+	  if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	    org = TaskUtils.getCustomer(task);
+	    endTime = getEndTime(task);
+	    lastActualSeen = (Long)customerHash.get(org);
+	    if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
+	      customerHash.put(org, new Long(endTime));
+	    }
 	  }
 	}
       }
