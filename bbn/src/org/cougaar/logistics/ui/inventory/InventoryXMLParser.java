@@ -22,6 +22,7 @@
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.Stack;
+import java.util.ArrayList;
 
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 import org.cougaar.logistics.ui.inventory.data.*;
@@ -96,7 +97,17 @@ public class InventoryXMLParser
     }
 
     private void parseHeader() {
-	ctr++;
+      String[] words = currentString.split("\\s");
+      String org=null;
+      String asset=null;
+      if(words[1].startsWith("org=")){
+	org=words[1].substring("org=".length());
+      }
+      if(words[2].startsWith("item=")){
+	asset=words[2].substring("item=".length());
+      }
+      inventory = new InventoryData(org,asset);
+      ctr++;
     }
 
     private String getScheduleType(String tag) {
@@ -106,14 +117,42 @@ public class InventoryXMLParser
     }
 
     private void parseSchedule() {
-	String type = getScheduleType(currentString);
+        String name = getTagName(currentString);
+	String typeStr = getScheduleType(currentString);
+	int type = InventoryScheduleHeader.getTypeInt(typeStr);
 	currentString = lines[++ctr];
+	ArrayList elements = new ArrayList();
 	while(!(currentString.startsWith("<"))) {
+	    elements.add(parseString(currentString,type));
 	    currentString = lines[++ctr];
 	}
+	InventoryScheduleHeader header = new InventoryScheduleHeader(name,
+								     type,
+								     elements);
+
+	inventory.addSchedule(header);
     }
 	
-		    
+    private InventoryScheduleElement parseString(String elementString,
+						 int    type){
+      switch(type) {
+      case InventoryScheduleHeader.TASKS_TYPE:
+	return InventoryTask.createFromCSV(elementString);
+      case InventoryScheduleHeader.PROJ_TASKS_TYPE:
+	return InventoryProjTask.createFromCSV(elementString);
+      case InventoryScheduleHeader.ARS_TYPE:
+	return InventoryAR.createFromCSV(elementString);
+      case InventoryScheduleHeader.PROJ_ARS_TYPE:
+	return InventoryProjAR.createProjFromCSV(elementString);
+      case InventoryScheduleHeader.LEVELS_TYPE:
+	return InventoryLevel.createFromCSV(elementString);
+      default:
+	throw new RuntimeException("Unparseable CSV " + elementString +
+				   " Element Type " + type); 
+      }
+    }
+
+	    
     private void popTag() {
 	String lastTag = (String) tagStack.peek();
 	if(getTagName(lastTag).equals(getTagName(currentString))) {

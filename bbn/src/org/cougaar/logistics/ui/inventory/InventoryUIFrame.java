@@ -28,6 +28,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JPanel;
 import javax.swing.JOptionPane;
@@ -69,13 +70,17 @@ public class InventoryUIFrame extends JFrame
 
     JTextArea editPane;
 
+
     InventorySelectionPanel selector;
+  InventoryXMLParser parser;
 
     public InventoryUIFrame() {
 	super("Inventory GUI");
 	addWindowListener(new WindowAdapter() {		
 		public void windowClosing(WindowEvent e) { System.exit(0); }
 	    });
+
+	parser = new InventoryXMLParser();
 	contentPane = getRootPane().getContentPane();
 	// fills frame
 	doMyLayout();
@@ -90,10 +95,10 @@ public class InventoryUIFrame extends JFrame
     }
 
     protected void doMyLayout() {
-	getRootPane().setMenuBar(makeMenus());
+	getRootPane().setJMenuBar(makeMenus());
 
         //Create a text area.
-        editPane = new JTextArea("Hello \n" + "There");
+        editPane = new JTextArea();
         editPane.setLineWrap(true);
         editPane.setWrapStyleWord(true);
         JScrollPane areaScrollPane = new JScrollPane(editPane);
@@ -106,7 +111,11 @@ public class InventoryUIFrame extends JFrame
                                 BorderFactory.createTitledBorder("XML"),
                                 BorderFactory.createEmptyBorder(5,5,5,5)),
                 areaScrollPane.getBorder()));
-	
+
+	JButton parseButton = new JButton("Parse");
+	parseButton.addActionListener(this);
+	contentPane.add(parseButton,BorderLayout.NORTH);
+
 	contentPane.add(areaScrollPane,BorderLayout.CENTER);
 
 	selector = new InventorySelectionPanel(this);
@@ -141,6 +150,9 @@ public class InventoryUIFrame extends JFrame
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_Connect)) {
 	    System.out.println("Connecting....");
 	    connectToServlet();
+	}
+	else if(e.getActionCommand().equals("Parse")) {
+	    parser.parseString(editPane.getText());
 	}
     }
 
