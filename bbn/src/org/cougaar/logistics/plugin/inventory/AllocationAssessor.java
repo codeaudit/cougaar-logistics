@@ -148,9 +148,24 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         lastPhase.endBucket=currentBucket+1;
       } else {
 
-        // add new phase
-        lastPhase = new AllocPhase(currentBucket, amount);
-        allocated.add(lastPhase);
+        // find existing phase for bucket if exists
+        Iterator phases = allocated.iterator();
+        AllocPhase aPhase=null, thePhase=null;
+        while (phases.hasNext()) {
+          aPhase = (AllocPhase)phases.next();
+          if ((aPhase.startBucket <= currentBucket) &&
+              (aPhase.endBucket > currentBucket)) {
+            thePhase = aPhase;
+            break;
+          }
+        }
+        if (thePhase == null) {
+          // add new phase
+          lastPhase = new AllocPhase(currentBucket, amount);
+          allocated.add(lastPhase);
+        } else {
+          thePhase.amount += amount;
+        }
       }
       if(remainingQty==amount){
         if(backlog>0.0) {
@@ -250,7 +265,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
       todayRefill = findCommittedRefill(currentBucket, thePG, true);
       todayLevel = thePG.getLevel(currentBucket - 1) + todayRefill;
-
 
       // First try to fill any previous deficits
       Iterator tpIt = trailingPointers.iterator();
