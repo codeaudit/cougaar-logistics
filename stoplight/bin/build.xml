@@ -1,0 +1,40 @@
+<project name="stoplight" default="create_cougaar_overlay" basedir="../">
+
+  <property name="src" value="src"/>
+  <property name="build" value="build"/>
+  <property environment="env"/>
+
+<!-- TIC Overlay Build -->
+<target name="create_cougaar_overlay">
+
+	<path id="tic.build.overlay.class.path">
+	  <fileset dir="${env.COUGAAR_INSTALL_PATH}/lib">
+	    <include name="**/*.jar"/>
+	  </fileset>
+	  <fileset dir="${env.COUGAAR_INSTALL_PATH}/sys">
+	    <include name="**/*.jar"/>
+	  </fileset>
+	</path>
+
+  <mkdir dir="staging"/>
+  <mkdir dir="staging/lib"/>
+  <mkdir dir="staging/data"/>
+  <delete dir="${build}"/>
+  <mkdir dir="${build}"/>
+  <javac classpathref="tic.build.overlay.class.path" srcdir="${src}" destdir="${build}"/>
+  <jar jarfile="staging/lib/stoplight.jar" basedir="${build}"/>
+	<signjar jar="staging/lib/stoplight.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+  <copy todir="staging/data">
+    <fileset dir="doc">
+      <patternset>
+        <exclude name="**/CVS/**"/>
+      </patternset>
+    </fileset>
+  </copy>
+  <zip zipfile="Logistics_bbn_stoplight_overlay.zip" basedir="staging"/>
+  <delete dir="staging"/>
+
+
+</target>
+
+</project>
