@@ -411,26 +411,6 @@ public class Contrastor extends Validator{
     }
   }
 
-//   protected void insertRow(Logger logger, Statement s, ResultSet rs, int run, String tableName) {
-//     try {
-//       StringBuffer sb=new StringBuffer();
-//       sb.append("insert into "+tableName+" values (");
-//       for(int i=1;i<=rs.getMetaData().getColumnCount();i++) {
-// 	String thisColumn = rs.getString(i);
-// 	if (thisColumn == null) sb.append("NULL,");
-// 	else sb.append("'"+thisColumn+"',");
-//       }
-//       sb.append(run+")");
-//       s.executeQuery(sb.toString());
-//     } catch (SQLException e){
-//       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-// 			"Problem inserting row",e);
-//     }
-//   }
-
-
-
-
   protected ResultSet grabTestResults(Logger l, Statement s, int run, int test) {
     String sql = null;
     StringBuffer sb = new StringBuffer();
