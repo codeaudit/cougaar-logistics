@@ -29,6 +29,12 @@ import org.cougaar.planning.ldm.policy.Policy;
 import org.cougaar.planning.ldm.policy.RuleParameter;
 import org.cougaar.planning.ldm.policy.RuleParameterIllegalValueException;
 import org.cougaar.planning.ldm.policy.StringRuleParameter;
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+import java.util.Date;
 
 public class InventoryPolicy extends Policy {
   public static final String AgentID = "AgentID";
@@ -42,14 +48,23 @@ public class InventoryPolicy extends Policy {
   public static final String OrderShipTime = "OrderShipTime";
   public static final String BucketSize = "BucketSize";
   public static final String FillToCapacity = "FillToCapacity";
+  public static final String SupplierArrivalTime = "SupplierArrivalTime";
+
+  public SimpleDateFormat dateFormatter;
+  private Logger logger;
 
   public InventoryPolicy() {
+    dateFormatter = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+    logger = Logging.getLogger(this);
+
     StringRuleParameter id = new StringRuleParameter(AgentID);
     String exception;
     try {
       id.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error(ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(id);
@@ -57,15 +72,23 @@ public class InventoryPolicy extends Policy {
     try {
       type.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("ResourceType-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(type);
+        StringRuleParameter arrivalDate = new StringRuleParameter(SupplierArrivalTime);
+    try {
+      arrivalDate.setValue(null);
+    } catch (RuleParameterIllegalValueException ex) {
+      logger.debug("SupplierArrivalTime-" + ex.toString());
+      // Print exception, waiting for a static logger
+    }
+    Add(arrivalDate);
     StringRuleParameter specifier = new StringRuleParameter(InventoryManagerSpecifier);
     try {
       type.setValue(new String());
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("InventoryManagerSpecifier-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(specifier);
@@ -73,7 +96,7 @@ public class InventoryPolicy extends Policy {
     try {
       cl.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("CriticalLevel-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(cl);
@@ -81,7 +104,7 @@ public class InventoryPolicy extends Policy {
     try {
       st.setValue(new Integer(1));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("SupplierAdvanceNoticeTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(st);
@@ -89,7 +112,7 @@ public class InventoryPolicy extends Policy {
     try {
       of.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("ReorderPeriod-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(of);
@@ -97,7 +120,7 @@ public class InventoryPolicy extends Policy {
     try {
       ht.setValue(new Integer(0));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("HandlingTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(ht);
@@ -105,7 +128,7 @@ public class InventoryPolicy extends Policy {
     try {
       tt.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("TransportTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(tt);
@@ -113,7 +136,7 @@ public class InventoryPolicy extends Policy {
     try {
       ost.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("OrderShipTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
     Add(ost);
@@ -121,14 +144,14 @@ public class InventoryPolicy extends Policy {
     try {
       bucket.setValue(new Long(TimeUtils.MSEC_PER_DAY));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("BucketSize-" + ex.toString());
     }
     Add(bucket);
     BooleanRuleParameter fillToCap = new BooleanRuleParameter(FillToCapacity, false);
     try {
       fillToCap.setValue(new Boolean(false));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("FillToCapacity-" + ex.toString());
     }
     Add(fillToCap);
   }
@@ -146,7 +169,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting AgentID-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -156,7 +179,7 @@ public class InventoryPolicy extends Policy {
       Lookup(ResourceType);
     return (String)param.getValue();
   }
-  
+
   public void setResourceType(String name) {
     String exception;
     StringRuleParameter param = (StringRuleParameter)
@@ -164,10 +187,45 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting ResourceType-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
+
+  public long getSupplierArrivalTime() {
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(SupplierArrivalTime);
+      if(param == null){
+       return -1;
+      }
+      String arrivalDateStr = (String)param.getValue();
+      if((arrivalDateStr == null) ||
+	 (arrivalDateStr.trim().equals(""))){
+        return -1;
+      }
+      try {
+        Date arrivalDate = dateFormatter.parse(arrivalDateStr);
+        return arrivalDate.getTime();
+      }
+      catch(Exception ex) {
+        logger.error(ex.toString());
+        return -1;
+      }
+  }
+
+  public void setSupplierArrivalTime(long arrivalTime) {
+    String exception;
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(SupplierArrivalTime);
+    String arrivalTimeStr = dateFormatter.format(new Date(arrivalTime));
+    try {
+      param.setValue(arrivalTimeStr);
+    } catch(RuleParameterIllegalValueException ex) {
+      logger.error("Setting SupplierArrivalTime-" + ex.toString());
+      // Print exception, waiting for a static logger
+    }
+  }
+
 
   public String getInventoryManagerSpecifier() {
     StringRuleParameter param = (StringRuleParameter)
@@ -182,7 +240,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(name);
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting InventoryManagerSpecifier-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -200,7 +258,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting CriticalLevel-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -218,7 +276,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting SupplierAdvanceNoticeTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -236,7 +294,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting ReorderPeriod-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -254,7 +312,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting HandlingTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -272,7 +330,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting TransportTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -290,7 +348,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Settting OrderShipTime-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -308,7 +366,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Long(l));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting BucketSize-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
@@ -326,7 +384,7 @@ public class InventoryPolicy extends Policy {
     try {
       param.setValue(new Boolean(b));
     } catch (RuleParameterIllegalValueException ex) {
-      exception = ex.toString();
+      logger.error("Setting FillToCapacity-" + ex.toString());
       // Print exception, waiting for a static logger
     }
   }
