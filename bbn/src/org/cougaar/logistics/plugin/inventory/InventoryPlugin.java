@@ -208,7 +208,8 @@ public class InventoryPlugin extends ComponentPlugin {
 	setupSubscriptions2();
       }
     }
-    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
+    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null && 
+        myOrganization != null ) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
