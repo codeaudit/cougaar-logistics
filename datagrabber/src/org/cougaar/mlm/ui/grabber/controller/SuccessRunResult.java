@@ -43,6 +43,7 @@ public class SuccessRunResult implements RunResult{
   private int id;
   private int runID;
   private boolean warning;
+  protected String creator, cluster;
 
   //Constructors:
   ///////////////
@@ -53,12 +54,20 @@ public class SuccessRunResult implements RunResult{
     warning=false;
     reason="";
   }
+  
+  public SuccessRunResult(int id, int runID, String creator, String cluster) {
+    this (id, runID);
+    this.creator = creator;
+    this.cluster = cluster;
+  }
 
-  public SuccessRunResult(int id, int runID, boolean warning, String reason){
+  public SuccessRunResult(int id, int runID, boolean warning, String reason, String creator, String cluster){
     this.id=id;
     this.runID=runID;
     this.reason=reason;
     this.warning=warning;
+    this.creator = creator;
+    this.cluster = cluster;
   }
 
   //Members:
@@ -80,8 +89,16 @@ public class SuccessRunResult implements RunResult{
     return warning;
   }
 
+  public String getCreator(){
+    return creator;
+  }
+
+  public String getCluster(){
+    return cluster;
+  }
+
   public String toString(){
-    return (warning?"Warning: ":"")+reason;
+    return "Successful Result" + (warning?" Warning: ":"")+reason+" created by " + creator;
   }
 
   //InnerClasses:
