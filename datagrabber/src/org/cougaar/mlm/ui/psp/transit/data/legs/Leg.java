@@ -113,7 +113,7 @@ public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable
   public static int numLongFields  = 2; 
   public static int numIntFields  = 2; 
   public static int numBooleanFields = 1;
-  public static int maxStringLength = 60;
+  public static int maxStringLength = 70;
 
   //Constructors:
   ///////////////
@@ -279,17 +279,34 @@ public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable
 
   public int writeToAssetBuffer(int index, 
 				char [] assetStringBuffer) {
-    for (Iterator iter = assetsOnLeg.iterator(); iter.hasNext(); ) {
-      UID assetUID = (UID) iter.next();
-      String assetUIDString = assetUID.toString();
-      //      System.out.println ("asset uid "+ assetUIDString + " at " + (index + i)*maxStringLength);
+      for (Iterator iter = assetsOnLeg.iterator(); iter.hasNext(); ) {
+	UID assetUID = (UID) iter.next();
+	String assetUIDString = assetUID.toString();
+	//      System.out.println ("asset uid "+ assetUIDString + " at " + (index + i)*maxStringLength);
+	int assetUIDLength = assetUIDString.length();
+	int arrayLocation = (index++)*maxStringLength; 
+	if (assetUIDLength > maxStringLength) {
+	  System.err.println ("Leg.writeToAssetBuffer - asset UID (" + assetUIDString + 
+			      ") longer than max (" + maxStringLength + "), so truncating it.");
+	  assetUIDLength = maxStringLength;
+	}
 
-      System.arraycopy (assetUIDString.toCharArray(), 0, 
-			assetStringBuffer, (index++)*maxStringLength, 
-			assetUIDString.length());
+	try {
+	  System.arraycopy (assetUIDString.toCharArray(),  // from this array
+			    0,                             // starting at 0 in the array
+			    assetStringBuffer,             // to this buffer
+			    arrayLocation,                 // starting at this point in the buffer
+			    assetUIDLength);               // copy this many characters
+	} catch (Exception e) {
+	  // this should not happen
+	  System.err.println ("Got exception " + e + "\n" + 
+			      "writing asset uid " + assetUIDString + 
+			      " to asset string buffer - it's probably longer than max length of " +
+			      maxStringLength);
+	}
+	//      System.out.println ("asset buf after "+ new String (assetStringBuffer));
+      }
 
-      //      System.out.println ("asset buf after "+ new String (assetStringBuffer));
-    }
     return index;
   }
 
