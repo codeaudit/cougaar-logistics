@@ -15,20 +15,18 @@
 <LITERAL value="0.0" type="constant" datatype="number" />
 <LITERAL value="1000.0" type="constant" datatype="number" />
 </OPERATOR>
-
 <OPERATOR operation="abs" >
- <OPERATOR operation="-" >
-  <OPERATOR operation="get" >
-   <LITERAL value="task" type="variable" datatype="task" />
-   <LITERAL value="arrival" type="constant" datatype="string" />
-   <LITERAL value="" type="variable" datatype="datetime" />
-  </OPERATOR>
-  <OPERATOR operation="taskendtime" >
-    <LITERAL value="task" type="variable" datatype="task" />
-  </OPERATOR>
- </OPERATOR>
+<OPERATOR operation="-" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
-
+<OPERATOR operation="taskendtime" >
+<LITERAL value="task" type="variable" datatype="task" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="sumover" >
@@ -54,7 +52,7 @@
 <LITERAL value="100.0" type="constant" datatype="number" />
 <LITERAL value="0.0" type="constant" datatype="number" />
 </OPERATOR>
-<OPERATOR operation="abs" >
+<OPERATOR operation="+" >
 <OPERATOR operation="-" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
@@ -64,6 +62,20 @@
 <OPERATOR operation="taskendtime" >
 <LITERAL value="task" type="variable" datatype="task" />
 </OPERATOR>
+</OPERATOR>
+<OPERATOR operation="if" >
+<OPERATOR operation="&gt;" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="earliestArrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="taskendtime" >
+<LITERAL value="task" type="variable" datatype="task" />
+</OPERATOR>
+</OPERATOR>
+<LITERAL value="1.0E9" type="constant" datatype="number" />
+<LITERAL value="0.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 </OPERATOR>

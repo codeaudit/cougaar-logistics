@@ -49,9 +49,10 @@
 </OPERATOR>
 <LITERAL value="1.0" type="constant" datatype="number" />
 </OPERATOR>
-<LITERAL value="864000" type="constant" datatype="number" />
+<LITERAL value="864000.0" type="constant" datatype="number" />
 <LITERAL value="0.0" type="constant" datatype="number" />
 </OPERATOR>
+<OPERATOR operation="+" >
 <OPERATOR operation="abs" >
 <OPERATOR operation="-" >
 <OPERATOR operation="get" >
@@ -62,6 +63,21 @@
 <OPERATOR operation="taskendtime" >
 <LITERAL value="task" type="variable" datatype="task" />
 </OPERATOR>
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="if" >
+<OPERATOR operation="&gt;" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="earliestArrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="taskendtime" >
+<LITERAL value="task" type="variable" datatype="task" />
+</OPERATOR>
+</OPERATOR>
+<LITERAL value="1.0E9" type="constant" datatype="number" />
+<LITERAL value="0.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 </OPERATOR>
@@ -94,7 +110,10 @@
 </OPERATOR>
 </TASKDURATION>
 <SETUPDURATION>
+<OPERATOR operation="*" >
+<LITERAL value="48.0" type="constant" datatype="number" />
 <LITERAL value="3600.0" type="constant" datatype="number" />
+</OPERATOR>
 </SETUPDURATION>
 <WRAPUPDURATION>
 <OPERATOR operation="/" >
@@ -149,10 +168,13 @@
 <OPERATOR operation="list" >
 <OPERATOR operation="interval" >
 <LITERAL value="start_time" type="variable" datatype="datetime" />
+<OPERATOR operation="-" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="departure" type="constant" datatype="string" />
+<LITERAL value="earliestArrival" type="constant" datatype="string" />
 <LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<LITERAL value="duration" type="variable" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="interval" >
