@@ -22,15 +22,15 @@ import org.cougaar.glm.packer.AggregationClosure;
 import org.cougaar.glm.packer.AmmoTransport;
 
 /**
- * LowFidelityAmmoPacker - handles packing ammo supply requests
+ * ALAmmoPacker - handles packing ammo supply requests
  * 
  */
-public class LowFidelityAmmoPacker extends Packer {
+public class ALAmmoPacker extends Packer {
 
   /**
-   * LowFidelityAmmoPacker - constructor 
+   * ALAmmoPacker - constructor 
    */
-  public LowFidelityAmmoPacker() {
+  public ALAmmoPacker() {
     super();
   }
 
@@ -41,7 +41,7 @@ public class LowFidelityAmmoPacker extends Packer {
    * handle
    */
   public UnaryPredicate getTaskPredicate() {
-    return LowFidelityAmmoPackerPredicate.getInputTaskPredicate();
+    return ALAmmoPackerPredicate.getInputTaskPredicate();
   }
 
   /**
@@ -53,7 +53,7 @@ public class LowFidelityAmmoPacker extends Packer {
    * reponsible
    */
   public UnaryPredicate getPlanElementPredicate() {
-    return LowFidelityAmmoPackerPredicate.getPlanElementPredicate();
+    return ALAmmoPackerPredicate.getPlanElementPredicate();
   }
 
   /*

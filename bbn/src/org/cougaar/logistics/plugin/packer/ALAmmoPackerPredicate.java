@@ -18,7 +18,7 @@ import org.cougaar.glm.packer.GenericPlugin;
   * all supply tasks that request Ammunition.
   */
 
-public class LowFidelityAmmoPackerPredicate  {
+public class ALAmmoPackerPredicate  {
 
   public static UnaryPredicate getInputTaskPredicate() {
     return new UnaryPredicate() {
