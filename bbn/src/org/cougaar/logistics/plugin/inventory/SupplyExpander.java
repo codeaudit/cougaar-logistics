@@ -263,7 +263,8 @@ public class SupplyExpander extends InventoryModule {
     }
   }
 
-  public void handleRemovedProjections(Collection tasks) {
+  public boolean handleRemovedProjections(Collection tasks) {
+    boolean removedProjections = false;
     LogisticsInventoryPG thePG;
     Task parent, aTask;
     Iterator taskIter = tasks.iterator();
@@ -280,12 +281,14 @@ public class SupplyExpander extends InventoryModule {
 	    thePG = getLogisticsInventoryPG(aTask);
 	    if (thePG != null) {
 	      thePG.removeWithdrawProjection(aTask);
+	      removedProjections = true;
 	    }
 	    break;
 	  }
 	}
       }
     }
+    return removedProjections;
   }
 
   public void updateChangedRequisitions(Collection tasks) {
