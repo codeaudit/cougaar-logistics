@@ -18,19 +18,19 @@ classVData=select nomenclature, weight, ccc from ammo_characteristics where DODI
 ui=select ui from header where NSN = :nsn
 # MEI
 #
-meiQuery=select NOMENCLATURE from AGGREGATED_MEI_NOMENCLATURE where MEI = :nsn and SERVICE = :service
+meiQuery=select NOMENCLATURE from aggregated_mei_nomenclature where MEI = :nsn and SERVICE = :service
 # ARMY
 #
-ConsumableArmyNSN=select MEI_NSN, PART_NSN, OPTEMPO, DCR from ARMY_SPARES_DCR_BY_OPTEMPO where MEI_NSN = :nsn and OPTEMPO = 'HIGH' order by DCR desc
-PackagedPOLArmyNSN=select MEI_NSN, PACKAGED_NSN, OPTEMPO, DCR from ARMY_PACKAGED_DCR_BY_OPTEMPO where MEI_NSN = :nsn order by DCR desc
-#BulkPOLArmyNSN=select NSN, FUEL_NSN, OPTEMPO, GALLONS_PER_DAY from ARMY_FUELS_DCR_BY_OPTEMPO where NSN = :nsn order by GALLONS_PER_DAY desc
-BulkPOLArmyNSN=select NSN, FUEL_NSN, UPPER(OPTEMPO), GALLONS_PER_DAY from ALP_MEI_FUEL where NSN = :nsn order by GALLONS_PER_DAY desc
+ConsumableArmyNSN=select MEI_NSN, PART_NSN, OPTEMPO, DCR from army_spares_dcr_by_optempo where MEI_NSN = :nsn and OPTEMPO = 'HIGH' order by DCR desc
+PackagedPOLArmyNSN=select MEI_NSN, PACKAGED_NSN, OPTEMPO, DCR from army_packaged_dcr_by_optempo where MEI_NSN = :nsn order by DCR desc
+#BulkPOLArmyNSN=select NSN, FUEL_NSN, OPTEMPO, GALLONS_PER_DAY from army_fuels_dcr_by_optempo where NSN = :nsn order by GALLONS_PER_DAY desc
+BulkPOLArmyNSN=select NSN, FUEL_NSN, UPPER(OPTEMPO), GALLONS_PER_DAY from alp_mei_fuel where NSN = :nsn order by GALLONS_PER_DAY desc
 AmmunitionArmyNSN=select MEI_NSN, DODIC, UPPER(OPTEMPO), TONS_PER_DAY from alp_mei_dodic_2_view where MEI_NSN = :nsn order by TONS_PER_DAY desc
-MeiConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from MEI_CONSUMPTION where NSN = :nsn
+MeiConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from mei_consumption where NSN = :nsn
 # Level2
 Level2BulkPOLRate=select optempo, gallons_per_day from level_2_fuel_rate where org_id = :org
 Level2AmmunitionRate=select optempo, tons_per_day from level_2_ammo_rate where org_id = :org
-UnitConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from UNIT_CONSUMPTION where ORG_ID = :org
+UnitConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from unit_consumption where ORG_ID = :org
 
 # AirForce
 #

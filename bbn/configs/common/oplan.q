@@ -76,6 +76,6 @@ select DISTINCT ATTRIBUTE_NAME, \
 # Query to determine the active oplan stages of an organization
 
 ActiveStagesQuery = \
-SELECT MIN(STAGE_NUM) FROM OPLAN_ACTIVE_STAGE \
+SELECT MIN(STAGE_NUM) FROM oplan_active_stage \
   WHERE OPLAN_ID = ':oplanid:' \
     AND ORG_ID = ':agent:'
