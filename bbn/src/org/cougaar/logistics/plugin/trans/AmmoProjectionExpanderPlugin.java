@@ -167,9 +167,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 		for (Iterator iter = types.iterator(); iter.hasNext(); ) {
 		  String type = (String) iter.next();
 		  List tasksForType = (List) typeToTasks.get(type);
-
-		  if (!tasksForType.remove (task)) {
-		    if (isWarnEnabled()) { warn ("no task " + task.getUID() + " in typeToTasks."); }
+		  if (tasksForType != null) { // might have been removed already
+		    if (!tasksForType.remove (task)) {
+		      if (isWarnEnabled()) { warn ("no task " + task.getUID() + " in typeToTasks."); }
+		    }
 		  }
 		}
 	      }
@@ -380,12 +381,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     }
 
     // post condition
-    if (totalQuantity != targetQuantity) {
-      if (isWarnEnabled ())
+    if (totalQuantity > targetQuantity + 0.001 ||
+	totalQuantity < targetQuantity - 0.001) {
+      if (isWarnEnabled ()) {
         warn (getName () + " total quantity " + totalQuantity +
               " != original total " + targetQuantity +
               " = window " + originalWindowInDays +
               " * ratePerDay " + ratePerDay);
+      }
     }
 
     if (isInfoEnabled())
@@ -1041,7 +1044,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       String type = (String) iter.next();
 
       List tasksForType = (List)typeToTasks.get(type);
-      possibleMatches.addAll (tasksForType);
+      if (tasksForType == null) {
+	if (isWarnEnabled()) {
+	  warn ("Could not find tasks for type <" + type + "> for task " + task.getUID() + 
+		" with d.o. " + task.getDirectObject() + " and types <" + types + ">");
+	}
+      }
+      else {
+	possibleMatches.addAll (tasksForType);
+      }
     }
 
     if (isInfoEnabled()) {
