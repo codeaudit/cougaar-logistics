@@ -324,8 +324,11 @@ public class InventoryPlugin extends ComponentPlugin
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
       Collection c = logisticsOPlanSubscription.getCollection();
       for (Iterator i = c.iterator(); i.hasNext();) {
-        logOPlan = (LogisticsOPlan) i.next();
-        break;
+	  logOPlan = (LogisticsOPlan) i.next();
+          //        System.out.println("logOplan in :" + getAgentIdentifier().toString() + 
+          //                   " is: " + logOPlan);
+	  resetLogOPlanForInventories();
+	  break;
       }
     }
 
@@ -1131,10 +1134,30 @@ public class InventoryPlugin extends ComponentPlugin
     for (Iterator i = inventories.iterator(); i.hasNext();) {
       Inventory inv = (Inventory) i.next();
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-      logInvPG.reinitialize(logToCSV, new Date(logOPlan.getOplanCday()), this);
+      logInvPG.reinitialize(logToCSV, this);
       addInventory(inv);
     }
   }
+
+
+    //AHF
+  protected void resetLogOPlanForInventories() {
+    Iterator inventories = getInventories().iterator();
+    while(inventories.hasNext()) {
+      Inventory inv = (Inventory) inventories.next();
+      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) 
+        inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      if(logInvPG.getArrivalTime() != getOPlanArrivalInTheaterTime()) {
+        long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() + 
+          (logInvPG.getArrivalTime() - getOPlanArrivalInTheaterTime());
+        logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
+        ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
+        logInvPG.setStartCDay(logOPlan.getOplanCday());
+        publishChange(inv);
+      }
+    }
+  }
+
 
   protected void addInventory(Inventory inventory) {
     String item = getInventoryType(inventory);
@@ -1215,7 +1238,9 @@ public class InventoryPlugin extends ComponentPlugin
       logInvPG.setOrg(getMyOrganization());
       logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, getOPlanArrivalInTheaterTime(), new Date(logOPlan.getOplanCday()), this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
+      logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
+      logInvPG.setStartCDay(logOPlan.getOplanCday());
 
       NewTypeIdentificationPG ti =
           (NewTypeIdentificationPG) inventory.getTypeIdentificationPG();
