@@ -1,0 +1,8 @@
+--- !ruby/object:FreeBASE::PluginConfiguration 
+name: acme_reporting_logistics
+version: 1.0
+autoload: true
+require_path: acme_reporting_logistics/core
+startup_module: ACME::Plugins::ReportingLogistics
+start_dependencies: 
+  acme_reporting_service: "*"
