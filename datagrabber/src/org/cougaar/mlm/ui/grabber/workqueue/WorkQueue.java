@@ -104,8 +104,9 @@ public class WorkQueue{
    * safe even if momentarily run out of threads.
    */
   public synchronized void enque(Work w){
-    logger.logMessage(Logger.TRIVIAL,Logger.STATE_CHANGE,
-    		      "Work "+w.getID()+" enqued");
+    if (logger.isTrivialEnabled())
+      logger.logMessage(Logger.TRIVIAL,Logger.STATE_CHANGE,
+			"Work "+w.getID()+" enqued");
     if(numInactiveThreads()==0 && numThreads()<maxThreads){
 	  putWorkOnNewThread (w);
     }else{
@@ -164,10 +165,11 @@ public class WorkQueue{
 	  // try again!
 	}
 
-	logger.logMessage(Logger.MINOR,Logger.GENERIC,
-			  Thread.currentThread () + 
-			  " - WorkQueue.createWorkThread - create new thread " +
-			  wt);
+	if (logger.isMinorEnabled())
+	  logger.logMessage(Logger.MINOR,Logger.GENERIC,
+			    Thread.currentThread () + 
+			    " - WorkQueue.createWorkThread - create new thread " +
+			    wt);
 		
       } catch (InterruptedException e) {}
     }
@@ -320,9 +322,10 @@ public class WorkQueue{
 
     public void haltWork(){
       if(work!=null){
-	logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
-			  "Thread("+getName()+") " + 
-			  "halting activity on work: "+work.getID());
+	if (logger.isMinorEnabled())
+	  logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
+			    "Thread("+getName()+") " + 
+			    "halting activity on work: "+work.getID());
 	work.halt();
       }
     }
@@ -367,9 +370,10 @@ public class WorkQueue{
 	handleResult(r);
       if(r!=null){
 	String workID = (work != null) ? ("" + work.getID()) : "";
-	logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
-			  "Thread("+getName()+") Work("+workID+
-			  ") done");
+	if (logger.isTrivialEnabled())
+	  logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
+			    "Thread("+getName()+") Work("+workID+
+			    ") done");
       }else
 	logger.logMessage(Logger.ERROR, Logger.STATE_CHANGE,
 			  "Thread("+getName()+") Work("+work.getID()+
@@ -384,9 +388,10 @@ public class WorkQueue{
 	handleResult(r);
       if(r!=null){
 	String workID = (work != null) ? ("" + work.getID()) : "";
-	logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
-			  "Thread("+getName()+") Work("+workID+
-			  ") done because timed out.");
+	if (logger.isMinorEnabled())
+	  logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
+			    "Thread("+getName()+") Work("+workID+
+			    ") done because timed out.");
       }else
 	logger.logMessage(Logger.ERROR, Logger.STATE_CHANGE,
 			  "Thread("+getName()+") Work("+work.getID()+
@@ -397,8 +402,10 @@ public class WorkQueue{
     }
 
     public void run(){
-      logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
-			"Thread("+getName()+") starting");
+      if (logger.isMinorEnabled())
+	logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
+			  "Thread("+getName()+") starting");
+
       while(!haltThread){
 	getWork();
 	if(work!=null){
@@ -416,9 +423,10 @@ public class WorkQueue{
 	    if (!timedOut) {
 	      workDone(r);
 	    } else {
-	      logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
-				"Thread " + Thread.currentThread () + 
-				" timed out, so dying.");
+	      if (logger.isMinorEnabled())
+		logger.logMessage(Logger.MINOR, Logger.STATE_CHANGE,
+				  "Thread " + Thread.currentThread () + 
+				  " timed out, so dying.");
 	      return; // thread timed out!
 	    }
 	  }
@@ -428,8 +436,9 @@ public class WorkQueue{
 	    try{
 	      this.wait(myKeepAlive);
 	    }catch(InterruptedException ie){
-	      logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
-				"Thread interrupted");
+	      if (logger.isTrivialEnabled())
+		logger.logMessage(Logger.TRIVIAL, Logger.STATE_CHANGE,
+				  "Thread interrupted");
 	      removeThread(this);
 	      haltThread=true;
 	      break;
@@ -453,8 +462,10 @@ public class WorkQueue{
 			  "Ending thread that still has a work object");
       }
       work=null;
-      logger.logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-			"Thread("+getName()+") dying");
+
+      if (logger.isMinorEnabled())
+	logger.logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+			  "Thread("+getName()+") dying");
     }
   }
 }
