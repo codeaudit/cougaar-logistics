@@ -43,7 +43,7 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.servicediscovery.SDFactory;
 
 import org.cougaar.servicediscovery.description.LineageEchelonScorer;
-import org.cougaar.servicediscovery.description.LineageListWrapper;
+import org.cougaar.servicediscovery.description.Lineage;
 import org.cougaar.servicediscovery.description.MMRoleQuery;
 import org.cougaar.servicediscovery.description.ScoredServiceDescription;
 import org.cougaar.servicediscovery.description.ServiceContract;
@@ -202,12 +202,12 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	Role role = relay.getServiceContract().getServiceRole();
 	String minimumEchelon = getMinimumEchelon(role);
 	
-	LineageListWrapper commandListWrapper = getCommandLineageList();
+	Lineage commandLineage = getCommandLineage();
 	
-	if (commandListWrapper != null) {
+	if (commandLineage != null) {
 	  
 	  LineageEchelonScorer serviceScorer = 
-	    new ALLineageEchelonScorer(commandListWrapper,
+	    new ALLineageEchelonScorer(commandLineage,
 				       getMinimumEchelon(role),
 				       role,
 				       getAgentIdentifier().toString(),
@@ -218,7 +218,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	} else {
 	  myLoggingService.error(getAgentIdentifier() + 
 				 " handleChangedServiceContractRelays: " +
-				 " no COMMAND LineageList on blackboard." + 
+				 " no COMMAND Lineage on blackboard." + 
 				 " Unable to generate MMRoleQuery for " + role);
 	}
         //publishRemove(relay);
@@ -656,13 +656,13 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       super();
     }
 
-    public ALLineageEchelonScorer(LineageListWrapper lineageListWrapper,
+    public ALLineageEchelonScorer(Lineage lineage,
 				  String minimumEchelon,
 				  Role role,
 				  String cn,
 				  ServiceRequestHistory srh,
 				  Collection uti) {
-      super(lineageListWrapper, minimumEchelon, role);
+      super(lineage, minimumEchelon, role);
       clientName = cn;
       uncoveredTimeIntervals = uti;
       serviceRequestHistory = srh;
