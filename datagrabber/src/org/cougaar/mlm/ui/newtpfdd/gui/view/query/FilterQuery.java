@@ -206,6 +206,7 @@ public class FilterQuery extends TPFDDQuery {
       }
     } catch (SQLException e) {
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.buildRollupCargoProtos - SQLError : " + e);
+      e.printStackTrace();
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
@@ -315,6 +316,7 @@ public class FilterQuery extends TPFDDQuery {
   
     } catch (SQLException e) {
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - SQLError : " + e);
+      e.printStackTrace();
     } finally {
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
@@ -1157,6 +1159,7 @@ public class FilterQuery extends TPFDDQuery {
 	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachManifestInstancesFromResult - total rows for instances " + rows);
     } catch (SQLException e) {
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachManifestInstancesFromResult - SQLError : " + e);
+      e.printStackTrace();
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
@@ -1195,6 +1198,7 @@ public class FilterQuery extends TPFDDQuery {
     String manifestProto = manifestTable + "." + DGPSPConstants.COL_ALP_TYPEID;
     String manifestInstanceID = manifestTable + "." + DGPSPConstants.COL_MANIFEST_ITEM_ID;
     String manifestAssetID = manifestTable + "." + DGPSPConstants.COL_ASSETID;
+    String isLowFi       = DGPSPConstants.COL_IS_LOW_FIDELITY;
     
     String sqlQuery = 
       "select " + "d2."+cLegID + ", " + "d2."+cLegStart + ", " + "d2."+cLegEnd + ", " + "d2."+cLegReadyAt + ", " + 
@@ -1202,7 +1206,7 @@ public class FilterQuery extends TPFDDQuery {
       "d2."+l2geoloc + ", " + "d2."+l2name + ", " + 
       "d2."+cpConvType + ", " + "d2."+cLegType + ", " + manifestInstanceID + ",\n"+
       "d2."+ciConvID + ", " + manifestProto + ", " + "d2."+cpNomen + ", " + 
-      "d2."+ciBumper + ", " + "d2."+assetInstanceOwner + ", " + "d2."+aggNumber +
+      "d2."+ciBumper + ", " + "d2."+assetInstanceOwner + ", " + "d2."+aggNumber +", d2."+isLowFi+
       "\nfrom " + derivedTable + " d2, " + manifestTable + "\n" +
       filterClauses.getWhereSql ("d2."+assetInstanceOwner, "d2."+cpPrototypeID, "d2."+ciConvID, 
 				 manifestProto, manifestInstanceID) +

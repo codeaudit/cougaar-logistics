@@ -191,6 +191,7 @@ public class AssetTPFDDQuery extends SqlQuery {
       }
     } catch (SQLException e) {
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - SQLError : " + e);
+      e.printStackTrace();
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){

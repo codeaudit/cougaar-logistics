@@ -251,6 +251,7 @@ public class UnitQuery extends SqlQuery {
 							" cargo types");
 	} catch (SQLException e) {
 	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildCargoProtosFromResult - SQLError : " + e);
+	  e.printStackTrace();
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
@@ -378,6 +379,7 @@ public class UnitQuery extends SqlQuery {
 	  
     } catch (SQLException e) {
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - SQLError : " + e);
+      e.printStackTrace();
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
