@@ -55,6 +55,12 @@ import java.util.Vector;
  * @see Filler
  */
 class Sizer {
+  protected long ONE_DAY_MILLIS = 24*60*60*1000;
+
+  // no two tasks can have arrival dates farther than this time apart and
+  // be on the same milvan
+  protected long MAX_GROUP_DAYS = 2;
+  
   static public final String TRUE = "True";
 
   /**
@@ -162,6 +168,26 @@ class Sizer {
       return null;
     }
 
+    long bestArrival = (long) _curTask.getPreferredValue(AspectType.END_TIME);    
+    
+    if (earliest > 0 && // if we've ever made a milvan
+	((bestArrival - earliest) > MAX_GROUP_DAYS*ONE_DAY_MILLIS ||
+	 (latest - bestArrival)   > MAX_GROUP_DAYS*ONE_DAY_MILLIS)) {
+      if (logger.isInfoEnabled ()) {
+	logger.info("making a new milvan since task with best arrival of " +
+		    new Date(bestArrival) + " outside of (earliest : " +
+		    new Date((long)earliest) + "-> latest " +
+		    new Date((long)latest) + ") window");
+      }
+      /*
+      System.out.println ("making a new milvan since task with best arrival of " +
+		    new Date(bestArrival) + " outside of (earliest : " +
+		    new Date((long)earliest) + "-> latest " +
+		    new Date((long)latest) + ") window");
+      */
+
+      return null;
+    }
 
     // precondition:  _curTask is bound to a Task and remainder >= 0.0
     // remainder can be == 0.0 because some Plugin developers make such
