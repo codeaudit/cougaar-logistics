@@ -161,9 +161,9 @@ public class ExternalAllocator extends InventoryModule {
     private boolean verifyBeforeAllocation(Task task, Organization org) {
       // Do not allocate tasks after they have taken place-AF does this make sense?
       if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
-      logger.warn("verifyBeforeAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
-      // too late to change
-      return false;
+	logger.warn("verifyBeforeAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
+	// too late to change
+	return false;
       }
       PlanElement pe = task.getPlanElement();
       if (pe == null) {

@@ -69,7 +69,7 @@ public class InventoryPolicy extends Policy {
       System.out.println(ex);
     }
     Add(cl);
-    IntegerRuleParameter st = new IntegerRuleParameter(SupplierAdvanceNoticeTime, 1, 40);
+    IntegerRuleParameter st = new IntegerRuleParameter(SupplierAdvanceNoticeTime, 1, 100);
     try {
       st.setValue(new Integer(1));
     } catch (RuleParameterIllegalValueException ex) {
