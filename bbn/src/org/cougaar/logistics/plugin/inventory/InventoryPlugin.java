@@ -162,9 +162,12 @@ public class InventoryPlugin extends ComponentPlugin {
   public Organization   getMyOrganization() {return myOrganization;}
     public long getCurrentTimeMillis() { return currentTimeMillis(); }
 
-    public boolean publishAdd(Object o) {
-	return getBlackboardService().publishAdd(o);
-    }
+  public boolean publishAdd(Object o) {
+    boolean success = getBlackboardService().publishAdd(o);
+    if (!success)
+      logger.error (getMyOrganization() + " - publishAdd failed for " + o);
+    return success;
+  }
 
   public void publishAddExpansion(Expansion expansion) {
     PluginHelper.publishAddExpansion(getBlackboardService(), expansion);
@@ -239,11 +242,16 @@ public class InventoryPlugin extends ComponentPlugin {
     if ((detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) &&
 	(logOPlan != null)) {
       boolean touchedRemovedProjections = 
-	supplyExpander.handleRemovedProjections(projectionTaskSubscription.getRemovedCollection());
-      supplyExpander.handleRemovedRequisitions(supplyTaskSubscription.getRemovedCollection());
+	supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
+      supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
-      expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
-      touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+
+      Collection addedSupply = supplyTaskSubscription.getAddedCollection();
+      expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
+
+      Collection addedProjections = projectionTaskSubscription.getAddedCollection();
+      touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections)); // fix for bug #1695
+
       // call the Refill Generators if we have new demand
       if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections
@@ -305,6 +313,11 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for LogisticsOPlan object **/
   private IncrementalSubscription logisticsOPlanSubscription;
 
+  /** Subscription for Withdraw tasks created by this plugin **/
+  private IncrementalSubscription withdrawTaskSubscription;
+
+  /** Subscription for ProjectWithdraw tasks created by this plugin **/
+  private IncrementalSubscription projectWithdrawTaskSubscription;
 
   protected void setupSubscriptions() {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
@@ -315,6 +328,8 @@ public class InventoryPlugin extends ComponentPlugin {
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
     inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+    withdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new WithdrawPredicate(supplyType));
+    projectWithdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new ProjectWithdrawPredicate(supplyType));
   }
 
   protected void setupSubscriptions2() {
@@ -486,42 +501,6 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
     
-  private class ProjectionExpansionPredicate implements UnaryPredicate {
-	String supplyType_;
-        UnaryPredicate taskPredicate;
-
-      public ProjectionExpansionPredicate(String type, String orgname, TaskUtils aTaskUtils) {
-	    supplyType_ = type;
-            taskPredicate = new ProjectionTaskPredicate(type, orgname, aTaskUtils);
-	}
-
-	public boolean execute(Object o) {
-	    if (o instanceof PlanElement ) {
-		Task task = ((PlanElement) o).getTask();
-                return taskPredicate.execute(task);
-	    }
-	    return false;
-	}
-    }
-    
-    private class SupplyExpansionPredicate implements UnaryPredicate
-    {
-	String supplyType_;
-        UnaryPredicate taskPredicate;
-
-	public SupplyExpansionPredicate(String type,String orgname,TaskUtils aTaskUtils) {
-	    supplyType_ = type;
-            taskPredicate = new SupplyTaskPredicate(type, orgname, aTaskUtils);
-	}
-
-	public boolean execute(Object o) {
-	    if (o instanceof Expansion) {
-		Task task = ((Expansion) o).getTask();
-                return taskPredicate.execute(task);
-	    }
-	    return false;
-	}
-    }
 
     //Allocation of refill tasks
   static class RefillAllocPredicate implements UnaryPredicate {
@@ -600,9 +579,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	    task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
 	  if (taskUtils.isDirectObjectOfType(task, supplyType)) {
 	    if (!taskUtils.isMyRefillTask(task, orgName)) {
-	      if (taskUtils.getQuantity(task) > 0) {
 		return true;
-	      }
 	    }
 	  }
 	}	
@@ -634,6 +611,69 @@ public class InventoryPlugin extends ComponentPlugin {
       return false;
     }
   } 
+
+  /** 
+   * Filters out tasks that already have PEs -- fix for bug #1695 
+   * @param tasks - possibly from added list
+   * @return Collection - tasks that have no PEs
+   */
+  protected Collection getTasksWithoutPEs (Collection tasks) {
+    Set tasksWithoutPEs = new HashSet();
+    for (Iterator iter = tasks.iterator(); iter.hasNext(); ) {
+      Task task = (Task) iter.next();
+	
+      if (task.getPlanElement() != null) {
+	if (logger.isDebugEnabled())
+	  logger.debug (getMyOrganization() + " - found task that already had a p.e. attached? : " + 
+			task.getUID() + " - so skipping it.");
+      }
+      else {
+	tasksWithoutPEs.add (task);
+      }
+    }
+
+    return tasksWithoutPEs;
+  }
+
+  private class WithdrawPredicate implements UnaryPredicate {
+    String supplyType;
+
+    public WithdrawPredicate(String type) {
+      supplyType = type;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+	Task task = (Task)o;
+	if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	  if (taskUtils.isDirectObjectOfType(task, supplyType)) {
+	    return true;
+	  }
+	}	
+      }
+      return false;
+    }
+  }
+
+  private class ProjectWithdrawPredicate implements UnaryPredicate {
+    String supplyType;
+
+    public ProjectWithdrawPredicate(String type) {
+      supplyType = type;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+	Task task = (Task)o;
+	if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+	  if (taskUtils.isDirectObjectOfType(task, supplyType)) {
+	    return true;
+	  }
+	}	
+      }
+      return false;
+    }
+  }
 
   // Determines which tasks should be expanded and which should be
   // re-allocated to a supplier
