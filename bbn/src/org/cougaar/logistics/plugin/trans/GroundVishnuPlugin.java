@@ -45,6 +45,8 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
     try {
       if (getMyParams ().hasParam ("MAX_DISTANCE"))
 	MAX_DISTANCE=getMyParams().getIntParam ("MAX_DISTANCE");
+      if (getMyParams ().hasParam ("complainAboutMissingMovabilityPG"))
+	complainAboutMissingMovabilityPG=getMyParams().getBooleanParam ("complainAboutMissingMovabilityPG");
     } catch (Exception e) { warn ("got unexpected exception " + e); }
   }
 
@@ -137,8 +139,7 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
     return false;
   }
 
-  boolean complainAboutMissingMovabilityPG = 
-    "true".equals (System.getProperty("org.cougaar.logistics.plugin.trans.GroundVishnuPlugin.complainAboutMissingMovabilityPG", "false"));
+  protected boolean complainAboutMissingMovabilityPG = false;
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMMeasure measureHelper;
   public int MAX_DISTANCE = 2000;
