@@ -1,6 +1,5 @@
 test of email notification
 
 A small step for mankind
-bar
 
 hello world
