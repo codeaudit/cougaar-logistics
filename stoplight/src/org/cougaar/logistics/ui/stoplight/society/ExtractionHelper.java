@@ -36,6 +36,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.text.DateFormat;
 
 import org.cougaar.core.util.UID;
@@ -1031,9 +1032,15 @@ public class ExtractionHelper
     if ((cdate_property == null) || (timezone_property == null))
       return c_time_msec;
 
-    DateFormat f = (new SimpleDateFormat("MM/dd/yyy H:mm:ss"));
-    f.setTimeZone(TimeZone.getTimeZone(timezone_property));
-    c_time_msec = f.parse(cdate_property).getTime();
+    try {
+      DateFormat f = (new SimpleDateFormat("MM/dd/yyy H:mm:ss"));
+      f.setTimeZone(TimeZone.getTimeZone(timezone_property));
+      c_time_msec = f.parse(cdate_property).getTime();
+    } catch (ParseException e) {
+      if (logger.isErrorEnabled())
+        logger.warn("Error: could not parse CDate -> " + cdate_property);
+      return 0l;
+    }
 /*
     TimeZone tz = TimeZone.getTimeZone(timezone_property);
 
