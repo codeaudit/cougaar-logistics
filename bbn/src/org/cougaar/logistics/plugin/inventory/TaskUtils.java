@@ -56,6 +56,8 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.logistics.plugin.packer.GenericPlugin;
+
 
 /** Provides convenience methods. */
 public class TaskUtils extends PluginHelper implements Serializable { // revisit making Serializable later...
@@ -79,6 +81,16 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 	logger = aLogger;
 	assetUtils = new AssetUtils(aLogger);
     }
+ /** @param t the task
+   *  @return true if the task has an packer INTERNAL prep phrase */
+  public static boolean isInternal(Task task) {
+    PrepositionalPhrase pp = task.getPrepositionalPhrase(GenericPlugin.INTERNAL);
+    if (pp == null) {
+      return false;
+    }
+    return true;
+   }
+
 
   /** @param t the task
    *  @param type type identification string
@@ -449,8 +461,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
       Task task = (Task)iterator.next();
       try {
-      os_elements.add(new ObjectScheduleElement(getStartTime(task),
-                                                getEndTime(task), task));
+        os_elements.add(new ObjectScheduleElement(getStartTime(task),
+            getEndTime(task), task));
       } catch (IllegalArgumentException iae) {
         if (logger.isErrorEnabled()) {
           logger.error("newObjectSchedule failed, start and end time is " + new Date(getStartTime(task)) +
