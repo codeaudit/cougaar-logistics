@@ -86,5 +86,5 @@ public class CougaarRCParams {
   }
 
   private boolean debug = "true".equals(System.getProperty("org.cougaar.mlm.ui.grabber.config.CougaarRCParams","false"));
-  private Map parameterMap = new HashMap(89);
+  protected Map parameterMap = new HashMap(89);
 }
