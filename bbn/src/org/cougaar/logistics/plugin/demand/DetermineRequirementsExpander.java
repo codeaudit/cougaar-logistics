@@ -92,7 +92,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     if (gpTasks.isEmpty()) {
       if(logger.isWarnEnabled()) {
         logger.warn("Cannot expand - no subtasks for determine requirements task "
-                  + getTaskUtils().taskDesc(detReqTask));
+                    + getTaskUtils().taskDesc(detReqTask));
       }
     } else {
       PlanElement pe = detReqTask.getPlanElement();
@@ -108,12 +108,11 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
       else if (pe instanceof Expansion) {
         addToAndPublishExpansion(detReqTask, gpTasks);
       } else {
-	if(logger.isErrorEnabled()) {
+        if(logger.isErrorEnabled()) {
           logger.error("Unhandled plan element type on DetermineRequirementsTask :" + pe.getClass().getName());
-	}
+        }
       }
     }
-
   }
 
   public void removeSubtasksFromDetermineRequirements(Task detReqTask, Collection removedAssets) {
@@ -140,6 +139,11 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
     dfPlugin.publishAdd(expansion);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Agent: " + dfPlugin.getClusterId().toString() + "DetReqExp type[" +
+                   dfPlugin.getSupplyType() + "] " + " Expanding DetReq: " + parent.getUID() +
+                   " Expansion is: " + expansion.getUID());
+    }
   }
 
   protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
