@@ -62,10 +62,10 @@ public class OrgActivityChartDataModel
     extends InventoryBaseChartDataModel {
 
 
-  private double offensiveQty = 0.0;
-  private double defensiveQty = 0.0;
+  protected double offensiveQty = 0.0;
+  protected double defensiveQty = 0.0;
 
-  private ArrayList orgActs;
+  protected ArrayList orgActs;
 
   public static final int OFFENSIVE_SERIES_INDEX = 0;
   public static final int DEFENSIVE_SERIES_INDEX = 1;
@@ -83,6 +83,14 @@ public class OrgActivityChartDataModel
 
   public OrgActivityChartDataModel(String legendTitle) {
     this(null, legendTitle);
+  }
+
+  //Subclass needed a no arg construtor that did nothing but that 
+  //was taken above.
+  //The below constructor was made to prevent the subclass from calling
+  //the no arg constructor automatically.
+  //This allowed me to call this one explicitly from the subclass.
+  public OrgActivityChartDataModel(String x,String y,String z ) {
   }
 
   public OrgActivityChartDataModel(InventoryData data,
