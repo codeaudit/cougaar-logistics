@@ -61,7 +61,10 @@ public class RefillComparator extends InventoryModule {
     Iterator oldIter = oldRefills.iterator();
     while (oldIter.hasNext()) {
       Task oldRefill = (Task) oldIter.next();
-      inventoryPlugin.publishRemove(oldRefill);
+      // check for a null in the refills list!
+      if (oldRefill != null) {
+	inventoryPlugin.publishRemove(oldRefill);
+      }
     }
 
     //Process all new Refill Tasks
@@ -95,7 +98,11 @@ public class RefillComparator extends InventoryModule {
     Iterator oldIter = oldRefillProjs.iterator();
     while (oldIter.hasNext()) {
       Task oldRefillProj = (Task) oldIter.next();
-      inventoryPlugin.publishRemove(oldRefillProj);
+      // add in a check for a null - nulls and tasks are put in the
+      // refill lists so make sure we don't publish null!
+      if (oldRefillProj != null) {
+	inventoryPlugin.publishRemove(oldRefillProj);
+      }
     }
 
     //Process all new Refill Projection Tasks
