@@ -40,7 +40,7 @@ import org.xml.sax.Attributes;
 
 /**
  * A single instance leaving the Legs PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 1/28/01
  **/
@@ -139,10 +139,11 @@ public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable
   }
 
   public Iterator getCarriedAssetsIterator(){
-    if(assetsOnLeg==null)
+    if(assetsOnLeg==null) {
       return Collections.EMPTY_LIST.iterator();
-    else
+    } else {
       return assetsOnLeg.iterator();
+    }
   }
 
   /** Get the UID of a carried asset**/

@@ -167,10 +167,11 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	final Node parentNode = (Node) parent;
 	if (!(parentNode instanceof DBUIDNode) && !(parentNode instanceof ByCarrier))
 	  return;
-	if (parentNode instanceof ByCarrier && !parentNode.hasChildren ())
+	if (parentNode instanceof ByCarrier && !parentNode.hasChildren ()) {
 	  worker = new CarrierQueryWorker (parentNode, myTree, panel);
-	else if (!parentNode.hasChildren ())
+	} else if (!parentNode.hasChildren ()) {
 	  worker = new UnitQueryWorker (parentNode, myTree, panel);
+    }
 	if (worker != null)
 	  worker.startWorker();
   }
@@ -430,10 +431,11 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
         /* Check for null, in case someone passed in a null node, or
            they passed in an element that isn't rooted at root. */
         if ( aNode == null ) {
-            if ( depth == 0 )
+            if ( depth == 0 ) {
                 return null;
-            else
+            } else {
                 retNodes = new Object[depth];
+            }
         }
         else {
             depth++;

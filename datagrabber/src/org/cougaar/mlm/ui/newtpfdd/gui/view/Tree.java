@@ -108,10 +108,11 @@ public class Tree {
 	child.setParentUID (parentUID);
 
 	Node parent = getNode (parentUID);
-	if (parent == null)
+	if (parent == null) {
 	  System.out.println ("Tree.addNode -- ERROR, no parent for " + parentUID);
-	else
+	} else {
 	  parent.addChild (child.getUID());
+    }
 	
 	uidToNode.put (new Long(child.getUID ()), child);
   }

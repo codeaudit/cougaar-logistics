@@ -26,7 +26,7 @@ import java.util.Iterator;
 
 /**
  * A location on the route
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/19/01
  **/
@@ -60,10 +60,11 @@ public class RouteLoc{
   public float getLat(){return lat;}
   public float getLon(){return lon;}
   public int hashCode(){
-    if (geoloc != null)
+    if (geoloc != null) {
       return geoloc.hashCode();
-    else
+    } else {
       return super.hashCode ();
+    }
   }
   public boolean equals(Object o){
     if(this==o)

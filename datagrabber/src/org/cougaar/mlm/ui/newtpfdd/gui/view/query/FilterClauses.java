@@ -327,10 +327,11 @@ public class FilterClauses {
 	  sb.append("\nand (");
 	  sb.append(col2);
 	  sb.append(" = ");
-	  if (selfPropelled)
+	  if (selfPropelled) {
 	    sb.append("1");
-	  else
+	  } else {
 	    sb.append("0");
+      }
 	  sb.append(")");
 	}
 

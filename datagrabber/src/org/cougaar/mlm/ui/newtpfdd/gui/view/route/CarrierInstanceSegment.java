@@ -51,7 +51,7 @@ import java.text.SimpleDateFormat;
  * are misleading, as a single CarrierInstanceSegment can represent multiple
  * movements, possibly in opposite directions...
  *
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/19/01
  **/
@@ -227,10 +227,11 @@ public class CarrierInstanceSegment extends RouteSegment {
       ret.append("");
     }else{
       LegInfo li;
-      if(forwardLegInfoList.size()>0)
+      if(forwardLegInfoList.size()>0) {
 	li=(LegInfo)forwardLegInfoList.get(0);
-      else
+      }else {
 	li=(LegInfo)backwardLegInfoList.get(0);
+    }
       ret.append(openFont(lightFontColor)+" from " +closeFont()+ 
 		 openFont(dateFontColor) + 
 		 formatter.format(li.getStart()) + closeFont()+

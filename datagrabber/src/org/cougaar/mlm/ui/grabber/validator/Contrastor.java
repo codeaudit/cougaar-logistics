@@ -36,7 +36,7 @@ import java.util.List;
 
 /**
  * Contains all the tests and knows how to kick them off
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/27/01
  *
@@ -325,10 +325,15 @@ public class Contrastor extends Validator{
   }
 
   protected String fixType(String type) {
-    if (type.equals("VARCHAR")) return "VARCHAR(255)";
-    else if (type.equals("LONG")) return "INTEGER";
-    else if (type.equals("CHAR")) return "VARCHAR(30)";
-    else return type;
+    if (type.equals("VARCHAR")) {
+        return "VARCHAR(255)";
+    } else if (type.equals("LONG")) {
+        return "INTEGER";
+    } else if (type.equals("CHAR")) {
+        return "VARCHAR(30)";
+    } else  {
+        return type;
+    }
   }
 
   protected void insertShortRow(Logger logger, Statement s, ResultSet rs, 
@@ -340,8 +345,11 @@ public class Contrastor extends Validator{
       if (position==1) {
 	for(int i=1;i<=rs.getMetaData().getColumnCount();i++) {
 	  String thisColumn = rs.getString(i);
-	  if (thisColumn == null) sb.append("NULL,");
-	  else sb.append("'"+thisColumn+"',");
+	  if (thisColumn == null) {
+          sb.append("NULL,");
+	  } else {
+          sb.append("'"+thisColumn+"',");
+      }
 	}
 	for(int i=1;i<=rs.getMetaData().getColumnCount();i++) {
 	  sb.append("NULL,");
@@ -352,8 +360,11 @@ public class Contrastor extends Validator{
 	}
 	for(int i=1;i<=rs.getMetaData().getColumnCount();i++) {
 	  String thisColumn = rs.getString(i);
-	  if (thisColumn == null) sb.append("NULL,");
-	  else sb.append("'"+thisColumn+"',");
+	  if (thisColumn == null) {
+          sb.append("NULL,");
+	  } else {
+          sb.append("'"+thisColumn+"',");
+      }
 	}
       } else {
 	logger.logMessage(Logger.ERROR,Logger.GENERIC,
@@ -377,13 +388,19 @@ public class Contrastor extends Validator{
       sb.append("'"+-count+"',");
       for(int i=1;i<=rs1.getMetaData().getColumnCount();i++) {
 	String thisColumn = rs1.getString(i);
-	if (thisColumn == null) sb.append("NULL,");
-	else sb.append("'"+thisColumn+"',");
+	if (thisColumn == null) {
+        sb.append("NULL,");
+	} else {
+        sb.append("'"+thisColumn+"',");
+    }
       }
       for(int i=1;i<=rs2.getMetaData().getColumnCount();i++) {
 	String thisColumn = rs2.getString(i);
-	if (thisColumn == null) sb.append("NULL,");
-	else sb.append("'"+thisColumn+"',");
+	if (thisColumn == null) {
+        sb.append("NULL,");
+	} else {
+        sb.append("'"+thisColumn+"',");
+    }
       }
       sb.deleteCharAt(sb.length()-1); // remove trailing ,
       sb.append(")");
@@ -457,10 +474,11 @@ public class Contrastor extends Validator{
       h.sRow();
       String[] headers=test.getHeaders();
       for(int i=0;i<(headers.length*2);i++){
-	if(i<headers.length)
+	if(i<headers.length) {
 	  h.tHead(headers[i]+" "+compone);
-	else
+	} else {
 	  h.tHead(headers[i-headers.length]+" "+comptwo);
+    }
       }
       h.eRow();
       //Print the rest of the table:
@@ -486,8 +504,11 @@ public class Contrastor extends Validator{
 	    break;
 	  case Test.TYPE_INT:
 	    int output_i = rs.getInt(tableindex);
-	    if (output_i==0) output_s=" ";
-	    else output_s=new Integer(output_i).toString();
+	    if (output_i==0) {
+            output_s=" ";
+	    } else {
+            output_s=new Integer(output_i).toString();
+        }
 	    if (conflictFlag < 0) output_s = "<FONT COLOR=RED>"+output_s+"</FONT>";
 	    h.tData(output_s);
 	    break;

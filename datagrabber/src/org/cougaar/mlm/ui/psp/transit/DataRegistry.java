@@ -1010,10 +1010,11 @@ typical_case:
 			      ".registerCargoPrototype - register proto proto for "+instAsset.getUID());
 
 	toReg.cargoPrototypes.addPrototype(toProt);
-	if (lowFiAssetPG != null)
+	if (lowFiAssetPG != null) {
 	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDim());
-	else
+	} else{
 	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, protWidth, protHeight, protDepth, protWeight, protArea, protVolume, (GLMAsset)protAsset));
+    }
       }
 
       // don't return the protId just yet!
@@ -1137,10 +1138,11 @@ typical_case:
 	  System.out.println (Thread.currentThread () + ".registerCargoPrototype - register Instance proto for "+ instAsset.getUID());
 
 	toReg.cargoPrototypes.addPrototype(toProt);
-	if (lowFiAssetPG != null)
+	if (lowFiAssetPG != null) {
 	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDim());
-	else
+	} else {
 	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, instWidth, instHeight, instDepth, instWeight, instArea, instVolume, (GLMAsset)protAsset));
+    }
       }
       else if (DEBUG)
 	System.out.println (Thread.currentThread () + ".registerCargoPrototype - ignoring instId " + instId);

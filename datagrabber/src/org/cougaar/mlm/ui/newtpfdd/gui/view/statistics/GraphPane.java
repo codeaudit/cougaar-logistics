@@ -242,10 +242,11 @@ public class GraphPane extends StatisticsPane {
 			while(rs.next()){
 			  // X axis labels
 			  String label = "?";
-			  if (types[xCol-1] == Test.TYPE_STRING)
+			  if (types[xCol-1] == Test.TYPE_STRING) {
 				label = rs.getString(xCol);
-			  else if (types[xCol-1] == Test.TYPE_DATETIME)
+			  } else if (types[xCol-1] == Test.TYPE_DATETIME) {
 				label = rs.getTimestamp(xCol).toString();
+              }
 
 			  if (!label.equals(lastX)) {
 				labels.add (label);

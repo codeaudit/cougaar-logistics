@@ -22,7 +22,7 @@ package org.cougaar.mlm.ui.newtpfdd.transit;
 import java.io.Serializable;
 
 /** Position of an object at a specific geoloc/lat/lon
- * @author Benjamin Lubin; last modified by $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by $Author: tom $
  *
  * @since 11/14/00
  */
@@ -32,10 +32,11 @@ public class FixedPosition implements Position{
   protected float lon;
   
   public FixedPosition(String name, double lat, double lon){
-    if(name != null)
+    if(name != null) {
       this.name=name.intern();
-    else
+    } else {
       this.name=null;
+    }
     this.lat=(float)lat;
     this.lon=(float)lon;
   }

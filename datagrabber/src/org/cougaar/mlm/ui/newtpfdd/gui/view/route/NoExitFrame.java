@@ -44,10 +44,11 @@ public class NoExitFrame extends OpenMapFrame {
 
   protected void processWindowEvent(WindowEvent e) 
   {
-	if (e.getID() != WindowEvent.WINDOW_CLOSING)
+	if (e.getID() != WindowEvent.WINDOW_CLOSING) {
 	  super.processWindowEvent(e);
-	else
+	} else {
 	  dispose();
+    }
   }
 
   public void setInfoDeligator(InformationDelegator id){

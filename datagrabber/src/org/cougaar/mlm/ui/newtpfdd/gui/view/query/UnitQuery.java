@@ -595,10 +595,11 @@ public class UnitQuery extends SqlQuery {
     CargoInstance cargo = new CargoInstance (generator, id);
     String trimName = trim(name);
     if (trimName.length () == 0) {// for aggregates
-      if (quantity > 1)
+      if (quantity > 1) {
 	trimName = "Group of " + aggnumber + " " + protoNomen;
-      else
+      } else {
 	trimName = protoNomen;
+    }
     }
 	
     cargo.setDisplayName (trimName);
@@ -943,10 +944,11 @@ public class UnitQuery extends SqlQuery {
 	String cpNomen       = conveyancePrototypeTable + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
 	String wherePrefix = 
 	  filterClauses.getUnitWhereSql (assetInstanceOwner);
-	if (wherePrefix.equals(""))
+	if (wherePrefix.equals("")) {
 	  wherePrefix = "\nwhere ";
-	else
+	} else {
 	  wherePrefix += "\nand ";
+    }
 
 	String sqlQuery = 
 	  "select " + cLegID + ", " + cLegStart + ", " + cLegEnd + ", " + cLegReadyAt + ", " + l1geoloc + ", " + l1name +

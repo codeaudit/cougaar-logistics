@@ -251,12 +251,16 @@ public class AssetCategoryQuery extends SqlQuery {
 	String prototypeName = rs.getString(DGPSPConstants.COL_PROTOTYPEID);
 	String conveyanceName = rs.getString(DGPSPConstants.COL_CONVEYANCEID);
 
-	if (oldProto == null || !prototypeName.equals(oldProto)) 
+	if (oldProto == null || !prototypeName.equals(oldProto)) {
 	  protoChange = true; 
-	else protoChange = false;
-	if (oldConvey == null || !conveyanceName.equals(oldConvey)) 
+	} else { 
+        protoChange = false;
+    }
+	if (oldConvey == null || !conveyanceName.equals(oldConvey)) { 
 	  conveyChange = true;
-	else conveyChange = false;
+	} else {
+        conveyChange = false;
+    }
 	
 	if (protoChange) {
 	  if (oldProto != null) {

@@ -359,9 +359,9 @@ public class GanttChart extends Container
   public void fireRowAdded(int rowNum)
   {
     final Object item = readItem(rowNum);
-    if ( rowNum >= 0 && rowNum <= getMaximum() + 1 ) // expected; n rows numbered 0 to n - 1
+    if ( rowNum >= 0 && rowNum <= getMaximum() + 1 ) { // expected; n rows numbered 0 to n - 1
       setMaximum(getMaximum() + 1);
-    else if ( rowNum > getMaximum() + 1 ) {
+    } else if ( rowNum > getMaximum() + 1 ) {
       setMaximum(rowNum);
       OutputHandler.out("GC:fRA Warning: adding row " + rowNum
 			+ " beyond known max " + getMaximum());
@@ -771,18 +771,19 @@ public class GanttChart extends Container
   
   public void setVirtualXSize(long newSize) {
     myVirtualXSync.setVirtualXSize(newSize);
-    if (newSize > 48*MONTH)
+    if (newSize > 48*MONTH) {
       setTicInterval (YEAR);
-    else if (newSize > 12*MONTH)
+    } else if (newSize > 12*MONTH) {
       setTicInterval (MONTH);
-    else if (newSize > 12*WEEK)
+    } else if (newSize > 12*WEEK) {
       setTicInterval (WEEK);
-    else if (newSize > DAY)
+    } else if (newSize > DAY) {
       setTicInterval (DAY);
-    else if (newSize < DAY)
+    } else if (newSize < DAY) {
       setTicInterval (HOUR);
-    else if (newSize < HOUR)
+    } else if (newSize < HOUR) {
       setTicInterval (MINUTE);
+    }
   }
 
   public int getVisibleAmount()

@@ -43,7 +43,7 @@ import java.text.SimpleDateFormat;
 
 /**
  * A single segment in the route
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/19/01
  **/
@@ -326,8 +326,11 @@ public class RouteSegment extends OMLine {
 	    // set the end at the begining...
 	    newEndY2 = ypoints[0][start[1]];
 	    // and adjust...
-	    if (dy < 0) newEndY2 -= offset;
-	    else newEndY2 += offset;
+	    if (dy < 0) {
+            newEndY2 -= offset;
+	    } else {
+            newEndY2 += offset;
+        }
 	  } else {
 	    dd = Math.abs((float)dy/(float)dx);
 	    // If the line moves more x than y
@@ -338,8 +341,11 @@ public class RouteSegment extends OMLine {
 	      // find the y for that x and set that
 	      newEndY2 = ypoints[0][start[1]];
 	      offset = (int)((float)Math.abs(xpoints[0][start[1]] - newEndX2)*dd);
-	      if (dy < 0) newEndY -= offset;
-	      else newEndY += offset;
+	      if (dy < 0) {
+              newEndY -= offset;
+	      } else {
+              newEndY += offset;
+          }
 	    } else  {
 	      // switch everything...set y end
 	      newEndY2 = ypoints[0][start[1]] + 
@@ -389,8 +395,11 @@ public class RouteSegment extends OMLine {
 	  // set the end at the begining...
 	  newEndY = ypoints[0][start[0]];
 	  // and adjust...
-	  if (dy < 0) newEndY -= offset;
-	  else newEndY += offset;
+	  if (dy < 0) {
+          newEndY -= offset;
+	  } else {
+          newEndY += offset;
+      }
 	} else {
 	  dd = Math.abs((float)dy/(float)dx);
 	  // If the line moves more x than y
@@ -401,8 +410,11 @@ public class RouteSegment extends OMLine {
 	    // find the y for that x and set that
 	    newEndY = ypoints[0][start[0]];
 	    offset = (int)((float)Math.abs(xpoints[0][start[0]] - newEndX)*dd);
-	    if (dy < 0) newEndY -= offset;
-	    else newEndY += offset;
+	    if (dy < 0) {
+            newEndY -= offset;
+	    } else {
+            newEndY += offset;
+        }
 	  } else {
 	    // switch everything...set y end
 	    newEndY = ypoints[0][start[0]] + 

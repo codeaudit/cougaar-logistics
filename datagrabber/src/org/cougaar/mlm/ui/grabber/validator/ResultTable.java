@@ -92,10 +92,11 @@ public class ResultTable {
       int runtwo = rs.getInt(2);
       int result = rs.getInt(3);
       int otherrun = baseline;
-      if (runone == baseline)
+      if (runone == baseline) {
 	otherrun = runtwo;
-      else if (runtwo == baseline)
+      } else if (runtwo == baseline) {
 	otherrun = runone;
+    }
 
       if (result != Test.RESULT_NOT_RUN)
 	retval.add(new Integer(otherrun));
@@ -233,10 +234,11 @@ public class ResultTable {
     if (comptwo < compone) { x = comptwo; y = compone; }
     
     int status;
-    if (compone == comptwo) 
+    if (compone == comptwo) {
       status = tester.getTestResult(logger,s,x,test);
-    else
+    } else {
       status = ((Contrastor)tester).getDiffResult(logger,s,x,y,test);
+    }
     
     // A whole comparison needs to be marked as different
     if (compone != comptwo && status == Contrastor.RESULT_DIFF) {
@@ -283,8 +285,11 @@ public class ResultTable {
       ResultSet rs = s.executeQuery("select status from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+
 				    "' and runtwo = '"+y+"' and test = '0'");
       if (!rs.next()) {
-	if (compone==0 || comptwo==0) result = Contrastor.RESULT_NOT_RUN;
-	else result = Contrastor.RESULT_SAME;
+	if (compone==0 || comptwo==0) {
+        result = Contrastor.RESULT_NOT_RUN;
+	} else {
+        result = Contrastor.RESULT_SAME;
+    }
       } else {
 	result = rs.getInt(1);
       }

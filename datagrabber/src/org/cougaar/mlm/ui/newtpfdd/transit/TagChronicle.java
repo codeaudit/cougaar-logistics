@@ -25,7 +25,7 @@ import java.io.Serializable;
 /**
  * Holds a Chronicle of data about the location of some String indexed property
  *
- * @author Benjamin Lubin; last modified by $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by $Author: tom $
  *
  * @since 11/15/00
  */
@@ -164,10 +164,11 @@ public class TagChronicle extends Chronicle{
       this.end=end;
       this.startDate=startDate;
       this.endDate=endDate;
-      if(tag!=null)
+      if(tag!=null) {
 	this.tag=tag.intern();
-      else
+      } else{
 	this.tag=null;
+    }
       this.count=count;
     }
 
@@ -229,10 +230,11 @@ public class TagChronicle extends Chronicle{
     public int getCount(String tag){
       if(tags.contains(tag)){
 	Integer i=(Integer)tagToCount.get(tag);
-	if(i==null)
+	if(i==null) {
 	  return 0;
-	else
+	} else {
 	  return i.intValue();
+    }
       }
       return 0;
     }

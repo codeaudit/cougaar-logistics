@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/BeanInfoProvider.java,v 1.1 2002-05-14 20:41:08 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/BeanInfoProvider.java,v 1.2 2002-08-08 19:23:15 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -56,10 +56,11 @@ public class BeanInfoProvider
 	    else {
 		propertyVector.add(property);
 		readMethod = property.getReadMethod();
-		if ( readMethod != null )
+		if ( readMethod != null ) {
 		    ReaderMap.put(key, readMethod);
-		else
+		} else {
 		    OutputHandler.out("BIP:aC Warning: no read method for " + key);
+        }
 	    }
 	    writeMethod = property.getWriteMethod();
 	    if ( writeMethod != null ) // for the class type itself

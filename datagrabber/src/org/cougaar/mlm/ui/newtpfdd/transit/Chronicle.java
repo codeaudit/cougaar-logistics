@@ -31,7 +31,7 @@ import java.io.Serializable;
  *
  * Assumption -- transit tasks do not overlap.
  *
- * @author Benjamin Lubin; last modified by $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by $Author: tom $
  *
  * @since 11/14/00
  */
@@ -137,10 +137,11 @@ public abstract class Chronicle implements Serializable{
     i.next();
     while(i.hasNext()){
       TransitData td=(TransitData)i.next();
-      if(td.getStartDate() < lastEndDate)
+      if(td.getStartDate() < lastEndDate) {
 	i.remove();
-      else
+      } else {
 	lastEndDate=td.getEndDate();
+    }
     }
   }
 

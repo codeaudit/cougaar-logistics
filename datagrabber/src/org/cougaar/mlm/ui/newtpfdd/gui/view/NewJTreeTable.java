@@ -375,10 +375,11 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
     carrierPopup.setLightWeightPopupEnabled(false);
     try{
       if(selectedNode != null){
-	if(taskModel instanceof AssetModel)
+	if(taskModel instanceof AssetModel) {
 	  fillAssetPopup(carrierPopup, selectedNode, unitName,unitDBUID);
-	else
+	} else {
 	  fillUnitPopup(carrierPopup, selectedNode, unitName, unitDBUID);
+    }
       }
     }catch ( Exception e ) {
       handleException(e);
@@ -520,11 +521,12 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
 	  useFilter=true;
 	  break;
 	case UIDGenerator.ASSET_PROTOTYPE:
-	  if(taskModel instanceof AssetModel)
+    if(taskModel instanceof AssetModel) {
 	    //This is an awful hack because the AssetModel uses the wrong type.
 	    filterClauses.addCarrierType(taskModel.getDBUID(curNode));
-	  else
+    } else {
 	    filterClauses.addCargoType(taskModel.getDBUID(curNode));
+    }
 	  useFilter=true;
 	  break;
 	case UIDGenerator.ASSET_INSTANCE:

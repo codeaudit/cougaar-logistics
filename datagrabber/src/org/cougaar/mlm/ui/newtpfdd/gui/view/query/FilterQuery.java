@@ -132,23 +132,26 @@ public class FilterQuery extends TPFDDQuery {
     }
 
       rs = getResultSet(connection, formManifestLegSql(myFC, recentRun));
-      if (myFC.getRollup ())
+      if (myFC.getRollup ()) {
 	attachRollupLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
-      else
+      } else {
 	attachLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
+    }
       
     }else{
       ResultSet rs = getResultSet(connection, formCargoLegSql (myFC, recentRun, false));
-      if (myFC.getRollup ())
+      if (myFC.getRollup ()) {
 	attachRollupLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
-      else
+      } else {
 	attachLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
+    }
 
       rs = getResultSet(connection, formCargoLegSql (myFC, recentRun, true));
-      if (myFC.getRollup ())
+      if (myFC.getRollup ()) {
 	attachRollupLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
-      else
+      } else {
 	attachLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
+    }
     }
     if(showSqlTime){
       System.out.println((run.hasCargoLegTable()?"Fast ":"")+"FilterCargoLeg query took: "+

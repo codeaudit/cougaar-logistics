@@ -50,9 +50,9 @@ public class UnitTreeModel extends TaskModel {
 		int total = 0;
 		for (int i = 0; i < org.getChildCount (); i++) {
 		  DBUIDNode child = (DBUIDNode) myTree.getChild(org, i);
-		  if (child.getType () == UIDGenerator.ORGANIZATION) 
+		  if (child.getType () == UIDGenerator.ORGANIZATION) { 
 			total++;
-		  else if (debug) {
+		  } else if (debug) {
 			System.out.println ("UnitTreeModel.getChildCount - found equipment node " + child);
 		  }
 		}
