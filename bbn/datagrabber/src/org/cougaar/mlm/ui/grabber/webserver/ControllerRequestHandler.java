@@ -25,6 +25,7 @@ import org.cougaar.mlm.ui.grabber.logger.DBIDLogger;
 import org.cougaar.mlm.ui.grabber.config.WebServerConfig;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 
+import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.controller.*;
 import org.cougaar.mlm.ui.grabber.validator.HTMLizer;
 import org.cougaar.mlm.ui.grabber.validator.ResultTable;
@@ -184,12 +185,20 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     if(showSpace)
       runToSize=getDiskSpacePerRun (s);
 	
-    ResultSet rs=s.executeQuery("SELECT "+Controller.COL_RUNID+","+
-				Controller.COL_STARTTIME+","+
-				Controller.COL_ENDTIME+","+
-				Controller.COL_CONDITION+" FROM "+
-				controller.getRunTableName() +
-				" ORDER BY "+Controller.COL_RUNID);
+    String sql = "SELECT "+Controller.COL_RUNID+","+
+      Controller.COL_STARTTIME+","+
+      Controller.COL_ENDTIME+","+
+      Controller.COL_CONDITION+" FROM "+
+      controller.getRunTableName() +
+      " ORDER BY "+Controller.COL_RUNID;
+
+    Map runToOwners = new HashMap ();
+    Map runToAssets = new HashMap ();
+
+    getSizes(s, sql, runToOwners, runToAssets);
+
+    ResultSet rs=s.executeQuery(sql);
+
     h.sTable();
     h.sRow();
     h.tHead("ID");
@@ -197,6 +206,8 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     h.tHead("End Time");
     if(showSpace)
       h.tHead("Disk Space");
+    h.tHead("Units");
+    h.tHead("Assets");
     h.tHead("Status");
     h.tHead("Action");
     h.eRow();
@@ -214,6 +225,11 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
 	h.tData("" + size);
       }
       
+      Object numOwners = runToOwners.get(new Integer(runID));
+      Object numAssets = runToAssets.get(new Integer(runID));
+      h.tData((numOwners == null) ? "N/A" : numOwners.toString());
+      h.tData((numAssets == null) ? "N/A" : numAssets.toString());
+
       h.tData(h.aStr(getURLRun(COM_LISTLOG,runID)+
 		     "?displayLevel="+Logger.SEVERITIES[Logger.IMPORTANT],
 		     Run.CONDITIONS[rs.getInt(4)])+
@@ -246,6 +262,38 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     }
 
     h.eTable();
+  }
+
+  protected void getSizes(Statement s, String sql, Map runToOwners, Map runToAssets) throws SQLException {
+    ResultSet rs=s.executeQuery(sql);
+
+    Set runIDs = new HashSet ();
+
+    while(rs.next()){
+      int runID=rs.getInt(1);
+      runIDs.add (new Integer(runID));
+    }
+
+    for(Iterator iter = runIDs.iterator(); iter.hasNext(); ) {
+      Integer runID = (Integer) iter.next(); 
+      
+      String perRunSQL = "select count(distinct " + 
+	DGPSPConstants.COL_OWNER + "), count(*)" + 
+	"\nfrom " + 
+	Controller.getTableName (DGPSPConstants.ASSET_INSTANCE_TABLE, runID.intValue());
+
+      try {
+	ResultSet perRunResultSet=s.executeQuery(perRunSQL);
+	while(perRunResultSet.next()){
+	  int owners=perRunResultSet.getInt(1);
+	  int assets=perRunResultSet.getInt(2);
+	  runToOwners.put (runID, new Integer(owners));
+	  runToAssets.put (runID, new Integer(assets));
+	}
+      } catch (Exception e) {
+	//System.out.println ("got exception on query\n" + perRunSQL + "\nexception was:\n" + e);
+      }
+    }
   }
 
   protected Map getDiskSpacePerRun (Statement s)
