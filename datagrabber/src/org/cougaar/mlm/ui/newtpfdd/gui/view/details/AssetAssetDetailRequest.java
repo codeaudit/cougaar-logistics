@@ -40,7 +40,7 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
 
   //Constants:
   ////////////
-  public static boolean debug = false;
+  public static boolean debug = Boolean.getBoolean("org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetAssetDetailRequest.debug");
   //Variables:
   ////////////
   private String assetID;
@@ -57,6 +57,7 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
   protected String getSql(DatabaseConfig dbConfig, int runID){
     String aiTable=getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,runID);
     String apTable=getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,runID);
+    String cccDimTable=getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,runID);
 
     //For select:
     String aiOwner="ai."+DGPSPConstants.COL_OWNER;
@@ -66,15 +67,14 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
     String aiAgg="ai."+DGPSPConstants.COL_AGGREGATE;
     String apAClass="ap."+DGPSPConstants.COL_ASSET_CLASS;
     String apAType="ap."+DGPSPConstants.COL_ASSET_TYPE;
-    String apWeight="ap."+DGPSPConstants.COL_WEIGHT;
-    String apWidth="ap."+DGPSPConstants.COL_WIDTH;
-    String apHeight="ap."+DGPSPConstants.COL_HEIGHT;
-    String apDepth="ap."+DGPSPConstants.COL_DEPTH;
+    String cccDimWeight=DGPSPConstants.COL_WEIGHT;
+    String cccDimWidth=DGPSPConstants.COL_WIDTH;
+    String cccDimHeight=DGPSPConstants.COL_HEIGHT;
+    String cccDimDepth=DGPSPConstants.COL_DEPTH;
+    String cccDimArea=DGPSPConstants.COL_AREA;
+    String cccDimVolume=DGPSPConstants.COL_VOLUME;
 
-    //For Where:
-    String aiAssetID="ai."+DGPSPConstants.COL_ASSETID;
-    String aiProtoID="ai."+DGPSPConstants.COL_PROTOTYPEID;
-    String apProtoID="ap."+DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimCCC=DGPSPConstants.COL_CARGO_CAT_CODE;
 
     String sql="select "+
       aiOwner+", "+
@@ -84,22 +84,42 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
       aiAgg+", "+
       apAClass+", "+
       apAType+", "+
-      apWeight+", "+
-      apWidth+", "+
-      apHeight+", "+
-      apDepth+
-      " from "+
-      aiTable+" ai, "+   
-      apTable+" ap "+
-      " where "+
-      aiAssetID+"='"+assetID+"'\nand "+
-      aiProtoID+"="+apProtoID + "\n" +
+      cccDimWeight+", "+
+      cccDimWidth+", "+
+      cccDimHeight+", "+
+      cccDimDepth+", "+
+      cccDimArea+", "+
+      cccDimVolume+", "+
+      cccDimCCC+
+      "\nfrom " +getFrom  (runID) + "\n" +
+      "where "+getWhere (runID) + "\n" +
       "order by " + aiOwner +"," +apType+","+apNomen+","+aiName;
 
     if (debug) 
-      System.out.println ("AssetAssetDetailRequest.getSql - sql is " + sql);
+      System.out.println ("AssetAssetDetailRequest.getSql - sql is\n" + sql);
 
       return sql;
+  }
+
+  protected String getFrom (int runID) {
+    String aiTable  =getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,runID);
+    String apTable  =getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,runID);
+    String cccDimTable=getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,runID);
+
+    return aiTable+" ai, "+   
+      apTable+" ap, " + cccDimTable;
+  }
+
+  protected String getWhere (int runID) {
+    String aiAssetID="ai."+DGPSPConstants.COL_ASSETID;
+    String aiProtoID="ai."+DGPSPConstants.COL_PROTOTYPEID;
+    String apProtoID="ap."+DGPSPConstants.COL_PROTOTYPEID;
+    String cccDimTable=getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE,runID);
+    String cccDimProtoID=cccDimTable +"."+DGPSPConstants.COL_PROTOTYPEID;
+
+    return aiAssetID+"='"+assetID+"'\n and "+
+      aiProtoID     +"="+apProtoID + "\n and " +
+      cccDimProtoID +"="+apProtoID;
   }
 
   //InnerClasses:
