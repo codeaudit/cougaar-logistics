@@ -66,9 +66,10 @@ public class InventoryLevelGenerator extends InventoryModule {
   protected double findCommittedRefill(int bucket, LogisticsInventoryPG thePG, boolean countProjections) {
     double refillQty = 0;
     ArrayList reqs = thePG.getRefillRequisitions();
+    ArrayList refills=null;
     Task refill = null;
     if (bucket < reqs.size()) {
-      refill = (Task) reqs.get(bucket);
+      refills = (ArrayList) reqs.get(bucket);
     }
     
     // long today = inventoryPlugin.getCurrentTimeMillis();
@@ -81,59 +82,62 @@ public class InventoryLevelGenerator extends InventoryModule {
     // check that the bucket we're looking at is in the projection period and its
     // not just an off day during the Requisition period
     int lastReqBucket = thePG.getLastRefillRequisition();
-    if ((refill == null) && (bucket > lastReqBucket) && (countProjections)) {
-      refill = thePG.getRefillProjection(bucket);
+    if (((refills == null) || (refills.size() == 0)) 
+	&& (bucket > lastReqBucket) && (countProjections)) {
+      refills = thePG.getRefillProjection(bucket);
     }
 
 
     //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
     // filled with null instead of a task - so make sure you really have a task!
-    if (refill != null) {
-      PlanElement pe = refill.getPlanElement();
-      AllocationResult ar = null;
-      if (pe !=null ) {
-        //try to use the reported result - but if its null - use the 
-        // estimated result
-        if (pe.getReportedResult() != null) {
-          ar = pe.getReportedResult();
-        } else {
-          ar = pe.getEstimatedResult();
-        }
-        // make sure that we got atleast a valid reported OR estimated allocation result
-        if (ar != null) {
-          if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-            //demandrate
-	    //             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-	    //               //default rate for volume is days
-	    //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
-	    //             } else {
-	    //               //default rate for counts is millis
-	    //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
-	    // 	  }
-	    refillQty = getTaskUtils().getQuantity(refill, ar, thePG.getBucketMillis());
-          } else {
-            try {
-              refillQty = ar.getValue(AspectType.QUANTITY);
-            } catch (IllegalArgumentException iae) {
-		if (logger.isErrorEnabled()) { 
-		    logger.error("findCommittedRefill - The refill task " + 
-				 refill.getUID() + 
-				 "'s plan element has an allocation result without a quantity : " + ar);
+    if (refills != null) {
+	for(int i=0; i < refills.size(); i++) {
+	    refill = (Task) refills.get(i);
+	    PlanElement pe = refill.getPlanElement();
+	    AllocationResult ar = null;
+	    if (pe !=null ) {
+		//try to use the reported result - but if its null - use the 
+		// estimated result
+		if (pe.getReportedResult() != null) {
+		    ar = pe.getReportedResult();
+		} else {
+		    ar = pe.getEstimatedResult();
 		}
-	    } catch (Exception e) {
-	      if (ar == null && logger.isErrorEnabled()) {
-		logger.error("This would blow our minds.");
-	      } else {
-		  if (logger.isErrorEnabled()) {
-		      logger.error(" Task is " + getTaskUtils().taskDesc(refill) );
-		      e.printStackTrace();
-		  }
-	      }
+		// make sure that we got atleast a valid reported OR estimated allocation result
+		if (ar != null) {
+		    if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+			//demandrate
+			//             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+			//               //default rate for volume is days
+			//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
+			//             } else {
+			//               //default rate for counts is millis
+			//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+			// 	  }
+			refillQty += getTaskUtils().getQuantity(refill, ar, thePG.getBucketMillis());
+		    } else {
+			try {
+			    refillQty += ar.getValue(AspectType.QUANTITY);
+			} catch (IllegalArgumentException iae) {
+			    if (logger.isErrorEnabled()) { 
+				logger.error("findCommittedRefill - The refill task " + 
+					     refill.getUID() + 
+					     "'s plan element has an allocation result without a quantity : " + ar);
+			    }
+			} catch (Exception e) {
+			    if (ar == null && logger.isErrorEnabled()) {
+				logger.error("This would blow our minds.");
+			    } else {
+				if (logger.isErrorEnabled()) {
+				    logger.error(" Task is " + getTaskUtils().taskDesc(refill) );
+				    e.printStackTrace();
+				}
+			    }
+			}
+		    }
+		}
 	    }
-	  }
-	  return refillQty;
-	}
-      }
+	}		
     }
     // if we did not find a match return 0.0
     return refillQty;

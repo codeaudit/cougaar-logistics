@@ -37,6 +37,7 @@ import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
 import java.util.*;
 
@@ -321,7 +322,22 @@ public class LogisticsInventoryBG implements PGDelegate {
         while (bucket >= refillRequisitions.size()) {
             refillRequisitions.add(null);
         }
-        refillRequisitions.set(bucket, task);
+
+	//MWD Debugging
+	ArrayList refills = (ArrayList) refillRequisitions.get(bucket);
+	if(refills == null) {
+	    refills = new ArrayList();
+	    refillRequisitions.set(bucket, refills);
+	}
+	/**
+	 * Debug
+	else {
+	    logger.warn("Uh-Oh. At " + getOrgName() + "-item:" + getItemName() +
+			" on " + TimeUtils.dateString(endTime)+" we would be overwritting task "
+			+ ((Task) refills.get(0)).getUID() + " with new task " + task.getUID()); 
+        }
+	*/
+	refills.add(task);
     }
 
     public int getLastWithdrawBucket() {
@@ -402,9 +418,21 @@ public class LogisticsInventoryBG implements PGDelegate {
     public int getLastRefillRequisition() {
         int lastRefill = -1;
         for (int i = 0; i < refillRequisitions.size(); i++) {
-            Task task = (Task) refillRequisitions.get(i);
-            if (task != null) {
-                lastRefill = i;
+            ArrayList refills = (ArrayList) refillRequisitions.get(i);
+            if ((refills != null) &&
+		(refills.size() > 0)) {
+		//The last refill is actually the target date for it's arrival, 
+		//because thats what the refill generator is planning on.
+		for(int j=0; j < refills.size() ; j++) {
+		    Task task = (Task) refills.get(j);
+		    //taskUtils.getEndTime() returns the preference (the best time)
+		    int endBucket = convertTimeToBucket(taskUtils.getEndTime(task),true);
+		    lastRefill = Math.max(endBucket,lastRefill);
+		}
+		//Put above for loop and code in to replace line below this 
+		//because we were counting all the projections from an early arrival 
+		//to the request date of a last refill.
+		//lastRefill = i;
             }
         }
         return lastRefill;
@@ -449,30 +477,54 @@ public class LogisticsInventoryBG implements PGDelegate {
             refillProjections.add(null);
         }
         for (int i = bucket_start; i < bucket_end; i++) {
-            refillProjections.set(i, task);
+	    ArrayList refills = (ArrayList) refillProjections.get(i);
+	    if(refills == null) {
+		refills = new ArrayList();
+		refillProjections.set(i, refills);
+	    }
+	    if(!refills.contains(task)) {
+		refills.add(task);
+	    }
         }
     }
 
     public void removeRefillProjection(Task task) {
+      ArrayList refills;
       Task refillProj = null;
       for (int i=0; i < refillProjections.size(); i++) {
-        refillProj = (Task)refillProjections.get(i);
-        if ((refillProj != null) &&
-            (refillProj.getUID().equals(task.getUID()))) {
-          refillProjections.set(i, null);
-        }
-      }
+        refills = (ArrayList)refillProjections.get(i);
+	if(refills != null) {
+	    //	    for(j=0; j < refills.size() ;j++) {
+	    //		refillProj = (Task) refills.get(j);
+	    //	if ((refillProj != null) &&
+	    //	    (refillProj.getUID().equals(task.getUID()))) {
+	    //	    refills.remove(j);
+	    //}
+	    //}
+	    if(refills.remove(task)) {
+		if(refills.size() < 1) {
+		    refillProjections.set(i,null);
+		}
+	    }
+	}
 //         int index;
 //         while ((index = refillProjections.indexOf(task)) != -1) {
 //             refillProjections.set(index, null);
 //         }
     }
+}
 
     public void removeRefillRequisition(Task task) {
-        int index;
-        if ((index = refillRequisitions.indexOf(task)) != -1) {
-            refillRequisitions.set(index, null);
-        }
+        for (int i = 0; i < refillRequisitions.size(); i++) {
+            ArrayList refills = (ArrayList) refillRequisitions.get(i);
+	    if(refills != null) {
+		if(refills.remove(task)){
+		    if(refills.size() < 1) {
+			refillRequisitions.set(i, null);
+		    }
+		}
+	    }
+	}
     }
 
     public List clearRefillTasks(Date now) {
@@ -480,13 +532,26 @@ public class LogisticsInventoryBG implements PGDelegate {
         // tasks to a second list that will be returned
         // for comparison
         Task task;
+	ArrayList refills;
         ArrayList taskList = new ArrayList();
         for (int i = 0; i < refillRequisitions.size(); i++) {
-            task = (Task) refillRequisitions.get(i);
-            if ((task != null) && task.beforeCommitment(now)) {
-                refillRequisitions.set(i, null);
-                taskList.add(task);
-            }
+            refills = (ArrayList) refillRequisitions.get(i);
+	    if(refills != null) {
+		ArrayList refillsToRemove = new ArrayList(refills.size());
+		for(int j=0; j < refills.size() ; j++) {
+		    task = (Task) refills.get(j);
+		    if ((task != null) && task.beforeCommitment(now)) {
+			if(!taskList.contains(task)) {
+			    taskList.add(task);
+			}
+			refillsToRemove.add(task);
+		    }
+		}
+		refills.removeAll(refillsToRemove);
+		if(refills.size() < 1) {
+		    refillRequisitions.set(i, null);
+		}
+	    }            
         }
         return taskList;
     }
@@ -498,19 +563,32 @@ public class LogisticsInventoryBG implements PGDelegate {
       ArrayList removedTaskList = new ArrayList();
       overlappingRefillProjections.clear();
       Task t;
+      ArrayList refills;
       for (int i = 0; i < refillProjections.size(); i++) {
-	  t = (Task) refillProjections.get(i);
-	  if ((t != null) && (!removedTaskList.contains(t))) {
-	      long start = taskUtils.getStartTime(t);
-	      if (start > now) { 
-		  refillProjections.set(i, null);
-		  removedTaskList.add(t);
-	      } else if ((start < now) && (taskUtils.getEndTime(t) > now)) {
-		  //this task spans now - shorten it	
-                if (!overlappingRefillProjections.contains(t)) {
-		  overlappingRefillProjections.add(t);
-                }
+	  refills = (ArrayList) refillProjections.get(i);
+	  if(refills != null) {
+	      ArrayList refillsToRemove = new ArrayList(refills.size());
+	      for(int j=0; j < refills.size(); j++) {
+		  t = (Task) refills.get(j);
+		  if ((t != null) && (!removedTaskList.contains(t))) {
+		      long start = taskUtils.getStartTime(t);
+		      if (start > now) { 
+			  refillsToRemove.add(t);
+			  if(!removedTaskList.contains(t)) {
+			      removedTaskList.add(t);
+			  }
+		      } else if ((start < now) && (taskUtils.getEndTime(t) > now)) {
+			  //this task spans now - shorten it	
+			  if (!overlappingRefillProjections.contains(t)) {
+			      overlappingRefillProjections.add(t);
+			  }
+		      }
+		  }
 	      }
+	      refills.removeAll(refillsToRemove);
+	      if(refills.size() == 0) {
+		  refillProjections.set(i, null);
+	      }	      
 	  }
       }
       return removedTaskList;
@@ -520,14 +598,44 @@ public class LogisticsInventoryBG implements PGDelegate {
 	return (ArrayList) overlappingRefillProjections.clone();
     }
 
-    public ArrayList getRefillRequisitions() {
-        return (ArrayList) refillRequisitions.clone();
+    private ArrayList getFlattenedList(ArrayList listOLists) {
+	ArrayList uniqueTasks = new ArrayList();
+        for (int i = 0; i < listOLists.size(); i++) {
+            ArrayList list = (ArrayList) listOLists.get(i);
+	    if(list != null) {
+		for(int j=0; j<list.size(); j++) {
+		    Task task = (Task) list.get(j);
+		    if(!uniqueTasks.contains(task)) {
+			uniqueTasks.add(task);
+		    }
+		}
+	    }
+	}
+        return uniqueTasks;
     }
 
-    public Task getRefillProjection(int bucket) {
+    private ArrayList deepClone(ArrayList listOLists) {
+	
+	ArrayList clone = new ArrayList(listOLists.size());
+        for (int i = 0; i < listOLists.size(); i++) {
+            ArrayList list = (ArrayList) listOLists.get(i);
+	    if(list != null) {
+		list = (ArrayList) list.clone();
+	    }
+	    clone.add(i,list);
+	}
+	return clone;
+    }
+
+    public ArrayList getRefillRequisitions() {	
+	return ((ArrayList) refillRequisitions.clone());
+    }
+
+
+    public ArrayList getRefillProjection(int bucket) {
         // make sure the bucket doesn't cause an array out of bounds
         if (bucket < refillProjections.size()) {
-            return (Task) refillProjections.get(bucket);
+            return (ArrayList) refillProjections.get(bucket);
         } else {
             return null;
         }
@@ -620,6 +728,9 @@ public class LogisticsInventoryBG implements PGDelegate {
 	//will want to reset it on the next refillGenerator call to recalculate
 	if(bucket == 0) {
 	    recalculate_initial_level=true;
+	    //	    if(value <= 0) {
+	    //logger.warn("At " + getOrgName() + "AAARRGH. Setting the initial level of item " + getItemName() + "-" + getSupplyType() + " to " + value);
+	    // }
 	}
         inventoryLevelsArray[bucket] = value;
     }
@@ -927,11 +1038,11 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public ArrayList getProjSupplyList() {
-        return projSupplyList;
+        return getFlattenedList(projSupplyList);
     }
 
     public ArrayList getSupplyList() {
-        return supplyList;
+        return getFlattenedList(supplyList);
     }
 
     public Schedule getBufferedCritLevels() {
@@ -949,7 +1060,6 @@ public class LogisticsInventoryBG implements PGDelegate {
     public ArrayList getActualDemandTasksList() {
         return actualDemandTasksList;
     }
-
 
     /**
      *  Take the incomming time and convert it to the beginning of the bucket
@@ -1079,16 +1189,23 @@ public class LogisticsInventoryBG implements PGDelegate {
 	projWithdrawList =tmpProjWdraw;
 	withdrawList = tmpWdraw;
 
+	/**
 	Iterator projResupplyIt = refillProjections.iterator();
 	while(projResupplyIt.hasNext()) {
-	    Task task = (Task) projResupplyIt.next();
-	    if(!tmpProjResupply.contains(task)) {
-	        tmpProjResupply.add(task);
+	    ArrayList refills = (ArrayList)projResupplyIt.next();
+	    if(refills != null) {
+		for(int i=0; i < refills.size(); i++) {
+		    Task task = (Task) refills.get(i);
+		    if(!tmpProjResupply.contains(task)) {
+			tmpProjResupply.add(task);
+		    }
+		}
 	    }
 	}
+	**/
 
-	projSupplyList = tmpProjResupply;
-	supplyList = (ArrayList)refillRequisitions.clone();
+	projSupplyList = deepClone(refillProjections);
+	supplyList = deepClone(refillRequisitions);
 
 	// MWD took this out when converted list to a schedule.
 	//    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
@@ -1208,12 +1325,14 @@ public class LogisticsInventoryBG implements PGDelegate {
                 logger.error(taskUtils.taskDesc((Task) withdrawList.get(i)));
             }
             logger.error("********* ProjectSupplyList ********");
-            for (int i = 0; i < projSupplyList.size(); i++) {
-                logger.error(taskUtils.taskDesc((Task) projSupplyList.get(i)));
+	    ArrayList flatProjList = getFlattenedList(projSupplyList);
+            for (int i = 0; i < flatProjList.size(); i++) {
+                logger.error(taskUtils.taskDesc((Task) flatProjList.get(i)));
             }
             logger.error("********* SupplyList ********");
-            for (int i = 0; i < supplyList.size(); i++) {
-                logger.error(taskUtils.taskDesc((Task) supplyList.get(i)));
+	    ArrayList flatSupplyList = getFlattenedList(supplyList);
+            for (int i = 0; i < flatSupplyList.size(); i++) {
+                logger.error(taskUtils.taskDesc((Task) flatSupplyList.get(i)));
             }
             logger.error("********* Buffered Critical Levels ********");
             printQuantityScheduleTimes(bufferedCriticalLevels);
@@ -1241,4 +1360,9 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public String getItemName() { return myPG.getResource().getTypeIdentificationPG().getTypeIdentification();}
 
+    public String getSupplyType() {
+	SupplyClassPG pg = (SupplyClassPG)
+myPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
+        return pg.getSupplyType();
+    }
 }
