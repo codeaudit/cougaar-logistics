@@ -46,6 +46,7 @@ import org.cougaar.logistics.servlet.CommStatus;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Allocation;
+import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Task;
@@ -271,7 +272,15 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
           supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       // The following is here because the above lies about what it does
-      supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
+
+      //START EPD AUXQUERY CHANGES
+      //supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
+      Collection removedDispositions = recDispositions.getRemovedCollection();
+      if (! removedDispositions.isEmpty()) {
+        supplyExpander.handleRemovedRealRequisitions(removedDispositions);
+      }
+      // END EPD AUXQUERY CHANGES
+
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
       if (! commStatusSub.isEmpty()) {
@@ -573,6 +582,9 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   /** Subscription for CommStatus object **/
   private IncrementalSubscription commStatusSub;
 
+  /** Subscription for reconciliation dispositions **/
+  private IncrementalSubscription recDispositions;
+
   protected void setupSubscriptions() {
     if (!getBlackboardService().didRehydrate()) {
       setupOperatingModes();
@@ -620,6 +632,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     MITopExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new MITopExpansionPredicate());
     DetReqInvExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
     commStatusSub = (IncrementalSubscription) blackboard.subscribe(new CommStatusPredicate());
+    recDispositions = (IncrementalSubscription) blackboard.subscribe(new RecDispositionsPredicate());
 
     if (getAgentIdentifier() == null && logger.isErrorEnabled()) {
       logger.error("No agentIdentifier ... subscriptions need this info!!  In plugin: " + this);
@@ -942,6 +955,18 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   static class CommStatusPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       return o instanceof CommStatus;
+    }
+  }
+
+  static class RecDispositionsPredicate implements UnaryPredicate {
+    public boolean execute(Object o) {
+      if (o instanceof Disposition) {
+        Task task = ((Disposition) o).getTask();
+        if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 

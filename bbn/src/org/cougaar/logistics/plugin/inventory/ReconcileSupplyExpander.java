@@ -303,13 +303,37 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     }
   }
 
-  public void handleRemovedRealRequisitions(Collection tasks) {
-    Iterator taskIter = tasks.iterator();
-    while (taskIter.hasNext()) {
-      Task aTask = (Task)taskIter.next();
-      System.out.println(" INSIDE remove reqs, task has aux query " + hasAuxQuery(aTask));
-      if (hasAuxQuery(aTask)) {
-        publishRemovePrediction(aTask);
+  // ORIG AUX QUERY CODE
+//   public void handleRemovedRealRequisitions(Collection tasks) {
+//     Iterator taskIter = tasks.iterator();
+//     while (taskIter.hasNext()) {
+//       Task aTask = (Task)taskIter.next();
+//       if (logger.isDebugEnabled()) {
+//         logger.debug(" INSIDE remove reqs, task has aux query " + hasAuxQuery(aTask));
+//       }
+//       if (hasAuxQuery(aTask)) {
+//         publishRemovePrediction(aTask);
+//       }
+//     }
+//   }
+
+  //EPD AUX QUERY CHANGES
+  public void handleRemovedRealRequisitions(Collection dispositions) {
+    Iterator dispIter = dispositions.iterator();
+    while (dispIter.hasNext()) {
+      Disposition aDisp = (Disposition) dispIter.next();
+      Task aTask = aDisp.getTask();
+      if (aTask != null) {
+        if (logger.isDebugEnabled()) {
+          logger.debug(" INSIDE remove reqs, task has aux query " + hasAuxQuery(aDisp, aTask));
+        }
+        if (hasAuxQuery(aDisp, aTask)) {
+          publishRemovePrediction(aDisp, aTask);
+        }
+      } else {
+        if (logger.isDebugEnabled()) {
+          logger.debug("handleRemovedRealRequisitions... Disposition's task reference is null");
+        }
       }
     }
   }
@@ -764,43 +788,64 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       types[i] = i;
     }
     ((TaskImpl)t).setAuxiliaryQueryTypes(types);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Setting AuxQueryTypes: " + types+ " on task: " + t.getUID());
+      logger.debug("Task says it has the following AuxQueryTypes: " + t.getAuxiliaryQueryTypes());
+    }
   }
 
-  private boolean hasAuxQuery(Task task) {
-    PlanElement pe = task.getPlanElement();
-    if (pe == null) {
-      return false;
-    }
+  //MORE EPD AUX QUERY CHANGES
+//   private boolean hasAuxQuery(Task task) {
+//     PlanElement pe = task.getPlanElement();
+//     if (pe == null) {
+//       return false;
+//     }
+  private boolean hasAuxQuery(Disposition pe, Task task) {
     AllocationResult ar = pe.getEstimatedResult();
     if (ar == null) {
-      System.out.println(" Task's estimated is null");
+      if (logger.isDebugEnabled()) {
+        logger.debug("In hasAuxQuery:  Task's estimated is null");
+      }
       return false;
     }
     //ar = pe.getEstimatedResult();
     int [] theTypes = task.getAuxiliaryQueryTypes();
     int checktype = theTypes[0];
     //return (checktype > -1);
+    if (logger.isDebugEnabled()) {
+      logger.debug("In hasAuxQuery: checktype is " + checktype);
+    }
     return (checktype > -1);
   }
 
-  public void publishRemovePrediction(Task task) {
-    PlanElement pe = task.getPlanElement();
-    if (pe == null) {
-      return;
-    }
-    AllocationResult ar = pe.getReportedResult();
-    if (ar == null) {
-      return;
-    }
-    ar = pe.getEstimatedResult();
+  // MORE EPD AUX QUERY CHANGES
+//   public void publishRemovePrediction(Task task) {
+//     PlanElement pe = task.getPlanElement();
+//     if (pe == null) {
+//       return;
+//     }
+//     AllocationResult ar = pe.getReportedResult();
+//     if (ar == null) {
+//       return;
+//     }
+  public void publishRemovePrediction(Disposition pe, Task task) {
+    AllocationResult ar = pe.getEstimatedResult();
     int [] auxQueryTypes = task.getAuxiliaryQueryTypes();
     for (int i = 0; i < auxQueryTypes.length; i++) {
       String uid = ar.auxiliaryQuery(auxQueryTypes[i]);
+      if (logger.isDebugEnabled()) {
+        logger.debug("AuxQuery from estimated result returned this uid " + uid);
+      }
       if (uid != null) {
         BlackboardService bs = ((ReconcileInventoryPlugin) inventoryPlugin).getBBService();
         Collection predTasks = bs.query(new TaskUid(uid));
         if (! predTasks.isEmpty()) {
           inventoryPlugin.publishRemove(predTasks.iterator().next());
+          if (logger.isDebugEnabled()) {
+            logger.debug("Reconciled task was removed... Removing matching prediction " + uid);
+          }
+        } else if (logger.isDebugEnabled()) {
+          logger.debug("Query for matching prediction retruned an empty set for uid: " + uid);
         }
       }
     }
