@@ -494,7 +494,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     }
 
     List orgs = (List) roleToOrg.get (GLMTransConst.THEATER_MCC_ROLE); // sets roleToOrg
-    if (orgs.size () < numTheaterGroundAgents) {
+    if (orgs.size () < getNumTheaterGroundAgents()) {
       if (isWarnEnabled() && !warnedBefore) {
 	warn ("only " + orgs.size() + 
 	      " theater subords have reported, expecting " + numTheaterGroundAgents +
@@ -511,6 +511,16 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     }
       
     return true;
+  }
+
+  public int getNumTheaterGroundAgents () {
+    Object ammoShipPacker = findOrgWithRole(GLMTransConst.AMMO_SHIP_PACKER_ROLE);
+    if (ammoShipPacker != null) {
+      return 1; // ammo sea only needs one theater ground agent - ammo theater ground
+    }
+    else {
+      return numTheaterGroundAgents;
+    }
   }
 
   /** overridden in sequentialglobalseaplugin */
