@@ -236,7 +236,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     newTask.setPrepositionalPhrases(projTask.getPrepositionalPhrases());
 
     newTask.setDirectObject(consumed);
-    newTask.setVerb(Verb.getVerb(Constants.Verb.SUPPLY));
+    newTask.setVerb(Verb.get(Constants.Verb.SUPPLY));
 
 
 
