@@ -772,8 +772,12 @@ public class DemandForecastPlugin extends ComponentPlugin
       PropertyGroup pg = (PropertyGroup) pgIt.next();
       Task gp = (Task) pgToGPTaskHash.get(pg);
       if (gp != null) {
-        logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
-        invokeGenProjectionsExp(pg, gp);
+        PlanElement pe = gp.getPlanElement();
+        if ((pe == null) ||
+            (!(pe instanceof Disposition))) {
+          logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
+          invokeGenProjectionsExp(pg, gp);
+        }
       } else {
         if (logger.isErrorEnabled()) {
           logger.error("Property group :" + pg + " does not have an associated GenerateProjections task in the HashMap.");
@@ -893,14 +897,14 @@ public class DemandForecastPlugin extends ComponentPlugin
   private void rehydrateHashMaps() {
     Iterator gpIt = genProjSubscription.iterator();
     while (gpIt.hasNext()) {
-      Task gpTask = (Task)gpIt.next();
+      Task gpTask = (Task) gpIt.next();
       Asset mei = gpTask.getDirectObject();
       if (mei instanceof AggregateAsset) {
         mei = ((AggregateAsset) mei).getAsset();
       }
       PropertyGroup pg = mei.searchForPropertyGroup(supplyClassPG);
       addNewPG(pg);
-      pgToGPTaskHash.put(pg,gpTask);
+      pgToGPTaskHash.put(pg, gpTask);
     }
   }
 
