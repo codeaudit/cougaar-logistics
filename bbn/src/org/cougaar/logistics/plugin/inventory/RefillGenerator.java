@@ -146,8 +146,14 @@ public class RefillGenerator extends InventoryLevelGenerator {
 			   thePG.getCriticalLevel(refillBucket));
 	  }
 
-          if ((thePG.getCriticalLevel(refillBucket)< invLevel)  ||
-	      (thePG.getCriticalLevel(refillBucket) == 0.0)) {
+          // Note we had the following to fix some weirdness in subsistence charts
+          // but the critical == 0.0 prevents refills from being created during
+          // times when we get demand that causes us to go below 0 and the critical level
+          // is 0.  For now just check that we are below and if we see weird behavior with
+          // subsistence charts we'll put in another check.
+         //  if ((thePG.getCriticalLevel(refillBucket)< invLevel)  ||
+          //     (thePG.getCriticalLevel(refillBucket) == 0.0)) {
+          if (thePG.getCriticalLevel(refillBucket)< invLevel) {
 
             thePG.setLevel(refillBucket, invLevel);
 	    if (logger.isDebugEnabled()) { 
