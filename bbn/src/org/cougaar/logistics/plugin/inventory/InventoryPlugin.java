@@ -305,10 +305,8 @@ public class InventoryPlugin extends ComponentPlugin {
           //we might get new demand where we don't need to generate any new refills
           // such as small demand from the stimulator servlet - when this happens we
           // need to kick the allocation assessor to allocate the withdraws
-          if (newRefills.isEmpty()) {
-            allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
-          }
-
+          allocationAssessor.reconcileInventoryLevels(getActionableInventories());
+         
         } 
 	//        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
 	//        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
@@ -1306,28 +1304,21 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
 
-  // We only want to process AllocationResults for inventories with unchanged demand
-  // Sort through Refill Allocation results to find all inventories in backward flow.
-  // Save off inventory for later use by AllocationAssessor and return actionableARs.
-  // private Collection getActionableRefillAllocations(){
-//     ArrayList actionableARs = new ArrayList();
-//     Task refill;
-//     Asset asset;
-//     Allocation alloc;
-//     Inventory inventory;
-//     Iterator alloc_list = refillAllocationSubscription.getChangedCollection().iterator();
-//     while (alloc_list.hasNext()) {
-//       alloc = (Allocation)alloc_list.next();
-//       refill = alloc.getTask();
-//       asset = (Asset)refill.getDirectObject();
-//       inventory = findOrMakeInventory(asset);
-//       if (!touchedInventories.contains(inventory)) {
-// 	actionableARs.add(alloc);
-// 	backwardFlowInventories.add(inventory);
-//       }
-//     }
-//     return actionableARs;
-//   }
+  // We only want to process inventories that we have no new refills for.
+  private Collection getActionableInventories(){
+    ArrayList actionableInvs = new ArrayList(touchedInventories);
+    Task refill;
+    Asset asset;
+    Inventory inventory;
+    Iterator refillIt = newRefills.iterator();
+    while (refillIt.hasNext()) {
+      refill = (Task)refillIt.next();
+      asset = (Asset)refill.getDirectObject();
+      inventory = findOrMakeInventory(asset);
+      actionableInvs.remove(inventory);
+    }
+    return actionableInvs;
+  }
 
   /**
      Self-Test
