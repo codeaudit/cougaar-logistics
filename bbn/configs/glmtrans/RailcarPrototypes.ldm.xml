@@ -1,0 +1,289 @@
+  <prototype name="RAILCAR_60FT_FLAT">
+    <object class="org.cougaar.glm.ldm.asset.RailCar">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> RAILCAR_60FT_FLAT </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> RAILCAR_60FT_FLAT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="ContainPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewContainPG">
+
+	    <field name="MaximumLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 648.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWidth" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 124.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumHeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 124.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 150000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareInches" type="double">
+		    <value> 80352.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumVolume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 5766.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumPassengers" type="long">
+	      <value> 0 </value>
+            </field>
+
+	    <field name="PermittedCargoCategoryCodes" type="String">
+	      <value> A0D,A1D,A2B,A2C,A2D,A3B,A3C,A3D,B0D,B1D,B2C,B2D,C0D,C1D,C2B,C2C,C2D,J0D,J1D,J2B,J2C,J2D,J3B,J3C,J3D,M3B,R0D,R1D,R2B,R2C,R2D,R3B,R3C,R3D,JBB,MBB </value> <!-- somewhat made up -->
+            </field>
+
+	  </object>
+	</value>
+
+      </field>	  
+    </object>
+  </prototype>
+
+  <!-- :::::::::::::RAILCAR_68DODX::::::::::::::::::::::::::::::::::: -->
+  <!-- 40000 series DODX 68 ft rail car  -->
+
+  <prototype name="RAILCAR_68DODX">
+    <object class="org.cougaar.glm.ldm.asset.RailCar">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> RAILCAR_68DODX </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> RAILCAR_68DODX </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="ContainPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewContainPG">
+
+	    <field name="MaximumLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 816.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWidth" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 144.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumHeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 125.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 299000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareInches" type="double">
+		    <value> 117504.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumVolume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 16145.83 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumPassengers" type="long">
+	      <value> 0 </value>
+            </field>
+
+	    <field name="PermittedCargoCategoryCodes" type="String">
+	      <value> A0D,A1D,A2B,A2C,A2D,A3B,A3C,A3D,B0D,B1D,B2C,B2D,C0D,C1D,C2B,C2C,C2D,J0D,J1D,J2B,J2C,J2D,J3B,J3C,J3D,M3B,R0D,R1D,R2B,R2C,R2D,R3B,R3C,R3D,JBB,MBB </value> <!-- somewhat made up -->
+            </field>
+
+	  </object>
+	</value>
+
+      </field>	  
+    </object>
+  </prototype>
+
+  <!-- :::::::::::::RAILCAR_89FT_FLAT:::::::::::::::::::::::::::::::: -->
+
+  <prototype name="RAILCAR_89FT_FLAT">
+    <object class="org.cougaar.glm.ldm.asset.RailCar">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> RAILCAR_89FT_FLAT </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> RAILCAR_89FT_FLAT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="ContainPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.NewContainPG">
+
+	    <field name="MaximumLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 996.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWidth" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 102.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumHeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Inches" type="double">
+		    <value> 102.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumWeight" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Mass">
+		  <field name="Pounds" type="double">
+		    <value> 110000.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFootprintArea" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareInches" type="double">
+		    <value> 101592.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumVolume" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Volume">
+		  <field name="CubicFeet" type="double">
+		    <value> 5996.75 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumPassengers" type="long">
+	      <value> 0 </value>
+            </field>
+
+	    <field name="PermittedCargoCategoryCodes" type="String">
+	      <value> A0D,A1D,A2B,A2C,A2D,A3B,A3C,A3D,B0D,B1D,B2C,B2D,C0D,C1D,C2B,C2C,C2D,J0D,J1D,J2B,J2C,J2D,J3B,J3C,J3D,M3B,R0D,R1D,R2B,R2C,R2D,R3B,R3C,R3D,JBB,MBB </value> <!-- somewhat made up -->
+            </field>
+
+	  </object>
+	</value>
+
+      </field>	  
+    </object>
+  </prototype>

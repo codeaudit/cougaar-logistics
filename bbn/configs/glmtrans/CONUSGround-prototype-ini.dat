@@ -1,0 +1,33 @@
+[Prototype]     SupportOrganization
+        
+[UniqueId]      "UTC/SupportOrg"
+
+[UIC]           "UIC/CONUSGround"
+
+[Relationship]
+Superior        "GlobalSea"      ""
+Supporting	    "GlobalSea"      "CONUSGroundTransportationProvider"
+Supporting	    "GlobalAir"      "CONUSGroundTransportationProvider"
+
+[TypeIdentificationPG]                      
+TypeIdentification              String               "UTC/RTOrg"
+Nomenclature                    String               "CONUSGround Cluster"
+AlternateTypeIdentification     String               "SRC/87004L100100"
+
+[ClusterPG]
+ClusterIdentifier               ClusterIdentifier    "CONUSGround"
+
+[OrganizationPG]
+Roles                           Collection<Role>     "CONUSGroundTransportationProvider"
+
+[MilitaryOrgPG]
+UIC                             String               "GLMTrans0004"
+Echelon                         String               "08"
+UTC                             String               ""
+SRC                             String               "87004L100100"
+
+###############################################################################
+## THESE ARE MADE UP, NEED REAL DATA HERE
+###############################################################################
+[MilitaryOrgPG]
+HomeLocation	GeolocLocation "GeolocCode=XXXX, Name=String MTMC IL, Latitude=Latitude 40.00 DEGREES, Longitude=Longitude -76.00 DEGREES"

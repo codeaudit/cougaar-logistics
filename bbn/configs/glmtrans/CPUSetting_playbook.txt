@@ -1,0 +1,2 @@
+CPULevel > 0.5  : FidelityKnob = 0;
+CPULevel <= 0.5 : FidelityKnob = 1;

@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE tasklist SYSTEM "ClusterInput.dat.dtd" []>
+
+<!-- basic test for GLMTrans - one air and one sea task -->
+<tasklist>
+  <task id="test_task">
+    <verb>Supply</verb>
+    <directobject>
+        <asset id="bueller">MassiveLowFidelityPrototype</asset>
+    </directobject>
+    <for>3ID-HHC</for>
+    <to>
+      <geoloc>31DA</geoloc>
+      <latitude>14.88</latitude>    
+      <longitude>39.32</longitude>
+      <name>Over_There_In_Eritrea</name>
+    </to>
+    <startdate>  
+      <readyatdate>
+        <year>2005</year> 
+        <month>05</month> 
+        <day>01</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </readyatdate>
+    </startdate> 
+    <enddate>    
+      <earlydate>
+        <year>2005</year> 
+        <month>05</month> 
+        <day>10</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </earlydate>
+      <bestdate>
+        <year>2005</year> 
+        <month>05</month> 
+        <day>15</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+      <latedate>
+        <year>2005</year> 
+        <month>05</month> 
+        <day>16</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </latedate>
+    </enddate>   
+  </task>
+</tasklist>
+
+
+

@@ -1,0 +1,2 @@
+CPUTestPlugin.CPU > 0.5  : FidelityKnob = 0;
+CPUTestPlugin.CPU <= 0.5 : FidelityKnob = 1;

@@ -1,0 +1,2 @@
+CPUSettingServlet.CPULevel > 0.5  : Level2TimeHorizon = 40 : Level6TimeHorizon = 20;
+CPUSettingServlet.CPULevel <= 0.5 : Level2TimeHorizon = 80 : Level6TimeHorizon = 40;
