@@ -73,6 +73,8 @@ import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
 
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Preposition;
 import org.cougaar.planning.ldm.plan.Priority;
 import org.cougaar.planning.ldm.plan.Task;
@@ -142,7 +144,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public final int ASSET_CLASS_10 = 10;
   public final int ASSET_CLASS_CONTAINER = 11;
   public final int ASSET_CLASS_PERSON = 12;
-  public final long DAY_IN_MILLIS = 24*60*60*1000l;
+  public final long DAY_IN_MILLIS = MILLIS_PER_DAY; //30*1000l;
 
   public void localSetup() {     
     super.localSetup();
@@ -311,7 +313,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	    ((mode==LEVEL_6_MODE) ? "LEVEL_6" : ((mode==LEVEL_2_MODE) ? "LEVEL_2" : "DONT_PROCESS")));
     }
 
-    if (mode == DONT_PROCESS_MODE) {
+    if (parentTask.getPlanElement () != null) { // shouldn't it have been removed from my collection???
+      if (isInfoEnabled ()) {
+	info (getName() + ".getSubtasks - skipping previously planned task " + parentTask.getUID() + ".");
+      }
+      return;
+    }
+      
+    if (mode != LEVEL_6_MODE) {
       synchronized (alarmMutex) { // alarm.expire will try to clear currentAlarm so must synchronize on it
 	if (currentAlarm == null) {
 	  startAgainIn (DAY_IN_MILLIS);
@@ -323,10 +332,20 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	}
       }
 
-      if (isWarnEnabled ()) {
-	warn (getName() + ".getSubtasks - ignoring " + parentTask.getUID() + " for now (= " +
-	      new Date(alarmService.currentTimeMillis()) + "), will revisit at " +
-	      new Date(currentAlarm.getExpirationTime ()));
+      if (mode == DONT_PROCESS_MODE) {
+	if (isWarnEnabled ()) {
+	  warn (getName() + ".getSubtasks - not processing " + parentTask.getUID() + " for now (= " +
+		new Date(alarmService.currentTimeMillis()) + "), will revisit at " +
+		new Date(currentAlarm.getExpirationTime ()));
+	}
+      }
+      else {
+	if (isInfoEnabled ()) {
+	  info (getName() + ".getSubtasks - processing " + parentTask.getUID() + " at level 2 for now (= " +
+		new Date(alarmService.currentTimeMillis()) + "), will revisit at " +
+		new Date(currentAlarm.getExpirationTime ()));
+	}
+	super.handleTask (parentTask);
       }
 
       return;
@@ -939,7 +958,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       String owner = (originalOwner != null) ? originalOwner : directObject.getUID().getOwner();
 
       if (isInfoEnabled()) {
-	info (".getSubtasks - WARNING : got task " + parentTask.getUID() + 
+	info (".getSubtasks - NOTE : got task " + parentTask.getUID() + 
 	      " which has no FOR unit prep, using owner - " + owner + ".");
       }
 	
@@ -1075,15 +1094,23 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	String name = getName()+"_restartThread";
 
 	if (isWarnEnabled())
-	  warn (getName () + " restarting thread " + getBufferingThread() + 
-		" for " + name);
+	  warn (getName () + " re-examining unprocessed tasks.");
 
 	schedulable = 
 	  threadService.getThread (this, 
 				   new Runnable () {
 				       public void run() {
 					 // review the known task list
-					 processTasks (new ArrayList(myInputTaskCallback.getSubscription().getCollection()));
+					 try {
+					   blackboard.openTransaction ();
+					   reviewLevel2 ();
+					   processTasks (new ArrayList(myInputTaskCallback.getSubscription().getCollection()));
+					 } catch (Throwable t) {
+					   System.err.println("Error: Uncaught exception in "+this+": "+t);
+					   t.printStackTrace();
+					 } finally {
+					   blackboard.closeTransaction();
+					 }
 				       }
 				     }, 
 				   name);
@@ -1111,6 +1138,44 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       return "<BufferingAlarm "+clockExpireTime+
         (expired?"(Expired) ":" ")+
         "for "+GLMTransOneToManyExpanderPlugin.this.toString()+">";
+    }
+  }
+
+  public void reviewLevel2 () {
+    // review the known task list
+    replanLevel2 (blackboard.query (new UnaryPredicate() {
+	public boolean execute (Object obj) {
+	  if (obj instanceof Task) {
+	    Task task = (Task) obj;
+	    if (interestingTask (task)) {
+	      // if just by looking at the dates it ought to be level 6
+	      if (getMode (task) == LEVEL_6_MODE) {
+		if (task.getPlanElement () != null && (task.getPlanElement () instanceof Expansion)) {
+		  Task subtask = 
+		    (Task) ((Expansion)task.getPlanElement ()).getWorkflow().getTasks().nextElement ();
+		  // but it's got low fi children
+		  return (prepHelper.hasPrepNamed (subtask, GLMTransConst.LOW_FIDELITY));
+		} else return false;
+	      } else return false;
+	    } else return false;
+	  } else return false;
+	}
+      }));
+  }
+
+  protected void replanLevel2 (Collection level2Tasks) {
+    for (Iterator iter = level2Tasks.iterator(); iter.hasNext();) {
+      NewTask level2 = (NewTask) iter.next();
+      
+      PlanElement pe = level2.getPlanElement ();
+      publishRemove (pe);
+      publishChange (level2);
+
+      // replan the task
+      
+      if (isWarnEnabled())
+	warn (getName () + ".reviewLevel2 - replanning task " + level2.getUID() + 
+	      " as a Level 6 task.");
     }
   }
 
