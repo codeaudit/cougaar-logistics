@@ -168,7 +168,6 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	  if (tip!= null) {
 	    String type_id = tip.getTypeIdentification();
 	    if (type_id != null) {
-	      fillProperties(proto);
 	      getLDM().cachePrototype(type_id, proto);
 	      good_prototypes.add(proto);
 	    } else {
@@ -179,27 +178,100 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	  }
 	}
       }
+      addConsumerPGs(meiSubscription);
     }
   } 
 
   public void execute() {
+//     System.out.println("Execute called for "+getAgentIdentifier());
     if (!configured) {
       configure();
     } 
+    if (!meiSubscription.isEmpty()) {
+//       System.out.println("Calling addConsumerPGs() for "+getAgentIdentifier());
+      addConsumerPGs(meiSubscription);
+    }
   }
 
   protected void configure() {
+//     System.out.println(" configuring MEIPrototypeProvider for "+getAgentIdentifier());
     Iterator new_orgs = queryService.query(orgsPredicate).iterator();
     if (new_orgs.hasNext()) { 
       myOrg = (Organization) new_orgs.next();
       Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service= srvc.toString();
+//         System.out.println("MEIPrototypeProvider configured for "+getAgentIdentifier());
         configured = true;
       } else {
         logger.error("Organization has no Service :"+
                      myOrg.getItemIdentificationPG().getItemIdentification());
       }
+    }
+  }
+
+  protected void addConsumerPGs(Collection meiConsumers) {
+    Iterator meis = meiConsumers.iterator();
+    Asset a, anAsset;
+    boolean addedPG = false;
+    while (meis.hasNext()) {
+      a = (Asset)meis.next();
+      if (a instanceof AggregateAsset) {
+        anAsset = ((AggregateAsset)a).getAsset();
+      } else {
+        anAsset = a;
+      }
+      if (anAsset instanceof ClassVIIMajorEndItem) {
+        logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
+                     getAgentIdentifier());
+        if (anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
+          NewFuelConsumerPG fuelpg = 
+            (NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
+          fuelpg.setMei(a);
+          fuelpg.setService(service);
+          fuelpg.setTheater(THEATER);
+          fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
+          fuelpg.initialize(this);
+          anAsset.setPropertyGroup(fuelpg);
+          addedPG = true;
+        }
+        if (anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {        
+          NewAmmoConsumerPG ammopg = 
+            (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
+          ammopg.setMei(a);
+          ammopg.setService(service);
+          ammopg.setTheater(THEATER);
+          ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
+          ammopg.initialize(this);
+          anAsset.setPropertyGroup(ammopg);
+          addedPG = true;
+        }
+        if (anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class) == null) {
+          NewPackagedPOLConsumerPG packagedpg = 
+            (NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
+          packagedpg.setMei(a);
+          packagedpg.setService(service);
+          packagedpg.setTheater(THEATER);
+          packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
+          packagedpg.initialize(this);
+          anAsset.setPropertyGroup(packagedpg);
+          addedPG = true;
+        }
+        if (anAsset.searchForPropertyGroup(RepairPartConsumerPG.class) == null) {
+          NewRepairPartConsumerPG partpg = 
+            (NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
+          partpg.setMei(a);
+          partpg.setService(service);
+          partpg.setTheater(THEATER);
+          partpg.setRepairPartBG(new RepairPartConsumerBG(partpg));
+          partpg.initialize(this);
+          anAsset.setPropertyGroup(partpg);
+          addedPG = true;
+        }
+        if (addedPG) {
+          publishChange(a);
+        }
+      } 
     }
   }
 
@@ -235,7 +307,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (!configured) {
       configure();
       if (!configured) {
-        logger.error("fillProperties() plugin missing myOrganization");
+        logger.error("makePrototype() plugin missing myOrganization");
         return null;
       }
     }
@@ -352,49 +424,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
 
   public void fillProperties (Asset anAsset) {
-    if (!configured) {
-      configure();
-      if (!configured) {
-        logger.error("fillProperties() plugin missing myOrganization");
-        return;
-      }
-    }
-    if (anAsset instanceof ClassVIIMajorEndItem) {
-      logger.debug("fillProperties() CREATING FuelConsumerPG for "+anAsset);
-      NewFuelConsumerPG fuelpg = 
-	(NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
-      fuelpg.setMei(anAsset);
-      fuelpg.setService(service);
-      fuelpg.setTheater(THEATER);
-      fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
-      fuelpg.initialize(this);
-      anAsset.setPropertyGroup(fuelpg);
-      NewAmmoConsumerPG ammopg = 
-	(NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
-      ammopg.setMei(anAsset);
-      ammopg.setService(service);
-      ammopg.setTheater(THEATER);
-      ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
-      ammopg.initialize(this);
-      anAsset.setPropertyGroup(ammopg);
-      NewPackagedPOLConsumerPG packagedpg = 
-	(NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
-      packagedpg.setMei(anAsset);
-      packagedpg.setService(service);
-      packagedpg.setTheater(THEATER);
-      packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
-      packagedpg.initialize(this);
-      anAsset.setPropertyGroup(packagedpg);
-      NewRepairPartConsumerPG partpg = 
-	(NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
-      partpg.setMei(anAsset);
-      partpg.setService(service);
-      partpg.setTheater(THEATER);
-      partpg.setRepairPartBG(new RepairPartConsumerBG(partpg));
-      partpg.initialize(this);
-      anAsset.setPropertyGroup(partpg);
-    } // if
-  } // fillProperties
+  } 
 
   public Asset getPrototype(String typeid) {
     return getLDM().getFactory().getPrototype(typeid);
@@ -448,7 +478,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 				String service,  String theater) {
     String typeID = asset.getTypeIdentificationPG().getTypeIdentification();
     int indx = typeID.indexOf ('/');
-    String division = typeID.substring (0, indx);
+    String division;
+    try {
+      division = typeID.substring (0, indx);
+    } catch (Exception exc) {
+      logger.error(" ########### "+typeID+" "+exc.getMessage());
+      exc.printStackTrace();
+      return null;
+    }
     String query = (String) fileParameters_.get (asset_type+service+division);
     String consumer_id = typeID.substring (indx+1);
     logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+ 
