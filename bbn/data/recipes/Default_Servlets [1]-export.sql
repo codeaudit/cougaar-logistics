@@ -1,0 +1,39 @@
+# MySQL dump 8.12
+#
+# Host: localhost    Database: tempcopy
+#--------------------------------------------------------
+# Server version	3.23.33
+
+#
+# Dumping data for table 'v4_lib_mod_recipe'
+#
+
+LOCK TABLES v4_lib_mod_recipe WRITE;
+REPLACE INTO v4_lib_mod_recipe (MOD_RECIPE_LIB_ID, NAME, JAVA_CLASS, DESCRIPTION) VALUES ('RECIPE-0001-cpy','Default_Servlets [1]-cpy','org.cougaar.tools.csmart.recipe.ServletGroupInsertionRecipe','No description available');
+UNLOCK TABLES;
+
+#
+# Dumping data for table 'v4_lib_mod_recipe_arg'
+#
+
+LOCK TABLES v4_lib_mod_recipe_arg WRITE;
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','AgentInfoServlet',3.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','Classname of servlet 1',9.000000000000000000000000000000,'org.cougaar.core.servlet.BlackboardServletComponent');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','CommunityProviderServlet',7.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','CompletionServlet',10.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','DataGathererServlet',2.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','HierarchyServlet',4.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','InventoryServlet',11.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','LoaderServletComponent',6.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','MetricsServlet',12.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','New Servlet 1 arg 1',16.000000000000000000000000000000,'org.cougaar.glm.servlet.GLMStimulatorServlet');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','New Servlet 1 arg 2',14.000000000000000000000000000000,'/stimulator');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','Number of args for servlet 1',5.000000000000000000000000000000,'2');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','PlanServlet',17.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','PlanViewServlet',0.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','SearchServlet',15.000000000000000000000000000000,'true');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','Target Agent Selection Query',8.000000000000000000000000000000,'recipeQueryAllAgents');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','TopologyServlet',1.000000000000000000000000000000,'false');
+REPLACE INTO v4_lib_mod_recipe_arg (MOD_RECIPE_LIB_ID, ARG_NAME, ARG_ORDER, ARG_VALUE) VALUES ('RECIPE-0001-cpy','_Number of New Servlets',13.000000000000000000000000000000,'1');
+UNLOCK TABLES;
+
