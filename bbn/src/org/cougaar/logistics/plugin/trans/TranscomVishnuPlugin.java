@@ -269,7 +269,7 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     // Fix for bug #13455
 
     if (!delayedTasks.isEmpty ()) {
-      processTasks (Collections.EMPTY_LIST);
+      processTasks (new ArrayList());
     }
   }
 
