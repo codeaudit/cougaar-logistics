@@ -182,7 +182,7 @@ public class AssetStimulator extends UTILPluginAdapter
 	  exc.printStackTrace();
 	}
 	finally{
-	  blackboard.closeTransaction(false);
+	  blackboard.closeTransactionDontReset();
 	}
   }
 
@@ -204,7 +204,7 @@ public class AssetStimulator extends UTILPluginAdapter
 	  exc.printStackTrace();
 	}
 	finally{
-	  blackboard.closeTransaction(false);
+	  blackboard.closeTransactionDontReset();
 	}
   }
 
