@@ -57,6 +57,10 @@ public class TimeUtils {
 	}
     }
 
+  /** Add N days converts a time (long) into an int
+   *  representing the number of days and then adds n_days
+   *  therefore the resulting long will always be on the midnight boundary
+   **/
     public static long addNDays(long time, int n_days) {
 	return addNDaysTime(time, n_days);
     }
