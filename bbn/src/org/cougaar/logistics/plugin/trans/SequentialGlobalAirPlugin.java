@@ -124,9 +124,6 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     if (isDebugEnabled())
       debug ("localSetup - Creating prep helper and asset helper.");
 
-    glmPrepHelper  = new GLMPrepPhrase (logger);
-    glmAssetHelper = new AssetUtil (logger);
-
     if (isDebugEnabled())
       debug ("localSetup - this " + this + " prep helper " + glmPrepHelper);
   }
@@ -182,6 +179,9 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   /*** Organization Listener ***/
     
   public void setupFilters () {
+    glmPrepHelper  = new GLMPrepPhrase (logger);
+    glmAssetHelper = new AssetUtil (logger);
+
     super.setupFilters ();
         
     if (isInfoEnabled())
@@ -903,6 +903,6 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   boolean shouldRefreshOrgList = false;
   private Random r = new Random();
 
-  protected GLMPrepPhrase glmPrepHelper;
-  protected AssetUtil     glmAssetHelper;
+  protected transient GLMPrepPhrase glmPrepHelper;
+  protected transient AssetUtil     glmAssetHelper;
 }
