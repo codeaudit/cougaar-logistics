@@ -93,6 +93,7 @@ public class InventoryUIFrame extends JFrame
       Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
   public static final String SHOW_INIT_SHORTFALL = "SHOW_INIT_SHORTFALL";
+  public static final String SHOW_INIT_CDAY = "SHOW_INIT_CDAY";
 
   protected InventoryDataSource dataSource;
   private Container contentPane;
@@ -115,6 +116,7 @@ public class InventoryUIFrame extends JFrame
   protected InventoryXMLParser parser;
 
   protected boolean showInitialShortfall=true;
+  protected boolean initialDisplayCDay=false;
 
   public InventoryUIFrame(HashMap params) {
     super("Inventory GUI");
@@ -216,7 +218,7 @@ public class InventoryUIFrame extends JFrame
     editPanel.add(buttonPanel, BorderLayout.NORTH);
     editPanel.add(areaScrollPane, BorderLayout.CENTER);
 
-    multiChart = new MultiChartPanel(showInitialShortfall);
+    multiChart = new MultiChartPanel(showInitialShortfall,initialDisplayCDay);
     multiChart.setPreferredSize(new Dimension(700, 250));
 
     tabs.add("InventoryChart", multiChart);
@@ -404,6 +406,11 @@ public class InventoryUIFrame extends JFrame
         if((showShortfall != null) &&
             (!showShortfall.trim().equals(""))) {
             showInitialShortfall = (!(showShortfall.trim().toLowerCase().equals("false")));
+        }
+        String displayCDay = (String) map.get(SHOW_INIT_CDAY);
+        if((displayCDay != null) &&
+            (!displayCDay.trim().equals(""))) {
+            initialDisplayCDay = (displayCDay.trim().toLowerCase().equals("true")) ;
         }
   }
 

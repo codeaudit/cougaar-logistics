@@ -93,13 +93,15 @@ public abstract class InventoryChart extends JPanel {
 
     public abstract void initializeChart();
 
-    public void initialize(String title) {
+    public void initialize(String title,boolean initialDisplayCDay) {
         int gridx = 0;
         int gridy = 0;
 
         viewIndex = 0;
 
         logger = Logging.getLogger(this);
+
+	displayCDay = initialDisplayCDay;
 
         colorTable = new InventoryColorTable();
 
@@ -315,6 +317,7 @@ public abstract class InventoryChart extends JPanel {
 
         ChartDataView chartDataView = new ChartDataView();
         chartDataView.setChartType(chartType);
+	dm.setInitialDisplayCDay(displayCDay);
         chartDataView.setDataSource(dm);
         chart.setDataView(viewIndex, chartDataView);
         viewIndex++;

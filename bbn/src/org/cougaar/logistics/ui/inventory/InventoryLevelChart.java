@@ -59,8 +59,8 @@ public class InventoryLevelChart extends InventoryChart {
   protected ChartDataView invChartDataView;
   protected ChartDataView orgChartDataView;
 
-  public InventoryLevelChart() {
-    initialize("Inventory");
+  public InventoryLevelChart(boolean initialDisplayCDay) {
+    initialize("Inventory",initialDisplayCDay);
   }
 
   public ChartDataView getInvChartDataView() { return invChartDataView; }

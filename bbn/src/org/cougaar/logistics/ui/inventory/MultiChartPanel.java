@@ -110,9 +110,10 @@ public class MultiChartPanel extends JPanel
         initializeMultiChart();
     }
 
-    public MultiChartPanel(boolean showInitShortfall) {
+    public MultiChartPanel(boolean showInitShortfall,boolean initialDisplayCDay) {
         super();
         showInitialShortfall = showInitShortfall;
+	displayCDay = initialDisplayCDay;
         initializeMultiChart();
     }
 
@@ -126,9 +127,9 @@ public class MultiChartPanel extends JPanel
         InventoryColorTable colorTable = new InventoryColorTable();
 
         Insets blankInsets = new Insets(0, 0, 0, 0);
-        levelChart = new InventoryLevelChart();
-        refillChart = new InventoryRefillChart();
-        demandChart = new InventoryDemandChart();
+        levelChart = new InventoryLevelChart(displayCDay);
+        refillChart = new InventoryRefillChart(displayCDay);
+        demandChart = new InventoryDemandChart(displayCDay);
 
         pointLabel = new JLabel(INITIAL_POINT_LABEL, JLabel.CENTER);
         pointLabel.setBackground(Color.magenta);

@@ -115,6 +115,10 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
     }
 
 
+    public void setInitialDisplayCDay(boolean doUseCDay) {
+	useCDay = doUseCDay;
+    }
+
     /**
      * Retrieves the specified x-value series
      * This returns the nominal getXSeries of the super class

@@ -76,8 +76,8 @@ public class InventoryRefillChart extends InventoryBarChart{
 
 
 
-    public InventoryRefillChart() {
-	initialize("Refill");
+    public InventoryRefillChart(boolean initialDisplayCDay) {
+	initialize("Refill",initialDisplayCDay);
     }
 
 
