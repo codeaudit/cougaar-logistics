@@ -144,6 +144,12 @@ public class TaskScheduler {
       logger.error ("Bad phase level " + phase);
       return;
     }
+    if (phase != (policy.numPhases() - 1)) {
+      // do a phase shift
+      addedLists[priority][phase+1].addAll (addedLists[priority][phase]);
+      changedLists[priority][phase+1].addAll (changedLists[priority][phase]);
+      removedLists[priority][phase+1].addAll (removedLists[priority][phase]);
+    }
     addedLists[priority][phase].clear();
     changedLists[priority][phase].clear();
     removedLists[priority][phase].clear();
@@ -192,6 +198,19 @@ public class TaskScheduler {
   /** All removed tasks at given priority and phase since last cleared */
   public Collection getRemovedCollection (int priority, int phase) {
     return removedLists[priority][phase];
+  }
+
+  /** All tasks in the lists */
+  public Iterator getAllTasks() {
+    ArrayList al = new ArrayList();
+    for (int i = 0; i < addedLists.length; i++) {
+      for (int j = 0; j < addedLists[0].length; j++) {
+        al.addAll (addedLists[i][j]);
+        al.addAll (changedLists[i][j]);
+        al.addAll (removedLists[i][j]);
+      }
+    }
+    return al.iterator();
   }
 
   /**
