@@ -345,9 +345,12 @@ public class RefillGenerator extends InventoryModule {
     return homeGeoloc;
   }
   
-  /**Utility method to help find commited refills 
-   *  NOTE this only finds a quantity IF there is a reported AllocationResult
-   *  for the Task!
+  /** Utility method to help find commited refills 
+   *  NOTE this only finds a quantity IF there is a reported or
+   *  Estimated AllocationResult for the Task!
+   *  @param bucket The time bucket to match the Task with
+   *  @param thePG The PG for the Inventory the Tasks are against
+   *  @return double The quantity of the committed Refill Task for the time period.
    **/
   private double findCommittedRefill(int bucket, LogisticsInventoryPG thePG) {
     double refillQty = 0;
@@ -356,17 +359,25 @@ public class RefillGenerator extends InventoryModule {
     while (reqsIter.hasNext()) {
       Task refill = (Task) reqsIter.next();
       PlanElement pe = refill.getPlanElement();
-	if (pe !=null ) {
-	  AllocationResult ar = pe.getReportedResult();
-	  if (ar != null) {
-	    double endTime = ar.getValue(AspectType.END_TIME);
-	    if (bucket == thePG.convertTimeToBucket((long)endTime)) {
-	      // we found a refill for this bucket
-	      refillQty = ar.getValue(AspectType.QUANTITY);
-	      return refillQty;
-	     }
-	  }
-	}
+      AllocationResult ar = null;
+      if (pe !=null ) {
+        //try to use the reported result - but if its null - use the 
+        // estimated result
+        if (pe.getReportedResult() != null) {
+          ar = pe.getReportedResult();
+        } else {
+          ar = pe.getEstimatedResult();
+        }
+        // make sure that we got atleast a valid reported OR estimated allocation result
+        if (ar != null) {
+          double endTime = ar.getValue(AspectType.END_TIME);
+          if (bucket == thePG.convertTimeToBucket((long)endTime)) {
+            // we found a refill for this bucket
+            refillQty = ar.getValue(AspectType.QUANTITY);
+            return refillQty;
+          }
+        }
+      }
     }
     // if we did not find a match return 0.0
     return refillQty;
