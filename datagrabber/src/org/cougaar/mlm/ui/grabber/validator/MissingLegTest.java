@@ -118,7 +118,7 @@ public class MissingLegTest extends Test implements DGPSPConstants{
 		    ")");
   }
 
-  private String getQuery(int run){
+  private String getQuery(Logger l, int run){
     StringBuffer sb=new StringBuffer();
     switch(searchType){
     case BY_CARRIER:
@@ -140,24 +140,24 @@ public class MissingLegTest extends Test implements DGPSPConstants{
       sb.append(COL_OWNER);
       sb.append(",cl.");
       sb.append(COL_BUMPERNO);
-      sb.append(" from ");
+      sb.append("\nfrom ");
       sb.append(Controller.getTableName(CONVEYED_LEG_TABLE,run));
       sb.append(" cl");
       sb.append(",");
       sb.append(Controller.getTableName(CONV_INSTANCE_TABLE,run));
       sb.append(" ci");
-      sb.append(" where ");
+      sb.append("\nwhere ");
       sb.append("cl.");
       sb.append(COL_CONVEYANCEID);
       sb.append("=");
       sb.append("ci.");
       sb.append(COL_CONVEYANCEID);
-      sb.append(" and ");
+      sb.append("\nand ");
       sb.append("ci.");
       sb.append(COL_SELFPROP);
       sb.append("=");
       sb.append("0");
-      sb.append(" order by ");
+      sb.append("\norder by ");
       sb.append(COL_CONVEYANCEID);
       sb.append(",");
       sb.append(COL_STARTTIME);
@@ -173,7 +173,7 @@ public class MissingLegTest extends Test implements DGPSPConstants{
       sb.append(COL_ENDTIME);
       sb.append(",c.");
       sb.append(COL_STARTLOC);
-      sb.append(",c.");
+      sb.append(",\nc.");
       sb.append(COL_ENDLOC);
       sb.append(",i.");
       sb.append(COL_ASSETID);
@@ -181,7 +181,11 @@ public class MissingLegTest extends Test implements DGPSPConstants{
       sb.append(COL_OWNER);
       sb.append(",a.");
       sb.append(COL_NAME);
-      sb.append(" from ");
+      sb.append(",p.");
+      sb.append(COL_IS_LOW_FIDELITY);
+      sb.append("\nfrom ");
+      sb.append(Controller.getTableName(ASSET_PROTOTYPE_TABLE,run));
+      sb.append(" p, ");
       sb.append(Controller.getTableName(ASSET_INSTANCE_TABLE,run));
       sb.append(" a, ");
       sb.append(Controller.getTableName(CONVEYED_LEG_TABLE,run));
@@ -203,12 +207,19 @@ public class MissingLegTest extends Test implements DGPSPConstants{
       sb.append(COL_ASSETID);
       sb.append("=a.");
       sb.append(COL_ASSETID);
+      sb.append("\nand a.");
+      sb.append(COL_PROTOTYPEID);
+      sb.append("=p.");
+      sb.append(COL_PROTOTYPEID);
       sb.append("\norder by i.");
       sb.append(COL_ASSETID);
       sb.append(",c.");
       sb.append(COL_STARTTIME);
       break;
     }
+
+    l.logMessage(Logger.MINOR,Logger.DB_QUERY,"SQL was : \n" + sb.toString());
+
     return sb.toString();
   }
 
@@ -230,9 +241,11 @@ public class MissingLegTest extends Test implements DGPSPConstants{
     Calendar dCal=Calendar.getInstance();
     Calendar tCal=Calendar.getInstance();
 
-    ResultSet rs=s.executeQuery(getQuery(run));
+    ResultSet rs=s.executeQuery(getQuery(l, run));
     //Now actually do the walk.
     while(rs.next()){
+      if (rs.getString(10).charAt(0) == 't') // ignore low fidelity assets
+	continue;
       //First we need to get the times -- is there a better way?
       dCal.setTime(rs.getDate(3));
       tCal.setTime(rs.getTime(3));
@@ -250,8 +263,8 @@ public class MissingLegTest extends Test implements DGPSPConstants{
       curEndTime=dCal.getTime().getTime();
 
       //If the search matches the last guy, then do our comparison:
-      if(search.equals(rs.getString(7))){
-	if(!endLoc.equals(rs.getString(5))){
+      if(search.equals(rs.getString(7))){ // compare asset ids
+	if(!endLoc.equals(rs.getString(5))){ // end geoloc of last != start geoloc of this
 	  insertRow(s,run,
 		    legID,legType,startTime,endTime,startLoc,endLoc,search,
 		    rs.getString(8),
