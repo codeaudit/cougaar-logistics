@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -46,17 +46,17 @@ import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
-/** 
+/**
  * <pre>
- * 
- * The LogisticsInventoryFormatter is a specialized writer class that 
+ *
+ * The LogisticsInventoryFormatter is a specialized writer class that
  * produces the csv output logged by the LogisticsInventoryLogger.
- * It maintains the contract with LogisticsInventoryBG on how to 
+ * It maintains the contract with LogisticsInventoryBG on how to
  * write its internal data structures into the proper csv data output
  * to a provided output stream writer.   It also provides methods that will
  * wrap that output with useful header and column info, or in xml
  * for a servlet.
- * 
+ *
  * @see LogisticsInventoryLogger
  * @see LogisticsInventoryBG
  *
@@ -80,7 +80,7 @@ public class LogisticsInventoryFormatter {
     public final static String PROJECTSUPPLY_TASK_ARS_TAG="PROJECTSUPPLY_TASK_ALLOCATION_RESULTS";
     public final static String PROJECTWITHDRAW_TASK_ARS_TAG="PROJECTWITHDRAW_TASK_ALLOCATION_RESULTS";
     public final static String COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG="COUNTED_PROJECTWITHDRAW_TASK_ALLOCATION_RESULTS";
-    
+
     public final static String RESUPPLY_SUPPLY_TASKS_TAG="RESUPPLY_SUPPLY_TASKS";
     public final static String RESUPPLY_PROJECTSUPPLY_TASKS_TAG="RESUPPLY_PROJECTSUPPLY_TASKS";
     public final static String RESUPPLY_SUPPLY_TASK_ARS_TAG="RESUPPLY_SUPPLY_TASK_ALLOCATION_RESULTS";
@@ -110,7 +110,7 @@ public class LogisticsInventoryFormatter {
     public final static String PACKAGED_POL_UNIT = "Packages";
     public final static String AMMUNITION_UNIT = "Tons";
     public final static String CONSUMABLE_UNIT = "Packages";
-    
+
 
     protected LoggingService logger;
     protected TaskUtils taskUtils;
@@ -186,8 +186,8 @@ public class LogisticsInventoryFormatter {
 	    throw e;
 	}
 	writeln(taskStr);
-    } 
-    
+    }
+
     protected void logAllocationResults(ArrayList tasks, long aCycleStamp, boolean expandTimestamp, boolean isCountedAR) {
 	cycleStamp = aCycleStamp;
 	for(int i=0; i < tasks.size(); i++) {
@@ -249,7 +249,7 @@ public class LogisticsInventoryFormatter {
 		    long endTime;
 		    if(startInd == -1) {
 			outputStr += ",";
-		    } 
+		    }
 		    else {
 			startTime = (long) results[startInd];
 			if(isCountedAR &&
@@ -261,7 +261,7 @@ public class LogisticsInventoryFormatter {
 		    if(endInd == -1) {
 			/** MWD The following line of code which replaces the
 			 *  allocation result end time with the task end time
-			 *  is only due to a current error in the 
+			 *  is only due to a current error in the
 			 *  UniversalAllocator.   The UA is only setting
 			 *  the start time in the allocation result. There
 			 *  is a bug in and when the UA is fixed this line
@@ -294,26 +294,26 @@ public class LogisticsInventoryFormatter {
 		}
 	    }
 	}
-    }    
+    }
 
 
     protected void logLevels(Schedule reorderLevels,
-			     Schedule inventoryLevels, 
-			     Schedule targetLevels, 
-			     long aCycleStamp, 
+			     Schedule inventoryLevels,
+			     Schedule targetLevels,
+			     long aCycleStamp,
 			     boolean expandTimestamp) {
 	cycleStamp = aCycleStamp;
 	Enumeration e = reorderLevels.getAllScheduleElements();
 	while(e.hasMoreElements()) {
 	    QuantityScheduleElement qse=(QuantityScheduleElement)e.nextElement();
-	    Collection invLevelsInRange = 
+	    Collection invLevelsInRange =
 		inventoryLevels.getEncapsulatedScheduleElements(qse.getStartTime(),qse.getEndTime());
-	    Collection targetLevelsInRange = 
+	    Collection targetLevelsInRange =
 		targetLevels.getEncapsulatedScheduleElements(qse.getStartTime(),qse.getEndTime());
 	    logLevels(qse,invLevelsInRange,targetLevelsInRange,expandTimestamp);
 	}
     }
-    
+
     protected void logLevels(QuantityScheduleElement reorderLevel,
 			     Collection invLevelsInRange,
 			     Collection targetLevelsInRange,
@@ -337,7 +337,7 @@ public class LogisticsInventoryFormatter {
 		outputStr = outputStr + invLevel.getQuantity() + ",";
 		if(moreThanOne && !alreadyLogged) {
 		    if(logger.isWarnEnabled()) {
-		    logger.warn("logLevel:More than one inventory level in range " + outputStr);			
+		    logger.warn("logLevel:More than one inventory level in range " + outputStr);
 		    }
 		    alreadyLogged=true;
 		}
@@ -352,17 +352,17 @@ public class LogisticsInventoryFormatter {
 		    outputStr += targetLevel.getQuantity();
 		    if(moreThanOne && !alreadyLogged) {
 			if(logger.isWarnEnabled()) {
-			    logger.warn("logLevel:More than one target level in range " + outputStr);			
+			    logger.warn("logLevel:More than one target level in range " + outputStr);
 			}
 			alreadyLogged=true;
 		    }
 		    moreThanOne=true;
 		}
-	    }		
+	    }
 	    writeln(outputStr);
 	}
     }
-		
+
     protected static int getIndexForType(int[] types, int type) {
 	for (int ii = 0; ii < types.length; ii++) {
 	    if (types[ii] == type) {
@@ -391,25 +391,25 @@ public class LogisticsInventoryFormatter {
 				  long aCycleStamp) {
 	writeNoCycleLn("CYCLE,START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL");
 	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,true);
-    } 
+    }
 
 
     protected void excelLogProjections(ArrayList tasks,boolean isCountedTask,long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE");
 	logTasks(tasks,aCycleStamp,true,isCountedTask);
-    } 
-    
-    
+    }
+
+
     protected void excelLogNonProjections(ArrayList tasks,long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,QTY");
 	logTasks(tasks,aCycleStamp,true,false);
-    } 
-    
+    }
+
 
     protected void excelLogARs(ArrayList tasks,boolean isCountedAR, long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR QTY");
 	logAllocationResults(tasks,aCycleStamp,true,isCountedAR);
-    } 
+    }
 
 
     protected void xmlLogLevels(Schedule reorderLevels,
@@ -421,7 +421,7 @@ public class LogisticsInventoryFormatter {
 	    writeNoCycleLn("<START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL>");
 	}
 	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,humanReadable);
-    } 
+    }
 
 
     protected void xmlLogProjections(ArrayList tasks,boolean isCountedTask,boolean humanReadable, long aCycleStamp) {
@@ -429,9 +429,9 @@ public class LogisticsInventoryFormatter {
 	    writeNoCycleLn("<PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE>");
 	}
 	logTasks(tasks,aCycleStamp,humanReadable,isCountedTask);
-    } 
-    
-    
+    }
+
+
     protected void xmlLogNonProjections(ArrayList tasks,
 					boolean humanReadable,
 					long aCycleStamp) {
@@ -439,18 +439,18 @@ public class LogisticsInventoryFormatter {
 	    writeNoCycleLn("<PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,QTY>");
 	}
 	logTasks(tasks,aCycleStamp,humanReadable,false);
-    } 
-    
+    }
+
 
     protected void xmlLogProjectionARs(ArrayList tasks,
-				       boolean isCountedAR, 
+				       boolean isCountedAR,
 				       boolean humanReadable,
 				       long aCycleStamp) {
 	if(humanReadable) {
 	    writeNoCycleLn("<PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR DAILY RATE>");
 	}
 	logAllocationResults(tasks,aCycleStamp,humanReadable,isCountedAR);
-    } 
+    }
 
 
     protected void xmlLogNonProjectionARs(ArrayList tasks,
@@ -460,7 +460,7 @@ public class LogisticsInventoryFormatter {
 	    writeNoCycleLn("<PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR QTY>");
 	}
 	logAllocationResults(tasks,aCycleStamp,humanReadable,false);
-    } 
+    }
 
     protected ArrayList buildParentTaskArrayList(ArrayList tasks) {
 	ArrayList parentList = new ArrayList(tasks.size());
@@ -471,11 +471,11 @@ public class LogisticsInventoryFormatter {
 	    }
 	    else {
 		logger.error("Problem deriving parent task from task");
-	    }	
+	    }
 	}
 	return parentList;
     }
-    
+
     /***
      ** This method flattens the 2 dimensional array list into one
      ** dimension and weeds out PROJECTWITHDRAWs.
@@ -496,10 +496,10 @@ public class LogisticsInventoryFormatter {
 	}
 	return countedProjDemand;
     }
-	    
+
 
     public void logToExcelOutput(LogisticsInventoryPG inv,
-				 long aCycleStamp) { 
+				 long aCycleStamp) {
 
 	logInvPG=inv;
 	if(logInvPG != null) {
@@ -542,7 +542,7 @@ public class LogisticsInventoryFormatter {
 					  ArrayList countedProjWithdrawList,
 					  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
-	
+
 	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
 	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
 
@@ -628,14 +628,14 @@ public class LogisticsInventoryFormatter {
 
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
-	
+
 	String header;
 
 	if(humanReadable) {
 	    header ="<" + INVENTORY_HEADER_PERSON_READABLE_TAG + " org=" + orgId + " item=" + assetName;
 	}
 	else {
-	    header ="<" + INVENTORY_HEADER_GUI_TAG + " org=" + orgId + " item=" + assetName;	    
+	    header ="<" + INVENTORY_HEADER_GUI_TAG + " org=" + orgId + " item=" + assetName;
 	}
 
 	header = header + " unit=" + getUnitForAsset(invAsset);
@@ -655,7 +655,7 @@ public class LogisticsInventoryFormatter {
 		    nomenclature = supplyPG.getSupplyType();
 		}
 	    }
-	} 
+	}
 
 	header = header+" nomenclature=" + nomenclature;
 
@@ -668,7 +668,7 @@ public class LogisticsInventoryFormatter {
 
 	writeNoCycleLn(header);
     }
-    
+
     protected void logHeaderEndToXMLOutput(boolean humanReadable) {
 	if(humanReadable) {
 	    writeNoCycleLn("</" + INVENTORY_HEADER_PERSON_READABLE_TAG + ">");
@@ -701,7 +701,7 @@ public class LogisticsInventoryFormatter {
 	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,humanReadable,aCycleStamp);
 	logHeaderEndToXMLOutput(humanReadable);
     }
-    
+
 
     protected void logToXMLOutput(Asset invAsset,
 				  Organization anOrg,
@@ -841,13 +841,13 @@ public class LogisticsInventoryFormatter {
 	    try {
 		output.write(aString + "\n");
 	    }
-	    catch(IOException e) {		
+	    catch(IOException e) {
 		logger.error("Exception trying to write to Writer: " + output, e);
 	    }
 	}
     }
 
-    protected static String getUnitForAsset(Asset invAsset) {
+    public static String getUnitForAsset(Asset invAsset) {
 	SupplyClassPG pg = (SupplyClassPG)invAsset.searchForPropertyGroup(SupplyClassPG.class);
 	String supplyType = pg.getSupplyType();
 
@@ -866,12 +866,12 @@ public class LogisticsInventoryFormatter {
 	else if(supplyType.equals(CONSUMABLE_SUPPLY_TYPE)) {
 	    return CONSUMABLE_UNIT;
 	}
-	
-	return "UNKNOWN UNIT"; 
+
+	return "UNKNOWN UNIT";
     }
 }
 
 
-    
-  
-  
+
+
+
