@@ -115,8 +115,14 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
           logger.debug("DiffSupply "+getTimeUtils().dateString(thePG.convertBucketToTime(bucket))+" - "+
                        "no refills on this day, add new task");
         }
-        thePG.addRefillRequisition(newRefill);
-        inventoryPlugin.publishRefillTask(newRefill, inv);
+        if (inventoryPlugin.publishRefillTask(newRefill, inv)) {
+          thePG.addRefillRequisition(newRefill);
+        } else {
+          if (logger.isDebugEnabled()) {
+            logger.debug("publishRefillTask returned false - not adding Refill task to the BG" +
+                         newRefill.getUID());
+          }
+        }
       } else {
         // found a published refill for the bucket
         oldRefills.remove(publishedRefill);
@@ -150,13 +156,13 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
                        getTaskUtils().taskDesc(oldRefill));
         }
         //((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
-     	//inventoryPlugin.publishRemove(oldRefill);
+        //inventoryPlugin.publishRemove(oldRefill);
         inventoryPlugin.removeSubTask(oldRefill);
       }
     }      
   }
 
- /** Compares the old and new Refill Projection tasks.
+  /** Compares the old and new Refill Projection tasks.
    *  A schedule is created from the previously published projections.  New tasks
    *  are compared to the schedule in order to identify overlapping tasks.  In 
    *  cases where overlapping tasks are found, the published task is changed to 
@@ -174,7 +180,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
                                        Inventory inv) {
 
     LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
-	searchForPropertyGroup(LogisticsInventoryPG.class);
+        searchForPropertyGroup(LogisticsInventoryPG.class);
 
     if (logger.isDebugEnabled()) {
       logger.debug("DiffProj handling "+
@@ -193,8 +199,8 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
           logger.debug("DiffProj \n"+getTaskUtils().taskDesc(oldRefill));
         }
         if (oldRefill != null) {
-	  // clean out the reference in the maintain inventory workflow
-	  //((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+          // clean out the reference in the maintain inventory workflow
+          //((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
           //inventoryPlugin.publishRemove(oldRefill);
           inventoryPlugin.removeSubTask(oldRefill);
         }
@@ -257,9 +263,14 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
           logger.debug("No task exists that covers this timespan, publish task "+
                        getTaskUtils().taskDesc(new_task));
         }
-        thePG.addRefillProjection(new_task);
-        // hook the task in with the MaintainInventory workflow and publish
-        inventoryPlugin.publishRefillTask(new_task, inv);
+        if (inventoryPlugin.publishRefillTask(new_task, inv)) {
+          thePG.addRefillProjection(new_task);
+        } else {
+          if (logger.isDebugEnabled()) {
+            logger.debug("publishRefillTask returned false - not adding Refill task to the BG" +
+                         new_task.getUID());
+          }
+        }
       }
     }
     // Rescind any tasks that were not accounted for
@@ -272,16 +283,13 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
       }
       //((NewWorkflow)task.getWorkflow()).removeTask(task);
       //inventoryPlugin.publishRemove(task);
+      if (logger.isDebugEnabled()) {
+        logger.debug("About to call pluginhelper.removeSubTask... Task is: " + task.getVerb() + " " +
+                     task.getUID() + " Parent Task is: " + task.getParentTaskUID() + " " +
+                     task.getWorkflow().getParentTask().getVerb() +" Parent PE is: " +
+                     task.getWorkflow().getParentTask().getPlanElement());
+      }
       inventoryPlugin.removeSubTask(task);
     }
   }
 }
-    
-  
-  
-
-
-
-
-
-
