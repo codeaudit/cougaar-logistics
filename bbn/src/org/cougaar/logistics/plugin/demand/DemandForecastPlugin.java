@@ -451,7 +451,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
-        if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
+        if (t.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
           return taskUtils.isTaskOfTypeString(t, supplyType);
         }
       }
