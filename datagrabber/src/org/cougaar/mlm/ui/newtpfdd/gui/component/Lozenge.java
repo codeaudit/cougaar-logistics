@@ -141,16 +141,18 @@ public class Lozenge extends Component
 	return myFillPaint;
     }  
     public Color getHighlightFillColor() {
-	if (myHighlightFillColor == null)
+	if (myHighlightFillColor == null) {
 	    return myFillColor;
-	else
+	} else{
 	    return myHighlightFillColor;
+    }
     }  
     public Color getHighlightOutlineColor() {
-	if (myHighlightOutlineColor == null)
+	if (myHighlightOutlineColor == null) {
 	    return myOutlineColor;
-	else
+	} else{
 	    return myHighlightOutlineColor;
+    }
     }  
     public Object getID() { return id; }  
     public int getLeftTipType() { return lozBar.getLeftTipType(); }  
@@ -164,27 +166,30 @@ public class Lozenge extends Component
     public boolean getMouseInside() { return myMouseInside; }  
     public Color getOutlineColor() { return myOutlineColor; }  
     public Paint getOutlinePaint() {
-	if (myMouseInside)
+	if (myMouseInside) {
 	    return getHighlightOutlineColor();
-	else if (mySelected)
+	} else if (mySelected) {
 	    return getSelectedOutlineColor();
-	else
+	} else {
 	    return myOutlineColor;
+    }
     }  
     public double getRelativeHeight() { return lozBar.getRelativeHeight(); }  
     public int getRightTipType() { return lozBar.getRightTipType(); }  
     public boolean getSelected() { return mySelected; }  
     public Color getSelectedFillColor() {
-	if (mySelectedFillColor == null)
+	if (mySelectedFillColor == null) {
 	    return myFillColor;
-	else
+	} else {
 	    return mySelectedFillColor;
+    }
     }  
     public Color getSelectedOutlineColor() {
-	if (mySelectedOutlineColor == null)
+	if (mySelectedOutlineColor == null) {
 	    return myOutlineColor;
-	else
+	} else {
 	    return mySelectedOutlineColor;
+    }
     }  
     public int getStatus() { return myStatus; }  
     public Color getTextBackground() {

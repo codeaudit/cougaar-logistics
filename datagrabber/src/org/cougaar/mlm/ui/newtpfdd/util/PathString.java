@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Attic/PathString.java,v 1.1 2002-05-14 20:41:08 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Attic/PathString.java,v 1.2 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -28,10 +28,11 @@ public class PathString
     public static String firstname(String source, int ch)
     {
 	int divider = source.indexOf(ch);
-	if ( divider > -1 )
+	if ( divider > -1 ) {
 	    return source.substring(0, divider);
-	else
+	} else {
 	    return source;
+    }
     }
 
     public static String restname(String source)
@@ -42,10 +43,11 @@ public class PathString
     public static String restname(String source, int ch)
     {
 	int divider = source.indexOf(ch);
-	if ( divider > -1 )
+	if ( divider > -1 ) {
 	    return source.substring(divider + 1);
-	else
+	} else {
 	    return source;
+    }
     }
 
     public static String basename(String source)
@@ -56,10 +58,11 @@ public class PathString
     public static String basename(String source, int ch)
     {
 	int divider = source.lastIndexOf(ch);
-	if ( divider > -1 )
+	if ( divider > -1 ) {
 	    return source.substring(divider + 1);
-	else
+	} else {
 	    return source;
+    }
     }
 
     public static String dirname(String source)
@@ -70,10 +73,11 @@ public class PathString
     public static String dirname(String source, int ch)
     {
 	int divider = source.lastIndexOf(ch);
-	if ( divider > -1 )
+	if ( divider > -1 ) {
 	    return source.substring(0, divider);
-	else
+	} else {
 	    return source;
+    }
     }
 
     public static Vector split(String source, int ch)

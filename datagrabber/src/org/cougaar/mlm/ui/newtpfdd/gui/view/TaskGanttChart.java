@@ -300,11 +300,11 @@ public class TaskGanttChart extends GanttChart
       // These are the only legs for which we know carrier names right now
       break;
     case Node.MODE_AIR:
-      if ((((LegNode)leg).getLegType () == DGPSPConstants.LEG_TYPE_TRANSPORTING) ||
-	  (((LegNode)leg).getLegType () == DGPSPConstants.LEG_TYPE_POSITIONING))
+    if ((((LegNode)leg).getLegType () == DGPSPConstants.LEG_TYPE_TRANSPORTING) || (((LegNode)leg).getLegType () == DGPSPConstants.LEG_TYPE_POSITIONING)) {
 	loz.setForeground(TPFDDColor.TPFDDBlue);
-      else
+    }  else {
 	loz.setForeground(Color.orange);
+    }
 
       break;
     case Node.MODE_AGGREGATE:

@@ -173,15 +173,17 @@ public class CarrierInstanceSegment extends RouteSegment {
     if(arrowDirectionType==direction&&doArrowHead)
       return;
     if(direction==OMArrowHead.ARROWHEAD_DIRECTION_FORWARD){
-      if(arrowDirectionType==OMArrowHead.ARROWHEAD_DIRECTION_BACKWARD)
+      if(arrowDirectionType==OMArrowHead.ARROWHEAD_DIRECTION_BACKWARD) {
 	addArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_BOTH);
-      else
+      } else {
 	addArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_FORWARD);
+    }
     }else if(direction==OMArrowHead.ARROWHEAD_DIRECTION_BACKWARD){
-      if(arrowDirectionType==OMArrowHead.ARROWHEAD_DIRECTION_FORWARD)
+      if(arrowDirectionType==OMArrowHead.ARROWHEAD_DIRECTION_FORWARD) {
 	addArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_BOTH);
-      else
+      } else {
 	addArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_BACKWARD);
+    }
     }
   }
 
@@ -216,10 +218,11 @@ public class CarrierInstanceSegment extends RouteSegment {
     }
     ret.append(closeFont());
     ret.append(openFont(lightFontColor));
-    if(multipleLegs)
+    if(multipleLegs) {
       ret.append("legs for ");
-    else
+    } else {
       ret.append("leg for ");
+    }
     ret.append(closeFont());
     ret.append(openFont(getModeFontColor(getMode())) +
 	       carrierType + " "+ carrierName + closeFont());

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/CopiableImpl.java,v 1.2 2002-08-07 19:48:21 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/CopiableImpl.java,v 1.3 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -90,10 +90,9 @@ public class CopiableImpl implements Copiable
 	    catch ( InvocationTargetException e ) {
 		OutputHandler.out(ExceptionTools.toString("CI:tS", e));
 	    }
-	    if ( value == null )
-		myString += spaces + properties[i].getName() + ": [null]\n";
-	    else // if ( properties[i].getWriteMethod() != null )
-		if ( properties[i].getPropertyType().isArray() ) {
+	    if ( value == null ) {
+            myString += spaces + properties[i].getName() + ": [null]\n";
+	    } else /* if ( properties[i].getWriteMethod() != null )*/	if ( properties[i].getPropertyType().isArray() ) {
 		    int length = java.lang.reflect.Array.getLength(value);
 		    if ( length == 0 )
 			myString += spaces + properties[i].getName() + ": [none]\n";
@@ -101,19 +100,21 @@ public class CopiableImpl implements Copiable
 			myString += spaces + properties[i].getName() + ":\n";
 			for ( int j = 0; j < length; j++ ) {
 			    Object element = java.lang.reflect.Array.get(value, j);
-			    if ( element instanceof Copiable )
+			    if ( element instanceof Copiable ) {
 				myString += element.toString();
-			    else
+			    } else {
 				myString += spaces + "  " + element.toString() + "\n";
+                }
 			}
 		    }
 		}
 		else {
 		    myString += spaces + properties[i].getName() + ": ";
-		    if ( value instanceof Copiable )
+		    if ( value instanceof Copiable ) {
 			myString += "\n" + value;
-		    else
+            } else {
 			myString += value + "\n";
+            }
 		}
 	}
 	spaces = saveSpaces;

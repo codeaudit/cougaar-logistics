@@ -319,9 +319,9 @@ public class DataGathererWorker
   }
 
   protected String getRequestType () {
-    if ((flags & FLAG_BEGIN_SESSION) != 0)
+    if ((flags & FLAG_BEGIN_SESSION) != 0) {
       return "Begin Session";
-    else if ((flags & MASK_GET_ALL) != 0) {
+    } else if ((flags & MASK_GET_ALL) != 0) {
       if ((flags & FLAG_GET_LEGS) != 0) {
 	return "Get Legs";
       } else if ((flags & FLAG_GET_LOCATIONS) != 0) {

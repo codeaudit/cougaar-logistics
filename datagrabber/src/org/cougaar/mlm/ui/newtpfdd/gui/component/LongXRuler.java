@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LongXRuler.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LongXRuler.java,v 1.2 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -87,22 +87,24 @@ public class LongXRuler extends VirtualXComponent
 
 	// compute start values
 	long firstTic;
-	if( start >= 0)
+	if( start >= 0) {
 	    firstTic = ((start+getTicInterval()-1)
 			/ getTicInterval())
 		* getTicInterval();
-	else // ( start < 0 )
+	} else { // ( start < 0 )
 	    firstTic = start
 		/ getTicInterval()
 		* getTicInterval();
+    }
 
 	long firstLabel;
-	if( start >=0 )
+	if( start >=0 ) {
 	    firstLabel = ((start+getLabelInterval()-1)
 			  / getLabelInterval())
 		* getLabelInterval();
-	else // ( start < 0 )
+	}else { // ( start < 0 )
 	    firstLabel = start / getLabelInterval() * getLabelInterval();
+    }
 
 	// paint tics
 	g.setColor( getForeground() );
@@ -145,10 +147,11 @@ public class LongXRuler extends VirtualXComponent
 		  long millisToday = labelx % DAY;
 		  long hour = millisToday / HOUR;
 		  if (millisToday >= HOUR) {
-			if (hour < 10)
+			if (hour < 10) {
 			  text = "0" + hour + ":00";
-			else
+			} else {
 			  text = "" + hour + ":00";
+            }
 			g.setFont( getFont () );
 		  }
 		  else
@@ -218,12 +221,13 @@ public class LongXRuler extends VirtualXComponent
 		repaint();
 		break;
 	    case MouseEvent.MOUSE_MOVED:
-		if( e.getX() <= getResizeHandleWidth() )
+		if( e.getX() <= getResizeHandleWidth() ) {
 		    setCursor( Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR) );
-		else if( e.getX() >= getSize().width-getResizeHandleWidth() )
+		} else if( e.getX() >= getSize().width-getResizeHandleWidth() ) {
 		    setCursor( Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR) );
-		else
+		} else{
 		    setCursor( Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) );
+        }
 	    }
 	super.processMouseMotionEvent(e);
     }

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeBar.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeBar.java,v 1.2 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -358,14 +358,15 @@ public class LozengeBar extends LayeredComponent implements VirtualX
 		    x = (float)left;
 		    break;
 		case Lozenge.BROKEN_TIP:
-		    if (y < q1)
+        if (y < q1) {
 			x = (float)left + ((float)leftIndent * ((q1 - y) / (q1 - q0)));
-		    else if (y < q2)
+        } else if (y < q2) {
 			x = (float)left + ((float)leftIndent * (1.0f - ((q2 - y) / (q2 - q1))));
-		    else if (y < q3)
+        } else if (y < q3) {
 			x = (float)left + ((float)leftIndent * ((q3 - y) / (q3 - q2)));
-		    else
+        } else{
 			x = (float)left + ((float)leftIndent * (1.0f - ((q4 - y) / (q4 - q3))));
+        }
 		    break;
 		}
 	}
@@ -380,14 +381,15 @@ public class LozengeBar extends LayeredComponent implements VirtualX
 		    x = (float)right;
 		    break;
 		case Lozenge.BROKEN_TIP:
-		    if (y < q1)
+        if (y < q1) {
 			x = (float)right - ((float)rightIndent * (1.0f - ((q1 - y) / (q1 - q0))));
-		    else if (y < q2)
+        } else if (y < q2) {
 			x = (float)right - ((float)rightIndent * ((q2 - y) / (q2 - q1)));
-		    else if (y < q3)
+        } else if (y < q3){
 			x = (float)right - ((float)rightIndent * (1.0f - ((q3 - y) / (q3 - q2))));
-		    else
+        } else {
 			x = (float)right - ((float)rightIndent * ((q4 - y) / (q4 - q3)));
+        }
 		    break;
 		}
 	}

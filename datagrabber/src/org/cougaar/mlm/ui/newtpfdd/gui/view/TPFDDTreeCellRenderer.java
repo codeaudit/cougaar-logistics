@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TPFDDTreeCellRenderer.java,v 1.4 2002-08-09 14:47:39 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TPFDDTreeCellRenderer.java,v 1.5 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -90,14 +90,15 @@ public class TPFDDTreeCellRenderer extends JLabel implements TreeCellRenderer
 	Color bColor;
 	//	System.out.println ("TPFDDTreeCellRenderer.paint - called");
 	
-	if ( selected )
+	if ( selected ) {
 	    bColor = SelectedBackgroundColor;
-	else if ( getParent() != null )
+	} else if ( getParent() != null ) {
 	    /* Pick background color up from parent (which will come from
 	       the JTree we're contained in). */
  	    bColor = getParent().getBackground();
-	else
+	} else {
  	   bColor = getBackground();
+    }
 	g.setColor(bColor);
 	g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
 	super.paint(g);

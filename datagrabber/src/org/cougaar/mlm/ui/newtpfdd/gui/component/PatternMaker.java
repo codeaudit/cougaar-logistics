@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.3 2002-08-07 21:09:33 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.4 2002-08-09 16:46:10 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -72,12 +72,13 @@ public class PatternMaker {
       int xa = 0;
       for (x=0; x<w; x++) {
 	if (x > xa*band) xa++;
-	if (y % spacing == 0 && xa % 2 == 0)
+	if (y % spacing == 0 && xa % 2 == 0) {
 	  pix[index++] = fgColor;
-	else if ((y+spacing/2) % spacing == 0 && xa % 2 != 0)
+	} else if ((y+spacing/2) % spacing == 0 && xa % 2 != 0) {
 	  pix[index++] = fgColor;
-	else
+	} else {
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -198,8 +199,11 @@ public class PatternMaker {
       for (x=0; x<w; x++) {
 
 	int term;
-	if (slopeIsPositive) term = x+y;
-	else term = x-y;
+	if (slopeIsPositive) {
+        term = x+y;
+	} else {
+        term = x-y;
+    }
 
 	boolean foregroundPixel = false;
 
@@ -208,11 +212,13 @@ public class PatternMaker {
 	    foregroundPixel = true;
 	}
 
-	if (foregroundPixel)
+	if (foregroundPixel) {
 	  pix[index++] = fgColor;
-	else if (pix[index] == 0)
+	} else if (pix[index] == 0) {
 	  pix[index++] = bgColor;
-	else;
+	} else {
+        ;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
