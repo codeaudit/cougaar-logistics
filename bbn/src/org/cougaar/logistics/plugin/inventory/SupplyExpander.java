@@ -64,7 +64,7 @@ import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 
-public class SupplyExpander extends InventoryModule {
+public class SupplyExpander extends InventoryModule implements ExpanderModule {
 
     /**
      * Define an ARA that can deal with the expansion of a
