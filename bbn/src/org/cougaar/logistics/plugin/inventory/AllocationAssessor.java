@@ -316,6 +316,13 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	qty = thePG.getProjectionTaskDemand(projWdraw, currentBucket, start, end);
 	testQty = runningQty + qty;
 	testLevel = yesterdayLevel - testQty + todayRefill;
+	if(logger.isWarnEnabled()) {
+	  logger.warn("AA.determineProjectionAllocations " +
+		      "Got " + projWdraw.getVerb() + 
+		      " task thats in actual demand zone. Test Qty : " +
+		      testQty + ". Test Level is : " + testLevel);
+	}
+		      
 	if (testLevel >= 0.0) {
 	  // if its ok give it a pe and update the quantity  
 	  runningQty = runningQty + qty;
@@ -323,6 +330,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	    TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
 	    if (taskdeficit == null) {
 	      allocatedProjections.add(projWdraw);
+	      if(logger.isWarnEnabled()) {
+		logger.warn("AA.determineProjectionAllocations Adding to allocated projections");
+	      }
 	    } else {
 	      taskdeficit.addBucket(qty, 0);
 	    }
