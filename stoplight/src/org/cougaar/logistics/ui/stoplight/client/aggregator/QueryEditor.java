@@ -38,8 +38,8 @@ import java.util.Vector;
 import org.cougaar.lib.aggagent.query.AggregationQuery;
 import org.cougaar.lib.aggagent.query.ScriptSpec;
 import org.cougaar.lib.aggagent.util.Enum.*;
-import org.cougaar.lib.uiframework.ui.components.CFrame;
-import org.cougaar.lib.uiframework.ui.components.CRadioButtonSelectionControl;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRadioButtonSelectionControl;
 
 public class QueryEditor extends JPanel
 {

@@ -28,8 +28,8 @@ package org.cougaar.logistics.ui.stoplight.util;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
-import org.cougaar.lib.uiframework.transducer.*;
-import org.cougaar.lib.uiframework.transducer.elements.*;
+import org.cougaar.logistics.ui.stoplight.transducer.*;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.*;
 
 public class OrgXMLGenerator
 {

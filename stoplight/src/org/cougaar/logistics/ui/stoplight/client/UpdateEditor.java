@@ -31,7 +31,7 @@ import java.beans.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
-import org.cougaar.lib.uiframework.ui.components.CRadioButtonSelectionControl;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRadioButtonSelectionControl;
 
 public class UpdateEditor extends JDialog
 {

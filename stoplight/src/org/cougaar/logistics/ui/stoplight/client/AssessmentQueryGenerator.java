@@ -41,20 +41,20 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 
-import org.cougaar.lib.uiframework.ui.models.RangeModel;
-import org.cougaar.lib.uiframework.ui.models.VariableModel;
-import org.cougaar.lib.uiframework.ui.util.VariableInterfaceManager;
 import org.cougaar.lib.aggagent.client.ResultSetMonitor;
 import org.cougaar.lib.aggagent.query.AggregationQuery;
 import org.cougaar.lib.aggagent.query.AggregationResultSet;
 import org.cougaar.lib.aggagent.query.ScriptSpec;
 import org.cougaar.lib.aggagent.query.UpdateListener;
 import org.cougaar.lib.aggagent.util.Enum.*;
-import org.cougaar.lib.uiframework.transducer.XmlInterpreter;
-import org.cougaar.lib.uiframework.transducer.elements.*;
 import org.cougaar.logistics.ui.stoplight.society.InventoryRelatedPredicate;
 import org.cougaar.logistics.ui.stoplight.society.OrganizationMelder;
 import org.cougaar.logistics.ui.stoplight.society.MetricFormatter;
+import org.cougaar.logistics.ui.stoplight.transducer.XmlInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.*;
+import org.cougaar.logistics.ui.stoplight.ui.models.RangeModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.VariableModel;
+import org.cougaar.logistics.ui.stoplight.ui.util.VariableInterfaceManager;
 import org.cougaar.logistics.ui.stoplight.util.TreeUtilities;
 
 public class AssessmentQueryGenerator extends QueryGenerator

@@ -37,11 +37,11 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableModel;
 import javax.swing.tree.*;
 
-import org.cougaar.lib.uiframework.ui.models.TransformableTableModel;
-import org.cougaar.lib.uiframework.ui.models.RangeModel;
-import org.cougaar.lib.uiframework.ui.models.VariableModel;
-import org.cougaar.lib.uiframework.ui.util.VariableInterfaceManager;
 
+import org.cougaar.logistics.ui.stoplight.ui.models.RangeModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.TransformableTableModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.VariableModel;
+import org.cougaar.logistics.ui.stoplight.ui.util.VariableInterfaceManager;
 import org.cougaar.logistics.ui.stoplight.util.TreeUtilities;
 
 /**

@@ -30,9 +30,9 @@ import java.sql.*;
 import java.util.Date;
 import java.util.Random;
 
-import org.cougaar.lib.uiframework.transducer.*;
-import org.cougaar.lib.uiframework.transducer.configs.*;
-import org.cougaar.lib.uiframework.transducer.elements.*;
+import org.cougaar.logistics.ui.stoplight.transducer.*;
+import org.cougaar.logistics.ui.stoplight.transducer.configs.*;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.*;
 
 public class BlackjackTableCreator
 {

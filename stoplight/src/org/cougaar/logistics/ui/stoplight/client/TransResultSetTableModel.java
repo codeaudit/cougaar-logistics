@@ -29,10 +29,10 @@ import java.util.Iterator;
 import java.util.Vector;
 import javax.swing.event.TableModelEvent;
 
-import org.cougaar.lib.uiframework.ui.models.TransformableTableModel;
 
 import org.cougaar.lib.aggagent.query.ResultSetDataAtom;
 import org.cougaar.lib.aggagent.query.AggregationResultSet;
+import org.cougaar.logistics.ui.stoplight.ui.models.TransformableTableModel;
 
 public class TransResultSetTableModel extends TransformableTableModel {
 

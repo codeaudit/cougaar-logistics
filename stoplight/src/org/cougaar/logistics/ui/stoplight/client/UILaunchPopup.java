@@ -32,12 +32,12 @@ import java.util.Hashtable;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.cougaar.lib.uiframework.ui.components.CDesktopFrame;
-import org.cougaar.lib.uiframework.ui.components.CFrame;
-import org.cougaar.lib.uiframework.ui.inventory.InventorySelector;
-import org.cougaar.lib.uiframework.ui.models.RangeModel;
-import org.cougaar.lib.uiframework.ui.util.CougaarUI;
-import org.cougaar.lib.uiframework.ui.util.VariableInterfaceManager;
+import org.cougaar.logistics.ui.stoplight.ui.components.CDesktopFrame;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.inventory.InventorySelector;
+import org.cougaar.logistics.ui.stoplight.ui.models.RangeModel;
+import org.cougaar.logistics.ui.stoplight.ui.util.CougaarUI;
+import org.cougaar.logistics.ui.stoplight.ui.util.VariableInterfaceManager;
 
 /**
  * This popup is used to launch new cougaar UIs configured based on the

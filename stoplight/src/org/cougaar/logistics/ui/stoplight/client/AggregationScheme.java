@@ -32,7 +32,7 @@ import javax.swing.tree.*;
 
 import org.w3c.dom.*;
 
-import org.cougaar.lib.uiframework.ui.models.DatabaseTableModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.DatabaseTableModel;
 
 public class AggregationScheme
 {

@@ -51,12 +51,12 @@ import org.cougaar.lib.aggagent.query.QueryResultAdapter;
 import org.cougaar.lib.aggagent.query.UpdateListener;
 import org.cougaar.lib.aggagent.util.Enum.*;
 
-import org.cougaar.lib.uiframework.ui.components.CFrame;
-import org.cougaar.lib.uiframework.ui.util.CougaarUI;
-import org.cougaar.lib.uiframework.ui.util.TableMap;
-import org.cougaar.lib.uiframework.ui.util.TableSorter;
 
 import org.cougaar.logistics.ui.stoplight.client.MonitorControl;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.util.CougaarUI;
+import org.cougaar.logistics.ui.stoplight.ui.util.TableMap;
+import org.cougaar.logistics.ui.stoplight.ui.util.TableSorter;
 
 public class AggregatorPanel extends JPanel implements CougaarUI
 {

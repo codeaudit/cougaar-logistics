@@ -29,7 +29,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import org.cougaar.lib.aggagent.query.AlertDescriptor;
-import org.cougaar.lib.uiframework.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
 
 public class AlertEditor extends JPanel
 {

@@ -44,16 +44,16 @@ import org.cougaar.lib.aggagent.session.SubscriptionAccess;
 import org.cougaar.lib.aggagent.session.UpdateDelta;
 import org.cougaar.lib.aggagent.util.XmlUtils;
 
-import org.cougaar.lib.uiframework.transducer.MappedTransducer;
-import org.cougaar.lib.uiframework.transducer.XmlInterpreter;
-import org.cougaar.lib.uiframework.transducer.elements.Structure;
-import org.cougaar.lib.uiframework.transducer.configs.SqlTableMap;
 
 import org.cougaar.util.ConfigFinder;
 import org.cougaar.util.DBConnectionPool;
 import org.cougaar.util.Parameters;
 
 import org.cougaar.logistics.ui.stoplight.client.AggregationScheme;
+import org.cougaar.logistics.ui.stoplight.transducer.MappedTransducer;
+import org.cougaar.logistics.ui.stoplight.transducer.XmlInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.configs.SqlTableMap;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Structure;
 import org.cougaar.logistics.ui.stoplight.util.TreeUtilities;
 
 public class MetricFormatter implements IncrementFormat

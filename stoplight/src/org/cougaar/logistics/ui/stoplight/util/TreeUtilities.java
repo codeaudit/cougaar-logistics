@@ -32,13 +32,13 @@ import java.util.Vector;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 
-import org.cougaar.lib.uiframework.transducer.XmlInterpreter;
-import org.cougaar.lib.uiframework.transducer.elements.Attribute;
-import org.cougaar.lib.uiframework.transducer.elements.Element;
-import org.cougaar.lib.uiframework.transducer.elements.ListElement;
-import org.cougaar.lib.uiframework.transducer.elements.Structure;
-import org.cougaar.lib.uiframework.transducer.elements.ValElement;
-import org.cougaar.lib.uiframework.ui.util.TreeInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.XmlInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Attribute;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Element;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.ListElement;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Structure;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.ValElement;
+import org.cougaar.logistics.ui.stoplight.ui.util.TreeInterpreter;
 
 public class TreeUtilities
 {

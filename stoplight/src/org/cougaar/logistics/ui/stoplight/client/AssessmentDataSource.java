@@ -37,12 +37,12 @@ import java.util.TimeZone;
 import java.util.Vector;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.cougaar.lib.uiframework.transducer.XmlInterpreter;
-import org.cougaar.lib.uiframework.transducer.elements.*;
-import org.cougaar.lib.uiframework.ui.util.SelectableHashtable;
 import org.cougaar.lib.aggagent.client.AggregationClient;
 
 import org.cougaar.logistics.ui.stoplight.society.InventoryMetric;
+import org.cougaar.logistics.ui.stoplight.transducer.XmlInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.*;
+import org.cougaar.logistics.ui.stoplight.ui.util.SelectableHashtable;
 import org.cougaar.logistics.ui.stoplight.util.TreeUtilities;
 
 public class AssessmentDataSource
@@ -173,6 +173,7 @@ public class AssessmentDataSource
           throw new Exception();
         }
       } catch (Exception e) {
+      	e.printStackTrace();
         pspInterface = null;
         validClusters = null;
         cTime = 0l;
@@ -445,6 +446,9 @@ public class AssessmentDataSource
       String c_time_month_string = st.nextToken();
       String c_time_day_string = st.nextToken();
       String c_time_year_string = st.nextToken();
+      // strip of any extra chars after the year - this 
+      // will prevent problems if time is specified 
+      c_time_year_string = c_time_year_string.substring(0, c_time_year_string.indexOf(" "));
 
       // Month is offset from zero, others are not
       // Last three are hour, minute, second

@@ -25,10 +25,10 @@
  */
 package org.cougaar.logistics.ui.stoplight.client;
 
-import org.cougaar.lib.uiframework.ui.components.CFrameLauncher;
-import org.cougaar.lib.uiframework.ui.inventory.InventorySelector;
-import org.cougaar.lib.uiframework.ui.util.CougaarUI;
-//import org.cougaar.lib.uiframework.ui.map.app.CMap;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrameLauncher;
+import org.cougaar.logistics.ui.stoplight.ui.inventory.InventorySelector;
+import org.cougaar.logistics.ui.stoplight.ui.util.CougaarUI;
+//import org.cougaar.logistics.ui.stoplight.ui.map.app.CMap;
 
 /**
  * Blackjack Assessment UI main application class.  Includes

@@ -35,9 +35,6 @@ import java.util.Vector;
 import org.cougaar.glm.ldm.Constants.Role;
 import org.cougaar.glm.ldm.asset.Organization;
 
-import org.cougaar.lib.uiframework.transducer.*;
-import org.cougaar.lib.uiframework.transducer.configs.*;
-import org.cougaar.lib.uiframework.transducer.elements.*;
 
 import org.cougaar.lib.aggagent.client.AggregationClient;
 import org.cougaar.lib.aggagent.session.XMLEncoder;
@@ -49,6 +46,9 @@ import org.cougaar.lib.aggagent.util.Enum.*;
 import org.cougaar.logistics.ui.stoplight.society.ClassPredicate;
 import org.cougaar.logistics.ui.stoplight.society.DataAtomUtilities;
 import org.cougaar.logistics.ui.stoplight.society.ExtractionHelper;
+import org.cougaar.logistics.ui.stoplight.transducer.*;
+import org.cougaar.logistics.ui.stoplight.transducer.configs.*;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.*;
 
 public class OrgRelationshipFormatter implements XMLEncoder
 {

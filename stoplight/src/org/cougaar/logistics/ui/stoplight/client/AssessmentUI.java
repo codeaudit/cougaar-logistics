@@ -36,9 +36,9 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.TableModel;
 
-import org.cougaar.lib.uiframework.ui.components.CRadioButtonSelectionControl;
-import org.cougaar.lib.uiframework.ui.util.CougaarUI;
-import org.cougaar.lib.uiframework.ui.util.VariableInterfaceManager;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRadioButtonSelectionControl;
+import org.cougaar.logistics.ui.stoplight.ui.util.CougaarUI;
+import org.cougaar.logistics.ui.stoplight.ui.util.VariableInterfaceManager;
 
 public abstract class AssessmentUI extends JPanel implements CougaarUI
 {

@@ -30,10 +30,10 @@ import java.util.Iterator;
 import java.util.Vector;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.cougaar.lib.uiframework.ui.util.SelectableHashtable;
 
 import org.cougaar.logistics.ui.stoplight.society.ExtractionHelper;
 import org.cougaar.logistics.ui.stoplight.society.InventoryMetric;
+import org.cougaar.logistics.ui.stoplight.ui.util.SelectableHashtable;
 
 /**
  * This class provides knowledge about the metrics that should be included

@@ -27,10 +27,10 @@ package org.cougaar.logistics.ui.stoplight.client;
 
 import java.util.Vector;
 
-import org.cougaar.lib.uiframework.transducer.configs.SqlTableMap;
-import org.cougaar.lib.uiframework.transducer.elements.Structure;
 
-import org.cougaar.lib.uiframework.ui.util.DBDatasource;
+import org.cougaar.logistics.ui.stoplight.transducer.configs.SqlTableMap;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Structure;
+import org.cougaar.logistics.ui.stoplight.ui.util.DBDatasource;
 
 /**
  * This class is used to extract data from a database that uses the blackjack

@@ -30,10 +30,10 @@ import javax.swing.*;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.cougaar.lib.uiframework.ui.components.CRadioButtonSelectionControl;
 
 import org.cougaar.lib.aggagent.query.ScriptSpec;
 import org.cougaar.lib.aggagent.util.Enum.*;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRadioButtonSelectionControl;
 
 /**
  * Used by QueryEditor and AlertEditor for directly editing scripts.

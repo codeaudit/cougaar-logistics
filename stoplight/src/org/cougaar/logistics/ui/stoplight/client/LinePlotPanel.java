@@ -34,21 +34,21 @@ import javax.swing.plaf.metal.*;
 import javax.swing.table.TableModel;
 import javax.swing.tree.*;
 
-import org.cougaar.lib.uiframework.ui.components.CChartLegend;
-import org.cougaar.lib.uiframework.ui.components.CFrame;
-import org.cougaar.lib.uiframework.ui.components.CGraphFeatureSelectionControl;
-import org.cougaar.lib.uiframework.ui.components.CLinePlotChart;
-import org.cougaar.lib.uiframework.ui.components.CRangeButton;
-import org.cougaar.lib.uiframework.ui.components.CRLabel;
-import org.cougaar.lib.uiframework.ui.components.CRowHeaderTable;
-import org.cougaar.lib.uiframework.ui.components.CTreeButton;
-import org.cougaar.lib.uiframework.ui.models.DatabaseTableModel;
-import org.cougaar.lib.uiframework.ui.models.RangeModel;
-import org.cougaar.lib.uiframework.ui.models.VariableModel;
-import org.cougaar.lib.uiframework.ui.util.CougaarUI;
-import org.cougaar.lib.uiframework.ui.util.SelectableHashtable;
-import org.cougaar.lib.uiframework.ui.util.TableSorter;
-import org.cougaar.lib.uiframework.ui.util.VariableInterfaceManager;
+import org.cougaar.logistics.ui.stoplight.ui.components.CChartLegend;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.components.CGraphFeatureSelectionControl;
+import org.cougaar.logistics.ui.stoplight.ui.components.CLinePlotChart;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRLabel;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRangeButton;
+import org.cougaar.logistics.ui.stoplight.ui.components.CRowHeaderTable;
+import org.cougaar.logistics.ui.stoplight.ui.components.CTreeButton;
+import org.cougaar.logistics.ui.stoplight.ui.models.DatabaseTableModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.RangeModel;
+import org.cougaar.logistics.ui.stoplight.ui.models.VariableModel;
+import org.cougaar.logistics.ui.stoplight.ui.util.CougaarUI;
+import org.cougaar.logistics.ui.stoplight.ui.util.SelectableHashtable;
+import org.cougaar.logistics.ui.stoplight.ui.util.TableSorter;
+import org.cougaar.logistics.ui.stoplight.ui.util.VariableInterfaceManager;
 
 /**
  * Panel that contains a line plot chart and controls for selecting what

@@ -38,10 +38,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import org.cougaar.lib.aggagent.query.ResultSetDataAtom;
 import org.cougaar.lib.aggagent.util.XmlUtils;
 
-import org.cougaar.lib.uiframework.transducer.XmlInterpreter;
-import org.cougaar.lib.uiframework.transducer.elements.Structure;
 
 import org.cougaar.logistics.ui.stoplight.client.AggregationScheme;
+import org.cougaar.logistics.ui.stoplight.transducer.XmlInterpreter;
+import org.cougaar.logistics.ui.stoplight.transducer.elements.Structure;
 import org.cougaar.logistics.ui.stoplight.util.TreeUtilities;
 
 public class OrganizationMelder extends ScheduleMelder

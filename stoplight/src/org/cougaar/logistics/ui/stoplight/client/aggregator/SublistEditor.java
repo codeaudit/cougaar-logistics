@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import javax.swing.*;
 import javax.swing.event.*;
 
-import org.cougaar.lib.uiframework.ui.components.CFrame;
+import org.cougaar.logistics.ui.stoplight.ui.components.CFrame;
 
 /**
  * A reuseable component used for selecting sublists
