@@ -210,16 +210,15 @@ public class Lozenge extends Component
 	Component c = getParent();
 	LozengeRow lozRow = (LozengeRow)c;
 	if ( c instanceof LozengeRow ) {
-	  ganttChart.doPopup (lozRow);
-
 	  if ((mod & InputEvent.BUTTON3_MASK) != 0) {
 	    // Right mouse button: single click -> menu; double click -> default menu action
 	    editProperties(me);
 	  } else {
 	    // Left mouse button: treat single and double-click the same 
-	    lozRow.setSelected(!lozRow.getSelected());
-	    toggleSelected();
+	    //lozRow.setSelected(!lozRow.getSelected());
+	    //	    toggleSelected();
 	  }
+	  ganttChart.doPopup (lozRow);
 	} 
     }
 
