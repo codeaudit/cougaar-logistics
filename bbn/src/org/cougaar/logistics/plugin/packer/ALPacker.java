@@ -119,11 +119,6 @@ public abstract class ALPacker extends GenericPlugin {
                                  task.getPlanElement() + ".\n" +
                                  "Is the UniversalAllocator also handling Supply tasks in this node?");
       } else {
-        if (getLoggingService().isInfoEnabled()) {
-          getLoggingService().info("Packer: Got a new task - " +
-                                   task.getUID() +
-                                   " from " + task.getSource());
-        }
         ADD_TASKS++;
 
         double taskWeight =
@@ -131,6 +126,14 @@ public abstract class ALPacker extends GenericPlugin {
         ADD_TONS += taskWeight;
         tonsReceived += taskWeight;
         tasks.add(task);
+
+        if (getLoggingService().isInfoEnabled()) {
+          getLoggingService().info("Packer: Got a task - " +
+                                   task.getUID() +
+                                   " from " + task.getSource() + 
+				   " with " + taskWeight + 
+				   " tons of ammo.");
+        }
       }
     }
 
@@ -138,18 +141,21 @@ public abstract class ALPacker extends GenericPlugin {
       return;
     }
 
-    if (getLoggingService().isDebugEnabled()) {
-      getLoggingService().debug("Packer - number of added SUPPLY tasks: " +
+    if (getLoggingService().isInfoEnabled()) {
+      getLoggingService().info("Packer - number of added SUPPLY tasks: " +
                                 ADD_TASKS +
                                 ", aggregated quantity from added SUPPLY tasks: " +
-                                ADD_TONS + " tons.");
+                                ADD_TONS + " tons, " + 
+			       " this cycle got " + tasks.size () + 
+			       " tasks, " + tonsReceived + 
+			       " tons.");
     }
 
     double tonsPacked = doPacking(tasks, getSortFunction(), getPreferenceAggregator(),
                                   getAllocationResultDistributor());
 
     if ((tonsPacked > tonsReceived + 0.1) || (tonsPacked < tonsReceived - 0.1)) {
-      if (getLoggingService().isErrorEnabled()) {
+      if (getLoggingService().isWarnEnabled()) {
         getLoggingService().warn("Packer - received " + tonsReceived + " tons but packed " + tonsPacked +
                                  " tons, (total received " + ADD_TONS + " vs total packed "
                                  + Filler.TRANSPORT_TONS +
@@ -158,7 +164,7 @@ public abstract class ALPacker extends GenericPlugin {
         for (Iterator iter = tasks.iterator(); iter.hasNext();) {
           t = (Task) iter.next();
           getLoggingService().warn("\t" + t.getUID());
-          getLoggingService().warn(" Quanty : " + t.getPreferredValue(AspectType.QUANTITY));
+          getLoggingService().warn(" Quantity : " + t.getPreferredValue(AspectType.QUANTITY));
         }
       }
     }

@@ -1267,9 +1267,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     AspectValue [] aspectValueArray =
         (AspectValue []) aspectValues.toArray(new AspectValue [aspectValues.size()]);
 
-    AllocationResult successfulAR = ldmf.newAVAllocationResult(1.0,
-                                                               true,
-                                                               aspectValueArray);
+    AllocationResult successfulAR = ldmf.newAllocationResult(1.0,
+							     true,
+							     aspectValueArray);
     return successfulAR;
   }
 
