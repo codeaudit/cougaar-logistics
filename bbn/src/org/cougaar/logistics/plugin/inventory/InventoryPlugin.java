@@ -1501,13 +1501,23 @@ public class InventoryPlugin extends ComponentPlugin
 //       result = getClusterSuffix(myOrganization.getClusterPG().getMessageAddress().toString()) +
 // 	"_"+type.toLowerCase()+".inv";
     } else if (type.equals("Ammunition")) {
-      result = getAgentIdentifier().toString() +
+      result = getAgentPrefix(getAgentIdentifier().toString()) +
           "_" + type.toLowerCase() + ".inv";
     } else {
-      result = getClusterSuffix(getAgentIdentifier().toString()) +
+      result = getClusterSuffix(getAgentPrefix(getAgentIdentifier().toString())) +
           "_" + type.toLowerCase() + ".inv";
     }
     return result;
+  }
+
+  private String getAgentPrefix(String agentId) {
+      int i=agentId.indexOf(".");
+      if(i<=0) {
+	  return agentId;
+      }
+      else {
+	  return agentId.substring(0,i);
+      }
   }
 
   private String getClusterSuffix(String clusterId) {
