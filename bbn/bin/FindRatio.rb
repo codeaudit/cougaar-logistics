@@ -1,18 +1,26 @@
+require "find"
 require "rexml/document"
 include REXML
 
-input = ARGV[0]
-file = File.new(input)
+dir = ARGV[0]
 
-completion = 1.00
-completion.to_f
+def parse(f)
+	completion = 1.00
+	completion.to_f
+	file = File.new(f)	
+	doc = Document.new file
+	doc.elements.each("CompletionSnapshot/SimpleCompletion/Ratio") do |element|
+	puts f + "\t" + element.parent.attributes["agent"] + "\t" +
+	element.text if element.text.to_f < completion.to_f
+	end
+end
 
-doc = Document.new file
-
-doc.elements.each("CompletionSnapshot/SimpleCompletion/Ratio") do |element|
-agent = element.parent.attributes["agent"]
-ratio = element.text
-puts agent + "\t" + ratio if ratio.to_f < completion.to_f
+Find.find(dir) do |f|
+	if FileTest.file?(f)
+	parse(f) if /\.xml$/ =~ f
+	else
+	parse(f) if /\.xml$/ =~ f
+	end
 end
 
 
