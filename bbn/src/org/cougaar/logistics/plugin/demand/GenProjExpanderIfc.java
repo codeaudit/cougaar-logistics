@@ -22,6 +22,8 @@
 package org.cougaar.logistics.plugin.demand;
 
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.planning.ldm.asset.Asset;
 
 
 /**
@@ -39,8 +41,6 @@ public interface GenProjExpanderIfc {
    * tasks - one for each resource need of this MEI/Asset determined by the 
    * BG associated with the passed in supplyPGClass.
    **/
-  void expandGenerateProjections(Task gpTask, Class supplyPGClass);
-  
-
+  void expandGenerateProjections(Task gpTask, Schedule schedule, Asset asset);
 }
 
