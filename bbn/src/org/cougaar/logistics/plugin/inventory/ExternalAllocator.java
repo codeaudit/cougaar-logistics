@@ -86,20 +86,20 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 	    }
             else {
               logger.error("Unable to publish the allocation " + alloc);
-		}
-	    }
+            }
+          }
         } else {
           alloc = (Allocation)task.getPlanElement();
           if (estAR != null){
             alloc.setEstimatedResult(estAR);
             if(inventoryPlugin.publishChange(alloc)) {
               return true;
-	}
+            }
             else {
               logger.error("Unable to publish Change the allocation " + alloc);
-    }
-  }
-  }
+            }
+          }
+        }
       }
     }
     return false;
@@ -108,12 +108,12 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
   /** Figure out which organization supplying item is best for us. */
   private Organization findBestSource(Task task) {
     Enumeration support_orgs;
-        if (getTaskUtils().isProjection(task)) {
-            /* For a projection, should be time-phased as support
-      changes over time. We try for one provider for the whole task, if that doesn't work
-      we try to split it.*/
+    if (getTaskUtils().isProjection(task)) {
+      /* For a projection, should be time-phased as support
+         changes over time. We try for one provider for the whole task, if that doesn't work
+         we try to split it.*/
       support_orgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(),
-                                                providerRole,
+                                                       providerRole,
                                                        getTaskUtils().getStartTime(task),
                                                        TaskUtils.getEndTime(task));
       // if we have no providers that cover the whole projection, split it and try again
@@ -126,23 +126,23 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
           allocateRefillTasks(newPartialTasks);
           return null;
         } else {
-          logger.warn("No "+providerRole+" for task " + task.getUID() + ", during ["+
-                    getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
-                    "-" +
-                    getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]"+". Will retry.");
-              return null;
-            }
-		}
-		    } else {
+          stagedMessageLog("No "+providerRole+" for projection task " + task.getUID() + ", during ["+
+                           getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
+                           "-" +
+                           getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]"+". Will retry.");
+          return null;
+        }
+      }
+    } else {
       support_orgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(),
                                                        providerRole,
                                                        getTaskUtils().getEndTime(task));
       if (!support_orgs.hasMoreElements()) {
-        logger.warn("No "+providerRole+" for task " + task.getUID() + ", during "+
+        stagedMessageLog("No "+providerRole+" for task " + task.getUID() + ", during "+
                     getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
         return null;
-			}
-		    }
+      }
+    }
     // For now, returning the first supporting org during the time span
     if (support_orgs.hasMoreElements()) {
       return (Organization)support_orgs.nextElement();
@@ -155,60 +155,60 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
   private Allocation buildAllocation(Task t, Asset a, Role r)
   {
     return inventoryPlugin.getPlanningFactory().createAllocation(t.getPlan(), t, a, null, r);
-	    }
+  }
 
   private AllocationResult createPredictedAllocationResult(Task task) {
     //MWD in the future this will have to generate the expected result
     //from the predictor.
     return new AllocationResultHelper(task, null).getAllocationResult(Constants.Confidence.DISPATCHED, true);
-        }
+  }
 
 
-    protected Collection findSingleSource(Task task, long endTime) {
-	Vector tasksAndProviders = new Vector();
-	Enumeration supportOrgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(), 
-								    providerRole, 
-								    endTime);
-	if (supportOrgs.hasMoreElements()) {
-	    // For now, returning the first supporting org during the time span
-	    tasksAndProviders.add(task);
-	    tasksAndProviders.add((Organization)supportOrgs.nextElement());
-	    return(tasksAndProviders);
-	} else {
-	    findSourcesWarning(task);
-	    return(null);
-	}
+  protected Collection findSingleSource(Task task, long endTime) {
+    Vector tasksAndProviders = new Vector();
+    Enumeration supportOrgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(), 
+                                                                providerRole, 
+                                                                endTime);
+    if (supportOrgs.hasMoreElements()) {
+      // For now, returning the first supporting org during the time span
+      tasksAndProviders.add(task);
+      tasksAndProviders.add((Organization)supportOrgs.nextElement());
+      return(tasksAndProviders);
+    } else {
+      findSourcesWarning(task);
+      return(null);
     }
+  }
 
-    protected class SupportOrg {
-	Organization org;
-	long startTime;
-	long endTime;
-	public SupportOrg(Organization org, long startTime, long endTime) {
-	    this.org = org;
-	    this.startTime = startTime;
-	    this.endTime = endTime;
-	}
-	public Organization getOrg() { return org; }
-	public long getEndTime() { return endTime; }
-	public long getStartTime() { return startTime; }
-    };
+  protected class SupportOrg {
+    Organization org;
+    long startTime;
+    long endTime;
+    public SupportOrg(Organization org, long startTime, long endTime) {
+      this.org = org;
+      this.startTime = startTime;
+      this.endTime = endTime;
+    }
+    public Organization getOrg() { return org; }
+    public long getEndTime() { return endTime; }
+    public long getStartTime() { return startTime; }
+  };
 
   private long getWarningCutOffTime() {
     if (warningCutoffTime == 0) {
-//       WARNING_SUPPRESSION_INTERVAL = Integer.getInteger(QUERY_GRACE_PERIOD_PROPERTY,
-// 							WARNING_SUPPRESSION_INTERVAL).intValue();
+      //       WARNING_SUPPRESSION_INTERVAL = Integer.getInteger(QUERY_GRACE_PERIOD_PROPERTY,
+      // 							WARNING_SUPPRESSION_INTERVAL).intValue();
       warningCutoffTime = System.currentTimeMillis() + WARNING_SUPPRESSION_INTERVAL*60000;
     }
 
     return warningCutoffTime;
   }
 
-  private void stagedErrorLog(String message) {
-    stagedErrorLog(message, null);
+  private void stagedMessageLog(String message) {
+    stagedMessageLog(message, null);
   }
 
-  private void stagedErrorLog(String message, Throwable e) {
+  private void stagedMessageLog(String message, Throwable e) {
 
     if(System.currentTimeMillis() > getWarningCutOffTime()) {
       if (e == null)
@@ -260,29 +260,29 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 	backwardFlowInventories.add(inventory);
 	
 	logInvPG = (LogisticsInventoryPG)
-            inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+          inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
 	if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-            logInvPG.updateRefillProjection(refill);
+          logInvPG.updateRefillProjection(refill);
 	} else {
-            logInvPG.updateRefillRequisition(refill);
+          logInvPG.updateRefillRequisition(refill);
 	}
       }
     }
     return backwardFlowInventories;
   }
 
-    protected void findSourcesWarning(Task task) {
+  protected void findSourcesWarning(Task task) {
     //String itemId = task.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
-	    if (getTaskUtils().isProjection(task)) {
-		logger.error("No "+providerRole+" for task " + task.getUID() + ", during ["+
-                            getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
-			     "-" +
-			   getTimeUtils().dateString(getTaskUtils().getEndTime(task)) +"]"+". Will retry.");
-	    } else {
-		logger.error("No "+providerRole+" for task " + task.getUID() + ", during "+
-                            getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
-	    }
+    if (getTaskUtils().isProjection(task)) {
+      logger.error("No "+providerRole+" for task " + task.getUID() + ", during ["+
+                   getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
+                   "-" +
+                   getTimeUtils().dateString(getTaskUtils().getEndTime(task)) +"]"+". Will retry.");
+    } else {
+      logger.error("No "+providerRole+" for task " + task.getUID() + ", during "+
+                   getTimeUtils().dateString(getTaskUtils().getEndTime(task))+". Will retry.");
     }
+  }
 
   public void rescindTaskAllocations(Collection tasks) {
     Task task;
