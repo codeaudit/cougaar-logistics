@@ -394,11 +394,8 @@ public class RefillProjectionGenerator extends InventoryModule {
    **/
   private Preference createRefillTimePreference(long bestDay, long start, 
                                                 int aspectType) {
-    //TODO - really need end of deployment from an OrgActivity -
-    // As a hack for now just add 180 days from start - note that this
-    // will push the possible end date out too far...
-    // long end = inventoryPlugin.getEndOfDeplyment()); 
-    long end = getTimeUtils().addNDays(start, 180);
+    //TODO - really need last day in theatre from an OrgActivity -
+    long end = inventoryPlugin.getOPlanEndTime();
     double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;

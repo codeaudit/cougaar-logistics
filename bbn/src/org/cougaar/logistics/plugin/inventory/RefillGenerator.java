@@ -269,11 +269,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @return Preference  The new time preference
    **/
   private Preference createRefillTimePreference(long bestDay, long today) {
-    //TODO - really need end of deployment from an OrgActivity -
-    // As a hack for now just add 180 days from today - note that this
-    // will push the possible end date out too far...
-    // long end = inventoryPlugin.getEndOfDeplyment()); 
-    long end = getTimeUtils().addNDays(today, 180);
+    //TODO - really need last day in theatre from an OrgActivity -
+    long end = inventoryPlugin.getOPlanEndTime();
     double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
