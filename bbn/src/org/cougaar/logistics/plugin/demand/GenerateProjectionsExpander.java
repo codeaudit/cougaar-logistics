@@ -58,7 +58,7 @@ import java.util.Vector;
  *
  *
  **/
- 
+
 public class GenerateProjectionsExpander extends DemandForecastModule implements GenProjExpanderIfc {
   private String myOrgName = null;
 
@@ -85,7 +85,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       }
     }
     else {
-      Collection subTasks = buildTaskList(pg, schedule, gpTask, consumer);
+      Collection subTasks = buildTaskList(pg, getConsumed(pg), schedule, gpTask, consumer);
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
       }
@@ -96,19 +96,22 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg) {
-    Collection publishedTasks = dfPlugin.projectSupplySet(gpTask);
-    if (publishedTasks.isEmpty()) {
-      logger.error("No project supply tasks were found for parent task " + gpTask.toString());
-      return;
+    Collection consumedItems = getConsumed(pg);
+
+    for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
+      Asset asset = (Asset) iterator.next();
+      Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
+      if (publishedTasks.isEmpty()) {
+        logger.error("No project supply tasks were found for parent task " + gpTask.toString());
+        return;
+      }
+
+      Collection newTasks = buildTaskList(pg, consumedItems, schedule, gpTask, consumer);
+      Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
+      Schedule newTasksSched =  newObjectSchedule(newTasks);
+      Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
+      addToAndPublishExpansion(gpTask, diffedTasks);
     }
-
-    Collection newTasks = buildTaskList(pg, schedule, gpTask, consumer);
-
-    Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
-    Schedule newTasksSched =  newObjectSchedule(newTasks);
-
-    Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
-    addToAndPublishExpansion(gpTask, diffedTasks);
   }
 
   private void createDisposition(Task gpTask) {
@@ -124,9 +127,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     dfPlugin.publishAdd(disp);
   }
 
-  private Collection buildTaskList(PropertyGroup pg, Schedule schedule, Task gpTask, Asset consumer) {
-    Collection items = getConsumed(pg);
-    Collection subTasks = new ArrayList();
+  private Collection buildTaskList(PropertyGroup pg, Collection items,
+                                   Schedule schedule, Task gpTask,
+                                   Asset consumer) {
+    List subTasks = new ArrayList();
     Asset consumedItem;
 
     if (!items.isEmpty()) {
@@ -266,7 +270,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   private String getOrgName() {
     if (myOrgName == null) {
       myOrgName =dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    } 
+    }
     return myOrgName;
   }
 
