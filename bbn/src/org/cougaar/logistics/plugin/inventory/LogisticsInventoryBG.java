@@ -43,6 +43,7 @@ import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
@@ -1267,12 +1268,21 @@ public class LogisticsInventoryBG implements PGDelegate {
         return actualDemandTasksList;
     }
 
-    public ShortfallInventory checkForShortfall(String invID) {
+    public ShortfallInventory checkForShortfall(String invID,
+						String unitOfIssue) {
 
-      ShortfallInventory shortfallInv=new ShortfallInventory(invID);
+      ShortfallInventory shortfallInv=new ShortfallInventory(invID,unitOfIssue);
 
-      shortfallInv.setNumDemandProj(countProjFailures(getProjWithdrawList()));
-      shortfallInv.setNumResupplyProj(countProjFailures(getProjSupplyList()));
+      int numDemandProj = countProjFailures(getProjWithdrawList(),true,true);
+      int numPermDemandProj = countProjFailures(getProjWithdrawList(),true,false);
+      shortfallInv.setNumDemandProj(numDemandProj);
+      shortfallInv.setNumTempDemandProj(numDemandProj - numPermDemandProj);
+
+      int numResupplyProj = countProjFailures(getProjSupplyList(),false,true);
+      int numPermResupplyProj = countProjFailures(getProjSupplyList(),false,false);
+      shortfallInv.setNumResupplyProj(numResupplyProj);
+      shortfallInv.setNumTempResupplyProj(numResupplyProj - numPermResupplyProj);
+
       int numDemandSupply = countActualShortfall(getWithdrawList(), true);
       int numPermDemandSupply = countActualShortfall(getWithdrawList(),false);
       shortfallInv.setNumDemandSupply(numDemandSupply);
@@ -1281,7 +1291,6 @@ public class LogisticsInventoryBG implements PGDelegate {
       int numPermResupplySupply = countActualShortfall(getSupplyList(),false);
       shortfallInv.setNumResupplySupply(numResupplySupply);
       shortfallInv.setNumTempResupplySupply(numResupplySupply - numPermResupplySupply);
-
 
       if(shortfallInv.getNumTotalShortfall() > 0) {
 	  addShortfallPeriods(shortfallInv);
@@ -1295,13 +1304,13 @@ public class LogisticsInventoryBG implements PGDelegate {
     
     protected void addShortfallPeriods(ShortfallInventory shortfallInv) {
       int startBucket = getStartBucket();
-      int endBucket = inventoryLevelsArray.length;
+      int endBucket = getLastDemandBucket();
 	
       long startOfPeriod = -1;
       long endOfPeriod = -1;
       boolean inShortfallPeriod =false;
       
-      for(int i=startBucket; i < endBucket; i++) {
+      for(int i=startBucket; i <= endBucket; i++) {
 	double level = getLevel(i);
 	if(level ==  0.0) {
 	  if(!inShortfallPeriod) {
@@ -1321,6 +1330,16 @@ public class LogisticsInventoryBG implements PGDelegate {
 	    inShortfallPeriod=false;
 	  }
 	}
+      }
+
+      if(inShortfallPeriod) {
+	  //The bucket before the current one was the last shortfall period bucket.  Therefore i-1
+	  endOfPeriod = convertBucketToTime(endBucket) - 1;
+	  ShortfallPeriod newPeriod = new ShortfallPeriod(startOfPeriod,
+							    endOfPeriod);
+	  calculateShortfallPeriod(newPeriod,getProjWithdrawList());
+	  calculateShortfallPeriod(newPeriod,getWithdrawList());
+	  shortfallInv.addShortfallPeriod(newPeriod);  
       }
     }
 
@@ -1344,8 +1363,34 @@ public class LogisticsInventoryBG implements PGDelegate {
 	  long end = Math.min(shortPeriod.getEndTime(),getEndTime(t));
 	  taskQty = taskUtils.getTotalQuantity(t,start,end);
 	  totalDemand += taskQty;
-	  if((ar == null) || (ar.isSuccess())) {
+	  if(ar == null) {
+	    totalFilled += taskQty;
+	  } else if (ar.isSuccess()) {
+	    if(!ar.isPhased()) {
 	      totalFilled += taskQty;
+	    }
+	    else {
+	      int[] ats = ar.getAspectTypes();
+	      int rateInd = -1;
+	      int startInd = -1;
+	      int endInd = -1;
+	      double totalQty=0;
+	      rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+	      startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+	      endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+	      
+	      Enumeration phasedResults = ar.getPhasedResults();
+	      while (phasedResults.hasMoreElements()) {
+		double[] results = (double[]) phasedResults.nextElement();
+		double phaseRate = results[rateInd];
+		double phaseStart = results[startInd];
+		double phaseEnd = results[endInd];
+		start = Math.max(shortPeriod.getStartTime(),getEffectiveProjectionStart(t,(long) phaseStart));
+		end = Math.min(shortPeriod.getEndTime(),(long) phaseEnd);
+		totalQty += taskUtils.getTotalQuantity(t,phaseRate,start,end);
+	      }	
+	      totalFilled += totalQty;
+	    }
 	  }
 	}
 	else {
@@ -1395,7 +1440,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    protected int countProjFailures(ArrayList taskList) {
+    protected int countProjFailures(ArrayList taskList, boolean isDemand, boolean includeTemps) {
 	Iterator it = taskList.iterator();
 	int ctr=0;
 	while(it.hasNext()) {
@@ -1406,12 +1451,62 @@ public class LogisticsInventoryBG implements PGDelegate {
 	    if (ar == null) {
 	      ar = pe.getEstimatedResult();
 	    }
-	    long start = getEffectiveProjectionStart(t,getStartTime(t));
+	    long start = 0;
+	    int lastReqBucket = getLastRefillRequisition();
+	    long projRefillStart = convertBucketToTime(lastReqBucket + 1);
+	    if(isDemand) {
+		start = getEffectiveProjectionStart(t,getStartTime(t));
+	    }
+	    else {
+		start = Math.max(getStartTime(t), projRefillStart);
+	    }
 	    long end = getEndTime(t);
 	    double taskTotal = taskUtils.getTotalQuantity(t,start,end);
 	    if(ar != null) {
 	      if ((!ar.isSuccess())  && (taskTotal > 0)) {
 		ctr++;  		    
+	      }
+	      else if(includeTemps && ar.isPhased()) {
+		int[] ats = ar.getAspectTypes();
+		int rateInd = -1;
+		int startInd = -1;
+		int endInd = -1;
+		double totalQty=0;
+		rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+		startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+		endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+		
+		Enumeration phasedResults = ar.getPhasedResults();
+		long maxPhaseEnd = 0;
+		while (phasedResults.hasMoreElements()) {
+		  double[] results = (double[]) phasedResults.nextElement();
+		  double phaseRate = results[rateInd];
+		  double phaseStart = results[startInd];
+		  double phaseEnd = results[endInd];
+		  long arStart = 0;
+		  if(isDemand) {
+		      arStart = getEffectiveProjectionStart(t,(long) phaseStart);
+		  }
+		  else {
+		      arStart = Math.max(start,(long)phaseStart);
+		  }
+		  //long arEnd =(long) Math.min(end,(long) phaseEnd;
+		  totalQty += taskUtils.getTotalQuantity(t,phaseRate,arStart,(long)phaseEnd);
+		  maxPhaseEnd = Math.max((long)phaseEnd,maxPhaseEnd);
+		} 
+		//When doing all this addition of double rates some precision is lost so we need a small offset to avoid "false shortfalls".
+		double offset = 0.001d;
+		if(taskTotal > (totalQty + offset)) {
+		    /****
+		    if(getOrgName().startsWith("1-35-ARBN")) {
+			logger.error("MWD: at 1-35-ARBN - item: " + getItemName() + " taskTotal is: " + taskTotal + " and totalQuantity is : " + totalQty);
+		    } 
+		    **/
+		    ctr++;
+		}
+		else if (maxPhaseEnd > taskUtils.getEndTime(t)) {
+		    ctr++;
+		}
 	      }
 	    }
 	  }
