@@ -300,7 +300,9 @@ public class SupplyExpander extends InventoryModule {
 		  thePG = getLogisticsInventoryPG(projSupply);
 		  if (thePG != null) {
 		      thePG.removeWithdrawProjection(task);
-		      inventoryPlugin.publishRemove(task.getPlanElement());
+		      if (task.getPlanElement() != null) {
+			  inventoryPlugin.publishRemove(task.getPlanElement());
+		      }
 		      synchronized (projSupply) {
 			  ((NewTask)task).setPreferences(projSupply.getPreferences());
 		      }
