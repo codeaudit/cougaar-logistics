@@ -104,7 +104,8 @@ public class PrepareDerivedTables extends PrepareDBTables{
 						DGPSPConstants.COL_WEIGHT,
 						DGPSPConstants.COL_WIDTH,
 						DGPSPConstants.COL_HEIGHT,
-						DGPSPConstants.COL_DEPTH};
+						DGPSPConstants.COL_DEPTH,
+						DGPSPConstants.COL_IS_LOW_FIDELITY};
 
   public static final String[] CARGO_TYPE_INDICES={DGPSPConstants.COL_OWNER,
 						   DGPSPConstants.COL_ALP_TYPEID,
@@ -520,7 +521,9 @@ public class PrepareDerivedTables extends PrepareDBTables{
     sb.append(DGPSPConstants.COL_HEIGHT);
     sb.append(" DOUBLE, ");
     sb.append(DGPSPConstants.COL_DEPTH);
-    sb.append(" DOUBLE ");
+    sb.append(" DOUBLE, ");
+    sb.append(DGPSPConstants.COL_IS_LOW_FIDELITY);
+    sb.append(" VARCHAR(5) ");
     sb.append(")");
     prepareTable(s, tableName, sb.toString());
   }
@@ -552,6 +555,7 @@ public class PrepareDerivedTables extends PrepareDBTables{
     String prototypeWidth = "self1." + DGPSPConstants.COL_WIDTH;
     String prototypeHeight = "self1." + DGPSPConstants.COL_HEIGHT;
     String prototypeDepth = "self1." + DGPSPConstants.COL_DEPTH;
+    String prototypeLowFi = "self1." + DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String ciConvID      = conveyanceInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
     String ciPrototypeID = conveyanceInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -576,7 +580,7 @@ public class PrepareDerivedTables extends PrepareDBTables{
       typeID + ", " + nomen + ", " + proto + 
       ", " + instanceAggNumber + ", " +
       ciPrototypeID + ", " + ciConvID + ", " + instanceID + 
-      ",\n " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth +      
+      ",\n " + prototypeWeight +", " + prototypeWidth +", " + prototypeHeight +", " + prototypeDepth + ", " + prototypeLowFi + 
       "\nfrom "  + assetInstanceTable + ", " + protoTables + ", " + 
       conveyanceInstanceTable + ", " +
       itinTable + ", " + cLegTable +
