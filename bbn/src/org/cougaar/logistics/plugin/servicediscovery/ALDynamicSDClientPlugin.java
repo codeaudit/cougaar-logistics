@@ -42,6 +42,7 @@ import org.cougaar.servicediscovery.SDFactory;
 import org.cougaar.servicediscovery.description.TimeInterval;
 import org.cougaar.servicediscovery.description.MMRoleQuery;
 import org.cougaar.servicediscovery.description.ScoredServiceDescription;
+import org.cougaar.servicediscovery.description.ServiceContract;
 import org.cougaar.servicediscovery.description.ServiceDescription;
 import org.cougaar.servicediscovery.description.ServiceInfo;
 import org.cougaar.servicediscovery.description.ServiceRequest;
@@ -53,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.HashMap;
 
@@ -132,9 +134,22 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                  relay.getServiceContract().getServiceRole().toString());
         }
 
-	TimeInterval requestedTimeInterval = getRequestedTimeInterval(relay);
-	TimeInterval providedTimeInterval = getProvidedTimeInterval(relay);
+	TimeInterval requestedTimeInterval = 
+	  getPreferenceTimeInterval(relay.getServiceRequest().getServicePreferences());
 
+	if (requestedTimeInterval == null) {
+	  myLoggingService.debug(getAgentIdentifier() +
+				 " service request to " + 
+				 relay.getProviderName() + 
+				 " for " +
+				 relay.getServiceRequest().getServiceRole() +
+				 " does not have valid start/end time preferences.");
+	}
+
+	TimeInterval providedTimeInterval = 
+	  getPreferenceTimeInterval(relay.getServiceContract().getServicePreferences());
+
+       
 	ServiceRequestRecord srr = 
 	  new ServiceRequestRecord(relay.getProviderName(),
 				   requestedTimeInterval);
@@ -170,33 +185,15 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	  srh.addRequest(srr);
 	}
 
-        //change the relay. If revoked, change request to zero.
-        //If contract doesnt cover request, shrink request
-        if(relay.getServiceContract().isRevoked()) {
-          //todo, doesn't matter much now because we won't look at revoked ones
-        } else { //change request to match contract
-          if (myLoggingService.isDebugEnabled()) {
-            myLoggingService.debug(getAgentIdentifier() +
-                                   " change request to match contract for " +
-                                   relay.getProviderName() + " " +
-                                   relay.getServiceContract().getServiceRole().toString());
-          }
-          ServiceRequest request =
-              mySDFactory.newServiceRequest(getSelfOrg(),
-              relay.getServiceContract().getServiceRole(),
-              relay.getServiceContract().getServicePreferences());
-          relay.setServiceRequest(request);
-          publishChange(relay);
-        }
-
         if (myLoggingService.isDebugEnabled()) {
           myLoggingService.debug(getAgentIdentifier() +
                                  " do another queryServices for " +
                                  relay.getServiceContract().getServiceRole().toString());
         }
+
 	Collection uncoveredTimeIntervals = 
 	  requestedTimeInterval.subtractInterval(providedTimeInterval);
-	  
+
 	UnaryPredicate servicePredicate = 
 	  new ServiceRequestPredicate(srh, uncoveredTimeIntervals);
 
@@ -232,18 +229,18 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       return false;
     }
 
-    double requestedStart = SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
-                            Preference.START_TIME);
-    double requestedEnd = SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
-                            Preference.END_TIME);
-    double contractedStart = SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
-                            Preference.START_TIME);
-    double contractedEnd = SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
-                            Preference.END_TIME);
+    TimeInterval requested = 
+      getPreferenceTimeInterval(relay.getServiceRequest().getServicePreferences());
+    TimeInterval provided = 
+      getPreferenceTimeInterval(relay.getServiceContract().getServicePreferences());
 
-    boolean ret = requestedStart >= contractedStart && requestedEnd <= contractedEnd;
-    return ret;
-
+    if ((requested == null) ||
+	(provided == null)) {
+      return false;
+    } else {
+    return ((requested.getStartTime() >= provided.getStartTime()) && 
+	    (requested.getEndTime() <= provided.getEndTime()));
+    }
   }
 
   /**
@@ -365,17 +362,16 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       if (relay.getServiceContract() == null  &&
           relay.getServiceRequest().getServiceRole().toString().equals(role.toString())) {
 
-        double endTime = SDFactory.getPreference(
-            relay.getServiceRequest().getServicePreferences(),
-            Preference.END_TIME);
-        double startTime = SDFactory.getPreference(
-            relay.getServiceRequest().getServicePreferences(),
-            Preference.START_TIME);
-
-        stillNeeded = TimeInterval.removeInterval(new TimeInterval((long)startTime, (long)endTime), stillNeeded);
+	TimeInterval requestedTimeInterval = 
+	  getPreferenceTimeInterval(relay.getServiceRequest().getServicePreferences());	
+	
+	stillNeeded = TimeInterval.removeInterval(requestedTimeInterval,
+						  stillNeeded);
       }
     }
 
+    
+    
     return stillNeeded;
   }
 
@@ -397,18 +393,41 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       if(!relay.getClient().equals(getSelfOrg())) {
         continue;
       }
-      if (relay.getServiceContract() != null  &&
-          !relay.getServiceContract().isRevoked() &&
-          relay.getServiceContract().getServiceRole().toString().equals(role.toString())) {
 
-        double endTime = SDFactory.getPreference(
-            relay.getServiceContract().getServicePreferences(),
-            Preference.END_TIME);
-        double startTime = SDFactory.getPreference(
-            relay.getServiceContract().getServicePreferences(),
-            Preference.START_TIME);
+      ServiceContract contract = relay.getServiceContract();
 
-        stillNeeded = TimeInterval.removeInterval(new TimeInterval((long)startTime, (long)endTime), stillNeeded);
+      if ((contract != null)  &&
+          (!contract.isRevoked()) &&
+          (contract.getServiceRole().equals(role))) {
+
+	TimeInterval providedTimeInterval = 
+	  getPreferenceTimeInterval(relay.getServiceContract().getServicePreferences());
+
+      
+	if (providedTimeInterval == null) {
+	  if (myLoggingService.isDebugEnabled()) {
+	    myLoggingService.debug(getAgentIdentifier() + 
+				   " getCurrentlyUncoveredIntervals: " +
+				   " contract with " + relay.getProviderName() +
+				   " for " + role + 
+				   " does not have a valid time period.");
+	  }
+	} else {
+	  if (myLoggingService.isDebugEnabled()) {
+	    myLoggingService.debug(getAgentIdentifier() +
+				   " getCurrentlyUncoveredIntervals: " +
+				   " contract with " + 
+				   relay.getProviderName() +
+				   " for " + role + 
+				   " runs " + 
+				   providedTimeInterval.getStartTime() +
+				   " to " + providedTimeInterval.getEndTime());
+	  }
+	  // If contract specifies a valid time range, remove it.
+	  stillNeeded = 
+	    TimeInterval.removeInterval(providedTimeInterval,
+					stillNeeded);				 
+	}
       }
     }
 
@@ -433,9 +452,9 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       c = getCurrentlyUncoveredIntervalsWithoutOutstandingRequests(srh.requestedTimeInterval.getStartTime(),
           srh.requestedTimeInterval.getEndTime(), role);
     }
-    Iterator unCovered = c.iterator();
-    while(unCovered.hasNext()) {
-      TimeInterval current = (TimeInterval) unCovered.next();
+    Iterator uncovered = c.iterator();
+    while(uncovered.hasNext()) {
+      TimeInterval current = (TimeInterval) uncovered.next();
       if(current.getStartTime() < current.getEndTime()) {
         if (myLoggingService.isDebugEnabled()) {
             myLoggingService.debug(getAgentIdentifier() +
@@ -461,16 +480,31 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
   protected boolean checkProviderCompletelyCovered(Role role) {
     Collection c = getCurrentlyUncoveredIntervals(DEFAULT_START_TIME, DEFAULT_END_TIME,
         role);
+
+    if (myLoggingService.isDebugEnabled()) {
+      myLoggingService.debug(getAgentIdentifier() +
+			     " checkProviderCompletelyCovered: " + 
+			     " uncovered intervals for " + role +
+			     " = " + c);
+    }
+
     //check the personal history time interval (if it exists)
     //instead of the default interval
     ServiceRequestHistory srh = (ServiceRequestHistory)serviceRequestHistories.get(role.toString());
     if(srh != null) {
       c = getCurrentlyUncoveredIntervals(srh.requestedTimeInterval.getStartTime(),
           srh.requestedTimeInterval.getEndTime(), role);
+
+      if (myLoggingService.isDebugEnabled()) {
+	myLoggingService.debug(getAgentIdentifier() +
+			       " checkProviderCompletelyCovered: " + 
+			       " uncovered intervals from service request history " + 
+			       srh  + " = " + c);
+      }
     }
-    Iterator unCovered = c.iterator();
-    while(unCovered.hasNext()) {
-      TimeInterval current = (TimeInterval) unCovered.next();
+
+    for (Iterator uncovered = c.iterator(); uncovered.hasNext();) {
+      TimeInterval current = (TimeInterval) uncovered.next();
 
       if(current.getStartTime() < current.getEndTime()) {
         if (myLoggingService.isDebugEnabled()) {
@@ -490,7 +524,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     //todo: set a daily alarm
   }
 
-  protected static class ServiceRequestHistory {
+  private static class ServiceRequestHistory {
     
     Role requestedRole;
     TimeInterval requestedTimeInterval;
@@ -588,7 +622,8 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     }
   }
     
-  protected static class ServiceRequestPredicate implements UnaryPredicate {
+  //protected static class ServiceRequestPredicate implements UnaryPredicate {
+  protected class ServiceRequestPredicate implements UnaryPredicate {
     private transient ServiceRequestHistory serviceRequestHistory;
     private transient Collection uncoveredTimeIntervals;
 
@@ -617,11 +652,25 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 
 	  if (!serviceRequestHistory.containsRequest(providerName, 
 						     timeInterval)) {
+	    if (myLoggingService.isDebugEnabled()) {
+	      myLoggingService.debug(getAgentIdentifier() + 
+				     " ServiceRequestPredicate passed " + 
+				     providerName +
+				     " for " + 
+				     new Date(timeInterval.getStartTime()) +
+				     " to " + 
+				     new Date(timeInterval.getEndTime()));
+	    }
 	    return true;
-	  }
-	}
+	  } 
+	} 
 
-	// All intervals previously asked for
+	if (myLoggingService.isDebugEnabled()) {
+	  myLoggingService.debug(getAgentIdentifier() + 
+				 " ServiceRequestPredicate returned false for " + 
+				 providerName);
+	}
+	  // All intervals previously asked for
 	return false;
       } else {
 	return false;
@@ -629,25 +678,21 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     }
   }
 
-  public static TimeInterval getRequestedTimeInterval(ServiceContractRelay relay) {
+  /** returns null if start/end time preference not specified **/
+  private static TimeInterval getPreferenceTimeInterval(Collection servicePreferences) {
     long start = 
-      (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
+      (long)SDFactory.getPreference(servicePreferences,
 				    Preference.START_TIME);
     long end = 
-      (long)SDFactory.getPreference(relay.getServiceRequest().getServicePreferences(),
+      (long)SDFactory.getPreference(servicePreferences,
 				    Preference.END_TIME);
-    return new TimeInterval(start, end);
-  }
-  
-  public static TimeInterval getProvidedTimeInterval(ServiceContractRelay relay) {
-    long start = 
-      (long)SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
-				    Preference.START_TIME);
-    long end = 
-      (long)SDFactory.getPreference(relay.getServiceContract().getServicePreferences(),
-				    Preference.END_TIME);
-    return new TimeInterval(start, end);
-  }
-}
 
+    if ((start == -1) || (end == -1)) {
+      return null;
+    } else {
+      return new TimeInterval(start, end);
+    }
+  }
+
+}
 
