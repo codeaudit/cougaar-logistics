@@ -294,7 +294,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   public double getQuantity(Task task, AllocationResult ar) {
       if(isProjection(task)) {
-	  logger.warn("TaskUtils::getting qty from projection!");
+// 	  logger.warn("TaskUtils::getting qty from projection!");
 	  return convertResultsToDailyRate(task,
 					   getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
       }
