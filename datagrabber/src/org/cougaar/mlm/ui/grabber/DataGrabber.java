@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Main class for the data grabber
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: ahelsing $
  *
  * @since 2/01/01
  **/
@@ -87,6 +87,34 @@ public class DataGrabber{
 		      "Database driver loaded: "+getDBDriverName());    
   }
 
+  // Invoke the NAI security code, if available
+  private void doSecureUserAuthInit() {
+    String securityUIClass = System.getProperty("org.cougaar.ui.userAuthClass");
+    
+    if (securityUIClass == null) {
+      securityUIClass = "org.cougaar.core.security.userauth.UserAuthenticatorImpl";
+    }
+    
+    Class cls = null;
+    try {
+      cls = Class.forName(securityUIClass);
+    } catch (ClassNotFoundException e) {
+      logger.logMessage(logger.NORMAL, logger.WEB_IO, "Not using secure User Authentication: " + securityUIClass);
+    } catch (ExceptionInInitializerError e) {
+      logger.logMessage(logger.IMPORTANT, logger.WEB_IO, "Unable to use secure User Authentication: " + securityUIClass + ". " + e);
+    } catch (LinkageError e) {
+      logger.logMessage(logger.NORMAL, logger.WEB_IO, "Not using secure User Authentication: " + securityUIClass);
+    }
+    
+    if (cls != null) {
+      try {
+	cls.newInstance();
+      } catch (Exception e) {
+	logger.logMessage(logger.IMPORTANT, logger.WEB_IO, "Error using secure User Authentication (" + securityUIClass + "): " + e);
+      }
+    }
+  }
+
   public void start(){
     logger.logMessage(logger.IMPORTANT,logger.STATE_CHANGE,
 		      "DataGrabber started on "+new Date());
@@ -95,6 +123,10 @@ public class DataGrabber{
 		      " database SQL format");
 
     loadDBDriver();
+
+    // Support HTTPS with client-cert authentication
+    doSecureUserAuthInit();
+
     controller = new Controller(logger, dgConfig);
     controller.start();
     webServer = new WebServer(logger, 

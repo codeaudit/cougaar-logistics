@@ -28,6 +28,9 @@ set CONFIG_FILE=ServletGrabberConfig.xml
 
 set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\bootstrap.jar
 
+REM Modify the argument org.cougaar.ui.userAuthClass to use a
+REM UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
+
 REM PROPERTIES -
 
 echo "java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%

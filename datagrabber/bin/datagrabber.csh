@@ -27,6 +27,9 @@ setenv CONFIG_FILE ServletGrabberConfig.xml
 
 setenv LIBPATHS "${COUGAAR_INSTALL_PATH}/lib/bootstrap.jar"
 
+# Modify the argument org.cougaar.ui.userAuthClass to use a
+# UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
+
 # PROPERTIES -
 
 echo java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=${COUGAAR_INSTALL_PATH} -classpath ${LIBPATHS} org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber ${CONFIG_FILE}
