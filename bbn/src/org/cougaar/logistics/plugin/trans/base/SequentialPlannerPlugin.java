@@ -248,9 +248,9 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     
   public boolean interestingAsset (Asset a) { return true; }
     
-  public void handleNewAssets     (Enumeration e) {};
+  public void handleNewAssets     (Enumeration e) {}
     
-  public void handleChangedAssets (Enumeration e) {};
+  public void handleChangedAssets (Enumeration e) {}
     
   protected final Iterator getAssets() {
     Collection assets = 

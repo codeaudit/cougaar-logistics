@@ -36,5 +36,5 @@ package org.cougaar.logistics.ui.inventory;
 
 public interface InventorySelectionListener
 {
-    public void selectionChanged(InventorySelectionEvent e);
+    void selectionChanged(InventorySelectionEvent e);
 }

@@ -15,7 +15,7 @@
  *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- *  PERFORMANCE OF THE COUGAAR SOFTWARE.q
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
  
@@ -37,18 +37,15 @@ import java.util.Hashtable;
  * @see InventoryFileManager
  *
  **/
-
-
-
 public interface InventoryDataSource
 {
-  public Vector getOrgNames();
-  public String[] getSupplyTypes();
-  public Vector getAssetNames(String orgName, String supplyType);
-  public String getInventoryData(String orgName, String assetName);
-  public String getCurrentInventoryData();
-    // public String getDefaultAssetName();
-    //public String getDefaultOrganizationName();
+  Vector getOrgNames();
+  String[] getSupplyTypes();
+  Vector getAssetNames(String orgName, String supplyType);
+  String getInventoryData(String orgName, String assetName);
+  String getCurrentInventoryData();
+    //String getDefaultAssetName();
+    //String getDefaultOrganizationName();
 }
 
 
