@@ -176,36 +176,28 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-            
+
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
       if(startDay < inventoryPlugin.getRefillStartTime()) {
         startDay = inventoryPlugin.getRefillStartTime();
       }
-      int startBucket = thePG.convertTimeToBucket(startDay, false);
+
       long now = inventoryPlugin.currentTimeMillis();
-      if (now > startDay) {
-	  //startDay = now;
-	  // OLD - Now that were keeping the old projected demand in the past we 
-	  // only plan from now on.
-	  //	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
-	  //startBucket = thePG.convertTimeToBucket(now, false) + inventoryPlugin.getOrderShipTime();
 
-	  //Bug fix for 13464
-	  startDay = now + ((inventoryPlugin.getOrderShipTime() * thePG.getBucketMillis()));
-	  startBucket = thePG.convertTimeToBucket(startDay, true);	  
-      }
-
-      // clear all of the projections
-      //oldProjections.addAll(thePG.clearRefillProjectionTasks(startDay));
-      //long cutoffTime = now + ((inventoryPlugin.getOrderShipTime() + 1) * thePG.getBucketMillis());
       //Bug fix for 13464
       long cutoffTime = now + ((inventoryPlugin.getOrderShipTime()) * thePG.getBucketMillis());
-
       //round up if need be (not exactly on the zero mark)
       cutoffTime = thePG.convertBucketToTime(thePG.convertTimeToBucket(cutoffTime,true));
-      
 
+      if (cutoffTime > startDay) {
+          startDay = cutoffTime;
+      }
+
+      int startBucket = thePG.convertTimeToBucket(startDay, true);     
+
+
+      // clear all of the projections
       oldProjections.addAll(thePG.clearRefillProjectionTasks(cutoffTime));
       //grab the overlapping tasks and change their end time
       ArrayList projectionsToCut = (ArrayList) thePG.getOverlappingRefillProjections();
