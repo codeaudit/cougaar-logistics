@@ -34,6 +34,7 @@ import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
 
 /**
@@ -181,7 +182,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 
   protected void disposeOfTask(Task task) {
     AspectValue avs[] = new AspectValue[1];
-    avs[0] = AspectValue.newAspectValue(15, CountRate.newEachesPerDay(0.0));
+    avs[0] = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, CountRate.newEachesPerDay(0.0));
     AllocationResult dispAR =
         getPlanningFactory().newAllocationResult(1.0, true, avs);
     Disposition disposition =
