@@ -145,6 +145,25 @@ public class LogisticsInventoryBG implements PGDelegate {
 						startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
   }
 
+  public void addWithdrawProjectionAllocation(Task task) {
+    LogisticsAllocationResultHelper helper = 
+      new LogisticsAllocationResultHelper(task, task.getPlanElement());
+    for (int i=0, n=helper.getPhaseCount(); i < n; i++) {
+      LogisticsAllocationResultHelper.Phase phase =
+	(LogisticsAllocationResultHelper.Phase) helper.getPhase(i);
+      double qty = phase.getAspectValue(AlpineAspectType.DEMANDRATE).getValue();
+      int start = convertTimeToBucket(phase.getStartTime());
+      int end = convertTimeToBucket(phase.getEndTime());
+      while (end >= dueOutList.size()) {
+	dueOutList.add(new ArrayList());
+      }
+      for (; start < end; start++) {
+	ArrayList list = (ArrayList)dueOutList.get(i);
+	list.add(task);
+      }
+    }
+  }
+
   public void addWithdrawProjection(Task task) {
     compute_critical_levels = true;
     long start = getStartTime(task);
@@ -217,9 +236,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
   }
 
-  // Opportunity for some refactoring
-  // Code is virtually identical to addWithdrawProjection()
-  // try to refactor and reuse - AHF
+  /** Called by SupplyExpander to remove a Withdraw task that has either
+   *  been rescinded or changed.
+   *  @param task  The ProjectWithdraw task being removed
+   **/
   public void removeWithdrawProjection(Task task) {
     compute_critical_levels = true;
     long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
@@ -230,6 +250,15 @@ public class LogisticsInventoryBG implements PGDelegate {
       ArrayList list = (ArrayList)dueOutList.get(i);
       list.remove(task);
       updateProjectedDemandList(task, i, start, end, false);
+    }
+  }
+
+  public void removeWithdrawProjectionAllocation(Task task) {
+    int size = dueOutList.size();
+    ArrayList list;
+    for (int i=0; i < size; i++) {
+      list = (ArrayList)dueOutList.get(i);
+      list.remove(task);
     }
   }
 
@@ -383,14 +412,19 @@ public class LogisticsInventoryBG implements PGDelegate {
     addRefillRequisition(task);
   }
 
+  public void updateRefillProjection(Task task) {
+    removeRefillProjection(task);
+    addRefillProjection(task);
+  }
+
   public void updateWithdrawRequisition(Task task) {
     removeWithdrawRequisition(task);
     addWithdrawRequisition(task);
   }
 
-  public void updateRefillProjection(Task task) {
-    removeRefillProjection(task);
-    addRefillProjection(task);
+  public void updateWithdrawProjection(Task task) {
+    removeWithdrawProjectionAllocation(task);
+    addWithdrawProjectionAllocation(task);
   }
 
   public double getProjectedDemand(int bucket) {
@@ -574,7 +608,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   private long getStartTime(Task task) {
     PlanElement pe = task.getPlanElement();
-    // If the task has no plan element then return the EndTime Pref
+    // If the task has no plan element then return the StartTime Pref
     if (pe == null) {
       return PluginHelper.getStartTime(task);
     }
