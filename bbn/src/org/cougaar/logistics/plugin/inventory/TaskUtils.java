@@ -64,6 +64,12 @@ public class TaskUtils extends PluginHelper {
 	logger = (Logger)invPlugin.getLoggingService(this);
     }
 
+    public TaskUtils(LoggingService aLogger) {
+	super();
+	invPlugin = null;
+	logger = (Logger)aLogger;
+    }
+
   /** @param task
    *  @param type type identification string
    *  @return true if the task's OFTYPE preposition's indirect object is 

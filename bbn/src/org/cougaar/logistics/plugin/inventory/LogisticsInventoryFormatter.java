@@ -70,8 +70,14 @@ public class LogisticsInventoryFormatter {
 
     public LogisticsInventoryFormatter(Writer writeOutput, InventoryPlugin invPlugin){
 	logger = invPlugin.getLoggingService(this);
-	taskUtils = invPlugin.getTaskUtils();
 	output = writeOutput;
+	taskUtils = invPlugin.getTaskUtils();
+    }
+
+    public LogisticsInventoryFormatter(Writer writeOutput, LoggingService aLogger){
+	logger = aLogger;
+	output = writeOutput;
+	taskUtils = new TaskUtils(aLogger);
     }
 
     protected static String buildTaskPrefixString(Task aTask) {
@@ -103,8 +109,8 @@ public class LogisticsInventoryFormatter {
     protected void logTask(Task aTask,boolean expandTimestamp) {
 	if(aTask == null){ return; }
 	String taskStr = buildTaskPrefixString(aTask);
-	taskStr = taskStr + getDateString(taskUtils.getStartTime(aTask),expandTimestamp) + ",";
-	taskStr = taskStr + getDateString(taskUtils.getEndTime(aTask),expandTimestamp) + ",";
+	taskStr = taskStr + getDateString(TaskUtils.getStartTime(aTask),expandTimestamp) + ",";
+	taskStr = taskStr + getDateString(TaskUtils.getEndTime(aTask),expandTimestamp) + ",";
 	//This is qty for supply, daily rate for projection
 	taskStr = taskStr + taskUtils.getDailyQuantity(aTask);
 	writeln(taskStr);
