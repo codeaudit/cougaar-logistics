@@ -163,9 +163,10 @@ public class Level2Expander extends Level2TranslatorModule {
   }
 
   private void mapLevel2ToLevel6(Collection level2s, Collection level6s) {
-    //alreadyMapped is only here to print out the error below.   If this is
-    // a nominal case take already Mapped and the error out.  MWD.
-    HashSet alreadyMapped = new HashSet();
+    //alreadyMapped is only here to print out the error below.   This turns out
+    //to be a nominal case where level 6s overlap more than one level2.  Commented
+    //out the debug code for right now.  Can uncomment if any need to re-examine.
+    //HashSet alreadyMapped = new HashSet();
     level2To6Map.clear();
     Iterator level2It = level2s.iterator();
     while (level2It.hasNext()) {
@@ -184,9 +185,10 @@ public class Level2Expander extends Level2TranslatorModule {
             (l6EndTime > l2StartTime)) {
           if (l2Cust.equals(l6Cust)) {
             mappedL6s.add(level6Task);
+            /**
             if ((alreadyMapped.contains(level6Task)) &&
                 logger.isWarnEnabled()) {
-              //Apparently lots overlap TODO: MWD either take out alreadyMapped and all debug related or debug more.
+              //Apparently lots overlap commented out alreadyMapped and all debug related code.
               logger.warn("The following task has already been mapped: " + level6Task.getUID() + " startTime: " +
                           new Date(l6StartTime) + " endTime: " +
                           new Date(l6EndTime) + ".  And the new overlapping L2 Task startTime " + new Date(l2StartTime) +
@@ -194,6 +196,7 @@ public class Level2Expander extends Level2TranslatorModule {
             } else {
               alreadyMapped.add(level6Task);
             }
+            **/
           } else {
             logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
           }
@@ -386,47 +389,6 @@ public class Level2Expander extends Level2TranslatorModule {
     return newTask;
   }
 
-  /**
-   *   Create a Time Preference for the Refill Task
-   *  Use a Piecewise Linear Scoring Function.
-   *  For details see the IM SDD.
-   *  @param bestDay The time you want this preference to represent
-   *  @param aspectType The AspectType of the preference- should be start_time or end_time
-   *  @return Preference The new Time Preference
-   *
-   * TODO: MWD Remove this method it is no longer necessary and relys on
-   *       getLogOPlanStart and endTime can't be used no LogOplan can be at OSC
-   *
-
-   private Preference createTimePreference(long bestDay, int aspectType) {
-   long early = translatorPlugin.getLogOPlanStartTime();
-   long late = getTimeUtils().addNDays(bestDay, 1);
-   long end = translatorPlugin.getLogOPlanEndTime();
-   double daysBetween = ((end - bestDay) / 86400000);
-   //Use .0033 as a slope for now
-   double late_score = .0033 * daysBetween;
-   // define alpha .25
-   double alpha = .25;
-
-   Vector points = new Vector();
-   AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
-   AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-   AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
-   AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
-
-   points.addElement(earliest);
-   points.addElement(best);
-   points.addElement(first_late);
-   points.addElement(latest);
-   ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
-   return getPlanningFactory().newPreference(aspectType, timeSF);
-
-   // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
-   //return prefs;
-   }
-
-   ** End of remove
-   **/
 
   /** Create a Time Preference for the Refill Task
    *  Use a Piecewise Linear Scoring Function.
