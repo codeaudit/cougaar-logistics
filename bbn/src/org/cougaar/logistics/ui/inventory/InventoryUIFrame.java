@@ -96,16 +96,16 @@ public class InventoryUIFrame extends JFrame
   static final Cursor defaultCursor =
       Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
-  InventoryDataSource dataSource;
+  protected InventoryDataSource dataSource;
   private Container contentPane;
 
-  JTextArea editPane;
-  JFileChooser fileChooser;
+  protected JTextArea editPane;
+  protected JFileChooser fileChooser;
 
-  MultiChartPanel multiChart;
-  InventoryData inventory;
+  protected MultiChartPanel multiChart;
+  protected InventoryData inventory;
 
-  private Logger logger;
+  protected Logger logger;
 
   String cip;
   String defaultSaveCSVPath;
@@ -113,8 +113,8 @@ public class InventoryUIFrame extends JFrame
   String helpFileStr;
 
 
-  InventorySelectionPanel selector;
-  InventoryXMLParser parser;
+  protected InventorySelectionPanel selector;
+  protected InventoryXMLParser parser;
 
   public InventoryUIFrame() {
     super("Inventory GUI");
