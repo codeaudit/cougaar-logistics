@@ -81,14 +81,15 @@ public class UnitArrivalTimePrecisionTest extends ArrivalTimePrecisionTest{
 
   protected void insertFinalRow (Logger l, Statement s, int run,
 				 String owner, 
-				 int number, 
+				 int current,
+				 int total, 
 				 Collection endTimesForUnit,
 				 Map unitToNumAssets,
 				 Map unitToMean,
 				 Map unitToStdDev) throws SQLException {
     insertRow(l, s, run,
 	      owner,
-	      endTimesForUnit.size(),
+	      current,
 	      (String) unitToMean.get(owner),
 	      ((Integer)unitToStdDev.get(owner)).intValue());
   }

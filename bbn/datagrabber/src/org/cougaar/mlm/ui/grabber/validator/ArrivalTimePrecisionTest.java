@@ -59,6 +59,7 @@ public class ArrivalTimePrecisionTest extends Test{
   //Variables:
   ////////////
 
+  private boolean debug = false;
 
   //Constructors:
   ///////////////
@@ -119,22 +120,28 @@ public class ArrivalTimePrecisionTest extends Test{
     String itinTable = Controller.getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE,run);
     String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
     String arrivalTimeTable = Controller.getTableName(DGPSPConstants.ARRIVAL_TIME_TABLE,run);
+    String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
 
     String assetOwner = assetTable+"."+DGPSPConstants.COL_OWNER;
     String prefOwner = arrivalTimeTable+"."+DGPSPConstants.COL_OWNER;
     String assetAssetid = assetTable+"."+DGPSPConstants.COL_ASSETID;
+    String assetProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
+    String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String itinAssetid = itinTable+"."+DGPSPConstants.COL_ASSETID;
     String itinLegid = itinTable+"."+DGPSPConstants.COL_LEGID;
     String legLegid = legTable+"."+DGPSPConstants.COL_LEGID;
     String legEndtime = legTable+"."+DGPSPConstants.COL_ENDTIME;
+    String legEndLoc = legTable+"."+DGPSPConstants.COL_ENDLOC;
     String preferredArrivaltime = arrivalTimeTable+"."+DGPSPConstants.COL_PREFERREDARRIVALTIME;
+    String protoIsLowFi = protoTable+"."+DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String sqlQuery =
-      "select "+assetOwner+", "+assetAssetid+", "+legEndtime+"\n"+
-      "from "+assetTable+", "+itinTable+", "+legTable+"\n"+
+      "select "+assetOwner+", "+assetAssetid+", "+legEndtime+", " + legEndLoc+", " + protoIsLowFi + "\n"+
+      "from "+assetTable+", "+itinTable+", "+legTable+", "+protoTable+"\n"+
       "where "+assetAssetid+" = "+itinAssetid+"\n"+ 
       " and "+itinLegid+" = "+legLegid+"\n"+
-      "order by "+assetOwner+", "+assetAssetid+", "+legEndtime+"\n"+
+      " and "+assetProtoid+" = "+protoProtoid+"\n"+
+      "order by "+assetOwner+", "+assetAssetid+", "+legEndLoc+", "+legEndtime+"\n"+
       ";";
 
     // System.out.println("\n ArrivalTimePrecisionTest.getQuery() - "+sqlQuery);
@@ -160,78 +167,119 @@ public class ArrivalTimePrecisionTest extends Test{
       String prevOwner = "";
       String prevAssetid = "";
       String prevEndTime = "";
+      String prevEndLoc = "";
+      boolean prevIsLowFi = false;
       boolean firstIteration = true;
       Collection endTimesForUnit = new LinkedList();
+      int currentNumAssets = 0;
 
       // aggregate quantities over all units
       int totalNumAssets = 0;
       Map unitToNumAssets = new HashMap();
       Map unitToMean = new HashMap();
       Map unitToStdDev = new HashMap();
-      
+      Collection lowFiEndTimes = new LinkedList ();
+
       while(rs.next()){
 	String owner = rs.getString(1);
 	String assetid = rs.getString(2);
 	String endTime = rs.getString(3);
-	 
+	String endLoc = rs.getString(4);
+	boolean isLowFi = rs.getString (5).charAt(0)=='t';
+
 	// Don't do anything for the first row
 	if (!firstIteration) {
 
 	  // Beginning legs for a new asset.  Hence the previous leg processed was the
 	  // last leg of the previous asset.
-	  if (!assetid.equals(prevAssetid))
-	      endTimesForUnit.add(prevEndTime);
+	  if (!assetid.equals(prevAssetid)) {
+	    if (!prevIsLowFi)
+	      endTimesForUnit.add (prevEndTime);
+	    else {
+	      endTimesForUnit.addAll (lowFiEndTimes); // get all the most recent times and add them
+	      if (debug) 
+		System.out.println("new asset - added low fi end times " + lowFiEndTimes + 
+				   " to end times for unit " + endTimesForUnit);
+	      lowFiEndTimes.clear(); 
+	    }
+	    currentNumAssets++;
+
+	    if (debug) 
+	      System.out.println("new asset - current assets " + currentNumAssets + 
+				 " and " + endTimesForUnit.size() + " end times");
+	  }
+
+	  if (isLowFi) {
+	    if (!endLoc.equals (prevEndLoc)) {
+	      lowFiEndTimes.clear();     // location changed, so last run must have been a non-terminal leg set
+	      if (debug) 
+		System.out.println("different locs - cleared low fi end times");
+	    }
+	    lowFiEndTimes.add (endTime); // accumulate most recent end times for one location
+	  }
 
 	  // Insert an entry if we're starting to look at another unit.  
 	  if (!owner.equals(prevOwner)) {
-	    
-//       System.out.println("ArrivalTimePrecisionTest.insertRow() - unit = " + prevOwner + 
-//  			 " total = " + assetsForUnitCount + 
-//  			 " diff = " + assetsNonBestArrivalCount + 
-//  			 " endTimesForUnit=" + endTimesForUnit);
+	    if (debug) 
+	      System.out.println("new unit, incremented num assets, now " +currentNumAssets + 
+				 " and " + endTimesForUnit.size() + " end times");
+	    if (debug) 
+	      System.out.println("ArrivalTimePrecisionTest.insertResults - unit = " + prevOwner + 
+				 " endTimesForUnit=" + endTimesForUnit);
 
-	    String mean = computeArrivalMean(endTimesForUnit);
-	    int stddev = computeArrivalStdDev(mean, endTimesForUnit);
+	    String mean = computeArrivalMean   (endTimesForUnit);
+	    int stddev  = computeArrivalStdDev (mean, endTimesForUnit);
 
-	    totalNumAssets += endTimesForUnit.size();
+	    totalNumAssets += currentNumAssets;//endTimesForUnit.size();
 	    unitToNumAssets.put(prevOwner, new Integer(endTimesForUnit.size()));
 	    unitToMean.put(prevOwner, mean);
 	    unitToStdDev.put(prevOwner, new Integer(stddev));
 
 	    insertUnitRow (l, s, run, 
 			   prevOwner,
-			   endTimesForUnit.size(),
+			   currentNumAssets,
 			   mean,
 			   stddev);
 
 	    endTimesForUnit.clear();
+	    currentNumAssets = 0;
+	    // lowFiEndTimes.clear(); 
 	  }
 	}
 	prevOwner = owner;
 	prevAssetid = assetid;
 	prevEndTime = endTime;
+	prevEndLoc  = endLoc;
+	prevIsLowFi = isLowFi;
 	firstIteration = false;
       }
 
       // Enter last value
-      endTimesForUnit.add(prevEndTime);
-      String mean = computeArrivalMean(endTimesForUnit);
-      int stddev = computeArrivalStdDev(mean, endTimesForUnit);
+      if (!prevIsLowFi)
+	endTimesForUnit.add (prevEndTime);
+      else {
+	endTimesForUnit.addAll (lowFiEndTimes); // get all the most recent times and add them
+	if (debug) 
+	  System.out.println("last value - added low fi end times " + lowFiEndTimes + 
+			     " to end times for unit " + endTimesForUnit);
+      }
+      currentNumAssets++;
+      if (debug) 
+	System.out.println("last value, incremented num assets, now " +currentNumAssets + 
+			   " and " + endTimesForUnit.size() + " end times");
 
-      totalNumAssets += endTimesForUnit.size();
+      String mean = computeArrivalMean   (endTimesForUnit);
+      int stddev  = computeArrivalStdDev (mean, endTimesForUnit);
+
+      totalNumAssets += currentNumAssets;//endTimesForUnit.size();
       unitToNumAssets.put(prevOwner, new Integer(endTimesForUnit.size()));
       unitToMean.put(prevOwner, mean);
       unitToStdDev.put(prevOwner, new Integer(stddev));
 
-//        insertRow(l, s, run, 
-//  		prevOwner,
-//  		endTimesForUnit.size(),
-//  		mean,
-//  		stddev);
-
       // Enter the aggregate values - final row
       insertFinalRow(l, s, run,
 		     prevOwner,
+		     currentNumAssets,
 		     totalNumAssets,
 		     endTimesForUnit,
 		     unitToNumAssets,
@@ -253,17 +301,18 @@ public class ArrivalTimePrecisionTest extends Test{
 
   protected void insertFinalRow (Logger l, Statement s, int run,
 				 String owner, 
-				 int number, 
+				 int current,
+				 int total, 
 				 Collection endTimesForUnit,
 				 Map unitToNumAssets,
 				 Map unitToMean,
 				 Map unitToStdDev) throws SQLException {
     String aggregateMean = computeAggregateMean(unitToNumAssets, unitToMean);
-    int aggregateStdDev = computeAggregateStdDev(unitToNumAssets, unitToStdDev);
+    int aggregateStdDev  = computeAggregateStdDev(unitToNumAssets, unitToStdDev);
 
     insertRow(l, s, run,
 	      "ALL UNITS",
-	      number,
+	      total,
 	      aggregateMean, aggregateStdDev);
   }
   
@@ -280,7 +329,7 @@ public class ArrivalTimePrecisionTest extends Test{
 
 	  
     } catch (ParseException e) {
-      System.out.println ("ArrivalTimePrecisionTest.computeArrivalMean() - could not parse date format.");
+      System.err.println ("ArrivalTimePrecisionTest.computeArrivalMean() - could not parse date format.");
     }
 
     return retval;
@@ -301,7 +350,7 @@ public class ArrivalTimePrecisionTest extends Test{
 	squaresum += (meanL - actualL) * (meanL - actualL);
       }
     } catch (ParseException e) {
-      System.out.println ("ArrivalTimePrecisionTest.computeSumSquareArrivalTimeDiff() - could not parse date format.");
+      System.err.println ("ArrivalTimePrecisionTest.computeSumSquareArrivalTimeDiff() - could not parse date format.");
     }
 
     return ((int)Math.sqrt(squaresum /(endTimesForUnit.size() - 1)));
@@ -325,7 +374,7 @@ public class ArrivalTimePrecisionTest extends Test{
 
       retval = format.format(new Date((long)(sum / totalAssets)));
     } catch (ParseException e) {
-      System.out.println ("ArrivalTimePrecisionTest.computeAggregateMean() - could not parse date format.");
+      System.err.println ("ArrivalTimePrecisionTest.computeAggregateMean() - could not parse date format.");
     }
 
     return retval;
@@ -343,12 +392,17 @@ public class ArrivalTimePrecisionTest extends Test{
       
       squaresum += (unitArrivalStdDev) * (unitArrivalStdDev) * (unitNumAssets - 1);
       totalAssets += unitNumAssets;
+      if (debug) 
+	System.out.println ("For unit " + unit + " # assets " + unitNumAssets + " std dev " + unitArrivalStdDev);
     }
 
-	// protect against Divide by Zero error
-	if ((totalAssets - 1) == 0)
-	  return ((int)Math.sqrt(squaresum));
+    // protect against Divide by Zero error
+    if ((totalAssets - 1) == 0)
+      return ((int)Math.sqrt(squaresum));
 	
+    if (debug)
+      System.out.println ("Total assets is " + totalAssets + " std dev " + Math.sqrt(squaresum /(totalAssets - 1)));
+
     return ((int)Math.sqrt(squaresum /(totalAssets - 1)));
   }
 
