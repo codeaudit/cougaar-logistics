@@ -424,7 +424,16 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       createAllocation(withdraw.getPlan(), withdraw,
                        inv, estimatedResult, myRole);
     inventoryPlugin.publishAdd(alloc);
-    thePG.updateWithdrawRequisition(withdraw);
+
+    //MWD this method (createBestAllocation) is
+    //being called from allocateEarlyProjections so were using this
+    //method to update ProjectWithdraws too, so I added this check.
+    if(withdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	thePG.updateWithdrawRequisition(withdraw);
+    }
+    else {
+	thePG.updateWithdrawProjection(withdraw);
+    }
   }
 
   /** Utility method to create a late Allocation
