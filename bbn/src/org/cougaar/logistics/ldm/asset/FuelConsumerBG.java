@@ -21,52 +21,138 @@
 
 package org.cougaar.logistics.ldm.asset;
 
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.PGDelegate;
+import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Rate;
+import org.cougaar.planning.ldm.measure.FlowRate;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.plan.Service;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.util.TimeSpan;
+import org.cougaar.util.UnaryPredicate;
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
+import org.cougaar.logistics.plugin.utils.*;
+import org.cougaar.logistics.ldm.MEIPrototypeProvider;
+
+import java.math.BigDecimal;
+import java.util.*;
 
 
-public abstract class FuelConsumerBG extends ConsumerBG {
+public class FuelConsumerBG extends ConsumerBG {
 
-  String typeId;
-  Schedule consumerSchedule = null, 
-    orgActivitySchedule = null,
-    mergedSchedule = null;
-  Service service;
-  String theater;
+  protected FuelConsumerPG myPG;
+  MEIPrototypeProvider parentPlugin;
+  String supplyType = "BulkPOL";
+  Schedule mergedSchedule = null;
+  HashMap consumptionRates = new HashMap();
+  private transient LoggingService logger;
 
-  public FuelConsumerBG(String typeId, Service service, String theater) {
-    this.typeId = typeId;
-    this.service = service;
-    this.theater = theater;
+  public FuelConsumerBG(FuelConsumerPG pg) {
+    myPG = pg;
   }
+
+  public void initialize(MEIPrototypeProvider plugin) {
+    parentPlugin = plugin;
+    logger = parentPlugin.getLoggingService(this);
+   }
 
   public List getPredicates() {
     ArrayList predList = new ArrayList();
+    String typeId = myPG.getMei().getTypeIdentificationPG().getTypeIdentification();
     predList.add(new ConsumerPredicate(typeId));
     predList.add(new OrgActivityPred());
     return predList;
   }
 
-  public Schedule getParameterSchedule(Collection col) {
-    return null;
+  public Schedule getParameterSchedule(Collection col, TimeSpan span) {
+    Schedule paramSchedule = null;
+    Vector params = new Vector();
+    Iterator predList = col.iterator();
+    UnaryPredicate predicate;
+    while (predList.hasNext()) {
+      Iterator list = ((Collection)predList.next()).iterator();
+      predicate = (UnaryPredicate)list.next();
+      if (predicate instanceof ConsumerPredicate) {
+	Schedule consumerSched = 
+	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
+ 	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
+      } else if (predicate instanceof OrgActivityPred) {
+ 	params.add(parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next()));
+      } else {
+ 	logger.error("getParameterSchedule: unknown predicate");
+      }
+    }
+    paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
+    if (mergedSchedule == null) {
+      return paramSchedule;
+    }
+    return null; // diff'ed schedule
   }
 
   public Rate getRate(Asset asset, List params) {
-    return null;
+    Rate r = null;
+    Double qty = (Double)params.get(0);
+    OrgActivity orgAct = (OrgActivity)params.get(1);
+    Double d = (Double) consumptionRates.get(orgAct.getActivityName());
+    r = FlowRate.newGallonsPerDay (d.doubleValue()*qty.doubleValue());
+    return r;
   }
 
   public Collection getConsumed() {
-    return null;
+    if (consumptionRates.isEmpty()) {
+      Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
+							      myPG.getService(), myPG.getTheater());
+      parseResults(result);
+      if (consumptionRates.isEmpty()) {
+	logger.error("getConsumed(): Database query returned EMPTY result set");
+      }
+    }
+    return consumptionRates.keySet();
   }
 
-  public PGDelegate copy(PGDelegate del) {
+  public Collection getConsumed(int x) {
+    return getConsumed();
+  }
+
+  public Collection getConsumed(int x, int y) {
+    return getConsumed();
+  }
+
+  protected void parseResults (Vector result) {
+    String mei_nsn, typeid, optempo;
+    double dcr;
+    Asset newAsset;
+    HashMap map = null;
+    
+    Enumeration results = result.elements();
+    Object row[];
+    
+    for (int i=0; results.hasMoreElements(); i++) {
+      row = (Object [])results.nextElement();
+      mei_nsn = (String) row[0];
+      logger.debug("FUEL: parsing results for MEI nsn: " + mei_nsn);
+      typeid = "NSN/"+(String) row[1];
+      newAsset = parentPlugin.getPrototype(typeid);
+      if (newAsset != null) {
+	optempo = (String) row[2];
+	dcr = ((BigDecimal) row[3]).doubleValue();
+	map = (HashMap)consumptionRates.get(newAsset);
+	if (map == null) {
+	  map = new HashMap();
+	  consumptionRates.put(newAsset, map);
+	}
+	map.put(optempo.toUpperCase(), new Double(dcr));
+	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
+		     ", DCR "+dcr+", Optempo "+optempo);
+      }
+    }  
+  } // parseResults
+
+
+  public PGDelegate copy(PropertyGroup pg) {
     return null;
   }
 }
