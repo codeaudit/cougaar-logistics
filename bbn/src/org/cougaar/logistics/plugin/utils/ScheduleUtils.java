@@ -57,7 +57,7 @@ public class ScheduleUtils {
 
   public ScheduleUtils(UtilsProvider provider) {
     if(provider == null) {
-      logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+      logger = NullLoggingServiceImpl.getLoggingService();
     }
     else {
       logger = (Logger)provider.getLoggingService(this);

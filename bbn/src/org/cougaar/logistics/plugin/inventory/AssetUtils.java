@@ -59,7 +59,7 @@ public class AssetUtils {
     public AssetUtils(UtilsProvider provider) {
 	utilProvider = provider;
 	if(utilProvider == null) {
-	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+	    logger = NullLoggingServiceImpl.getLoggingService();
 	}
 	else {
 	    logger = (Logger)utilProvider.getLoggingService(this);
@@ -71,7 +71,7 @@ public class AssetUtils {
 	utilProvider = null;
 	logger = aLogger;
 	if(logger == null) {
-	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+	    logger = NullLoggingServiceImpl.getLoggingService();
 	}
     }
  

@@ -51,7 +51,7 @@ public class TimeUtils {
 
     public TimeUtils(UtilsProvider provider) {
 	if(provider == null) {
-	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+	    logger = NullLoggingServiceImpl.getLoggingService();
 	}
 	else {
 	    logger = (Logger)provider.getLoggingService(this);
