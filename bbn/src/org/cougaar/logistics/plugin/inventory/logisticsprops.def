@@ -84,7 +84,9 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	ArrayList getProjSupplyList(); \
 	ArrayList getSupplyList(); \
 	Schedule  getBufferedCritLevels(); \
-	Schedule  getBufferedInvLevels(); 
+	Schedule  getBufferedInvLevels(); \
+	ArrayList getTargetLevelsList(); \
+	ArrayList getActualDemandTasksList();
 
 ;;
 ;; examples
