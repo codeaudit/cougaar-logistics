@@ -71,9 +71,10 @@ public class ALAmmoPacker extends Packer {
   public AggregationClosure getAggregationClosure(ArrayList tasks) {
     // BOZO - source and destination should be taken from the tasks not
     // hardcoded.
-    AmmoTransport ac = new AmmoTransport(tasks);
+    AmmoTransport ac = new AmmoTransport();
 
     ac.setGenericPlugin(this);
+    ac.setDestinations (tasks);
     
     return ac;
   }

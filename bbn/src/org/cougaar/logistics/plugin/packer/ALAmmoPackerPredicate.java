@@ -31,6 +31,22 @@ public class ALAmmoPackerPredicate  {
             (((Task)o).getPrepositionalPhrase("LOW_FIDELITY") == null)) {// BOZO - change this to a const reference later...
           return true;
         } else {
+	  if ((o instanceof Task) &&
+	      (((Task)o).getVerb().equals(Constants.Verb.SUPPLY))) {
+	    /*	    if (((Task)o).getPrepositionalPhrase(GenericPlugin.INTERNAL) != null)
+	      System.out.println ("AmmoPackerPredicate - Ignoring supply task " + ((Task)o).getUID() + 
+				  " b/c has internal prep.");
+	    else if (!(((Task)o).getDirectObject() instanceof Ammunition))
+	      System.out.println ("AmmoPackerPredicate - Ignoring supply task " + ((Task)o).getUID() + 
+				  " b/c d.o. not Ammunition.");
+	    else if (!(((Task)o).getPrepositionalPhrase("LOW_FIDELITY") != null))
+	      System.out.println ("AmmoPackerPredicate - Ignoring supply task " + ((Task)o).getUID() + 
+				  " b/c has LOW_FIDELITY prep.");
+	    else
+	      System.out.println ("AmmoPackerPredicate - Ignoring supply task " + ((Task)o).getUID() + 
+				  " b/c - ?");
+	    */
+	  }
           return false;
         }
       }
