@@ -59,7 +59,7 @@ import org.cougaar.util.Filters;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.DynamicUnaryPredicate;
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.util.DynamicUnaryPredicate;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -283,13 +283,20 @@ public class DemandForecastPlugin extends ComponentPlugin
       //Only after we have all the constituent parts to start going - oplan, orgActitivities, logOplan do we
       //lay down
       if (logOPlan != null) {
-        if ((supplyClassPG != null) &&
-            (genProjTaskScheduler == null)) {
-          setupTaskScheduler();
-//          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
-        }
+	updateStartAndEndTimes();
+	if(logOPlan.getArrivalTime() != Long.MIN_VALUE){
+	   if((supplyClassPG != null) &&
+	      (genProjTaskScheduler == null)) {
+	       setupTaskScheduler();
+	       //          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
+	   }
+	}
+	else {
+	  logOPlan = null;
+	  return;
+	}
       } else {// wait for logOPlan
-        logger.debug("OrgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
+        logger.debug("orgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
         return;
       }
     }
@@ -354,6 +361,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
 
   private IncrementalSubscription orgActivities;
+  private IncrementalSubscription allOrgActivities;
   private IncrementalSubscription oplanSubscription;
   private IncrementalSubscription detReqSubscription;
   private IncrementalSubscription detReqPESubscription;
@@ -376,6 +384,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     UnaryPredicate orgActivityPred = new OrgActivityPred();
     orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
+    allOrgActivities = (IncrementalSubscription) blackboard.subscribe(new OrgActivityPredicate());
     predToSubHash.put(orgActivityPred, orgActivities);
 
     oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
@@ -387,7 +396,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     assetsWithPGSubscription = null;
 
     if (supplyClassPG != null) {
+      //MWD took out
       setupTaskScheduler();
+
       //genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
 
       assetsWithPGSubscription = (IncrementalSubscription)
@@ -1237,6 +1248,24 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
     });
   }
+
+  public void updateStartAndEndTimes() {
+      if(logOPlan != null) {
+	  if(!allOrgActivities.isEmpty()) {
+	      logOPlan.updateOrgActivities(allOrgActivities);
+	  }
+      }
+  }
+
+public class OrgActivityPredicate implements UnaryPredicate { 
+  private static final String predString = "OrgActivityPredicate";
+  public boolean execute (Object o) {
+    if (o instanceof OrgActivity) {
+	return true;
+    }
+    return false;
+  }
+} 
 
 
   /**
