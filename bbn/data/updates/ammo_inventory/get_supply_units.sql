@@ -10,5 +10,9 @@ or
 fu.org_id like '%DASB%'
 or
 fu.org_id like '%MAINTCO%'
+or
+fu.org_id like '%ORDCO%'
+or
+fu.org_id like '%ORDBN%'
 order by
   fu.org_id
