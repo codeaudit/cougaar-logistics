@@ -11,7 +11,7 @@
       	<String value ="Subsistence">
 	</String>
     </RuleParam>
-    <RuleParam name="Critical">
+    <RuleParam name="CriticalLevel">
 	<Integer value="1" min="1" max="90"> 
 	</Integer>
     </RuleParam>
@@ -42,7 +42,7 @@
       	<String value ="Ammunition">
 	</String>
     </RuleParam>
-    <RuleParam name="Critical">
+    <RuleParam name="CriticalLevel">
 	<Integer value="3" min="1" max="90"> 
 	</Integer>
     </RuleParam>
@@ -81,7 +81,7 @@
       	<String value ="BulkPOL">
 	</String>
     </RuleParam>
-    <RuleParam name="Critical">
+    <RuleParam name="CriticalLevel">
 	<Integer value="2" min="-1" max="90"> 
 	</Integer>
     </RuleParam>
@@ -112,7 +112,7 @@
       	<String value ="PackagedPOL">
 	</String>
     </RuleParam>
-    <RuleParam name="Critical">
+    <RuleParam name="CriticalLevel">
 	<Integer value="2" min="1" max="90"> 
 	</Integer>
     </RuleParam>
@@ -143,7 +143,7 @@
       	<String value ="Consumable">
 	</String>
     </RuleParam>
-    <RuleParam name="Critical">
+    <RuleParam name="CriticalLevel">
 	<Integer value="3" min="1" max="90"> 
 	</Integer>
     </RuleParam>
