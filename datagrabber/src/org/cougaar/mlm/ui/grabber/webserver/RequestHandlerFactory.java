@@ -38,7 +38,6 @@ import java.sql.Connection;
 /**
  * Returns the appropriate type of request handler for the given
  * request
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

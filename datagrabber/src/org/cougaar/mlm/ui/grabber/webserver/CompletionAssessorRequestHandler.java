@@ -53,7 +53,6 @@ import java.text.NumberFormat;
 
 /**
  * Handles a request to the completion assessor
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 3/4/01
  **/

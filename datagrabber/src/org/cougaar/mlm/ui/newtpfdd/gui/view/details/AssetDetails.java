@@ -31,7 +31,6 @@ import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
  * Contains the details on an Asset
  * NOTE: we aren't using Asset Type right now, as it isn't being filled
  * by the DB, and we aren't showing contents yet...
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/27/01
  **/

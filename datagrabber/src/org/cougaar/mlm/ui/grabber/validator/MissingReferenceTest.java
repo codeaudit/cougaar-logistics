@@ -36,7 +36,6 @@ import java.util.StringTokenizer;
 
 /**
  * Looks for missing references accross tables.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

@@ -33,7 +33,6 @@ import com.bbn.openmap.InformationDelegator;
 
 /**
  * Displays Status information, with customizations for Route Display
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/24/01
  **/

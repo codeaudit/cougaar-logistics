@@ -42,7 +42,6 @@ import java.util.Iterator;
 
 /**
  * Wraps configuration for the Hierarchy PSP grabber
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

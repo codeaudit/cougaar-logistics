@@ -28,7 +28,6 @@ import org.cougaar.mlm.ui.grabber.workqueue.Result;
 
 /**
  * Defines the result of a task within a Run
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

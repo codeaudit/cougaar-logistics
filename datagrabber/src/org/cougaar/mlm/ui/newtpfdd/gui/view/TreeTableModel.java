@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModel.java,v 1.2 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
  * %W% %E%
@@ -26,10 +26,7 @@ import javax.swing.tree.TreeModel;
  * the TreeTableModel can return a value for each of the columns and 
  * set that value if isCellEditable() returns true. 
  *
- * @version %I% %G%
  *
- * @author Philip Milne 
- * @author Scott Violet
  */
 public interface TreeTableModel extends TreeModel
 {

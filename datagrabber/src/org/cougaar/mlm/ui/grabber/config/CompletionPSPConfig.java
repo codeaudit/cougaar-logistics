@@ -35,7 +35,6 @@ import java.util.*;
 
 /**
  * Config file for the Completion PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 3/4/01
  **/

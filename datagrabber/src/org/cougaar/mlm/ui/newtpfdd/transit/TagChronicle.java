@@ -30,7 +30,6 @@ import java.io.Serializable;
 /**
  * Holds a Chronicle of data about the location of some String indexed property
  *
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/15/00
  */

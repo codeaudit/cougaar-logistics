@@ -38,7 +38,6 @@ import java.sql.Types;
 
 /**
  * Abstract base class for data tests
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

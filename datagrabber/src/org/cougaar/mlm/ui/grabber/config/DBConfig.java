@@ -40,7 +40,6 @@ import java.io.*;
 
 /**
  * Parameters for comunication with the database
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/05/01
  **/

@@ -34,7 +34,6 @@ import java.sql.SQLException;
 
 /**
  * Looks for bad conveyance types
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

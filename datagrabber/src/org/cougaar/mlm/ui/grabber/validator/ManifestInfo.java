@@ -38,7 +38,6 @@ import java.sql.ResultSet;
 /**
  * Dump the contents of the manifest table.
  *
- * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 02/24/04
  **/

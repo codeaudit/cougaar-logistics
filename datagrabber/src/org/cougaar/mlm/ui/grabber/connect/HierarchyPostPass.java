@@ -43,7 +43,6 @@ import java.util.Iterator;
 
 /**
  * Handles creating the descendents table and forging roots if need be
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/AbstractTreeTableModel.java,v 1.2 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
  * %W% %E%
@@ -25,9 +25,7 @@ import javax.swing.event.*;
  * An abstract implementation of the TreeTableModel interface, handling 
  * the list of listeners. 
  *
- * @version %I% %G%
  *
- * @author Philip Milne
  */
 public abstract class AbstractTreeTableModel implements TreeTableModel
 {

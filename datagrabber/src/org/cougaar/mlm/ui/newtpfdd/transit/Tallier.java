@@ -28,7 +28,6 @@ import java.io.Serializable;
 
 /**
  * Instances of this class contain the actual bins of data
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/14/00
  */

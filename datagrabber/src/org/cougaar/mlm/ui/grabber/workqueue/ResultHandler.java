@@ -27,7 +27,6 @@ package org.cougaar.mlm.ui.grabber.workqueue;
 
 /**
  * Defines a handler for Results
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

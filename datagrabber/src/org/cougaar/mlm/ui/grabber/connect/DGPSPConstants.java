@@ -31,7 +31,6 @@ import org.cougaar.mlm.ui.psp.transit.data.population.ConveyancePrototype;
 
 /**
  * Constants for the DataGathererPSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/18/01
  **/

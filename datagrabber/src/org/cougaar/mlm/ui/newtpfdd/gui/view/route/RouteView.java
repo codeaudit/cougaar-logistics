@@ -67,7 +67,6 @@ import java.util.TooManyListenersException;
 
 /**
  * Displays route informatation in Openmap
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

@@ -35,7 +35,6 @@ import org.cougaar.mlm.ui.newtpfdd.transit.Chronicle.Frame;
 /**
  * Holds a Chronicle of data about the flow of a Assets
  *
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 12/01/00
  */

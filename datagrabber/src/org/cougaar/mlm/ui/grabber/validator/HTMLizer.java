@@ -33,7 +33,6 @@ import java.text.NumberFormat;
 
 /**
  * HTMLization
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

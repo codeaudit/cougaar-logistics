@@ -33,7 +33,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Factory for generating DataGrabberConfig from xml
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

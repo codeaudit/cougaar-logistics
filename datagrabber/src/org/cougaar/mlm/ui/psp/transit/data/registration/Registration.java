@@ -37,7 +37,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Represents a registration with PSP_DataGatherer
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/24/01
  **/

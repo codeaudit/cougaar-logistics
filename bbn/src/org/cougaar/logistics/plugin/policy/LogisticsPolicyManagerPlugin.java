@@ -75,7 +75,6 @@ import org.cougaar.core.service.community.CommunityService;
  * plugin=org.cougaar.logistics.plugin.policy.LogisticsPolicyManagerPlugin(POLICY=policy.ldm.xml,DESTINATION=Subordinate )
  * </PRE>
  *
- * @author   SRA
  *
  */
 public class LogisticsPolicyManagerPlugin extends ComponentPlugin

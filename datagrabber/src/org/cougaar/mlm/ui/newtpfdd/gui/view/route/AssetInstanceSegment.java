@@ -46,7 +46,6 @@ import java.text.SimpleDateFormat;
 
 /**
  * A single segment displayed in the AssetInstance route
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

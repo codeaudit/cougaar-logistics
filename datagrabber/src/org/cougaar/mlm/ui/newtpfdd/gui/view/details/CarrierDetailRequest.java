@@ -39,7 +39,6 @@ import java.sql.SQLException;
 
 /**
  * Gets data about carrier details
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 5/3/01
  **/

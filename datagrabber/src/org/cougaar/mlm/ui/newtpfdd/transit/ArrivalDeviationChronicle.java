@@ -33,7 +33,6 @@ import org.cougaar.mlm.ui.newtpfdd.transit.UnitChronicle.UnitTally;
 /**
  * Holds a Chronicle of data about the location of a unit's arrival deviation
  *
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 12/02/00
  */

@@ -35,7 +35,6 @@ import java.util.ArrayList;
 /**
  * Shows a popup of the details about an carrier, or all the 
  * carriers carried on a leg.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 5/3/01
  **/

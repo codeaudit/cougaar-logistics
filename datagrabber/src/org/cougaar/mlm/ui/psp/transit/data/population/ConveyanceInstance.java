@@ -39,7 +39,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Represents the data leaving the PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/24/01
  **/

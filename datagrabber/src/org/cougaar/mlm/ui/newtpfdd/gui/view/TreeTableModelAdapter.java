@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModelAdapter.java,v 1.3 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
  * %W% %E%
@@ -32,10 +32,7 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
  * all of the event dispatching support provided by the superclass: 
  * the AbstractTableModel. 
  *
- * @version %I% %G%
  *
- * @author Philip Milne
- * @author Scott Violet
  */
 
 

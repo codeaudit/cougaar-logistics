@@ -35,7 +35,6 @@ import java.sql.*;
 
 /**
  * Handles creating the Hierarchy DB tables.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

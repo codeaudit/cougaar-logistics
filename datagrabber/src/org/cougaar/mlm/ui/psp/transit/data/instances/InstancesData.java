@@ -53,7 +53,6 @@ import org.xml.sax.Attributes;
  * a prototype returned by the Prototypes PSP, but containing some altered
  * values (usually a container whose weight has changed etc).  Make sure
  * such prototypes have their parentUID field filled in.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/28/01
  **/

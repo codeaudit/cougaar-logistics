@@ -41,7 +41,6 @@ import java.util.Map;
 
 /**
  * Cargo, broken down by asset class
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

@@ -40,7 +40,6 @@ import java.util.HashMap;
 
 /**
  * C
- * @author Gordon Vidaver
  * @since 05/02/01
  **/
 public class UnitPalletTest extends UnitMilvansTest{

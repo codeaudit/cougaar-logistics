@@ -37,7 +37,6 @@ import java.sql.SQLException;
 /**
  * Abstract class for all classes that produce data for the
  * RouteView
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

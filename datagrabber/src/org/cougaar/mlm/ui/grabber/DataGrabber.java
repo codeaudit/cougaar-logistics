@@ -46,7 +46,6 @@ import org.xml.sax.SAXException;
 
 /**
  * Main class for the data grabber
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

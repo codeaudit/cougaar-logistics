@@ -36,7 +36,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Factory the Registration object
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/24/01
  **/

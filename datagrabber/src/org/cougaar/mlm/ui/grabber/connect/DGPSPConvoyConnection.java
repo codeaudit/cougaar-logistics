@@ -45,7 +45,6 @@ import java.util.Iterator;
 
 /**
  * Handles getting convoy data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/18/01
  **/

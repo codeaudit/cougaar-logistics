@@ -44,7 +44,6 @@ import java.util.Date;
 
 /**
  * A request for an CarrierInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

@@ -39,7 +39,6 @@ import java.util.Date;
 
 /**
  * A request for an AssetInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/20/01
  **/

@@ -23,7 +23,7 @@
  *  
  * </copyright>
  */
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellElement.java,v 1.3 2004-03-18 20:50:08 mthome Exp $ */
+/*  */
 
 package org.cougaar.mlm.ui.newtpfdd.gui.view;
 

@@ -35,7 +35,6 @@ import javax.swing.*;
 /**
  * Shows a popup of the details about an asset, or all the 
  * assets carried on a leg.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/27/01
  **/

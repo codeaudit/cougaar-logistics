@@ -48,7 +48,6 @@ import java.sql.*;
  * Users of the DB should check for their presence before using, and should
  * NOT REQUIRE their presence.
  *
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/06/01
  **/

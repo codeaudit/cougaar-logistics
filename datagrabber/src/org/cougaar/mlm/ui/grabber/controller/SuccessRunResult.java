@@ -28,7 +28,6 @@ import org.cougaar.mlm.ui.grabber.workqueue.Result;
 
 /**
  * Defines a RunResult that represents a success
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

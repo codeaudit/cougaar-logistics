@@ -35,7 +35,6 @@ import java.util.StringTokenizer;
 
 /**
  * The data pertaining to a single HTTP request
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

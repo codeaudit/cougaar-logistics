@@ -56,7 +56,6 @@ import java.text.SimpleDateFormat;
  * are misleading, as a single CarrierInstanceSegment can represent multiple
  * movements, possibly in opposite directions...
  *
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

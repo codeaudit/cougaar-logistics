@@ -52,7 +52,6 @@ import java.sql.*;
  * are for?), but we want to enable another thread to call halt() on this 
  * one and have this thread clean up and stop, so we need the halt checks.
  *
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

@@ -35,7 +35,6 @@ import org.xml.sax.Attributes;
 
 /**
  * A single location leaving the Locations PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/29/01
  **/

@@ -6,7 +6,6 @@
    Joint Venture contract number MDA972-97-C-0800, by Ascent Technology,
    Inc. 64 Sidney Street, Suite 380, Cambridge, MA 02139.
 
-   @author Sundar Narasimhan, Daniel Bromberg
 */
 
 /*
@@ -81,10 +80,7 @@ import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
  * by using a JTree as a renderer (and editor) for the cells in a 
  * particular column in the JTable.  
  *
- * @version %I% %G%
  *
- * @author Philip Milne
- * @author Scott Violet
  */
 
 public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate

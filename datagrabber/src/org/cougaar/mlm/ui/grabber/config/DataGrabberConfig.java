@@ -41,7 +41,6 @@ import java.util.Iterator;
 
 /**
  * Wraps all configuration for the data gatherer
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

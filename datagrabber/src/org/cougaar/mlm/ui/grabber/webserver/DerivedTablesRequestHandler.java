@@ -49,7 +49,6 @@ import java.text.SimpleDateFormat;
 
 /**
  * Handles requests concerning preparion of derived tables
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/13/01
  **/

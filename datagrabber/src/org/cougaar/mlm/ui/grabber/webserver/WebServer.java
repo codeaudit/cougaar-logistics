@@ -43,7 +43,6 @@ import java.sql.SQLException;
 
 /**
  * Simple web server to provide control interface to the grabber
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

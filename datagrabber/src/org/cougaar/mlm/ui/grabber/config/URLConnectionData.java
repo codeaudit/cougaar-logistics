@@ -34,7 +34,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Produces URL necessary for a given PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

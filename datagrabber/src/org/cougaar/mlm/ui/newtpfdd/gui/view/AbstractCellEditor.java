@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/AbstractCellEditor.java,v 1.2 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
  * %W% %E%
@@ -26,13 +26,11 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 /**
- * @version %I% %G% 
  * 
  * A base class for CellEditors, providing default implementations for all 
  * methods in the CellEditor interface and support for managing a series 
  * of listeners. 
  *
- * @author Philip Milne
  */
 
 public class AbstractCellEditor implements CellEditor

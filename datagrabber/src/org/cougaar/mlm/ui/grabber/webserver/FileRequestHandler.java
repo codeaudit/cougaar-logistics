@@ -34,7 +34,6 @@ import java.util.*;
 
 /**
  * Handles requests for files
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

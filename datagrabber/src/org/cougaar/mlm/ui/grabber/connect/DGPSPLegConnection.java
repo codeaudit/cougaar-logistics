@@ -53,7 +53,6 @@ import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 
 /**
  * Handles getting leg data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/19/01
  **/

@@ -39,7 +39,6 @@ import java.io.Serializable;
  *
  * Assumption -- transit tasks do not overlap.
  *
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/14/00
  */

@@ -42,7 +42,6 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Shows dimension of cargo types
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

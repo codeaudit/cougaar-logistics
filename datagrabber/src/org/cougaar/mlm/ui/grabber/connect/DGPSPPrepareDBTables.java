@@ -35,7 +35,6 @@ import java.sql.*;
 
 /**
  * Handles creating the DataGathererPSP DB tables.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/18/01
  **/

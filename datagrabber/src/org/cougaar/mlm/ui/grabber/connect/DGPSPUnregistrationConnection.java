@@ -42,7 +42,6 @@ import java.sql.Connection;
 
 /**
  * Handles registering for data with DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/17/01
  **/

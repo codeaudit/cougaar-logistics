@@ -57,7 +57,6 @@ import org.cougaar.mlm.ui.grabber.workqueue.TimedResult;
  *
  * Times out after a fixed duration, defaults to two minutes, but
  * can be set by xml tag.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

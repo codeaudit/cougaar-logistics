@@ -33,7 +33,6 @@ import java.util.Iterator;
 
 /**
  * Holds the data for the RouteLayer
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

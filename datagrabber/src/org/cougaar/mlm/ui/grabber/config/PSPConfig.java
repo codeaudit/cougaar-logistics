@@ -34,7 +34,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Base class for PSP Configuration classes
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/9/01
  **/

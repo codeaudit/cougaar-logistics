@@ -32,7 +32,6 @@ import java.util.Date;
 
 /**
  * Logs to a database table.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

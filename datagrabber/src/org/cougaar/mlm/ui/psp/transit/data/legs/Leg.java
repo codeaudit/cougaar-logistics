@@ -45,7 +45,6 @@ import org.xml.sax.Attributes;
 
 /**
  * A single instance leaving the Legs PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/28/01
  **/

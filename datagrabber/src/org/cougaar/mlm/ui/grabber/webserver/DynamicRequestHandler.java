@@ -47,7 +47,6 @@ import java.text.SimpleDateFormat;
 /**
  * Abstract base class for Handlers for requests for commands 
  * to dynamic pages
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 3/3/01
  **/

@@ -31,7 +31,6 @@ import  org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
 /**
  * Contains the fields of data about a given carrier.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 5/3/01
  **/

@@ -65,7 +65,6 @@ import java.text.SimpleDateFormat;
  * Basic infrastructure to talk to a PSP that uses the 
  * XMLable/serializable interfaces
  * 
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

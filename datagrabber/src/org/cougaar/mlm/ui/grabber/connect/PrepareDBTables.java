@@ -38,7 +38,6 @@ import java.sql.*;
 /**
  * Base class for all Work that creates tables.
  *
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

@@ -39,7 +39,6 @@ import java.io.File;
 
 /**
  * Data for configuring derived table generation
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/12/01
  **/

@@ -36,7 +36,6 @@ import java.sql.ResultSet;
 
 /**
  * Calculates total # people or cargo moved
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

@@ -72,7 +72,6 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Displays statistics information based on grabber Validation tests
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 5/3/01
  **/

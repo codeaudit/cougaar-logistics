@@ -55,7 +55,6 @@ import java.sql.Statement;
 
 /**
  * Controls the data grabber and orchestrates its workflow
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

@@ -35,7 +35,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Wraps configuration for registering with DataGathererPSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

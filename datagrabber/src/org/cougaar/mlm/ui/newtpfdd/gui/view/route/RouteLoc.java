@@ -31,7 +31,6 @@ import java.util.Iterator;
 
 /**
  * A location on the route
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

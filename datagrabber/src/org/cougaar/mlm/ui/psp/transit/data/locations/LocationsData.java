@@ -38,7 +38,6 @@ import org.xml.sax.Attributes;
 
 /**
  * Represents the data leaving the Locations PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/29/01
  **/

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TPFDDTreeCellRenderer.java,v 1.7 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -10,7 +10,6 @@
 
   Based on Sun's example SampleTreeCellRenderer.
 
-  @author Daniel Bromberg
 */
 
 package org.cougaar.mlm.ui.newtpfdd.gui.view;

@@ -34,7 +34,6 @@ import java.sql.SQLException;
 
 /**
  * Looks for bad asset classes
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

@@ -28,7 +28,6 @@ import java.io.Serializable;
 
 
 /** Incoming data for each transport task.
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/14/00
  */

@@ -37,7 +37,6 @@ import java.util.*;
 /**
  * Base class for handlers of individual connections to the web
  * server.  By default just returns an empty document
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

@@ -39,7 +39,6 @@ import java.io.File;
 
 /**
  * Data for configuring the web server
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

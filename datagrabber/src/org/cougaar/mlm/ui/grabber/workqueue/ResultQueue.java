@@ -35,7 +35,6 @@ import java.util.Iterator;
 /**
  * A ResultHandler that queues up results until they can be
  * dealt with.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 02/01/01
  **/

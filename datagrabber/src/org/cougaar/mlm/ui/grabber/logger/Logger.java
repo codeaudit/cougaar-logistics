@@ -27,7 +27,6 @@ package org.cougaar.mlm.ui.grabber.logger;
 
 /**
  * Interface used for logging status/errors
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

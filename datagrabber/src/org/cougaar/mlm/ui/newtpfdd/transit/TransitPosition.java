@@ -27,7 +27,6 @@ package org.cougaar.mlm.ui.newtpfdd.transit;
 import java.io.Serializable;
 
 /** Position of an object beeing moved between two other Positions
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/14/00
  */

@@ -48,7 +48,6 @@ import java.text.SimpleDateFormat;
 
 /**
  * A single segment in the route
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

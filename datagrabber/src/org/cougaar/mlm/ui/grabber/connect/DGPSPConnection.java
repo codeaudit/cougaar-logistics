@@ -42,7 +42,6 @@ import java.sql.*;
 
 /**
  * Base class for connections to the DataGrathererPSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/18/01
  **/

@@ -79,7 +79,6 @@ import com.bbn.openmap.layer.location.BasicLocation;
 
 /**
  * Displays a route layer in openmap
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/19/01
  **/

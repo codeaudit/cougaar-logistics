@@ -54,7 +54,6 @@ import org.cougaar.planning.ldm.measure.Mass;
 
 /**
  * Handles getting instance data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/19/01
  **/

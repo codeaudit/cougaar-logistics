@@ -39,7 +39,6 @@ import java.sql.SQLException;
 
 /**
  * Gets data about assets on a given asset
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 4/27/01
  **/

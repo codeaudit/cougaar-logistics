@@ -42,7 +42,6 @@ import java.util.HashMap;
  * and takes it off the list of available threads.
  *
  * </pre>
- * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

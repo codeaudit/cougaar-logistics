@@ -1,5 +1,5 @@
-/* Author: Benjamin Lubin; last modified by $Author: mthome $
- * Created: 2/26/01; last modified on $Date: 2003-02-03 22:27:59 $
+/* Author: Benjamin Lubin; last modified by 
+ * Created: 2/26/01; last modified on 
  *
  * Except as otherwise noted, if any of the below return non-empty
  * tables, it is an ERROR or WARNING as indicated

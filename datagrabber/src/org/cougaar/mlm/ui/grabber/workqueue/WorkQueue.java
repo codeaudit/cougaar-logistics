@@ -36,7 +36,6 @@ import java.util.HashMap;
 /**
  * Defines a queue of work to do, and manages threads to get it
  * done
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

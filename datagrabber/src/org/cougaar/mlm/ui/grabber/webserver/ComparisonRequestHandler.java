@@ -50,7 +50,6 @@ import java.text.SimpleDateFormat;
 
 /**
  * Handles requests for commands to the contrastor
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/8/01
  **/

@@ -47,7 +47,6 @@ import org.xml.sax.Attributes;
  * derivations from the 'true' prototypes with some of the fields changed
  * to fit a specific instance.  In this case, the parentUID field should
  * reflect the 'true' prototype from which the 'sub' prototype is derived.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/28/01
  **/

@@ -44,7 +44,6 @@ import java.sql.*;
 /**
  * Connection for talking to CompletionPSP
  * 
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 3/04/01
  **/

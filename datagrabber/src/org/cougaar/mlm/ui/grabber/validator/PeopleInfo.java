@@ -43,7 +43,6 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Looks for missing people
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

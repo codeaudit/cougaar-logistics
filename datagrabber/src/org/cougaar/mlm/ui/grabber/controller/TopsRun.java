@@ -62,7 +62,6 @@ import java.util.Iterator;
 
 /**
  * Represents a single gatherer run
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/12/01
  **/

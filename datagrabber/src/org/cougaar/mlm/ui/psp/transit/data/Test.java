@@ -51,7 +51,6 @@ import java.util.List;
 
 /**
  * Test the PSP data XMLization
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/24/01
  **/

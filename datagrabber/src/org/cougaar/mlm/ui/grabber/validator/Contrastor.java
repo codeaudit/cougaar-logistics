@@ -41,7 +41,6 @@ import java.util.List;
 
 /**
  * Contains all the tests and knows how to kick them off
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/27/01
  *

@@ -29,7 +29,6 @@ import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 /**
  * Defines a piece of work to do
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

@@ -47,7 +47,6 @@ import java.text.ParseException;
 /**
  * Looks at all the transported assets and tests for deviation from preferred arrival time.  
  *
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/26/01
  **/

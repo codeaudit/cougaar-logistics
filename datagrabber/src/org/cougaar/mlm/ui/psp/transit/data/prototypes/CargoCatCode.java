@@ -41,7 +41,6 @@ import org.xml.sax.Attributes;
 
 /**
  *
- * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 06/24/02
  **/

@@ -36,7 +36,6 @@ import java.util.Iterator;
 /**
  * Represents a collection of workIDs and has functions for
  * manipulating them.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/17/01
  **/

@@ -27,7 +27,6 @@ package org.cougaar.mlm.ui.grabber.workqueue;
 
 /**
  * Defines a timed piece of work to do
- * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 01/11/02
  **/

@@ -29,7 +29,6 @@ import org.cougaar.planning.servlet.data.hierarchy.Organization;
 
 /**
  * Constants for hierarchy connection and tables
- * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2//01
  **/

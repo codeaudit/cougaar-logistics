@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ControlBar.java,v 1.3 2003-02-03 22:28:00 mthome Exp $ */
+/*  */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -9,7 +9,6 @@
   Inc. 64 Sidney Street, Suite 380, Cambridge, MA 02139.
 
   Creation date: Mon Jan 24 12:13:54 2000
-  @author Daniel Bromberg
 */
 
 package org.cougaar.mlm.ui.newtpfdd.gui.view;

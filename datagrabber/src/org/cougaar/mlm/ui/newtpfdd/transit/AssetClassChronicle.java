@@ -33,7 +33,6 @@ import org.cougaar.mlm.ui.newtpfdd.transit.TagChronicle.TagTally;
 /**
  * Holds a Chronicle of data about the location of a Asset Classes
  *
- * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 11/15/00
  */
