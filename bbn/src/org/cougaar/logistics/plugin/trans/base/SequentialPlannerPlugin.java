@@ -144,9 +144,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     prepHelper.addPrepToTask(t, prepHelper.makePrepositionalPhrase(ldmf,
 								       GLMTransConst.SequentialSchedule,
 								       createEmptyPlan(t)));
+    
+    publishChange (t); // we added a prep, should publish change it
+
     Workflow wf = makeEmptyWorkflow(t);
     Expansion exp = ldmf.createExpansion(t.getPlan(), t, wf, null);
-    //	publishAdd(wf); // Mike Thome says don't!
     publishAdd(exp);
 	
     turnCrank(t);
@@ -160,13 +162,16 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     return wf;
   }
     
-  // turnCrank is a basic planning cycle. It looks through all the elements in the empty
-  // schedule and if one is ready to be planned it plans it. It also places the parenttask in a
-  // hashtable so it can be easily retrieved later when the subtask is succesfully allocated.
-    
+  /**
+   * turnCrank is a basic planning cycle. It looks through all the elements in the empty
+   * schedule and if one is ready to be planned it plans it. It also places the parenttask in a
+   * hashtable so it can be easily retrieved later when the subtask is succesfully allocated.
+   */
   public void turnCrank(Task task) {
     if (isDebugEnabled()) debug(getName () + "---Turning Crank: S");
+
     PrepositionalPhrase prep = prepHelper.getPrepNamed(task, GLMTransConst.SequentialSchedule);
+    
     if (prep == null) {
       error(getName () + ".turnCrank - ERROR - no prep named " + GLMTransConst.SequentialSchedule +
 	    " on task " + task);
@@ -458,6 +463,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     if (isDebugEnabled()) debug(getName () + "---handleSuccessfulAlloc: E"); 		
   }
 
+  /** deals with post-rehydration state */
   public Task getParentTask (Task child, String uid) {
     Task parenttask = (Task) childToParentUID.get(uid);
 
@@ -479,12 +485,15 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 
     return parenttask;
   }
-   
+ 
+  /** deals with post-rehydration state */
   public SequentialScheduleElement getElement(Task child, String uid) {
     SequentialScheduleElement sse = (SequentialScheduleElement)taskToSSE.get(uid);
 
     if (sse != null)
       return sse;
+
+    // in case of rehydration, re-enter mapping into hash map
 
     sse =
       (SequentialScheduleElement)
@@ -495,6 +504,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     return sse;
   }
 
+  /** for post-rehydration phase */
   class TaskCatcher implements UnaryPredicate {
     UID parentUID;
 	
