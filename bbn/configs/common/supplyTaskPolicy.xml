@@ -1,0 +1,8 @@
+<!-- temporary until define policy
+-->
+
+<POLICY>
+<PRIORITIES>
+<CRITERION passall="true" />
+</PRIORITIES>
+</POLICY>
