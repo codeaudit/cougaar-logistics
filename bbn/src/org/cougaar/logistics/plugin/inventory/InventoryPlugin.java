@@ -83,6 +83,12 @@ public class InventoryPlugin extends ComponentPlugin {
   private long startTime;
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
+  // Policy variables
+  private int criticalLevel = 3;
+  private int slackTime = 1;
+  private int orderFrequency = 3;
+  private int handlingTime = 0;
+  private int transportTime = 1;
 
   public void load() {
     super.load();
@@ -150,6 +156,8 @@ public class InventoryPlugin extends ComponentPlugin {
   }
   
   protected void execute() {
+    updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
+    updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if ((myOrganization != null) && (supplyTaskSubscription == null)) {
@@ -181,6 +189,10 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for incoming Projection tasks **/
   private IncrementalSubscription projectionTaskSubscription;
 
+  /** Subscription for InventoryPolicy **/
+  private IncrementalSubscription inventoryPolicySubscription;
+
+
   protected void setupSubscriptions() {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
@@ -188,6 +200,7 @@ public class InventoryPlugin extends ComponentPlugin {
     addInventories(blackboard.query(new InventoryPredicate(supplyType)));
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
+    inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
   }
 
   protected void setupSubscriptions2() {
@@ -347,7 +360,7 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
     
-  static class ProjectionExpansionPredicate implements UnaryPredicate {
+  private class ProjectionExpansionPredicate implements UnaryPredicate {
 	String supplyType_;
         UnaryPredicate taskPredicate;
 
@@ -365,7 +378,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	}
     }
     
-    static class SupplyExpansionPredicate implements UnaryPredicate
+    private class SupplyExpansionPredicate implements UnaryPredicate
     {
 	String supplyType_;
         UnaryPredicate taskPredicate;
@@ -383,6 +396,23 @@ public class InventoryPlugin extends ComponentPlugin {
 	    return false;
 	}
     }
+
+  private class InventoryPolicyPredicate implements UnaryPredicate {
+    String type;
+    public InventoryPolicyPredicate(String type) {
+      this.type = type;
+    }
+    public boolean execute(Object o) {
+      if (o instanceof org.cougaar.logistics.plugin.inventory.InventoryPolicy) {
+	String type = ((InventoryPolicy)o).getResourceType();
+	if (type.equals(this.type)) {
+	  logger.debug("Found an inventory policy for "+this.type);
+	  return true;
+	}
+      }
+      return false;
+    }
+  } 
 
   private Collection sortIncomingSupplyTasks(Collection tasks) {
     ArrayList expandList = new ArrayList();
@@ -620,6 +650,22 @@ public class InventoryPlugin extends ComponentPlugin {
     logger.error("Unsupported Supply Type");
     return null;
   }
+
+  protected boolean updateInventoryPolicy(Collection policies) {
+    InventoryPolicy pol;
+    boolean changed = false;
+    Iterator policy_iterator = policies.iterator();
+    while (policy_iterator.hasNext()) {
+      pol = (InventoryPolicy)policy_iterator.next();
+      int cl = pol.getCriticalLevel();
+      if ((cl >= 0) && (cl != criticalLevel)) {
+	criticalLevel = cl;
+	changed = true;
+      }    
+    }
+    return changed;
+  }
+
   /**
      IM Doctor
   **/
