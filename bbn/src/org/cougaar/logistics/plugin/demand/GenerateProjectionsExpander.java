@@ -203,13 +203,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     long end = dfPlugin.getLogOPlanEndTime();
     double daysBetween = ((end - bestDay) / 86400000);
 
-    // Negative value here is bad. Note that end==bestDay is OK. This case 
+    // Negative value here is bad. Note that end==bestDay is OK. This case
     // is handled below, where we skip adding the end AspectScorePoint
     if (daysBetween < 0.0) {
       if (logger.isWarnEnabled())
 	logger.warn(dfPlugin.getClusterId() + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
     }
-    
+
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
@@ -334,16 +334,16 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   private void createAndPublishExpansion(Task parent, Collection subtasks) {
+    Workflow wf = buildWorkflow(parent, subtasks);
+    Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
+    if (logger.isInfoEnabled()) {
+      logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
+    }
+    dfPlugin.publishAdd(expansion);
     Iterator subtasksIT = subtasks.iterator();
     while (subtasksIT.hasNext()) {
       dfPlugin.publishAdd(subtasksIT.next());
     }
-    Workflow wf = buildWorkflow(parent, subtasks);
-    Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
-    if(logger.isInfoEnabled()) {
-      logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
-    }
-    dfPlugin.publishAdd(expansion);
   }
 
   private void addToAndPublishExpansion(Task parent, Collection subtasks) {
@@ -352,19 +352,16 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Iterator subtasksIT = subtasks.iterator();
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
-      dfPlugin.publishAdd(task);
       wf.addTask(task);
       ((NewTask) task ).setWorkflow(wf);
+      dfPlugin.publishAdd(task);
     }
     dfPlugin.publishChange(expansion);
   }
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
-            
-					  long end, Rate rate) {
-    //if(logger.isInfoEnabled()) {
+                                          long end, Rate rate) {
     //logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
-    //}
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
@@ -520,9 +517,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Enumeration e = published_schedule.getAllScheduleElements();
       while (e.hasMoreElements()) {
         Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
-	if(logger.isDebugEnabled()) {
+        if(logger.isDebugEnabled()) {
           logger.debug(printProjection("********** Removing task --> \n", task));
-	}
+        }
         publishRemoveFromExpansion(task);
       }
       return Collections.EMPTY_LIST;
