@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class RelationshipScheduleServlet
@@ -170,9 +171,14 @@ public class RelationshipScheduleServlet
             }
 
 
-            ObjectOutputStream output = new ObjectOutputStream(out);
 
-            output.writeObject(data);
+	    BufferedWriter p = new BufferedWriter(new OutputStreamWriter(out,Charset.forName("ASCII")));
+	    p.write(data.toXMLString());
+	    p.flush();
+	    p.close();
+
+	    //ObjectOutputStream output = new ObjectOutputStream(out);
+	    //      output.writeObject(data);
             //System.out.println("Sent XML document");
 
         }

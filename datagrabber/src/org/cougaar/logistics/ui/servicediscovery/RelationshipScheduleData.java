@@ -30,6 +30,13 @@ import java.text.SimpleDateFormat;
 
 public class RelationshipScheduleData implements Serializable {
 
+    public final static String RELATIONSHIP_SCHEDULE_TAG = "RELATIONSHIP_SCHEDULE";
+    public final static String RELATIONSHIP_SCHEDULE_HEADER_TAG = "RELATIONSHIP_SCHEDULE_HEADER";
+    public final static String ROLE_INSTANCES_TAG = "ROLE_INSTANCES";
+    public final static String RELATIONSHIPS_TAG = "RELTIONSHIPS";
+
+
+
     final public static String DATE_FORMAT_STRING = "yyyy-MM-dd kk:mm:ss";
     final public static TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
     public static SimpleDateFormat dateFormatter = new SimpleDateFormat(DATE_FORMAT_STRING);
@@ -128,6 +135,21 @@ public class RelationshipScheduleData implements Serializable {
         relationshipMapping.add(relationship);
     }
 
+    protected synchronized void addRelationship(String[] relationship) {
+	if(relationship.length == RELATIONSHIP_NUM_ITEMS){
+	    String role = relationship[ROLE_IND];
+	    if (!instanceSet.contains(role)) {
+		instanceSet.add(role);
+	    }
+	    relationshipMapping.add(relationship);
+	}
+	else {
+	    throw new RuntimeException("Illegal number of columns in a relationship addition!");
+	}
+   
+    }
+
+
     public Iterator getInstances() {
         ArrayList instanceList = new ArrayList();
         ArrayList sortList = new ArrayList(instanceSet);
@@ -170,6 +192,39 @@ public class RelationshipScheduleData implements Serializable {
             }
         }
         sb.append("\n");
+        return sb.toString();
+    }
+
+    public String toXMLString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("<" + RELATIONSHIP_SCHEDULE_TAG + ">" + "\n");
+	sb.append("<" + RELATIONSHIP_SCHEDULE_HEADER_TAG + " sourceAgent=" + getSourceAgent());
+        sb.append(" startDate=" + getStartCDay() + ">\n");
+	Iterator i;
+        String[] sa;
+	/***
+        sb.append("<" + ROLE_INSTANCES_TAG + ">\n");
+        for (i = getInstances(); i.hasNext();) {
+            sa = (String[]) i.next();
+            sb.append("\n");
+            for (int j = 0; j < sa.length; j++) {
+                sb.append(sa[j]).append(",");
+            }
+        }
+	sb.append("\n</" + ROLE_INSTANCES_TAG + ">\n");
+	**/
+	sb.append("<" + RELATIONSHIPS_TAG + ">");
+        for (i = getRelationships(); i.hasNext();) {
+            sa = (String[]) i.next();
+            sb.append("\n");
+	    sb.append(sa[0]);
+            for (int j = 1; j < sa.length; j++) {
+                sb.append(",").append(sa[j]);
+            }
+        }
+	sb.append("\n</" + RELATIONSHIPS_TAG + ">\n");
+	sb.append("</" + RELATIONSHIP_SCHEDULE_HEADER_TAG + ">\n");
+        sb.append("</" + RELATIONSHIP_SCHEDULE_TAG + ">" + "\n");
         return sb.toString();
     }
 

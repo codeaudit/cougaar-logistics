@@ -38,6 +38,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import java.io.*;
+import java.nio.charset.Charset;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -65,7 +66,8 @@ public class RelationshipUILauncherFrame extends JFrame
             Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
     protected static final String CONNECT_BUTTON_LABEL = "Connect";
-    protected static final String CONNECTION_BORDER_TITLE = "Connection";
+    protected static final String OPEN_FILE_BUTTON_LABEL = "Open File..";
+    protected static final String DATA_SOURCE_BORDER_TITLE = "Data Source";
     protected static final String LAUNCH_BUTTON_LABEL = "Launch";
     protected static final String LAUNCH_BORDER_TITLE = "Agent Selection";
     protected static final String AGENT_COMBO_LABEL = "Agent:";
@@ -79,6 +81,7 @@ public class RelationshipUILauncherFrame extends JFrame
     final protected static String RELATIONSHIP_W_OVERLAP_QUERY = "RELATIONSHIP_SCHEDULE_W_OVERLAP";
 
     JButton connectButton;
+    JButton openFileButton;
     JButton launchButton;
     JComboBox agentsBox;
 
@@ -91,8 +94,16 @@ public class RelationshipUILauncherFrame extends JFrame
     Hashtable agentURLs;
 
     protected Logger logger;
+    
+    protected RelationshipXMLParser parser=null;
+    protected String xmlString;
 
     protected String currAgent;
+
+    public static String defaultSaveCSVPath=null;
+    public static String defaultOpenCSVPath=null;
+
+    private JFileChooser fileChooser;
 
 
     public RelationshipUILauncherFrame() {
@@ -110,10 +121,14 @@ public class RelationshipUILauncherFrame extends JFrame
         servProt = "http";
         servPort = "8800";
 
+	parser = new RelationshipXMLParser();
+
+	initializeChooser();
+
         // fills frame
         doMyLayout();
         pack();
-        setSize(300, 220);
+        setSize(300, 250);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         // set location to middle of the screen
         setLocation(screenSize.width / 2 - (int) this.getSize().getWidth() / 2,
@@ -122,19 +137,35 @@ public class RelationshipUILauncherFrame extends JFrame
     }
 
     protected JPanel createConnectPanel() {
-        JPanel connectPanel = new JPanel();
+        JPanel wholePanel = new JPanel();
+        JPanel dataSourcePanel = new JPanel();
         connectButton = new JButton(CONNECT_BUTTON_LABEL);
         connectButton.addActionListener(this);
         connectButton.setFocusPainted(true);
-        connectPanel.setLayout(new GridBagLayout());
-        connectPanel.add(connectButton,
-                         new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+        openFileButton = new JButton(OPEN_FILE_BUTTON_LABEL);
+        openFileButton.addActionListener(this);
+        openFileButton.setFocusPainted(true);
+        dataSourcePanel.setLayout(new GridBagLayout());
+        dataSourcePanel.add(connectButton,
+			    new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(1, 1, 1, 1),
+                                                0, 0));
+        dataSourcePanel.add(openFileButton,
+			    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.EAST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(1, 1, 1, 1),
+                                                0, 0));
+        wholePanel.add(dataSourcePanel,
+		       new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                                                 GridBagConstraints.CENTER,
-                                                GridBagConstraints.NONE,
+                                                GridBagConstraints.BOTH,
                                                 new Insets(5, 5, 5, 5),
                                                 0, 0));
-        connectPanel.setBorder(BorderFactory.createTitledBorder(CONNECTION_BORDER_TITLE));
-        return connectPanel;
+        wholePanel.setBorder(BorderFactory.createTitledBorder(DATA_SOURCE_BORDER_TITLE));
+        return wholePanel;
     }
 
 
@@ -189,6 +220,7 @@ public class RelationshipUILauncherFrame extends JFrame
         JPanel launchPanel = createAgentLaunchPanel();
 
 
+
         mainPanel.setLayout(new GridBagLayout());
         mainPanel.add(connectPanel,
                       new GridBagConstraints(x, y++, 1, 1, 0.0, 0.0,
@@ -211,9 +243,17 @@ public class RelationshipUILauncherFrame extends JFrame
          BorderFactory.createTitledBorder(MAIN_BORDER_TITLE),
          BorderFactory.createEmptyBorder(5, 5, 5, 5)),
          mainPanel.getBorder()));
-         ***/
+	**/
 
-        contentPane.add(mainPanel);
+	contentPane.setLayout(new GridBagLayout());
+        contentPane.add(mainPanel,new GridBagConstraints(0,0,1,1, 0.0, 0.0,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.BOTH,
+                                             new Insets(5, 5, 5, 5),
+                                             0, 0));
+         
+
+	//contentPane.add(mainPanel);
     }
 
     protected JMenuBar makeMenus() {
@@ -251,6 +291,8 @@ public class RelationshipUILauncherFrame extends JFrame
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals(CONNECT_BUTTON_LABEL)) {
             connectToServlet();
+        } else if (e.getActionCommand().equals(OPEN_FILE_BUTTON_LABEL)) {
+	    openXML();
         } else if (e.getActionCommand().equals(LAUNCH_BUTTON_LABEL)) {
             launchRelationshipViewer();
         } else {
@@ -379,7 +421,7 @@ public class RelationshipUILauncherFrame extends JFrame
         return servProt + "://" + servHost + ":" + servPort + "/";
     }
 
-    public RelationshipScheduleData getRelationshipData(String myAgentName) {
+    public String getXMLString(String myAgentName) {
         String agentURL = (String) agentURLs.get(myAgentName);
         //When querying for all just ASSET
         String queryStr = RELATIONSHIP_W_OVERLAP_QUERY;
@@ -401,6 +443,26 @@ public class RelationshipUILauncherFrame extends JFrame
             return null;
         }
         RelationshipScheduleData rsData = null;
+
+	String xmlStr = null;
+	try {
+	    BufferedReader p = new BufferedReader(new InputStreamReader(is, Charset.forName("ASCII")));
+	    xmlStr = p.readLine() + "\n";
+	    String currLine = p.readLine();
+	    while (currLine != null) {
+		xmlStr = xmlStr + currLine + "\n";
+		currLine = p.readLine();
+	    }
+	    p.close();
+	    connection.closeConnection();
+	} catch (Exception e) {
+	    displayErrorString("getInventoryData:Object read exception: " + "_2_" + e);
+	}
+
+	//System.out.println("Got XMLString: \n" + xmlStr);
+
+
+    /***
         try {
             ObjectInputStream p = new ObjectInputStream(is);
             rsData = (RelationshipScheduleData) p.readObject();
@@ -411,16 +473,53 @@ public class RelationshipUILauncherFrame extends JFrame
             return null;
         }
 
-        return rsData;
+    ***/
+
+        return xmlStr;
+    }
+
+
+    protected RelationshipScheduleData parseXMLString(String xmlStr){
+    
+	System.out.println("Now parsing");
+	RelationshipScheduleData rsData = parser.parseString(xmlStr);
+
+	return rsData;
     }
 
     protected void launchRelationshipViewer() {
         currAgent = (String) agentsBox.getSelectedItem();
-        RelationshipScheduleData rsData = getRelationshipData(currAgent);
+	xmlString = null;
+	xmlString = getXMLString(currAgent);
+	RelationshipScheduleData rsData = parseXMLString(xmlString);
         if (rsData != null) {
-            printRelationshipData(rsData);
-            new RelationshipDataGanttChartView(rsData).launch();
+            //printRelationshipData(rsData);
+            new RelationshipDataGanttChartView(rsData,xmlString,logger).launch();
         }
+    }
+
+    protected void openXML() {
+      
+	fileChooser.setMultiSelectionEnabled(false);
+	int retval = fileChooser.showOpenDialog(this);
+	if (retval == fileChooser.APPROVE_OPTION) {
+	    File openFile = fileChooser.getSelectedFile();
+	    xmlString = "";
+	    try {
+		BufferedReader br = new BufferedReader(new FileReader(openFile));
+	      
+		String nextLine = br.readLine();
+		while (nextLine != null) {
+		    xmlString = xmlString + nextLine + "\n";
+		    nextLine = br.readLine();
+	    }
+	    br.close();
+	    } catch (IOException ioe) {
+		throw new RuntimeException(ioe);
+	    }
+	    RelationshipScheduleData rsData = parseXMLString(xmlString);
+            new RelationshipDataGanttChartView(rsData,xmlString,logger).launch();
+	}
     }
 
     protected void printRelationshipData(RelationshipScheduleData data) {
@@ -469,6 +568,36 @@ public class RelationshipUILauncherFrame extends JFrame
         } else {
             return "" + digit;
         }
+    }
+
+    protected void initializeChooser() {
+
+	String cip = System.getProperty("org.cougaar.install.path");
+	
+	if ((cip == null) ||
+	    (cip.trim().equals(""))) {
+	    logger.error("org.cougaar.install.path is not defined in Command line");
+	}
+	
+	String baseDir = System.getProperty("org.cougaar.workspace");
+	if ((baseDir == null) ||
+	    (baseDir.trim().equals(""))) {
+	    baseDir = cip + File.separator + "workspace";
+	}
+	defaultOpenCSVPath = baseDir + File.separator + "RELGUICSV";
+	defaultSaveCSVPath = defaultOpenCSVPath + File.separator + RelationshipUILauncherFrame.formatTimeStamp(new Date(), false) + File.separator;
+
+	File pathDirs = new File(defaultOpenCSVPath);
+	fileChooser = new JFileChooser(pathDirs);
+
+    }
+
+    public static String getDefaultSavePath() {
+	return defaultSaveCSVPath;
+    }
+
+    public static String getDefaultOpenPath() {
+	return defaultOpenCSVPath;
     }
 
     protected class HelpDialog extends JDialog {
@@ -536,6 +665,9 @@ public class RelationshipUILauncherFrame extends JFrame
     public static void main(String[] args) {
         new RelationshipUILauncherFrame();
     }
+
+
+
 }
 
 
