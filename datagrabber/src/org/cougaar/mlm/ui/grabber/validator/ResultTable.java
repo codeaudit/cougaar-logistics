@@ -258,7 +258,7 @@ public class ResultTable {
 	}
       } catch (SQLException e){
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			  "Problem alterring comparison state info  in status table",e);
+			  "Problem altering comparison state info in status table",e);
       }
     }
     
@@ -273,7 +273,7 @@ public class ResultTable {
       }
     } catch (SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			"Problem alterring test info in status table",e);
+			"Problem altering test info in status table",e);
     }
   }
   
