@@ -473,12 +473,24 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
   public void resetCapacities () {
     Collection carriers = myAssetCallback.getSubscription().getCollection();
     handleNewAssets(java.util.Collections.enumeration (carriers));
-    if (isWarnEnabled()) 
-      warn (getName() + ".getSubtasks - recalculated maxContainContrib after rehydration.");
+    if (isInfoEnabled()) {
+      info (getName() + ".resetCapacities - recalculated maxContainContrib after rehydration using " +
+	    carriers.size () + " ships.");
+    }
 
     if (maxAreaCapacity == Double.MAX_VALUE) {
-      error (getName() + ".getSubtasks - maxContainCapacity has not been set, it's " + 
-	     maxContainCapacity);
+      if (isWarnEnabled()) {
+	warn (getName() + ".resetCapacities - maxContainCapacity has not been set, it's " + 
+	      maxContainCapacity + " - checked - " + carriers.size() + " ships.");
+      }
+      if (!carriers.isEmpty ()) {
+	GLMAsset ship = (GLMAsset) carriers.iterator().next();
+	if (isWarnEnabled()) {
+	  warn (getName () + 
+		".resetCapacities - first carrier is " + ship + 
+		" with contain pg " + ship.getContainPG ());
+	}
+      }
     }
   }
 
