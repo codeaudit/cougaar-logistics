@@ -55,7 +55,7 @@
 	<property name="build.javadocs" value="./doc/javadoc" />
 
 	<!-- <property name="build.compiler" value="classic"/>  -->
-	<!--<property name="build.compiler" value="jikes"/>-->
+	<property name="build.compiler" value="jikes"/>
 	<property name="build.compiler.warnings" value="true"/>
 	<property name="build.compiler.emacs" value="true"/>
 	<property name="doDeprecation" value="no"/>
