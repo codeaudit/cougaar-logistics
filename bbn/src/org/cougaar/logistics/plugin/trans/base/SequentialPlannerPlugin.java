@@ -519,15 +519,15 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     if ((alloc.getReportedResult() != null && alloc.getReportedResult().getConfidenceRating() >= UTILAllocate.HIGHEST_CONFIDENCE) ||
 	alloc.getAsset() instanceof PhysicalAsset || alloc.getAsset() instanceof Deck) {
       // if (isDebugEnabled()) debug(getName () + "------non-null reported result with highest confidence");
-      Task t = alloc.getTask();
-      String uid = t.getUID().toString();
+      Task allocTask = alloc.getTask();
+      String uid = allocTask.getUID().toString();
 	    
       if (isDebugEnabled()) {
 	debug(getName () + ".handleSuccessfulAlloc - considering finishing planning for allocation's task "+uid);
       }
 
       SequentialScheduleElement sse = null;
-      Task parenttask = getParentTask(t, uid);
+      Task parenttask = getParentTask(allocTask, uid);
       if (parenttask == null) {
 	if (isInfoEnabled()) {
 	  info(getName () + ".handleSuccessfulAlloc - no parent of task " + uid + 
@@ -535,7 +535,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	}
       }
       else {
-	sse = getElement (t, parenttask, uid);
+	sse = getElement (allocTask, parenttask, uid);
       }
 
       if (sse == null) {
@@ -572,12 +572,18 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	long returnedStart = (long) AR.getValue(AspectType.START_TIME);
 
 	if (isInfoEnabled ()) {
-	  info ("planned alloc " + alloc.getUID() + " task " + alloc.getTask().getUID () + " compare sse start " +
+	  info ("planned alloc " + alloc.getUID() + " task " + uid + " compare sse start " +
 		sse.getStartDate() + " vs AR start " + new Date (returnedStart));
 	}
 
 	// did the reported time get earlier?
 	if (returnedStart < sse.getStartDate ().getTime ()) {
+	  if (isInfoEnabled()) {
+	    info(getName () + ".handleSuccessfulAlloc - resetting start and end times of the element " + sse + 
+		 " b/c alloc results changed for task " + uid);
+	  }
+	  sse.finishPlan(alloc, this);
+
 	  // find tasks that depended on this one and replan them
 	  replanDependingTasks (parenttask, returnedStart);
 	}
