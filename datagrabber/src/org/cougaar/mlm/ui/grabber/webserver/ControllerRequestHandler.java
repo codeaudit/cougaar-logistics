@@ -473,21 +473,27 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     h.tHead("Exception");
     h.eRow();
     
+    h.openBuffer();
     while(rs.next()){
       int severity=rs.getInt(2);
-      h.sRow();
-      h.tData(rs.getDate(1)+" "+rs.getTime(1));
-      h.tData(fontTagForSeverity(severity)+
-	      Logger.SEVERITIES[severity]+"</FONT>");
-      h.tData(Logger.TYPES[rs.getInt(3)]);
-      h.tData(rs.getInt(4)==0?"":Integer.toString(rs.getInt(4)));
-      h.tData(fontTagForSeverity(severity)+
-	      ((rs.getString(5)==null)?"":
-	       rs.getString(5))+"</FONT>");
-      h.tData((rs.getString(6)==null)?"":
-	       rs.getString(6));
-      h.eRow();
+      int run = rs.getInt(4);
+      String message = rs.getString(5);
+      String exception = rs.getString(6);
+
+      h.sRowBuffer();
+      h.tDataBuffer(rs.getDate(1)+" "+rs.getTime(1));
+      h.tDataBuffer(fontTagForSeverity(severity)+
+		    Logger.SEVERITIES[severity]+"</FONT>");
+      h.tDataBuffer(Logger.TYPES[rs.getInt(3)]);
+      h.tDataBuffer(run==0?"":Integer.toString(run));
+      h.tDataBuffer(fontTagForSeverity(severity)+
+		    ((message==null)?"":message)+
+		    "</FONT>");
+      h.tDataBuffer((exception==null)?"":exception);
+      h.eRowBuffer();
     }
+    h.closeBuffer();
+
     h.eTable();
   }
   
