@@ -451,13 +451,15 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     double alpha = .25;
     Vector points = new Vector();
 
-    AspectScorePoint earliest = new AspectScorePoint(start, alpha, aspectType);
-    AspectScorePoint best = new AspectScorePoint(bestDay, 0.0, aspectType);
+    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
+    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
 //     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
 //                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(bestDay + thePG.getBucketMillis(),
-						       alpha, aspectType);
-    AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score), aspectType);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, 
+                                                                                  bestDay + thePG.getBucketMillis()), 
+                                                       alpha);
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
+                                                   (alpha + late_score));
 
     points.addElement(earliest);
     points.addElement(best);
