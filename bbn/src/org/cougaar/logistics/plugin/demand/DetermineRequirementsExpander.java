@@ -31,6 +31,7 @@ import java.util.HashSet;
 
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.logistics.ldm.Constants;
@@ -66,8 +67,22 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     Iterator assetIT = assets.iterator();
     while (assetIT.hasNext()) {
       Asset consumer = (Asset) assetIT.next();
-      NewTask gpTask = createGPTask(detReqTask, consumer);
-      gpTasks.add(gpTask);
+      if (getAssetUtils().getQuantity(consumer) > 0) {
+        NewTask gpTask = createGPTask(detReqTask, consumer);
+        gpTasks.add(gpTask);
+      } else {
+        if (logger.isWarnEnabled()) {
+          Asset asset;
+          if (consumer instanceof AggregateAsset) {
+            asset = ((AggregateAsset)consumer).getAsset();
+          } else {
+            // Not expecting this case, only AggregateAssets can have a zero quantity
+            asset = consumer.getPrototype();
+          }
+          logger.warn("Ignoring Asset: "+getAssetUtils().getAssetIdentifier(asset)+
+                      " at "+dfPlugin.getMyOrganization()+" - Asset has a quantity of zero");
+        }
+      }
     }
     if (gpTasks.isEmpty()) {
       logger.warn("Cannot expand - no subtasks for determine requirements task "
