@@ -643,15 +643,47 @@ public class InventoryWrapper {
       if (pe == null)
         continue;
       AllocationResult ar = pe.getReportedResult();
+      if (ar == null) {
+        ar = pe.getEstimatedResult();
+      }
       if (ar != null && ar.isSuccess()) {
-        long endTime = TaskUtils.getEndTime(task); 
-        long startTime = getStartTime(task, endTime, false);
-        double quantity = TaskUtils.getDailyQuantity(task);
+        //Huh?? Use the AR results not the preferences!
+        //long endTime = TaskUtils.getEndTime(task); 
+        //long startTime = getStartTime(task, endTime, false);
+        //double quantity = TaskUtils.getDailyQuantity(task);
+        if (!ar.isPhased()) {
+          long endTime = (long) TaskUtils.getEndTime(ar); 
+          //since this is a supply task set the start time won't be set so just make
+          //it right before the endtime so the schedule element spans some time.
+          long startTime = endTime -1;
+          double quantity = TaskUtils.getQuantity(ar);
         
-        NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
-                                                                         endTime,
-                                                                         quantity);
-        schedule.addScheduleElement(qse);
+          NewQuantityScheduleElement qse = new QuantityScheduleElementImpl(startTime,
+                                                                           endTime,
+                                                                           quantity);
+          schedule.addScheduleElement(qse);
+        } else {
+          int[] ats = ar.getAspectTypes();
+          int qtyInd = getIndexForType(ats, AspectType.QUANTITY);
+          int startInd = getIndexForType(ats, AspectType.START_TIME);
+          int endInd = getIndexForType(ats, AspectType.END_TIME);
+          Enumeration phasedResults = ar.getPhasedResults();
+          while (phasedResults.hasMoreElements()) {
+            double[] results = (double[]) phasedResults.nextElement();
+            double phasedQuantity = (double) results[qtyInd];
+            long phasedEndTime = (long) results[endInd];
+            long phasedStartTime;
+            if (startInd == -1) {
+              phasedStartTime = phasedEndTime -1;
+            } else {
+              phasedStartTime = (long) results[startInd];
+            }
+            NewQuantityScheduleElement pqse = new QuantityScheduleElementImpl(phasedStartTime,
+                                                                              phasedEndTime,
+                                                                              phasedQuantity);
+            schedule.addScheduleElement(pqse);
+          }
+        }
       }
     }
     return schedule;
@@ -812,6 +844,15 @@ public class InventoryWrapper {
       sdate = " "+sdate;
     }
     return sdate;
+  }
+
+ private int getIndexForType(int[] types, int type) {
+    for (int ii = 0; ii < types.length; ii++) {
+      if (types[ii] == type) {
+        return ii;
+      }
+    }
+    return -1;
   }
   
 }
