@@ -73,19 +73,23 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    * tasks - one for each resource need of this MEI/Asset determined by the
    * BG associated with the passed in supplyPGClass.
    **/
-  public void expandGenerateProjections(Task gpTask, Schedule schedule, Asset consumer) {
+  public void expandGenerateProjections(Task gpTask, Schedule schedule, Asset consumer, TimeSpan timespan) {
 
     // TODO: document, add logger, handle null checks
 
     consumer = convertAggregateToAsset(consumer);
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
 
-    if (gpTask.getPlanElement() != null) {
-      if (gpTask.getPlanElement() instanceof Expansion) {
-        handleExpandedGpTask(gpTask, schedule, consumer, pg);
+    PlanElement pe = gpTask.getPlanElement();
+    if ((pe != null) && !(pe instanceof Disposition)) {
+      if (pe instanceof Expansion) {
+        handleExpandedGpTask(gpTask, schedule, consumer, pg, timespan);
       }
     }
     else {
+      if (pe != null) {
+        dfPlugin.publishRemove(pe);
+      } 
       Collection subTasks = buildTaskList(pg, getConsumed(pg), schedule, gpTask, consumer);
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
@@ -96,7 +100,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
-  private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg) {
+  private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg, TimeSpan timespan) {
     Collection consumedItems = getConsumed(pg);
 
     ArrayList assetList = new ArrayList(1);
@@ -112,7 +116,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
       Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
       Schedule newTasksSched = newObjectSchedule(newTasks);
-      Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
+      Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched, timespan);
       addToAndPublishExpansion(gpTask, diffedTasks);
     }
   }
@@ -464,7 +468,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    * (and republished) otherwise it is rescinded and the new task
    * added.
    **/
-  protected Collection diffProjections(Schedule published_schedule, Schedule newtask_schedule) {
+  protected Collection diffProjections(Schedule published_schedule, Schedule newtask_schedule, TimeSpan timespan) {
+    // Only diff new projections against published tasks during this TimeSpan
+    published_schedule = ScheduleUtils.trimObjectSchedule(published_schedule, timespan);
     // Check for an empty schedule
     if (newtask_schedule.isEmpty()) {
       // Rescind any tasks that were not accounted for
