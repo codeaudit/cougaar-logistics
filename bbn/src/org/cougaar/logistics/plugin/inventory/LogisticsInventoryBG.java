@@ -409,9 +409,16 @@ public class LogisticsInventoryBG implements PGDelegate {
     // clear the projections (all of them)
     // and return the removed tasks for comparison
     public List clearRefillProjectionTasks() {
-        ArrayList removedTaskList = new ArrayList(refillProjections);
-        refillProjections.clear();
-        return removedTaskList;
+      Iterator tasks = refillProjections.iterator();
+      ArrayList removedTaskList = new ArrayList();
+      while (tasks.hasNext()) {
+	Task t = (Task)tasks.next();
+	if (!removedTaskList.contains(t)) {
+	  removedTaskList.add(t);
+	}
+      }
+      refillProjections.clear();
+      return removedTaskList;
     }
 
 
