@@ -21,6 +21,11 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
+import org.cougaar.glm.ldm.asset.Inventory;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 /** The Refill Generator Module is responsible for generating new
  *  refill tasks as needed when new demand is received.  This Refill 
  *  Generator uses a total replan algorithm which ignores all previously
@@ -45,14 +50,33 @@ public class RefillGenerator extends InventoryModule {
     super(imPlugin);
   }
 
-  //need our suppliers OST from somewhere
-  //need the reorder period policy
-  //tell the inventorybg to clear the refills
-  //ask the bg (or another module) what the reorder level is
-  //pick a starting day
-  //ask the bg for the inventory level for that day.
-  //if the inv level is below the reorder level create a refill.
+  public ArrayList calculateRefills(ArrayList touchedInventories, int advanceOrderTime,
+                                    int orderFrequency) {
+    ArrayList newRefills = new ArrayList();
+    Iterator tiIter = touchedInventories.iterator();
+    while (tiIter.hasNext()) {
+      Inventory anInventory = (Inventory) tiIter.next();
+      //LogisticsInventoryBG theBG = (LogisticsInventoryBG) anInventory.getLogisticsInventoryPG().
+      //  getLogisticsInventoryBG();
+      //clear the refills
+      //theBG.clearRefills();
 
+      //ask the bg (or another module) what the reorder level is
+      //int reorderLevel = theBG.getReorderLevel();
+
+      //pick a starting day - probably today
+      //ask the bg for the inventory level for that day.
+      //int invLevel = theBG.getInventoryLevel(today);
+
+      //if the inv level is below the reorder level create a refill.
+      //if (invLevel < reorderLevel) {
+      //  create the refills
+      //  add refills to newRefills
+      //}
+    
+    } // done going through inventories
+    return newRefills;
+  }
 
 }
     
