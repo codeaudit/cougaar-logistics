@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2003 BBNT Solutions, LLC
+ *  Copyright 2004 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -18,11 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-/*
- * User: tom
- * Date: Aug 22, 2002
- * Time: 2:41:10 PM
- */
+
 package org.cougaar.mlm.ui.grabber.validator;
 
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
@@ -36,9 +32,13 @@ import java.sql.ResultSet;
 
 /**
  * Dump the contents of the manifest table.
- */
+ *
+ * @author Gordon Vidaver; last modified by: $Author: gvidaver $
+ *
+ * @since 02/24/04
+ **/
 public class ManifestInfo extends Test {
-  public final String COL_TOTALWEIGHT = "Weight";
+  public final String COL_RESERVED = "Reserved";
 
   //Variables:
   ////////////
@@ -72,7 +72,8 @@ public class ManifestInfo extends Test {
     s.executeUpdate("CREATE TABLE "+getTableName(run)+" ( "+
 		    DGPSPConstants.COL_ALP_TYPEID+" VARCHAR(255) NOT NULL,"+
 		    DGPSPConstants.COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
-		    COL_TOTALWEIGHT+" DOUBLE NOT NULL" + 
+		    COL_RESERVED+" VARCHAR(255) NOT NULL,"+
+		    DGPSPConstants.COL_WEIGHT+" DOUBLE NOT NULL" + 
 		    ")");
   }
 
@@ -91,13 +92,24 @@ public class ManifestInfo extends Test {
 
     try {
       if (rs != null) {
-	double total = 0;
+	double actual = 0;
+	double reserved = 0;
 	while(rs.next()){
-	  double tons = rs.getDouble (3);
-	  insertRow (l, s, run, rs.getString (1), rs.getString (2), tons);
-	  total += tons;
+	  int wasReserved = rs.getInt (3);
+	  double tons = rs.getDouble (4);
+	  boolean isReserved = (wasReserved==1);
+	  insertRow (l, s, run, rs.getString (1), rs.getString (2), 
+		     isReserved ? "reserved" : "actual", 
+		     tons);
+
+	  if (isReserved)
+	    reserved += tons;
+	  else
+	    actual += tons;
 	}
-	insertRow (l, s, run, "All Dodics", "All Kinds - total tons", total);
+	insertRow (l, s, run, "All Dodics", "All Kinds - total tons", "reserved", reserved);
+	insertRow (l, s, run, "All Dodics", "All Kinds - total tons", "actual", actual);
+	insertRow (l, s, run, "All Dodics", "All Kinds - total tons", "both", reserved+actual);
       }
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
@@ -105,7 +117,9 @@ public class ManifestInfo extends Test {
     }
   }
 
-  private void insertRow(Logger l, Statement s, int run, String type, String nomen, double weight) throws SQLException {
+  private void insertRow(Logger l, Statement s, int run, 
+			 String type, String nomen, 
+			 String reservedLabel, double weight) throws SQLException {
     String sql = null;
     try {
       StringBuffer sb=new StringBuffer();
@@ -116,15 +130,27 @@ public class ManifestInfo extends Test {
       sb.append(",");
       sb.append(DGPSPConstants.COL_ALP_NOMENCLATURE);
       sb.append(",");
+      sb.append(COL_RESERVED);
+      sb.append(",");
       sb.append(DGPSPConstants.COL_WEIGHT);
       sb.append(")\nVALUES(");
+
       sb.append("'");
       sb.append(type);
       sb.append("'");
+
       sb.append(",");
+
       sb.append("'");
       sb.append(nomen);
       sb.append("'");
+
+      sb.append(",");
+
+      sb.append("'");
+      sb.append(reservedLabel);
+      sb.append("'");
+
       sb.append(",");
 
       // weight is in grams, we want short tons = 2000 pounds
@@ -143,16 +169,21 @@ public class ManifestInfo extends Test {
 
   /** Get header strings for the table **/
   public String[] getHeaders(){
-    String[] headers={"Ammo type", "nomenclature", "weight (short tons)"};
+    String[] headers={"Ammo type", "nomenclature", "Reserved(Projection)", "weight (short tons)"};
     return headers;
   }
 
   /** Get the types of the columns of the table **/
   public int[] getTypes(){
-    int[] types={TYPE_STRING, TYPE_STRING, TYPE_TONNAGE};
+    int[] types={TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_TONNAGE_THREE_DIGITS};
     return types;
   }
-  
+
+  /**
+   * Returns four columns : type, nomen, 1 if "Reserved", and sum of weight
+   * grouped by type and reserved or not.
+   * @return sql query
+   */
   protected String getQuery (int run) {
     String manifestTable = Controller.getTableName(DGPSPConstants.MANIFEST_TABLE,run);
 
@@ -160,9 +191,11 @@ public class ManifestInfo extends Test {
       "select "+
       DGPSPConstants.COL_ALP_TYPEID + ", " + 
       DGPSPConstants.COL_ALP_NOMENCLATURE + ", " + 
+      "instr(name, 'Reserved')<>0 as reserved, \n"+ 
       "sum("+DGPSPConstants.COL_WEIGHT+")\n"+
       "from "+manifestTable + "\n" +
-      "group by " + DGPSPConstants.COL_ALP_TYPEID;
+      "group by " + DGPSPConstants.COL_ALP_TYPEID + "," +
+      "reserved";
 	
     if (debug)
       System.out.println ("ManifestInfo.getQuery - sql was:\n" + sqlQuery);
