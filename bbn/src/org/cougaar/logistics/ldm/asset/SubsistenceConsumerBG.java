@@ -88,7 +88,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     Iterator predList = col.iterator();
     UnaryPredicate predicate;
     // DEBUG
-     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+//      String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
 //     if (myOrgName.indexOf("35-ARBN") >= 0) {
 //       System.out.println("getParamSched() Asset is "+
 // 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
@@ -130,9 +130,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getParamSched() MERGED "+paramSchedule);
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getParamSched() MERGED "+paramSchedule);
+//     }
     return paramSchedule;
   }
 
@@ -250,9 +250,12 @@ public class SubsistenceConsumerBG extends ConsumerBG {
     } // if
 
     Rate result = null;
-    String identifier = parentPlugin.getAssetUtils().getAssetIdentifier (myPG.getMei());
+    String identifier = parentPlugin.getAssetUtils().getAssetIdentifier (asset);
 
-    PackagePG ppg = (PackagePG) myPG.getMei().searchForPropertyGroup(PackagePG.class);
+    PackagePG ppg = (PackagePG) asset.searchForPropertyGroup(PackagePG.class);
+    if (ppg == null) {
+      logger.error("No PackagePG on "+identifier);
+    }
     //String type = null;
     double resource_count = 0;
 
@@ -269,28 +272,31 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       }
     } else {
       // Optempo does not over rule
-      logger.debug ( " meal params is " +
-		    params.get(1) + " resource is " + identifier);
+      logger.debug( " meal params is " +
+		    params.get(2) + " resource is " + identifier);
       if (params.size() < 3) {
-	logger.error("Class I ose array in getRate() is missing element "+3+" (meal)");
-      } else {
-	if (params.get(2) != null) {
+	logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
+      } else if (params.get(2) != null) {
 	  if (((HashMap) params.get(2)).containsKey(identifier)) {
 	    // Meals
 	    resource_count += ((Double) ((HashMap)
 					 params.get(2)).get(identifier)).doubleValue(); 
+	    logger.debug(identifier+" rate is "+resource_count);
 	  } // if
-	} // if
-
-	// Enhancements policy
-	if (params.get(3) != null) {
-	  if (((HashMap) params.get(3)).containsKey(identifier)) {
-	    // Meals
-	    resource_count += ((Double) ((HashMap)
-					 params.get(3)).get(identifier)).doubleValue(); 
-	    logger.debug ( " enhance params is " + ((Double)
-						   ((HashMap) params.get(3)).get (identifier)).doubleValue());
+	  // DEBUG
+	  else {
+	    logger.debug("No meal rates for "+identifier);
 	  }
+      } // if
+
+      // Enhancements policy
+      if (params.get(3) != null) {
+	if (((HashMap) params.get(3)).containsKey(identifier)) {
+	  // Meals
+	  resource_count += ((Double) ((HashMap)
+				       params.get(3)).get(identifier)).doubleValue(); 
+	  logger.debug ( " enhance params is " + ((Double)
+						  ((HashMap) params.get(3)).get (identifier)).doubleValue());
 	}
       }
     }
@@ -315,7 +321,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 	Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity); 
       result = CountRate.newEachesPerDay (total);
       RationPG rpg = (RationPG)
-	myPG.getMei().searchForPropertyGroup(RationPG.class);
+	asset.searchForPropertyGroup(RationPG.class);
       logger.debug ("\n THE rate is " +
 		   CountRate.newEachesPerDay (total) + " for asset " +
 		   identifier + " the ration type is " + rpg.getRationType());
