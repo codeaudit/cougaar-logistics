@@ -105,11 +105,12 @@ public class LogisticsInventoryBG implements PGDelegate {
     supplyList = new ArrayList();
   }
 
-  public void initialize(long today, int criticalLevel, int reorderPeriod, int bucketSize, InventoryPlugin parentPlugin) {
+
+  public void initialize(long today, int criticalLevel, int reorderPeriod, int bucketSize, boolean logToCSV, InventoryPlugin parentPlugin) {
     startTime = today;
     timeZero = (int)(startTime/MSEC_PER_BUCKET);
     logger = parentPlugin.getLoggingService(this);
-    if(false) {
+    if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),parentPlugin.getMyOrganization(),parentPlugin);
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
@@ -384,16 +385,28 @@ public class LogisticsInventoryBG implements PGDelegate {
     return start;
   }
 
-  private void logAllToCSVFile(long aCycleStamp) {
+  public void logAllToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
-	  csvWriter.logDemandToExcelOutput(withdrawList,projWithdrawList,aCycleStamp);
-	  csvWriter.logResupplyToExcelOutput(supplyList,projSupplyList,aCycleStamp);
+	  csvWriter.logToExcelOutput(withdrawList,
+				     projWithdrawList,
+				     supplyList,
+				     projSupplyList,
+				     bufferedCritLevels,
+				     bufferedInvLevels,
+				     aCycleStamp);
       }
   }
 
   public long getStartTime() {
     return startTime;
   }
+
+    public ArrayList getProjWithdrawList() {return projWithdrawList;}
+    public ArrayList getWithdrawList() {return withdrawList;}
+    public ArrayList getProjSupplyList() {return projSupplyList;}
+    public ArrayList getSupplyList() { return supplyList;}
+    public Schedule  getBufferedCritLevels() { return bufferedCritLevels;}
+    public Schedule  getBufferedInvLevels() { return bufferedInvLevels;}
 
   /**
    * Convert a time (long) into a bucket of this inventory that can be

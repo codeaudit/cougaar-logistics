@@ -30,7 +30,8 @@ slots=Asset resource, \
       double capacity, \
       double initialLevel
 delegates=LogisticsInventoryBG logInvBG
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, InventoryPlugin parentPlugin); \
+
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, boolean logToCSV, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	void addWithdrawRequisition(Task task); \
 	void removeWithdrawTask(Task task); \
@@ -49,6 +50,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	long convertBucketToTime(int bucket); \
 	int  convertTimeToBucket(long time); \
 	long getStartTime(); \
+  	void logAllToCSVFile(long aCycleStamp);\
 	int getCriticalLevel(); \
 	void Test(); \
 	void takeSnapshot();

@@ -81,8 +81,12 @@ public class InventoryPlugin extends ComponentPlugin {
   private SupplyExpander supplyExpander;
   private ExternalAllocator externalAllocator;
   private long startTime;
+  private long cycleStamp;
+  private boolean logToCSV=false;
+
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
+  public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
   // Policy variables
   private int criticalLevel = 3;
   private int reorderPeriod = 3;
@@ -516,7 +520,8 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, logToCSV, this);
+
       inventory=(Inventory)getRootFactory().createAsset("Inventory");
       inventory.addOtherPropertyGroup(logInvPG);
 
@@ -549,7 +554,7 @@ public class InventoryPlugin extends ComponentPlugin {
      Initializes supplyType and inventoryFile
   **/
   private HashMap readParameters() {
-    final String errorString = "InventoryPlugin requires 2 parameters, Supply Type and Inventory filename.  e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("+SUPPLY_TYPE+"=BulkPOL, "+INVENTORY_FILE+"=BulkPOLInvItems.inv);";
+    final String errorString = "InventoryPlugin requires 2 parameters, Supply Type and Inventory filename.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("+SUPPLY_TYPE+"=BulkPOL, "+INVENTORY_FILE+"=BulkPOLInvItems.inv, ENABLE_CSV_LOGGING=true);";
     Collection p = getParameters();
     
     if (p.isEmpty()) {
@@ -571,6 +576,11 @@ public class InventoryPlugin extends ComponentPlugin {
     inventoryFile = (String)map.get(INVENTORY_FILE);
     if ((supplyType == null) || (inventoryFile == null))
       logger.error(errorString);
+    String loggingEnabled = (String)map.get(ENABLE_CSV_LOGGING);
+    if((loggingEnabled != null) &&
+       (loggingEnabled.trim().equals("true"))) {
+	logToCSV = true;
+    }
     return map;
   }
 
