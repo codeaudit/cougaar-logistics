@@ -101,6 +101,9 @@ public class UnitMilvansTest extends UnitCargoAmountTest{
     
     try {
       sql = getQuery(run);
+      if (l.isMinorEnabled()) {
+	l.logMessage(Logger.MINOR,Logger.DB_WRITE,"doing query " + sql);
+      }
       rs=s.executeQuery(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
@@ -108,21 +111,35 @@ public class UnitMilvansTest extends UnitCargoAmountTest{
 		   sqle);
     }
     try {
-      while(rs.next()){
-		String owner;
-		int count;
+      if (!rs.next()) {
+	if (l.isMinorEnabled()) {
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"no rows returned from sql " + sql);
+	}
+	insertRow(l,s,run,"All Units",0);
+      }
+      else {
+	if (l.isMinorEnabled()) {
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"some rows returned from sql " + sql);
+	}
+	do {
+	  String owner;
+	  int count;
 		  
-		if (groupByUnit) {
-		  owner = rs.getString(1);
-		  count = rs.getInt(2);
-		}
-		else {
-		  owner = "All Units";
-		  count = rs.getInt(1);
-		}
+	  if (groupByUnit) {
+	    owner = rs.getString(1);
+	    count = rs.getInt(2);
+	  }
+	  else {
+	    owner = "All Units";
+	    count = rs.getInt(1);
+	  }
 		
-	insertRow(l,s,run,owner,count);
-      }    
+	  if (l.isTrivialEnabled()) {
+	    l.logMessage(Logger.TRIVIAL,Logger.DB_WRITE,"inserting row, owner " + owner + " count " + count);
+	  }
+	  insertRow(l,s,run,owner,count);
+	} while(rs.next());
+      }
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "UnitMilvansTest.insertResults - Problem walking results.",sqle);
