@@ -208,6 +208,7 @@ public class InventoryPlugin extends ComponentPlugin {
       } else { // Backwards Flow
 	externalAllocator.updateAllocationResult(refillAllocationSubscription);
      // AllocationAssessor.reconcileInventoryLevels(refillAllocationSubscription.getAddedCollection());
+     // supplyExpander.updateAllocationResult(withdrawAllocationSubscription);
       }
 						       
       takeInventorySnapshot(getTouchedInventories());
@@ -598,6 +599,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       inventory.addOtherPropertyGroup(logInvPG);
 
+      logInvPG.setIsLevel2(false); // will need to key off asset to identify level2 item
       logInvPG.setCapacity(levels[0]);
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);

@@ -30,6 +30,7 @@ import=org.cougaar.logistics.plugin.inventory.InventoryPlugin,\
 slots=Asset resource, \
       double capacity, \
       double initialLevel, \
+      boolean isLevel2, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
