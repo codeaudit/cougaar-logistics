@@ -22,6 +22,7 @@
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import com.klg.jclass.chart.ChartDataModel;
 import com.klg.jclass.chart.LabelledChartDataModel;
@@ -196,7 +197,7 @@ public class ProjectionsChartDataModel
 	    long endTime = task.getEndTime();
 	    long startTime = task.getStartTime();
 	    if(!resupply ||
-	       (startTime > (maxReqEndTime + MILLIS_IN_DAY))) {
+	       (startTime >= (maxReqEndTime + MILLIS_IN_DAY))) {
 		int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
 		int graphDay = (endDay - minDay)/bucketDays;
 		if(graphDay < 0) 
@@ -217,7 +218,7 @@ public class ProjectionsChartDataModel
 		long endTime = ar.getEndTime();
 		long startTime = ar.getStartTime();
 		if(!resupply ||
-		   (startTime > (maxReqEndTime + MILLIS_IN_DAY))) {
+		   (startTime >= (maxReqEndTime + MILLIS_IN_DAY))) {
 		    int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
 		    int graphDay = (endDay - minDay)/bucketDays;
 		    if(graphDay < 0) 
