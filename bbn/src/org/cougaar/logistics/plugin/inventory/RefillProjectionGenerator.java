@@ -72,7 +72,7 @@ import java.util.Vector;
  *  inventories.
  **/
 
-public class RefillProjectionGenerator extends InventoryLevelGenerator {
+public class RefillProjectionGenerator extends InventoryLevelGenerator implements RefillProjectionGeneratorModule {
 
   private transient Organization myOrg = null;
   private transient String myOrgName = null;
@@ -97,7 +97,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    **/
   public void calculateRefillProjections(Collection touchedInventories, int daysOnHand,
                                          long endOfLevelSix, long endOfLevelTwo, 
-					 RefillComparator theComparator) {
+					 ComparatorModule theComparator) {
 
     // NOTE!!!!
     // For now since we aren't doing anything special for the level 2 time window like
@@ -156,9 +156,9 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param daysOnHand DaysOnHand policy.
    *  @param endOfLevelSix The date representing the end of the Level 6 VTH window.
    **/
-  private void calculateLevelSixProjections(Collection touchedInventories, 
+  protected void calculateLevelSixProjections(Collection touchedInventories, 
                                             int daysOnHand, long endOfLevelSix, 
-					    RefillComparator myComparator) {
+					    ComparatorModule myComparator) {
 
     ArrayList refillProjections = new ArrayList();
     ArrayList oldProjections = new ArrayList();
@@ -348,7 +348,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param thePG  The Property Group of the Inventory Asset
    *  @return Task The new Projection Refill
    **/
-  private Task createProjectionRefill(long start, long end,
+  protected Task createProjectionRefill(long start, long end,
                                       double demand,
                                       LogisticsInventoryPG thePG) {
     //create a projection refill task
@@ -369,7 +369,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param level2Inv  The Level 2 Inventory
    *  @return Task The new Level 2 Projection Task
    **/
-  private Task createAggregateProjectionRefill(long start, long end, 
+  protected Task createAggregateProjectionRefill(long start, long end, 
                                                long earliest, double demand, 
                                                LogisticsInventoryPG level2PG,
                                                Inventory level2Inv) {
@@ -392,7 +392,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param thePG The property group attached to the Inventory 
    *  @param NewTask Return the filled in Task
    **/
-  private NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
+  protected NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
                              double qty, LogisticsInventoryPG thePG) {
     // create preferences
     Vector prefs = new Vector();
@@ -440,7 +440,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @return Preference The new Time Preference
    **/
-  private Preference createRefillTimePreference(long bestDay, long start, 
+  protected Preference createRefillTimePreference(long bestDay, long start, 
                                                 int aspectType, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
@@ -476,7 +476,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param refill_qty  The quantity we want for this Refill Task
    *  @return Preference  The new demand rate preference for the Refill Task
    **/
-  private Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
+  protected Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
     AspectValue bestAV;
     Duration dur = new Duration(bucketMillis, Duration.MILLISECONDS);
     //highAV could be bumped to more than refill_qty + 1 if needed
@@ -500,7 +500,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param io  The indirect object
    *  @return PrepositionalPhrase  A new prep phrase for the task
    **/
-  private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
+  protected PrepositionalPhrase createPrepPhrase(String prep, Object io) {
     NewPrepositionalPhrase newpp = inventoryPlugin.getPlanningFactory().
 	newPrepositionalPhrase();
     newpp.setPreposition(prep);
@@ -509,7 +509,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to get and keep organization info from the InventoryPlugin. **/
-  private Organization getMyOrganization() {
+  protected Organization getMyOrganization() {
     if (myOrg == null) {
        myOrg = inventoryPlugin.getMyOrganization();
        // if we still don't have it after we ask the inventory plugin, throw an error!
@@ -522,7 +522,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility accessor to get the Org Name from my organization and keep it around **/
-  private String getOrgName() {
+  protected String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
     } 
@@ -530,7 +530,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to get the default (home) location of the Org **/
-  private GeolocLocation getHomeLocation() {
+  protected GeolocLocation getHomeLocation() {
     if (homeGeoloc == null ) {
       Organization org = getMyOrganization();
       if (org.getMilitaryOrgPG() != null) {
