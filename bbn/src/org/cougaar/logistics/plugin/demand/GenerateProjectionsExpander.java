@@ -310,7 +310,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     newTask.setPlan(parentTask.getPlan());
     newTask.setDirectObject(consumedItem);
     newTask.setVerb(Verb.getVerb(Constants.Verb.PROJECTSUPPLY));
-    newTask.setCommitmentDate(new Date(start));
+    //newTask.setCommitmentDate(new Date(start));
     Vector prefs = new Vector();
     prefs.addElement(TaskUtils.createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
