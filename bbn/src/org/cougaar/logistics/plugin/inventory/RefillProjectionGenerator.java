@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- *
+ * 
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -57,17 +57,17 @@ import java.util.Iterator;
 import java.util.Vector;
 
 
-/** The Refill Projection Generator Module is responsible for generating
+/** The Refill Projection Generator Module is responsible for generating 
  *  projection refill tasks.  These projections will be calculated by
  *  time shifting the projections from each customer and summing the
  *  results.
  *  Called by the Inventory Plugin when there is new projection demand.
  *  Uses the InventoryBG module to gather projected demand.
- *  Generates Refill Projection tasks
- *  NOTE:  Right now this module assumes that all customers have the
+ *  Generates Refill Projection tasks 
+ *  NOTE:  Right now this module assumes that all customers have the 
  *  same VTH boundaries as we do.  This means that Level 2 demand is
  *  calculated soley from Level 2 incoming demand.  In the future we will
- *  need to account for differing level2 boundaries and calculate level 2
+ *  need to account for differing level2 boundaries and calculate level 2 
  *  projections by summing the tonnage across level 6 projections for all
  *  inventories.
  **/
@@ -96,7 +96,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *   from the VariableTimeHorizon OperatingMode (knob)
    **/
   public void calculateRefillProjections(Collection touchedInventories, int daysOnHand,
-                                         long endOfLevelSix, long endOfLevelTwo,
+                                         long endOfLevelSix, long endOfLevelTwo, 
 					 ComparatorModule theComparator) {
 
     // NOTE!!!!
@@ -141,14 +141,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //       if (inventoryPlugin.getClusterId().toString().equals("1-35-ARBN")) {
 //         System.out.println("RPG calling calculate level 2 projections");
 //       }
-//       calculateLevelTwoProjections(level2Inv, daysOnHand,
+//       calculateLevelTwoProjections(level2Inv, daysOnHand, 
 //                                    getTimeUtils().addNDays(endOfLevelSix, 1),
 //                                    endOfLevelTwo, theComparator);
 //     }
 //   }
   }
 
-
+   
   /** Calculate Projection Refills in level Six detail until the end of the
    *  Level 6 VTH window.
    *  @param touchedInventories  The Inventories that have changed wrt projections.
@@ -156,8 +156,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param daysOnHand DaysOnHand policy.
    *  @param endOfLevelSix The date representing the end of the Level 6 VTH window.
    **/
-  protected void calculateLevelSixProjections(Collection touchedInventories,
-                                            int daysOnHand, long endOfLevelSix,
+  protected void calculateLevelSixProjections(Collection touchedInventories, 
+                                            int daysOnHand, long endOfLevelSix, 
 					    ComparatorModule myComparator) {
 
     ArrayList refillProjections = new ArrayList();
@@ -170,44 +170,65 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-      // clear all of the projections
-      oldProjections.addAll(thePG.clearRefillProjectionTasks());
-
+            
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
       if(startDay < inventoryPlugin.getRefillStartTime()) {
         startDay = inventoryPlugin.getRefillStartTime();
       }
       int startBucket = thePG.convertTimeToBucket(startDay, true);
+      long now = inventoryPlugin.currentTimeMillis();
+      if (now > startDay) {
+	  startDay = now;
+	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
+      }
+      // clear all of the projections
+      //oldProjections.addAll(thePG.clearRefillProjectionTasks(startDay));
+      oldProjections.addAll(thePG.clearRefillProjectionTasks(now));
+      //grab the overlapping tasks and change their end time
+      ArrayList projectionsToCut = (ArrayList) thePG.getOverlappingRefillProjections();
+      Iterator toCut = projectionsToCut.iterator();
+      while(toCut.hasNext()) {
+	  Task taskToCut = (Task) toCut.next();
+	  if (taskToCut != null) {
+	      Preference new_end = createRefillTimePreference(now, 
+							      inventoryPlugin.getOPlanArrivalInTheaterTime(),
+							      AspectType.END_TIME, thePG);
+	      ((NewTask)taskToCut).setPreference(new_end);
+	      inventoryPlugin.publishChange(taskToCut);
+	      thePG.updateRefillProjection(taskToCut);
+	  }
+      }
+	      
       int currentBucket = startBucket;
 //       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
 //                                                            addNDays(startDay, daysOnHand), true);
       int customerDemandBucket = thePG.convertTimeToBucket(startDay, true) + daysOnHand;
-
+ 
       double projDemand = 0;
       double nextProjDemand = 0;
       int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix, true);
       thePG.setEndOfLevelSixBucket(endOfLevelSixBucket);
-
+      
       //get the initial demand for the customer for startBucket + daysOnHand
       //Is there a better way to do this to avoid the duplication?
       projDemand = thePG.getProjectedDemand(customerDemandBucket);
-
+      
       //move forward a bucket
       currentBucket = currentBucket + 1;
       customerDemandBucket = customerDemandBucket + 1;
-
+      
       //Begin looping through currentBucket forward until you hit the end of
       // the level six boundary
       //possible boundary issue... is it '<' or '<=' ??
       while (currentBucket < endOfLevelSixBucket) {
         nextProjDemand = thePG.getProjectedDemand(customerDemandBucket);
         if (projDemand != nextProjDemand) {
-          //if there's a change in the demand, create a refill projection
-	  //BUT only if demand is non-zero
+          //if there's a change in the demand, create a refill projection 
+	  //BUT only if demand is non-zero 
 	  if (projDemand > 0.0) {
 
-	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
+	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
 						 thePG.convertBucketToTime(currentBucket),
 						 projDemand, thePG);
             if (startBucket >= currentBucket) {
@@ -218,7 +239,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
               refillProjections.add(refill);
             }
 	  }
-          //then reset the start bucket and the new demand
+          //then reset the start bucket and the new demand 
           startBucket = currentBucket;
           projDemand = nextProjDemand;
         }
@@ -246,21 +267,21 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       }
       // send the new projections and the old projections to the Comparator
       // the comparator will rescind the old and publish the new projections
-      myComparator.compareRefillProjections(refillProjections, oldProjections,
+      myComparator.compareRefillProjections(refillProjections, oldProjections, 
                                             anInventory);
-
+     
       if (thePG.getIsLevel2()) {
         setTargetForProjectionPeriod(thePG, 0, thePG.getInitialLevel());
       }
     }
-
+    
   }
 
   /** Calculate the Projection Refills in Level 2
    *  Right now we assume that all of our customers have the same
    *  VTH boundaries as we do - so all of our level refills are based
    *  on customer level 2 demand.
-   *  In the future we will want to enhance this code to deal with
+   *  In the future we will want to enhance this code to deal with 
    *  customers having different VTH boundaries then us, meaning that we
    *  need to take into account customer level 2 demand and calculate level 2
    *  demand from customer level 6 demand if our level 2 window is earlier than the
@@ -271,8 +292,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param endOfLevelTwo The end time of the Level 2 VTH window
    *  @param theComparator The Comparator instance to compare old and new level 2 projections
    **/
-//   private void calculateLevelTwoProjections(Inventory level2Inv, int daysOnHand,
-//                                             long start, long endOfLevelTwo,
+//   private void calculateLevelTwoProjections(Inventory level2Inv, int daysOnHand, 
+//                                             long start, long endOfLevelTwo, 
 //                                             RefillComparator theComparator) {
 
 //     ArrayList newProjections = new ArrayList();
@@ -290,7 +311,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //     // int currentBucket = startBucket;
 // //     int customerDemandBucket = level2PG.convertTimeToBucket(getTimeUtils().
 // //                                                            addNDays(start, daysOnHand));
-//     // We need to time shift refills by days on hand.  So if level 2 demand starts the
+//     // We need to time shift refills by days on hand.  So if level 2 demand starts the 
 //     // day the level 2 window starts then we actually need to order outside of the level 2
 //     // window.  Perhaps this is wrong - and we should order the first 3 days in level 6
 //     // but right now we don't have the data to do this.
@@ -307,7 +328,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    //  currentBucket = currentBucket + 1;
 //     customerDemandBucket = customerDemandBucket + 1;
 
-//     //In the future with varying customer level 2 windows we will have to
+//     //In the future with varying customer level 2 windows we will have to 
 //     //loop through all of our Inventories and sum the tonnage of demand
 //     // for a level 2 combined demand per bucket.
 
@@ -316,25 +337,25 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //       nextProjDemand = level2PG.getProjectedDemand(customerDemandBucket);
 //       //check the results for the Day.
 //       if (projDemand != nextProjDemand) {
-//         //if there's a change in the demand, create a refill projection
-//         //BUT only if demand is non-zero
+//         //if there's a change in the demand, create a refill projection 
+//         //BUT only if demand is non-zero 
 //         if (projDemand > 0.0) {
     //       old
-//           Task newLevel2Refill =
-//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket),
+//           Task newLevel2Refill = 
+//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                             level2PG.convertBucketToTime(currentBucket),
 //                                             level2PG.getStartTime(), projDemand, level2PG,
 //                                             level2Inv);
     //       new (can't have earliest arrive before we get to theatre
-//           Task newLevel2Refill =
-//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket),
+//           Task newLevel2Refill = 
+//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                             level2PG.convertBucketToTime(currentBucket),
 //                                             inventoryPlugin.getOPlanArrivalInTheaterTime(), projDemand,
 //                                             level2PG,
 //                                             level2Inv);
 //           newProjections.add(newLevel2Refill);
 //         }
-//         //then reset the start bucket  and the new demand
+//         //then reset the start bucket  and the new demand 
 //         startBucket = currentBucket;
 //         projDemand = nextProjDemand;
 //       }
@@ -347,14 +368,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //     if (startBucket != currentBucket) {
 //       if (projDemand > 0.0) {
     //     old
-//         Task lastLevel2Refill =
-//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket),
+//         Task lastLevel2Refill = 
+//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                           level2PG.convertBucketToTime(currentBucket),
 //                                           level2PG.getStartTime(), projDemand, level2PG,
 //                                           level2Inv);
     //       new (can't have earliest arrive before we get to theatre
-//         Task lastLevel2Refill =
-//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket),
+//         Task lastLevel2Refill = 
+//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                           level2PG.convertBucketToTime(currentBucket),
 //                                           inventoryPlugin.getOPlanArrivalInTheaterTime(),
 //                                           projDemand, level2PG,
@@ -364,12 +385,12 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //     }
 //     // send the new projections and the old projections to the Comparator
 //     // the comparator will rescind the old and publish the new projections
-//     theComparator.compareRefillProjections(newProjections, oldProjections,
+//     theComparator.compareRefillProjections(newProjections, oldProjections, 
 //                                           level2Inv);
 //     setTargetForProjectionPeriod(level2PG, 1, level2PG.getInitialLevel());
-
-//   }
-
+    
+//   }      
+ 
 
   /** Make a Projection Refill Task and publish it to the InventoryPlugin.
    *  The InventoryPlugin will hook the task in to the proper workflow
@@ -387,9 +408,9 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     NewTask newRefill = inventoryPlugin.getPlanningFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(thePG.getResource());
-    //    newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(),
+    //    newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
     //                       demand, thePG);
-    newRefill = fillInTask(newRefill, start, end, inventoryPlugin.getOPlanArrivalInTheaterTime(),
+    newRefill = fillInTask(newRefill, start, end, inventoryPlugin.getOPlanArrivalInTheaterTime(), 
                            demand, thePG);
     return newRefill;
   }
@@ -403,8 +424,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param level2Inv  The Level 2 Inventory
    *  @return Task The new Level 2 Projection Task
    **/
-  private Task createAggregateProjectionRefill(long start, long end,
-                                               long earliest, double demand,
+  private Task createAggregateProjectionRefill(long start, long end, 
+                                               long earliest, double demand, 
                                                LogisticsInventoryPG level2PG,
                                                Inventory level2Inv) {
     //create a level two projection refill task
@@ -423,10 +444,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param start Start time for Task
    *  @param end End Time for Task
    *  @param qty Quantity Pref for Task
-   *  @param thePG The property group attached to the Inventory
+   *  @param thePG The property group attached to the Inventory 
    *  @return NewTask the filled in Task
    **/
-  protected NewTask fillInTask(NewTask newRefill, long start, long end, long earliest,
+  protected NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
                              double qty, LogisticsInventoryPG thePG) {
     // create preferences
     Vector prefs = new Vector();
@@ -442,9 +463,9 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     //create Prepositional Phrases
     Vector pp_vector = new Vector();
     pp_vector.add(createPrepPhrase(Constants.Preposition.FOR, getOrgName()));
-    pp_vector.add(createPrepPhrase(Constants.Preposition.OFTYPE,
+    pp_vector.add(createPrepPhrase(Constants.Preposition.OFTYPE, 
                                    inventoryPlugin.getSupplyType()));
-
+    
     Object io;
     Enumeration geolocs = getAssetUtils().getGeolocLocationAtTime(
 								  getMyOrganization(),
@@ -457,14 +478,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     pp_vector.addElement(createPrepPhrase(Constants.Preposition.TO, io));
     TypeIdentificationPG tip = thePG.getResource().getTypeIdentificationPG();
     MaintainedItem itemID = MaintainedItem.
-      findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(),
+      findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(), 
                                null, tip.getNomenclature(), (UtilsProvider)inventoryPlugin);
     pp_vector.add(createPrepPhrase(Constants.Preposition.MAINTAINING, itemID));
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
-
+    
     newRefill.setPrepositionalPhrases(pp_vector.elements());
     return newRefill;
-  }
+  } 
 
   /** Create a Time Preference for the Refill Task
    *  Use a Piecewise Linear Scoring Function.
@@ -474,7 +495,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @return Preference The new Time Preference
    **/
-  protected Preference createRefillTimePreference(long bestDay, long start,
+  protected Preference createRefillTimePreference(long bestDay, long start, 
                                                 int aspectType, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
@@ -487,13 +508,12 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 
     AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
     AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
 //                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType,
-                                                                                  bestDay + thePG.getBucketMillis()),
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, 
+                                                                                  bestDay + thePG.getBucketMillis()), 
                                                        alpha);
-    end = getTimeUtils().addNDays(bestDay, 20);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end),
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
                                                    (alpha + late_score));
 
     points.addElement(earliest);
@@ -517,7 +537,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     //highAV could be bumped to more than refill_qty + 1 if needed
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
       Volume vol = new Volume(refill_qty, Volume.GALLONS);
-      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
 					  new FlowRate(vol, dur));
     } else {
       Count cnt = new Count(refill_qty, Count.EACHES);
@@ -549,10 +569,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
        myOrg = inventoryPlugin.getMyOrganization();
        // if we still don't have it after we ask the inventory plugin, throw an error!
        if (myOrg == null) {
-	 logger.error("RefillProjectionGenerator can not get MyOrganization " +
+	 logger.error("RefillProjectionGenerator can not get MyOrganization " + 
 		      "from the InventoryPlugin");
        }
-    }
+    } 
     return myOrg;
   }
 
@@ -560,7 +580,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
   protected String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    }
+    } 
     return myOrgName;
   }
 
@@ -576,7 +596,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 	  //if we can't find the home loc either print an error
 	  logger.error("RefillProjectionGenerator can not generate a " +
 		       "Home Geoloc for org: " + org);
-	}
+	}  
       }
     }
     return homeGeoloc;
@@ -584,6 +604,6 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 
 
 }
-
-
-
+    
+  
+  
