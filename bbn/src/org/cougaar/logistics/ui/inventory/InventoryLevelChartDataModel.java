@@ -40,23 +40,19 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 /** 
  * <pre>
  * 
- * The InventoryMenuEvent has all the menu commands and allows
- * mechanism to broadcast the given menu event to other parts
- * of the inventory UI.
+ * The InventoryLevelChartDataModel is the ChartDataModel for the 
+ * InventoryLevelChart.    It calculates the inventory, reorder, 
+ * and target levels for puts them in x and y coordinates.
  * 
  * 
- * @see InventoryUIFrame
+ * @see InventoryBaseChartDataModel
  *
  **/
 
 public class InventoryLevelChartDataModel 
             extends InventoryBaseChartDataModel {
 
-    protected int minDay=-1;
-    protected int maxDay=0;
-    protected int bucketDays=1;
 
-    protected int nValues=0;
 
     public static final String INVENTORY_LEVEL_SERIES_LABEL="Inventory Level";
     public static final String REORDER_LEVEL_SERIES_LABEL="Reorder Level";
@@ -82,41 +78,7 @@ public class InventoryLevelChartDataModel
 	initValues();
     }
 
-    public void computeCriticalNValues() {
 
-	minDay = -1;
-	maxDay = 0;
-	bucketDays = 1;
-	nValues=0;
-
-	if(inventory==null) return;
-
-	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
-	    inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
-	ArrayList levels = schedHeader.getSchedule();
-	long baseTime = InventoryChartBaseCalendar.getBaseTime();
-
-	bucketDays = -1;
-
-	for (int i=0; i < levels.size(); i++) {
-	    //MWD Stopped here - you've got a ways to go!!
-	    InventoryScheduleElement level = (InventoryScheduleElement) levels.get(i);
-	    long startTime = level.getStartTime();
-	    long endTime = level.getEndTime();
-	    int startDay = (int)((startTime - baseTime) / MILLIS_IN_DAY);
-	    int endDay = (int)((endTime - baseTime) / MILLIS_IN_DAY);
-	    if(bucketDays == -1) {
-		long bucketSize = endTime - startTime;
-		bucketDays = (int) (bucketSize / MILLIS_IN_DAY);
-	    }
-	    if (minDay == -1)
-		minDay = startDay;
-	    else if (startDay < minDay)
-		minDay = startDay;
-	    maxDay = Math.max(endDay, maxDay);
-	}
-	nValues = (maxDay - minDay + 1) / bucketDays;
-    }
 
     public void setValues() {
 	if(valuesSet) return;
@@ -149,6 +111,11 @@ public class InventoryLevelChartDataModel
 	    }
 	}
 
+	//Need to add target level which is a little more complicated
+	//than you think.  We don't know how many values there are
+	//in this third series. We have to add them if they are non null
+	//to a vector, allocated the third series same length as the 
+	//vector and put them into there. mildly tricky business.
 	for (int i=0; i < levels.size(); i++) {
 	    InventoryLevel level = (InventoryLevel) levels.get(i);
 	    long startTime = level.getStartTime();
@@ -170,6 +137,5 @@ public class InventoryLevelChartDataModel
 	initValues();
 	fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
     }
-
 }
 

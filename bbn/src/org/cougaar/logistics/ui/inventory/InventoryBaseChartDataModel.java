@@ -21,6 +21,8 @@
  
 package org.cougaar.logistics.ui.inventory;
 
+import java.util.ArrayList;
+
 import com.klg.jclass.chart.ChartDataModel;
 import com.klg.jclass.chart.LabelledChartDataModel;
 import com.klg.jclass.chart.ChartDataSupport;
@@ -30,7 +32,11 @@ import com.klg.jclass.chart.ChartDataManager;
 
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
+import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
+
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
+import org.cougaar.logistics.ui.inventory.data.InventoryScheduleHeader;
+import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 
 /** 
  * <pre>
@@ -57,6 +63,12 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
   protected double yvalues[][];
   protected String[] seriesLabels;
   protected String[] scheduleNames;
+
+  protected int minDay=-1;
+  protected int maxDay=0;
+  protected int bucketDays=1;
+
+  protected int nValues=0;
     
   protected String legendTitle;
 
@@ -125,6 +137,43 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
       }
   }
 
-  public abstract void setValues();
+    public abstract void setValues();
+    
+    public void computeCriticalNValues() {
+	
+	minDay = -1;
+	maxDay = 0;
+	bucketDays = 1;
+	nValues=0;
+	
+	if(inventory==null) return;
+	
+	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
+	    inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
+	ArrayList levels = schedHeader.getSchedule();
+	long baseTime = InventoryChartBaseCalendar.getBaseTime();
+	
+	bucketDays = -1;
+	
+	for (int i=0; i < levels.size(); i++) {
+	    InventoryScheduleElement level = (InventoryScheduleElement) levels.get(i);
+	    long startTime = level.getStartTime();
+	    long endTime = level.getEndTime();
+	    int startDay = (int)((startTime - baseTime) / MILLIS_IN_DAY);
+	    int endDay = (int)((endTime - baseTime) / MILLIS_IN_DAY);
+	    if(bucketDays == -1) {
+		long bucketSize = endTime - startTime;
+		bucketDays = (int) (bucketSize / MILLIS_IN_DAY);
+	    }
+	    if (minDay == -1)
+		minDay = startDay;
+	    else if (startDay < minDay)
+		minDay = startDay;
+	    maxDay = Math.max(endDay, maxDay);
+	}
+	nValues = (maxDay - minDay + 1) / bucketDays;
+    }
+
+
 }
 
