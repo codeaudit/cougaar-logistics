@@ -24,7 +24,6 @@ import org.cougaar.mlm.ui.grabber.logger.*;
 import org.cougaar.mlm.ui.grabber.workqueue.*;
 import org.cougaar.mlm.ui.grabber.config.*;
 import org.cougaar.mlm.ui.grabber.connect.*;
-import org.cougaar.mlm.ui.grabber.config.*;
 
 import java.util.Set;
 import java.util.Iterator;
@@ -51,7 +50,7 @@ import java.sql.Statement;
 
 /**
  * Controls the data grabber and orchestrates its workflow
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/

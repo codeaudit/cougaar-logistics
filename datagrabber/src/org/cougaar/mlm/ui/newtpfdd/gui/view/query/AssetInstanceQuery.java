@@ -32,10 +32,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.List;
 import java.util.LinkedList;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;

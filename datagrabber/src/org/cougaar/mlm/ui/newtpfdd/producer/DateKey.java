@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/producer/DateKey.java,v 1.1 2002-05-14 20:41:07 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/producer/DateKey.java,v 1.2 2002-08-07 19:46:27 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -14,8 +14,6 @@
 
 package org.cougaar.mlm.ui.newtpfdd.producer;
 
-
-import java.lang.Comparable;
 
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 

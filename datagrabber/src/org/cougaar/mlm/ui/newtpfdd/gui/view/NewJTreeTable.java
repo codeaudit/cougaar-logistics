@@ -32,9 +32,6 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.table.*;
 import javax.swing.event.TableModelEvent;
-import javax.swing.JPanel;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

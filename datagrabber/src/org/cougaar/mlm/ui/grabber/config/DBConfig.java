@@ -24,7 +24,6 @@ import org.cougaar.planning.servlet.data.xml.DeXMLable;
 import org.cougaar.planning.servlet.data.xml.XMLable;
 import org.cougaar.planning.servlet.data.xml.UnexpectedXMLException;
 import org.cougaar.planning.servlet.data.xml.XMLWriter;
-import java.io.IOException;
 import org.xml.sax.Attributes;
 
 import java.util.Date;
@@ -36,7 +35,7 @@ import java.io.*;
 
 /**
  * Parameters for comunication with the database
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/05/01
  **/
