@@ -174,7 +174,7 @@ public class DetReqAggHandler extends InventoryModule{
     subtask.setContext(parent.getContext());
     subtask.setDirectObject(inventory);
     subtask.setParentTask(parent);
-    subtask.setVerb(new Verb(Constants.Verb.MAINTAININVENTORY));
+    subtask.setVerb(Verb.get(Constants.Verb.MAINTAININVENTORY));
     setStartTimePreference(subtask, getTaskUtils().getStartTime(parent));
     setEndTimePreference(subtask, getTaskUtils().getEndTime(parent));
     return subtask;
@@ -205,7 +205,7 @@ public class DetReqAggHandler extends InventoryModule{
     composition.setIsPropagating(false);
     mpTask.setComposition(composition);
     composition.setCombinedTask(mpTask);
-    mpTask.setVerb(new Verb(Constants.Verb.MAINTAININVENTORY));
+    mpTask.setVerb(Verb.get(Constants.Verb.MAINTAININVENTORY));
     aggregateDetermineRequirementsTasks(mpTask, parents);
     return mpTask;
   }
