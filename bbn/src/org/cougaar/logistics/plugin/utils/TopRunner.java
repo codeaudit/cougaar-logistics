@@ -57,8 +57,9 @@ public class TopRunner implements Runnable {
       String [] percentage = new String [10];
       int cpus = 0;
 
+      Reader r = null;
       try {
-	Reader r = new BufferedReader(new InputStreamReader(stream));
+	r = new BufferedReader(new InputStreamReader(stream));
 	StreamTokenizer st = new StreamTokenizer(r);
 	while (st.nextToken () != StreamTokenizer.TT_EOF) {
 	  // System.out.println ("token " + st.sval + " num token " +st.nval);
@@ -74,9 +75,11 @@ public class TopRunner implements Runnable {
 	    }
 	  }
 	}
-
       } catch (Exception e) {
 	System.err.println ("got read " + e);
+      } finally {
+	if (r != null)
+	  try { r.close(); } catch (Exception e) { System.err.println ("Got exception closing ssh input stream reader " + e); }
       }
 
       StringBuffer buf = new StringBuffer();
@@ -92,14 +95,14 @@ public class TopRunner implements Runnable {
 
 	if (resultsAtTime == null) {
 	  timeToResult.put (topTime, resultsAtTime = new HashMap());
-	  System.err.println ("timeToResult now " + timeToResult);
+	  // System.err.println ("timeToResult now " + timeToResult);
 	}
 
 	for (int i = 0; i < cpus; i++) {
 	  String key = (machine+"-CPU_"+i);
 	  String value = "" + percentage[i];
 	  resultsAtTime.put (key, value);
-	   System.err.println ("timeToResult put " + key + "->" + value);
+	  //System.err.println ("timeToResult put " + key + "->" + value);
 	}
 
 	if (showIntermediate)
