@@ -238,6 +238,20 @@ public class LogisticsInventoryBG implements PGDelegate {
     refillRequisitions.set(bucket, task);
   }
 
+  public int getLastRefillRequisitionBucket() {
+    int last = (refillRequisitions.size() - 1);
+    if (refillRequisitions.get(last) != null) {
+      return last;
+    } else {
+      Object validLast = null;
+      while (validLast == null) {
+        last = last -1;
+        validLast = refillRequisitions.get(last);
+      }
+      return last;
+    }
+  }
+
   public void addRefillProjection(Task task) {
     long start = getStartTime(task);
     long end = getEndTime(task);
@@ -292,6 +306,10 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public ArrayList getRefillRequisitions() {
     return (ArrayList)refillRequisitions.clone();
+  }
+
+  public Task getRefillProjection(int bucket) {
+    return (Task) refillProjections.get(bucket);
   }
 
   public double getCriticalLevel(int bucket) {
