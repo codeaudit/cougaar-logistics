@@ -36,6 +36,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
+import org.cougaar.core.service.ThreadService;
 
 import org.cougaar.glm.ldm.Constants;
 
@@ -1124,6 +1125,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     alarmService.addAlarm (currentAlarm = new BufferingAlarm (millis));
   }
 
+    public void setThreadService (ThreadService ts) {
+	threadService = ts;
+    }
+
   /** Alarm for when buffering runnable wants to restart later */
   class BufferingAlarm implements Alarm {
     long clockExpireTime;
@@ -1231,11 +1236,32 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       }));
   }
 
+    /** 
+     * Remove the expansions of tasks that were previously expanded
+     * into level-2 subtasks.  By removing the expansion and publish
+     * changing the task, the task will appear as a "new" task to the 
+     * plugin again in the next execute cycle. <p>
+     *
+     * If the task somehow got it's plan element removed by the time this
+     * is called, just skip it.  Somehow a logic provider seems to be able
+     * to remove the task's expansion during my transaction. <p>
+     * 
+     * @param level2Tasks tasks that were previously expanded into level 2
+     *        that we want to replan.  
+     */
   protected void replanLevel2 (Collection level2Tasks) {
     for (Iterator iter = level2Tasks.iterator(); iter.hasNext();) {
       NewTask level2 = (NewTask) iter.next();
       
       PlanElement pe = level2.getPlanElement ();
+      if (pe == null) {
+	if (isInfoEnabled ())
+	    info ("Somehow between calling the predicate and trying\n" +
+		  " to remove task " + level2.getUID() +"'s plan element\n" +
+		  " the plan element got removed by another Logic Provider.");
+	continue; // nothing to do
+      }
+
       publishRemove (pe);
       publishChange (level2);
 
