@@ -284,8 +284,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
                                             "Level2MEI");
       Asset a = factory.createInstance(asset);
       setupAvailableSchedule(a);
-      if (logger.isInfoEnabled())
-	logger.info("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
+      if (logger.isDebugEnabled())
+	logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
       publishAdd(a);
     }
     publishedLevel2MeiAsset = true;
@@ -431,8 +431,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // putting the appropriate BG on them as well
   // It only creates PGs for the MEIs that consume that supply class
   protected void addConsumerPGs(Collection meiConsumers) {
-    if (logger.isInfoEnabled())
-      logger.info(getAgentIdentifier() + " in addConsumerPGs with " + meiConsumers.size() + " meis");
+    if (logger.isDebugEnabled())
+      logger.debug(getAgentIdentifier() + " in addConsumerPGs with " + meiConsumers.size() + " meis");
     Iterator meis = meiConsumers.iterator();
     Asset a, anAsset;
 
@@ -449,8 +449,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       }
 
       if (anAsset instanceof ClassVIIMajorEndItem) {
-	if (logger.isInfoEnabled())
-	  logger.info(getAgentIdentifier() + ".addConsumerPGs for Class7MEI: " + anAsset);
+	if (logger.isDebugEnabled())
+	  logger.debug(getAgentIdentifier() + ".addConsumerPGs for Class7MEI: " + anAsset);
 
         if (anAsset instanceof Level2MEIAsset) {
           //This cargo category code means, "do not transport me."
@@ -463,8 +463,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         if (consumes(consumed, FUEL)) {
 	  NewFuelConsumerPG fuelpg = (NewFuelConsumerPG) anAsset.searchForPropertyGroup(FuelConsumerPG.class);
 	  if ( fuelpg == null) {
-	    if (logger.isInfoEnabled())
-	      logger.info("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
+	    if (logger.isDebugEnabled())
+	      logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
 			  getAgentIdentifier());
 
 	    fuelpg =
@@ -481,8 +481,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    anAsset.setPropertyGroup(fuelpg);
 	    addedPG = true;
 	  } else {
-	    if (logger.isInfoEnabled())
-	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing FuelConsumerPG for " + anAsset);
+	    if (logger.isDebugEnabled())
+	      logger.debug(getAgentIdentifier() + ".addConsPGs Re-BGing FuelConsumerPG for " + anAsset);
 	    if (didRehydrate()) {
 	      if (logger.isInfoEnabled())
 		logger.info("          Due to rehydrate. Will re-initialize BG only.");
@@ -496,16 +496,16 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    }
 	  }
 	} else {
-	  if (logger.isInfoEnabled())
-	    logger.info(getAgentIdentifier() + ".addConsPGs not putting FuelPG on asset that does not consume it: " + anAsset);
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsPGs not putting FuelPG on asset that does not consume it: " + anAsset);
 	}
 
         if (consumes(consumed, AMMO)) {
           NewAmmoConsumerPG ammopg =
 	    (NewAmmoConsumerPG)anAsset.searchForPropertyGroup(AmmoConsumerPG.class);
 	  if (ammopg == null) {
-	    if (logger.isInfoEnabled())
-	      logger.info("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
+	    if (logger.isDebugEnabled())
+	      logger.debug("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
 			  getAgentIdentifier());
 	    ammopg =
               (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
@@ -521,8 +521,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    anAsset.setPropertyGroup(ammopg);
 	    addedPG = true;
 	  } else {
-	    if (logger.isInfoEnabled())
-	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing AmmoConsumerPG for " + anAsset);
+	    if (logger.isDebugEnabled())
+	      logger.debug(getAgentIdentifier() + ".addConsPGs Re-BGing AmmoConsumerPG for " + anAsset);
 	    if (didRehydrate()) {
 	      if (logger.isInfoEnabled())
 		logger.info("          Due to rehydrate. Will re-initialize BG only.");
@@ -536,15 +536,15 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    } // end of block to handle re-BG not rehydrate
 	  } // end of block to handle existing PG
 	} else {
-	  if (logger.isInfoEnabled())
-	    logger.info(getAgentIdentifier() + ".addConsPGs not putting AmmopG on asset that does not consume it: " + anAsset);
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsPGs not putting AmmopG on asset that does not consume it: " + anAsset);
 	}
 	
         if (consumes(consumed, PKG_POL)) {
           NewPackagedPOLConsumerPG packagedpg = (NewPackagedPOLConsumerPG)anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class);
 	  if (packagedpg == null) {
-	    if (logger.isInfoEnabled())
-	      logger.info("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
+	    if (logger.isDebugEnabled())
+	      logger.debug("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
 			  getAgentIdentifier());
 	    
 	    packagedpg =
@@ -558,8 +558,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    addedPG = true;
 	  } else {
 	    // Already had this PG
-	    if (logger.isInfoEnabled())
-	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing PackagedPOLConsumerPG for " + anAsset);
+	    if (logger.isDebugEnabled())
+	      logger.debug(getAgentIdentifier() + ".addConsPGs Re-BGing PackagedPOLConsumerPG for " + anAsset);
 	    if (didRehydrate()) {
 	      if (logger.isInfoEnabled())
 		logger.info("          Due to rehydrate. Will re-initialize BG only.");
@@ -574,16 +574,16 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	      
 	  } // end of block to handle existing PG
 	} else {
-	  if (logger.isInfoEnabled())
-	    logger.info(getAgentIdentifier() + ".addConsPGs not putting PackagedPOLPG on asset that does not consume it: " + anAsset);
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsPGs not putting PackagedPOLPG on asset that does not consume it: " + anAsset);
 	}
 
         if (consumes(consumed, SPARES)) {
           NewRepairPartConsumerPG partpg =
 	    (NewRepairPartConsumerPG)anAsset.searchForPropertyGroup(RepairPartConsumerPG.class);
 	  if (partpg == null) {
-	    if (logger.isInfoEnabled())
-	      logger.info("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
+	    if (logger.isDebugEnabled())
+	      logger.debug("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
 			  getAgentIdentifier());
 	    
 	    partpg =
@@ -597,8 +597,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    addedPG = true;
 	  } else {
 	    // Already had this PG
-	    if (logger.isInfoEnabled())
-	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing RepairPartConsumerPG for " + anAsset);
+	    if (logger.isDebugEnabled())
+	      logger.debug(getAgentIdentifier() + ".addConsPGs Re-BGing RepairPartConsumerPG for " + anAsset);
 	    if (didRehydrate()) {
 	      if (logger.isInfoEnabled())
 		logger.info("          Due to rehydrate. Will re-initialize BG only.");
@@ -613,15 +613,15 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 	    
 	  } // end of block to handle existing PG
 	} else {
-	  if (logger.isInfoEnabled())
-	    logger.info(getAgentIdentifier() + ".addConsPGs not putting RepairPartPG on asset that does not consume it: " + anAsset);
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsPGs not putting RepairPartPG on asset that does not consume it: " + anAsset);
 	} // end of block to handle RepairPartPG at all
 	
 	// Only publishChange the Asset if we really changed it
         if (addedPG) {
           publishChange(a);
-        } else if (logger.isInfoEnabled()) {
-	  logger.info(getAgentIdentifier() + ".addConsumerPGs did not add any PGs to " + a);
+        } else if (logger.isDebugEnabled()) {
+	  logger.debug(getAgentIdentifier() + ".addConsumerPGs did not add any PGs to " + a);
 	}
       } else {
 	// Not a Class7MEI
@@ -829,7 +829,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
                  asset_type+service+" = "+query);
     Vector result;
     try {
+      Date beforeQuery = new Date();
       result = executeQuery (query);
+      Date afterQuery = new Date();
+      long duration = afterQuery.getTime() - beforeQuery.getTime();
+      if (logger.isInfoEnabled()) 
+        logger.info(duration+" consumptionRate query duration for "+getAgentIdentifier());
       if (logger.isDebugEnabled())
 	logger.debug ("in lookupAssetConsumptionRate() query complete for asset "+
                     asset.getTypeIdentificationPG().getNomenclature()+
