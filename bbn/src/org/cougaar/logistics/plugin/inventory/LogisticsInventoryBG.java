@@ -577,7 +577,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 		  t = (Task) refills.get(j);
 		  if ((t != null) && (!removedTaskList.contains(t))) {
 		      long start = taskUtils.getStartTime(t);
-		      if (start > now) { 
+		      if (start >= now) { 
 			  refillsToRemove.add(t);
 			  if(!removedTaskList.contains(t)) {
 			      removedTaskList.add(t);
@@ -776,7 +776,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void updateRefillProjection(Task task) {
-        removeRefillProjection(task);
+	removeRefillProjection(task);
         addRefillProjection(task);
     }
 
