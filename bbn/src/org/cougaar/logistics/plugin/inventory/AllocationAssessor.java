@@ -469,10 +469,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  alloc = inventoryPlugin.getRootFactory().
 	    createAllocation(task.getPlan(), task, inv, ar, myRole);
 	  inventoryPlugin.publishAdd(alloc);
-	} else {
-//  	  System.out.println(" Not generating AR for PW :"+getTaskUtils().taskDesc(task));
-	}
-      } else {
+	} 
+//       } else {
 	// need to check the Allocation Result
       }
     }
@@ -553,7 +551,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     // with best.
     PlanElement pe = withdraw.getPlanElement();
     AllocationResult ar = pe.getEstimatedResult();
-    double arEnd, taskEnd, arQty, taskQty;
+    double taskEnd, arQty, taskQty;
     boolean correct = false;
     if (ar != null) {
       double resultTime;
@@ -564,7 +562,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       } else {
         resultTime = ar.getValue(AspectType.START_TIME);
       }
-      //arEnd = ar.getValue(AspectType.END_TIME);
+      //double arEnd = ar.getValue(AspectType.END_TIME);
       arQty = ar.getValue(AspectType.QUANTITY);
       taskEnd = getTaskUtils().getPreference(withdraw, AspectType.END_TIME);
       taskQty = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
