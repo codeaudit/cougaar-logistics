@@ -505,6 +505,7 @@ ARCHIVE_TIME=${build.time}
 
 	<target name="create_cougaar_overlay" depends="set-zip-dirs,create-overlay-manifest">
 		<delete dir="${zipbase}"/>
+		<delete dir="configs_staging"/>
 		<antcall target="clean-docs"/>
 		<antcall target="compile"/>
 		<antcall target="dist-module"/>
@@ -512,6 +513,13 @@ ARCHIVE_TIME=${build.time}
 		<antcall target="zip-copy-bin"/>
 		<antcall target="zip-copy-data"/>
 		<antcall target="zip-copy-configs"/>
+    <mkdir dir="configs_staging/configs/"/>
+    <copy todir="configs_staging/configs/">
+      <fileset dir="${configs}" />
+    </copy>
+		<mkdir dir="${zipbase}/${module}/lib"/>
+		<jar jarfile="${zipbase}/${module}/lib/albbn_config.jar" basedir="configs_staging/"/>
+		<signjar jar="${zipbase}/${module}/lib/albbn_config.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<antcall target="zip-copy-doc"/>
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
