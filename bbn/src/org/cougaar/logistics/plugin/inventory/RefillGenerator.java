@@ -193,6 +193,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 // 					      reorderPeriodEndBucket, thePG);
             int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
             double targetLevel = getTargetLevel(refillBucket,reorderPeriodEndBucket, thePG);
+            thePG.setTarget(refillBucket, targetLevel);
             if (thePG.getFillToCapacity()) {
               double capacity = thePG.getCapacity();
               if (targetLevel > capacity) {
@@ -280,9 +281,6 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
             }
 
             thePG.setLevel(refillBucket, invLevel);
-            //set the target level to invlevel + refillQty (if we get the refill we
-            //ask for we hit the target - otherwise we don't)
-            thePG.setTarget(refillBucket, targetLevel);
             if (logger.isDebugEnabled()) {
               double printsum = targetLevel;
               logger.debug("\nSetting the InventoryLevel and the TargetLevel to: " + printsum);
