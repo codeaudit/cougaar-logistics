@@ -1199,7 +1199,7 @@ public class InventoryPlugin extends ComponentPlugin
         passThruList.add(t);
       }
     }
-    externalAllocator.forwardSupplyTasks(passThruList, myOrganization);
+    externalAllocator.forwardSupplyTasks(passThruList);
     return expandList;
   }
 

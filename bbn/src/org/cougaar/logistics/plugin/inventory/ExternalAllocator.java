@@ -48,7 +48,6 @@ import org.cougaar.core.component.ServiceBroker;
 
 public class ExternalAllocator extends InventoryModule implements AllocatorModule {
 
-    Organization myOrg;
     Role         providerRole;
     /** list of nsn's with no resupply point */
     private Vector noResupply;
@@ -60,10 +59,9 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 	noResupply = new Vector();
     }
 
-    public void forwardSupplyTasks(Collection supplyTasks, Organization org) {
+    public void forwardSupplyTasks(Collection supplyTasks) {
 	//assuming inventory plugin calls this with knowledge that 
 	//all passed tasks are to be forwarded
-        myOrg = org;
 	Task supplyTask;
 	Iterator tasksIter = supplyTasks.iterator();
 	if (providerRole == null) {
@@ -148,13 +146,14 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
         if (getTaskUtils().isProjection(task)) {
             /* For a projection, should be time-phased as support
                changes over time. We ignore that, for now */
-            support_orgs = getAssetUtils().getSupportingOrgs(myOrg, 
+            support_orgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(), 
 							     providerRole, 
 							     getTaskUtils().getStartTime(task), 
 							     TaskUtils.getEndTime(task));
         } else {
-            support_orgs = getAssetUtils().getSupportingOrgs(myOrg, providerRole, 
-                                                        getTaskUtils().getEndTime(task));
+            support_orgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(), 
+                                                             providerRole, 
+                                                             getTaskUtils().getEndTime(task));
         }
 	if (support_orgs.hasMoreElements()) {
 	    // For now, returning the first supporting org during the time span
