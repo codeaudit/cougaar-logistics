@@ -69,26 +69,30 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
       Task oldRefill = (Task) oldIter.next();
       // check for a null in the refills list!
       if (oldRefill != null) {
-	  // clean out the reference in the maintain inventory workflow
-	  ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
-	inventoryPlugin.publishRemove(oldRefill);
+        // clean out the reference in the maintain inventory workflow
+        ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+        inventoryPlugin.publishRemove(oldRefill);
       }
     }
 
     //Process all new Refill Tasks
     LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
-	searchForPropertyGroup(LogisticsInventoryPG.class);
+        searchForPropertyGroup(LogisticsInventoryPG.class);
     Iterator newIter = newRefills.iterator();
     while (newIter.hasNext()) {
       Task newRefill = (Task) newIter.next();
-      // apply the Task to the LogisticsInventoryBG
-      thePG.addRefillRequisition(newRefill);
-      // hook the task in with the MaintainInventory workflow and publish
-      inventoryPlugin.publishRefillTask(newRefill, inv);
+      if (inventoryPlugin.publishRefillTask(newRefill, inv)) {
+        thePG.addRefillRequisition(newRefill);
+      } else {
+        if (logger.isDebugEnabled()) {
+          logger.debug("publishRefillTask returned false - not adding Refill task to the BG" +
+                       newRefill.getUID());
+        }
+      }
     }
   }
-                       
- /** Compares the old and new Refill Projection tasks.
+
+  /** Compares the old and new Refill Projection tasks.
    *  Publishes any new Refill Projections and Rescinds any old Refill Projection Tasks.
    *  For now this implementation rescinds ALL old Refill Projections
    *  and publishes ALL new Refill Projection tasks.  
@@ -99,9 +103,9 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
    *  @param oldRefillProjs The previously generated Refill Projection Tasks
    *  @param inv The Inventory the Refills Projections are refilling.
    **/
-  public void compareRefillProjections(ArrayList newRefillProjs, 
-					ArrayList oldRefillProjs, 
-					Inventory inv) {
+  public void compareRefillProjections(ArrayList newRefillProjs,
+                                       ArrayList oldRefillProjs,
+                                       Inventory inv) {
     //Rescind all old Refill Projection Tasks
     Iterator oldIter = oldRefillProjs.iterator();
     while (oldIter.hasNext()) {
@@ -109,26 +113,29 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
       // add in a check for a null - nulls and tasks are put in the
       // refill lists so make sure we don't publish null!
       if (oldRefillProj != null) {
-	  // remove this from the workflow's sub task list first
-	  ((NewWorkflow)oldRefillProj.getWorkflow()).removeTask(oldRefillProj);
-	inventoryPlugin.publishRemove(oldRefillProj);
+        // remove this from the workflow's sub task list first
+        ((NewWorkflow)oldRefillProj.getWorkflow()).removeTask(oldRefillProj);
+        inventoryPlugin.publishRemove(oldRefillProj);
       }
     }
 
     //Process all new Refill Projection Tasks
     LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
-	searchForPropertyGroup(LogisticsInventoryPG.class);
+        searchForPropertyGroup(LogisticsInventoryPG.class);
     Iterator newIter = newRefillProjs.iterator();
     while (newIter.hasNext()) {
       Task newRefillProj = (Task) newIter.next();
-      // apply the Task to the LogisticsInventoryBG
-      thePG.addRefillProjection(newRefillProj);
-      // hook the task in with the MaintainInventory workflow and publish
-      inventoryPlugin.publishRefillTask(newRefillProj, inv);
+      if (inventoryPlugin.publishRefillTask(newRefillProj, inv)) {
+        thePG.addRefillProjection(newRefillProj);
+      } else {
+        if (logger.isDebugEnabled()) {
+          logger.debug("publishRefillTask returned false - not adding Refill Projection task to the BG" +
+                       newRefillProj.getUID());
+        }
+      }
     }
   }
-
 }
-    
-  
-  
+
+
+
