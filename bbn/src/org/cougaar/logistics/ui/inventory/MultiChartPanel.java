@@ -447,7 +447,7 @@ public class MultiChartPanel extends JPanel
         int month = tmpC.get(Calendar.MONTH) + 1;
 
         String label;
-        String valueLabel = "Quantity: " + JCChartUtil.format(y[pt], 1);
+        String valueLabel = "Quantity: " + JCChartUtil.format(y[pt], 2);
 
         if (displayHourly) {
             label = "Date: " + month + "/" +
