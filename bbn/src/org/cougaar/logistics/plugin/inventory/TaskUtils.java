@@ -64,10 +64,12 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 	assetUtils = utilProvider.getAssetUtils();
     }
 
-    public TaskUtils(LoggingService aLogger) {
+
+
+     public TaskUtils(Logger aLogger) {
 	super();
 	utilProvider = null;
-	logger = (Logger)aLogger;
+	logger = aLogger;
 	assetUtils = new AssetUtils(aLogger);
     }
 
