@@ -241,6 +241,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     NewWorkflow wf  = ldmf.newWorkflow();
     wf.setParentTask(t);
     ((NewTask)subtask).setWorkflow(wf);
+    ((NewTask)subtask).setParentTask(t);
     wf.addTask (subtask);
 
     Expansion   exp = ldmf.createExpansion(t.getPlan(), t, wf, null);
@@ -753,7 +754,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       Logger logger = plugin.getLogger();
       UTILExpand expandHelper = plugin.getExpandHelper();
       GLMPrepPhrase glmPrepHelper = plugin.getPrepHelper();
-      Location toLocation;
+      Location toLocation = null;
       Date end = null;
 
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
@@ -765,8 +766,13 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       if (!getDependencies().isEmpty()) {
 	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);
 	Task dependingTask = sse.getTask ();
-	end = sse.getStartDate();
-	toLocation = glmPrepHelper.getFromLocation (dependingTask);
+	if (dependingTask == null) {
+	  logger.error (" - problem with replanning earlier tasks - no task on schedule element " + sse);
+	}
+	else {
+	  end = sse.getStartDate();
+	  toLocation = glmPrepHelper.getFromLocation (dependingTask);
+	}
       }
       else {
 	end = plugin.getPrefHelper().getLateDate(new_task);

@@ -232,10 +232,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 										 spe));
     */
 	
-    Expansion exp = (Expansion)spe.getParentTask().getPlanElement();
+    Task parentTask = spe.getParentTask();
+    Expansion exp = (Expansion)parentTask.getPlanElement();
     if (exp == null) {
       if (isInfoEnabled ()) {
-	info ("attachSubtask - task " + spe.getParentTask().getUID() + 
+	info ("attachSubtask - task " + parentTask.getUID() + 
 	      "'s plan element is missing, so skipping trying to process subtask " + 
 	      subtask.getUID() + " must be in process of rescinds?");
       }
@@ -243,11 +244,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
     NewWorkflow wf = (NewWorkflow)exp.getWorkflow();
 
-    // This check so initial creation doesn;t get added and changed in same pass
+    // So initial creation doesn't get added and changed in same pass
     boolean workflowWasEmpty = !wf.getTasks().hasMoreElements();
 
     wf.addTask(subtask);
-    ((NewTask)subtask).setWorkflow(wf);	    
+    ((NewTask)subtask).setWorkflow(wf);
+    ((NewTask)subtask).setParentTask(parentTask);
     publishAdd(subtask);
     if (!workflowWasEmpty) {
       publishChange(exp);
@@ -528,8 +530,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
       }
 
       if (sse == null) {
-	if (parenttask != null)
-	  error(getName () + ".handleSuccessfulAlloc - could not find seq. schedule element for task "+ uid);
+	if (parenttask != null) {
+	  if (isInfoEnabled()) {	
+	    info(getName () + ".handleSuccessfulAlloc - could not find seq. schedule element for task "+ uid);
+	  }
+	}
 	else if (isInfoEnabled()) {
 	  info(getName () + ".handleSuccessfulAlloc - no parent task of task " + uid + 
 	       " must be during rescinds.  Skipping seq. planning."); 
@@ -581,6 +586,15 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
    * that depend on it.
    */
   protected void replanEarlierTasks (Task parentTask, long beforeTime) {
+    Expansion exp = (Expansion) parentTask.getPlanElement();
+    if (exp == null) {
+      if (isInfoEnabled()) {
+	info ("no expansion for " + parentTask.getUID() + " must be in middle of rescinds.");
+      }
+
+      return;
+    }
+      
     PrepositionalPhrase prep = prepHelper.getPrepNamed(parentTask, GLMTransConst.SequentialSchedule);
     Schedule sched = (Schedule) prep.getIndirectObject();
     Enumeration enum = sched.getAllScheduleElements();
@@ -605,9 +619,14 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	}
 
 	spe.unplan ();
-	Expansion exp = (Expansion) parentTask.getPlanElement();
 	if (exp != null) { // fix for bug #13417
-	  ((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	  try {
+	    ((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	  } catch (IllegalArgumentException iae) {
+	    error (getName () + " - task " + spe.getTask().getUID () + 
+		   " is not in workflow for task " + parentTask.getUID() + 
+		   " - likely rescinds happening concurrently. Exception was " + iae);
+	  }
 	  publishChange (exp);
 	}
 	handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
@@ -716,10 +735,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
 
     if (sse == null) {
-      error (getName () + ".getElement - no schedule element for " + child.getUID());
+      if (isInfoEnabled ()) {
+	info (getName () + ".getElement - no schedule element for " + child.getUID());
+      }
     }
-
-    enterHash(child.getUID().toString(), sse);
+    else 
+      enterHash(child.getUID().toString(), sse);
 
     return sse;
   }
