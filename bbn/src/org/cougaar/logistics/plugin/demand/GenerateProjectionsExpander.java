@@ -48,6 +48,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.util.Date;
 
 /**
  * <pre>
@@ -306,7 +307,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     newTask.setPlan(parentTask.getPlan());
     newTask.setDirectObject(consumedItem);
     newTask.setVerb(Verb.getVerb(Constants.Verb.PROJECTSUPPLY));
-
+    newTask.setCommitmentDate(new Date(start));
     Vector prefs = new Vector();
     prefs.addElement(TaskUtils.createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
@@ -467,7 +468,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       return null;
     }
 
-    Collection add_tasks = new ArrayList();
+    List add_tasks = new ArrayList();
     // Remove from the published schedule of tasks  all tasks that occur BEFORE now but not overlapping now
     // These historical tasks should not be changed
     long now = dfPlugin.currentTimeMillis();
