@@ -59,6 +59,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public static final String MEI_STRING = "ClassVIIMajorEndItem";
   public static final String THEATER = "SWA";
+  public static final String LEVEL2 = "Level2";
   private String service = null;
   // Subscription to policies
   private IncrementalSubscription meiSubscription;
@@ -220,14 +221,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       if (srvc != null) {
         service= srvc.toString();
 //         System.out.println("MEIPrototypeProvider configured for "+getAgentIdentifier());
-         if (!publishedLevel2MeiAsset && !queryLevel2Mei()) {
-          Asset asset = factory.createPrototype(org.cougaar.logistics.ldm.asset.Level2MEIAsset.class,
-                                                "Level2MEI");
-          Asset a = factory.createInstance(asset);
-          setupAvailableSchedule(a);
-          logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
-          publishAdd(a);
-          publishedLevel2MeiAsset = true;
+        if (!publishedLevel2MeiAsset && !queryLevel2Mei()) {
+          publishLevel2Mei();
         }
         configured = true;
       } else {
@@ -235,6 +230,16 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
                      myOrg.getItemIdentificationPG().getItemIdentification());
       }
     }
+  }
+
+  private void publishLevel2Mei() {
+    Asset asset = factory.createPrototype(Level2MEIAsset.class,
+                                          "Level2MEI");
+    Asset a = factory.createInstance(asset);
+    setupAvailableSchedule(a);
+    logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
+    publishAdd(a);
+    publishedLevel2MeiAsset = true;
   }
 
   // In case we rehydrate, query the blackboard
@@ -588,7 +593,33 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     return result;
   } // lookupAssetConsumptionRate
 
+  public Vector lookupLevel2AssetConsumptionRate(String agent, Asset asset, String supply_type) {
+    Vector result = null;
 
+    String query = (String) fileParameters_.get (LEVEL2 + supply_type + "Rate");
+    if (query == null) {
+      logger.error("lookupAssetConsumptionRate() ACR query is null for "+
+                   LEVEL2+supply_type);
+      return null;
+    }
+    query = substituteOrgName(query, agent);
+    logger.debug("lookupAssetConsumptionRate() ACR query for "+ LEVEL2 + supply_type + " = "+query);
+    try {
+      result = executeQuery (query);
+      logger.debug ("in lookupLevel2AssetConsumptionRate() query complete for asset "+
+                    asset.getTypeIdentificationPG().getNomenclature()+
+                    "\nquery= "+query);
+      if (result.isEmpty()) {
+        logger.debug ("no result for asset " +
+                      asset.getTypeIdentificationPG().getNomenclature());
+        return null;
+      }
+    } catch (Exception ee) {
+      logger.error ( "in lookupLevel2AssetConsumptionRate(), DB query failed.Query= "+query);
+      return null;
+    }
+    return result;
+  }
   public String generateMEIQueryParameter
       (Asset asset, String asset_type, Service service) {
     String typeID = asset.getTypeIdentificationPG().getTypeIdentification();
@@ -652,6 +683,19 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     return query;
   } // substituteSupplyType
 
+  public String substituteOrgName (String q, String agent_name) {
+    String query=null;
+    if (q != null) {
+      int indx = q.indexOf(":org");
+      if (indx != -1) {
+        query = q.substring(0,indx) + "'"+agent_name+"'";
+        if (q.length() > indx+3) {
+          query += q.substring(indx+3);
+        } // if
+      } // if
+    } // if
+    return query;
+  }
 
   /**
    *  Replaces the ":nsns" in the query for the actual list of NSNs.
