@@ -158,6 +158,7 @@ public class RefillProjectionGenerator extends InventoryModule {
       double projDemand = 0;
       double nextProjDemand = 0;
       int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
+      thePG.setEndOfLevelSixBucket(endOfLevelSixBucket);
       
       //get the initial demand for the customer for startBucket + daysOnHand
       //Is there a better way to do this to avoid the duplication?
