@@ -543,9 +543,15 @@ public class InventoryPlugin extends ComponentPlugin {
       if (o instanceof org.cougaar.logistics.plugin.inventory.InventoryPolicy) {
 	String type = ((InventoryPolicy)o).getResourceType();
 	if (type.equals(this.type)) {
-	  logger.debug("Found an inventory policy for "+this.type + "agent is: " +
-		       getBindingSite().getAgentIdentifier());
+	  if (logger.isDebugEnabled()) 
+	    logger.debug("Found an inventory policy for "+this.type + "agent is: " +
+			 getBindingSite().getAgentIdentifier());
 	  return true;
+	} else {
+	  if (logger.isDebugEnabled()) 
+	    logger.debug("Ignoring type of: "+type + " in " +
+			 getBindingSite().getAgentIdentifier() + " this type is: " + 
+			 this.type);
 	}
       }
       return false;
