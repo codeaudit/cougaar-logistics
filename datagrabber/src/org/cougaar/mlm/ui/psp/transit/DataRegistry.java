@@ -1330,7 +1330,7 @@ typical_case:
    */
   private static int getAssetType(Asset a) {
     // could modify to use "hasXPG()" methods
-    final int retval;
+    int retval = ConveyancePrototype.ASSET_TYPE_UNKNOWN;
     if ((a instanceof Truck) ||
         (a instanceof Trailer)) {
       // trucks
@@ -1358,15 +1358,21 @@ typical_case:
       retval = ConveyancePrototype.ASSET_TYPE_PERSON;
     } else if (a instanceof GLMAsset) {
       GLMAsset alpA = (GLMAsset)a;
-      if (alpA.hasPersonPG()) {
-        // people
-        retval = ConveyancePrototype.ASSET_TYPE_PERSON;
-      } else if (glmAssetHelper.isVehicle(alpA)) {
-        // misc self-propellable (e.g. tank)
-        retval = ConveyancePrototype.ASSET_TYPE_SELF_PROPELLABLE;
-      } else {
-        // unknown
-        retval = ConveyancePrototype.ASSET_TYPE_UNKNOWN;
+      try {
+	if (alpA.hasPersonPG()) {
+	  // people
+	  retval = ConveyancePrototype.ASSET_TYPE_PERSON;
+	} else if (glmAssetHelper.isVehicle(alpA)) {
+	  // misc self-propellable (e.g. tank)
+	  retval = ConveyancePrototype.ASSET_TYPE_SELF_PROPELLABLE;
+	} else {
+	  // unknown
+	  retval = ConveyancePrototype.ASSET_TYPE_UNKNOWN;
+	}
+      } catch (Exception e) {
+	if (logger.isInfoEnabled()) {
+	  logger.info ("note that : " + alpA + " does not have a cargo cat code set.");
+	}
       }
     } else {
       // unknown
