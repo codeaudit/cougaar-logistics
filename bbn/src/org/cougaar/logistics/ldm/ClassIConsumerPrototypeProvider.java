@@ -151,7 +151,8 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 
   protected void rehydrate() {
     configure();
-    logger.debug ("Rehydrated - configured "+configured);
+    if (logger.isDebugEnabled())
+      logger.debug ("Rehydrated - configured "+configured);
     if (configured) {
       // rehook handlers
       Enumeration consumers = consumerSubscription.elements();
@@ -176,7 +177,8 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 	    if (type_id != null) {
 	      getLDM().cachePrototype(type_id, proto);
 	      good_prototypes.add(proto);
-	      logger.debug ("Rehydrated asset "+asset+" w/ proto "+proto);
+	      if (logger.isDebugEnabled())
+		logger.debug ("Rehydrated asset "+asset+" w/ proto "+proto);
             } else {
 	      logger.error ("cannot rehydrate "+proto+" no typeId");
 	    }
@@ -230,7 +232,8 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
     Vector list = new Vector();
     String query = (String)fileParameters_.get("Class1ConsumedList");
     if (query == null) { // if query not found, return null
-      logger.debug ("generaterationList(),  query is null");
+      if (logger.isDebugEnabled())
+	logger.debug ("generaterationList(),  query is null");
       return null;
     }
     Vector holdsQueryResult;
@@ -240,8 +243,10 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 	return null;
       }
     } catch (Exception ee) {
-      String str =" DB query failed. query= "+ query+ "\n ERROR "+ee.toString();
-      logger.debug (" getSupplementalList(),"+str);
+      if (logger.isDebugEnabled()) {
+	String str =" DB query failed. query= "+ query+ "\n ERROR "+ee.toString();
+	logger.debug (" getSupplementalList(),"+str);
+      }
       return null;
     }
     String  typeIDPrefix = "NSN/";
@@ -259,8 +264,12 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
   }
 
   protected void addConsumerPGs(Collection consumers) {
+    if (logger.isDebugEnabled())
+      logger.debug(getAgentIdentifier() + ".addConsumerPGs with " + consumers.size() + " people");
     Iterator people = consumers.iterator();
     Asset a, anAsset;
+
+    // Loop over all eaters, adding the PG as necessary
     while (people.hasNext()) {
       a = (Asset)people.next();
       if (a instanceof AggregateAsset) {
@@ -269,8 +278,16 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
         anAsset = a;
       }
       if (anAsset instanceof MilitaryPerson) {
-        if (anAsset.searchForPropertyGroup(SubsistenceConsumerPG.class) == null) {
-          NewSubsistenceConsumerPG foodpg = 
+	if (logger.isDebugEnabled())
+	  logger.debug(getAgentIdentifier() + ".addConsumerPG for MilitaryPerson: " + anAsset);
+
+	NewSubsistenceConsumerPG foodpg = (NewSubsistenceConsumerPG)anAsset.searchForPropertyGroup(SubsistenceConsumerPG.class);
+
+	// If have not added the PG yet, add it
+	if (foodpg == null) {
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsumerPG CREATING SubConsumerPG for " + anAsset);
+          foodpg = 
             (NewSubsistenceConsumerPG)getLDM().getFactory().createPropertyGroup(SubsistenceConsumerPG.class);
           foodpg.setMei(a);
           foodpg.setService(service);
@@ -279,9 +296,15 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
           foodpg.initialize(this);
           anAsset.setPropertyGroup(foodpg);
           publishChange(a);
-        }
-      }
-    }
+        } else if (didRehydrate()) {
+	  if (logger.isDebugEnabled())
+	    logger.debug(getAgentIdentifier() + ".addConsumerPG on rehydrate - reinitializing PG for " + anAsset);
+	  // Otherwise, if it is there, and we rehydrated, then all the slots are filled in, but
+	  // we must re-initialize (so the BG has a parentPlugin reference, etc)
+	  foodpg.initialize(this);
+	} // end of didRehydrate
+      } // end of check for MilitaryPerson
+    } // end of loop over eaters
   }
 
   // Associating a property group to the person asset

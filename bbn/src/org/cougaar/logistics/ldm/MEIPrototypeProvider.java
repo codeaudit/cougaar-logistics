@@ -170,8 +170,11 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     meiSubscription =
         (IncrementalSubscription) subscribe (new ClassVIIPredicate());
     if (didRehydrate()) {
+      if (logger.isInfoEnabled())
+	logger.info("Did Rehydrate -- will do rehydrate() method");
       rehydrate();
-    }
+    } else if (logger.isInfoEnabled())
+      logger.info("Did not rehydrate.");
   } // setupSubscriptions
 
 
@@ -208,7 +211,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
       }
       addConsumerPGs(meiSubscription);
-    }
+    } else if (logger.isInfoEnabled())
+      logger.info("in rehydrate still not configured after call to configure - so not doing addConsumerPGs");
   }
 
   public void execute() {
@@ -219,7 +223,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (!meiSubscription.isEmpty()) {
 //       System.out.println("Calling addConsumerPGs() for "+getAgentIdentifier());
       addConsumerPGs(meiSubscription);
-    }
+    } else if (logger.isInfoEnabled())
+      logger.info("execute had empty meiSubscription");
   }
 
   protected void configure() {
@@ -241,7 +246,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         logger.error("Organization has no Service :"+
                      myOrg.getItemIdentificationPG().getItemIdentification());
       }
-    }
+    } else if (logger.isInfoEnabled())
+      logger.info("No self orgs from query service?");
   }
 
   private void publishLevel2Mei() {
@@ -255,7 +261,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
                                             "Level2MEI");
       Asset a = factory.createInstance(asset);
       setupAvailableSchedule(a);
-      logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
+      if (logger.isInfoEnabled())
+	logger.info("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
       publishAdd(a);
     }
     publishedLevel2MeiAsset = true;
@@ -292,11 +299,13 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     Vector qresult = null;
     try {
       qresult = executeQuery (query);
-      logger.debug("checkLevel2MEIConsumption() execute query: " +query);
+      if (logger.isDebugEnabled())
+	logger.debug("checkLevel2MEIConsumption() execute query: " +query);
       if (qresult.isEmpty()) {
         // TODO:  this should be a warn, but we are currently getting one and
         // I have asked Gary to look into it.  After that, we should switch back.
-        logger.debug ("No results returned for Level2MEIConsumption query:  " + query);
+	if (logger.isDebugEnabled())
+	  logger.debug ("No results returned for Level2MEIConsumption query:  " + query);
       } else {
         Object row[] = (Object[])qresult.firstElement();
         result[AMMO]=convertConsumptionElement(row[AMMO]);
@@ -330,11 +339,13 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
     try {
       qresult = executeQuery (query);
-      logger.debug ("in checkMeiConsumption() query complete for asset "+
+      if (logger.isDebugEnabled())
+	logger.debug ("in checkMeiConsumption() query complete for asset "+
                     asset.getTypeIdentificationPG().getNomenclature()+
                     "\nquery= "+query);
       if (qresult.isEmpty()) {
-        logger.debug ("no result for asset " +
+	if (logger.isDebugEnabled())
+	  logger.debug ("no result for asset " +
                       asset.getTypeIdentificationPG().getNomenclature());
       } else {
         Object row[] = (Object[])qresult.firstElement();
@@ -383,92 +394,210 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     return false;
   }
 
+  // On rehydration, this should just re-initialize the PGs
+  // Otherwise, it should create the various consumer PGs for the MEIs as necessary,
+  // putting the appropriate BG on them as well
+  // It only creates PGs for the MEIs that consume that supply class
   protected void addConsumerPGs(Collection meiConsumers) {
+    if (logger.isInfoEnabled())
+      logger.info(getAgentIdentifier() + " in addConsumerPGs with " + meiConsumers.size() + " meis");
     Iterator meis = meiConsumers.iterator();
     Asset a, anAsset;
-    boolean addedPG = false;
+
+    // Loop over all the MEIs, adding PGs as necessary
     while (meis.hasNext()) {
+      // Reset this boolean for each Asset so decision to publishChange is accurate
+      boolean addedPG = false; // Did we add any PGs to this Asset?
+
       a = (Asset)meis.next();
       if (a instanceof AggregateAsset) {
         anAsset = ((AggregateAsset)a).getAsset();
       } else {
         anAsset = a;
       }
+
       if (anAsset instanceof ClassVIIMajorEndItem) {
+	if (logger.isInfoEnabled())
+	  logger.info(getAgentIdentifier() + ".addConsumerPGs for Class7MEI: " + anAsset);
+
         if (anAsset instanceof Level2MEIAsset) {
           //This cargo category code means, "do not transport me."
           setNoTransportCargoCode(anAsset);
         }
+
         boolean[] consumed = checkMeiConsumption(anAsset);
-        if (consumes(consumed, FUEL) && anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
-          logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
-                       getAgentIdentifier());
 
-          NewFuelConsumerPG fuelpg =
+	// For each class of supply, add the appropriate consumer PG as necessary
+        if (consumes(consumed, FUEL)) {
+	  NewFuelConsumerPG fuelpg = (NewFuelConsumerPG) anAsset.searchForPropertyGroup(FuelConsumerPG.class);
+	  if ( fuelpg == null) {
+	    if (logger.isInfoEnabled())
+	      logger.info("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
+			  getAgentIdentifier());
+
+	    fuelpg =
               (NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
-          fuelpg.setMei(a);
-          fuelpg.setService(service);
-          fuelpg.setTheater(THEATER);
-          if (anAsset instanceof Level2MEIAsset) {
-            fuelpg.setFuelBG(new Level2FuelConsumerBG(fuelpg));
-          } else {
-            fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
-          }
-          fuelpg.initialize(this);
-          anAsset.setPropertyGroup(fuelpg);
-          addedPG = true;
-        }
-        if (consumes(consumed, AMMO) && anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {
-          logger.debug("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
-                       getAgentIdentifier());
+	    fuelpg.setMei(a);
+	    fuelpg.setService(service);
+	    fuelpg.setTheater(THEATER);
+	    if (anAsset instanceof Level2MEIAsset) {
+	      fuelpg.setFuelBG(new Level2FuelConsumerBG(fuelpg));
+	    } else {
+	      fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
+	    }
+	    fuelpg.initialize(this);
+	    anAsset.setPropertyGroup(fuelpg);
+	    addedPG = true;
+	  } else {
+	    if (logger.isInfoEnabled())
+	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing FuelConsumerPG for " + anAsset);
+	    if (didRehydrate()) {
+	      if (logger.isInfoEnabled())
+		logger.info("          Due to rehydrate. Will re-initialize BG only.");
+	      fuelpg.initialize(this);
+	    } else {
+	      if (logger.isDebugEnabled())
+		logger.debug("          DidRehydrate is false. Blindly assume the PG is ok and avoid doing excess work.");
+
+	      // Note that we could check the Mei, Service, Theater, and BG. But there's
+	      // no situation where they should not be OK.
+	    }
+	  }
+	} else {
+	  if (logger.isInfoEnabled())
+	    logger.info(getAgentIdentifier() + ".addConsPGs not putting FuelPG on asset that does not consume it: " + anAsset);
+	}
+
+        if (consumes(consumed, AMMO)) {
           NewAmmoConsumerPG ammopg =
+	    (NewAmmoConsumerPG)anAsset.searchForPropertyGroup(AmmoConsumerPG.class);
+	  if (ammopg == null) {
+	    if (logger.isInfoEnabled())
+	      logger.info("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
+			  getAgentIdentifier());
+	    ammopg =
               (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
-          ammopg.setMei(a);
-          ammopg.setService(service);
-          ammopg.setTheater(THEATER);
-          if (anAsset instanceof Level2MEIAsset) {
-            ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
-          } else {
-            ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
-          }
-          ammopg.initialize(this);
-          anAsset.setPropertyGroup(ammopg);
-          addedPG = true;
-        }
-        if (consumes(consumed, PKG_POL) && anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class) == null) {
-          logger.debug("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
-                       getAgentIdentifier());
+	    ammopg.setMei(a);
+	    ammopg.setService(service);
+	    ammopg.setTheater(THEATER);
+	    if (anAsset instanceof Level2MEIAsset) {
+	      ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
+	    } else {
+	      ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
+	    }
+	    ammopg.initialize(this);
+	    anAsset.setPropertyGroup(ammopg);
+	    addedPG = true;
+	  } else {
+	    if (logger.isInfoEnabled())
+	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing AmmoConsumerPG for " + anAsset);
+	    if (didRehydrate()) {
+	      if (logger.isInfoEnabled())
+		logger.info("          Due to rehydrate. Will re-initialize BG only.");
+	      ammopg.initialize(this);
+	    } else {
+	      if (logger.isDebugEnabled())
+		logger.debug("          DidRehydrate is false. Blindly assume the PG is ok and avoid doing excess work.");
 
-          NewPackagedPOLConsumerPG packagedpg =
+	      // Note that we could check the Mei, Service, Theater, and BG. But there's
+	      // no situation where they should not be OK.
+	    } // end of block to handle re-BG not rehydrate
+	  } // end of block to handle existing PG
+	} else {
+	  if (logger.isInfoEnabled())
+	    logger.info(getAgentIdentifier() + ".addConsPGs not putting AmmopG on asset that does not consume it: " + anAsset);
+	}
+	
+        if (consumes(consumed, PKG_POL)) {
+          NewPackagedPOLConsumerPG packagedpg = (NewPackagedPOLConsumerPG)anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class);
+	  if (packagedpg == null) {
+	    if (logger.isInfoEnabled())
+	      logger.info("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
+			  getAgentIdentifier());
+	    
+	    packagedpg =
               (NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
-          packagedpg.setMei(a);
-          packagedpg.setService(service);
-          packagedpg.setTheater(THEATER);
-          packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
-          packagedpg.initialize(this);
-          anAsset.setPropertyGroup(packagedpg);
-          addedPG = true;
-        }
-        if (consumes(consumed, SPARES) && anAsset.searchForPropertyGroup(RepairPartConsumerPG.class) == null) {
-          logger.debug("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
-                       getAgentIdentifier());
+	    packagedpg.setMei(a);
+	    packagedpg.setService(service);
+	    packagedpg.setTheater(THEATER);
+	    packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
+	    packagedpg.initialize(this);
+	    anAsset.setPropertyGroup(packagedpg);
+	    addedPG = true;
+	  } else {
+	    // Already had this PG
+	    if (logger.isInfoEnabled())
+	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing PackagedPOLConsumerPG for " + anAsset);
+	    if (didRehydrate()) {
+	      if (logger.isInfoEnabled())
+		logger.info("          Due to rehydrate. Will re-initialize BG only.");
+	      packagedpg.initialize(this);
+	    } else {
+	      if (logger.isDebugEnabled())
+		logger.debug("          DidRehydrate is false. Blindly assume the PG is ok and avoid doing excess work.");
 
+	      // Note that we could check the Mei, Service, Theater, and BG. But there's
+	      // no situation where they should not be OK.
+	    } // end of block to handle non-rehydrate existing PG
+	      
+	  } // end of block to handle existing PG
+	} else {
+	  if (logger.isInfoEnabled())
+	    logger.info(getAgentIdentifier() + ".addConsPGs not putting PackagedPOLPG on asset that does not consume it: " + anAsset);
+	}
+
+        if (consumes(consumed, SPARES)) {
           NewRepairPartConsumerPG partpg =
+	    (NewRepairPartConsumerPG)anAsset.searchForPropertyGroup(RepairPartConsumerPG.class);
+	  if (partpg == null) {
+	    if (logger.isInfoEnabled())
+	      logger.info("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
+			  getAgentIdentifier());
+	    
+	    partpg =
               (NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
-          partpg.setMei(a);
-          partpg.setService(service);
-          partpg.setTheater(THEATER);
-          partpg.setRepairPartBG(new RepairPartConsumerBG(partpg));
-          partpg.initialize(this);
-          anAsset.setPropertyGroup(partpg);
-          addedPG = true;
-        }
+	    partpg.setMei(a);
+	    partpg.setService(service);
+	    partpg.setTheater(THEATER);
+	    partpg.setRepairPartBG(new RepairPartConsumerBG(partpg));
+	    partpg.initialize(this);
+	    anAsset.setPropertyGroup(partpg);
+	    addedPG = true;
+	  } else {
+	    // Already had this PG
+	    if (logger.isInfoEnabled())
+	      logger.info(getAgentIdentifier() + ".addConsPGs Re-BGing RepairPartConsumerPG for " + anAsset);
+	    if (didRehydrate()) {
+	      if (logger.isInfoEnabled())
+		logger.info("          Due to rehydrate. Will re-initialize BG only.");
+	      partpg.initialize(this);
+	    } else {
+	      if (logger.isDebugEnabled())
+		logger.debug("          DidRehydrate is false. Blindly assume the PG is ok and avoid doing excess work.");
+
+	      // Note that we could check the Mei, Service, Theater, and BG. But there's
+	      // no situation where they should not be OK.
+	    } // end of block to handle non-rehydrate existing PG
+	    
+	  } // end of block to handle existing PG
+	} else {
+	  if (logger.isInfoEnabled())
+	    logger.info(getAgentIdentifier() + ".addConsPGs not putting RepairPartPG on asset that does not consume it: " + anAsset);
+	} // end of block to handle RepairPartPG at all
+	
+	// Only publishChange the Asset if we really changed it
         if (addedPG) {
           publishChange(a);
-        }
+        } else if (logger.isInfoEnabled()) {
+	  logger.info(getAgentIdentifier() + ".addConsumerPGs did not add any PGs to " + a);
+	}
+      } else {
+	// Not a Class7MEI
+	if (logger.isInfoEnabled())
+	  logger.info(getAgentIdentifier() + ".addConsumerPGs had non Class7MEI: " + a);
       }
-    }
-  }
+    } // while loop over MEIs
+  } // addConsumerBGs method
 
   private void setNoTransportCargoCode(Asset anAsset) {
     MovabilityPG pg = (MovabilityPG) anAsset.searchForPropertyGroup(MovabilityPG.class);
@@ -490,7 +619,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public boolean canHandle (String typeid, Class class_hint) {
     Boolean protoProvider = (Boolean) myParams_.get("PrototypeProvider");
-    logger.debug("canHandle (typeid:"+typeid+")");
+    if (logger.isDebugEnabled())
+      logger.debug("canHandle (typeid:"+typeid+")");
     if ((protoProvider == null) || (protoProvider.booleanValue())) {
       if ((class_hint == null) ||  class_hint.getName().equals(MEI_STRING)){
         String [] handlesList = {"NSN/", "MDS/", "TAMCN/", "MEI/", "DODIC/"};
@@ -501,7 +631,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
       }
     }
-    logger.debug("canHandle(), Unable to provider Prototype."+
+    if (logger.isDebugEnabled())
+      logger.debug("canHandle(), Unable to provider Prototype."+
                  " ProtoProvider = "+protoProvider+", typeid= "+typeid);
     return false;
   }
@@ -531,7 +662,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (nomen == null) {
       return null;
     } // if
-    logger.debug ("is dodic:" + (type_name.indexOf ("DODIC") > -1));
+    if (logger.isDebugEnabled())
+      logger.debug ("is dodic:" + (type_name.indexOf ("DODIC") > -1));
     return newAsset(type_name,MEI_STRING, nomen);
   } // makePrototype
 
@@ -544,7 +676,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     StringBuffer mission = new StringBuffer();
     StringBuffer design = new StringBuffer();
     StringBuffer series = new StringBuffer();
-    logger.debug("getNormalizedName, Original MDS: "+name);
+    if (logger.isDebugEnabled())
+      logger.debug("getNormalizedName, Original MDS: "+name);
     StringCharacterIterator sci = new StringCharacterIterator(name);
     int state = 0;
     //0 = mission
@@ -640,7 +773,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // public AssetConsumptionRate lookupAssetConsumptionRate
   public Vector lookupAssetConsumptionRate(Asset asset, String asset_type,
                                            String service, String theater) {
-    logger.debug ("lookupAssetConsumptionRate()");
+    if (logger.isDebugEnabled())
+      logger.debug ("lookupAssetConsumptionRate()");
 
     String query = createACRQuery (asset, asset_type, service, theater);
     if (query == null) {
@@ -648,16 +782,19 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
                    asset_type+service);
       return null;
     } // if
-    logger.debug("lookupAssetConsumptionRate() ACR query for "+
+    if (logger.isDebugEnabled())
+      logger.debug("lookupAssetConsumptionRate() ACR query for "+
                  asset_type+service+" = "+query);
     Vector result;
     try {
       result = executeQuery (query);
-      logger.debug ("in lookupAssetConsumptionRate() query complete for asset "+
+      if (logger.isDebugEnabled())
+	logger.debug ("in lookupAssetConsumptionRate() query complete for asset "+
                     asset.getTypeIdentificationPG().getNomenclature()+
                     "\nquery= "+query);
       if (result.isEmpty()) {
-        logger.debug ("no result for asset " +
+	if (logger.isDebugEnabled())
+	  logger.debug ("no result for asset " +
                       asset.getTypeIdentificationPG().getNomenclature());
         return null;
       } // if
@@ -678,14 +815,17 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       return null;
     }
     query = substituteOrgName(query, agent);
-    logger.debug("lookupLevel2AssetConsumptionRate() ACR query for "+ LEVEL2 + supply_type + " = "+query);
+    if (logger.isDebugEnabled())
+      logger.debug("lookupLevel2AssetConsumptionRate() ACR query for "+ LEVEL2 + supply_type + " = "+query);
     try {
       result = executeQuery (query);
-      logger.debug ("in lookupLevel2AssetConsumptionRate() query complete for asset "+
+      if (logger.isDebugEnabled())
+	logger.debug ("in lookupLevel2AssetConsumptionRate() query complete for asset "+
                     asset.getTypeIdentificationPG().getNomenclature()+
                     "\nquery= "+query);
       if (result.isEmpty()) {
-        logger.debug ("no result for asset " +
+	if (logger.isDebugEnabled())
+	  logger.debug ("no result for asset " +
                       asset.getTypeIdentificationPG().getNomenclature());
         return null;
       }
@@ -719,7 +859,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     }
     String query = (String) fileParameters_.get (asset_type+service+division);
     String consumer_id = typeID.substring (indx+1);
-    logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+
+    if (logger.isDebugEnabled())
+      logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+
                  ", consumer_Id:"+consumer_id);
     return substituteNSN (query, consumer_id);
   } // createACRQuery
