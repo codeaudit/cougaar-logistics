@@ -53,42 +53,11 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
     this.conditionName = conditionName;
     this.broker = broker;
 
-    if (conditionService == null) {
-      if (getLog().isInfoEnabled())
-	getLog().info (getAgentIdentifier() + " - No condition service available at startup." +
-		       " Will check again when servlet called.\n"+
-		       " This servlet needs the ConditionServiceProvider to be loaded eventually.");
-    }
-    else
-      publishCondition ();
+    publishCondition ();
   }
 
   /** publishes the condition to blackboard, if the condition service is available. */
   public void publishCondition () {
-    if (!broker.hasService (org.cougaar.core.service.ConditionService.class)) {
-      if (getLog().isInfoEnabled())
-	getLog().info (getAgentIdentifier() + " - No condition service available." +
-		       " Servlet will not be able to set the condition.\n"+
-		       " Servlet needs the ConditionServiceProvider to be loaded.");
-      return;
-    }
-    else if (conditionService == null) {
-      conditionService = (ConditionService)
-	broker.getService (this,
-			   org.cougaar.core.service.ConditionService.class,
-			   this);
-      if (conditionService == null) {
-	if (getLog().isInfoEnabled())
-	  getLog().info (getAgentIdentifier() + " - No condition service available." +
-			 " Servlet will not be able to set the condition.\n"+
-			 " Servlet needs the ConditionServiceProvider to be loaded.");
-	return;
-      }
-
-      if (getLog().isDebugEnabled())
-	getLog().debug (getAgentIdentifier() + " - found condition service.");
-    }
-
     if (didPublish)
       return;
 
