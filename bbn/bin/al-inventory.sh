@@ -19,14 +19,10 @@
 #  PERFORMANCE OF THE COUGAAR SOFTWARE.
 # </copyright>
 
-MYCLASSPATH=".:$COUGAAR_INSTALL_PATH/lib/core.jar:$COUGAAR_INSTALL_PATH/lib/bootstrap.jar:$COUGAAR_INSTALL_PATH/lib/util.jar:$COUGAAR_INSTALL_PATH/lib/glm.jar:$COUGAAR_INSTALL_PATH/lib/Logistics_bbn_bbn.jar:$COUGAAR_INSTALL_PATH/sys/jcchart.jar:$COUGAAR_INSTALL_PATH/sys/log4j.jar"
+
+source $COUGAAR_INSTALL_PATH/bin/setlibpath.sh
+source $COUGAAR_INSTALL_PATH/bin/setarguments.sh
 
 MYCLASSES="org.cougaar.logistics.ui.inventory.InventoryUIFrame"
-# REM set MYCLASSES=org.cougaar.logistics.ui.inventory.data.InventoryProjAR
-BS="org.cougaar.bootstrap.Bootstrapper"
-MYMEMORY="-Xms100m -Xmx300m"
 
-#java.exe %MYMEMORY% -classpath %MYCLASSPATH% %BS% %MYCLASSES% %1
-
-echo exec java $MYMEMORY -classpath $MYCLASSPATH $BS $MYCLASSES $*
-exec java $MYMEMORY -classpath $MYCLASSPATH $BS $MYCLASSES $*
+exec java $MYPROPERTIES -classpath $LIBPATHS $BOOTSTRAPPER $DEVP $MYCLASSES $*
