@@ -34,6 +34,7 @@ import javax.swing.JComboBox;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JComponent;
+import javax.swing.Box;
 import javax.swing.border.LineBorder;
 
 import java.awt.event.ItemEvent;
@@ -150,13 +151,29 @@ public class InventorySelectionPanel extends JPanel
 	this.add(orgsAndSupply);
 
 	assetNamesBox.addItemListener(this);
-	this.add(new JLabel(ITEMS));
-	this.add(assetNamesBox);
-	submitButton.setPreferredSize(new Dimension(100,25));
-	submitButton.addActionListener(this);
-	this.add(submitButton);
+	JPanel assetsPanel = new JPanel();
+	assetsPanel.setLayout(new FlowLayout());
+	assetsPanel.add(new JLabel(ITEMS));
+	assetsPanel.add(assetNamesBox);
 
-	this.setPreferredSize(new Dimension(25,80));
+	JPanel buttonPanel = new JPanel();
+	buttonPanel.setLayout(new FlowLayout());
+	submitButton.setPreferredSize(new Dimension(100,25));
+	submitButton.setMaximumSize(new Dimension(100,25));
+	submitButton.addActionListener(this);
+	buttonPanel.add(Box.createHorizontalStrut(100));
+	buttonPanel.add(submitButton);
+	buttonPanel.add(Box.createHorizontalStrut(100));
+
+	JPanel assetsAndButton = new JPanel();
+	assetsAndButton.setLayout(new BorderLayout());
+	
+	assetsAndButton.add(assetsPanel,BorderLayout.NORTH);
+	assetsAndButton.add(buttonPanel,BorderLayout.CENTER);
+
+	this.add(assetsAndButton);
+
+	this.setPreferredSize(new Dimension(700,80));
     }
 
     public void initializeComboBoxes(Vector orgs, String[] supplyTypes) {
