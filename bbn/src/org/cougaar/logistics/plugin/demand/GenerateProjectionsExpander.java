@@ -79,12 +79,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Collection subTasks = new ArrayList();
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
       Asset consumedItem = (Asset) iterator.next();
+
       Enumeration scheduleElements = schedule.getAllScheduleElements();
       Rate rate;
       // for every item consumed, walk the schedule elements and get the rates
       while (scheduleElements.hasMoreElements()) {
         ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
         rate = getRate(pg, consumedItem, (List) ose.getObject());
+        logger.info("checking Rate on consumed item " + rate.toString());
         subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                              ose.getEndTime(), rate));
       }
@@ -201,6 +203,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
+     logger.info("GenerateProjectionsExpander publishing expansion ");
     dfPlugin.publishAdd(expansion);
   }
 
@@ -216,11 +219,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     dfPlugin.publishChange(expansion);
   }
 
-  protected void addNewTasksToExpansion(Task parentTask, Collection subtasks) {
 
-  }
-
-  private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start, long end, Rate rate) {
+  private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
+                                          long end, Rate rate) {
+    logger.info("GenerateProjectionsExpander create ProjectSupply Task ");
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
