@@ -55,6 +55,7 @@ import org.cougaar.planning.plugin.util.AllocationResultHelper;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -665,6 +666,8 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
+
+
   /** Subscription for aggregatable support requests. **/
   private IncrementalSubscription detReqSubscription;
 
@@ -722,6 +725,9 @@ public class InventoryPlugin extends ComponentPlugin
    *  issue that occurs because subsistence does not generate level 2 tasks
    **/
   private IncrementalSubscription Level6OMSubscription;
+
+    //Org Activity subscription
+  private IncrementalSubscription orgActSubscription;
 
   /** Subscription for CommStatus object **/
   private IncrementalSubscription commStatusSub;
@@ -790,6 +796,11 @@ public class InventoryPlugin extends ComponentPlugin
     nonrefillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new NonRefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
+
+    //LogOPlan replacment
+    orgActSubscription = (IncrementalSubscription) blackboard.subscribe(new OrgActivitiesPredicate());
+
+
     // Setup TaskSchedulers
     String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
     turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
@@ -839,6 +850,17 @@ public class InventoryPlugin extends ComponentPlugin
 //        subscribe(new SupplyTaskPredicate(supplyType, id, taskUtils));
 //    projectionTaskSubscription = (IncrementalSubscription) blackboard.
 //        subscribe(new ProjectionTaskPredicate(supplyType, id, taskUtils));
+  }
+
+  private static class OrgActivitiesPredicate implements UnaryPredicate {
+    public OrgActivitiesPredicate() {
+    } 
+    public boolean execute(Object o) {
+      if (o instanceof OrgActivity) {
+	  return true;
+      }
+      return false;
+    }
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -1369,10 +1391,12 @@ public class InventoryPlugin extends ComponentPlugin
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)
           inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       if(logInvPG.getArrivalTime() != getOPlanArrivalInTheaterTime()) {
-        long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() +
-            (getOPlanArrivalInTheaterTime() - logInvPG.getArrivalTime());
-        logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
-        ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
+	if(logInvPG.getSupplierArrivalTime() != -1) {
+	    long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() +
+		(getOPlanArrivalInTheaterTime() - logInvPG.getArrivalTime());
+	    ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
+	}
+	logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
         logInvPG.setStartCDay(logOPlan.getOplanCday());
         publishChange(inv);
         touchInventory(inv);
@@ -1749,7 +1773,17 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   public long getOPlanArrivalInTheaterTime() {
-    return logOPlan.getArrivalTime();
+      //Before the arrivalt time is updated in the log oplan
+      //the default value is just the start time.
+    if(logOPlan.getArrivalTime() == Long.MIN_VALUE) {
+      if(logger.isErrorEnabled()) {
+	logger.error("Asking for arrival time in theater, before it is known");
+      }
+      return startTime;
+    }
+    else {
+      return logOPlan.getArrivalTime();
+    }
   }
 
   public long getPrepoArrivalTime() {
@@ -2093,6 +2127,14 @@ public class InventoryPlugin extends ComponentPlugin
       logger.info("Using expander " + expanderClass);
     }
     return em;
+  }
+
+  public void updateStartAndEndTimes() {
+      if(logOPlan != null) {
+	  if(!orgActSubscription.isEmpty()) {
+	      logOPlan.updateOrgActivities(orgActSubscription);
+	  }
+      }
   }
 
   /**
