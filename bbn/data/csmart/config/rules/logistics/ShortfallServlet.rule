@@ -1,0 +1,12 @@
+####################################################
+# Add Shortfall Servlet
+
+simple_servlet_comp = "org.cougaar.core.servlet.SimpleServletComponent"
+
+society.each_agent(true) do |agent|
+  agent.add_component do |c|
+    c.classname = "org.cougaar.logistics.servlet.ShortfallAlertServlet"
+    c.add_argument("/shortfall")
+  end
+end
+
