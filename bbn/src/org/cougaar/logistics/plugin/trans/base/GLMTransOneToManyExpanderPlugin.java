@@ -70,6 +70,7 @@ import org.cougaar.glm.util.GLMPrepPhrase;
 import org.cougaar.glm.util.GLMPreference;
 
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
+import org.cougaar.lib.callback.*;
 
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -104,6 +105,7 @@ import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
 
 import org.cougaar.glm.ldm.asset.TransportationRoute;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.log.Logger;
 
 /**
  * getSubtasks is filled in.  It justs blows up composite
@@ -167,7 +169,43 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public void setupFilters () {
     super.setupFilters ();
     portLocator = new PortLocatorImpl (this, logger);
+    
+    addFilter (modeCallback = new OperatingModeCallback (this, logger));
   }
+
+    UTILFilterCallback modeCallback;
+
+    class OperatingModeCallback extends UTILFilterCallbackAdapter {
+	public OperatingModeCallback (UTILFilterCallbackListener listener, Logger logger) {
+	    super (listener, logger);
+	}
+	protected UnaryPredicate getPredicate () {
+	    return new UnaryPredicate() {
+		    public boolean execute(Object o) { 
+			boolean val = (o instanceof OperatingMode);
+			if (val && isInfoEnabled())
+			    info (getName () + ".getPredicate - interested in " + o);
+			return val;
+		    }
+		};
+	}
+	public void reactToChangedFilter () {
+	    if (isInfoEnabled())
+		info (getName () + " operating modes sub changed " +
+		      modeCallback.getSubscription ().getAddedCollection().size () + " added, " + 
+		      modeCallback.getSubscription ().getChangedCollection().size () + " changed, " + 
+		      modeCallback.getSubscription ().getRemovedCollection().size () + " removed");
+	    if (!modeCallback.getSubscription().getChangedCollection().isEmpty ()) {
+		if (isInfoEnabled())
+		    info (getName () + " operating modes changed, so reviewing level 2 tasks.");
+		reviewLevel2 ();
+		if (isInfoEnabled())
+		    info (getName () + " operating modes changed, so reviewing deferred tasks.");
+		processTasks (new ArrayList(myInputTaskCallback.getSubscription().getCollection()));
+	    }
+	}
+
+    }
 
   /** create and publish level-2 and 6 VTH Operating Modes */
   protected void setupOperatingModes () {
@@ -333,8 +371,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       }
 
       if (mode == DONT_PROCESS_MODE) {
-	if (isWarnEnabled ()) {
-	  warn (getName() + ".getSubtasks - not processing " + parentTask.getUID() + " for now (= " +
+	if (isInfoEnabled ()) {
+	  info (getName() + ".getSubtasks - not processing " + parentTask.getUID() + " for now (= " +
 		new Date(alarmService.currentTimeMillis()) + "), will revisit at " +
 		new Date(currentAlarm.getExpirationTime ()));
 	}
@@ -1047,8 +1085,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
   /** Buffering runnable wants to restart later */
   public void startAgainIn (long millis) {
-    if (isWarnEnabled())
-      warn (getName () + " asking to be restarted in " + millis);
+    if (isInfoEnabled())
+	info (getName () + " asking to be restarted in " + millis);
 
     if (currentAlarm != null)
       currentAlarm.cancel ();
@@ -1093,8 +1131,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
 	String name = getName()+"_restartThread";
 
-	if (isWarnEnabled())
-	  warn (getName () + " re-examining unprocessed tasks.");
+	if (isInfoEnabled())
+	  info (getName () + " re-examining unprocessed tasks.");
 
 	schedulable = 
 	  threadService.getThread (this, 
@@ -1173,8 +1211,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
       // replan the task
       
-      if (isWarnEnabled())
-	warn (getName () + ".reviewLevel2 - replanning task " + level2.getUID() + 
+      if (isInfoEnabled())
+	info (getName () + ".reviewLevel2 - replanning task " + level2.getUID() + 
 	      " as a Level 6 task.");
     }
   }
