@@ -24,6 +24,7 @@ package org.cougaar.logistics.plugin.demand;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.util.TimeSpan;
 
 import java.util.Collection;
 
@@ -43,7 +44,7 @@ public interface GenProjExpanderIfc {
    * tasks - one for each resource need of this MEI/Asset determined by the 
    * BG associated with the passed in supplyPGClass.
    **/
-  void expandGenerateProjections(Task gpTask, Schedule schedule, Asset asset);
+  void expandGenerateProjections(Task gpTask, Schedule schedule, Asset asset, TimeSpan timespan);
 
   /** 
    * Reflect new received results in the estimated results slot so that
