@@ -53,9 +53,6 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
     this.conditionName = conditionName;
     this.broker = broker;
 
-    if (getLog().isInfoEnabled())
-      getLog().info (getAgentIdentifier() + " - Publishing condition : " + conditionName);
-
     if (conditionService == null) {
       if (getLog().isInfoEnabled())
 	getLog().info (getAgentIdentifier() + " - No condition service available at startup." +
@@ -102,8 +99,8 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
       getBlackboardService().openTransaction();
       getBlackboardService().publishAdd(doubleCondition);
       setCondition (doubleCondition);
-      if (getLog().isDebugEnabled())
-	getLog().debug (getAgentIdentifier() + " - published condition " + doubleCondition);
+      if (getLog().isInfoEnabled())
+	getLog().info (getAgentIdentifier() + " - published condition " + doubleCondition);
     } 
     catch (Exception exc) {
       getLog().error ("Could not publish double condition???", exc);

@@ -122,9 +122,6 @@ public class ConditionComponent extends BlackboardServletComponent {
    * perhaps the core should work like this?
    */
   protected SimpleServletSupport makeServletSupport () {
-    if (log.isInfoEnabled())
-      log.info ("Creating ConditionSupport, log is " + log);
-
     setConditionName (getParameters());
 
     // create a new support instance
