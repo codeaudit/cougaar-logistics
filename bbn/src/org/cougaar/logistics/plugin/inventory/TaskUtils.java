@@ -38,8 +38,11 @@ import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.planning.ldm.PlanningFactory;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Vector;
 import java.io.Serializable;
 
@@ -396,6 +399,18 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     public TimeUtils getTimeUtils() {return utilProvider.getTimeUtils();}
 
+  public static Collection getUnallocatedTasks(Collection tasks, Verb verb) {
+    Iterator taskIt = tasks.iterator();
+    ArrayList list = new ArrayList();
+    Task task;
+    while (taskIt.hasNext()) {
+      task = (Task)taskIt.next();
+      if ((task.getPlanElement() == null) && (task.getVerb().equals(verb))){
+        list.add(task);
+      }
+    }
+    return list;
+  }
 }
 
 
