@@ -210,6 +210,7 @@ public class InventoryPlugin extends ComponentPlugin {
     newRefills.clear();
     updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
     updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
+    processDetReq(detReqSubscription.getAddedCollection());
     cycleStamp = (new Date()).getTime();
 
     if (inventoryPolicy ==null) {
@@ -247,7 +248,7 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
 
-    if ((detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) &&
+    if ((detReqHandler.getDetermineRequirementsTask(aggMILSubscription) != null) &&
 	(logOPlan != null)) {
       boolean touchedRemovedProjections = 
 	supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
@@ -273,10 +274,15 @@ public class InventoryPlugin extends ComponentPlugin {
         firstTimeThrough = false;
       } else {
         Collection addedSupply = supplyTaskSubscription.getAddedCollection();
-        expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
+        if (!addedSupply.isEmpty()){
+          expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
+        }
 
         Collection addedProjections = projectionTaskSubscription.getAddedCollection();
-        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections)); // fix for bug #1695
+        if (!addedProjections.isEmpty()) {
+           // getTasksWithoutPEs is fix for bug #1695
+          touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
+        }
 
         // call the Refill Generators if we have new demand
         if (! getTouchedInventories().isEmpty()) {
@@ -869,8 +875,7 @@ public class InventoryPlugin extends ComponentPlugin {
       if (inventory != null) {
 	addInventory(inventory);
 	publishAdd(inventory);
-	detReqHandler.findOrMakeMILTask(inventory, detReqSubscription, 
-					aggMILSubscription);
+	detReqHandler.findOrMakeMILTask(inventory, aggMILSubscription);
       }
     }
     if (inventory == null) {
@@ -1057,7 +1062,7 @@ public class InventoryPlugin extends ComponentPlugin {
   // inventory parent task and workflow.
   public void publishRefillTask(Task task, Inventory inventory) {
     Task milTask = detReqHandler.findOrMakeMILTask(inventory,
-						   detReqSubscription, aggMILSubscription);
+						   aggMILSubscription);
     publishAddToExpansion(milTask, task);
   }
 
@@ -1222,6 +1227,23 @@ public class InventoryPlugin extends ComponentPlugin {
     return getAgentIdentifier();
   }
 
+  //
+  private void processDetReq(Collection addedDRs) {
+    // with one oplan we should only have one DR for MI.
+    Iterator drIt = addedDRs.iterator();
+    if (drIt.hasNext()) {
+      Task detReq = (Task) drIt.next();
+      //synch on the detReq task so only one instance of this plugin
+      // checks and creates a single agg task and then creates an
+      // empty expansion (wf) for the maintain inventory for each item tasks
+      synchronized(detReq) {
+        if (detReq.getPlanElement() == null) {
+          detReqHandler.createAggTask(addedDRs);
+        }
+      }
+    }
+  }
+
   /**
      Self-Test
   **/
@@ -1232,7 +1254,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
 	logger.error("Could not find Inventory file : "+inventoryFile);
     }
-    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) == null)
+    if (detReqHandler.getDetermineRequirementsTask(aggMILSubscription) == null)
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
     if (logOPlan == null)
       logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");

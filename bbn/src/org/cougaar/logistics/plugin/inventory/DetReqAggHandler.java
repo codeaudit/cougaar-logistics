@@ -25,6 +25,7 @@ import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.blackboard.CollectionSubscription;
+import org.cougaar.core.domain.RootFactory;
 import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.Constants;
@@ -45,9 +46,8 @@ public class DetReqAggHandler extends InventoryModule{
 						  IncrementalSubscription aggMILSubscription) {
     aggMILTask = null;
     if (detReqSubscription.hasChanged()) {
-      aggregateDetermineRequirementsTasks((NewMPTask)getDetermineRequirementsTask(detReqSubscription,
-										  aggMILSubscription),
-					  detReqSubscription.getAddedList());
+      aggregateDetermineRequirementsTasks((NewMPTask)getDetermineRequirementsTask(aggMILSubscription),
+					  detReqSubscription.getAddedCollection());
     }
   }
 
@@ -89,15 +89,11 @@ public class DetReqAggHandler extends InventoryModule{
      will be no task if there are no DetermineRequirements tasks to
      be aggregated.
   **/
-  public Task getDetermineRequirementsTask(IncrementalSubscription detReqSubscription,
-					   CollectionSubscription aggMILSubscription) {
+  public Task getDetermineRequirementsTask(CollectionSubscription aggMILSubscription) {
     if (aggMILTask == null) {
       if (!aggMILSubscription.isEmpty()) {
 	aggMILTask = (Task) aggMILSubscription.elements().nextElement();
-      } else if (!detReqSubscription.isEmpty()) {
-	aggMILTask = createAggTask(detReqSubscription.elements());
-	inventoryPlugin.publishAdd(aggMILTask);
-      }
+      } 
     }
     return aggMILTask;
   }
@@ -105,38 +101,67 @@ public class DetReqAggHandler extends InventoryModule{
   /**
      Aggregate some DetermineRequirements tasks
   **/
-  private void aggregateDetermineRequirementsTasks(NewMPTask mpTask, Enumeration e) {
-    if (!e.hasMoreElements()) return;
+  private void aggregateDetermineRequirementsTasks(NewMPTask mpTask, Collection parents) {
     if (mpTask == null) return;
     NewComposition composition = (NewComposition) mpTask.getComposition();
-    long minStartTime;
-    long maxEndTime;
-    try {
-      maxEndTime = TaskUtils.getEndTime(mpTask);
-    } catch (IllegalArgumentException iae) {
-      maxEndTime = Long.MIN_VALUE;
-    }
-    try {
-      minStartTime = TaskUtils.getStartTime(mpTask);
-    } catch (IllegalArgumentException iae) {
-      minStartTime = Long.MAX_VALUE;
-    }
-    while (e.hasMoreElements()) {
-      Task parent = (Task) e.nextElement();
-      if (parent.getPlanElement() != null) continue; // Already aggregated
-      minStartTime = Math.min(minStartTime, TaskUtils.getStartTime(parent));
-      maxEndTime = Math.max(maxEndTime, TaskUtils.getEndTime(parent));
-      if (parent.getPlanElement() != null) continue;
+    long minStartTime = 0;
+    long maxEndTime = 0;
+    Iterator parentIt = parents.iterator();
+    while (parentIt.hasNext()) {
+       try {
+        maxEndTime = getTaskUtils().getEndTime(mpTask);
+      } catch (IllegalArgumentException iae) {
+        maxEndTime = Long.MIN_VALUE;
+      }
+      try {
+        minStartTime = getTaskUtils().getStartTime(mpTask);
+      } catch (IllegalArgumentException iae) {
+        minStartTime = Long.MAX_VALUE;
+      }
+      Task parent = (Task) parentIt.next();
+      if (parent.getPlanElement() != null) {
+        logger.error("Det Req for MaintainInventory already disposed: " + parent);
+      }
+      minStartTime = Math.min(minStartTime, getTaskUtils().getStartTime(parent));
+      maxEndTime = Math.max(maxEndTime, getTaskUtils().getEndTime(parent));
       AllocationResult estAR =
-	PluginHelper.createEstimatedAllocationResult(parent, inventoryPlugin.getRootFactory(), 1.0, true);
-      Aggregation agg = inventoryPlugin.getRootFactory().createAggregation(parent.getPlan(), parent,
-									   composition, estAR);
+	PluginHelper.createEstimatedAllocationResult(parent, 
+                                                     inventoryPlugin.getRootFactory(), 
+                                                     1.0, true);
+      Aggregation agg = inventoryPlugin.getRootFactory().
+        createAggregation(parent.getPlan(), parent,
+                          composition, estAR);
+      composition.addAggregation(agg);      
       inventoryPlugin.publishAdd(agg);
-      composition.addAggregation(agg);
     }
     setStartTimePreference(mpTask, minStartTime);
     setEndTimePreference(mpTask, maxEndTime);
     mpTask.setParentTasks(new Enumerator (composition.getParentTasks()));
+    inventoryPlugin.publishAdd(mpTask);
+    // create an expty expansion for the mp maintain inv task to be filled
+    // in later with a MaintainInventory task for each maintained item
+    createTopMIExpansion(mpTask);
+  }
+
+  /** Create an empty expansion pe for the top level maintain inventory task
+   *  that will be filled in with Maintain inventory tasks for each
+   *  Maintained item.
+   *  @param parent The Top maintain inventory task
+   **/
+  private void createTopMIExpansion(Task parent) {
+    RootFactory factory = inventoryPlugin.getRootFactory();
+    // Create workflow
+    NewWorkflow wf = (NewWorkflow)factory.newWorkflow();
+    wf.setParentTask(parent);
+    wf.setIsPropagatingToSubtasks(true);
+    // Build Expansion
+    AllocationResult estAR =
+      PluginHelper.createEstimatedAllocationResult(parent, 
+                                                   inventoryPlugin.getRootFactory(), 
+                                                   0.25, true);
+    Expansion expansion = factory.createExpansion(parent.getPlan(), parent, wf, estAR);
+    // Publish Expansion
+    inventoryPlugin.publishAdd(expansion);
   }
   
   /**
@@ -149,13 +174,13 @@ public class DetReqAggHandler extends InventoryModule{
     subtask.setDirectObject(inventory);
     subtask.setParentTask(parent);
     subtask.setVerb(new Verb(Constants.Verb.MAINTAININVENTORY));
-    setStartTimePreference(subtask, TaskUtils.getStartTime(parent));
-    setEndTimePreference(subtask, TaskUtils.getEndTime(parent));
+    setStartTimePreference(subtask, getTaskUtils().getStartTime(parent));
+    setEndTimePreference(subtask, getTaskUtils().getEndTime(parent));
     return subtask;
   }
   
   /**
-     Create the aggregated determine requrements task. This task is
+     Create the aggregated maintain inventory task. This task is
      the parent of all the per-inventory MaintainInventory tasks.
      It, too, uses the MaintainInventory verb but with no direct
      object. It is an MPTask that combines all the
@@ -163,7 +188,7 @@ public class DetReqAggHandler extends InventoryModule{
      Composition of this MPTask is non-propagating so it is
      rescinded only if all the parent tasks are rescinded.
   **/
-  private NewMPTask createAggTask(Enumeration parents) {
+  public NewMPTask createAggTask(Collection parents) {
     NewMPTask mpTask = inventoryPlugin.getRootFactory().newMPTask();
     NewComposition composition = inventoryPlugin.getRootFactory().newComposition();
     composition.setIsPropagating(false);
@@ -179,13 +204,12 @@ public class DetReqAggHandler extends InventoryModule{
      MILTaskHash_ does not contain an existing task, create a new
      one and link it to the determine requirements tasks.
   **/
-  public Task findOrMakeMILTask(Inventory inventory, IncrementalSubscription detReqSubscription,
-				CollectionSubscription aggMILSubscription) {
+  public Task findOrMakeMILTask(Inventory inventory, CollectionSubscription aggMILSubscription) {
     // Creates the MaintainInventoryLevels Task for this item 
     // if one does not already exist
     NewTask milTask = (NewTask) MILTaskHash.get(inventory);
     if (milTask == null) {
-      Task parent = getDetermineRequirementsTask(detReqSubscription, aggMILSubscription);
+      Task parent = getDetermineRequirementsTask(aggMILSubscription);
       if (parent == null) {
 	/**
 	   This might happen just after the last determine
@@ -201,7 +225,20 @@ public class DetReqAggHandler extends InventoryModule{
 	return null; // Can't make one
       }
       milTask = createMILTask(parent, inventory);
-      inventoryPlugin.publishAddToExpansion(parent, milTask);
+      PlanElement pe = parent.getPlanElement();
+      if (pe instanceof Expansion) {
+        Expansion expansion =(Expansion)pe;
+        NewWorkflow wf = (NewWorkflow)expansion.getWorkflow();
+        wf.addTask(milTask);
+        ((NewTask) milTask).setWorkflow(wf);
+        inventoryPlugin.publishChange(expansion);
+      } else {
+        logger.error("publish Change to MIL Top Expansion: problem pe not Expansion? "+pe);
+      }
+      // Publish new task
+      if (!inventoryPlugin.publishAdd(milTask)) {
+        logger.error("publishAdd(milTask) fail to publish task "+ getTaskUtils().taskDesc(milTask));
+      }
       MILTaskHash.put(inventory, milTask);
     }
     return milTask;
