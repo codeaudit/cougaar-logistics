@@ -28,6 +28,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Color;
 import java.awt.Insets;
+import java.awt.Dimension;
 
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
@@ -45,6 +46,8 @@ import com.klg.jclass.chart.JCPickEvent;
 import com.klg.jclass.chart.EventTrigger;
 
 import com.klg.jclass.util.legend.JCLegend;
+import com.klg.jclass.util.legend.JCMultiColLegend;
+
 
 import com.klg.jclass.chart.ChartDataView;
 import com.klg.jclass.chart.ChartDataViewSeries;
@@ -78,7 +81,9 @@ public abstract class InventoryChart extends JPanel
     protected String myYAxisTitle;
     protected String myTitle;
     
-    protected int viewIndex=0;
+    protected int viewIndex;
+
+    protected InventoryColorTable colorTable;
 
 
     public abstract void initializeChart();
@@ -86,6 +91,11 @@ public abstract class InventoryChart extends JPanel
     public void initialize(String title) {
 	int gridx = 0;
 	int gridy = 0;
+
+	viewIndex=0;
+
+	colorTable = new InventoryColorTable();
+
 	Insets blankInsets = new Insets(0, 0, 0, 0);
 
 	myTitle = title;
@@ -114,12 +124,20 @@ public abstract class InventoryChart extends JPanel
 	// add chart to panel
 	setLayout(new GridBagLayout());
 	chart.getHeader().setVisible(true);
-	// set legend invisible, because we create our own
-	chart.getLegend().setVisible(true);
 	add(chart, new GridBagConstraints(gridx, gridy++, 1, 1, 1.0, 1.0,
 					  GridBagConstraints.CENTER, 
 					  GridBagConstraints.BOTH, 
 					  blankInsets, 0, 0));
+
+
+	JCMultiColLegend legend = new JCMultiColLegend();
+	legend.setNumColumns(1);
+	chart.setLegend(legend);
+
+	// set legend invisible, because we create our own??
+	chart.getLegend().setVisible(true);
+	chart.getLegend().setPreferredSize(new Dimension(141,70));
+
 
 
 	// provide for point labels displayed beneath chart
@@ -266,4 +284,22 @@ public abstract class InventoryChart extends JPanel
 	series.getStyle().setSymbolColor(color);
     }
 
+
+    protected void setBarChartColors() {
+	java.util.List viewList = chart.getDataView();
+	for (int i = 0; i < viewList.size(); i++) {
+	    // set line width
+	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
+	    //((JCBarChartFormat)chartDataView .getChartFormat()).setClusterWidth(100);
+	    chartDataView.setOutlineColor(Color.black);
+	    for (int j = 0; j < chartDataView.getNumSeries(); j++) {
+		ChartDataViewSeries series = chartDataView.getSeries(j);
+		setSeriesColor(series,colorTable.get(series.getLabel()));
+		Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
+		if(symbolColor != null) {
+		    series.getStyle().setSymbolColor(symbolColor);
+		}
+	    }
+	}
+    }
 }

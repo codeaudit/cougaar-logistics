@@ -31,6 +31,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.JOptionPane;
 import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
@@ -71,7 +72,7 @@ public class InventoryUIFrame extends JFrame
 
     JTextArea editPane;
 
-    InventoryLevelChart levelChart;
+    MultiChartPanel     multiChart;
     InventoryData       inventory;
 
 
@@ -101,6 +102,13 @@ public class InventoryUIFrame extends JFrame
     protected void doMyLayout() {
 	getRootPane().setJMenuBar(makeMenus());
 
+	JTabbedPane tabs = new JTabbedPane();
+
+	contentPane.add(tabs,BorderLayout.CENTER);
+
+	JPanel editPanel = new JPanel();
+	editPanel.setLayout(new BorderLayout());
+
         //Create a text area.
         editPane = new JTextArea();
         editPane.setLineWrap(true);
@@ -108,7 +116,7 @@ public class InventoryUIFrame extends JFrame
         JScrollPane areaScrollPane = new JScrollPane(editPane);
         areaScrollPane.setVerticalScrollBarPolicy(
                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        areaScrollPane.setPreferredSize(new Dimension(700,200));
+        areaScrollPane.setPreferredSize(new Dimension(700,500));
         areaScrollPane.setBorder(
             BorderFactory.createCompoundBorder(
                 BorderFactory.createCompoundBorder(
@@ -118,13 +126,14 @@ public class InventoryUIFrame extends JFrame
 
 	JButton parseButton = new JButton("Parse");
 	parseButton.addActionListener(this);
-	contentPane.add(parseButton,BorderLayout.WEST);
+	editPanel.add(parseButton,BorderLayout.NORTH);
+	editPanel.add(areaScrollPane,BorderLayout.CENTER);
 
-	levelChart = new InventoryLevelChart();
-	levelChart.setPreferredSize(new Dimension(700,250));
+	multiChart = new MultiChartPanel();
+	multiChart.setPreferredSize(new Dimension(700,250));
 
-	contentPane.add(levelChart,BorderLayout.CENTER);
-	contentPane.add(areaScrollPane,BorderLayout.NORTH);
+	tabs.add("InventoryChart",multiChart);
+	tabs.add("XML",editPanel);
 
 	selector = new InventorySelectionPanel(this);
 	selector.addInventorySelectionListener(this);
@@ -161,7 +170,7 @@ public class InventoryUIFrame extends JFrame
 	else if(e.getActionCommand().equals("Parse")) {
 	  System.out.println("Parsing");
 	    inventory = parser.parseString(editPane.getText());
-	    levelChart.setData(inventory);
+	    multiChart.setData(inventory);
 	}
     }
 
@@ -190,7 +199,9 @@ public class InventoryUIFrame extends JFrame
 	else if(e.getID() == InventorySelectionEvent.INVENTORY_SELECT) {
 	    String invXML = dataSource.getInventoryData(e.getOrg(),
 							e.getAssetName());
-	    editPane.setText(invXML);	    
+	    editPane.setText(invXML);
+	    inventory = parser.parseString(editPane.getText());
+	    multiChart.setData(inventory);	    
 	}
     }
 

@@ -62,10 +62,9 @@ public class RequisitionsChartDataModel
     protected String reqScheduleName;
     protected String reqARScheduleName;
 
-
     public static final String REQUISITION_SERIES_LABEL="Requisition";
     public static final String REQUISITION_ALLOCATION_SERIES_LABEL="Requisition Allocation";
-    public static final String REQUISITION_LEGEND="Requisitions";
+    public static final String REQUISITION_LEGEND="";
 
     public RequisitionsChartDataModel(String aReqScheduleName,
 				     String aReqARScheduleName) {
@@ -120,7 +119,6 @@ public class RequisitionsChartDataModel
 	schedHeader = (InventoryScheduleHeader) 
 	    inventory.getSchedules().get(reqARScheduleName);
 	ArrayList reqARs = schedHeader.getSchedule();
-
    
 	computeCriticalNValues();
 

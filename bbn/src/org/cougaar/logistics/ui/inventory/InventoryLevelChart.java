@@ -75,11 +75,11 @@ public class InventoryLevelChart extends InventoryChart{
 	    ChartDataViewSeries series = chartDataView.getSeries(j);
 	    series.getStyle().setLineWidth(2);
 	    series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
-	    if(series.getLabel().equals(dm.INVENTORY_LEVEL_SERIES_LABEL)){
-		setSeriesColor(series,Color.red);
-	    }
-	    else if(series.getLabel().equals(dm.REORDER_LEVEL_SERIES_LABEL)){
-		setSeriesColor(series,Color.black);
+	    setSeriesColor(series,colorTable.get(series.getLabel()));
+	    if(series.getLabel().equals(dm.TARGET_LEVEL_SERIES_LABEL)){
+		setSeriesColor(series,Color.yellow);
+		series.getStyle().setSymbolShape(JCSymbolStyle.VERT_LINE);
+		series.getStyle().setSymbolColor(colorTable.get(series.getLabel() + "_SYMBOL"));
 	    }
 	    
 	}

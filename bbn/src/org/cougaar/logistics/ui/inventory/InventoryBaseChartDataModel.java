@@ -88,6 +88,31 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 
   /**
    * Retrieves the specified x-value series
+   * This returns the nominal getXSeries of the super class
+   * @param index data series index
+   * @return array of double values representing x-value data
+   */
+  public double[] getRealXSeries(int index) {
+      return getXSeries(index);
+  }
+
+  /**
+   * Retrieves the specified y-value series
+   * The nth asset.
+   * This returns the nominal getYSeries of the super class
+   * This aids the ProjectionChartDataModel which 
+   * has a real projected dimension which is added
+   * to actual demand to give an artificial 
+   * bar type chart.
+   * @param index data series index
+   * @return array of double values representing y-value data
+   */
+  public synchronized double[] getRealYSeries(int index) {
+      return getYSeries(index);
+  }
+
+  /**
+   * Retrieves the specified x-value series
    * Start and end times of the schedule for each asset
    * @param index data series index
    * @return array of double values representing x-value data

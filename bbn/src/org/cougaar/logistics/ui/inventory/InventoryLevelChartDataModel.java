@@ -56,6 +56,7 @@ public class InventoryLevelChartDataModel
 
     public static final String INVENTORY_LEVEL_SERIES_LABEL="Inventory Level";
     public static final String REORDER_LEVEL_SERIES_LABEL="Reorder Level";
+    public static final String TARGET_LEVEL_SERIES_LABEL="Target Level";
     public static final String INVENTORY_LEVEL_LEGEND="Inventory Key Levels";
 
     public InventoryLevelChartDataModel() {
@@ -71,10 +72,11 @@ public class InventoryLevelChartDataModel
 					String theLegendTitle) {
 	inventory = data;
 	legendTitle = theLegendTitle;
-	nSeries = 2;
-	seriesLabels = new String[2];
+	nSeries = 3;
+	seriesLabels = new String[nSeries];
 	seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
 	seriesLabels[1] = REORDER_LEVEL_SERIES_LABEL;
+	seriesLabels[2] = TARGET_LEVEL_SERIES_LABEL;
 	initValues();
     }
 
@@ -101,15 +103,19 @@ public class InventoryLevelChartDataModel
 
 	computeCriticalNValues();
 
-	xvalues = new double[nSeries][nValues];
-	yvalues = new double[nSeries][nValues];
+	xvalues = new double[nSeries][];
+	yvalues = new double[nSeries][];
 	//initZeroYVal(nValues);
-	for (int i = 0; i < nSeries; i++) {
+	for (int i = 0; i < (nSeries-1); i++) {
+	    xvalues[i] = new double[nValues];
+	    yvalues[i] = new double[nValues];	    
 	    for (int j = 0; j < nValues; j++) {
 		xvalues[i][j] = minDay + (j * bucketDays);
 		yvalues[i][j] = 0;
 	    }
 	}
+
+	ArrayList targetLevels = new ArrayList();
 
 	//Need to add target level which is a little more complicated
 	//than you think.  We don't know how many values there are
@@ -125,9 +131,24 @@ public class InventoryLevelChartDataModel
 	    double invQty = level.getInventoryLevel();
 	    double reorderQty = level.getReorderLevel();
 	    for(int j = startDay; j<= endDay; j+=bucketDays) {
-		yvalues[0][j-minDay] = invQty;
-		yvalues[1][j-minDay] = reorderQty;
+		yvalues[0][(j-minDay)/bucketDays] = invQty;
+		yvalues[1][(j-minDay)/bucketDays] = reorderQty;
 	    }
+	    if(level.getTargetLevel() != null) {
+		targetLevels.add(level);
+	    }
+	}
+
+	xvalues[2] = new double[targetLevels.size()];
+	yvalues[2] = new double[targetLevels.size()];
+
+	for(int i=0; i<targetLevels.size(); i++) {
+	    InventoryLevel level = (InventoryLevel) targetLevels.get(i);
+	    long startTime = level.getStartTime();
+	    int startDay = (int)((startTime - baseTime) / MILLIS_IN_DAY);
+	    double targetLevel = level.getTargetLevel().doubleValue();
+	    xvalues[2][i] = startDay;
+	    yvalues[2][i] = targetLevel;
 	}
     }
 

@@ -72,9 +72,11 @@ public class ProjectionsChartDataModel
     protected RequisitionsChartDataModel reqDataModel;
     protected boolean resupply;
 
+    protected double projYValues[][];
+
     public static final String PROJECTION_SERIES_LABEL="Projection";
     public static final String PROJECTION_ALLOCATION_SERIES_LABEL="Projection Allocation";
-    public static final String PROJECTION_LEGEND="Projections";
+    public static final String PROJECTION_LEGEND="";
 
     public ProjectionsChartDataModel(String aProjScheduleName,
 				     String aProjARScheduleName,
@@ -132,6 +134,7 @@ public class ProjectionsChartDataModel
 	if(inventory == null) {
 	    xvalues = new double[nSeries][0];
 	    yvalues = new double[nSeries][0];
+	    projYValues = new double[nSeries][0];
 	    return;
 	}
 
@@ -160,12 +163,14 @@ public class ProjectionsChartDataModel
 
 	xvalues = new double[nSeries][nValues];
 	yvalues = new double[nSeries][nValues];
+	projYValues = new double[nSeries][nValues];
 	//initZeroYVal(nValues);
 
 	for (int i = 0; i < nSeries; i++) {
 	    for (int j = 0; j < nValues; j++) {
 		xvalues[i][j] = minDay + (j * bucketDays);
 		yvalues[i][j] = 0;
+		projYValues[i][j] = 0;
 	    }
 	}
 
@@ -177,19 +182,26 @@ public class ProjectionsChartDataModel
 	    dailys.addAll(projTask.explodeToDaily());
 	}
 	for(int i=0; i < projARs.size(); i++) {
-	    InventoryProjTask projTask = (InventoryProjTask) projARs.get(i);
-	    dailyARs.addAll(projTask.explodeToDaily());
+	    InventoryProjAR projAR = (InventoryProjAR) projARs.get(i);
+	    dailyARs.addAll(projAR.explodeToDaily());
 	}
 
 
 	for(int i=0; i < dailys.size() ; i++) {
-	    InventoryProjTask task = (InventoryProjTask) projections.get(i);
+	    InventoryProjTask task = (InventoryProjTask) dailys.get(i);
 	    long endTime = task.getEndTime();
 	    long startTime = task.getStartTime();
 	    if(!resupply ||
 	       (startTime > (maxReqEndTime + MILLIS_IN_DAY))) {
 		int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
-		yvalues[0][(endDay - minDay)/bucketDays]+=task.getDailyRate();
+		int graphDay = (endDay - minDay)/bucketDays;
+		if(graphDay < 0) 
+		    System.out.println("Array out of bounds alright.  The Graphday is negative");
+		if(graphDay < nValues)
+		    projYValues[0][graphDay]+=task.getDailyRate();
+		else {
+		    System.out.println("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+		}
 	    }
 	}	    
 
@@ -201,10 +213,31 @@ public class ProjectionsChartDataModel
 		if(!resupply ||
 		   (startTime > (maxReqEndTime + MILLIS_IN_DAY))) {
 		    int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
-		    yvalues[1][(endDay - minDay)/bucketDays]+=ar.getDailyRate();
-		}
-	    }	    
+		    int graphDay = (endDay - minDay)/bucketDays;
+		    if(graphDay < 0) 
+			System.out.println("Array out of bounds alright.  The Graphday is negative");
+		    if(graphDay < nValues)
+			projYValues[1][graphDay]+=ar.getDailyRate();
+		    else {
+			System.out.println("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+		    }
+		}	    
+	    }
 	}
+
+	reqDataModel.resetInventory(inventory);
+	for (int i = 0; i < nSeries; i++) {
+	    for (int j = 0; j < nValues; j++) {
+		if(xvalues[i][j] == reqDataModel.getXSeries(i)[j]) {
+		    yvalues[i][j] = projYValues[i][j] + 
+			reqDataModel.getYSeries(i)[j] ;
+		}
+		else {
+		    throw new RuntimeException("ProjectionsChartDataModel:Accccch!  Mis-matching dates between two views...");
+		}
+	    }
+	}
+	
     }
 
     public void resetInventory(InventoryData newInventory){
@@ -214,15 +247,6 @@ public class ProjectionsChartDataModel
 	fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
     }
 
-  /**
-   * Retrieves the specified x-value series
-   * This returns the nominal getXSeries of the super class
-   * @param index data series index
-   * @return array of double values representing x-value data
-   */
-  public double[] getRealXSeries(int index) {
-      return super.getXSeries(index);
-  }
 
   /**
    * Retrieves the specified y-value series
@@ -232,46 +256,14 @@ public class ProjectionsChartDataModel
    * @return array of double values representing y-value data
    */
   public synchronized double[] getRealYSeries(int index) {
-      return super.getYSeries(index);
+      initValues();
+      if (projYValues == null) {
+	  System.out.println("InventoryChartDataModel ERROR getRealYSeries has no projYValues?");
+      }    
+      return projYValues[index];
+
   }
 
-  /**
-   * Retrieves the specified x-value series
-   * Start and end times of the schedule for each asset
-   * For non resupply we sum the x series of the actuals plus these
-   * projections to give the impression in the graph of 
-   * stacking projections on top of the actuals.
-   * (two views super imposed on each other the actuals on 
-   * the projections)
-   * @param index data series index
-   * @return array of double values representing x-value data
-   */
-    /*** MWD Needs fixing should sum resultant array in seperate
-     *** setProjectionValues() and keps as seperate array.
-     *** don't want to sum 2 arrays every time - this may be tricky.
-  public double[] getXSeries(int index) {
-      return (getRealXSeries(index) + reqDataModel.getXSeries(index));
-  }
-    ***/
-
-  /**
-   * Retrieves the specified y-value series
-   * The nth asset
-   * For non resupply we sum the y series of the actuals plus these
-   * projections to give the impression in the graph of 
-   * stacking projections on top of the actuals.
-   * (two views super imposed on each other the actuals on 
-   * the projections)   * The nth asset
-   * @param index data series index
-   * @return array of double values representing y-value data
-   */
-
-    /***  MWD Needs fixing
-  public synchronized double[] getYSeries(int index) {
-      return (getRealYSeries(index) + reqDataModel.getYSeries(index));
-  }
-
-    ****/
 
 }
 
