@@ -46,8 +46,6 @@ import org.cougaar.planning.ldm.asset.Asset;
  * the LogisticsInventoryBG.  The LogisticsInventoryWriter nows how to
  * write to one of these streams.
  *
- * 
- * @see LogisticsInventoryWriter
  * @see LogisticsInventoryBG
  *
  **/

@@ -57,9 +57,6 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  * projection and their allocation results.
  * 
  * @see InventoryChart
- * @see RequisitionChartDataModel
- * @see ProjectionChartDataModel
- * 
  *
  **/
 
