@@ -21,6 +21,7 @@ import java.util.Vector;
 import org.cougaar.glm.ldm.Constants;
 
 import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Task;
 
 import org.cougaar.glm.ldm.asset.Organization;
@@ -99,13 +100,36 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
           Task t = (Task) enum.nextElement();
           alreadyFound = true;
           if (t.getPlanElement() == null) {
-              logger.info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled");
-              handleTask(t, subscriptionResults);
+	    if (isInfoEnabled()) {
+              logger.info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled for task " +t.getUID());
+	    }
+	    handleTask(t, subscriptionResults);
           }
           else {
-              logger.info(getAgentIdentifier() + " - redoTasks: Plan Element to be removed and filled.");
-              publishRemove(t.getPlanElement());
-              handleTask(t, subscriptionResults);
+	    PlanElement prevPE = t.getPlanElement();
+
+	    // check to see if org activity in the past before we go tearing up the log plan
+	    if (orgActivityInThePast (subscriptionResults)) {
+	      if (isInfoEnabled()) {
+		logger.info(getAgentIdentifier() + " - redoTasks: not replanning " + t.getUID() + " because it's in the past.");
+	      }
+	    }
+	    else {
+	      if (isInfoEnabled()) {
+		logger.info(getAgentIdentifier() + " - redoTasks: Plan Element removed from " + t.getUID() + " and replanned.");
+	      }
+
+	      publishRemove(prevPE); // only remove old results if activity is in the future
+	      handleTask(t, subscriptionResults);
+
+	      // postcondition test
+	      if ((t.getPlanElement () == null) ||
+		  (t.getPlanElement () == prevPE)) {
+		logger.warn (getAgentIdentifier() + 
+			     " - redoTasks: didn't replan " + t.getUID () + 
+			     " properly, PE not updated.");
+	      }
+	    }
           }
       }
     }
@@ -209,7 +233,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
    */
   protected UTILOrganizationCallback createOrganizationCallback () { 
     if (isInfoEnabled())
-      warn (getName () + " : Filtering for Organizations...");
+      info (getName () + " : Filtering for Organizations...");
         
     UTILOrganizationCallback cb = new UTILOrganizationCallback (this, logger); 
     return cb;
@@ -235,7 +259,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
    */
   protected UTILOrgActivityCallback createOrgActivityCallback () { 
     if (isInfoEnabled())
-      warn (getName () + " : Filtering for Org Activities...");
+      info (getName () + " : Filtering for Org Activities...");
         
     UTILOrgActivityCallback cb = new UTILOrgActivityCallback (this, logger); 
     return cb;
@@ -367,6 +391,15 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       OrgActivity selfDeployOrgActivity = null;
       Vector personAssets = null;
       Vector MEIAssets =  null;
+    
+    public String toString () {
+      return "Subscription Results : \n" +
+	"\tself    " + selfOrg + "\n"+
+	"\tself id " + selfOrgID + "\n"+
+	"\torg act " + selfDeployOrgActivity + "\n"+
+	"\tnum people " + personAssets.size() + "\n"+
+	"\tnum mei    " + MEIAssets.size();
+    }
   }
 
   /** Returns a structure containing all the information extracted from the blackboard.
@@ -375,22 +408,34 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
   public SubscriptionResults checkSubscriptions() {
       SubscriptionResults results = new SubscriptionResults();
       results.selfOrg = getSelfOrg();
-      if (results.selfOrg == null)
-          return null; // if no self org, not valid
+      if (results.selfOrg == null) {
+	if (logger.isInfoEnabled()) {
+          logger.info (getAgentIdentifier() + " - No self org yet.");
+	}
+	return null; // if no self org, not valid
+      }
 
       results.selfOrgID = getOrgID(results.selfOrg);
       if (logger.isInfoEnabled()) 
           logger.info (getAgentIdentifier() + " - Found Self: " + results.selfOrgID);
 
       results.selfDeployOrgActivity = getOrgActivity(results.selfOrgID);
-      if (results.selfDeployOrgActivity == null)
-          return null;  // if no deployment activity, not valid
+      if (results.selfDeployOrgActivity == null) {
+	if (logger.isInfoEnabled()) {
+          logger.info (getAgentIdentifier() + " - no self deploy org act yet.");
+	}
+	return null;  // if no deployment activity, not valid
+      }
 
       results.personAssets = getPersonAssets();
       results.MEIAssets = getMEIAssets();
       if ( (results.personAssets == null || results.personAssets.size() == 0) && 
-           (results.MEIAssets == null || results.MEIAssets.size() == 0) )
-          return null;  // if nothing to transport, not valid
+           (results.MEIAssets == null || results.MEIAssets.size() == 0) ) {
+	if (logger.isInfoEnabled()) {
+          logger.info (getAgentIdentifier() + " - no people or MEI assets yet.");
+	}
+	return null;  // if nothing to transport, not valid
+      }
 
       return results;
   }  
@@ -407,10 +452,17 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
    * @param t the task to be expanded.
    */
   public void handleTask(Task t) {
-
+    if (t.getPlanElement () != null) {
+      if (isInfoEnabled ()) {
+	info (getName () + 
+	      ".handleTask : task " + t.getUID() + 
+	      " already has a PE (from redoTasks step.). Skipping.");
+      }
+      return;
+    }
     if (isDebugEnabled())
       debug (getName () + 
-	     ".handleTask : called on - " + t.getUID());
+	     ".handleTask : called on task " + t.getUID());
 
     // Need special handling here in case the getSubtasks returns no subtasks
     //   This is possible if not all subscriptions have been "filled"
@@ -430,19 +482,30 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 
     if (isDebugEnabled())
       debug (getName () + 
-	     ".handleTask : called on - " + t.getUID());
+	     ".handleTask : called on task " + t.getUID() + " with " + subscriptionResults);
 
     // Need special handling here in case the getSubtasks returns no subtasks
     //   This is possible if not all subscriptions have been "filled"
     Vector subtasks = getSubtasks(t, subscriptionResults);
 
-    if (subtasks.size() > 0)
-        expand.handleTask(ldmf, 
-			 getBlackboardService(), 
-			 getName(),
-			 wantConfidence, 
-			 t, 
-			 subtasks);
+    if (subtasks.size() > 0) {
+      if (isInfoEnabled()) {
+	logger.info(getAgentIdentifier() + " - handleTask: Expanding " + t.getUID () + 
+		    " with " + subtasks.size() + " subtasks.");
+      }
+
+      expand.handleTask(ldmf, 
+			getBlackboardService(), 
+			getName(),
+			wantConfidence, 
+			t, 
+			subtasks);
+    }
+    else {
+      // postcondition test
+      logger.warn (getAgentIdentifier() + " - publishing no subtasks for " +t.getUID()+ 
+		   " despite having subscription results = " + subscriptionResults);
+    }
   }
 
     
@@ -468,10 +531,14 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       return getSubtasks(task, subscriptionResults);
   }
 
-  /** overloaded for efficient checking of subscriptions.
-    *   Returns empty vector if the task is in the past. 
-    *   (note: still processes task if the deploy time span is null.  May need to change this?)
-    */
+  /** 
+   * Overloaded for efficient checking of subscriptions.
+   *   Returns empty vector if the task is in the past. 
+   *   (note: still processes task if the deploy time span is null.  May need to change this?)
+   *
+   * @return empty vector if org activity is in the past, 
+   *         or if both person and MEI assets are missing
+   */
   public Vector getSubtasks(Task task, SubscriptionResults subscriptionResults){
       Vector subtasks = new Vector();
 
@@ -490,13 +557,12 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
     	startTime = actTS.getStartDate();
       }
 
-      if (thruTime != null) {
-          long curr = currentTimeMillis();
-          long thru = thruTime.getTime();
-          if (thru < curr) {
-              logger.warn(getName () + ": Task " + task.getUID() + " is in the past and will be ignored: task-date: " + thruTime.toString() + " vs. cougaar-date: " + (new Date(curr)).toString());
-              return (new Vector());  // return empty vector
-          }
+      if (orgActivityInThePast (subscriptionResults)) {
+	long curr = currentTimeMillis();
+	logger.warn(getName () + ": orgActivity for agent " + getAgentIdentifier () + 
+		    " is in the past, will be ignored: activity thru time: " + thruTime.toString() + 
+		    " vs. cougaar-time: " + (new Date(curr)).toString());
+	return (new Vector());  // return empty vector
       }
 
       // PREPOSITIONS ====== extract information from buckets and create prepositions
@@ -633,8 +699,41 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
         // add new subtask to vector
         subtasks.add(newMEISubtask);
       }
+      
+      // postcondition test
+      if (subtasks.isEmpty()) {
+	logger.warn (getAgentIdentifier() + " - producing no subtasks, expecting at least one of people or assets,\n" + 
+		     "num people " + subscriptionResults.personAssets.size() + 
+		     " num assets " + subscriptionResults.MEIAssets.size());
+      }
 
     return subtasks;
+  }
+
+  /** 
+   * Is the org activity for something in the past? 
+   * SubscriptionResults refers to org activity, which has a time span for when it's active.
+   * Compares with current cougaar time (not wall clock time).
+   */
+  public boolean orgActivityInThePast (SubscriptionResults subscriptionResults) {
+    TimeSpan actTS = subscriptionResults.selfDeployOrgActivity.getTimeSpan();
+    Date thruTime = null;
+    if (actTS != null) {
+      // do we want to fix dates to be after System time? (what does this mean?)
+      thruTime = actTS.getEndDate();
+    }
+
+    if (thruTime != null) {
+      long curr = currentTimeMillis();
+      long thru = thruTime.getTime();
+      return (thru < curr);
+    }
+
+    if (isWarnEnabled()) {
+      logger.warn (getAgentIdentifier() + " - taskInThePast : thruTime is null in deploy org activity???");
+    }
+
+    return false;
   }
 
 }
