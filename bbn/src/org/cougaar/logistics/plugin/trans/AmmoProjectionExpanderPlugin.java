@@ -21,6 +21,7 @@
 package org.cougaar.logistics.plugin.trans;
 
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.util.UID;
 import org.cougaar.glm.ldm.asset.*;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
@@ -179,7 +180,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	}
       }
 	       );
-
   }
 
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) {
@@ -1217,6 +1217,28 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   /** 
+   * Must check best dates of Supply task parents. 
+   * Fix for bug #12467 and #12468.
+   *
+   * The problem is that the packer can aggregate supply tasks for two different ammo types
+   * into one milvan, and the EARLIER of the two dates becomes the END_TIME best for the
+   * MP Transport task.  It was this time I was using to determine overlap of the Transport
+   * Reservation that's derived from the ProjectSupply.
+   *
+   * E.g. the packer can make:
+   *
+   * Parent #1 : C380 arrive at 10/18
+   * Parent #2 : A986 arrive at 10/15
+   * -> MPTask with milvan arrive at 10/15 - don't want to make parent #2 be late
+   *
+   * So when we try to find the overlap with a Reservation:
+   * C380 from 9/25->10/20
+   * if we use the MPTask's arrival time, the overlap results in a Reservation 
+   * from 10/15->10/20 not from 10/18->10/20.
+   *
+   * Since the packer may do different packings from run-to-run, the quantities of Reserved
+   * ammo varies from run to run (and potentially the # of milvans).
+   * 
    * @param transport - actual transport task
    * @param reserved projected transport task
    * @return true if transport task overlaps in time with the reserved task 
@@ -1224,20 +1246,102 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   protected boolean transportDateWithinReservedWindow (Task transport, Task reserved){
     Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
 
-    Date best          = prefHelper.getBestDate  (transport);
+    Date latestDateOfParents = getLatestParentEndDate (transport, reserved);
 
-    if (reservedReady.getTime () >= best.getTime()) {
-      if (isDebugEnabled())
-        debug ("skipping transport task where task best " + best +
+    if (reservedReady.getTime () >= latestDateOfParents.getTime()) {
+      if (isDebugEnabled()) {
+        debug ("skipping actual transport task where task latest supply parent time " +latestDateOfParents +
                " before examined ready " + reservedReady);
+      }
+
       return false;
     }
 
-    if (isInfoEnabled ())
-      info ("transport " + transport.getUID() + " best "+ best+ " after reserved " + reserved.getUID()+
+    if (isInfoEnabled ()) {
+      info ("transport " + transport.getUID() + " latest supply parent time "+ latestDateOfParents+ 
+	    " after reserved " + reserved.getUID()+
             " ready " + reservedReady);
+    }
 
     return true;
+  }
+
+  /**
+   *  Must check best dates of Supply task parents. 
+   *
+   *  Remember to round to end of day!  A task arriving at midnight + 1 sec
+   *  of a day counts for the whole day against the projection.
+   */
+  protected Date getLatestParentEndDate (Task transport, Task reserved) {
+    Collection types = getTypesInContainer (reserved);
+    if (types.isEmpty()) {
+      if (isWarnEnabled ()) {
+	warn (getName () + " - huh? no types in container for " + reserved);
+      }
+    }
+
+    // should be only one ammo type in container
+    String reservedAmmoType  = (String) types.iterator().next();
+    Date latest = getLatestParentEndDate (transport, reservedAmmoType);
+
+    // round to nearest next day boundary
+    long round = ((latest.getTime() + MILLIS_PER_DAY)/MILLIS_PER_DAY)*MILLIS_PER_DAY;
+
+    Date roundDate = new Date(round);
+
+    if (roundDate.getTime () == latest.getTime()) {
+      if (isWarnEnabled ()) {
+	warn ("huh? Didn't move date : date was " + latest + " now " + roundDate);
+      }
+    }
+    else if (isInfoEnabled ()) {
+      info ("date was " + latest + " now " + roundDate);
+    }
+
+    return roundDate;
+  }
+
+  /**
+   *  Must check best dates of Supply task parents. 
+   */
+  protected Date getLatestParentEndDate (Task transport, String reservedAmmoType) {
+    Date best                = prefHelper.getBestDate  (transport);
+    long latestDateOfParents = best.getTime();
+
+    if (transport instanceof MPTask) {
+      MPTask multiParent = (MPTask) transport;
+      for (Enumeration enum = multiParent.getParentTasks(); enum.hasMoreElements(); ) {
+	Task supplyParent = (Task) enum.nextElement();
+	
+	// check to see parent is of same ammo type
+	TypeIdentificationPG typePG = supplyParent.getDirectObject ().getTypeIdentificationPG();
+
+	if (typePG == null) { // never happen
+	  if (isWarnEnabled()) {
+	    warn ("huh? for task " + supplyParent + " the direct object is missing its type PG?");
+	  }
+	}
+
+	String typeName = typePG.getTypeIdentification ();
+	if (typeName.equals (reservedAmmoType)) {
+	  // check to see if date is later
+	  long parentBest = prefHelper.getBestDate(supplyParent).getTime();
+	  if (parentBest > latestDateOfParents) {
+	    latestDateOfParents = parentBest;
+	  }
+	}
+      }
+
+      return new Date(latestDateOfParents);
+    }
+    else {
+      // never used
+      if (isWarnEnabled()) {
+	warn ("transport task " +transport+ " is not an MPTask?");
+      }
+
+      return prefHelper.getBestDate (transport);
+    }
   }
 
   protected void updateMap (Map reservedToActual, Task actual, Task reserved) {
@@ -1305,7 +1409,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     // real code starts here ---
 
-    Date best          = prefHelper.getBestDate (task);
+    // should be only one ammo type in container
+    Date best          = getLatestParentEndDate (task, reservedTask);
     Date reservedBest  = prefHelper.getBestDate (reservedTask);
     long daysLeft      = (reservedBest.getTime()-best.getTime())/MILLIS_PER_DAY;
     Date reservedReady = (Date) prepHelper.getIndirectObject (reservedTask, START);
