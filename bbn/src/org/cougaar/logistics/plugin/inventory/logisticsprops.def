@@ -30,7 +30,7 @@ slots=Asset resource, \
       double capacity, \
       double initialLevel
 delegates=LogisticsInventoryBG logInvBG
-logInvBG.delegate= void initialize(long today, int critLevel,InventoryPlugin parentPlugin); \
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	void addWithdrawRequisition(Task task); \
 	void removeWithdrawTask(Task task); \
@@ -39,10 +39,17 @@ logInvBG.delegate= void initialize(long today, int critLevel,InventoryPlugin par
 	void removeRefillProjection(Task task); \
 	void removeRefillRequisition(Task task); \
 	List clearRefillTasks(Date now); \
-	Schedule computeCriticalLevels(); \
+	double getCriticalLevel(int bucket); \
+	double getLevel(int bucket); \
+	void setLevel(int bucket, double value); \
 	void updateRefillAllocation(Task task); \
-	Schedule getProjectedDemand(); \
+	double getProjectedDemand(int bucket); \
+	double getReorderPeriod(); \
+	long convertBucketToTime(int bucket); \
+	int  convertTimeToBucket(long time); \
 	long getStartTime(); \
+	int getCriticalLevel(); \
+	void Test(); \
 	void takeSnapshot();
 
 ;;
