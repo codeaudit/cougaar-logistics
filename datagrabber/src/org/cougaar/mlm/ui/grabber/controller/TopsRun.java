@@ -90,6 +90,7 @@ public class TopsRun extends Run{
   protected Map clusterToDGPSPConfig;//Maps a cluster to its config
 
   private Set hConfigs;
+  Set expectedLegs, expectedInstances, expectedPopulations;
 
   //  boolean doInstancesWithLegsAndPopulation = true;
 
@@ -142,12 +143,12 @@ public class TopsRun extends Run{
     case EPOCH_OBTAIN_LEGS:
     case EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS:
       return processResultsObtainLegs();
-    case EPOCH_OBTAIN_INSTANCES:
-      return processResultsObtainInstances();
+      //    case EPOCH_OBTAIN_INSTANCES:
+      //      return processResultsObtainInstances();
     case EPOCH_OBTAIN_PROTOTYPES:
       return processResultsObtainPrototypes();
-    case EPOCH_OBTAIN_POPULATIONS:
-      return processResultsObtainPopulations();
+      //    case EPOCH_OBTAIN_POPULATIONS:
+      //      return processResultsObtainPopulations();
     case EPOCH_OBTAIN_LOCATIONS:
       return processResultsObtainLocations();
     case EPOCH_OBTAIN_ROUTES:
@@ -402,19 +403,45 @@ public class TopsRun extends Run{
   protected void obtainLegs(){
     setAutoCommitFalse ();
     //    if (doInstancesWithLegsAndPopulation) {
-    //      setEpoch(EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS);
+    setEpoch(EPOCH_OBTAIN_LEGS_INSTANCES_POPULATIONS);
       //    }
       //    else {
-            setEpoch(EPOCH_OBTAIN_LEGS);
+    //       setEpoch(EPOCH_OBTAIN_LEGS);
       //    }
 
+    expectedLegs = new HashSet();
+    expectedInstances = new HashSet();
+    expectedPopulations = new HashSet();
+
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
+    int alternator = 0;
     while(iter.hasNext()){
       String cluster=(String)iter.next();
+
+      expectedLegs.add (cluster);
+      expectedInstances.add (cluster);
+      expectedPopulations.add (cluster);
+
       DataGathererPSPConfig dgc=(DataGathererPSPConfig)
 	clusterToDGPSPConfig.get(cluster);
-      workGroup.add(startDGPSPLegConnection(dgc),
-		    cluster);
+
+      alternator++;
+
+      if (alternator % 3 == 0) {
+	workGroup.add(startDGPSPLegConnection(dgc),
+		      cluster);
+	expectedLegs.remove (cluster);
+      }
+      else if (alternator % 3 == 1) {
+	workGroup.add(startDGPSPInstanceConnection(dgc),
+		      cluster);
+	expectedInstances.remove (cluster);
+      }
+      else {
+	workGroup.add(startDGPSPPopulationConnection(dgc),
+		      cluster);
+	expectedPopulations.remove (cluster);
+      }
 
       //      if (doInstancesWithLegsAndPopulation) {
       /*
@@ -431,29 +458,125 @@ public class TopsRun extends Run{
   }
 
   /** 
-   * if we're doing one phase at a time, 
-   *  after getting legs we get instances
+   * We do one after another - avoid database table contention
+   * by doing a leg query on agent 1, an instance query on agent 2,
+   * and a population query on agent 3, etc. simultaneously.  
    *
-   * if we're doing legs, instances, and populations all in one set
-   *  after getting legs, instances, and populations we get prototypes
+   * After getting a leg query, we do an instance, after an instance,
+   * we do a population, after a population we do a leg.
+   *
+   * In this way we act to guarantee that all agents are busy
+   * on some query, but the database is processing multiple queries
+   * from different tables at the same time.  The leg query writes
+   * to the leg table, etc.
+   *
+   * Before, when we did all instances at once, all queries would all 
+   * contend for the lock on the same table.
    */
   protected boolean processResultsObtainLegs(){
-    boolean ret=genericWarningProcessResults("Obtained Leg, Instances, and Population information");
+    boolean ret=false;
+    Result result=workGroup.getResult();
+    while(result!=null){
+      String desc=workGroup.getDesc(result.getID());
+
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "Removing work "+desc);
+      }
+
+      workGroup.remove(result.getID());
+
+      if(errorFailure(result)) // error - punt!
+	return false;
+
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "Obtained result of "+desc + " result is " + result);
+      }
+
+      if (result instanceof SuccessRunResult) {
+	String cluster = ((SuccessRunResult) result).getCluster();
+	DataGathererPSPConfig dgc=(DataGathererPSPConfig)
+	  clusterToDGPSPConfig.get(cluster);
+	String creator = ((SuccessRunResult) result).getCreator();
+	    
+	// Leg -> Instance -> Pop -> Leg
+	if (creator.startsWith ("DGPSPLeg")) {
+	  if (isNormalEnabled()) {
+	    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		       "Got leg, making instance for " + cluster);
+	  }
+
+	  if (expectedInstances.contains(cluster)) {
+	    workGroup.add(startDGPSPInstanceConnection(dgc), cluster);
+	    expectedInstances.remove (cluster);
+	  }
+
+	  if (expectedInstances.isEmpty()) {
+	    if (isNormalEnabled()) {
+	      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+			 "All instances created.");
+	    }
+	  }
+	}
+	else if (creator.startsWith ("DGPSPInstance")) {
+	  if (isNormalEnabled()) {
+	    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		       "Got instance, making pop for " + cluster);
+	  }
+
+	  if (expectedPopulations.contains(cluster)) {
+	    workGroup.add(startDGPSPPopulationConnection(dgc), cluster);
+	    expectedPopulations.remove (cluster);
+	  }
+
+	  if (expectedPopulations.isEmpty()) {
+	    if (isNormalEnabled()) {
+	      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+			 "All pops created.");
+	    }
+	  }
+	}
+	else if (creator.startsWith ("DGPSPPopulation")) {
+	  if (isNormalEnabled()) {
+	    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		       "Got pop, making leg for " + cluster);
+	  }
+
+	  if (expectedLegs.contains(cluster)) {
+	    workGroup.add(startDGPSPLegConnection(dgc),
+			  cluster);
+	    expectedLegs.remove (cluster);
+	  }
+
+	  if (expectedLegs.isEmpty()) {
+	    if (isNormalEnabled()) {
+	      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+			 "All legs created.");
+	    }
+	  }
+	}
+      }
+	
+      ret=true;
+      result=workGroup.getResult();
+    }
 
     if(workGroup.isEmpty()) {
       setAutoCommitTrue (); // commit leg batches
       //      if (doInstancesWithLegsAndPopulation) {
-      //	obtainPrototypes ();
-	//      }
-	//      else {
-		obtainInstances();
-	//      }
+      obtainPrototypes ();
+      //      }
+      //      else {
+      //		obtainInstances();
+      //      }
     }
     return ret;
   }
 
   //OBTAIN_INSTANCES:
 
+  /*
   protected void obtainInstances(){
     setAutoCommitFalse();
     setEpoch(EPOCH_OBTAIN_INSTANCES);
@@ -466,6 +589,7 @@ public class TopsRun extends Run{
 		    cluster);
     }
   }
+  */
 
   /** after getting instances we get prototypes */
   protected boolean processResultsObtainInstances(){
@@ -547,10 +671,10 @@ public class TopsRun extends Run{
     boolean ret=genericWarningProcessResults("Obtained prototype information");
     if(workGroup.isEmpty()) {
       //      if (doInstancesWithLegsAndPopulation) {
-      //	obtainLocations();
+      obtainLocations();
 	//      }
 	//      else {
-	obtainPopulations();
+      //	obtainPopulations();
 	//      }
     }
     return ret;
@@ -558,6 +682,7 @@ public class TopsRun extends Run{
 
   //OBTAIN_POPULATIONS:
 
+  /*
   protected void obtainPopulations(){
     setEpoch(EPOCH_OBTAIN_POPULATIONS);
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
@@ -569,8 +694,10 @@ public class TopsRun extends Run{
 		    cluster);
     }
   }
+  */
 
   /** After getting populations we get prototypes */
+  /*
   protected boolean processResultsObtainPopulations(){
     boolean ret=genericWarningProcessResults
       ("Obtained population information");
@@ -585,6 +712,7 @@ public class TopsRun extends Run{
     }
     return ret;
   }
+  */
 
   //OBTAIN_LOCATIONS:
 
