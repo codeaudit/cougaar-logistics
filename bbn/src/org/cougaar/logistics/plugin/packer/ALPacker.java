@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Vector;
 
 /**
  * Packer - handles packing supply requests
@@ -171,13 +172,10 @@ public abstract class ALPacker extends GenericPlugin {
    * @param changedTasks Enumeration of changed ammo supply tasks. Ignored.
    */
   public void processChangedTasks(Enumeration changedTasks) {
+    Vector changedTaskList = new Vector();
     while (changedTasks.hasMoreElements()) {
       Task task = (Task) changedTasks.nextElement();
-      double taskWeight =
-        Sizer.getTaskMass(task, getTaskQuantityUnit()).getShortTons();
-      ADD_TONS -= taskWeight;
-      ADD_TASKS--;
-
+      changedTaskList.add(task);
       if (getLoggingService().isDebugEnabled()) {
         getLoggingService().debug("Packer - handling changed task - " +
                                   task.getUID() +
@@ -185,17 +183,31 @@ public abstract class ALPacker extends GenericPlugin {
       }
 
       PlanElement pe = task.getPlanElement();
-      if (pe instanceof Expansion) {
-        Enumeration tasks = ((Expansion)pe).getWorkflow().getTasks();
-        while (tasks.hasMoreElements()) {
-          Task t = (Task)tasks.nextElement();
-          ((NewWorkflow)t.getWorkflow()).removeTask(t);
-          publishRemove(t);
+      if (pe != null) {
+        AllocationResult ar;
+        if (pe.getReportedResult() != null) {
+          ar = pe.getReportedResult();
+        } else {
+          ar = pe.getEstimatedResult();
         }
+        // make sure that we got atleast a valid reported OR estimated allocation result
+        if (ar != null) {
+          double taskWeight = PluginHelper.getARAspectValue(ar, AspectType.QUANTITY);
+          ADD_TONS -= taskWeight;
+          ADD_TASKS--;
+        }
+        if (pe instanceof Expansion) {
+          Enumeration tasks = ((Expansion)pe).getWorkflow().getTasks();
+          while (tasks.hasMoreElements()) {
+            Task t = (Task)tasks.nextElement();
+            ((NewWorkflow)t.getWorkflow()).removeTask(t);
+            publishRemove(t);
+          }
+        }
+        publishRemove(pe);
       }
-      publishRemove(pe);
     }
-    processNewTasks(changedTasks);
+    processNewTasks(changedTaskList.elements());
   }
 
   /**
