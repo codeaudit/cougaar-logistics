@@ -148,10 +148,10 @@ public class InventoryUIFrame extends JFrame
 	    System.exit(0);
 	}
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_Connect)) {
-	    System.out.println("Connecting....");
 	    connectToServlet();
 	}
 	else if(e.getActionCommand().equals("Parse")) {
+	  System.out.println("Parsing");
 	    parser.parseString(editPane.getText());
 	}
     }

@@ -232,17 +232,17 @@ public class InventorySelectionPanel extends JPanel
 	    JComponent source = (JComponent) e.getSource();
 	    if(source == orgsBox) {
 		currOrg = (String) orgsBox.getSelectedItem();
-		System.out.println("Selected org " + currOrg);
+		//System.out.println("Selected org " + currOrg);
 		fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	    }
 	    else if(source == supplyTypesBox) {
 		currSupplyType = (String) supplyTypesBox.getSelectedItem();
-		System.out.println("Selected supply type " + currSupplyType);
+		// System.out.println("Selected supply type " + currSupplyType);
 		fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	    }
 	    else if(source == assetNamesBox) {
 		currAssetName = (String) assetNamesBox.getSelectedItem();
-		System.out.println("Selected asset " + currAssetName);
+		// System.out.println("Selected asset " + currAssetName);
 	    }
 	}
 	
@@ -251,7 +251,7 @@ public class InventorySelectionPanel extends JPanel
     public void actionPerformed(ActionEvent e){
 	JComponent source = (JComponent) e.getSource();
 	if(e.getActionCommand().equals(SUBMIT)) {
-	    System.out.println("Pressed Submit");
+	  //System.out.println("Pressed Submit");
 	    fireInventorySelectionEvent(InventorySelectionEvent.INVENTORY_SELECT);
 	}
     }

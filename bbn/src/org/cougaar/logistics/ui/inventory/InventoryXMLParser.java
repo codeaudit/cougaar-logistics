@@ -107,6 +107,8 @@ public class InventoryXMLParser
 	asset=words[2].substring("item=".length());
       }
       inventory = new InventoryData(org,asset);
+      System.out.println("Parsed header w/org=|" +
+			 "| item=|" + asset + "|");
       ctr++;
     }
 
@@ -120,6 +122,7 @@ public class InventoryXMLParser
         String name = getTagName(currentString);
 	String typeStr = getScheduleType(currentString);
 	int type = InventoryScheduleHeader.getTypeInt(typeStr);
+	int ctrIn = ctr;
 	currentString = lines[++ctr];
 	ArrayList elements = new ArrayList();
 	while(!(currentString.startsWith("<"))) {
@@ -129,6 +132,9 @@ public class InventoryXMLParser
 	InventoryScheduleHeader header = new InventoryScheduleHeader(name,
 								     type,
 								     elements);
+	System.out.println("Parsed Schedule " + name 
+			   + " there were " + (ctr - ctrIn) +
+			   " lines of type " + typeStr);
 
 	inventory.addSchedule(header);
     }
@@ -157,6 +163,7 @@ public class InventoryXMLParser
 	String lastTag = (String) tagStack.peek();
 	if(getTagName(lastTag).equals(getTagName(currentString))) {
 	    tagStack.pop();
+	    System.out.println("Popping" + getTagName(currentString));
 	}
 	else {
 	    throw new RuntimeException("ERROR:Last pushed tag doesn't match this termination tag");
