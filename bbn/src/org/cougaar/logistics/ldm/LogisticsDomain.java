@@ -28,14 +28,12 @@ import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.DomainService;
 
 import org.cougaar.core.domain.*;
-import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.domain.DomainAdapter;
 
-import org.cougaar.glm.ldm.lps.*;
-import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.logistics.ldm.asset.PropertyGroupFactory;
+import org.cougaar.logistics.ldm.asset.AssetFactory;
 
 import org.cougaar.planning.ldm.LDMServesPlugin;
 import org.cougaar.planning.ldm.PlanningFactory;
@@ -120,7 +118,7 @@ public class LogisticsDomain extends DomainAdapter {
     }
 
     ldmf.addPropertyGroupFactory(new PropertyGroupFactory());
-    setFactory(new LogisticsFactory(ldm));
+    ldmf.addAssetFactory(new AssetFactory());
   }
 
   protected void loadXPlan() {
