@@ -300,7 +300,9 @@ public class SupplyExpander extends InventoryModule {
 	  if (thePG != null) {
 	    thePG.removeWithdrawProjection(task);
 	    inventoryPlugin.publishRemove(task.getPlanElement());
-	    ((NewTask)task).setPreferences(projSupply.getPreferences());
+	    synchronized (projSupply) {
+	      ((NewTask)task).setPreferences(projSupply.getPreferences());
+	    }
             inventoryPlugin.publishChange(task);
             //BD Why is this here?  We never removed the task from the wf???
             // commenting this code out
@@ -399,7 +401,9 @@ public class SupplyExpander extends InventoryModule {
 	subtask.setSource( clusterId );
 
 	// Copy all preferences 
-        subtask.setPreferences(parentTask.getPreferences());
+	synchronized (parentTask) {
+          subtask.setPreferences(parentTask.getPreferences());
+	}
 	return subtask;
     }
 
