@@ -206,20 +206,36 @@ public abstract class SimpleGanttChartView {
   }
 
   /** default date parser */
-  private static final SimpleDateFormat DEFAULT_DATE_FORMAT = 
+  private static final Object DATE_PARSER_LOCK = new Object();
+  private static final SimpleDateFormat SHORT_DATE_FORMAT = 
+    new SimpleDateFormat("HH:mm:ss,SSS");
+  private static final SimpleDateFormat FULL_DATE_FORMAT = 
     new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   
   /**
    * Parse a date in a leg.
    * <p>
-   * The default format is "yyyy-MM-dd HH:mm:ss".
+   * The default format is either the logger format ("HH:mm:ss,SSS")
+   * or "yyyy-MM-dd HH:mm:ss"
    */
   protected Date parseDate(String dateString) {
-    synchronized (DEFAULT_DATE_FORMAT) {
+    if (dateString == null) {
+      return null;
+    }
+    synchronized (DATE_PARSER_LOCK) {
       try {
-	return DEFAULT_DATE_FORMAT.parse(dateString);
+        if (dateString.indexOf(':') < 0) {
+          // e.g. 1078155547241
+          return new Date(Long.parseLong(dateString));
+        } else if (dateString.indexOf(' ') < 0) {
+          // e.g. 10:39:07,241
+          return SHORT_DATE_FORMAT.parse(dateString);
+        } else {
+          // e.g. 2004-03-01 10:39:07
+	  return FULL_DATE_FORMAT.parse(dateString);
+        }
       } catch (Exception e) {
-	return new Date(0);
+        return new Date(0);
       }
     }
   }

@@ -28,6 +28,7 @@ package org.cougaar.mlm.ui.newtpfdd.gui.view;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -42,35 +43,58 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- * The file GanttChartView reads a CSV file and displays
- * a Gantt chart UI.
+ * The file GanttChartView reads a CSV file and displays a Gantt chart
+ * UI.
  * <p>
- * This class supports subclassing.  The provided CSV file 
- * format is described below.
+ * The standard CSV file format is described below:
  * <p>
- * Blank lines and line starting with "#" are ignored.
+ * Blank lines and line starting with "#" are ignored.  Data lines
+ * look like:<pre>
+ *   NAME, [START], [END], [COLOR], [COMMENT]
+ * </pre>
+ * The start and end dates can be in milliseconds since 1970,
+ * "HH:mm:ss,SSS", or "yyyy-MM-dd HH:mm:ss".  If the start date
+ * is not specified then it is copied from the prior line for that
+ * NAME, or the minimal date of all names if this is the first entry
+ * for the NAME.  If the end date is not specified then it is copied
+ * from the next line's start date for that NAME, or the maximum date
+ * for all names if this is the last entry for the NAME.  Valid
+ * colors are:<ul>
+ *   <li>red</li>
+ *   <li>yellow</li>
+ *   <li>green</li>
+ *   <li>blue</li>
+ *   <li>purple</li>
+ *   <li>burgundy</li>
+ *   <li>grey <i>(default)</i></li>
+ * </ul>
  * <p>
- * A blank start date tells the reader to copy the end date
- * from the prior line.  This is handy if your input file
- * only records the end time of the event.
- * <p>
- * A blank end date tells the reader to copy the start date
- * from the current line.  This is handy if the event is
- * instantaneous.
- * <p>
- * Example file:
- * <pre>
- *   # comment
- *   A, 2002-10-08 01:03:00, 2002-10-08 02:50:00, grey, foo
- *   B, 2002-10-08 01:00:00, 2002-10-08 01:30:00, red, bar
- *   B, , 2002-10-08 03:05:00, blue, baz
+ * Example input:<pre>
+ *   # any comment 
+ *   A, 12:34:56,789, , red,
+ *   A, 15:00:00,000, , yellow, test me
+ *   A, 19:20:21,230, , green,
+ *   B, 11:00:00,000, , blue,
+ *   B, 23:00:00,000, , grey,
  * </pre>
  */
 public class FileGanttChartView extends SimpleGanttChartView {
 
   public static void main(String[] args) {
-    if (args.length <= 0) {
-      System.err.println("Expecting filename parameter");
+    if (args.length <= 0 || "--help".equals(args[0])) {
+      System.err.println(
+          "Usage: java "+FileGanttChartView.class+" CSV_FILE"+
+          "\n"+
+          "\nThe CSV_FILE can be a file name or \"-\" for stdin."+
+          "\nSee the javadocs for file format details."+
+          "\n"+
+          "\nExample input:"+
+          "\n   # any comment"+
+          "\n   FOO, 12:34:56,789, , red,"+
+          "\n   FOO, 15:00:00,000, , yellow, my label"+
+          "\n   FOO, 19:20:21,230, , green,"+
+          "\n   BAR, 11:00:00,000, , blue,"+
+          "\n   BAR, 23:00:00,000, , grey,");
       return;
     }
     (new FileGanttChartView(args)).launch();
@@ -98,7 +122,7 @@ public class FileGanttChartView extends SimpleGanttChartView {
   protected final boolean verbose;
   protected final String filename;
 
-  protected final Map instances = new HashMap();
+  protected final List instances = new ArrayList();
   protected final List legs = new ArrayList();
 
   protected void preProcess() {
@@ -116,16 +140,18 @@ public class FileGanttChartView extends SimpleGanttChartView {
 
   // override for non-file input
   protected BufferedReader openFile() throws IOException {
-    File sf = new File(filename);
-    BufferedReader f = 
+    InputStream is =
+      ("-".equals(filename) ?
+       System.in :
+       (new FileInputStream(filename)));
+    return
       new BufferedReader(
-          new InputStreamReader(
-            new FileInputStream(sf)));
-    return f;
+          new InputStreamReader(is));
   }
 
   protected void readFile() throws IOException {
-    // parse file
+    // parse file into map of (inst -> List(String[5]))
+    Map m = new HashMap(); 
     BufferedReader f = openFile();
     for (int i = 0; ; i++) {
       String l = f.readLine();
@@ -137,58 +163,128 @@ public class FileGanttChartView extends SimpleGanttChartView {
         sa = parseLine(l, i);
       } catch (RuntimeException re) {
         throw new RuntimeException(
-            "Invalid line "+filename+
-            " ["+i+"]: "+l,
+            "Invalid line "+filename+" ["+i+"]: "+l,
             re);
       }
-      if (sa != null) {
-        instances.put(sa[0], sa);
+      if (sa == null) {
+        continue;
+      }
+      List l2 = (List) m.get(sa[0]);
+      if (l2 == null) {
+        l2 = new ArrayList();
+        m.put(sa[0], l2);
+      }
+      l2.add(sa);
+    }
+    f.close();
+    // find min/max dates
+    String min_start = null; 
+    String max_end = null; 
+    Date min_start_date = null; 
+    Date max_end_date = null; 
+    for (Iterator itr = m.values().iterator(); itr.hasNext(); ) {
+      List l = (List) itr.next();
+      String[] sa0 = (String[]) l.get(0);
+      String start = sa0[2];
+      if (start == null) {
+        start = sa0[3];
+      }
+      if (start != null) {
+        Date d = parseDate(start);
+        if ((min_start_date == null) ||
+            (min_start_date.compareTo(d) > 0)) {
+          min_start_date = d;
+          min_start = start;
+        }
+      }
+      String[] saN = (String[]) l.get(l.size()-1);
+      String end = saN[3];
+      if (end == null) {
+        end = saN[2];
+      }
+      if (end != null) {
+        Date d = parseDate(end);
+        if ((max_end_date == null) ||
+            (max_end_date.compareTo(d) < 0)) {
+          max_end_date = d;
+          max_end = end;
+        }
+      }
+    }
+    // fix dates
+    for (Iterator itr = m.values().iterator(); itr.hasNext(); ) {
+      List l = (List) itr.next();
+      for (int i = 0, n = l.size(); i < n; i++) {
+        String[] sa = (String[]) l.get(i);
+        String start = sa[2];
+        String end = sa[3];
+        if (start == null) {
+          if (i > 0) {
+            String[] prev = (String[]) l.get(i-1);
+            String prev_end = prev[3];
+            start = prev_end;
+          } else {
+            start = min_start;
+          }
+        }
+        if (end == null) {
+          if ((i+1) < n) {
+            String[] next = (String[]) l.get(i+1);
+            String next_start = next[2];
+            end = next_start;
+          } else {
+            end = max_end;
+          }
+        }
+        // fix wrap-around?  (e.g. 23:59:59 -> 00:00:01)
+        sa[2] = start;
+        sa[3] = end;
+      }
+    }
+    // add instances (set_of_names -> sorted_list{name,name})
+    List tmp = new ArrayList(m.keySet());
+    Collections.sort(tmp);
+    for (int i = 0, n = tmp.size(); i < n; i++) {
+      final String s = (String) tmp.get(i);
+      String[] ia = {s, s};
+      instances.add(ia);
+    }
+    // add legs
+    for (Iterator itr = m.values().iterator(); itr.hasNext(); ) {
+      List l = (List) itr.next();
+      for (int i = 0, n = l.size(); i < n; i++) {
+        String[] sa = (String[]) l.get(i);
         legs.add(sa);
       }
     }
-    f.close();
-  }
-
-  protected String getTokenizerDelim() {
-    return ",";
   }
 
   protected String[] parseLine(
       String l,
       int i) {
-    StringTokenizer st = 
-      new StringTokenizer(
-          l,
-          getTokenizerDelim());
-    if (!st.hasMoreTokens()) {
+    StringTokenizer st = new StringTokenizer(l, ",");
+    final String instId = nextToken(st);
+    if (instId == null || instId.startsWith("#")) {
       return null;
     }
-    final String instId = st.nextToken().trim();
-    if (instId.startsWith("#")) {
-      return null;
-    }
-    String[] priorEntry = (String[]) instances.get(instId);
-    String priorEnd = 
-      (priorEntry != null ? priorEntry[3] : null);
     final String legId = ("#"+i);
-    final String rawStart = 
-      (st.hasMoreTokens() ? st.nextToken().trim() : null);
-    final String rawEnd = 
-      (st.hasMoreTokens() ? st.nextToken().trim() : null);
-    final String start =
-      parseStart(
-          priorEnd,
-          rawStart,
-          rawEnd);
-    final String end =
-      parseEnd(
-          start,
-          rawStart,
-          rawEnd);
-    final String color =
-      (st.hasMoreTokens() ? st.nextToken().trim() : null);
-    final String info =
-      (st.hasMoreTokens() ? st.nextToken().trim() : null);
+    String s1 = nextToken(st);
+    String s2 = nextToken(st);
+    if (isMillis(s2)) {
+      // fix "HH:mm:ss,SSS"
+      s1 += ","+s2; 
+      s2 = nextToken(st);
+    }
+    String s3 = nextToken(st);
+    if (isMillis(s3)) {
+      // fix "HH:mm:ss,SSS"
+      s2 += ","+s3; 
+      s3 = nextToken(st);
+    }
+    final String start = s1;
+    final String end = s2;
+    final String color = s3;
+    final String info = nextToken(st);
     String[] ret = {
       instId,
       legId,
@@ -200,20 +296,25 @@ public class FileGanttChartView extends SimpleGanttChartView {
     return ret;
   }
 
-  protected String parseStart(
-      String priorEnd,
-      String rawStart,
-      String rawEnd) {
-    if (rawStart == null || rawStart.length() == 0) return priorEnd;
-    return rawStart;
+  protected static final String nextToken(StringTokenizer st) {
+    if (!st.hasMoreTokens()) {
+      return null;
+    }
+    String s = st.nextToken().trim();
+    if (s != null && s.length() == 0) {
+      s = null;
+    }
+    return s;
   }
 
-  protected String parseEnd(
-      String start,
-      String rawStart,
-      String rawEnd) {
-    if (rawEnd == null || rawEnd.length() == 0) return start;
-    return rawEnd;
+  private static final boolean isMillis(String s) {
+    // same as s.matches("^\d\d\d$");
+    return 
+      (s != null &&
+       s.length() == 3 &&
+       Character.isDigit(s.charAt(0)) &&
+       Character.isDigit(s.charAt(1)) &&
+       Character.isDigit(s.charAt(2)));
   }
 
   protected void postProcess() {
@@ -221,24 +322,7 @@ public class FileGanttChartView extends SimpleGanttChartView {
   }
 
   protected Iterator getInstances() {
-    // convert "set of names" to "iter of {name,name}"
-    Set s = instances.keySet();
-    List l = new ArrayList(s);
-    Collections.sort(l);
-    final Iterator iter = l.iterator();
-    return new Iterator() {
-      public boolean hasNext() {
-        return iter.hasNext();
-      }
-      public Object next() {
-        final String s = (String) iter.next();
-        String[] sa = {s, s};
-        return sa;
-      }
-      public void remove() {
-        throw new UnsupportedOperationException("remove");
-      }
-    };
+    return instances.iterator();
   }
 
   protected Iterator getLegs() {
@@ -250,7 +334,7 @@ public class FileGanttChartView extends SimpleGanttChartView {
     sb.append("filename:\n  ");
     sb.append(filename);
     sb.append("\ninstances:\n  ");
-    sb.append(instances.keySet());
+    sb.append(instances);
     sb.append("\nlegs:");
     for (Iterator i = getLegs(); i.hasNext(); ) {
       String[] sa = (String[])i.next();
