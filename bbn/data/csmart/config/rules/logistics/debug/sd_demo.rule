@@ -28,10 +28,15 @@ society.each_agent do |agent|
        c.name = "#{new_plugin3}(#$1)"
     end
   end
-  agent.add_component do |c|
-    c.classname = sd_servlet
-    c.priority = 'COMPONENT'
-    c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+  re = /^.*Provider.*$/
+  agent.each_facet(:role) do |facet|
+    if re.match(facet[:role])
+      agent.add_component do |c|
+        c.classname = sd_servlet
+        c.priority = 'COMPONENT'
+        c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+      end
+    end
   end
   agent.add_component do |c|
     c.classname = relationship_servlet
