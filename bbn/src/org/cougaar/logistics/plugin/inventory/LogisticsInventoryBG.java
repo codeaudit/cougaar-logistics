@@ -53,35 +53,40 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected LogisticsInventoryPG myPG;
   protected long startTime;
   protected int timeZero;
-  private boolean initialized;
   private LoggingService logger;
   private LogisticsInventoryLogger csvLogger=null;
   private LogisticsInventoryFormatter csvWriter=null;
   // customerHash holds the time(long) of the last actual is seen
   // for each customer
   private HashMap customerHash;
-  private long earliestDemand;
   private TaskUtils taskUtils;
 
-  protected ArrayList dueInList;
+  protected ArrayList refillProjections;
+  protected ArrayList refillRequisitions;
   protected ArrayList dueOutList;
+  protected Schedule inventoryLevelsSchedule;
+  protected Schedule criticalLevelsSchedule;
   // projectedDemandList mirrors dueOutList, each element
   // contains the sum of all Projected Demand for corresponding
   // bucket in dueOutList
-  protected ArrayList projectedDemandList;
-  // Lists for csv logging
+  protected double projectedDemandArray[];
+  // Policy inputs
+  protected int criticalLevel = 3;
+  // Lists for csv logging & UI support
   protected ArrayList projWithdrawList;
   protected ArrayList withdrawList;
   protected ArrayList projSupplyList;
   protected ArrayList supplyList;
-
+  protected Schedule  bufferedCritLevels;
+  // protected <unknown> bufferedInvLevels;
+  
   public LogisticsInventoryBG(LogisticsInventoryPG pg) {
     myPG = pg;
-    initialized = false;
     customerHash = new HashMap();
     dueOutList = new ArrayList();
-    dueInList = new ArrayList();
-    projectedDemandList = new ArrayList();
+    refillProjections = new ArrayList();
+    refillRequisitions = new ArrayList();
+    projectedDemandArray = new double[180];
     durationArray = new Duration[15];
     for (int i=0; i <= 14; i++) {
       durationArray[i] = Duration.newDays(0.0+i);
@@ -92,11 +97,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     supplyList = new ArrayList();
   }
 
-  public void initialize(long today, InventoryPlugin parentPlugin) {
-    // It would be nice to make this part of the constructor but I don't
-    // know of a way.  If the BG is not initialized then we can't even
-    // log an error so I added the initialized boolean but I don't care
-    // for it.
+  public void initialize(long today, int criticalLevel, InventoryPlugin parentPlugin) {
     startTime = today;
     timeZero = (int)(startTime/MSEC_PER_BUCKET);
     logger = parentPlugin.getLoggingService(this);
@@ -106,22 +107,32 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     taskUtils = parentPlugin.getTaskUtils();
     logger.debug("Start day: "+TimeUtils.dateString(today));
-    initialized = true;
+    this.criticalLevel = criticalLevel;
   }
 
-  public void addWithdrawTask(Task task) {
-    if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-      addDueOut(task);
-      withdrawList.add(task);
-      earliestDemand = Math.min(earliestDemand, PluginHelper.getEndTime(task));
-    } else if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
-      addDueOutProjection(task);
-      projWithdrawList.add(task);
-      earliestDemand = Math.min(earliestDemand, PluginHelper.getStartTime(task));
+  public void addWithdrawProjection(Task task) {
+    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    int bucket_start = convertTimeToBucket(start);
+    int bucket_end = convertTimeToBucket(end);
+    if (bucket_end >= projectedDemandArray.length) {
+      projectedDemandArray = expandArray(projectedDemandArray);
+    }
+    logger.error("\n"+taskUtils.taskDesc(task));
+    logger.error("start: "+TimeUtils.dateString(start));
+    logger.error("end  : "+TimeUtils.dateString(end));
+    logger.error("bucket start "+bucket_start+", bucket end "+bucket_end);
+    while (bucket_end >= dueOutList.size()) {
+      dueOutList.add(new ArrayList());
+    }
+    for (int i=bucket_start; i < bucket_end; i++) {
+      ArrayList list = (ArrayList)dueOutList.get(i);
+      list.add(task);
+      updateProjectedDemandList(task, i, start, end);
     }
   }
 
-  private void addDueOut(Task task) {
+  public void addWithdrawRequisition(Task task) {
     long endTime = PluginHelper.getEndTime(task);
     Object org = TaskUtils.getCustomer(task);
     if (org != null) {
@@ -138,115 +149,72 @@ public class LogisticsInventoryBG implements PGDelegate {
     list.add(task);
   }
 
-  private void addDueOutProjection(Task task) {
-    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
-    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-    int bucket_start = convertTimeToBucket(start);
-    int bucket_end = convertTimeToBucket(end);
-    logger.debug("\n"+taskUtils.taskDesc(task));
-    logger.debug("start: "+TimeUtils.dateString(start));
-    logger.debug("end  : "+TimeUtils.dateString(end));
-    while (bucket_end >= dueOutList.size()) {
-      dueOutList.add(new ArrayList());
-      projectedDemandList.add(new Double(0.0));
-    }
-    for (int i=bucket_start; i < bucket_end; i++) {
-      ArrayList list = (ArrayList)dueOutList.get(i);
-      list.add(task);
-      updateProjectedDemandList(task, i, start, end);
-    }
-  }
-
+  // Updates the running demand sum per bucket
   private void updateProjectedDemandList(Task task, int bucket,
-				      long start, long end) {
+					 long start, long end) {
     long bucket_start = convertBucketToTime(bucket);
-    long bucket_end = convertBucketToTime(bucket+1);
+    long bucket_end = bucket_start + MSEC_PER_BUCKET;
     long interval_start = Math.max(start, bucket_start);
     long interval_end = Math.min(end, bucket_end);
     int days_spanned = (int)((interval_end - interval_start)/TimeUtils.MSEC_PER_DAY);
     Rate rate = taskUtils.getRate(task);
     Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
     double demand = taskUtils.getDouble(scalar);
-    Double prev_demand = (Double)projectedDemandList.get(bucket);
-    projectedDemandList.add(bucket, new Double(prev_demand.doubleValue()+demand));
-    logger.debug("Bucket "+bucket+": previous demand is "+prev_demand
-		 +", new demand "+demand+", total is "+
-		 (Double)projectedDemandList.get(bucket));
+    projectedDemandArray[bucket] += demand;
+    logger.debug("Bucket "+bucket+": new demand "+demand+", total is "+
+		 projectedDemandArray[bucket]);
   }
 
+  // If have alloc results then use to remove from buckets
+  // else use add method for removal
+  // Make this a general method (finding the days)
+  // findFirstBucket(projection)
+  // findLastBucket(projection)  may be able to use same
+  // methods for refill requisitions as well
   public void removeWithdrawTask(Task task) {
     int index;
     for (int i=0; i < dueOutList.size(); i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
-      while ((index = list.indexOf(task)) != -1) {
-	list.remove(index);
-      }
-    }
-    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
-      if ((index = withdrawList.indexOf(task)) != -1) {
-	withdrawList.remove(index);
-      }
-    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-      while ((index = projWithdrawList.indexOf(task)) != -1) {
-	projWithdrawList.remove(index);
-      }
+      list.remove(task);
     }
   }
 
-  public void addRefillTask(Task task) {
-    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
-      addDueIn(task);
-      supplyList.add(task);
-    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-      addDueInProjection(task);
-      projSupplyList.add(task);
-    }
-  }
-
-  private void addDueIn(Task task) {
+  public void addRefillRequisition(Task task) {
     long endTime = PluginHelper.getEndTime(task);
     int bucket = convertTimeToBucket(endTime);
-    while (bucket >= dueInList.size()) {
-      dueInList.add(new ArrayList());
+    while (bucket >= refillRequisitions.size()) {
+      refillRequisitions.add(null);
     }
-    ArrayList list = (ArrayList)dueInList.get(bucket);
-    list.add(task);
+    refillRequisitions.set(bucket, task);
   }
 
-  private void addDueInProjection(Task task) {
+  public void addRefillProjection(Task task) {
     long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
     long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
-    while (bucket_end >= dueInList.size()) {
-      dueInList.add(new ArrayList());
+    while (bucket_end >= refillProjections.size()) {
+      refillProjections.add(null);
     }
     for (int i=bucket_start; i < bucket_end; i++) {
-      ArrayList list = (ArrayList)dueInList.get(i);
-      list.add(task);
+      refillProjections.set(i, task);
     }
   }
 
-  // Might want to refactor and combine with removeWithdrawTask()
-  public void removeRefillTask(Task task) {
+  public void removeRefillProjection(Task task) {
     int index;
-    for (int i=0; i < dueInList.size(); i++) {
-      ArrayList list = (ArrayList)dueInList.get(i);
-      while ((index = list.indexOf(task)) != -1) {
-	list.remove(index);
-      }
-    }
-    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
-      if ((index = supplyList.indexOf(task)) != -1) {
-	supplyList.remove(index);
-      }
-    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-      while ((index = projSupplyList.indexOf(task)) != -1) {
-	projSupplyList.remove(index);
-      }
+    while ((index = refillProjections.indexOf(task)) != -1) {
+	refillProjections.set(index, null);
     }
   }
 
+  public void removeRefillRequisition(Task task) {
+    int index;
+    if ((index = refillRequisitions.indexOf(task)) != -1) {
+      refillRequisitions.set(index, null);
+    }
+  }
+  
   public List clearRefillTasks(Date now) {
     // remove uncommitted refill tasks and refill
     // projections from the list.  Add all removed
@@ -254,28 +222,29 @@ public class LogisticsInventoryBG implements PGDelegate {
     // for comparison
     Task task;
     ArrayList taskList = new ArrayList();
-    for (int i=0; i < dueInList.size(); i++) {
-      ArrayList list = (ArrayList)dueInList.get(i);
-      for (int j=0; j < list.size(); j++) {
-	task = (Task)list.get(j);
-	if (task.beforeCommitment(now)) {
-	  taskList.add(task);
-	  list.remove(j);
-	  int index;
-	  if ((index = supplyList.indexOf(task)) != -1) {
-	    supplyList.remove(index);
-	  }
-	  if ((index = projSupplyList.indexOf(task)) != -1) {
-	    projSupplyList.remove(index);
-	  }
-	}
+    for (int i=0; i < refillRequisitions.size(); i++) {
+      task = (Task)refillRequisitions.get(i);
+      if ((task != null) && task.beforeCommitment(now)) {
+	refillRequisitions.set(i, null);
+	taskList.add(task);
       }
     }
+    for (int i=0; i < refillProjections.size(); i++) {
+      task = (Task)refillProjections.get(i);
+      if ((task != null) && task.beforeCommitment(now)) {
+	refillProjections.set(i, null);
+	if (!taskList.contains(task)) {
+	  taskList.add(task);
+	}
+      }
+    }	
     return taskList;
   }
 
-  public Schedule getCriticalLevel() {
-    
+  public Schedule computeCriticalLevel() {
+    // Need a generic way of thinking about buckets and
+    // reconciling the buckets with the criticalLevel,
+    // a number representing days
     return null;
   }
 
@@ -316,6 +285,18 @@ public class LogisticsInventoryBG implements PGDelegate {
    **/
   private long convertBucketToTime(int bucket) {
     return (bucket + timeZero) * MSEC_PER_BUCKET;
+  }
+
+  private double[] expandArray(double[] doubleArray) {
+    double biggerArray[] = new double[(int)(doubleArray.length*1.5)];
+    for (int i=0; i < doubleArray.length; i++) {
+      biggerArray[i] = doubleArray[i];
+    }
+    return biggerArray;
+  }
+
+  public void takeSnapshot() {
+    // do double buffer
   }
 
   // Ask Beth about persistance.  Would like to make sure structures
