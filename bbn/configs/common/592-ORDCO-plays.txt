@@ -1,0 +1,20 @@
+CPULevel > 0.5  : Level2TimeHorizon_Ammunition = 40 : Level6TimeHorizon_Ammunition = 20;
+CPULevel <= 0.5 : Level2TimeHorizon_Ammunition = 80 : Level6TimeHorizon_Ammunition = 40;
+
+CPULevel > 0.5  : Level2TimeHorizon_BulkPOL = 40 : Level6TimeHorizon_BulkPOL = 20;
+CPULevel <= 0.5 : Level2TimeHorizon_BulkPOL = 80 : Level6TimeHorizon_BulkPOL = 40;
+
+CPULevel > 0.5  : Level2TimeHorizon_Consumable = 40 : Level6TimeHorizon_Consumable = 20;
+CPULevel <= 0.5 : Level2TimeHorizon_Consumable = 80 : Level6TimeHorizon_Consumable = 40;
+
+CPULevel > 0.5  : Level2TimeHorizon_PackagedPOL = 40 : Level6TimeHorizon_PackagedPOL = 20;
+CPULevel <= 0.5 : Level2TimeHorizon_PackagedPOL = 80 : Level6TimeHorizon_PackagedPOL = 40;
+
+CPULevel > 0.5  : Level2TimeHorizon_Subsistence= 40 : Level6TimeHorizon_Subsistence= 20;
+CPULevel <= 0.5 : Level2TimeHorizon_Subsistence= 80 : Level6TimeHorizon_Subsistence= 40;
+
+
+
+
+
+
