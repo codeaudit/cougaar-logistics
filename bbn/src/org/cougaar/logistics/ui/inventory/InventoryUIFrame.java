@@ -140,7 +140,7 @@ public class InventoryUIFrame extends JFrame
 
   public InventoryUIFrame(String[] args, String frameTitle) {
     super(frameTitle);
-    initializeUIFrame(readParameters(args));
+    //initializeUIFrame(readParameters(args));
   }
 
 
