@@ -181,13 +181,23 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   }
 
   private void printForm(HttpServletRequest req, PrintWriter out) {
+    myOrg = getMyOrganization();
     String optionString = "";
-    Iterator roleIter = registeredRoles.iterator();
-    while (roleIter.hasNext()) {
-      String role = roleIter.next().toString();
+
+    out.print("<p>\n" + "<table border>" + "<tr><th colspan=1>" + "Registered Roles" + "</th>" + "<th colspan=1>"
+              + "Clients" + "</th></tr>");
+    Iterator iter = registeredRoles.iterator();
+    while (iter.hasNext()) {
+      Role role = (Role) iter.next();
+      String client = "No";
+      if (hasClientRelationship(role)) {
+        client = "Yes";
+      }
+      out.print("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
       optionString = optionString.concat(
           "<option value=\"" + role + "\">" + role + "</option>" + "\n");
     }
+    out.print("</table>");
 
     out.print("<form method=\"GET\" action=\"" +
               req.getRequestURI() +
@@ -252,6 +262,12 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     }
 
     return list;
+  }
+
+  private boolean hasClientRelationship(Role role) {
+    RelationshipSchedule relSched = myOrg.getRelationshipSchedule();
+    Collection relationships = relSched.getMatchingRelationships(role);
+    return !relationships.isEmpty();
   }
 
   protected Organization getMyOrganization(Iterator orgs) {
