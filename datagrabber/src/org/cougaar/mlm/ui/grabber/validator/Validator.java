@@ -35,7 +35,6 @@ import org.cougaar.mlm.ui.grabber.workqueue.ResultHandler;
 import org.cougaar.mlm.ui.grabber.workqueue.Work;
 import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 
-import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
 
@@ -61,7 +60,7 @@ public class Validator{
   public static final int MIN_TEST_CATEGORY=ERROR_TESTS;
 
   protected Test[] tests;
-  private WorkQueue workQ;
+  protected WorkQueue workQ;
 
   //Variables:
   ////////////
@@ -481,32 +480,13 @@ public class Validator{
 		      int run, int test){
     // keep track of whether this category has been run
     try {
-      Statement s = connectionProvider.getDBConnection ().createStatement();
+      Statement s = connectionProvider.createStatement();
       if (isTestCategory(test)) {
 	ResultTable.updateStatus(h,s,this,run,test);
       }
       s.close();
 
-      ValidatorResultHandler resultHandler = new ValidatorResultHandler (h);
-      workQ = new WorkQueue (h, resultHandler);
-      resultHandler.setWorkQ (workQ);
-
-      List l = getTestIndicesForTestType(test);
-      for(int i=0;i<l.size();i++){
-	int idx=((Integer)l.get(i)).intValue();
-	Work work = new TestWork (100+i, connectionProvider.getDBConnection(), 
-				  idx, getDescription (idx), h, run, this);
-	if (h.isMinorEnabled()) {
-	  h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
-	}
-	workQ.enque (work);
-      }
-
-      while (workQ.isBusy ()) {
-	synchronized (this) {
-	  try {wait(5000);} catch (Exception e) {e.printStackTrace();}
-	}
-      }
+      runTestsOnQueue (h, connectionProvider, run, test);
     }
     catch (SQLException sqle) {
       h.logMessage (Logger.WARNING, Logger.GENERIC, "Got SQL error : " + sqle);
@@ -514,6 +494,37 @@ public class Validator{
     }
 
     h.p("<BR><B>Finished Validating</B>");
+  }
+
+  /**
+   * Blocks until all tests are complete
+   */
+  protected void runTestsOnQueue (HTMLizer h, DBConnectionProvider connectionProvider, int run, int test) {
+    ValidatorResultHandler resultHandler = new ValidatorResultHandler (h);
+    workQ = new WorkQueue (h, resultHandler);
+    resultHandler.setWorkQ (workQ);
+
+    List l = getTestIndicesForTestType(test);
+    for(int i=0;i<l.size();i++){
+      int idx=((Integer)l.get(i)).intValue();
+      Work work = getTestWork (i, connectionProvider, idx, h, run);
+
+      if (h.isMinorEnabled()) {
+	h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
+      }
+      workQ.enque (work);
+    }
+
+    while (workQ.isBusy ()) {
+      synchronized (this) {
+	try {wait(5000);} catch (Exception e) {e.printStackTrace();}
+      }
+    }
+  }
+
+  protected Work getTestWork (int i, DBConnectionProvider connectionProvider, int idx, HTMLizer h, int run) {
+    return new TestWork (100+i, connectionProvider, 
+			 idx, getDescription (idx), h, run, this);
   }
 
   class ValidatorResultHandler implements ResultHandler {
@@ -550,87 +561,88 @@ public class Validator{
   public class TestWork implements Work {
     int id;
     boolean halt = false;
-    Connection connection;
+    DBConnectionProvider connectionProvider;
     String testName;
     int testIndex;
     HTMLizer htmlizer;
     int run;
     Validator validator;
+    TestWork outer;
 
-    public TestWork (int id, Connection connection, 
+    public TestWork (int id, DBConnectionProvider connectionProvider, 
 		     int testIndex, String testName, 
 		     HTMLizer htmlizer, int run,
 		     Validator validator) {
       this.id = id; 
-      this.connection = connection;
+      this.connectionProvider = connectionProvider;
       this.testName = testName;
       this.testIndex = testIndex;
       this.htmlizer = htmlizer;
       this.run = run;
       this.validator = validator;
-
-      if (htmlizer.isMinorEnabled()) {
-	htmlizer.logMessage (Logger.MINOR, Logger.GENERIC, 
-			     "Using connection " + connection + 
-			     " for test " + this);
-      }
     }
 
     public int getID() { return id; }
     public String getStatus() { return "doing test " + this; }
     public void halt() { halt = true;}
     public Result perform(Logger l) { 
-      Statement statement = null;
       Result result = null;
-      try {
-	if (doTest (statement = connection.createStatement())) {
-	  result = new Result () { 
-	      public int getID () { return id; }
-	      public String toString () { return "Successful run of test \"" + testName + "\" on run #" + run; }
-	    };
-	} else {
-	  result = new FailureRunResult (id, run, "failed running test " + this, false);
-	}
-      } catch (SQLException sqle){
-	htmlizer.logMessage (Logger.ERROR, Logger.GENERIC, "Got sql exception " + sqle);
-	sqle.printStackTrace ();
-	result = new FailureRunResult (id, run, "sql error - failed running test " + this, false);
-      } finally {
-	if (statement != null) {
-	  try { statement.close(); } catch (Exception e) {}
-	}
+
+      this.outer = this;
+      if (doTest ()) {
+	result = new Result () { 
+	    public int getID () { return id; }
+	    public String toString () { return "Successful run of " + outer; }
+	  };
+      } else {
+	result = new FailureRunResult (id, run, "failed running test " + this, false);
       }
 
       return result;
     }
 
-    protected boolean doTest (Statement statement) {
+    protected boolean doTest () {
+      Statement statement = null;
+      boolean retval = true;
       try {
+	statement = connectionProvider.createStatement();
 	if (!halt) {
-	  getTest(testIndex).prepare(htmlizer,statement,run);
+	  prepare (statement);
 	}
       } catch (Exception e) {
 	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
 			    "Problem running test - could not prepare test "+testName +
 			    ". Exception was " + e);
 	e.printStackTrace();
-	return false;
+	retval = false;
       }
+
       try {
-	synchronized (validator) { // don't update tables at same time
-	  if (!halt) {
-	    ResultTable.updateStatus(htmlizer,statement,validator,run,testIndex);
-	  }
+	if (!halt && retval) {
+	  update (statement);
 	}
       } catch (RuntimeException e) {
 	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
 			    "Problem running test - could not update status for test "+testName);
-	return false;
+	retval = false;
+      } finally {
+	if (statement != null) {
+	  try { statement.close(); } catch (Exception e) {}
+	}
       }
-      return true;
+
+      return retval;
     }
 
-    public String toString () { return "Test Work : " + testName;  }
+    protected void prepare (Statement statement) {
+      getTest(testIndex).prepare(htmlizer,statement,run);
+    }
+
+    protected void update (Statement statement) {
+      ResultTable.updateStatus(htmlizer,statement,validator,run,testIndex);
+    }
+
+    public String toString () { return "Test \"" + testName + "\" for run " +run;  }
   }
 
   /** test has a ONE based index, 0 is reserved for 'all tests'**/
