@@ -39,6 +39,8 @@ import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.utils.TaskScheduler;
+import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -93,6 +95,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   public final String SUPPLY_PG_CLASS = "SUPPLY_PG_CLASS";
   public final String REQ_EXPANDER = "REQ_EXPANDER";
   public final String PROJ_EXPANDER = "PROJ_EXPANDER";
+  public final String TASK_SCHEDULER_OFF = "TASK_SCHEDULER_OFF";
 
   LogisticsOPlan logOPlan = null;
 
@@ -210,6 +213,8 @@ public class DemandForecastPlugin extends ComponentPlugin
       return;
     }
 
+    genProjTaskScheduler.initForExecuteCycle();
+
     if (!detReqSubscription.isEmpty()) {
       Iterator detReqIt = detReqSubscription.iterator();
       Task detReqTask = (Task) detReqIt.next();
@@ -268,31 +273,34 @@ public class DemandForecastPlugin extends ComponentPlugin
       //lay down
       if (logOPlan != null) {
         if ((supplyClassPG != null) &&
-            (genProjSubscription == null)) {
-          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
+            (genProjTaskScheduler == null)) {
+          setupTaskScheduler();
+//          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
         }
       }
     }
 
-    if (genProjSubscription != null) {
+//    if (genProjSubscription != null) {
 
-      HashSet justExpandedPGs = new HashSet();
+    HashSet justExpandedPGs = new HashSet();
 
-      if (genProjSubscription.hasChanged()) {
-        if (!genProjSubscription.getRemovedCollection().isEmpty()) {
-          processRemovedGenProjs(genProjSubscription.getRemovedCollection());
-        }
-        if (!genProjSubscription.getAddedCollection().isEmpty()) {
-          justExpandedPGs = processNewGenProjs(genProjSubscription.getAddedCollection());
-        }
-      }
+    if (! genProjTaskScheduler.isEmpty()) {
+      Collection removed = genProjTaskScheduler.getRemovedCollection();
+      Collection added = genProjTaskScheduler.getAddedCollection();
+      TimeSpan timeSpan = genProjTaskScheduler.getCurrentTimeSpan();
+      if (! removed.isEmpty())
+        processRemovedGenProjs (removed, timeSpan);
+      if (! added.isEmpty())
+        justExpandedPGs = processNewGenProjs (added, timeSpan);
 
-      //if the determine requirements task has already fired we're this far down
-      //in the execute we should check the hash table subscriptions and see if
-      //we have to regenerate some of the expansions due to subscription changes.
-      if (processedDetReq) {
-        checkAndProcessHashSubscriptions(justExpandedPGs);
-      }
+      genProjTaskScheduler.finishedExecuteCycle();
+    }
+
+    //if the determine requirements task has already fired we're this far down
+    //in the execute we should check the hash table subscriptions and see if
+    //we have to regenerate some of the expansions due to subscription changes.
+    if (processedDetReq) {
+      checkAndProcessHashSubscriptions(justExpandedPGs);
     }
 
     //Update the Allocation results on new or changed GP PlanElements
@@ -328,7 +336,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private IncrementalSubscription oplanSubscription;
   private IncrementalSubscription detReqSubscription;
   private IncrementalSubscription detReqPESubscription;
-  private IncrementalSubscription genProjSubscription;
+  private TaskScheduler genProjTaskScheduler;
   private IncrementalSubscription genProjPESubscription;
   private IncrementalSubscription projectSupplySubscription;
   private IncrementalSubscription logisticsOPlanSubscription;
@@ -354,10 +362,11 @@ public class DemandForecastPlugin extends ComponentPlugin
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
     detReqPESubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPEPredicate(supplyType, taskUtils));
 
-    genProjSubscription = null;
+    genProjTaskScheduler = null;
     assetsWithPGSubscription = null;
 
     if (supplyClassPG != null) {
+      setupTaskScheduler();
       //genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
 
       assetsWithPGSubscription = (IncrementalSubscription)
@@ -368,6 +377,52 @@ public class DemandForecastPlugin extends ComponentPlugin
         blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
 
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+  }
+
+  private void setupTaskScheduler() {
+    String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
+    boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
+    long now = getAlarmService().currentTimeMillis();
+    long date1 = timeUtils.addNDays (now, 7);
+    long date2 = timeUtils.addNDays (now, 21);
+    long date3 = timeUtils.addNDays (now, 60);
+//     long date4 = timeUtils.addNDays (now, 180);
+    long date4 = timeUtils.addNDays (now, 205);
+    TimeSpan ts1 = TaskSchedulingPolicy.makeTimeSpan (now, date1);
+    TimeSpan ts2 = TaskSchedulingPolicy.makeTimeSpan (date1, date2);
+    TimeSpan ts3 = TaskSchedulingPolicy.makeTimeSpan (date2, date3);
+    TimeSpan ts4 = TaskSchedulingPolicy.makeTimeSpan (date3, date4);
+    if (!turnOffTaskSched) {
+      genProjTaskScheduler = new TaskScheduler
+        (new GenProjPredicate (supplyType, taskUtils),
+         new TaskSchedulingPolicy (
+         new TaskSchedulingPolicy.Predicate[] {
+           new TaskSchedulingPolicy.Predicate() {
+             public boolean execute (Task task) {
+               return taskUtils.isLevel2 (task); }},
+           new TaskSchedulingPolicy.Predicate() {
+             public boolean execute (Task task) {
+               return ! taskUtils.isLevel2 (task); }}},
+         new TaskSchedulingPolicy.PriorityPhaseMix[] {
+           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts1),
+           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts2),
+           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts3),
+           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts2),
+           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts4),
+           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts3),
+           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts4)}),
+       blackboard, logger,"GenProjs for " + getBlackboardClientName());
+    } else {
+     genProjTaskScheduler = new TaskScheduler
+      (new GenProjPredicate (supplyType, taskUtils),
+       new TaskSchedulingPolicy (
+         new TaskSchedulingPolicy.Predicate[] {
+           new TaskSchedulingPolicy.Predicate() {
+             public boolean execute (Task task) {
+               return true; }}}
+           ),
+       blackboard, logger,"GenProjs for " + getBlackboardClientName());
+    }
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -429,7 +484,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   } // DetReqPEPredicate
 
   /** Predicate defining expandable Determine Reqs. **/
-  private static class GenProjPredicate implements UnaryPredicate {
+  private static class GenProjPredicate
+      implements TaskSchedulingPolicy.Predicate {
     private String supplyType;
     private TaskUtils taskUtils;
 
@@ -438,14 +494,9 @@ public class DemandForecastPlugin extends ComponentPlugin
       this.taskUtils = utils;
     } // constructor
 
-    public boolean execute(Object o) {
-      if (o instanceof Task) {
-        Task t = (Task) o;
-        if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
-          return taskUtils.isTaskOfTypeString(t, supplyType);
-        }
-      }
-      return false;
+    public boolean execute (Task t) {
+      return t.getVerb().equals (Constants.Verb.GENERATEPROJECTIONS) &&
+             taskUtils.isTaskOfTypeString (t, supplyType);
     } // execute
   } // GenProjPredicate
 
@@ -620,7 +671,7 @@ public class DemandForecastPlugin extends ComponentPlugin
    * @param addedGPs - The collection of new GenerateProjections tasks
    */
 
-  private HashSet processNewGenProjs(Collection addedGPs) {
+  private HashSet processNewGenProjs(Collection addedGPs, TimeSpan timeSpan) {
     Iterator gpIt = addedGPs.iterator();
     HashSet justExpandedPGs = new HashSet();
     while (gpIt.hasNext()) {
@@ -647,14 +698,15 @@ public class DemandForecastPlugin extends ComponentPlugin
         addNewPG(pg);
         //We invoke GenProjections now because we do not expect any new subscriptions in the Hash table
         //to fire immediately.   They should be just the orgActivities subscription at this point.
-        invokeGenProjectionsExp(pg, genProj);
+        invokeGenProjectionsExp(pg, genProj,timeSpan);
       }
       // For each new GP task it actually has a new unique PGImpl, so
       // this code should never be called.   Especially if all the
       // hash tables are kept in line with whats on the blackboard.
       else {
-        logger.error("Surprise!!!! - unexpected expansion code firing in processNewGenProjs");
-        invokeGenProjectionsExp(pg, genProj);
+	  //with new TaskScheduler this is no longer a surprise, but is expected behavior.
+	  //logger.error("Surprise!!!! - unexpected expansion code firing in processNewGenProjs");
+        invokeGenProjectionsExp(pg, genProj,timeSpan);
       }
 
 //TODO: MWD Remove
@@ -680,7 +732,7 @@ public class DemandForecastPlugin extends ComponentPlugin
    * from the blackboard.
    */
 
-  private void processRemovedGenProjs(Collection removedGPs) {
+  private void processRemovedGenProjs(Collection removedGPs, TimeSpan timeSpan) {
     Iterator gpIt = removedGPs.iterator();
     while (gpIt.hasNext()) {
       Task genProj = (Task) gpIt.next();
@@ -785,7 +837,14 @@ public class DemandForecastPlugin extends ComponentPlugin
           }
         }
       }
-      processSubscriptionChangedPG(filteredPGs);
+
+      if(!filteredPGs.isEmpty()) {
+       Oplan oplan = getOplan();
+       TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
+                                                     oplan.getEndDay());
+       processSubscriptionChangedPG(filteredPGs,projectSpan);
+       genProjTaskScheduler.clearState();
+      }
     }
   }
 
@@ -818,7 +877,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   //Invoke the BG and the genProjExpander if there are changes
   //in the OrgActivities or Removals of OrgActivities.
-  private void processSubscriptionChangedPG(Collection PGs) {
+  private void processSubscriptionChangedPG(Collection PGs,TimeSpan projectSpan) {
     Iterator pgIt = PGs.iterator();
     while (pgIt.hasNext()) {
       //ConsumerPG pg = (ConsumerPG) pgIt.next();
@@ -830,7 +889,7 @@ public class DemandForecastPlugin extends ComponentPlugin
         if ((pe == null) ||
             (!(pe instanceof Disposition))) {
           logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
-          invokeGenProjectionsExp(pg, gp);
+          invokeGenProjectionsExp(pg, gp, projectSpan);
         }
       } else {
         if (logger.isErrorEnabled()) {
@@ -840,15 +899,10 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   }
 
-  private void invokeGenProjectionsExp(PropertyGroup pg, Task genProj) {
+  private void invokeGenProjectionsExp(PropertyGroup pg, Task genProj, TimeSpan projectSpan) {
     Collection pgInputs = getSubscriptions(pg);
-    Oplan oplan = getOplan();
-    // placeholder for task scheduler
-    //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
-    TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
-                                                   oplan.getEndDay());
     Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
-    generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject());
+    generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject(), projectSpan);
   }
 
   private void removeFromDetReq(Collection addedDRs, Collection removedAssets) {
@@ -922,7 +976,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void rehydrateHashMaps() {
-    Iterator gpIt = genProjSubscription.iterator();
+    Iterator gpIt = genProjTaskScheduler.getAllTasks();
     while (gpIt.hasNext()) {
       Task gpTask = (Task) gpIt.next();
       Asset mei = gpTask.getDirectObject();
