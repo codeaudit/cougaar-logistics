@@ -64,7 +64,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected LogisticsInventoryPG myPG;
   protected long startTime;
   protected int timeZero;
-  private LoggingService logger;
+  private transient LoggingService logger;
   private transient LogisticsInventoryLogger csvLogger=null;
   private transient LogisticsInventoryFormatter csvWriter=null;
   // customerHash holds the time(long) of the last actual is seen
