@@ -565,10 +565,16 @@ public class LogisticsInventoryBG implements PGDelegate {
 	  criticalLevelsArray[0] = Ci;
 	  for (int i=1; i < projectedDemandArray.length-buckets-1; i++) {
 	      Ci =  Ci - getProjectedDemand(i) + getProjectedDemand(i+buckets);
+	      if (Ci < 0.0) {
+		  Ci = 0.0;
+	      }
 	      criticalLevelsArray[i] = Ci;
 	  }
 	  for (int i=projectedDemandArray.length-buckets-1; i < projectedDemandArray.length; i++) {
 	      Ci =  Ci - getProjectedDemand(i);
+	      if (Ci < 0.0) {
+		  Ci = 0.0;
+	      }
 	      criticalLevelsArray[i] = Ci;
 	  }
 	}
