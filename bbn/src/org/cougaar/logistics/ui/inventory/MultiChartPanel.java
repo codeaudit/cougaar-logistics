@@ -128,11 +128,11 @@ public class MultiChartPanel extends JPanel
 
   protected JLabel pointLabel;
 
-  private Logger logger;
+  protected Logger logger;
 
-  private JCheckBox cdaysModeCheck;
-  private JCheckBox shortfallModeCheck;
-  private JButton resetButton;
+  protected JCheckBox cdaysModeCheck;
+  protected JCheckBox shortfallModeCheck;
+  protected JButton resetButton;
 
   protected boolean displayCDay = false;
   protected long baseCDayTime = InventoryChartBaseCalendar.getBaseTime();
