@@ -23,7 +23,9 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.*;
 
+import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Role;
@@ -117,7 +119,7 @@ public class ExternalAllocator extends InventoryModule {
     private AllocationResult createPredictedAllocationResult(Task task, Organization provider) {
 	//MWD in the future this will have to generate the expected result
 	//from the predictor.
-	return new AllocationResultHelper(task, null).getAllocationResult(1.0);
+	return new AllocationResultHelper(task, null).getAllocationResult(0.25);
     }
 
     private void setRefillScoringFunction(Task task) {
@@ -188,6 +190,10 @@ public class ExternalAllocator extends InventoryModule {
 	}
         return false;
     }
+
+  public void updateAllocationResult(IncrementalSubscription sub) {
+    PluginHelper.updateAllocationResult(sub);
+  }
 }
     
   
