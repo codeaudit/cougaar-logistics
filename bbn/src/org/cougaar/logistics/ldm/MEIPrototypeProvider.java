@@ -364,10 +364,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           ammopg.setTheater(THEATER);
           if (anAsset instanceof Level2MEIAsset) {
             ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
-            //FIXME:  temp hack to suppress transportation warnings -- there will be a bug submitted
+            //This cargo category codes says, "do not transport me."
             NewMovabilityPG mpg = (NewMovabilityPG) getLDM().getFactory().createPropertyGroup(MovabilityPG.class);
             mpg.setMoveable(false);
-            mpg.setCargoCategoryCode("AOD");
+            mpg.setCargoCategoryCode("000");
             anAsset.setPropertyGroup(mpg);
           } else {
             ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
