@@ -25,7 +25,18 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.util.TimeSpan;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import java.util.*;
+import java.io.*;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.AlarmService;
+import org.apache.xerces.parsers.SAXParser;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  *  A TaskSchedulingPolicy instance prioritizes tasks as to which
@@ -120,31 +131,32 @@ public class TaskSchedulingPolicy {
     return new TimePeriod (start, end);
   }
 
-  /**
-   * Predicate that lets everything pass
-   */
+  /** Predicate that lets everything pass */
   public static Predicate PASSALL = new Predicate() {
     public boolean execute (Task task)  { return true; }
   };
 
-  /** 
-   * It is anticipated that the most common usage will involve
-   * tests on the start time and/or detail level of a task.
-   * Therefore, we provide a generic predicate that implements
-   * these tests.
-   */
-  public static class StandardPredicate implements Predicate {
-    long earliestStart;
-    long latestStart;
-    int maxDetailLevel;
+  /** Predicate that tests if task is for level 2 detail */
+  public static class Level2Predicate implements Predicate {
+    private boolean isLevel2;
+    private TaskUtils taskUtils;
+    public Level2Predicate (boolean isLevel2, TaskUtils taskUtils) {
+      this.isLevel2 = isLevel2;
+      this.taskUtils = taskUtils;
+    }
+    public boolean execute (Task task) {
+      return (! isLevel2) ^ taskUtils.isLevel2 (task);
+    }
+  }
 
-    public StandardPredicate (long earliestStart, long latestStart,
-                              int maxDetailLevel) {
+  /** Predicate that tests if task is within given time span */
+  public static class TimeSpanPredicate implements Predicate {
+    private long earliestStart;
+    private long latestStart;
+    public TimeSpanPredicate (long earliestStart, long latestStart) {
       this.earliestStart = earliestStart;
       this.latestStart = latestStart;
-      this.maxDetailLevel = maxDetailLevel;
     }
-
     public boolean execute (Task task) {
       Preference pref = task.getPreference (AspectType.START_TIME);
       if (pref == null)
@@ -153,11 +165,32 @@ public class TaskSchedulingPolicy {
         return false;
       long time =
         pref.getScoringFunction().getBest().getAspectValue().longValue();
-      if ((time < earliestStart) || (time >= latestStart))
-        return false;
-      // ????? still need to check that detail level of task (e.g., level 2,
-      // level 6, etc.) is not greater than maxDetailLevel ?????
-      return true;
+      return (time >= earliestStart) && (time < latestStart);
+    }
+  }
+
+  public static TaskSchedulingPolicy fromXML
+      (String filename, UtilsProvider plugin, AlarmService alarm) {
+    try {
+      return fromXML (new FileInputStream (filename), plugin, alarm);
+    } catch (Exception e) {
+      plugin.getLoggingService(plugin).error
+          ("Could not open file " + filename);
+      return null;
+    }
+  }
+
+  public static TaskSchedulingPolicy fromXML
+      (InputStream stream, UtilsProvider plugin, AlarmService alarm) {
+    try {
+      SAXParser parser = new SAXParser();
+      ParmsHandler handler = new ParmsHandler (plugin, alarm);
+      parser.setContentHandler (handler);
+      parser.parse (new InputSource (stream));
+      return handler.getPolicy();
+    } catch (Exception e) {
+      plugin.getLoggingService(plugin).error (e.getMessage());
+      return null;
     }
   }
 
@@ -195,9 +228,96 @@ public class TaskSchedulingPolicy {
     return UNKNOWN_PRIORITY;
   }
 
+  private static class ParmsHandler extends DefaultHandler {
+    private ArrayList criteria = null;
+    private ArrayList phases = null;
+    private ArrayList ordering = null;
+    private TaskUtils taskUtils;
+    private TimeUtils timeUtils;
+    private long now;
+    private TaskSchedulingPolicy policy = null;
 
-  /** unit test */
-  public static void main (String[] args) {
+    public ParmsHandler (UtilsProvider plugin, AlarmService alarm) {
+      taskUtils = plugin.getTaskUtils();
+      timeUtils = plugin.getTimeUtils();
+      now = alarm.currentTimeMillis();
+    }
+
+    public TaskSchedulingPolicy getPolicy()  { return policy; }
+
+    public void startElement (String uri, String local,
+                     String name, Attributes atts) throws SAXException {
+      if (name.equals ("PRIORITIES")) {
+        criteria = new ArrayList();
+      }
+      else if (name.equals ("PHASES")) {
+        phases = new ArrayList();
+      }
+      else if (name.equals ("ORDERING")) {
+        if ((criteria == null) || (phases == null))
+          throw new SAXException ("In scheduling policy, should " +
+                "have criteria and phases defined before ordering");
+        ordering = new ArrayList();
+      }
+      else if (name.equals ("CRITERION")) {
+        String level = atts.getValue ("level");
+        if (level == null)
+          throw new SAXException ("In scheduling policy criterion, " +
+                "currently must have level attribute defined");
+        boolean level2 = "2".equals (level.trim());
+        criteria.add (new Level2Predicate (level2, taskUtils));
+      }
+      else if (name.equals ("PHASE")) {
+        String start = atts.getValue ("start");
+        String end = atts.getValue ("end");
+        if ((start == null) || (end == null))
+          throw new SAXException ("In scheduling policy criterion, " +
+                "must define start and end attributes for a phase");
+        try {
+          int istart = Integer.parseInt (start);
+          int iend = Integer.parseInt (end);
+          phases.add (makeTimeSpan (timeUtils.addNDays (now, istart),
+                                    timeUtils.addNDays (now, iend)));
+        } catch (NumberFormatException e) {
+          throw new SAXException ("In scheduling policy criterion, " +
+             "the values of start and end of a phase must be integers");
+        }
+      }
+      else if (name.equals ("PRIORITYPHASEMIX")) {
+        String priority = atts.getValue ("priority");
+        String phase = atts.getValue ("phase");
+        if ((priority == null) || (phase == null))
+          throw new SAXException ("In scheduling policy criterion, " +
+            "must define priority and phase attributes for a priphasemix");
+        try {
+          int ipri = Integer.parseInt (priority);
+          int iphase = Integer.parseInt (phase);
+          ordering.add (new PriorityPhaseMix
+                             (ipri, (TimeSpan) phases.get (iphase)));
+        } catch (NumberFormatException e) {
+          throw new SAXException ("In scheduling policy criterion, the " +
+            "values of priority and phase of a priphasemix must be integers");
+        }
+      }
+    }
+
+    public void endElement (String uri, String local,
+                            String name) {
+      if (name.equals ("POLICY")) {
+        if (ordering != null)
+          policy = new TaskSchedulingPolicy
+            ((Predicate[]) criteria.toArray (new Predicate [criteria.size()]),
+             (PriorityPhaseMix[]) ordering.toArray
+               (new PriorityPhaseMix [ordering.size()]));
+        else if (phases != null)
+          policy = new TaskSchedulingPolicy
+            ((TimeSpan[]) phases.toArray (new TimeSpan [phases.size()]));
+        else if (criteria != null)
+          policy = new TaskSchedulingPolicy
+            ((Predicate[]) criteria.toArray
+                           (new Predicate [criteria.size()]));
+      }
+    }
   }
 
 }
