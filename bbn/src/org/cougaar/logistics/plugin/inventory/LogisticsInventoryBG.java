@@ -454,7 +454,9 @@ public class LogisticsInventoryBG implements PGDelegate {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
 	start = getProjectedDemandStart(task, start);
-	if (start < end) {
+	long end_of_bucket = (convertBucketToTime(bucket + 1) - 1);
+	if ((start < end) &&
+	    (start < end_of_bucket)) {
 	  int days_spanned = getDaysSpanned(bucket, start, end);
 	  rate = taskUtils.getRate(task);
 	  scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
