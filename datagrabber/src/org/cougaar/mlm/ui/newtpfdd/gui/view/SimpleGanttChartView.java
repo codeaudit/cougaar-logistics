@@ -27,6 +27,8 @@ package org.cougaar.mlm.ui.newtpfdd.gui.view;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -193,6 +195,12 @@ public abstract class SimpleGanttChartView {
     ganttChartFrame.getContentPane().add(ganttChartPanel, BorderLayout.CENTER);
     ganttChartFrame.setTitle(title);
     ganttChartFrame.setSize(640, 480);
+    ganttChartFrame.addWindowListener(
+        new WindowAdapter() {
+          public void windowClosing(WindowEvent event) {
+            System.exit(0);
+          }
+        });
     ganttChartFrame.setVisible(true);
     //ganttChartFrame.setJMenuBar(ganttChartView.getMenuBar());
     ganttChartView.showTPFDDLines(null);
