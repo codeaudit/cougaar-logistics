@@ -4,14 +4,16 @@
 
 <!ENTITY % locationcontent "geoloc, latitude, longitude">
 <!ENTITY % datecontent "year, month, day, hour, minute, second">
+<!ENTITY % maintainingcontent "itemID, type, nomen, typeID">
 
 <!ELEMENT tasklist (task*)>
-<!ELEMENT task (verb, directobject, for?, using?, from?, to?, with?, via?, ItineraryOf?, RespondTo?, FromTask?, readyat?, startdate, enddate, cost?)>
+<!ELEMENT task (verb, directobject, for?, using?, from?, to?, maintaining?, with?, via?, ItineraryOf?, RespondTo?, FromTask?, readyat?, startdate, enddate, cost?)>
 <!ATTLIST task id ID #REQUIRED>
 <!ELEMENT verb (#PCDATA)>
 <!ELEMENT directobject (asset | aggregateasset | assetgroup)*>
 <!ELEMENT from (%locationcontent;)>
 <!ELEMENT to (%locationcontent;)>
+<!ELEMENT maintaining (%maintainingcontent;)>
 <!ELEMENT with (asset)>
 <!ELEMENT using (asset)>
 <!ELEMENT via (TransportationRouteSet)>
@@ -37,6 +39,11 @@
 <!ELEMENT hour (#PCDATA)>
 <!ELEMENT minute (#PCDATA)>
 <!ELEMENT second (#PCDATA)>
+
+<!ELEMENT itemID (#PCDATA)>
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT nomen (#PCDATA)>
+<!ELEMENT typeID (#PCDATA)>
 
 <!ELEMENT assetgroup (asset | aggregateasset | assetgroup)*>
 <!ATTLIST assetgroup id ID #REQUIRED>
