@@ -27,7 +27,6 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
-import org.cougaar.core.plugin.util.LogisticsAllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 
 import org.cougaar.planning.ldm.plan.Allocation;
