@@ -58,6 +58,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   private DemandTaskGeneratorIfc demandGenerator;
   private DGClass9Scheduler class9Scheduler;
+  private DemandGeneratorOutputModule demandOutputModule;
 
   private String supplyType;
   private long period;
@@ -67,6 +68,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   public final String RANDOM_DEVIATION_ON = "RANDOM_DEVIATION_ON";
 
   public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
+  public final String DG_TO_FILE = "DG_TO_FILE";
 
   private boolean poissonOn = true;
 
@@ -110,9 +112,26 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
     logger = getLoggingService(this);
 
+    String dg_to_file = (String)pluginParams.get(DG_TO_FILE);
+    if (dg_to_file != null && dg_to_file.equalsIgnoreCase("true")) {
+      demandOutputModule = getDemandOutputModule();
+
+      String demandGen = (String)pluginParams.get(DEMAND_GENERATOR);
+      if (demandGen != null && demandGen.endsWith("DemandGeneratorInputModule")) {
+        logger.warn("Invalid Combination of Plugin Params: Cannot output AND " +
+                    "input demand info in same run.  Changing Demand " +
+                    "Generator Module to default!");
+        pluginParams.remove(DEMAND_GENERATOR);
+      }
+    }
+
     demandGenerator = getDemandTaskGeneratorModule();
     class9Scheduler = getClass9SchedulerModule();
 
+  }
+
+  private DemandGeneratorOutputModule getDemandOutputModule() {
+    return new DemandGeneratorOutputModule(this);
   }
 
   public void unload() {
@@ -278,7 +297,6 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     return myOrganization;
   }
 
-
   public String getOrgName() {
     if ((myOrgName == null) &&
         (getMyOrganization() != null)) {
@@ -319,6 +337,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         getServiceBroker().getService(requestor,
                                       LoggingService.class,
                                       null);
+  }
+
+  public BlackboardService getBlackboardService() {
+    return blackboard;
   }
 
   protected void execute() {
@@ -375,9 +397,14 @@ public class DemandGeneratorPlugin extends ComponentPlugin
           (getOrgName().trim().equals("1-35-ARBN"))) {
         System.out.println("I'm waking up - new period starts " + new Date(planTime) + " and Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
       }
-      
+
       relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
-      demandGenerator.generateDemandTasks(planTime, period, relevantProjs);
+      List demandTasks = demandGenerator.generateDemandTasks(planTime, period, relevantProjs);
+
+      if (demandOutputModule != null) {
+        demandOutputModule.writeDemandOutputToFile(demandTasks);
+      }
+
       resetTimer();
     }
   }
@@ -431,7 +458,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
                      "Loading default org.cougaar.logistics.plugin.demand.DemandTaskGenerator");
       }
     }
-    
+
     return new DemandTaskGenerator(this);
   }
 

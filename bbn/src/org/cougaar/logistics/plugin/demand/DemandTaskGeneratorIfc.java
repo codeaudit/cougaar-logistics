@@ -23,6 +23,7 @@ package org.cougaar.logistics.plugin.demand;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import org.cougaar.planning.ldm.plan.Task;
 
@@ -44,6 +45,6 @@ public interface DemandTaskGeneratorIfc {
    * Expand DetermineRequirements tasks into GenerateProjections tasks.
    **/
 
-  void generateDemandTasks(long startGen, long duration, Collection relevantProjectSupplys);
+  List generateDemandTasks(long startGen, long duration, Collection relevantProjectSupplys);
 }
 

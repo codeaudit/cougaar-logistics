@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Vector;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -70,7 +71,8 @@ public class DemandTaskGenerator extends DemandGeneratorModule
    * Generate actual demand tasks from the passed in projections
    **/
 
-  public void generateDemandTasks(long start, long duration, Collection relevantProjectSupplys) {
+  public List generateDemandTasks(long start, long duration, Collection relevantProjectSupplys) {
+    ArrayList demandTasks = new ArrayList();
     regenerateProjectionHash(relevantProjectSupplys);
     long end = start + duration;
     Iterator gpTasksIt = projHash.keySet().iterator();
@@ -82,32 +84,44 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       while (assetsIt.hasNext()) {
         Asset consumed = (Asset) assetsIt.next();
         Collection projTasks = (Collection) (assetMap.get(consumed));
-        double totalQty = deriveTotalQty(start,end,projTasks);
-        double taskQty = 0.0;
-        if(dgPlugin.getPoissonOn()) {
-          taskQty = poissonGen.nextPoisson(totalQty);
-        }
-        else {
-          taskQty = totalQty;
-        }
-        Iterator projTaskIt = projTasks.iterator();
-        //This should not be a while, but an if
-        if((taskQty > 0) &&
-           (projTaskIt.hasNext())) {
+
+        // Step through the period one hour at a time
+        long step = 3600000;
+
+        // Step through each hour of the requested period
+        for (long time=start; time<end; time += step) {
+
+          double totalQty = deriveTotalQty(time,time+step,projTasks);
+          if (totalQty <= 0.0) {
+            continue;
+          }
+          double taskQty = 0.0;
+          if (dgPlugin.getPoissonOn()) {
+            taskQty = poissonGen.nextPoisson(totalQty);
+          }
+          else {
+            taskQty = totalQty;
+          }
+
+          Iterator projTaskIt = projTasks.iterator();
+
+          if((taskQty > 0) && (projTaskIt.hasNext())) {
             supplyTasks.add(createNewDemandTask(gpTask,
                                                   (Task) projTaskIt.next(),
                                                   consumed,
-                                                  start,
-                                                  end,
+                                                  time,
+                                                  time+step,
                                                   taskQty));
-
+          }
         }
-
       }
       if(!supplyTasks.isEmpty()){
-        addToAndPublishExpansion(gpTask,supplyTasks);       
+        addToAndPublishExpansion(gpTask,supplyTasks);
+        demandTasks.addAll(supplyTasks);
       }
     }
+
+    return demandTasks;
 
   }
 
@@ -153,6 +167,11 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       Task projTask = (Task) tasksIt.next();
       long taskStart = getTaskUtils().getStartTime(projTask);
       long taskEnd  = getTaskUtils().getEndTime(projTask);
+
+      if (taskStart > bucketEnd || taskEnd < bucketStart) {
+        continue;
+      }
+
       long start = Math.max(taskStart, bucketStart);
       long end = Math.min(taskEnd, bucketEnd);
       //duration in seconds
@@ -187,7 +206,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       if ((dgPlugin.getOrgName() != null) &&
           (dgPlugin.getOrgName().trim().equals("1-35-ARBN"))) {
         logger.shout("DGPlugin:DemandTaskGenerator:I'm publishing " + subtasks.size() + " " + dgPlugin.getSupplyType() + " Supply tasks");
-      }    
+      }
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
       dgPlugin.publishAdd(task);
@@ -223,7 +242,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     newTask.setDirectObject(consumed);
     newTask.setVerb(Verb.getVerb(Constants.Verb.SUPPLY));
 
-    
+
 
     newTask.setPreferences(prefs.elements());
 
