@@ -54,6 +54,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
+import java.awt.Cursor;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -301,43 +302,61 @@ public class InventoryUIFrame extends JFrame
 	    fileChooser.setSelectedFile(new File(fileID));
 	}
 	*/
+	InventoryFileManager fm=null;
+	String invXML="";
+
+	fileChooser.setMultiSelectionEnabled(true);
 	int retval = fileChooser.showOpenDialog(this);
 	if(retval == fileChooser.APPROVE_OPTION) {
-	    File openFile = fileChooser.getSelectedFile();
-	    String invXML="";
-	    try{
-		BufferedReader br = new BufferedReader(new FileReader(openFile));
+	    
+	    this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-		String nextLine = br.readLine();
-		while(nextLine != null) {
-		    invXML = invXML + nextLine + "\n";
-		    nextLine = br.readLine();
+	    File[] openFiles = fileChooser.getSelectedFiles();
+	    if(openFiles.length > 0) {
+		if(dataSource instanceof InventoryFileManager)  {
+		    fm = (InventoryFileManager) dataSource;
 		}
-		br.close();
+		else {
+		    fm = new InventoryFileManager(this);
+		    dataSource = fm;
+		}
 	    }
-	    catch(IOException ioe) {
-		throw new RuntimeException(ioe);
+	    for(int i=0; i < openFiles.length; i++) {
+		File openFile = openFiles[i];
+		invXML="";
+		try{
+		    BufferedReader br = new BufferedReader(new FileReader(openFile));
+		    
+		    String nextLine = br.readLine();
+		    while(nextLine != null) {
+			invXML = invXML + nextLine + "\n";
+			nextLine = br.readLine();
+		    }
+		    br.close();
+		}
+		catch(IOException ioe) {
+		    throw new RuntimeException(ioe);
+		}
+
+		inventory = parser.parseString(invXML);
+		fm.addItem(inventory,invXML);
 	    }
 
-	    InventoryFileManager fm;
-	    if(dataSource instanceof InventoryFileManager)  {
-		fm = (InventoryFileManager) dataSource;
-	    }
-	    else {
-		fm = new InventoryFileManager(this);
-		dataSource = fm;
-	    }
-	    inventory = parser.parseString(invXML);
-	    editPane.setText(invXML);
-	    fm.addItem(inventory,invXML);
-	    Vector orgs = dataSource.getOrgNames();
-	    String[] fileType = dataSource.getSupplyTypes();
-	    selector.initializeComboBoxes(orgs,fileType);
-	    Vector assetNames = dataSource.getAssetNames(inventory.getOrg(),fileType[0]);
-	    selector.setAssetNames(assetNames);
-	    selector.setSelectedOrgAsset(inventory.getOrg(),fm.getFullItemName(inventory));
-	    multiChart.setData(inventory);	    
-	}		
+	    if((openFiles.length > 0) &&
+	       (inventory != null)) {
+		editPane.setText(invXML);
+		Vector orgs = dataSource.getOrgNames();
+		String[] fileType = dataSource.getSupplyTypes();
+		selector.initializeComboBoxes(orgs,fileType);
+		Vector assetNames = dataSource.getAssetNames(inventory.getOrg(),fileType[0]);
+		selector.setAssetNames(assetNames);
+		selector.setSelectedOrgAsset(inventory.getOrg(),fm.getFullItemName(inventory));
+		multiChart.setData(inventory);	    
+	    }		
+	    this.setCursor(Cursor.getDefaultCursor());
+	}
+
+	fileChooser.setMultiSelectionEnabled(false);
     }
 
     protected void connectToServlet() {
