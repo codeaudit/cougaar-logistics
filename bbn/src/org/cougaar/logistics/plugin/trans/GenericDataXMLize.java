@@ -20,14 +20,17 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
+import com.bbn.vishnu.objects.Reusable;
+import com.bbn.vishnu.objects.SchObject;
+
+import java.util.Date;
+
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.lib.vishnu.server.Reusable;
-import org.cougaar.lib.vishnu.server.SchObject;
 import org.cougaar.util.log.Logger;
 
 import org.w3c.dom.Element;
@@ -49,6 +52,8 @@ public class GenericDataXMLize extends TranscomDataXMLize {
   /** 
    * Create XML for asset, subclass to add fields
    * 
+   * NOTE : field names should match those in .dff file
+   *
    * @param object node representing asset
    * @param taskOrAsset asset being translated
    * @return true if should add object to list of new objects
@@ -84,6 +89,8 @@ public class GenericDataXMLize extends TranscomDataXMLize {
   /** 
    * Create XML for task, subclass to add fields
    * 
+   * NOTE : field names should match those in .dff file
+   *
    * @param object node representing task
    * @param taskOrAsset task being translated
    * @return true if should add object to list of new objects
@@ -105,7 +112,10 @@ public class GenericDataXMLize extends TranscomDataXMLize {
     dataHelper.createFloatField(object, "area",     (float) getArea     (baseAsset));
     dataHelper.createFloatField(object, "quantity", (float) getQuantity (directObject));
     dataHelper.createBooleanField(object, "isVehicle", isVehicle (baseAsset));
+    Date earliestArrival = new Date(glmPrefHelper.getEarlyDate(task).getTime());
+    dataHelper.createDateField(object, "earliestArrival", earliestArrival);
 
+    /*
     if (direct && logger.isDebugEnabled()) {
       logger.debug ("GenericDataXMLize.processTask - created task : " + object);
       Reusable.RInteger departureTime = 
@@ -116,6 +126,7 @@ public class GenericDataXMLize extends TranscomDataXMLize {
       logger.debug ("\tdeparture " + timeOps.timeToString (departureTime.intValue()) + 
 		    " arrival "    + timeOps.timeToString (arrivalTime.intValue()));
     }
+    */
 
     return true;
   }
