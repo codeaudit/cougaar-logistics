@@ -138,6 +138,9 @@ public class ConditionWorker
 	} catch (FileNotFoundException fnf) {
 	  if (support.getLog().isInfoEnabled())
 	    support.getLog().info ("Skipping agent " + agentName + " that has no Condition servlet.");
+	} catch (Exception other) {
+	  if (support.getLog().isWarnEnabled())
+	    support.getLog().warn ("Skipping agent " + agentName + " that has returned an EOF.");
 	}
       }
 
