@@ -1,2 +1,2 @@
-FallingBehind > 0.5  : FidelityKnob = 0;
-FallingBehind <= 0.5 : FidelityKnob = 1;
+FallingBehind > 0.5  : Level2TimeHorizon = 40  : Level6TimeHorizon = 20;
+FallingBehind <= 0.5 : Level2TimeHorizon = 160 : Level6TimeHorizon = 80;
