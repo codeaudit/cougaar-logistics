@@ -220,19 +220,14 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   }
 
 
-  public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp)
-  {
+  public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp) {
     Enumeration enum = task.getPrepositionalPhrases();
-    if (!enum.hasMoreElements())
-      task.setPrepositionalPhrase(pp);
-    else {
-      Vector phrases = new Vector();
-      while (enum.hasMoreElements()) {
-        phrases.addElement(enum.nextElement());
-      }
-      phrases.addElement(pp);
-      task.setPrepositionalPhrases(phrases.elements());
+    Vector phrases = new Vector();
+    while (enum.hasMoreElements()) {
+      phrases.addElement(enum.nextElement());
     }
+    phrases.addElement(pp);
+    task.setPrepositionalPhrases(phrases.elements());
     return task;
   }
 }
