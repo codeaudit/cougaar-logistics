@@ -34,7 +34,7 @@ slots=Asset resource, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, boolean logToCSV, InventoryPlugin parentPlugin); \
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	void addWithdrawRequisition(Task task); \
 	void removeWithdrawProjection(Task task); \
@@ -55,6 +55,8 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	double getProjectedDemand(int bucket); \
 	double getActualDemand(int bucket); \
 	double getReorderPeriod(); \
+	Collection getWithdrawTasks(int bucket); \
+	Collection getProjectWithdrawTasks(int bucket); \
 	long convertBucketToTime(int bucket); \
 	int  convertTimeToBucket(long time); \
 	long getStartTime(); \
