@@ -489,7 +489,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   private void processNewGenProjs(Collection addedGPs) {
     Iterator gpIt = addedGPs.iterator();
-    if (gpIt.hasNext()) {
+    while (gpIt.hasNext()) {
       Task genProj = (Task) gpIt.next();
       Asset asset = genProj.getDirectObject();
       if (asset instanceof AggregateAsset) {
