@@ -5,11 +5,15 @@ fue.org_id
 from 
 fdm_unit_equipment fue
 , oplog_ammorate oa
-, fdm_transportable_item_detail ftid
+, org_pg_attr opa
 where
-fue.ti_id = ftid.ti_id
+fue.ti_id = oa.lin
 and
-ftid.materiel_item_identifier = oa.mei_nsn
+fue.org_id = opa.org_id
+and 
+opa.pg_attribute_lib_id = "MilitaryOrgPG|Echelon"
+and
+opa.attribute_value = oa.echelon
 group by
 fue.org_id
 , oa.optempo
