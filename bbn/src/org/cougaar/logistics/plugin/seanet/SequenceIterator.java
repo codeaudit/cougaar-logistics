@@ -16,7 +16,9 @@ public class SequenceIterator implements Iterator {
     this.b = b;
   }
   public boolean hasNext() {
-    if (a.hasNext()) return true;
+    if (a.hasNext()) {
+      return true;
+    } 
     else if (b != null) {
       a = b;
       b = null;

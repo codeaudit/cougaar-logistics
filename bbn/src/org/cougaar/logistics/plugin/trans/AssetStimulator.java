@@ -172,9 +172,6 @@ public class AssetStimulator extends UTILPluginAdapter
   void addAsset () {
     try {
       blackboard.openTransaction();
-
-      Collection collection = myAssetCallback.getSubscription ().getCollection();
-		
       publishAdd (makeNewAsset (getLDMService().getLDM(), "RAILCAR_68DODX", "brandNewAsset"));
     } catch (Exception exc) {
       error("Could not make asset.");
