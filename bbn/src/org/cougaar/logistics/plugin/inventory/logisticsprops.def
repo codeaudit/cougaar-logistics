@@ -34,7 +34,11 @@ logInvBG.delegate= void initialize(long today, InventoryPlugin parentPlugin); \
 	void addWithdrawTask(Task task); \
 	void removeWithdrawTask(Task task); \
 	void addRefillTask(Task task); \
+	void removeRefillTask(Task task); \
+	List clearRefillTasks(Date now); \
+	Schedule getCriticalLevel(); \
 	void updateRefillAllocation(Task task); \
+	void logAllToCSVFile(long aCycleStamp); \
 	long getStartTime();
 
 ;;
