@@ -53,6 +53,7 @@ public class InventoryXMLParser
 	ctr=0;
 	inventory=null;
 	lines = xmlInput.split("$");
+	System.out.println("Number of Lines=" + lines.length);
 	parse();
     }
 
@@ -97,7 +98,8 @@ public class InventoryXMLParser
     }
 
     private void parseHeader() {
-      String[] words = currentString.split("\\s");
+      String header = stripTag(currentString);
+      String[] words = header.split("\\s");
       String org=null;
       String asset=null;
       if(words[1].startsWith("org=")){

@@ -228,7 +228,7 @@ public class InventorySelectionPanel extends JPanel
 	//System.out.println("Item State Changed event: " + e);
 	//System.out.println("Item id: " + e.getID() + " and SELECTED is:" + e.SELECTED);
 	if(e.getStateChange() == e.SELECTED) {
-	    System.out.println("Selected Event");
+	  //System.out.println("Selected Event");
 	    JComponent source = (JComponent) e.getSource();
 	    if(source == orgsBox) {
 		currOrg = (String) orgsBox.getSelectedItem();
