@@ -58,9 +58,10 @@ public class InventoryConnectionManager implements InventoryDataSource
     final public static String ASSET = "ASSET";
     final public static String ASSET_AND_CLASSTYPE =ASSET + ":" + "CLASS_TYPE:";
     final public static String GET_ALL_CLASS_TYPES = "All";
-    final public static String[] ASSET_CLASS_TYPES = {GET_ALL_CLASS_TYPES,"Ammunition","BulkPOL","ClassISubsistence","ClassVIIIMedical","PackagedPOL","Consumable"};
+    final public static String[] ASSET_CLASS_TYPES = {GET_ALL_CLASS_TYPES,"Ammunition","BulkPOL","Subsistence","ClassVIIIMedical","PackagedPOL","Consumable"};
 
     private Component parentComponent;
+    private String servProt;
     private String servHost;
     private String servPort;
     Hashtable orgURLs;
@@ -70,15 +71,17 @@ public class InventoryConnectionManager implements InventoryDataSource
     private Logger logger;
 
     public InventoryConnectionManager(Component parent) {
-	this(parent,"localhost","8800");
+	this(parent,"http","localhost","8800");
     }
 
     public InventoryConnectionManager(Component parent,
+				      String targetProtocol,
 				      String targetHost,
 				      String targetPort) {
 	parentComponent = parent;
 	servHost = targetHost;
 	servPort = targetPort;
+	servProt = targetProtocol;
 	logger = Logging.getLogger(this);
     }   
 
@@ -202,7 +205,7 @@ public class InventoryConnectionManager implements InventoryDataSource
     }    
 
     public String getURLString() {
-	return "http://" + servHost + ":" + servPort + "/";
+	return servProt + "://" + servHost + ":" + servPort + "/";
     }
     
     public boolean getOrgHostAndPort() {
@@ -215,12 +218,17 @@ public class InventoryConnectionManager implements InventoryDataSource
 	}
 	s = s.trim();
 	if (s.length() != 0) {
-	    int i = s.indexOf(":");
-	    if (i != -1) {
-		servHost = s.substring(0, i);
-		servPort = s.substring(i+1);
-
-		return true;
+	    String[] substrings = s.split("://");
+	    if(substrings.length >= 2) {
+		servProt = substrings[0];
+		String hostAndPort = substrings[1];
+		int i = hostAndPort.indexOf(":");
+		if (i != -1) {
+		    servHost = hostAndPort.substring(0, i);
+		    servPort = hostAndPort.substring(i+1);
+		    System.out.println("getOrgHostAndPort url = " + getURLString());
+		    return true;
+		}
 	    }
 	}
 	displayErrorString("Improper Format for url.  Cannot get connection.");
