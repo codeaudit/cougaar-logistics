@@ -228,6 +228,10 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 	    maxDay = Math.max(endDay, maxDay);
 	}
 	nValues = (maxDay - minDay + 1) / bucketDays;
+
+	if(logger.isDebugEnabled()) {
+	    logger.debug("computeNValues:minDay=" + minDay + " maxDay=" + maxDay + " bucketDays=" + bucketDays + " nValues=" + nValues);
+	}
     }
 
 
