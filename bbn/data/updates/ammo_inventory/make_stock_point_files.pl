@@ -10,13 +10,17 @@
 #                           supply_units.csv 
 #                           ../results_step_6
 
+$lev2 = "Level2Ammunition";
+
 open(LIST, "ls $ARGV[0]/*.inv |");
 while(chop($file=<LIST>)) {
 
     open(I, $file);
     while(chop($line=<I>)) {
 	@fields = split(/,/, $line);
-	$dodics{$fields[0]} = 1;
+	if ($fields[0] ne $lev2) {
+	    $dodics{$fields[0]} = 1;
+	}
     }
     close(I);
 }
@@ -33,6 +37,7 @@ while(chop($unit=<I>)) {
     foreach (@dodics_sorted) {
 	print OUT "$_,4000.0,0.0,0.0,0.0\n";
     }
+    print OUT "$lev2,0.0,0.0,0.0,0.0\n";
     close OUT;
 }
 close(I);

@@ -20,6 +20,8 @@ close(I);
 #print %cl;
 
 # Load unit equipment and compute inventory
+$lev2 = "Level2Ammunition";
+
 open(I, $ARGV[1]);
 $last_org = "";
 while(chop($line=<I>)) {
@@ -35,6 +37,7 @@ while(chop($line=<I>)) {
     if ($org ne $last_org) {
 	if ($last_org ne "") {
 	    print OUT "DODIC/$last_dodic,$bl,0.0,0.0,0.0\n";
+	    print OUT "$lev2,0.0,0.0,0.0,0.0\n";
 	    close OUT;
 	    $bl = 0;
 	}
@@ -58,6 +61,7 @@ while(chop($line=<I>)) {
     $last_dodic = $dodic
 }
 print OUT "DODIC/$last_dodic,$bl,0.0,0.0,0.0\n";
+print OUT "$lev2,0.0,0.0,0.0,0.0\n";
 close OUT;
 close(I);
 
