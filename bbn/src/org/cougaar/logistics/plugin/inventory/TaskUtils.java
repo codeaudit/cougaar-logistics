@@ -1,14 +1,14 @@
 /*
  * <copyright>
- *  
+ *
  *  Copyright 1997-2004 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects
  *  Agency (DARPA).
- * 
+ *
  *  You can redistribute this software and/or modify it under the
  *  terms of the Cougaar Open Source License as published on the
  *  Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -20,7 +20,7 @@
  *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *  
+ *
  * </copyright>
  */
 
@@ -81,7 +81,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   /** @param t the task
    *  @param type type identification string
-   *  @return true if the task's OFTYPE preposition's indirect object is 
+   *  @return true if the task's OFTYPE preposition's indirect object is
    *  an asset with nomeclature equal to 'type'.*/
   public static boolean isTaskOfType(Task t, String type) {
     PrepositionalPhrase pp =t.getPrepositionalPhrase(Constants.Preposition.OFTYPE) ;
@@ -90,14 +90,14 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       if (obj instanceof Asset) {
         Asset a = (Asset)obj;
         return a.getTypeIdentificationPG().getTypeIdentification().equals(type);
-      } 
+      }
     }
     return false;
   }
 
   /** @param t the task
    *  @param type type identification string
-   *  @return true if the task's OFTYPE preposition's indirect object is 
+   *  @return true if the task's OFTYPE preposition's indirect object is
    *  an string with nomeclature equal to 'type'.*/
   public static boolean isTaskOfTypeString(Task t, String type) {
     PrepositionalPhrase pp =t.getPrepositionalPhrase(Constants.Preposition.OFTYPE) ;
@@ -105,7 +105,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       Object obj = pp.getIndirectObject();
       if (obj instanceof String) {
         return ((String)obj).equals(type);
-      } 
+      }
     }
     return false;
   }
@@ -295,18 +295,25 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
    * corresponding AspectValues are nearly equal.
    * This needs to be fixed to be more efficient.
    **/
-  public static boolean comparePreferences(Task a, Task b) {
+  private boolean comparePreferences(Task a, Task b) {
     return comparePreferencesInner(a, b) && comparePreferencesInner(b, a);
   }
 
-  private static boolean comparePreferencesInner(Task a, Task b) {
+  private boolean comparePreferencesInner(Task a, Task b) {
     Enumeration ae = a.getPreferences();
     while (ae.hasMoreElements()) {
       Preference p = (Preference) ae.nextElement();
       int at = p.getAspectType();
       double av = p.getScoringFunction().getBest().getValue();
       double bv = getPreferenceBestValue(b, at);
-      if (!MoreMath.nearlyEquals(av, bv, 0.0001)) return false;
+      if (at == AspectType.START_TIME || at == AspectType.END_TIME) {
+        //for times say they are nearly equal if they are within 30 minutes
+        // it could be longer if we only had daily buckets - but this should
+        // work for both daily and hourly buckets
+        if (!MoreMath.nearlyEquals(av, bv, 0.00000008)) return false;
+      }  else {
+        if (!MoreMath.nearlyEquals(av, bv, 0.0001)) return false;
+      }
     }
     return true;
   }
@@ -462,18 +469,19 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return s;
   }
 
-  
 
-  /** Create String defining task identity. Defaults to comparing preferences.
+
+  /** Change the prev task's preferences to the new tasks preferences if they are different.
    * @param prev_task previously published task.
    * @param new_task already defined to have the same taskKey as task a.
    * @return null if the two tasks are the same,
    *         or returns task a modified for a publishChange.
    */
-  public static Task changeTask(Task prev_task, Task new_task) {
+  public Task changeTask(Task prev_task, Task new_task) {
     // Checks for changed preferences.
     if(prev_task==new_task) {
-      return new_task;
+      //return new_task;
+      return null;
     }
     if (!comparePreferences(new_task, prev_task)) {
       synchronized ( new_task ) {
@@ -510,12 +518,12 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
     AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
 //                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, 
-                                                                                  bestDay + thePG.getBucketMillis()), 
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType,
+                                                                                  bestDay + thePG.getBucketMillis()),
                                                        alpha);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end),
                                                    (alpha + late_score));
 
     points.addElement(earliest);
@@ -544,13 +552,13 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     long late = getTimeUtils().addNDays(bestDay, 1);
     double daysBetween = ((end - bestDay) / 86400000);
 
-    // Negative value here is bad. Note that end==bestDay is OK. This case 
+    // Negative value here is bad. Note that end==bestDay is OK. This case
     // is handled below, where we skip adding the end AspectScorePoint
     if (daysBetween < 0.0) {
       if (logger.isWarnEnabled())
 	logger.warn(clusterId + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
     }
-    
+
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
