@@ -27,7 +27,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
-import org.cougaar.core.plugin.util.AllocationResultHelper;
+import org.cougaar.core.plugin.util.LogisticsAllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 
 import org.cougaar.planning.ldm.plan.Allocation;
@@ -366,7 +366,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   }
 
   private void createProjectionAllocations(Collection list, Inventory inv) {
-    AllocationResultHelper helper;
+    LogisticsAllocationResultHelper helper;
     Task task;
     AllocationResult ar;
     Allocation alloc;
@@ -376,7 +376,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if (task.getPlanElement() == null) {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-	helper = new AllocationResultHelper(task, null);
+	helper = new LogisticsAllocationResultHelper(task, null);
 	helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
 	ar = helper.getAllocationResult(1.0);
 	alloc = inventoryPlugin.getRootFactory().
