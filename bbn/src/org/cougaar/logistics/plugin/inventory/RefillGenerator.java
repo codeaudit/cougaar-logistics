@@ -113,7 +113,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
       // only process Level 6 inventories
       if (! thePG.getIsLevel2()) {
 	//clear the refills
-	oldRefills.addAll(thePG.clearRefillTasks(new Date(start)));
+	oldRefills.addAll(thePG.clearRefillTasks(new Date(today)));
 
         int inventoryBucket = thePG.convertTimeToBucket(today);
         int startBucket = thePG.convertTimeToBucket(start);
