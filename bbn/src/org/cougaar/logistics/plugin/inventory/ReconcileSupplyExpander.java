@@ -236,7 +236,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
               //removeUncommittedPredictions(aTask);  // otherwise we ignore the task
               continue;
             }
-            if (afterTheGap(cs.customerLeadTime, aTask)) {
+            if (afterTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask)) {
               inventoryPlugin.publishRemove(aTask);  // don't need to check commitment should be beyond
               if (logger.isDebugEnabled() && debugAgent()) {
                 logger.debug(inventoryPlugin.getSupplyType() + " - Comm is down, removing prediction after the gap "
@@ -244,11 +244,13 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
               }
               continue;
             }
+
           } else {  // ignore demand tasks in or after the gap while we are waiting for the alarm to expire
             if (inTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask)
-                || afterTheGap(cs.customerLeadTime, aTask)) {
+                || afterTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask) || isCommitted(aTask)) {
               if (logger.isDebugEnabled() && debugAgent()) {
-                logger.debug(inventoryPlugin.getSupplyType() + " -Comm is down, ignoring demand task in/after the gap "
+                logger.debug(inventoryPlugin.getSupplyType() +
+                             " -Comm is down, ignoring demand task committed || in || after the gap "
                              + printTheGap(aTask) + " task: " + printTask(aTask));
               }
               continue;
@@ -265,7 +267,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
         }
         ((NewWorkflow) wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
         if (logger.isDebugEnabled() && debugAgent())
-          logger.debug(inventoryPlugin.getSupplyType() + " - Epanding task :" + printTask(aTask));
+          logger.debug(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(aTask));
       } else {
         if (isPrediction(aTask)) {
           logger.error(" Prediction ");
@@ -576,9 +578,25 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
                    supplyTasks.size());
       return;
     }
-    reconcilePredictions(supplyTasks, predictionTasks);
+    // predicted items dictate what we need to reconcile
+    List sortedTasks = sortTasksByEndTime(supplyTasks);
+    List sortedPreds = sortTasksByEndTime(predictionTasks);
+    Collection uniquePredItems = pruneDuplicateItems(predictionTasks);
+    for (Iterator iterator = uniquePredItems.iterator(); iterator.hasNext();) {
+      String item = (String) iterator.next();
+      // pass in the complete lists, and then filter as needed for the item
+      reconcilePredictions(sortedTasks, sortedPreds, item);
+    }
   }
 
+  private Collection pruneDuplicateItems(Collection preds) {
+    Set uniqueItems = new HashSet();
+    for (Iterator iterator = preds.iterator(); iterator.hasNext();) {
+      Task t = (Task) iterator.next();
+      uniqueItems.add(t.getDirectObject().getTypeIdentificationPG().getTypeIdentification());
+    }
+    return uniqueItems;
+  }
   private void updateCommStatus(Collection commStatus) {
     for (Iterator iter = commStatus.iterator(); iter.hasNext();) {
       CommStatus cs = (CommStatus) iter.next();
@@ -625,14 +643,19 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     return thunk.getMaxEndTime();
   }
 
-  private void reconcilePredictions(Collection demandTasks, Collection committedPreds) {
-    List sortedTasks = sortTasksByEndTime(demandTasks);
-    List sortedPreds = sortTasksByEndTime(committedPreds);
+  private void reconcilePredictions(Collection demandTasks, Collection committedPreds, String item) {
+    //List sortedTasks = sortTasksByEndTime(demandTasks);
+    //List sortedPreds = sortTasksByEndTime(committedPreds);
+    UnaryPredicate itemPred = new ItemPredicate(item);
+    List sortedTasks = filterItems(itemPred, demandTasks);
+    List sortedPreds = filterItems(itemPred, committedPreds);
     if (logger.isDebugEnabled() && debugAgent()) {
       logger.debug(inventoryPlugin.getSupplyType() + ": Number of tasks in the gap -->  Predictions:  " + sortedPreds.size()
                    + " \t\t DemandTasks: " + sortedTasks.size());
     }
     int i = 0;
+    int j = 0;
+    int size = sortedPreds.size() - 1;
     int lastIndex = sortedTasks.size() -1;
     for(i = 0; i <= lastIndex; i++) {
       Task task = (Task) sortedTasks.get(i);
@@ -640,8 +663,8 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       double quantity = 0.0;
       long maxEndTime = endTime;
       List taskPhasedValues = new ArrayList();
-      for (Iterator iter = sortedPreds.iterator(); iter.hasNext();) {
-        Task pred = (Task) iter.next();
+      while (j < size) {
+        Task pred = (Task) sortedPreds.get(j);
         long predEndTime = taskUtils.getEndTime(pred);
         if (predEndTime > endTime && i < lastIndex) {
           break;
@@ -653,6 +676,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
           if (logger.isDebugEnabled()) {
             logger.debug("Found a failed prediction, no reconcilation");
           }
+          j++;
           continue;
         }
         List phasedResults = ar.getPhasedAspectValueResults();
@@ -672,6 +696,80 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
             }
           }
         }
+        j++;
+      }
+
+      AspectValue[] rollup = { AspectValue.newAspectValue(AspectType.END_TIME, maxEndTime),
+                               AspectValue.newAspectValue(AspectType.QUANTITY, quantity)};
+      AllocationResult ar = new AllocationResult(1.0, true, rollup, taskPhasedValues);
+      if (logger.isDebugEnabled() && debugAgent()) {
+        logger.debug(inventoryPlugin.getSupplyType() + " - Published new disposition on task " + task.getUID()
+                     + " end Time " + new Date(endTime) + " new quantity " + quantity + "\nOriginal data " +
+                     printTask(task) + " for ITEM "+ item);
+
+      }
+      if (task.getPlanElement() != null) {
+        if (logger.isDebugEnabled() && debugAgent()) {
+          logger.debug(inventoryPlugin.getSupplyType() + " - demand task has a plan element " + printTask(task));
+          inventoryPlugin.publishRemove(task.getPlanElement());
+        }
+      }
+      Disposition disp = inventoryPlugin.getPlanningFactory().createDisposition(task.getPlan(), task, ar);
+      inventoryPlugin.publishAdd(disp);
+    }
+  }
+
+   private void fixReconcilePredictions(Collection demandTasks, Collection committedPreds) {
+    List sortedTasks = sortTasksByEndTime(demandTasks);
+    List sortedPreds = sortTasksByEndTime(committedPreds);
+    if (logger.isDebugEnabled() && debugAgent()) {
+      logger.debug(inventoryPlugin.getSupplyType() + ": Number of tasks in the gap -->  Predictions:  " + sortedPreds.size()
+                   + " \t\t DemandTasks: " + sortedTasks.size());
+    }
+    int i = 0;
+    int j = 0;
+    int lastIndex = sortedTasks.size() - 1;
+    int size = sortedPreds.size() - 1;
+    for(i = 0; i <= lastIndex; i++) {
+      Task task = (Task) sortedTasks.get(i);
+      long endTime = taskUtils.getEndTime(task);
+      double quantity = 0.0;
+      long maxEndTime = endTime;
+      List taskPhasedValues = new ArrayList();
+      while (j < size) {
+        Task pred = (Task) sortedPreds.get(j);
+        long predEndTime = taskUtils.getEndTime(pred);
+        if (predEndTime > endTime && i < lastIndex) {
+          break;
+        }
+        PlanElement pe = pred.getPlanElement();
+        AllocationResult ar = pe.getEstimatedResult();
+        if (! ar.isSuccess()) {
+          // prediction failed no reconcilation needed
+          if (logger.isDebugEnabled()) {
+            logger.debug("Found a failed prediction, no reconcilation");
+          }
+          j++;
+          continue;
+        }
+        List phasedResults = ar.getPhasedAspectValueResults();
+        taskPhasedValues.addAll(phasedResults);
+        for (Iterator phaseIter = phasedResults.iterator(); phaseIter.hasNext();) {
+          AspectValue[] aspectValues = (AspectValue[]) phaseIter.next();
+          for (int l = 0; l < aspectValues.length; l++) {
+            AspectValue aspectValue = aspectValues[l];
+            switch (aspectValue.getAspectType()) {
+              case AspectType.QUANTITY:
+                quantity += aspectValue.getValue();
+                break;
+              case AspectType.END_TIME:
+                maxEndTime = Math.max(maxEndTime, aspectValue.longValue());
+                break;
+              default: logger.warn("Unexpected aspect type " + aspectValue.getAspectType());
+            }
+          }
+        }
+        j++;
       }
 
       AspectValue[] rollup = { AspectValue.newAspectValue(AspectType.END_TIME, maxEndTime),
@@ -716,12 +814,16 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
   private boolean inTheGap(long leftEdge, long leadTime, Task task) {
     boolean retVal = false;
     long rightEdge = inventoryPlugin.getCurrentTimeMillis() + leadTime;
+    // current time + clt - lastest end time
+    long gap = rightEdge - leftEdge;
+    rightEdge = leftEdge + gap * 4;
     long endTime = taskUtils.getEndTime(task);
     retVal = endTime > leftEdge && endTime < rightEdge;
     if (retVal == true && logger.isDebugEnabled() && debugAgent()) {
       if (isPrediction(task))
         logger.debug(" Prediction ");
-      logger.debug(inventoryPlugin.getSupplyType() + " - task in the GAP:  end time is " + new Date(endTime));
+      logger.debug(inventoryPlugin.getSupplyType() + " - task in the GAP:  end time is " + new Date(endTime)
+                   + printTheGap(task));
     }
     return  retVal;
   }
@@ -737,10 +839,13 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     return  (commitTime > leftEdge && commitTime < rightEdge);
   }
 
-  private boolean afterTheGap(long leadTime, Task task) {
+  private boolean afterTheGap(long leftEdge, long leadTime, Task task) {
     long rightEdge = inventoryPlugin.getCurrentTimeMillis() + leadTime;
     long endTime = taskUtils.getEndTime(task);
     boolean retVal = false;
+    // current time + clt - lastest end time
+    long gap = rightEdge - leftEdge;
+    rightEdge = leftEdge + gap * 4;
     retVal = endTime > rightEdge;
     if (retVal == true && logger.isDebugEnabled() && debugAgent()) {
       if (isPrediction(task))
@@ -769,9 +874,12 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
   private String printTheGap(Task t) {
     String theTask = new Date(taskUtils.getEndTime(t)) + "\n gap is --> ";
     CustomerState state = (CustomerState) customerStates.get(getCustomerName(t));
-    Date leftSide = new Date(state.getLatestEndTime());
-    Date rightSide = new Date(inventoryPlugin.getCurrentTimeMillis() + state.customerLeadTime);
-    String theGap = leftSide.toString() + "  --  " + rightSide.toString();
+    long leftSide = state.getLatestEndTime();
+    long rightSide = inventoryPlugin.getCurrentTimeMillis() + state.customerLeadTime;
+    long gap = rightSide - leftSide;
+    rightSide = leftSide + gap * 4;
+    String theGap = new Date(leftSide).toString() + "  --  " + new Date(rightSide).toString() +
+        " gap interval is "+ (int)(gap/86400000);
     return theTask+theGap;
   }
 
@@ -856,7 +964,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     }
 
     public long getMaxEndTime(){
-      System.out.println(inventoryPlugin.getSupplyType() + " Last task found " + lastTask);
+      System.out.println(" ReconcileExpander " + inventoryPlugin.getSupplyType() + " Last task found " + lastTask);
       return maxEnd;
     }
   }
@@ -903,7 +1011,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     }
   }
   private boolean isCommitted(Task t) {
-    return t.beforeCommitment(new Date(inventoryPlugin.getCurrentTimeMillis()));
+    return ! t.beforeCommitment(new Date(inventoryPlugin.getCurrentTimeMillis()));
   }
 
   private String getCustomerName(Task t) {
@@ -924,6 +1032,10 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
 
   public Collection tasksInTheGap(UnaryPredicate gapPredicate) {
     return filter(gapPredicate);
+  }
+
+  public List filterItems(UnaryPredicate itemPred, Collection tasks) {
+    return new ArrayList(Filters.filter(tasks, itemPred));
   }
 
   private class PredictionsInTheOutage implements UnaryPredicate {
@@ -965,6 +1077,21 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
             return true;
           }
         }
+      }
+      return false;
+    }
+  }
+
+  private class ItemPredicate implements UnaryPredicate {
+    String item;
+    public ItemPredicate (String item) {
+      this.item = item;
+    }
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task task = (Task) o;
+        String thisItem = task.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
+        return thisItem.equals(item);
       }
       return false;
     }
