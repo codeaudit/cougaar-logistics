@@ -47,13 +47,14 @@ import java.text.NumberFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.io.Serializable;
 
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
 /** Provides convenience methods. */
-public class TaskUtils extends PluginHelper {
+public class TaskUtils extends PluginHelper implements Serializable { // revisit making Serializable later...
 
     private transient Logger logger;
     private transient InventoryPlugin invPlugin;

@@ -203,7 +203,7 @@ public class InventoryPlugin extends ComponentPlugin {
       if (logger.isInfoEnabled ())
 	logger.info("\n InventoryPlugin " + supplyType + 
 		    " not ready to process tasks yet." +
-		    " my inv policy is: " + inventoryPolicy + " in " + myOrganization);
+		    " my inv policy is: " + inventoryPolicy + " in " + getBindingSite().getAgentIdentifier());
       return;
     }
 	
