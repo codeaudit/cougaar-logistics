@@ -114,8 +114,9 @@ public class ShortfallChartDataModel
 			  reqModel.getYSeries(ACTUAL_SERIES_INDEX)[0]) +
 			 (projModel.getYSeries(REQUESTED_SERIES_INDEX)[0] -
 			  projModel.getYSeries(ACTUAL_SERIES_INDEX)[0]));
+	int i;
 
-	for(int i=1; i < nValues ; i++) {
+	for(i=1; i < nValues ; i++) {
 	    yvalues[0][i] = 
 	    (((reqModel.getYSeries(REQUESTED_SERIES_INDEX)[i] -
 	       reqModel.getYSeries(ACTUAL_SERIES_INDEX)[i]) +
@@ -125,9 +126,14 @@ public class ShortfallChartDataModel
 	    if(yvalues[0][i] > 0) {
 		shortfallExists = true;
 	    }
-	    else if(yvalues[0][i] < 0) {
-		yvalues[0][i] = 0;
+	    else if(yvalues[0][i-1] < 0) {
+		yvalues[0][i-1] = 0;
 	    }
+	}
+
+	if((nValues>1) &&
+	   (yvalues[0][nValues - 1] < 0)) {
+	    yvalues[0][nValues - 1] = 0;
 	}
     }
 
