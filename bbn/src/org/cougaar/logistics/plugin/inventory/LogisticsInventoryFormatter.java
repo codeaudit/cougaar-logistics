@@ -353,10 +353,10 @@ public class LogisticsInventoryFormatter {
     outputStr += getDateString(reorderLevel.getEndTime(), expandTimestamp) + ",";
     outputStr += reorderLevel.getQuantity() + ",";
     if (invLevelsInRange.isEmpty()) {
-      if (logger.isWarnEnabled()) {
-        logger.warn("logLevel:no inventory level in range " + outputStr);
+      if (logger.isDebugEnabled()) {
+        logger.debug("logLevel:no inventory level in range " + outputStr);
       }
-      writeln(outputStr);
+      outputStr += ",";
     } else {
       Iterator it = invLevelsInRange.iterator();
       boolean moreThanOne = false;
@@ -388,6 +388,7 @@ public class LogisticsInventoryFormatter {
           moreThanOne = true;
         }
       }
+
       if (!orgActsInRange.isEmpty()) {
         moreThanOne = false;
         alreadyLogged = false;

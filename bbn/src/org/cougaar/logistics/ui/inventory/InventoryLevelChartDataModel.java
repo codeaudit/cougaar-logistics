@@ -57,11 +57,6 @@ public class InventoryLevelChartDataModel
         extends InventoryBaseChartDataModel {
 
 
-    /**TODO: MWD Remove
-    private double offensiveQty=0.0;
-    private double defensiveQty=0.0;
-    public static final int ORG_ACTIVITY_SERIES_INDEX = 3;
-    **/
     public static final String INVENTORY_LEVEL_SERIES_LABEL = "Inventory Level";
     public static final String REORDER_LEVEL_SERIES_LABEL = "Reorder Level";
     public static final String TARGET_LEVEL_SERIES_LABEL = "Target Level";
@@ -87,23 +82,9 @@ public class InventoryLevelChartDataModel
         seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
         seriesLabels[1] = REORDER_LEVEL_SERIES_LABEL;
         seriesLabels[2] = TARGET_LEVEL_SERIES_LABEL;
-        //TODO: MWD Remove
-        //seriesLabels[ORG_ACTIVITY_SERIES_INDEX] = ORG_ACTIVITY_SERIES_LABEL;
         logger = Logging.getLogger(this);
         initValues();
     }
-
-
-    /**TODO: MWD Remove
-    public String getActivityFromLevel(double value){
-      if(value == defensiveQty){
-        return "Defensive";
-      }
-      else {
-        return "Offensive";
-      }
-    }
-    **/
 
     public void setValues() {
         if (valuesSet) return;
@@ -140,9 +121,6 @@ public class InventoryLevelChartDataModel
         ArrayList targetLevels = new ArrayList();
         ArrayList orgActLevels = new ArrayList();
 
-        //TODO: MWD Remove
-        //double maxQty = 0;
-
         //Need to add target level which is a little more complicated
         //than you think.  We don't know how many values there are
         //in this third series. We have to add them if they are non null
@@ -154,13 +132,12 @@ public class InventoryLevelChartDataModel
             long endTime = level.getEndTime();
             int startBucket = (int) computeBucketFromTime(startTime);
             int endBucket = (int) computeBucketFromTime(endTime);
-            double invQty = level.getInventoryLevel();
+            Double invQty = level.getInventoryLevel();
             double reorderQty = level.getReorderLevel();
-            //TODO: Remove
-            //maxQty = Math.max(maxQty,invQty);
-            //maxQty = Math.max(maxQty,reorderQty);
             for (int j = startBucket; j <= endBucket; j += bucketDays) {
-                yvalues[0][(j - minBucket) / bucketDays] = invQty;
+                if(invQty != null) {
+                  yvalues[0][(j - minBucket) / bucketDays] = invQty.doubleValue();
+                }
                 yvalues[1][(j - minBucket) / bucketDays] = reorderQty;
             }
             if (level.getTargetLevel() != null) {

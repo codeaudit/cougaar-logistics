@@ -44,7 +44,7 @@ import org.cougaar.logistics.plugin.inventory.TimeUtils;
 public class InventoryLevel extends InventoryScheduleElement {
 
     protected double reorderLevel;
-    protected double inventoryLevel;
+    protected Double inventoryLevel;
     protected Double targetLevel;
 
     protected String activityType;
@@ -59,7 +59,7 @@ public class InventoryLevel extends InventoryScheduleElement {
     public static final int OPTEMPO_INDEX=CSV_START_INDEX + 7;
 
     public InventoryLevel(double aReorderLevel,
-			  double anInventoryLevel,
+			  Double anInventoryLevel,
 			  Double aTargetLevel,
         String anActivityType,
         String anOptempo,
@@ -74,7 +74,7 @@ public class InventoryLevel extends InventoryScheduleElement {
     }
 
     public double getReorderLevel() { return reorderLevel; }
-    public double getInventoryLevel() { return inventoryLevel; }
+    public Double getInventoryLevel() { return inventoryLevel; }
     public Double getTargetLevel() { return targetLevel;}
     public String getActivityType() { return activityType; }
     public String getOptempo() { return optempo; }
@@ -100,11 +100,20 @@ public class InventoryLevel extends InventoryScheduleElement {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
 	
 	double aReorderLevel = (new Double(subStrings[REORDER_LEVEL_INDEX])).doubleValue();
-	double anInventoryLevel = (new Double(subStrings[INVENTORY_LEVEL_INDEX])).doubleValue();
+	Double anInventoryLevel;
 	Double aTargetLevel;
   String anActivityType;
   String anOptempo;
-	if((subStrings.length == TARGET_LEVEL_INDEX) ||
+
+  if((subStrings.length == INVENTORY_LEVEL_INDEX) ||
+	   (subStrings[INVENTORY_LEVEL_INDEX].trim().equals(""))) {
+	    anInventoryLevel = null;
+	}
+	else {
+	    anInventoryLevel = new Double(subStrings[INVENTORY_LEVEL_INDEX]);
+	}
+
+	if((subStrings.length <= TARGET_LEVEL_INDEX) ||
 	   (subStrings[TARGET_LEVEL_INDEX].trim().equals(""))) {
 	    aTargetLevel = null;
 	}

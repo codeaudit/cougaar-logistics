@@ -151,8 +151,10 @@ public class OrgActivityChartDataModel
         //vector and put them into there. mildly tricky business.
         for (int i = 0; i < levels.size(); i++) {
             InventoryLevel level = (InventoryLevel) levels.get(i);
-            double invQty = level.getInventoryLevel();
-            maxQty = Math.max(maxQty,invQty);
+            Double invQty = level.getInventoryLevel();
+            if(invQty != null) {
+              maxQty = Math.max(maxQty,invQty.doubleValue());
+            }
             double reorderQty = level.getReorderLevel();
             maxQty = Math.max(maxQty,reorderQty);
             if (level.getTargetLevel() != null) {
