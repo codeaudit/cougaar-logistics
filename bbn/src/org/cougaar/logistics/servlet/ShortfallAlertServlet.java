@@ -70,6 +70,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.wp.WhitePagesService;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.util.UID;
@@ -96,10 +97,13 @@ import org.cougaar.util.Filters;
 import org.cougaar.util.ConfigFinder;
 
 import org.cougaar.glm.ldm.oplan.Oplan;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.plan.GeolocLocation;
 
 import org.cougaar.logistics.plugin.inventory.ShortfallSummary;
 import org.cougaar.logistics.plugin.inventory.ShortfallInventory;
 import org.cougaar.logistics.plugin.inventory.ShortfallPeriod;
+import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 /**
@@ -124,6 +128,14 @@ extends BaseServletComponent
 	      return (o instanceof Oplan);
 	  }
       };
+
+
+  protected static UnaryPredicate ORG_ACTIVITY_PREDICATE = 
+      new UnaryPredicate() {
+	  public boolean execute(Object o) {
+	      return (o instanceof OrgActivity);
+	  }
+      };
     
 
   protected static final String[] iframeBrowsers = {
@@ -142,6 +154,10 @@ extends BaseServletComponent
 
   protected static final int MAX_AGENT_FRAMES = 18;
 
+  protected static final int RED_PERCENT_SHORTFALL_THRESHOLD = 20;
+
+  protected static final int YELLOW_PERCENT_SHORTFALL_THRESHOLD = 10;
+
   protected String path;
     //protected ArrayList rulesList=new ArrayList();
 
@@ -156,10 +172,12 @@ extends BaseServletComponent
   protected final Object lock = new Object();
   protected LoggingService logger;
 
+  protected AlarmService alarmService;
+
   protected SimpleDateFormat dayFormat=null;
   protected SimpleDateFormat hourFormat=null;
 
-  protected DecimalFormat numberFormat=null;
+  
 
   protected boolean userMode=false;
 
@@ -170,7 +188,6 @@ extends BaseServletComponent
     dayFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     hourFormat= new SimpleDateFormat("MM/dd/yyyy HH:mm");
     hourFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    numberFormat = new DecimalFormat("############.##");
   }
 
   public void setParameter(Object o) {
@@ -225,6 +242,10 @@ extends BaseServletComponent
       this.localAgent = agentIdService.getMessageAddress();
       encLocalAgent = formURLEncode(localAgent.getAddress());
     }
+  }
+
+  public void setAlarmService(AlarmService anAlarmService) {
+    this.alarmService = anAlarmService;
   }
 
   public void setBlackboardQueryService(
@@ -1024,6 +1045,34 @@ extends BaseServletComponent
     }
 
 
+    protected GeolocLocation getCurrentGeoLoc() {
+      long currentTime = alarmService.currentTimeMillis();
+
+      Collection orgActCollection = queryBlackboard(ORG_ACTIVITY_PREDICATE);
+      Iterator iter = orgActCollection.iterator();
+      while(iter.hasNext()) {
+	  OrgActivity currAct = (OrgActivity) iter.next();
+	  if((currAct.getStartTime() <= currentTime) &&
+	     (currAct.getEndTime() >= currentTime)) {
+	      return currAct.getGeoLoc();
+	  }
+      }
+      return null;
+    }
+
+
+    protected String getGeoLocString() {
+	GeolocLocation geoLoc = getCurrentGeoLoc();
+	if(geoLoc == null) {
+	    return "Unknown Location";
+	}
+	else {
+	    return (geoLoc.getName() + 
+		    ", Lat: " + geoLoc.getLatitude() + 
+		    ", Long: " + geoLoc.getLongitude());
+	}
+    }
+
 
 
     // Output a checkbox form allowing selection of multiple agents
@@ -1146,11 +1195,15 @@ extends BaseServletComponent
 	numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
       }
       String bgcolor, fgcolor, lncolor;
-      if (numUnexpectedShortfall >= redThreshold) {
+      if ((numUnexpectedShortfall >= redThreshold) ||
+	  ((userMode) && 
+	   (result.hasPercentShortfallAbove(RED_PERCENT_SHORTFALL_THRESHOLD)))){
         bgcolor = "#aa0000";
         fgcolor = "#ffffff";
         lncolor = "#ffff00";
-      } else if ((numUnexpectedShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
+      } else if ((numUnexpectedShortfall >= yellowThreshold) ||
+		 ((userMode) && 
+		  (result.hasPercentShortfallAbove(YELLOW_PERCENT_SHORTFALL_THRESHOLD)))) {
         bgcolor = "#ffff00";
         fgcolor = "#000000";
         lncolor = "#0000ff";
@@ -1174,15 +1227,18 @@ extends BaseServletComponent
 		  agent+
 		  "</a>");
       if(userMode) {
-	out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfallPeriodInvs + "</b>");
+	out.println(formatLabel("Num Shortfall Items:") + " <b>" + numShortfallPeriodInvs + "</b>");
       }
       else {
-	out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfall + "</b>");
-	out.println(formatLabel("Num Shortfall Period Inventories:") + " <b>" + numShortfallPeriodInvs + "</b>");
-	out.println(formatLabel("Num Temp Shortfall Inventories:") + " <b>" + numTempShortfall + "</b>");
-	out.println(formatLabel("Num Unexpected Shortfall Inventories:") + " <b>" + numUnexpectedShortfall + "</b>");
+	out.println(formatLabel("Num Shortfall Items:") + " <b>" + numShortfall + "</b>");
+	out.println(formatLabel("Num Shortfall Period Items:") + " <b>" + numShortfallPeriodInvs + "</b>");
+	out.println(formatLabel("Num Temp Shortfall Items:") + " <b>" + numTempShortfall + "</b>");
+	out.println(formatLabel("Num Unexpected Shortfall Items:") + " <b>" + numUnexpectedShortfall + "</b>");
       }
-      out.println(formatLabel("Effected Supply Types:\n") + result.getSupplyTypes());
+      if(((userMode) && (numShortfallPeriodInvs > 0)) ||
+	 ((!userMode) && (numUnexpectedShortfall > 0))) {
+	  out.println(formatLabel("Effected Supply Types:\n") + result.getSupplyTypes());
+      }
       out.println("</body>\n</html>");
     }
 
@@ -1366,9 +1422,13 @@ extends BaseServletComponent
         numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
       }
       String shortfallColor;
-      if (numUnexpectedShortfall >= redThreshold) {
+      if ((numUnexpectedShortfall >= redThreshold) ||
+	  ((userMode) && 
+	   (result.hasPercentShortfallAbove(RED_PERCENT_SHORTFALL_THRESHOLD)))){
         shortfallColor = "red";
-      } else if ((numUnexpectedShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
+      } else if ((numUnexpectedShortfall >= yellowThreshold) || 
+		 ((userMode) && 
+		  (result.hasPercentShortfallAbove(YELLOW_PERCENT_SHORTFALL_THRESHOLD)))) {
         shortfallColor = "yellow";
       } else {
         shortfallColor = "#00d000";
@@ -1384,45 +1444,63 @@ extends BaseServletComponent
       if(userMode) {
 	out.print(" MS)\n"+
 		  getTitlePrefix()+
-		  "Number of Shortfall Inventories: <b>"+
+		  "Location: <b>" +
+		  getGeoLocString() + "</b>\n" +
+		  "Number of Shortfall Items: <b>"+
 		  numShortfallPeriodInvs +
 		  "</b>\n");
       }
       else {
 	out.print(" MS)\n"+
-          getTitlePrefix()+
-          "Number of Shortfall Inventories: <b>"+
-          numShortfall +
-          "</b>\n");
-	out.print("Number of Shortfall Period Inventories: <b>"+
+		  getTitlePrefix()+
+		  "Location: <b>" +
+		  getGeoLocString() + "</b>\n" +
+		  "Number of Shortfall Items: <b>"+
+		  numShortfall +
+		  "</b>\n");
+	out.print("Number of Shortfall Period Items: <b>"+
 		  numShortfallPeriodInvs +
 		  "</b>\n");
-	out.print("Number of Temporary Shortfall Inventories: <b>"+
+	out.print("Number of Temporary Shortfall Items: <b>"+
 		  numTempShortfall +
 		  "</b>\n");
 
-	out.print("Number of Unexpected Shortfall Inventories: <b>"+
+	out.print("Number of Unexpected Shortfall Items: <b>"+
 		  numUnexpectedShortfall +
 		  "</b>\n");
       }
-      out.println(formatLabel("Effected Supply Types:") + ((result.getSupplyTypes()).replaceAll("\n","")) + "\n");
+      if(((userMode) && (numShortfallPeriodInvs > 0)) ||
+	 ((!userMode) && (numUnexpectedShortfall > 0))) {
+	out.println(formatLabel("Effected Supply Types:") + ((result.getSupplyTypes()).replaceAll("\n","")) + "\n");
+      }
       out.print("</pre>\n");
     }
 
     protected void printTablesAsHTML(ShortfallShortData result) {
+      int numShortfall = result.getNumberOfShortfallInventories();
+      if(userMode) {
+        numShortfall = result.getNumberOfShortfallPeriodInventories();
+      }
       if (result instanceof FullShortfallData) {
 	Iterator summaries = result.getShortfallSummaries().values().iterator();
 	while(summaries.hasNext()) {
 	    ShortfallSummary summary = (ShortfallSummary) summaries.next();
-	    String supplyType = summary.getSupplyType();
-	    int numShortfallInvs = summary.getShortfallInventories().size();
-	    
-	    beginShortfallHTMLTable(
-			       (supplyType + " shortfall items:"+numShortfallInvs+"]"),
-			       "wFailedTasks", summary.getUnit());
-	    printShortfallSummaryAsHTML(summary);
+	    int numSummaryShortfall = summary.getShortfallInventories().size();
 
-	    endShortfallHTMLTable();
+	    if(userMode) {
+		numSummaryShortfall = summary.getNumShortfallPeriodInvs();
+	    }
+
+	    if(numSummaryShortfall > 0) {
+		String supplyType = summary.getSupplyType();
+		
+		beginShortfallHTMLTable(
+					(supplyType + " shortfall items:["+numSummaryShortfall+"]"),
+					"", summary.getUnit());
+		printShortfallSummaryAsHTML(summary);
+		
+		endShortfallHTMLTable();
+	    }
 	}
       } else {
         // no table data
@@ -1435,8 +1513,7 @@ extends BaseServletComponent
         out.print(
             "?showTables=true&viewType=viewAgentBig\" target=\"viewAgentBig\">"+
             "Full Listing of Shortfall Inventory Items (");
-        out.print(
-            (result.getNumberOfShortfallInventories()));
+        out.print(numShortfall);
         out.println(
             " lines)</a><br>");
       }
@@ -1450,10 +1527,10 @@ extends BaseServletComponent
         "<table border=1 cellpadding=3 cellspacing=1 width=\"100%\">\n"+
         "<tr bgcolor=lightgrey>");
       if(userMode) {
-	out.print("<th align=left colspan=9>");
+	out.print("<th align=left colspan=10>");
       }
       else {
-	out.print("<th align=left colspan=14>");
+	out.print("<th align=left colspan=15>");
       }
       out.print(title);
       if (subTitle != null) {
@@ -1477,6 +1554,7 @@ extends BaseServletComponent
 	out.print("<th>Shortfall Start</th>" +
 		  "<th>Shortfall End</th>" +
 		  "<th>Num " + unit + "</th>" +
+		  "<th>Unit of Issue</th>" +
 		  "<th>Demand</th>" +
 		  "<th>Filled</th>" +
 		  "<th>Shortfall</th>" +
@@ -1502,7 +1580,9 @@ extends BaseServletComponent
       while(inventoryItems.hasNext()) {
 	ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
 	String invItem = inv.getInvID();
-	if(userMode && (inv.getShortfallPeriods().isEmpty())) {
+	if(userMode && 
+	   ((inv.getShortfallPeriods().isEmpty()) ||
+	    (!inv.getUnexpected()))) {
 	    continue;
 	}
 	out.print("<tr align=left><td>");
@@ -1522,28 +1602,35 @@ extends BaseServletComponent
 	  out.print("<b>" + inv.getNumProjection() + "</b>");
 	}
 	if(inv.getShortfallPeriods().isEmpty()) {
-	  out.print("</td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td>  ");
+	  out.print("</td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td>  </td><td>");
 	  out.print("</td></tr>\n");
 	}
 	else {
 	  Iterator shortfallPeriodIt = inv.getShortfallPeriods().iterator();
 	  ShortfallPeriod currPeriod = (ShortfallPeriod) shortfallPeriodIt.next();
-	  printShortfallPeriodAsHTML(currPeriod, summary.getMsecPerBucket());
+	  printShortfallPeriodAsHTML(currPeriod, 
+				     inv.getUnitOfIssue(),
+				     summary.getMsecPerBucket());
 	  out.print("</td></tr>\n");
 	  while(shortfallPeriodIt.hasNext()) {
 	    currPeriod = (ShortfallPeriod) shortfallPeriodIt.next();
-	    index = printShortfallPeriodRowAsHTML(currPeriod,index, summary.getMsecPerBucket());
+	    index = printShortfallPeriodRowAsHTML(currPeriod,
+						  inv.getUnitOfIssue(),
+						  index, 
+						  summary.getMsecPerBucket());
 	  }
 	}
       }
     }
 
-    protected int printShortfallPeriodRowAsHTML(ShortfallPeriod period, 
+    protected int printShortfallPeriodRowAsHTML(ShortfallPeriod period,
+						String unitOfIssue,
 						int index, 
 						long bucketSize) {
       out.print("<tr align=left><td>");
-      out.print(++index);
+      out.print(index);
       out.print("</td><td>");
+      out.print("\'\'");
       if(!userMode) {
 	out.print("</td><td>");
 	out.print("</td><td>");
@@ -1551,13 +1638,17 @@ extends BaseServletComponent
 	out.print("</td><td>");
 	out.print("</td><td>");
       }
-      printShortfallPeriodAsHTML(period, bucketSize);
+      printShortfallPeriodAsHTML(period, unitOfIssue, bucketSize);
       out.print("</td></tr>\n");
       return index;
     }
 
    protected void printShortfallPeriodAsHTML(ShortfallPeriod period,
+					     String unitOfIssue,
 					     long bucketSize) {
+
+       boolean roundToInt = !(unitOfIssue.equals(LogisticsInventoryFormatter.AMMUNITION_UNIT));
+
        out.print("</td><td>");
        out.print("<b>" + getTimeString(period.getStartTime(),bucketSize) + "</b>");
        out.print("</td><td>");
@@ -1565,13 +1656,15 @@ extends BaseServletComponent
        out.print("</td><td>");       
        out.print("<b>" + period.getNumBuckets(bucketSize) + "</b>");
        out.print("</td><td>");
-       out.print("<b>" + numberFormat.format(period.getTotalDemand()) + "</b>");
+       out.print("<b>" + unitOfIssue + "</b>");     
        out.print("</td><td>");
-       out.print("<b>" + numberFormat.format(period.getTotalFilled()) + "</b>");
+       out.print("<b>" + period.getRoundedTotalDemand(roundToInt) + "</b>");
        out.print("</td><td>");
-       out.print("<b>" + numberFormat.format(period.getShortfallQty()) + "</b>");
+       out.print("<b>" + period.getRoundedTotalFilled(roundToInt) + "</b>");
        out.print("</td><td>");
-       out.print("<b>%" + numberFormat.format(period.getPercentShortfall()) + "</b>");
+       out.print("<b>" + period.getShortfallQty(roundToInt) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>" + period.getPercentShortfall() + "%</b>");
     }
   }
 }
