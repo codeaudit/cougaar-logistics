@@ -44,6 +44,8 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   private int numResupplySupply=0;
   private int numDemandProj=0;
   private int numResupplyProj=0;
+  private int numTempResupplySupply=0;
+  private int numTempDemandSupply=0;
 
   /**
    * Constructor 
@@ -65,13 +67,17 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   public int getNumRefill() { return numResupplyProj + numResupplySupply;}
   public int getNumProjection() { return numDemandProj + numResupplyProj; }
   public int getNumActual() { return numDemandSupply + numResupplySupply; }
+  public int getNumTempResupplySupply() { return numTempResupplySupply; }
+  public int getNumTempDemandSupply() { return numTempDemandSupply; }
 
-
-  public int getNumPermShortfall() { return (getNumDemandSupply() +
-					     getNumResupplySupply() +
-					     getNumDemandProj() +
-					     getNumResupplyProj()); }
-
+  public int getNumPermShortfall() { return (getNumTotalShortfall() -
+					     getNumPermShortfall()); }
+  public int getNumTempShortfall() {return (getNumTempResupplySupply() +
+					    getNumTempDemandSupply()); }
+  public int getNumTotalShortfall() { return ((getNumDemandSupply() +
+					       getNumResupplySupply() +
+					       getNumDemandProj() +
+					       getNumResupplyProj()));}
   public void setNumDemandSupply(int numDemandSupply) {
       this.numDemandSupply = numDemandSupply;
   }
@@ -84,6 +90,12 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   public void setNumResupplyProj(int numResupplyProj) {
       this.numResupplyProj = numResupplyProj;
   }
+  public void setNumTempDemandSupply(int numDemandTemp) {
+      this.numTempDemandSupply = numDemandTemp;
+  }
+  public void setNumTempResupplySupply(int numResupplyTemp) {
+      this.numTempResupplySupply = numResupplyTemp;
+  }
 
 
   public String toString() {
@@ -92,6 +104,8 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
     sb.append(",NumResupplySupply=" + getNumResupplySupply());
     sb.append("\nNumDemandProj=" + getNumDemandProj());
     sb.append(",NumResupplyProj=" + getNumResupplyProj());
+    sb.append(",NumTempDemandSupply=" + getNumTempDemandSupply());
+    sb.append(",NumTempResupplySupply=" + getNumTempResupplySupply());
     sb.append("\nNumPerm=" + getNumPermShortfall());
     return sb.toString();
   }
@@ -101,7 +115,9 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 	      (this.getNumDemand() == si.getNumDemand()) &&
 	      (this.getNumResupplySupply() == si.getNumResupplySupply()) &&
 	      (this.getNumDemandProj() == si.getNumDemandProj()) &&
-	      (this.getNumResupplyProj() == si.getNumResupplyProj()));
+	      (this.getNumResupplyProj() == si.getNumResupplyProj()) &&
+	      (this.getNumTempDemandSupply() == si.getNumTempDemandSupply()) &&
+	      (this.getNumTempResupplySupply() == si.getNumTempResupplySupply()));
   }
   
 

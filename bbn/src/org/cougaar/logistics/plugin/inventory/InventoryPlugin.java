@@ -1975,24 +1975,9 @@ public class InventoryPlugin extends ComponentPlugin
 
 
     public ShortfallInventory checkForShortfall(Inventory inv) {
-      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       String invID = LogisticsInventoryServlet.getNomenclature(inv);
-
-      ShortfallInventory shortfallInv=new ShortfallInventory(invID);
-
-      shortfallInv.setNumResupplySupply(logInvPG.numResupplySupplyFailures());
-      shortfallInv.setNumResupplyProj(logInvPG.numResupplyProjFailures());
-      shortfallInv.setNumDemandSupply(logInvPG.numDemandSupplyFailures());
-      shortfallInv.setNumDemandProj(logInvPG.numDemandProjFailures());
-
-
-
-      if(shortfallInv.getNumPermShortfall() > 0) {
-	  return shortfallInv;
-      }
-      else {
-	  return null;
-      }
+      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      return logInvPG.checkForShortfall(invID);
     }
 
   /**

@@ -35,6 +35,7 @@ import org.cougaar.glm.ldm.plan.PlanScheduleType;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.logistics.servlet.LogisticsInventoryServlet;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Duration;
@@ -1231,29 +1232,41 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public boolean hasShortfall() {
-	return ((countFailures(getSupplyList()) > 0) ||
-		(countFailures(getProjSupplyList()) > 0) ||
-		(countFailures(getProjWithdrawList()) > 0) ||
-		(countFailures(getWithdrawList()) > 0));
+	return ((countActualShortfall(getSupplyList(),true) > 0) ||
+		(countProjFailures(getProjSupplyList()) > 0) ||
+		(countProjFailures(getProjWithdrawList()) > 0) ||
+		(countActualShortfall(getWithdrawList(),true) > 0));
     }
 
-    public int numResupplySupplyFailures() {
-      return countFailures(getSupplyList());
+
+
+    public ShortfallInventory checkForShortfall(String invID) {
+
+      ShortfallInventory shortfallInv=new ShortfallInventory(invID);
+
+      shortfallInv.setNumDemandProj(countProjFailures(getProjWithdrawList()));
+      shortfallInv.setNumResupplyProj(countProjFailures(getProjSupplyList()));
+      int numDemandSupply = countActualShortfall(getWithdrawList(), true);
+      int numPermDemandSupply = countActualShortfall(getWithdrawList(),false);
+      shortfallInv.setNumDemandSupply(numDemandSupply);
+      shortfallInv.setNumTempDemandSupply(numDemandSupply - numPermDemandSupply);
+      int numResupplySupply = countActualShortfall(getSupplyList(),true);
+      int numPermResupplySupply = countActualShortfall(getSupplyList(),false);
+      shortfallInv.setNumResupplySupply(numResupplySupply);
+      shortfallInv.setNumTempResupplySupply(numResupplySupply - numPermResupplySupply);
+
+
+      if(shortfallInv.getNumTotalShortfall() > 0) {
+	  return shortfallInv;
+      }
+      else {
+	  return null;
+      }
     }
 
-    public int numResupplyProjFailures() {
-      return countFailures(getProjSupplyList());
-    }
-    
-    public int numDemandSupplyFailures() {
-      return countFailures(getWithdrawList());
-    }
 
-    public int numDemandProjFailures() {
-      return countFailures(getProjWithdrawList());
-    }
 
-    protected static int countFailures(ArrayList taskList) {
+    protected int countProjFailures(ArrayList taskList) {
 	Iterator it = taskList.iterator();
 	int ctr=0;
 	while(it.hasNext()) {
@@ -1264,13 +1277,117 @@ public class LogisticsInventoryBG implements PGDelegate {
 		if (ar == null) {
 		    ar = pe.getEstimatedResult();
 		}
-		if((ar != null) && (!ar.isSuccess())) {
-		    ctr++;
+		if ((ar != null) && (!ar.isSuccess())) {
+		    ctr++;  		    
 		}
 	    }
 	}
 	return ctr;
     }
+
+    protected int countActualShortfall(ArrayList taskList, boolean includeTemps) {
+	Iterator it = taskList.iterator();
+	int ctr=0;
+	while(it.hasNext()) {
+	    Task t = (Task) it.next();
+	    PlanElement pe = t.getPlanElement();
+	    if (pe != null) {
+		AllocationResult ar = pe.getReportedResult();
+		if (ar == null) {
+		    ar = pe.getEstimatedResult();
+		}
+		if ((ar != null) && (!ar.isSuccess())) {
+		    ctr++;  		    
+		}
+		else if((ar != null) && (!taskUtils.isProjection(t))) {
+		    double unfilled=0;
+		    double arEndTime=0;
+		    double taskEndTime = taskUtils.getEndTime(t);
+
+		    if(!ar.isPhased()) {
+			unfilled = taskUtils.getQuantity(t) - taskUtils.getQuantity(ar);
+			arEndTime = taskUtils.getEndTime(ar);
+		    }
+		    else {
+			int[] ats = ar.getAspectTypes();
+			int qtyInd = -1;
+			int endInd = -1;
+			double totalQty=0;
+			qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+			endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+			Enumeration phasedResults = ar.getPhasedResults();
+			while (phasedResults.hasMoreElements()) {
+			    double[] results = (double[]) phasedResults.nextElement();
+			    if(qtyInd != -1) {
+				totalQty += results[qtyInd];
+			    }
+			    else {
+				totalQty = taskUtils.getQuantity(t);
+			    }
+			    double endTime=0;
+			    if(endInd == -1) {
+				endTime = taskEndTime;
+			    }
+			    else {
+				endTime = results[endInd];
+			    }
+			    arEndTime = Math.max(arEndTime,endTime);
+			}
+			unfilled = taskUtils.getQuantity(t) - totalQty;
+		    }
+		    if(unfilled > 0) {
+		      ctr++;
+		    }
+		    else if(includeTemps && (arEndTime > taskEndTime)) {
+		      ctr++;
+		    }
+		}
+	    }
+	}
+	return ctr;
+    }
+
+
+
+    protected double totalShortfall(ArrayList taskList) {
+	Iterator it = taskList.iterator();
+	double requested=0;
+	double granted=0;
+	while(it.hasNext()) {
+	    Task t = (Task) it.next();
+	    double taskQty = taskUtils.getTotalQuantity(t);
+	    requested += taskQty;
+	    PlanElement pe = t.getPlanElement();
+	    if (pe != null) {
+		AllocationResult ar = pe.getReportedResult();
+		if (ar == null) {
+		    ar = pe.getEstimatedResult();
+		}
+		if (ar == null) {
+		    granted += taskQty;	    		    
+		}
+		else if(taskUtils.isProjection(t)) {
+		    if(ar.isSuccess()) {
+			granted += taskQty;
+		    }
+		}
+		else {
+		    granted += taskUtils.getQuantity(ar);
+		}
+	    }
+	}
+	double returnQty = granted - requested;
+
+	if((returnQty <= 0) && (returnQty > -0.00005)) {
+	    return 0.0;
+	}
+	else {
+	    return returnQty;
+	}
+    }
+
+
+
 
 
     /**

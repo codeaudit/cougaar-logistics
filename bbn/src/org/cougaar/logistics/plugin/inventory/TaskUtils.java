@@ -425,6 +425,19 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
+
+  public double getTotalQuantity(Task task) {
+    if (isProjection(task)) {
+      double time_spanned = getEndTime(task) - getStartTime(task);
+      Rate rate = getRate(task);
+      Duration d = Duration.newMilliseconds((double)time_spanned);
+      Scalar scalar = (Scalar)rate.computeNumerator(d);
+      return getDouble(scalar);
+    } else {
+      return getQuantity(task);
+    }
+  }
+
   public static Rate getARAspectRate(AllocationResult ar) {
     if (ar == null) return null;
     AspectValue[] avs = ar.getAspectValueResults();
