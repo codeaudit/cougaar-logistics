@@ -211,7 +211,7 @@ public abstract class InventoryChart extends JPanel {
     }
   }
 
-  protected void resetAxes() {
+  public void resetAxes() {
 
     long baseCDayTime = 0L;
     if (inventory != null) {
