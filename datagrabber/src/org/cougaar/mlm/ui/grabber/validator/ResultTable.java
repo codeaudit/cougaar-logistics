@@ -32,6 +32,7 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -55,7 +56,7 @@ public class ResultTable {
     throws SQLException{
     Set retval = new HashSet();
 
-	confirmTableExistence (h,s);
+    confirmTableExistence (h,s);
 	
     ResultSet rs=s.executeQuery(getTestStatusSql(test));
     while(rs.next()) {
@@ -70,6 +71,50 @@ public class ResultTable {
     return retval;
   }
 
+  /**
+   * Returns map of run to number of tests that returned errors, warnings, info, or OK
+   *
+   * @return Map that is a run->int array, int array is a five-let - 
+   *         (num not run, num errors, num warnings, num ok, num info)
+   */
+  public static Map getTestResults(HTMLizer h, Statement s) throws SQLException {
+    String sql = getResultSql();
+    return getResults (h, s, sql);
+  }
+
+  public static Map getNumTestsRun(HTMLizer h, Statement s) throws SQLException {
+    String sql = getNumTestsRunSql();
+    return getResults (h, s, sql);
+  }
+
+  public static Map getResults(HTMLizer h, Statement s, String sql)
+    throws SQLException{
+    Map runToNumberOfResults = new HashMap();
+
+    confirmTableExistence (h,s);
+	
+    if (h.isTrivialEnabled ()) {
+      h.logMessage(Logger.TRIVIAL,Logger.DB_QUERY,
+		   "Result sql was " + sql);
+    }
+
+    ResultSet rs=s.executeQuery(sql);
+    while(rs.next()) {
+      int run    = rs.getInt(1);
+      Integer intObject = new Integer (run);
+      int [] numberOfResults;
+      if ((numberOfResults = (int []) runToNumberOfResults.get (intObject)) == null) {
+	runToNumberOfResults.put (intObject, numberOfResults = new int [Test.RESULT_INFO+1]);
+      }
+      int numWithResult = rs.getInt(2);
+      int result = rs.getInt(3);
+      numberOfResults[result] = numWithResult;
+    }
+    
+    rs.close();
+    return runToNumberOfResults;
+  }
+
   protected static String getTestStatusSql(int test){
     StringBuffer sb=new StringBuffer();
     sb.append("SELECT ");
@@ -82,6 +127,24 @@ public class ResultTable {
     sb.append("test=");
     sb.append(test);
     return sb.toString();
+  }
+
+  protected static String getResultSql () {
+    String sql = 
+      "select runone, count(*), status\n" + 
+      "from statustable\n" +
+      "where runone=runtwo\n" + 
+      "group by runone, status";
+    return sql;
+  }
+
+  protected static String getNumTestsRunSql () {
+    String sql =
+      "select runone, count(*), failure_level\n" +
+      "from statustable\n"+
+      "where runone=runtwo\n"+
+      "group by runone, failure_level";
+    return sql;
   }
 
   // Create a Set indicating whether a given diff category has been run across
@@ -239,7 +302,8 @@ public class ResultTable {
       confirmTableExistence(logger,s);
       int x = compone; int y = comptwo;
       if (comptwo < compone) { x = comptwo; y = compone; }
-    
+
+      int failureLevel = tester.getTestFailureLevel(test);
       int status;
       if (compone == comptwo) {
 	status = tester.getTestResult(logger,s,x,test);
@@ -253,7 +317,11 @@ public class ResultTable {
 	  ResultSet rs = s.executeQuery("select * from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+"' and"+
 					" runtwo = '"+y+"' and test = '0'");
 	  if (!rs.next()) {
-	    s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','0','"+status+"')");
+	    s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+
+			   " values ('"+(counter++)+"','"+x+"','"+y+"','0',"+
+			   "'"+status+"'," +
+			   "'"+failureLevel+"'"+
+			   ")");
 	  } else {
 	    s.executeQuery("update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
 			   "' and runtwo = '"+y+"' and test = '0'");
@@ -264,18 +332,33 @@ public class ResultTable {
 	}
       }
     
+      String sql = null;
       try {
 	ResultSet rs = s.executeQuery("select * from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+"' and"+
 				      " runtwo = '"+y+"' and test = '"+test+"'");
 	if (!rs.next()) {
-	  s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','"+test+"','"+status+"')");
+	  sql = 
+	    "insert into "+DGPSPConstants.STATUS_TABLE+
+	    " values "+
+	    "("+
+	    "'"+(counter++)+"',"+
+	    "'"+x+"',"+
+	    "'"+y+"',"+
+	    "'"+test+"'," +
+	    "'"+status+"'," +
+	    "'"+failureLevel+"'"+
+	    ")";
 	} else {
-	  s.executeQuery("update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
-			 "' and runtwo = '"+y+"' and test = '"+test+"'");
+	  sql =
+	    "update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
+	    "' and runtwo = '"+y+"' and test = '"+test+"'";
 	}
+
+	s.executeQuery(sql);
       } catch (SQLException e){
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			  "Problem altering test info in status table",e);
+			  "Problem altering test info in status table. Sql was :\n"+sql,e);
+	e.printStackTrace();
       }
     }
   }
@@ -321,8 +404,37 @@ public class ResultTable {
       boolean statusTableAvailable=rs.next();
       rs.close();
       if (!statusTableAvailable) {
-	s.executeQuery("create table "+DGPSPConstants.STATUS_TABLE+" (prikey INTEGER NOT NULL, runone INTEGER NOT NULL, runtwo INTEGER NOT NULL, "+
-		       "test INTEGER NOT NULL, status INTEGER NOT NULL)");
+	// check return value?
+	s.executeQuery("create table "+DGPSPConstants.STATUS_TABLE+" (" + 
+		       "prikey INTEGER NOT NULL, " + 
+		       "runone INTEGER NOT NULL, " + 
+		       "runtwo INTEGER NOT NULL, "+
+		       "test INTEGER NOT NULL, " + 
+		       "status INTEGER NOT NULL, " + 
+		       "failure_level INTEGER NOT NULL"+
+		       ")");
+      }
+      else {
+	ResultSet rs2 = meta.getColumns(null,null,DGPSPConstants.STATUS_TABLE,"failure_level");
+	if (!rs2.next()) {
+	  logger.logMessage(Logger.MINOR,Logger.DB_QUERY,"need to add failure_level column");
+	  // Statement s=dbConnection.createStatement();
+	  if(s==null){
+	    logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+			      "Could not create statement from connection");
+	  }
+	  try {
+	    ResultSet rs3=s.executeQuery("ALTER TABLE " +DGPSPConstants.STATUS_TABLE+ 
+					 " ADD COLUMN " + "failure_level" + 
+					 " INTEGER NOT NULL AFTER " + "status");
+	    rs3.close();
+	  } catch (SQLException sql) { 
+	    logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+			      "Could not add column to run table?");
+	  }		
+		
+	}	
+	rs2.close();
       }
     } catch (SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
