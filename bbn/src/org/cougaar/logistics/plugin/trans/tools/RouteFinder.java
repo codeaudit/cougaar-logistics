@@ -17,10 +17,10 @@ import org.cougaar.planning.ldm.measure.Longitude;
 import org.cougaar.planning.ldm.asset.AbstractAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 
-import org.cougaar.glm.seanet.Location;
-import org.cougaar.glm.seanet.LocationImpl;
-import org.cougaar.glm.seanet.Network;
-import org.cougaar.glm.seanet.Node;
+import org.cougaar.logistics.plugin.seanet.Location;
+import org.cougaar.logistics.plugin.seanet.LocationImpl;
+import org.cougaar.logistics.plugin.seanet.Network;
+import org.cougaar.logistics.plugin.seanet.Node;
 
 import java.util.*;
 
