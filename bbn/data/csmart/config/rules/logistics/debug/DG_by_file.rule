@@ -1,0 +1,28 @@
+# Adds the parameter "RANDOM_DEVIATION_ON=false" to every instance 
+# of the plugin "org.cougaar.logistics.plugin.demand.DemandGeneratorPlugin" 
+# in the society.
+
+plugin = "org.cougaar.logistics.plugin.demand.DemandGeneratorPlugin"
+arg = "DG_TO_FILE=true"
+#arg = "DEMAND_GENERATOR=org.cougaar.logistics.plugin.demand.DemandGeneratorInputModule"
+
+society.each_agent do |agent|
+# Already has SimpleTimeAdvanceComponent
+#  if agent.name == "NCA"
+#    agent.add_component do |c|
+#      c.name='org.cougaar.planning.plugin.completion.SimpleTimeAdvanceComponent()'
+#      c.classname='org.cougaar.planning.plugin.completion.SimpleTimeAdvanceComponent'
+#      c.insertionpoint='Node.AgentManager.Agent.PluginManager.Plugin'
+#      c.priority='COMPONENT'
+#    end
+#  end
+  #if agent.name == "1-6-INFBN"
+    agent.each_component do |comp|	
+      if comp.classname == plugin
+        comp.add_argument(arg) unless comp.has_argument?(arg)
+      end
+    end
+  #end
+
+end
+
