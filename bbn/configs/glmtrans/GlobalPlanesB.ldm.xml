@@ -1,0 +1,67 @@
+<?xml version="1.0"  encoding="US-ASCII"?>
+
+<!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [
+
+<!ENTITY PlanePrototypes SYSTEM "PlanePrototypes.ldm.xml">
+<!ENTITY dummyprototypes SYSTEM "DummyPrototypes.ldm.xml">]>
+
+<AssetList>
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                    First the Prototypes                     ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  &PlanePrototypes;
+  &dummyprototypes;
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                      Now the Instances                      ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  <!-- Note that the name of the prototype is the same as the type 
+       identification for that prototype, so we have that unreadable 
+       NSN number.  
+
+       This is only by convention and in fact the name of the prototype 
+       could be some nice English phrase like "5_ton_truck" which is easy 
+       to debug.
+
+       However we were instructed by ALP to use the NSN number for this 
+       example to get the library accepted in the ALP contrib directory.
+
+       To make things worse, the IBM parser does not allow the '/' 
+       character in XML atributes of Type ID.  This means that we had
+       to give the prototypes name like "NSN-####" instead of "NSN/###".
+       
+  -->
+  <!-- C17 --> 
+  <instance prototype="C5-B" id="C5" quantity="15">
+    <schedule end="12/31/06" start="11/07/00"/>
+  </instance>
+
+  <instance prototype="C17-B" id="C17" quantity="15">
+    <schedule end="12/31/06" start="11/07/00"/>
+  </instance>
+
+  <instance prototype="B747-B" id="B747" quantity="10">
+    <schedule end="12/31/06" start="11/07/00"/>
+  </instance>
+</AssetList>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
