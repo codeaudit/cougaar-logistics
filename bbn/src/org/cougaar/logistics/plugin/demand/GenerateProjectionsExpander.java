@@ -44,13 +44,7 @@ import org.cougaar.util.TimeSpan;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * <pre>
@@ -117,8 +111,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       if (publishedTasks.isEmpty() && newTasks.isEmpty()) {
         continue;
       }
-      Schedule publishedTasksSched = TaskUtils.newObjectSchedule(publishedTasks);
-      Schedule newTasksSched = TaskUtils.newObjectSchedule(newTasks);
+      Schedule publishedTasksSched = getTaskUtils().newObjectSchedule(publishedTasks);
+      Schedule newTasksSched = getTaskUtils().newObjectSchedule(newTasks);
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched, timespan);
       addToAndPublishExpansion(gpTask, diffedTasks);
     }
@@ -531,35 +525,70 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         // check end times not the same
         synchronized ( new_task ) {
           ((NewTask)published_task).setPreference(new_task.getPreference(AspectType.END_TIME));
-        } // synch
+          if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+            if (logger.isWarnEnabled()) {
+              logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
+                  new Date(TaskUtils.getStartTime(published_task)) +
+                  "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+            } // synch
+          }
+        }
 
-	if(logger.isDebugEnabled()) {
-	  logger.debug( printProjection("extend old end", published_task));
-	}
+        if(logger.isDebugEnabled()) {
+          logger.debug( printProjection("extend old end", published_task));
+        }
         dfPlugin.publishChange(published_task);
       } else {
         // check to make sure start_time is not before now
         // long that is the maximum of now and the start_time
         long when = Math.max(now, TaskUtils.getStartTime(new_task));
         setEndTimePreference((NewTask) published_task, when);
-	if(logger.isDebugEnabled()) {
-	  logger.debug(printProjection("truncate old end 1", published_task));
-	}
+        if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+          if (logger.isWarnEnabled()) {
+            logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
+                new Date(TaskUtils.getStartTime(published_task)) +
+                "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+          }
+        }
+        if(logger.isDebugEnabled()) {
+          logger.debug(printProjection("truncate old end 1", published_task));
+        }
         dfPlugin.publishChange(published_task);
         setStartTimePreference((NewTask) new_task, when);
-	if(logger.isDebugEnabled()) {
-	  logger.debug(printProjection("truncate new start 1", new_task));
-	}
+        if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+          if (logger.isWarnEnabled()) {
+            logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
+                new Date(TaskUtils.getStartTime(new_task)) +
+                "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+          }
+        }
+        if(logger.isDebugEnabled()) {
+          logger.debug(printProjection("truncate new start 1", new_task));
+        }
         add_tasks.add(new_task);
       }
     } else if (new_task != null) {
       setStartTimePreference((NewTask) new_task, now);
+       if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+        if (logger.isWarnEnabled()) {
+          logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
+              new Date(TaskUtils.getStartTime(new_task)) +
+              "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+        }
+      }
       if(logger.isDebugEnabled()) {
         logger.debug(printProjection("truncate new start 2", new_task));
       }
       add_tasks.add(new_task);
     } else if (published_task != null) {
       setEndTimePreference((NewTask) published_task, now);
+      if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+        if (logger.isWarnEnabled()) {
+          logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
+              new Date(TaskUtils.getStartTime(published_task)) +
+              "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+        }
+      }
       dfPlugin.publishChange(published_task);
       if(logger.isDebugEnabled()) {
         logger.debug(printProjection("truncate old end 2", published_task));
@@ -579,7 +608,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
       }
       else {
-	if(logger.isErrorEnabled()) {
+        if(logger.isErrorEnabled()) {
 	  logger.error("publishChangeProjection(), Bad Schedule: "+newtask_schedule);
 	}
         return Collections.EMPTY_LIST;
@@ -592,21 +621,35 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
-	if(logger.isDebugEnabled()) {
-	  logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
-                     " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
-	}
+        if(logger.isDebugEnabled()) {
+          logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+              " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
+        }
         published_task = TaskUtils.changeTask(published_task, new_task);
+        if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+          if (logger.isWarnEnabled()) {
+            logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
+                new Date(TaskUtils.getStartTime(published_task)) +
+                "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+          }
+        }
         if (published_task != null) {
-	  if(logger.isDebugEnabled()) {
+          if(logger.isDebugEnabled()) {
             logger.debug(printProjection("********** Replaced task with ---> \n", published_task));
-	  }
+          }
           dfPlugin.publishChange(published_task);
         }
       }
       else {
         // no task exists that covers this timespan, publish it
         add_tasks.add(new_task);
+        if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+          if (logger.isWarnEnabled()) {
+            logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
+                new Date(TaskUtils.getStartTime(new_task)) +
+                "\nPublished task -> " + published_task + "\n New task -> " + new_task);
+          }
+        }
       }
     }
     // Rescind any tasks that were not accounted for
