@@ -62,17 +62,10 @@
 </OPERATOR>
 <OPERATOR operation="&gt;=" >
 <OPERATOR operation="/" >
-<OPERATOR operation="dist" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="from.latlong" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="latlong" />
-</OPERATOR>
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="to.latlong" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="latlong" />
-</OPERATOR>
+<LITERAL value="distance" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="number" />
 </OPERATOR>
 <OPERATOR operation="/" >
 <OPERATOR operation="-" >
@@ -90,7 +83,7 @@
 <LITERAL value="3600.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="15.0" type="constant" datatype="number" />
+<LITERAL value="23.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
@@ -129,17 +122,10 @@
 </OPERATOR>
 <OPERATOR operation="&lt;" >
 <OPERATOR operation="/" >
-<OPERATOR operation="dist" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="from.latlong" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="latlong" />
-</OPERATOR>
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="to.latlong" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="latlong" />
-</OPERATOR>
+<LITERAL value="distance" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="number" />
 </OPERATOR>
 <OPERATOR operation="/" >
 <OPERATOR operation="-" >
@@ -157,7 +143,7 @@
 <LITERAL value="3600.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="15.0" type="constant" datatype="number" />
+<LITERAL value="23.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
