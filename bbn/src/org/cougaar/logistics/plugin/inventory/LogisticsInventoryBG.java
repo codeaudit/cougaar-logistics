@@ -406,6 +406,29 @@ public class LogisticsInventoryBG implements PGDelegate {
     return actualDemand; 
   }
 
+  public Collection getActualDemandTasks(int bucket) {
+    ArrayList demand = new ArrayList();
+    if (bucket >= dueOutList.size()) {
+      return demand;
+    }
+    Iterator dueOutIter = ((ArrayList)dueOutList.get(bucket)).iterator();
+    while (dueOutIter.hasNext()) {
+      Task task = (Task)dueOutIter.next();
+      if (taskUtils.isProjection(task)) {
+	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+	start = getProjectedDemandStart(task, start);
+	if (start < end) {
+          demand.add(task);
+        }
+      } else {
+        demand.add(task);
+      }
+    }
+    return demand;
+  }
+
+
   private int getDaysSpanned(int bucket, long start, long end) {
     long bucket_start = convertBucketToTime(bucket);
     long bucket_end = bucket_start + MSEC_PER_BUCKET;
