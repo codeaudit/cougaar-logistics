@@ -111,7 +111,8 @@ public class InventoryLevelGenerator extends InventoryModule {
             ar = pe.getEstimatedResult();
           }
           // make sure that we got at least a valid reported OR estimated allocation result
-          if (ar != null) {
+          //if (ar != null) {
+          if (ar != null && ar.isSuccess()) {
             if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
               //demandrate
               //             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
