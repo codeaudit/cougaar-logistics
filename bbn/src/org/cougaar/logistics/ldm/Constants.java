@@ -53,6 +53,14 @@ public class Constants extends org.cougaar.glm.ldm.Constants {
 
   }
 
+    public interface Confidence {
+	public static double DISPATCHED = .25;
+	public static double PREDICTED = .40; //for now - we might need to discuss this with the predictor guys later
+	public static double SCHEDULED = .90;
+	public static double OBSERVED = 1.0;
+
+    }
+
 }
 
 
