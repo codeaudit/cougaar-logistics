@@ -26,6 +26,7 @@ import org.cougaar.planning.ldm.policy.RuleParameterIllegalValueException;
 import org.cougaar.planning.ldm.policy.StringRuleParameter;
 
 public class InventoryPolicy extends Policy {
+  public static final String ResourceType = "ResourceType";
   public static final String CriticalLevel = "CriticalLevel";
   public static final String SlackTime = "SlackTime";
   public static final String OrderFrequency = "OrderFrequency";
@@ -33,6 +34,13 @@ public class InventoryPolicy extends Policy {
   public static final String TransportTime = "TransportTime";
 
   public InventoryPolicy() {
+    StringRuleParameter type = new StringRuleParameter(ResourceType);
+    try {
+      type.setValue(new String());
+    } catch (RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+    Add(type);
     IntegerRuleParameter cl = new IntegerRuleParameter(CriticalLevel, 1, 40);
     try {
       cl.setValue(new Integer(3));
@@ -70,12 +78,28 @@ public class InventoryPolicy extends Policy {
     Add(tt);
   }
 
+  public String getResourceType() {
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(ResourceType);
+    return (String)param.getValue();
+  }
+  
+  public void setResourceType(String name) {
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(ResourceType);
+    try {
+      param.setValue(name);
+    } catch(RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+  }
+
   public int getCriticalLevel() {
     IntegerRuleParameter param = (IntegerRuleParameter)
       Lookup(CriticalLevel);
     return ((Integer)(param.getValue())).intValue();
   }
-
+  
   public void setCriticalLevel(int i) {
     IntegerRuleParameter param = (IntegerRuleParameter)
       Lookup(CriticalLevel);
