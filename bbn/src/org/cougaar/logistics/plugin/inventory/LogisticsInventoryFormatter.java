@@ -68,11 +68,13 @@ public class LogisticsInventoryFormatter {
     public final static String WITHDRAW_TASKS_TAG="WITHDRAW_TASKS";
     public final static String PROJECTSUPPLY_TASKS_TAG="PROJECTSUPPLY_TASKS";
     public final static String PROJECTWITHDRAW_TASKS_TAG="PROJECTWITHDRAW_TASKS";
+    public final static String COUNTED_PROJECTWITHDRAW_TASKS_TAG="COUNTED_PROJECTWITHDRAW_TASKS";
 
     public final static String SUPPLY_TASK_ARS_TAG="SUPPLY_TASK_ALLOCATION_RESULTS";
     public final static String WITHDRAW_TASK_ARS_TAG="WITHDRAW_TASK_ALLOCATION_RESULTS";
     public final static String PROJECTSUPPLY_TASK_ARS_TAG="PROJECTSUPPLY_TASK_ALLOCATION_RESULTS";
     public final static String PROJECTWITHDRAW_TASK_ARS_TAG="PROJECTWITHDRAW_TASK_ALLOCATION_RESULTS";
+    public final static String COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG="COUNTED_PROJECTWITHDRAW_TASK_ALLOCATION_RESULTS";
     
     public final static String RESUPPLY_SUPPLY_TASKS_TAG="RESUPPLY_SUPPLY_TASKS";
     public final static String RESUPPLY_PROJECTSUPPLY_TASKS_TAG="RESUPPLY_PROJECTSUPPLY_TASKS";
@@ -96,6 +98,8 @@ public class LogisticsInventoryFormatter {
     protected TaskUtils taskUtils;
     protected long cycleStamp=-0L;
     protected Writer output;
+
+    LogisticsInventoryPG logInvPG;
 
     public LogisticsInventoryFormatter(Writer writeOutput, InventoryPlugin invPlugin){
 	logger = invPlugin.getLoggingService(this);
@@ -127,22 +131,28 @@ public class LogisticsInventoryFormatter {
 
     protected void logTasks(ArrayList tasks,
 			    long aCycleStamp,
-			    boolean expandTimestamp) {
+			    boolean expandTimestamp,
+			    boolean isCountedTask) {
 	cycleStamp = aCycleStamp;
 	for(int i=0; i < tasks.size(); i++) {
 	    Task aTask = (Task) tasks.get(i);
-	    logTask(aTask,expandTimestamp);
+	    logTask(aTask,expandTimestamp,isCountedTask);
 	}
     }
 
-    protected void logTask(Task aTask,boolean expandTimestamp) {
+    protected void logTask(Task aTask,boolean expandTimestamp, boolean isCountedTask) {
 	if(aTask == null){ return; }
 	String taskStr = buildTaskPrefixString(aTask);
 	if(TaskUtils.getPreferenceBest(aTask, AspectType.START_TIME) == null) {
 	    taskStr+= ",";
 	}
 	else {
-	    taskStr = taskStr + getDateString(TaskUtils.getStartTime(aTask),expandTimestamp) + ",";
+	    long startTime = TaskUtils.getStartTime(aTask);
+	    if(isCountedTask &&
+	       (TaskUtils.isProjection(aTask))) {
+		startTime = logInvPG.getEffectiveProjectionStart(aTask,startTime);
+	    }
+	    taskStr = taskStr + getDateString(startTime,expandTimestamp) + ",";
 	}
 	taskStr = taskStr + getDateString(TaskUtils.getEndTime(aTask),expandTimestamp) + ",";
 	//This is qty for supply, daily rate for projection
@@ -211,6 +221,17 @@ public class LogisticsInventoryFormatter {
 			outputStr += getDateString(results[startInd],expandTimestamp) + ",";
 		    }
 		    if(endInd == -1) {
+			/** MWD The following line of code which replaces the
+			 *  allocation result end time with the task end time
+			 *  is only due to a current error in the 
+			 *  UniversalAllocator.   The UA is only setting
+			 *  the start time in the allocation result. There
+			 *  is a bug in and when the UA is fixed this line
+			 *  of code should be removed.  GUI needs the end
+			 *  times for the rates.
+			 */
+			outputStr += getDateString(TaskUtils.getEndTime(aTask),expandTimestamp);
+
 			outputStr += ",";
 		    }
 		    else {
@@ -232,6 +253,7 @@ public class LogisticsInventoryFormatter {
 
     protected void logLevels(Schedule reorderLevels,
 			     Schedule inventoryLevels, 
+			     Schedule targetLevels, 
 			     long aCycleStamp, 
 			     boolean expandTimestamp) {
 	cycleStamp = aCycleStamp;
@@ -240,12 +262,15 @@ public class LogisticsInventoryFormatter {
 	    QuantityScheduleElement qse=(QuantityScheduleElement)e.nextElement();
 	    Collection invLevelsInRange = 
 		inventoryLevels.getEncapsulatedScheduleElements(qse.getStartTime(),qse.getEndTime());
-	    logLevels(qse,invLevelsInRange,expandTimestamp);
+	    Collection targetLevelsInRange = 
+		targetLevels.getEncapsulatedScheduleElements(qse.getStartTime(),qse.getEndTime());
+	    logLevels(qse,invLevelsInRange,targetLevelsInRange,expandTimestamp);
 	}
     }
     
     protected void logLevels(QuantityScheduleElement reorderLevel,
 			     Collection invLevelsInRange,
+			     Collection targetLevelsInRange,
 			     boolean expandTimestamp) {
 
 	String outputStr = getDateString(reorderLevel.getStartTime(),expandTimestamp) + ",";
@@ -263,16 +288,32 @@ public class LogisticsInventoryFormatter {
 	    boolean alreadyLogged = false;
 	    while(it.hasNext()) {
 		QuantityScheduleElement invLevel=(QuantityScheduleElement) it.next();
-		outputStr += invLevel.getQuantity();
+		outputStr = outputStr + invLevel.getQuantity() + ",";
 		if(moreThanOne && !alreadyLogged) {
 		    if(logger.isWarnEnabled()) {
 		    logger.warn("logLevel:More than one inventory level in range " + outputStr);			
 		    }
 		    alreadyLogged=true;
 		}
-		writeln(outputStr);
 		moreThanOne=true;
 	    }
+	    if(!targetLevelsInRange.isEmpty()) {
+		moreThanOne=false;
+		alreadyLogged = false;
+		it = targetLevelsInRange.iterator();
+		while(it.hasNext()) {
+		    QuantityScheduleElement targetLevel=(QuantityScheduleElement) it.next();
+		    outputStr += targetLevel.getQuantity();
+		    if(moreThanOne && !alreadyLogged) {
+			if(logger.isWarnEnabled()) {
+			    logger.warn("logLevel:More than one target level in range " + outputStr);			
+			}
+			alreadyLogged=true;
+		    }
+		    moreThanOne=true;
+		}
+	    }		
+	    writeln(outputStr);
 	}
     }
 		
@@ -300,21 +341,22 @@ public class LogisticsInventoryFormatter {
 
     protected void excelLogLevels(Schedule reorderLevels,
 				  Schedule inventoryLevels,
+				  Schedule targetLevels,
 				  long aCycleStamp) {
-	writeNoCycleLn("CYCLE,START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL");
-	logLevels(reorderLevels,inventoryLevels,aCycleStamp,true);
+	writeNoCycleLn("CYCLE,START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL");
+	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,true);
     } 
 
 
-    protected void excelLogProjections(ArrayList tasks,long aCycleStamp) {
+    protected void excelLogProjections(ArrayList tasks,boolean isCountedTask,long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE");
-	logTasks(tasks,aCycleStamp,true);
+	logTasks(tasks,aCycleStamp,true,isCountedTask);
     } 
     
     
     protected void excelLogNonProjections(ArrayList tasks,long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,QTY");
-	logTasks(tasks,aCycleStamp,true);
+	logTasks(tasks,aCycleStamp,true,false);
     } 
     
 
@@ -337,17 +379,58 @@ public class LogisticsInventoryFormatter {
 	return parentList;
     }
     
+    /***
+     ** This method flattens the 2 dimensional array list into one
+     ** dimension and weeds out PROJECTWITHDRAWs.
+     **
+     **/
+    protected ArrayList extractProjFromCounted(ArrayList countedDemandList) {
+	ArrayList countedProjDemand = new ArrayList();
+	for(int i=0; i<countedDemandList.size(); i++) {
+	    ArrayList bucketODemand = (ArrayList) countedDemandList.get(i);
+	    for(int j=0; j<bucketODemand.size(); j++) {
+		Task aTask = (Task) bucketODemand.get(j);
+		if(aTask.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+		    if(!(countedProjDemand.contains(aTask))) {
+			countedProjDemand.add(aTask);
+		    }
+		}
+	    }
+	}
+	return countedProjDemand;
+    }
+	    
 
-    public void logToExcelOutput(ArrayList withdrawList,
-				 ArrayList projWithdrawList,
-				 ArrayList resupplyList,
-				 ArrayList projResupplyList,
-				 Schedule  reorderLevels,
-				 Schedule  inventoryLevels,
-				 long aCycleStamp) {
-	logDemandToExcelOutput(withdrawList,projWithdrawList,aCycleStamp);
+    public void logToExcelOutput(LogisticsInventoryPG inv,
+				 long aCycleStamp) { 
+
+	logInvPG=inv;
+	if(logInvPG != null) {
+	    logToExcelOutput(logInvPG.getWithdrawList(),
+			     logInvPG.getProjWithdrawList(),
+			     logInvPG.getActualDemandTasksList(),
+			     logInvPG.getSupplyList(),
+			     logInvPG.getProjSupplyList(),
+			     logInvPG.getBufferedCritLevels(),
+			     logInvPG.getBufferedInvLevels(),
+			     logInvPG.getBufferedTargetLevels(),
+			     aCycleStamp);
+	}
+    }
+
+    protected void logToExcelOutput(ArrayList withdrawList,
+				    ArrayList projWithdrawList,
+				    ArrayList countedDemandList,
+				    ArrayList resupplyList,
+				    ArrayList projResupplyList,
+				    Schedule  reorderLevels,
+				    Schedule  inventoryLevels,
+				    Schedule  targetLevels,
+				    long aCycleStamp) {
+	ArrayList countedProjWithdraw = extractProjFromCounted(countedDemandList);
+	logDemandToExcelOutput(withdrawList,projWithdrawList,countedProjWithdraw,aCycleStamp);
 	logResupplyToExcelOutput(resupplyList,projResupplyList,aCycleStamp);
-	logLevelsToExcelOutput(reorderLevels,inventoryLevels,aCycleStamp);
+	logLevelsToExcelOutput(reorderLevels,inventoryLevels,targetLevels,aCycleStamp);
 
 	try {
 	    output.flush();
@@ -359,6 +442,7 @@ public class LogisticsInventoryFormatter {
 
     protected void logDemandToExcelOutput(ArrayList withdrawList,
 					  ArrayList projWithdrawList,
+					  ArrayList countedProjWithdrawList,
 					  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 	
@@ -375,12 +459,16 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("WITHDRAW TASKS:END");
 	writeNoCycleLn("PROJECTSUPPLY TASKS:START");
 	System.out.println("PROJECTSUPPLY TASKS:START");
-	excelLogProjections(projSupplyList,aCycleStamp);
+	excelLogProjections(projSupplyList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTSUPPLY TASKS:END");
 	writeNoCycleLn("PROJECTWITHDRAW TASKS:START");
 	System.out.println("PROJECTWITHDRAW TASKS:START");
-	excelLogProjections(projWithdrawList,aCycleStamp);
+	excelLogProjections(projWithdrawList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTWITHDRAW TASKS:END");
+	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASKS:START");
+	System.out.println("COUNTED PROJECTWITHDRAW TASKS:START");
+	excelLogProjections(countedProjWithdrawList,true,aCycleStamp);
+	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASKS:END");
 
 	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS :START");
 	System.out.println("SUPPLY TASK ALLOCATION RESULTS :START");
@@ -398,6 +486,10 @@ public class LogisticsInventoryFormatter {
 	System.out.println("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
 	excelLogARs(projWithdrawList,aCycleStamp);
 	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
+	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
+	System.out.println("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
+	excelLogARs(countedProjWithdrawList,aCycleStamp);
+	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
 
     }
 
@@ -410,7 +502,7 @@ public class LogisticsInventoryFormatter {
 	excelLogNonProjections(resupplyList,aCycleStamp);
 	writeNoCycleLn("RESUPPLY SUPPLY TASKS: END");
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASKS: START");
-	excelLogProjections(projResupplyList,aCycleStamp);
+	excelLogProjections(projResupplyList,false,aCycleStamp);
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASKS: END");
 
 	writeNoCycleLn("RESUPPLY SUPPLY TASK ALLOCATION RESULTS: START");
@@ -424,29 +516,33 @@ public class LogisticsInventoryFormatter {
 
     protected void logLevelsToExcelOutput(Schedule reorderLevels,
 					  Schedule inventoryLevels,
+					  Schedule targetLevels,
 					  long aCycleStamp) {
 
 	writeNoCycleLn("INVENTORY LEVELS: START");
-	excelLogLevels(reorderLevels,inventoryLevels,aCycleStamp);
+	excelLogLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp);
 	writeNoCycleLn("INVENTORY LEVELS: END");
     }
 
-    public void logToXMLOutput(Asset invAsset,
-			       Organization anOrg,
-			       ArrayList withdrawList,
-			       ArrayList projWithdrawList,
-			       ArrayList resupplyList,
-			       ArrayList projResupplyList,
-			       Schedule  reorderLevels,
-			       Schedule  inventoryLevels,
-			       long aCycleStamp) {
+    protected void logToXMLOutput(Asset invAsset,
+				  Organization anOrg,
+				  ArrayList withdrawList,
+				  ArrayList projWithdrawList,
+				  ArrayList countedDemandList,
+				  ArrayList resupplyList,
+				  ArrayList projResupplyList,
+				  Schedule  reorderLevels,
+				  Schedule  inventoryLevels,
+				  Schedule  targetLevels,
+				  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
 	writeNoCycleLn("<" + INVENTORY_DUMP_TAG + " org=" + orgId + " item=" + assetName + ">");
-	logDemandToXMLOutput(withdrawList,projWithdrawList,aCycleStamp);
+	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
+	logDemandToXMLOutput(withdrawList,projWithdrawList,countedProjWithdrawList,aCycleStamp);
 	logResupplyToXMLOutput(resupplyList,projResupplyList,aCycleStamp);
-	logLevelsToXMLOutput(reorderLevels,inventoryLevels,aCycleStamp);
+	logLevelsToXMLOutput(reorderLevels,inventoryLevels,targetLevels,aCycleStamp);
 	writeNoCycleLn("</" + INVENTORY_DUMP_TAG + ">");
 	try {
 	    output.flush();
@@ -459,40 +555,46 @@ public class LogisticsInventoryFormatter {
     public void logToXMLOutput(Inventory inv,
 			       long aCycleStamp) {
 
-	LogisticsInventoryPG logInvPG=null;
+	logInvPG=null;
 	logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
 	if(logInvPG != null) {
 	    logToXMLOutput(logInvPG.getResource(),
 			   logInvPG.getOrg(),
 			   logInvPG.getWithdrawList(),
 			   logInvPG.getProjWithdrawList(),
+			   logInvPG.getActualDemandTasksList(),
 			   logInvPG.getSupplyList(),
 			   logInvPG.getProjSupplyList(),
 			   logInvPG.getBufferedCritLevels(),
 			   logInvPG.getBufferedInvLevels(),
+			   logInvPG.getBufferedTargetLevels(),
 			   aCycleStamp);
 	}
     }
 
     protected void logDemandToXMLOutput(ArrayList withdrawList,
 					ArrayList projWithdrawList,
+					ArrayList countedProjWithdrawList,
 					long aCycleStamp) {
 
 	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
 	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
 
 	writeNoCycleLn("<" + SUPPLY_TASKS_TAG + " type=TASKS>");
-	logTasks(supplyList,aCycleStamp,false);
+	logTasks(supplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + SUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + WITHDRAW_TASKS_TAG + " type=TASKS>");
-	logTasks(withdrawList,aCycleStamp,false);
+	logTasks(withdrawList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + WITHDRAW_TASKS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projSupplyList,aCycleStamp,false);
+	logTasks(projSupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + PROJECTSUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTWITHDRAW_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projWithdrawList,aCycleStamp,false);
+	logTasks(projWithdrawList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + PROJECTWITHDRAW_TASKS_TAG + ">");
+	writeNoCycleLn("<" + COUNTED_PROJECTWITHDRAW_TASKS_TAG + " type=PROJTASKS>");
+	logTasks(countedProjWithdrawList,aCycleStamp,false,true);
+	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + SUPPLY_TASK_ARS_TAG + " type=ARS>");
 	logAllocationResults(supplyList,aCycleStamp,false);
@@ -506,6 +608,9 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("<" + PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
 	logAllocationResults(projWithdrawList,aCycleStamp,false);
 	writeNoCycleLn("</" + PROJECTWITHDRAW_TASK_ARS_TAG + ">");
+	writeNoCycleLn("<" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
+	logAllocationResults(countedProjWithdrawList,aCycleStamp,false);
+	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 
     }
 
@@ -515,10 +620,10 @@ public class LogisticsInventoryFormatter {
 	cycleStamp = aCycleStamp;
 
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASKS_TAG + " type=TASKS>");
-	logTasks(resupplyList,aCycleStamp,false);
+	logTasks(resupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASKS_TAG + ">");
 	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
-	logTasks(projResupplyList,aCycleStamp,false);
+	logTasks(projResupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASK_ARS_TAG + " type=ARS>");
@@ -532,9 +637,10 @@ public class LogisticsInventoryFormatter {
 
     protected void logLevelsToXMLOutput(Schedule reorderLevels,
 					Schedule inventoryLevels,
+					Schedule targetLevels,
 					long aCycleStamp) {
 	writeNoCycleLn("<" + INVENTORY_LEVELS_TAG + " type=LEVELS>");
-	logLevels(reorderLevels,inventoryLevels,aCycleStamp,false);
+	logLevels(reorderLevels,inventoryLevels,targetLevels,aCycleStamp,false);
 	writeNoCycleLn("</" + INVENTORY_LEVELS_TAG + ">");
     }
 
