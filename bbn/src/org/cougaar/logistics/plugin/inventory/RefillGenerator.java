@@ -153,9 +153,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
 			     " to level: " + invLevel);
 	    }
 	  } else {
-            int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
-            double refillQty = generateRefill(invLevel, refillBucket, 
-					      reorderPeriodEndBucket, thePG);
+//             int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
+//             double refillQty = generateRefill(invLevel, refillBucket, 
+// 					      reorderPeriodEndBucket, thePG);
+            double refillQty = calculateRefillQty(thePG, refillBucket, invLevel);
 	    if(refillQty > 0.0) {
 
 		if (logger.isDebugEnabled()) { 
@@ -422,85 +423,58 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param startBucket The bucket that starts the Projection period.
    *  @return void  The target level is set in thePG with this method
    **/
-  private void setTargetForProjectionPeriod(LogisticsInventoryPG thePG, int startBucket, double prevTarget){
-      if (logger.isDebugEnabled()) { 
-	  logger.debug("For item: "+thePG.getResource() + 
-		       " set Projection inventory and target levels starting with bucket: "+
-		       startBucket);
-      }
-    int currentBucket = startBucket;
+  private void setTargetForProjectionPeriod(LogisticsInventoryPG thePG, 
+                                            int startBucket, double prevTarget){
+    if (logger.isDebugEnabled()) { 
+      logger.debug("For item: "+thePG.getResource() + 
+                   " set Projection inventory and target levels starting with bucket: "+
+                   startBucket);
+    }
+
     int reorderPeriod = (int)thePG.getReorderPeriod();
-    int reorderPeriodEndBucket = startBucket + reorderPeriod;
     int lastDemandBucket = thePG.getLastDemandBucket();
-    double criticalLevelBegin, criticalLevelEnd;
-    int startReorderBucket = -1;
-    double startTarget = -1;
-    double lastTarget = prevTarget;
+    double lastTarget;
+    int inventoryBucket;
+    
+    // get the first target before we loop so we have 2 points for the
+    // inventory level calculations.
+    double invLevel = thePG.getLevel(startBucket - 1) - 
+      thePG.getActualDemand(startBucket);
+    double refillQty = calculateRefillQty(thePG, startBucket, invLevel);
+    double target = invLevel + refillQty;
+    thePG.setTarget(startBucket, target);
+    lastTarget = target;
 
-    while (currentBucket <= lastDemandBucket) {
-      criticalLevelBegin = thePG.getCriticalLevel(currentBucket);
-      criticalLevelEnd = thePG.getCriticalLevel(reorderPeriodEndBucket);
-//       double demand = calculateDemandForPeriod(thePG, currentBucket, reorderPeriodEndBucket);
-//       double target = (criticalLevelEnd - criticalLevelBegin) + demand;
-//       logger.debug("bucket: "+currentBucket+", reorderPeriod end bucket: "+reorderPeriodEndBucket+
-// 		   ", critical begin: "+criticalLevelBegin+", critical end: "+criticalLevelEnd+
-// 		   ", demand: "+demand+", Target: "+target);
+    // Start the loop after the first reorderperiod
+    for (int targetLevelBucket = startBucket + reorderPeriod; 
+         targetLevelBucket <= lastDemandBucket; 
+         targetLevelBucket = targetLevelBucket + reorderPeriod ) {
+      invLevel = thePG.getLevel(targetLevelBucket - 1) - 
+        thePG.getActualDemand(targetLevelBucket);
+      refillQty = calculateRefillQty(thePG, targetLevelBucket, invLevel);
+      target = invLevel + refillQty;
+      thePG.setTarget(targetLevelBucket, target);
 
-      double startDemand = thePG.getActualDemand(currentBucket);
-      double endDemand = thePG.getActualDemand(reorderPeriodEndBucket);
-      double target = (endDemand - startDemand) + lastTarget;
+      // set the start point for the inventory calcualtions to the 
+      // beginning of the last target window 
+      //ie whatever bucket lastTarget was set for.
+      inventoryBucket = targetLevelBucket - reorderPeriod;
 
-//       if ((debugItem.indexOf("9140002865294") > 0) && (getOrgName().indexOf("FSB") > 0)) {
-// 	System.out.println("     bucket: "+currentBucket+", reorderPeriod end bucket: "+
-// 			   reorderPeriodEndBucket+
-// 			   ", critical begin: "+criticalLevelBegin+", critical end: "+criticalLevelEnd+
-// 			   ", demand: "+endDemand+", Target: "+target);
-//       }
-
-      if (target < 0.0) {
-	target = 0.0;
+      for (int i=0; i < reorderPeriod; i++) {
+        double diff = target - lastTarget; 
+        double calcTarget = lastTarget + ((diff * i)/reorderPeriod);
+        //inv level in projection land is the average of the critcial and target levels
+        double level = (thePG.getCriticalLevel(inventoryBucket + i) + calcTarget) / 2;
+        thePG.setLevel(inventoryBucket + i, level);
       }
-      lastTarget = target;
-      // fill in the inventory levels for projections based on the target levels
-      // but don't start until we have two target points
-      if (startReorderBucket != -1) {
-        // set the inventory levels for the entire reorder period based on the two
-        // target levels we have
-        int levelBucket = startReorderBucket;
-        double calcTarget;
-        while (levelBucket < currentBucket) {
-          if ( (levelBucket == startReorderBucket) || (startTarget == target) ) {
-            calcTarget = startTarget;
-          } else {
-            int bucketsSpanned = currentBucket - startReorderBucket;
-            int bucketDiff = levelBucket - startReorderBucket;
-            double diff = target - startTarget; 
-            calcTarget = startTarget + ((diff/bucketsSpanned) * bucketDiff);
-          }
-          //inv level in projection land is the average of the critcial and target levels
-          double level = (thePG.getCriticalLevel(levelBucket) + calcTarget) / 2;
-          thePG.setLevel(levelBucket, level);
-
-	  thePG.setTarget(levelBucket, level);
-
-          levelBucket = levelBucket + 1;
-        }
-      }
-
-//       thePG.setTarget(currentBucket, target);
-      startReorderBucket = currentBucket;
-      startTarget = target;
-      currentBucket += reorderPeriod;
-      reorderPeriodEndBucket = currentBucket + reorderPeriod;
     }
-    //at the end fill in the last inv level based on the last target level
-    // but make sure we actually did stuff in the while.
-    if (startReorderBucket != -1 ) {
-      double lastlevel = (thePG.getCriticalLevel(startReorderBucket) + startTarget) / 2;
-      thePG.setLevel(startReorderBucket, lastlevel);
+  }
 
-      thePG.setTarget(startReorderBucket, lastlevel);
-    }
+
+  private double calculateRefillQty(LogisticsInventoryPG thePG, int refillBucket, double invLevel) {
+    int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
+    return generateRefill(invLevel, refillBucket, 
+                          reorderPeriodEndBucket, thePG);
   }
 
 }
