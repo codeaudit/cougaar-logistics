@@ -89,7 +89,7 @@ public class InventoryRefillChart extends InventoryBarChart{
 					   RESUPPLY_ARS);
 
 	projDM = 
-	    new ProjectionsChartDataModel("Refill From Suppliers",
+	    new ProjectionsChartDataModel("Refill from Suppliers ",
 					  RESUPPLY_PROJ_TASKS,
 					  RESUPPLY_PROJ_ARS,
 					  RESUPPLY_TASKS,
