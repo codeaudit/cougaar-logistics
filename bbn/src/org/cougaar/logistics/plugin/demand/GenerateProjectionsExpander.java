@@ -1,14 +1,14 @@
 /*
  * <copyright>
- *  
+ *
  *  Copyright 1997-2004 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects
  *  Agency (DARPA).
- * 
+ *
  *  You can redistribute this software and/or modify it under the
  *  terms of the Cougaar Open Source License as published on the
  *  Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -20,7 +20,7 @@
  *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *  
+ *
  * </copyright>
  */
 
@@ -91,7 +91,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     else {
       if (pe != null) {
         dfPlugin.publishRemove(pe);
-      } 
+      }
       Collection subTasks = buildTaskList(pg, getConsumed(pg), schedule, gpTask, consumer);
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
@@ -131,7 +131,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // defines which MEIs really are type x consumers.
     AspectValue avs[] = new AspectValue[1];
     avs[0] = AspectValue.newAspectValue(AspectType.START_TIME,
-                                        TaskUtils.getPreference(gpTask, AspectType.START_TIME));
+                                        getTaskUtils().getPreference(gpTask, AspectType.START_TIME));
     AllocationResult dispAR =
         getPlanningFactory().newAllocationResult(1.0, true, avs);
     Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
@@ -481,7 +481,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       ose = (ObjectScheduleElement)new_historical_tasks.next();
       ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
       if (logger.isDebugEnabled()) {
-        logger.debug("Found NEW Historical task... current society time is:" + 
+        logger.debug("Found NEW Historical task... current society time is:" +
                      new Date(now) + " start time of ose is: " + new Date(ose.getStartTime()) +
                      " end time of ose is: " + new Date(ose.getEndTime()));
       }
@@ -506,10 +506,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         // check end times not the same
         synchronized ( new_task ) {
           ((NewTask)published_task).setPreference(new_task.getPreference(AspectType.END_TIME));
-          if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+          if (getTaskUtils().getStartTime(published_task) == getTaskUtils().getEndTime(published_task)) {
             if (logger.isWarnEnabled()) {
               logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
-                  new Date(TaskUtils.getStartTime(published_task)) + " the current society time is ->  "  +
+                  new Date(getTaskUtils().getStartTime(published_task)) + " the current society time is ->  "  +
                   new Date(dfPlugin.getCurrentTimeMillis()) +
                   "\nPublished task -> " + published_task + "\n New task -> " + new_task);
             } // synch
@@ -523,12 +523,12 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       } else {
         // check to make sure start_time is not before now
         // long that is the maximum of now and the start_time
-        long when = Math.max(now, TaskUtils.getStartTime(new_task));
+        long when = Math.max(now, getTaskUtils().getStartTime(new_task));
         setEndTimePreference((NewTask) published_task, when);
-        if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+        if (getTaskUtils().getStartTime(published_task) == getTaskUtils().getEndTime(published_task)) {
           if (logger.isWarnEnabled()) {
             logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
-                new Date(TaskUtils.getStartTime(published_task)) +
+                new Date(getTaskUtils().getStartTime(published_task)) +
                 "\nPublished task -> " + published_task + " the current society time is ->  "  +
                 new Date(dfPlugin.getCurrentTimeMillis()) + "\n New task -> " + new_task);
           }
@@ -538,10 +538,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         }
         dfPlugin.publishChange(published_task);
         setStartTimePreference((NewTask) new_task, when);
-        if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+        if (getTaskUtils().getStartTime(new_task) == getTaskUtils().getEndTime(new_task)) {
           if (logger.isWarnEnabled()) {
             logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
-                new Date(TaskUtils.getStartTime(new_task)) +
+                new Date(getTaskUtils().getStartTime(new_task)) +
                 "\nPublished task -> " + published_task + " the current society time is ->  "  +
                 new Date(dfPlugin.getCurrentTimeMillis()) + "\n New task -> " + new_task);
           }
@@ -553,10 +553,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       }
     } else if (new_task != null) {
       setStartTimePreference((NewTask) new_task, now);
-      if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+      if (getTaskUtils().getStartTime(new_task) == getTaskUtils().getEndTime(new_task)) {
         if (logger.isWarnEnabled()) {
           logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
-              new Date(TaskUtils.getStartTime(new_task)) +
+              new Date(getTaskUtils().getStartTime(new_task)) +
               "\nPublished task -> " + published_task + " the current society time is ->  "  +
               new Date(dfPlugin.getCurrentTimeMillis()) + "\n New task -> " + new_task);
         }
@@ -567,10 +567,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       add_tasks.add(new_task);
     } else if (published_task != null) {
       setEndTimePreference((NewTask) published_task, now);
-      if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+      if (getTaskUtils().getStartTime(published_task) == getTaskUtils().getEndTime(published_task)) {
         if (logger.isWarnEnabled()) {
           logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
-              new Date(TaskUtils.getStartTime(published_task)) +
+              new Date(getTaskUtils().getStartTime(published_task)) +
               "\nPublished task -> " + published_task + " the current society time is ->  "  +
               new Date(dfPlugin.getCurrentTimeMillis()) + "\n New task -> " + new_task);
         }
@@ -611,12 +611,12 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
           logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
               " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
         }
-        published_task = TaskUtils.changeTask(published_task, new_task);
+        published_task = getTaskUtils().changeTask(published_task, new_task);
         if (published_task != null) {
-          if (TaskUtils.getStartTime(published_task) == TaskUtils.getEndTime(published_task)) {
+          if (getTaskUtils().getStartTime(published_task) == getTaskUtils().getEndTime(published_task)) {
             if (logger.isWarnEnabled()) {
               logger.warn("diffProjections is setting a PUBLISHED task where the start time equals the end time " +
-                  new Date(TaskUtils.getStartTime(published_task)) +
+                  new Date(getTaskUtils().getStartTime(published_task)) +
                   "\nPublished task -> " + published_task + "\n New task -> " + new_task);
             }
           }
@@ -629,10 +629,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       else {
         // no task exists that covers this timespan, publish it
         add_tasks.add(new_task);
-        if (TaskUtils.getStartTime(new_task) == TaskUtils.getEndTime(new_task)) {
+        if (getTaskUtils().getStartTime(new_task) == getTaskUtils().getEndTime(new_task)) {
           if (logger.isWarnEnabled()) {
             logger.warn("diffProjections is setting a NEW task where the start time equals the end time " +
-                new Date(TaskUtils.getStartTime(new_task)) +
+                new Date(getTaskUtils().getStartTime(new_task)) +
                 "\nPublished task -> " + published_task + " the current society time is ->  "  +
                 new Date(dfPlugin.getCurrentTimeMillis()) + "\n New task -> " + new_task);
           }
@@ -665,9 +665,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         + " " + msg + " "
         + getTaskUtils().getDailyQuantity(task)
         + " "
-        + getTimeUtils().dateString(TaskUtils.getStartTime(task))
+        + getTimeUtils().dateString(getTaskUtils().getStartTime(task))
         + " to "
-        + getTimeUtils().dateString(TaskUtils.getEndTime(task));
+        + getTimeUtils().dateString(getTaskUtils().getEndTime(task));
   }
 
   public void publishRemoveFromExpansion(Task subtask) {
