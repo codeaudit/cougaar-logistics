@@ -25,7 +25,6 @@ import java.util.*;
 
 import org.cougaar.core.mts.*;
 import org.cougaar.glm.plugins.FileUtils;
-import org.cougaar.glm.plugins.ScheduleUtils;
 
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
@@ -59,6 +58,8 @@ import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.OperatingMode;
 import org.cougaar.core.adaptivity.OperatingModeImpl;
 
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+
 /** The InventoryPlugin is the Glue of inventory management.
  *  It handles all blackboard services for its modules, 
  *  facilitates inter-module communication and manages the
@@ -76,6 +77,7 @@ public class InventoryPlugin extends ComponentPlugin
   private TaskUtils taskUtils;
   private TimeUtils timeUtils;
   private AssetUtils AssetUtils;
+  private ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
   private HashMap inventoryHash;
   private HashMap inventoryInitHash;
@@ -134,6 +136,7 @@ public class InventoryPlugin extends ComponentPlugin
     timeUtils = new TimeUtils(this);
     AssetUtils = new AssetUtils(this);
     taskUtils = new TaskUtils(this);
+    scheduleUtils = new ScheduleUtils(this);
     detReqHandler = new DetReqAggHandler(this);
     // readParameters() initializes supplyType and inventoryFile
     pluginParams = readParameters();
@@ -175,6 +178,7 @@ public class InventoryPlugin extends ComponentPlugin
   public TaskUtils      getTaskUtils() {return taskUtils;}
   public TimeUtils      getTimeUtils() {return timeUtils;}
   public AssetUtils     getAssetUtils() {return AssetUtils;}  
+  public ScheduleUtils  getScheduleUtils() {return scheduleUtils;}
   public String         getSupplyType() {return supplyType; }
   private String getInventoryFileName() {return inventoryFile; }
   public Organization   getMyOrganization() {return myOrganization;}
@@ -1094,7 +1098,7 @@ public class InventoryPlugin extends ComponentPlugin
       NewScheduledContentPG scp;
       scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
       scp.setAsset(resource);
-      scp.setSchedule(ScheduleUtils.buildSimpleQuantitySchedule(levels[1], startTime, 
+      scp.setSchedule(scheduleUtils.buildSimpleQuantitySchedule(levels[1], startTime, 
 								startTime+(TimeUtils.MSEC_PER_DAY*10)));
     }
     return inventory;

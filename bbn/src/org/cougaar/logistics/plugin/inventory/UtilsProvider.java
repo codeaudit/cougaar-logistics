@@ -22,7 +22,7 @@
 package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.core.service.LoggingService;
-
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 
 /** The UtilsProvider is an interface for a plugin and
  * that provides access to same versions a TaskUtils, TimeUtils, and 
@@ -36,6 +36,7 @@ public interface UtilsProvider {
   public TaskUtils      getTaskUtils();
   public TimeUtils      getTimeUtils();
   public AssetUtils     getAssetUtils();
+  public ScheduleUtils  getScheduleUtils();
 
   public LoggingService getLoggingService(Object requestor);
   
