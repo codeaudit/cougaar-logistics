@@ -225,6 +225,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    **/
   private void allocateEarlyProjections(int countedBucket, Inventory inventory, 
                                         LogisticsInventoryPG thePG) {
+    String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+
     int currentBucket = 0;
     // loop through the buckets in the inventory
     while (currentBucket < countedBucket) {
@@ -235,17 +238,21 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         double endTimePref = getTaskUtils().getPreference(withdrawProj, AspectType.END_TIME);
         //make sure there is an end time pref AND that the
         //bucket of the end time pref is not equal to or past the countedBucket
+	//Since endTime is not inclusive of the bucket it falls in decrement by 1
         // countedBucket is the firstCountedProjection - if the projection spans both
         //the uncounted and counted windows - don't blindly allocate it here ... it should
         // be picked up by the counted projections allocation method.
-        if (endTimePref != Double.NaN) {
-          if (thePG.convertTimeToBucket((long)endTimePref) < countedBucket) {
+        if ((endTimePref != Double.NaN) &&
+	    ((thePG.convertTimeToBucket((long)endTimePref) - 1) < countedBucket)) {
             if (withdrawProj.getPlanElement() == null) {
               createBestAllocation(withdrawProj, inventory, thePG);
             }
             // if it already has a pe we could check it - but for now we won't
-          }
-        }
+	}
+	else if ((myOrgName.indexOf("102-POL-SUPPLYCO") >= 0) &&
+		 (myItemId.indexOf("NSN/9130010315816") >= 0)) {
+	    System.out.println("Not allocating JP8 where endTimePref is " + new Date((long) endTimePref) + " which equals bucket " + thePG.convertTimeToBucket((long) endTimePref) + " and the counted bucket is " + countedBucket);
+	}
       }
       //bump the bucket
       currentBucket = currentBucket + 1;

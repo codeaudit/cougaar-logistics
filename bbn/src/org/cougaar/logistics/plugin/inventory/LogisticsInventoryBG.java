@@ -324,7 +324,9 @@ public class LogisticsInventoryBG implements PGDelegate {
 	firstSeen = time;
       }
     }
-    return convertTimeToBucket(firstSeen);
+    // return the bucket after the first seen actual's end time bucket
+    // consistent with getEffectiveProjectionStart
+    return (convertTimeToBucket(firstSeen) + 1);
   }
 
     public int getLastRefillRequisition() {
