@@ -34,6 +34,7 @@ import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.glm.ldm.Constants;
 
 import org.cougaar.core.plugin.util.AllocationResultHelper;
 
@@ -196,16 +197,21 @@ public class ExternalAllocator extends InventoryModule {
     Task refill;
     Asset asset;
     Inventory inventory;
+    LogisticsInventoryPG logInvPG;
     Iterator refill_list = sub.getAddedCollection().iterator();
     while (refill_list.hasNext()) {
       refill = (Task)refill_list.next();
       asset = (Asset)refill.getDirectObject();
       inventory = inventoryPlugin.findOrMakeInventory(asset);
+      logInvPG = (LogisticsInventoryPG)
+	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+      if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+	logInvPG.updateRefillProjection(refill);
+      } else {
+	logInvPG.updateRefillRequisition(refill);
+      }
       inventoryPlugin.touchInventory(inventory);
     }
     PluginHelper.updateAllocationResult(sub);
   }
 }
-    
-  
-  
