@@ -41,6 +41,7 @@ import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 
 import org.cougaar.planning.ldm.measure.*;
 
@@ -66,6 +67,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       this.amount=amount;
     }
 
+      public String toString(LogisticsInventoryPG thePG) {
+        return ("AllocPhase of amount: " + amount + " from " + getTimeUtils().dateString(thePG.convertBucketToTime(startBucket)) + " to " + getTimeUtils().dateString(thePG.convertBucketToTime(endBucket)));
+      }
+    
   }
 
   public class TaskDeficit {
@@ -134,18 +139,38 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
 
 
-    public TaskDeficit(Task withdraw, double qty, LogisticsInventoryPG thePG){
-      task = withdraw;
-      lastPhase = null;
-      remainingQty=qty;
-      this.thePG=thePG;
-    }
+      public TaskDeficit(Task withdraw, double qty, LogisticsInventoryPG thePG) {
+        task = withdraw;
+        lastPhase = null;
+        remainingQty=qty;
+        this.thePG=thePG;
+      }
 
-    public void addPhase(double amount, int currentBucket){
-      if (amount <= 0.0) {
-        return;
+      public void addPhase(double amount, int currentBucket){
+       if(amount < 0.0) {
+         if(logger.isInfoEnabled()) {
+           String itemId = getTaskUtils().getTaskItemName(task);
+           TypeIdentificationPG typeIdPG = thePG.getResource().getTypeIdentificationPG();
+           String nomenclature = null;
+           String orgId = thePG.getOrg().getItemIdentificationPG().getItemIdentification();
+           if (typeIdPG == null) {
+             logger.warn("No typeIdentificationPG for asset");
+           } else {
+             nomenclature = typeIdPG.getNomenclature();
+           }
+           if (nomenclature == null) {
+             nomenclature = itemId;
+           }
+           logger.info(" Adding a phase of a negative amount==" + amount + " at bucket " + getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)) + "for task: " + task.getUID() + " org is " + inventoryPlugin.getOrgName() + " and the item is : "  + nomenclature);
+         }
+         amount = 0.0;
+       }
+      if (amount == 0.0) {
+        if(task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+          return;
+        }
       }				       
-      else if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW) &&
+      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW) &&
               lastPhase !=null &&
               currentBucket==lastPhase.endBucket &&
               amount==lastPhase.amount ) {
@@ -251,6 +276,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    **/
   private void createAllocations(int todayBucket, int endBucket,
                                  Inventory inv, LogisticsInventoryPG thePG) {
+
     int currentBucket = todayBucket;
     double qty = 0;
     double todayLevel, todayRefill;
@@ -270,6 +296,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
       todayRefill = findCommittedRefill(currentBucket, thePG, true);
       todayLevel = thePG.getLevel(currentBucket - 1) + todayRefill;
+      
+      /***
+       **
+
+      if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+         (thePG.getItemName().indexOf("9140002865294") != -1)) {
+        logger.error("createAllocations - bucket is "+getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+                     ", committed refill "+todayRefill+" and today's inventory level "+todayLevel);
+      }
+
+      **/
 
       // First try to fill any previous deficits
       Iterator tpIt = trailingPointers.iterator();
@@ -284,6 +321,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         // check the level
         if (todayLevel >= qty) {
           // Can completely fill known deficit
+          /***
+           **
+          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+             (thePG.getItemName().indexOf("9140002865294") != -1)) {
+            logger.error("calculateAllocations - filling deficit on day "+
+                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+                         " and the remaining qty is "+qty+" and new inventory level is "+todayLevel+" for task "+
+                         withdraw.getUID() + " task request qty " + getTaskUtils().getDailyQuantity(withdraw));               
+          }        
+          **/
+
           fillDeficit(td,currentBucket,inv,thePG);
           todayLevel = todayLevel - qty;
         } else if (todayLevel==0.0){
@@ -291,6 +339,19 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         } else {
           //this withdraw has previously had a deficit we cannot fill the deficit entirely during this bucket`
           //  leave the TaskDeficit in the same place on the queue -- it still needs to be filled with its old priority
+          
+          /****
+           ***
+
+          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+             (thePG.getItemName().indexOf("9140002865294") != -1)) {
+            logger.error("calculateAllocations - adding phase on day "+
+                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+                         " and td.remaining qty is " + qty + " today level is " + todayLevel + " setting today level to 0. This is for task " + withdraw.getUID() +  " task request daily quantity " + getTaskUtils().getDailyQuantity(withdraw ));               
+          }  
+
+          **/
+
           td.addPhase(todayLevel, currentBucket);
           todayLevel = 0.0;
           break; // nothing more to allocate
@@ -316,6 +377,20 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
           fulfillTask(withdraw,currentBucket,inv,thePG);
           todayLevel = Math.max(0.0, todayLevel - qty);
+
+          /***
+           **
+
+          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+             (thePG.getItemName().indexOf("9140002865294") != -1)) {
+            logger.error("calculateAllocations - fulfill task on day "+
+                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+                         " demand is "+qty+" and new inventory level is "+todayLevel+" for task "+
+                         withdraw.getUID() + " task qty " + getTaskUtils().getDailyQuantity(withdraw));
+          }
+          **
+          */
+
         } else {
           // can't fill this task totally -- create deficit on this task
           // if it already has a pe - rescind it
@@ -331,6 +406,22 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  //getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
 	  //}
 
+          /***
+           **
+          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+             (thePG.getItemName().indexOf("9140002865294") != -1)) {
+            logger.error("calculateAllocations - deficit for task on day "+
+                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+                         " demand is "+qty+" and new inventory level is 0.0 and provided "+todayLevel+" to "+
+                         withdraw.getUID()+ " task qty " + getTaskUtils().getDailyQuantity(withdraw) + " TD: remainingQty " + td.getRemainingQty() + " backlog " + td.backlog);
+              if(td.lastPhase != null) {
+                logger.error("And Last Phase is = " + td.lastPhase.toString(thePG));
+              }
+          }          
+
+          ***
+          **/
+          
           trailingPointers.add(td);
           // this task depletes the inventory level
           todayLevel = 0.0;
