@@ -205,7 +205,7 @@ public class LogisticsInventoryFormatter {
 		}
 		String outputStr = taskStr + getDateString(startTime,expandTimestamp) + ",";
 		outputStr = outputStr + getDateString(endTime,expandTimestamp) + ",";
-		outputStr = outputStr + TaskUtils.getQuantity(aTask,ar);
+		outputStr = outputStr + taskUtils.getQuantity(aTask,ar);
 		writeln(outputStr);
 	    }
 	    else {
