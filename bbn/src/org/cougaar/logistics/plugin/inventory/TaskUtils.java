@@ -49,7 +49,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.io.Serializable;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
@@ -205,6 +205,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
   }
 
 
+  public boolean isReadyForTransport(Task task){
+      PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.READYFORTRANSPORT);
+      return (pp != null);
+  }
+
   public boolean isMyDemandForecastProjection(Task task,String orgName) {
     PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.FOR);
     if (pp == null) {
@@ -240,6 +245,10 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   public static boolean isSupply(Task t) {
     return !isProjection(t);
+  }
+
+  public boolean isLevel2(Task t) {
+    return assetUtils.isLevel2Asset(t.getDirectObject());
   }
 
   // TASK PREFERENCE UTILS

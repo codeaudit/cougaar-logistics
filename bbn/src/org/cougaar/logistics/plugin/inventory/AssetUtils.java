@@ -30,6 +30,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.LocationSchedulePG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.plan.Relationship;
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Role;
@@ -41,7 +42,7 @@ import org.cougaar.util.TimeSpan;
 
 import java.util.*;
 
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
@@ -137,6 +138,15 @@ public class AssetUtils {
      return geolocs.elements();
    }
 
+
+
+  public boolean isLevel2Asset(Asset asset) {
+    Asset actualAsset=asset;
+    if (asset instanceof AggregateAsset) {
+      actualAsset = ((AggregateAsset) asset).getAsset();
+    }
+    return (getAssetIdentifier(actualAsset).startsWith("Level2"));
+  }
 
 }
 
