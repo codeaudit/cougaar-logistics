@@ -284,7 +284,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 //          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
         }
       } else {// wait for logOPlan
-        logger.warn("OrgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
+        logger.debug("OrgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
         return;
       }
     }
