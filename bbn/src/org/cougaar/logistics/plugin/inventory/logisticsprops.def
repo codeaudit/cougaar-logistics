@@ -63,7 +63,13 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	boolean getFailuresFlag(); \
 	void setFailuresFlag(boolean value); \
 	void Test(); \
-	void takeSnapshot(Inventory inventory);
+	void takeSnapshot(Inventory inventory); \
+	ArrayList getProjWithdrawList(); \
+	ArrayList getWithdrawList(); \
+	ArrayList getProjSupplyList(); \
+	ArrayList getSupplyList(); \
+	Schedule  getBufferedCritLevels(); \
+	Schedule  getBufferedInvLevels(); 
 
 ;;
 ;; examples

@@ -38,6 +38,7 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Schedule;
@@ -375,6 +376,24 @@ public class LogisticsInventoryFormatter {
 	}
 	catch(IOException e) {
 	    logger.error("Exception when trying to flush xml stream." + e.toString());
+	}
+    }
+
+    public void logToXMLOutput(Inventory inv,
+			       long aCycleStamp) {
+
+	LogisticsInventoryPG logInvPG=null;
+	logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+	if(logInvPG != null) {
+	    logToXMLOutput(logInvPG.getResource(),
+			   logInvPG.getOrg(),
+			   logInvPG.getWithdrawList(),
+			   logInvPG.getProjWithdrawList(),
+			   logInvPG.getSupplyList(),
+			   logInvPG.getProjSupplyList(),
+			   logInvPG.getBufferedCritLevels(),
+			   logInvPG.getBufferedInvLevels(),
+			   aCycleStamp);
 	}
     }
 
