@@ -32,11 +32,10 @@
 	<property environment="env"/>
 
 	<property name="lib" value="${env.COUGAAR_INSTALL_PATH}/lib" />
+	<property name="clib" value="${env.COUGAAR_INSTALL_PATH}/clib" />
 
 	<!-- Third party jar files go in CIP/sys -->
 	<property name="sys" value="${env.COUGAAR_INSTALL_PATH}/sys" />
-	<property name="other" value="${env.COUGAAR_INSTALL_PATH}/other" />
-
 	<property name="src" value="./src" />
 	<property name="testsrc" value="./regress" />
 	<property name="examples" value="./examples" />
@@ -91,7 +90,7 @@
 	   <pathelement location="${sys}/xerces.jar" />
 	   <pathelement location="${sys}/openmap.jar" />
 	   <pathelement location="${sys}/fesi-111.jar" />
-	   <!-- <pathelement location="${sys}/jcchart451K.jar" /> -->
+	   <pathelement location="${clib}/build.jar" />
 	   <pathelement location="${sys}/jcchart.jar" />
 	   <pathelement location="${sys}/servlet.jar" />
 	</path>
@@ -120,7 +119,7 @@
 
 	<!-- Define paths for doing codegen stuff -->
 	<path id="codegen.path">
-	  <pathelement path="${lib}/build.jar"/>
+	  <pathelement path="${clib}/build.jar"/>
 	  <path refid="${module}.classpath"/>
 	</path>
 	<property name="genpath" refid="codegen.path"/>
