@@ -28,6 +28,18 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.util.log.Logger;
 
+/** 
+ * <pre>
+ * A utility superclass for all the sub-modules of the Inventory Plugin
+ *
+ * This superclass of all the components of the InventoryPlugin contains
+ * utility functions attained from the back pointer to the InventoryPlugin.
+ * Common utility functionality to all the components such as blackboard
+ * activity go here.
+ *
+ *
+ **/
+
 public class InventoryModule {
 
     protected Logger logger;

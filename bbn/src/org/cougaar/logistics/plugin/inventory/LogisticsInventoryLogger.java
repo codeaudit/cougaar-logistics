@@ -24,15 +24,35 @@ import java.util.GregorianCalendar;
 import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 
 import org.cougaar.planning.ldm.plan.Task;
 
+import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 
-
-
+/** 
+ * <pre>
+ * 
+ * The LogisticsInventoryLogger is a specialized logger seperate from
+ * the infrastructure logging facility that logs to files the special
+ * csv files for Inventory testing.
+ *
+ * There is a one to one correspondance between these and the inventories
+ * managed by an inventory plugin.   Most of the logging is invoked by
+ * the LogisticsInventoryBG.  This is the keeper of most of the data
+ * structures associated with an Inventory asset and this is the info
+ * we want to log.
+ *
+ * 
+ *
+ * @see LogisticsInventoryBG
+ *
+ **/
 
 public class LogisticsInventoryLogger {
 
@@ -45,12 +65,15 @@ public class LogisticsInventoryLogger {
     protected FileWriter writer;
     protected TaskUtils taskUtils;
 
-    public LogisticsInventoryLogger(Asset invAsset, InventoryPlugin invPlugin){
+    public LogisticsInventoryLogger(Asset invAsset, 
+				    Organization anOrg, 
+				    InventoryPlugin invPlugin){
+
 	logger = invPlugin.getLoggingService(this);
 	initializeClass();
 	taskUtils = invPlugin.getTaskUtils();
 	//Initialize the file to COUGAAR_WORKSPACE\inventory\organizationid\datestamp\NSNinv.csv
-	String orgId = invPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
 	String pathId = baseDir + File.separator + "inventory" + File.separator + orgId + File.separator + datestamp;
 	String fileId = pathId + File.separator + invAsset.getItemIdentificationPG().getItemIdentification() + "inv.csv";
 	File csvFile = new File(fileId);
@@ -87,8 +110,40 @@ public class LogisticsInventoryLogger {
 		baseDir = ".";
 	    }
 	}
-								      
     }
+
+    public void logToCSVFile(ArrayList dueOuts){
+	logDueOuts(dueOuts);
+	incrementCycleCtr();
+    }
+    
+    protected void logDueOuts(ArrayList dueOuts) {
+	write("DUE_OUTS:START");
+	writeNoCtr("CYCLE,END TIME,VERB,FOR,QTY");
+	for(int i=0; i < dueOuts.size(); i++) {
+	    ArrayList bin = (ArrayList) dueOuts.get(i);
+	    write("Bin #" + i);
+	    for(int j=0; j < bin.size(); j++) {
+		Task aDueOut = (Task) bin.get(j);
+		Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
+		String dueOutStr = endDate.toString() + "," + aDueOut.getVerb() + ",";
+		PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
+		Object org;
+		    if (pp_for != null) {
+			org = pp_for.getIndirectObject();
+			dueOutStr = dueOutStr + org + ",";
+		    }
+		    if(taskUtils.isSupply(aDueOut)) {
+			dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
+		    }
+		    //We have to get the Rate if its a projection....MWD
+		    
+		    write(dueOutStr);
+	    }
+	}
+	write("DUE_OUTS:END");
+    } 
+
 
     public void write(String csvString) {
 	if(writer != null)

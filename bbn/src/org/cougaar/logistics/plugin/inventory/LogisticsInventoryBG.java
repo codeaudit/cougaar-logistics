@@ -79,7 +79,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     timeZero = (int)(startTime/MSEC_PER_BUCKET);
     logger = parentPlugin.getLoggingService(this);
     if(false) {
-	csvLogger = new LogisticsInventoryLogger(myPG.getResource(),parentPlugin);
+	csvLogger = new LogisticsInventoryLogger(myPG.getResource(),parentPlugin.getMyOrganization(),parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
     logger.debug("Start day: "+TimeUtils.dateString(today));
@@ -164,37 +164,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public void logAllToCSVFile() {
       if(csvLogger != null) {
-	  logDueOutsToCSVFile();
-	  csvLogger.incrementCycleCtr();
-      }
-  }
-
-  private void logDueOutsToCSVFile() {
-      if(csvLogger != null) {
-	  csvLogger.write("DUE_OUTS:START");
-	  csvLogger.writeNoCtr("CYCLE,END TIME,VERB,FOR,QTY");
-	  for(int i=0; i < DueOut.size(); i++) {
-	      ArrayList bin = (ArrayList) DueOut.get(i);
-	      csvLogger.write("Bin #" + i);
-	      for(int j=0; j < bin.size(); j++) {
-		  Task aDueOut = (Task) bin.get(j);
-		  Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
-         	  String dueOutStr = endDate.toString() + "," + aDueOut.getVerb() + ",";
-		  PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
-		  Object org;
-		  if (pp_for != null) {
-		      org = pp_for.getIndirectObject();
-		      dueOutStr = dueOutStr + org + ",";
-		  }
-		  if(taskUtils.isSupply(aDueOut)) {
-		      dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
-		  }
-		  //We have to get the Rate if its a projection....MWD
-
-		  csvLogger.write(dueOutStr);
-	      }
-	  }
-	  csvLogger.write("DUE_OUTS:END");
+	  csvLogger.logToCSVFile(DueOut);
       }
   }
 
