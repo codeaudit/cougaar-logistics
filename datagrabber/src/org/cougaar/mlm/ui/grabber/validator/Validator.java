@@ -37,9 +37,13 @@ import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 
 import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.DatabaseMetaData;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Contains all the tests and knows how to kick them off
@@ -381,6 +385,13 @@ public class Validator{
     return getTest(test).getResult(l, s, run);
   }
 
+  public int getTestFailureLevel(int test){
+    if (isTestCategory(test))
+      return Test.RESULT_OK;
+	
+    return getTest(test).failureLevel();
+  }
+
   public String getTestResultString(Logger l, Statement s, int run, int test){
     return Test.RESULTS[getTestResult(l, s,run,test)];
   }
@@ -412,6 +423,10 @@ public class Validator{
 
   public boolean isTestCategory(int test){
     return (test <= ALL_TESTS);
+  }
+
+  public int getNumTestsOfType (int testtype) {
+    return getTestIndicesForTestType (testtype).size();
   }
 
   /*
