@@ -506,6 +506,7 @@
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
+		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
 		<zip zipfile="Logistics_bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
