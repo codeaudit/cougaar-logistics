@@ -212,7 +212,15 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
     // if the incoming task is already a low fidelity task, we don't need to do anything to it
     if (prepHelper.hasPrepNamed(parentTask, GLMTransConst.LOW_FIDELITY)) {
       // pass through
-      Task subTask = makeTask (parentTask, parentTask.getDirectObject());
+      Asset lowFiAsset = parentTask.getDirectObject();
+      Task subTask = makeTask (parentTask, lowFiAsset);
+      NewLowFidelityAssetPG lowFiPG = 
+	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
+      lowFiPG.setOriginalAsset (lowFiAsset);
+      attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
+      if (isDebugEnabled()) 
+	debug (".getSubtasks - processing task " + parentTask.getUID () + 
+	       " by attaching low fi pg to it's d.o. - " + lowFiAsset);
       childTasks.addElement (subTask);
     }
     else if (mode.getValue ().equals(LOW_FIDELITY)) {
