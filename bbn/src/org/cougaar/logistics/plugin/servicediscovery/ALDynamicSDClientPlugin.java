@@ -41,13 +41,16 @@ import org.cougaar.util.UnaryPredicate;
 //import org.cougaar.glm.ldm.Constants;
 
 import org.cougaar.servicediscovery.SDFactory;
-import org.cougaar.servicediscovery.description.TimeInterval;
+
+import org.cougaar.servicediscovery.description.LineageEchelonScorer;
+import org.cougaar.servicediscovery.description.LineageListWrapper;
 import org.cougaar.servicediscovery.description.MMRoleQuery;
 import org.cougaar.servicediscovery.description.ScoredServiceDescription;
 import org.cougaar.servicediscovery.description.ServiceContract;
 import org.cougaar.servicediscovery.description.ServiceDescription;
 import org.cougaar.servicediscovery.description.ServiceInfo;
 import org.cougaar.servicediscovery.description.ServiceRequest;
+import org.cougaar.servicediscovery.description.TimeInterval;
 import org.cougaar.servicediscovery.plugin.SDClientPlugin;
 import org.cougaar.servicediscovery.transaction.MMQueryRequest;
 import org.cougaar.servicediscovery.transaction.ServiceContractRelay;
@@ -196,12 +199,28 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	Collection uncoveredTimeIntervals = 
 	  requestedTimeInterval.subtractInterval(providedTimeInterval);
 
-	UnaryPredicate servicePredicate = 
-	  new ServiceRequestPredicate(getAgentIdentifier().toString(),
-				      srh, uncoveredTimeIntervals);
+	Role role = relay.getServiceContract().getServiceRole();
+	String minimumEchelon = getMinimumEchelon(role);
+	
+	LineageListWrapper commandListWrapper = getCommandLineageList();
+	
+	if (commandListWrapper != null) {
+	  
+	  LineageEchelonScorer serviceScorer = 
+	    new ALLineageEchelonScorer(commandListWrapper,
+				       getMinimumEchelon(role),
+				       role,
+				       getAgentIdentifier().toString(),
+				       srh, 
+				       uncoveredTimeIntervals);
 
-        queryServices(relay.getServiceContract().getServiceRole(), null,
-		      servicePredicate);
+	  queryServices(role, serviceScorer);
+	} else {
+	  myLoggingService.error(getAgentIdentifier() + 
+				 " handleChangedServiceContractRelays: " +
+				 " no COMMAND LineageList on blackboard." + 
+				 " Unable to generate MMRoleQuery for " + role);
+	}
         //publishRemove(relay);
       } else if ((relay.getClient().equals(getSelfOrg())) &&
 		 (timeIntervalRequestedCompletelySatisfied(relay))) {
@@ -625,64 +644,66 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     }
   }
     
-  protected static class ServiceRequestPredicate implements UnaryPredicate {
+  protected static class ALLineageEchelonScorer extends LineageEchelonScorer {
     private static Logger logger = 
-      Logging.getLogger(ServiceRequestPredicate.class);
+      Logging.getLogger(ALLineageEchelonScorer.class);
 
     private transient ServiceRequestHistory serviceRequestHistory;
     private transient Collection uncoveredTimeIntervals;
     private transient String clientName;
 
-    public ServiceRequestPredicate() {
+    public ALLineageEchelonScorer() {
+      super();
     }
 
-    public ServiceRequestPredicate(String cn,
-				   ServiceRequestHistory srh,
-				   Collection uti) {
+    public ALLineageEchelonScorer(LineageListWrapper lineageListWrapper,
+				  String minimumEchelon,
+				  Role role,
+				  String cn,
+				  ServiceRequestHistory srh,
+				  Collection uti) {
+      super(lineageListWrapper, minimumEchelon, role);
       clientName = cn;
       uncoveredTimeIntervals = uti;
       serviceRequestHistory = srh;
     }
 
-    public boolean execute(Object o) {
+    public int scoreServiceInfo(ServiceInfo serviceInfo) {
 
-      if (o instanceof ServiceInfo) {
-	if (serviceRequestHistory == null) {
-	  // Nothing to evaluate against
-	  return true;
-	}
-
-	String providerName = ((ServiceInfo) o).getProviderName();
-
-	for (Iterator iterator = uncoveredTimeIntervals.iterator();
-	     iterator.hasNext();) {
-	  TimeInterval timeInterval = (TimeInterval) iterator.next();
-
-	  if (!serviceRequestHistory.containsRequest(providerName, 
-						     timeInterval)) {
-	    if (logger.isDebugEnabled()) {
-	      logger.debug(clientName + " ServiceRequestPredicate passed " + 
-			   providerName +
-			   " for " + 
-			   new Date(timeInterval.getStartTime()) +
-			   " to " + 
-			   new Date(timeInterval.getEndTime()));
-	    }
-	    return true;
-	  } 
-	} 
-	
-	if (logger.isDebugEnabled()) {
-	  logger.debug(clientName + 
-		       "ServiceRequestPredicate returned false for " + 
-		       providerName);
-	}
-	// All intervals previously asked for
-	return false;
-      } else {
-	return false;
+      if (serviceRequestHistory == null) {
+	// Nothing to evaluate against
+	return super.scoreServiceInfo(serviceInfo);
       }
+      
+      String providerName = serviceInfo.getProviderName();
+      
+      for (Iterator iterator = uncoveredTimeIntervals.iterator();
+	   iterator.hasNext();) {
+	TimeInterval timeInterval = (TimeInterval) iterator.next();
+	
+	if (!serviceRequestHistory.containsRequest(providerName, 
+						   timeInterval)) {
+	  if (logger.isDebugEnabled()) {
+	    logger.debug(clientName + " ALLineageEchelonScorer passed " + 
+			 providerName +
+			 " for " + 
+			 new Date(timeInterval.getStartTime()) +
+			 " to " + 
+			 new Date(timeInterval.getEndTime()));
+	  }
+	  return super.scoreServiceInfo(serviceInfo);
+	} 
+      } 
+	
+      if (logger.isDebugEnabled()) {
+	logger.debug(clientName + 
+		     "ALLineageEchelonScorer returned -1 for " + 
+		     providerName);
+      }
+      // All intervals previously asked for
+      return -1;
     }
+
   }
   
   /** returns null if start/end time preference not specified **/
