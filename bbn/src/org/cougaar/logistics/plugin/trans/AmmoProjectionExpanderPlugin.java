@@ -20,6 +20,8 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 import java.util.Vector;
 import java.util.Calendar;
@@ -37,6 +39,7 @@ import org.cougaar.planning.ldm.plan.TimeAspectValue;
 import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.Workflow;
 
 import org.cougaar.core.plugin.PluginBindingSite;
 
@@ -46,6 +49,10 @@ import org.cougaar.glm.packer.Geolocs;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.NewPhysicalPG;
+import org.cougaar.glm.ldm.asset.ContentsPG;
+import org.cougaar.glm.ldm.asset.NewContentsPG;
+import org.cougaar.glm.ldm.asset.NewMovabilityPG;
+import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.planning.ldm.measure.*;
 
 import org.cougaar.glm.util.GLMPrepPhrase;
@@ -77,6 +84,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public long CHUNK_DAYS = 30;
   public static long MILLIS_PER_DAY = 1000*60*60*24;
   public static long SECS_PER_DAY = 60*60*24;
+  public static final String AMMO_CATEGORY_CODE = "MBB";
+  public static final String MILVAN_NSN = "NSN/8115001682275";
+  public static final double PACKING_LIMIT = 13.9; /* short tons */
+  private static Asset MILVAN_PROTOTYPE = null;
+  private static final String UNKNOWN = "unknown";
 
   public void localSetup () {
     super.localSetup ();
@@ -138,11 +150,20 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (window - (numSubtasks * CHUNK_DAYS*MILLIS_PER_DAY) != 0)
       numSubtasks++;
 
-    if (isInfoEnabled ())
+    if (numSubtasks < 1) {
+      error (getName () + ".getSubtasks - task " + parentTask.getUID () + 
+	     " will create no subtasks?  Window was " + originalWindowInDays + " days");
+    }
+
+    if (isInfoEnabled ()) {
       info (getName () + ".getSubtasks - task " + parentTask.getUID () + 
 	     " from " + readyAt + 
 	     " to " + best + 
 	     " will produce " + numSubtasks + " subtasks.");
+    }
+    
+    String unit = (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR)) ?
+      (String) prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR) : "null";
 
     // create one subtask for every chunk set of days, with an asset that is the total
     // delivered over the period = days*ratePerDay
@@ -151,9 +172,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     int targetQuantity = (int) (((double) (window/1000l))*ratePerSec);
     Date lastBestDate = readyAt;
 
-    if (isInfoEnabled ())
+    if (isInfoEnabled ()) {
       info (getName () + ".getSubtasks - task " + parentTask.getUID () + " target quantity " + targetQuantity + 
 	    " windowInSec " + window/1000l + " rate/sec " + ratePerSec);
+    }
 
     for (int i = 0; i < (int) numSubtasks; i++) {
       boolean onLastTask = (window/MILLIS_PER_DAY) < CHUNK_DAYS;
@@ -181,18 +203,19 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	       " gets a quantity of zero, ratePerDay was " + ratePerDay + 
 	       " chunk days " +daysToChunk);
       }
+      
+      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
+      //      AggregateAsset deliveredAsset = createDeliveredAsset (parentTask, supplyAsset, quantity);
+      totalQuantity += quantity; //deliveredAsset.getQuantity ();
 
-      AggregateAsset deliveredAsset = createDeliveredAsset (parentTask, supplyAsset, quantity);
-      totalQuantity += deliveredAsset.getQuantity ();
-
-      if (deliveredAsset.getQuantity () != quantity) {
-	error (".getSubtasks - task " + parentTask.getUID () + " quantities don't match");
-      }
+      //      if (deliveredAsset.getQuantity () != quantity) {
+      //	error (".getSubtasks - task " + parentTask.getUID () + " quantities don't match");
+      //      }
 
       // set item id pg to show it's a reservation, and not a normal task's asset
 
       ItemIdentificationPG itemIDPG = (ItemIdentificationPG) supplyAsset.getItemIdentificationPG();
-      NewItemIdentificationPG newItemIDPG = (NewItemIdentificationPG) PropertyGroupFactory.newItemIdentificationPG();
+      //      NewItemIdentificationPG newItemIDPG = (NewItemIdentificationPG) PropertyGroupFactory.newItemIdentificationPG();
       String itemID = itemIDPG.getItemIdentification();
       String itemNomen = itemIDPG.getNomenclature ();
 
@@ -203,14 +226,17 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       if (itemNomen == null) {
 	TypeIdentificationPG typeID = supplyAsset.getTypeIdentificationPG ();
-	itemID = typeID.getNomenclature();
+	itemNomen = typeID.getNomenclature();
       }
 
-      newItemIDPG.setItemIdentification (itemID    + "_Reservation_" + total);
-      newItemIDPG.setNomenclature       (itemNomen + "_Reservation_" + (total++));
-      deliveredAsset.setItemIdentificationPG (newItemIDPG);
+      //      newItemIDPG.setItemIdentification (itemID    + "_Reservation_" + total);
+      //      newItemIDPG.setNomenclature       (itemNomen + "_Reservation_" + (total++));
+      //      deliveredAsset.setItemIdentificationPG (newItemIDPG);
     
-      Task subTask = makeTask (parentTask, deliveredAsset);
+      GLMAsset milvan = makeMilvan ();
+      addContentsInfo (milvan, itemNomen, itemID, unit, massInKGs);
+
+      Task subTask = makeTask (parentTask, milvan);//deliveredAsset);
       long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
       if (bestTime > best.getTime()) {
 	if (isInfoEnabled())
@@ -234,11 +260,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
       prepHelper.removePrepNamed (subTask, Constants.Preposition.REFILL);
       prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
+
+      if (isInfoEnabled())
+	info (getName () + " publishing reservation " + subTask.getUID() + 
+	      " for " + itemNomen + 
+	      " from " + lastBestDate + " to " + new Date(bestTime) + " weight " + massInKGs + " kgs.");
+
       lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
-
-      if (isWarnEnabled())
-	warn (getName () + " publishing reservation for " + itemNomen + " from " + lastBestDate + " to " + new Date(bestTime));
     }
 
     // post condition
@@ -249,6 +278,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	      " = window " + originalWindowInDays + 
 	      " * ratePerDay " + ratePerDay);
     }
+
+    if (isInfoEnabled())
+      info (getName () + " returning " + childTasks.size() + " subtasks for " + parentTask.getUID());
 
     return childTasks;
   }
@@ -332,9 +364,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       info (getName () + ".handleTask - task " + t.getUID() + " had p.e. " + t.getPlanElement().getUID());
     if (t.getPlanElement () instanceof Expansion) {
       addToEstimatedAR (t.getPlanElement (), ratePerSec);
-      if (isWarnEnabled())
-	warn (getName () + ".handleTask " + t.getUID() + " in " + t.getWorkflow().getUID()+ 
-	      " p.e. " +t.getPlanElement ().getUID());
+      if (isInfoEnabled()) {
+	Workflow tasksWorkflow = t.getWorkflow();
+	Workflow peWorkflow = ((Expansion)t.getPlanElement()).getWorkflow();
+	info (getName () + ".handleTask " + t.getUID() + " in " + ((tasksWorkflow != null) ? tasksWorkflow.getUID().toString() : "null wf?")+ 
+	      " p.e. " +t.getPlanElement ().getUID() + " p.e. wf. " + ((peWorkflow != null) ? peWorkflow.getUID().toString() : " null p.e. wf?"));
+      }
     } 
     else if (isWarnEnabled ()) 
       warn (getName () + ".handleTask - task " + t.getUID() + " had no p.e.???");
@@ -389,6 +424,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
           cpe.getTask().getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
 
         AspectValue[] aspectValues = cpe.getEstimatedResult().getAspectValueResults();
+
 	AspectValue [] copy = new AspectValue [aspectValues.length+1];
 	System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
 	copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, prefValue);
@@ -399,8 +435,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
 	cpe.setEstimatedResult(correctedAR);          
 
-        if (isWarnEnabled()) 
-          warn (getName () + " : publish changing task " + cpe.getTask ().getUID ());
+        if (isInfoEnabled()) 
+          info (getName () + " : publish changing task " + cpe.getTask ().getUID ());
 
 	blackboard.publishChange(cpe);
       }
@@ -489,4 +525,125 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return true;                // Found a match for every aspect
   }
 
+  /**
+   * An ancillary method that creates an asset that represents a MILVAN 
+   * (military container) carrying ammunition
+   */
+  protected GLMAsset makeMilvan() {
+    
+    if (MILVAN_PROTOTYPE == null) {
+      MILVAN_PROTOTYPE = getLDMService().getLDM().getPrototype(MILVAN_NSN);
+      
+      if (MILVAN_PROTOTYPE == null) {
+        error("AmmoTransport: Error! Unable to get prototype for" +
+	      " milvan NSN -" + MILVAN_NSN);
+        return null;
+      }
+    }
+    
+    String itemID = makeMilvanID();
+    Container milvan = 
+      //      (Container)assetHelper.createInstance(getLDMService().getLDM(), MILVAN_PROTOTYPE, itemID);
+      (Container)getLDMService().getLDM().getFactory().createInstance(MILVAN_PROTOTYPE, itemID);
+    
+    // AMMO Cargo Code
+    NewMovabilityPG movabilityPG = 
+      PropertyGroupFactory.newMovabilityPG(milvan.getMovabilityPG());
+    movabilityPG.setCargoCategoryCode(AMMO_CATEGORY_CODE);
+    milvan.setMovabilityPG(movabilityPG);
+    
+    // Milvan Contents
+    NewContentsPG contentsPG = 
+      PropertyGroupFactory.newContentsPG();
+    milvan.setContentsPG(contentsPG);
+    
+    // Unique Item Identification
+    NewItemIdentificationPG itemIdentificationPG = 
+      (NewItemIdentificationPG)milvan.getItemIdentificationPG();
+    //    String itemID = makeMilvanID();
+    itemIdentificationPG.setItemIdentification(itemID); // redundant?
+    itemIdentificationPG.setNomenclature("Milvan");
+    itemIdentificationPG.setAlternateItemIdentification(itemID);
+    milvan.setItemIdentificationPG(itemIdentificationPG);
+
+    return milvan;
+  }
+  
+  protected String makeMilvanID() {
+    return new String(((PluginBindingSite)getBindingSite()).getAgentIdentifier() +
+                      ":Reserved_Milvan" + getCounter());
+  }
+  
+  private static int COUNTER = 0;
+
+  private static synchronized long getCounter() {
+    return COUNTER++;
+  }
+
+  protected void addContentsInfo(GLMAsset container, String nomen, String typeID, String unit, double massInKGs) {
+    List typeIDs = new ArrayList();
+    List nomenclatures = new ArrayList();
+    List weights = new ArrayList();
+    List receivers = new ArrayList();
+
+    /*    for (Iterator iterator = agglist.iterator(); iterator.hasNext();) {
+         Task task = (Task) iterator.next();
+          TypeIdentificationPG typeIdentificationPG = 
+            toAdd.getTypeIdentificationPG();
+      String typeID;
+      String nomenclature;
+      if (typeIdentificationPG != null) {
+        typeID = typeIdentificationPG.getTypeIdentification();
+        if ((typeID == null) || (typeID.equals(""))) {
+          typeID = UNKNOWN;
+        } 
+        
+        nomenclature = typeIdentificationPG.getNomenclature();
+        if ((nomenclature == null) || (nomenclature.equals(""))) {
+          nomenclature = UNKNOWN;
+        }
+      } else {
+        typeID = UNKNOWN;
+        nomenclature = UNKNOWN;
+      }
+    */
+      typeIDs.add(typeID);
+      nomenclatures.add(nomen);
+      
+      Mass mass = Mass.newMass(massInKGs, Mass.KILOGRAMS); 
+      weights.add(mass);
+      
+      /*
+      Object receiver = 
+        task.getPrepositionalPhrase(Constants.Preposition.FOR);
+      String receiverID;
+        
+      // Add field with recipient
+      if ((receiver == null) || !(receiver instanceof Asset)) {
+        receiverID = UNKNOWN;
+      } else {
+        ItemIdentificationPG itemIdentificationPG = 
+          ((Asset) receiver).getItemIdentificationPG();
+        if ((itemIdentificationPG == null) ||
+            (itemIdentificationPG.getItemIdentification() == null) ||
+            (itemIdentificationPG.getItemIdentification().equals(""))) {
+          receiverID = UNKNOWN;
+        } else {
+          receiverID = itemIdentificationPG.getItemIdentification();
+        }
+      }
+      receivers.add(receiverID);
+      */
+      receivers.add(unit);
+      //    }
+    
+    // Contents
+    NewContentsPG contentsPG = 
+      PropertyGroupFactory.newContentsPG();
+    contentsPG.setNomenclatures(nomenclatures);
+    contentsPG.setTypeIdentifications(typeIDs);
+    contentsPG.setWeights(weights);
+    contentsPG.setReceivers(receivers);
+    container.setContentsPG(contentsPG);
+  }
 }
