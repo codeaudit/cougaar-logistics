@@ -56,7 +56,7 @@ public class CargoDimensionTest extends AbstractCargoTest implements Graphable {
    * These constants are from :
    *	  http://www.wrsc.usace.army.mil/ndc/metric.htm
    */
-  public static final double METRIC_TO_SHORT_TON = 1.1023;
+  public static final double METRIC_TO_SHORT_TON = 1.1023113109;
   public static final double SHORT_TON_TO_METRIC = 0.90718;
   
   //Variables:
