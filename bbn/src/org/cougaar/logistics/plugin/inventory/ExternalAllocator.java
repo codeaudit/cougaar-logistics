@@ -46,6 +46,7 @@ import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 
+
 public class ExternalAllocator extends InventoryModule implements AllocatorModule {
 
     Role         providerRole;
@@ -205,25 +206,23 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
     Iterator refill_list = sub.iterator(); // ###
     while (refill_list.hasNext()) {
       alloc = (Allocation) refill_list.next();
-      //      refill = (Task)refill_list.next();
       refill = alloc.getTask();
       asset = (Asset)refill.getDirectObject();
       inventory = inventoryPlugin.findOrMakeInventory(asset);
-      if (inventory != null) {
-        logInvPG = (LogisticsInventoryPG)
-          inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-        if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          logInvPG.updateRefillProjection(refill);
-        } else {
-          logInvPG.updateRefillRequisition(refill);
-        }
-      } // else { this is a pass-thru }
         
       if (PluginHelper.updatePlanElement(alloc)) {
         inventoryPlugin.publishChange(alloc);
-        if (inventory != null) {
+        if (inventory != null) { // else { this is a pass-thru }
           //System.out.println("ex all publish changing and added to AA's inventory list " + logInvPG.getResource());
           backwardFlowInventories.add(inventory);
+
+          logInvPG = (LogisticsInventoryPG)
+            inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+          if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+            logInvPG.updateRefillProjection(refill);
+          } else {
+            logInvPG.updateRefillRequisition(refill);
+          }
         }
       }
     }
