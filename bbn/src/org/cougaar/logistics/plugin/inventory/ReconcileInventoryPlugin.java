@@ -633,7 +633,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     MITopExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new MITopExpansionPredicate());
     DetReqInvExpansionSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
     commStatusSub = (IncrementalSubscription) blackboard.subscribe(new CommStatusPredicate());
-    recDispositions = (IncrementalSubscription) blackboard.subscribe(new RecDispositionsPredicate());
+    recDispositions = (IncrementalSubscription) blackboard.subscribe(new RecDispositionsPredicate(supplyType, taskUtils));
 
     if (getAgentIdentifier() == null && logger.isErrorEnabled()) {
       logger.error("No agentIdentifier ... subscriptions need this info!!  In plugin: " + this);
@@ -960,10 +960,18 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   }
 
   static class RecDispositionsPredicate implements UnaryPredicate {
+    String type_;
+    TaskUtils taskUtils;
+
+    public RecDispositionsPredicate(String type, TaskUtils aTaskUtils) {
+      type_ = type;
+      taskUtils = aTaskUtils;
+    }
+
     public boolean execute(Object o) {
       if (o instanceof Disposition) {
         Task task = ((Disposition) o).getTask();
-        if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
+        if (task.getVerb().equals(Constants.Verb.SUPPLY) && taskUtils.isDirectObjectOfType(task, type_)) {
           return true;
         }
       }
