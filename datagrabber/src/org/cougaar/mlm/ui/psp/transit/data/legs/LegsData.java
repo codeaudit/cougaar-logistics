@@ -58,6 +58,7 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
   //Tags:
   public static final String NAME_TAG = "Legs";
   boolean useCompression = true;
+  boolean debug = false;
   //Attr:
 
   //Variables:
@@ -245,7 +246,8 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
       compresser.finish();
       int compressedDataLength = compresser.deflate(output);
 
-      System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
+      if (debug)
+	System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
 
       objectOutput.writeInt (compressedDataLength); // write compressed length
       objectOutput.writeInt (chars.length);         // write uncompressed length
@@ -273,7 +275,8 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
      * to take the fields it needs from the buffers.
      */
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    System.err.println ("readExternal.");
+    if (debug)
+      System.out.println ("readExternal.");
 
     int numLegs = in.readInt ();
 
@@ -349,9 +352,10 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
       int compressedDataLength   = input.readInt (); // read length
       int uncompressedDataLength = input.readInt (); // uncompressed length
 
-      System.err.println ("inflateCharArray - inflating " + 
-			  compressedDataLength + " bytes, uncompressed " + 
-			  uncompressedDataLength);
+      if (debug)
+	System.out.println ("inflateCharArray - inflating " + 
+			    compressedDataLength + " bytes, uncompressed " + 
+			    uncompressedDataLength);
 
       byte [] output = new byte [compressedDataLength];
       input.readFully (output, 0, compressedDataLength);

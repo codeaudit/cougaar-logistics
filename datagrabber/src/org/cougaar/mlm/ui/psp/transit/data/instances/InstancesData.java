@@ -392,7 +392,8 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
       compresser.finish();
       int compressedDataLength = compresser.deflate(output);
 
-      System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
+      if (debug)
+	System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
 
       objectOutput.writeInt (compressedDataLength); // write compressed length
       objectOutput.writeInt (chars.length);         // write uncompressed length
@@ -413,9 +414,10 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
       int compressedDataLength   = input.readInt (); // read length
       int uncompressedDataLength = input.readInt (); // uncompressed length
 
-      System.err.println ("inflateCharArray - inflating " + 
-			  compressedDataLength + " bytes, uncompressed " + 
-			  uncompressedDataLength);
+      if (debug)
+	System.out.println ("inflateCharArray - inflating " + 
+			    compressedDataLength + " bytes, uncompressed " + 
+			    uncompressedDataLength);
 
       byte [] output = new byte [compressedDataLength];
       input.readFully (output, 0, compressedDataLength);
