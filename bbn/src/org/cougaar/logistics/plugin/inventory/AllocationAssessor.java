@@ -522,7 +522,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       } else {
 	  // projection... set start and end to failed_time
 	  aspectTypes = new int[]{AspectType.START_TIME, 
-				  AspectType.START_TIME, AlpineAspectType.DEMANDRATE};
+				  AspectType.END_TIME, AlpineAspectType.DEMANDRATE};
 	  double qty = PluginHelper.getPreferenceBestValue(task, 
 							   AlpineAspectType.DEMANDRATE);
 	  results = new double[]{failed_time, failed_time, qty};
