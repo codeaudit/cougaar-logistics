@@ -926,12 +926,12 @@ public class InventoryPlugin extends ComponentPlugin {
       getBlackboardService().openTransaction();
       OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
       OMCRangeList rangeList = new OMCRangeList (level2Range);
-      publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
+      publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON+"_"+supplyType, rangeList, 
 							 LEVEL_2_TIME_HORIZON_DEFAULT));
 
       OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
       rangeList = new OMCRangeList (level6Range);
-      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
+      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON+"_"+supplyType, rangeList,
 							 LEVEL_6_TIME_HORIZON_DEFAULT));
     } catch (Exception e) {  
       logger.error (getBindingSite().getAgentIdentifier() + " got exception creating operating modes.", e); 
