@@ -41,7 +41,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	void removeWithdrawProjection(Task task); \
 	void removeWithdrawRequisition(Task task); \
 	void addRefillRequisition(Task task); \
-	int getLastRefillRequisitionBucket(); \
+	int getLastWithdrawBucket(); \
 	void addRefillProjection(Task task); \
 	void removeRefillProjection(Task task); \
 	void removeRefillRequisition(Task task); \
