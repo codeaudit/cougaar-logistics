@@ -521,7 +521,7 @@ public class LogisticsInventoryFormatter {
     }
   }
 
-  protected static int getIndexForType(int[] types, int type) {
+  public static int getIndexForType(int[] types, int type) {
     for (int ii = 0; ii < types.length; ii++) {
       if (types[ii] == type) {
         return ii;
