@@ -292,7 +292,7 @@ public class DGPSPInstanceConnection extends DGPSPConnection
   public class InstanceRunResult extends SuccessRunResult{
     private Set manifestUIDs;
     public InstanceRunResult(int id, int runID){
-      super(id,runID);
+      super(id,runID,getSimpleName(),getClusterName());
       this.manifestUIDs=new HashSet(89);
     }
     public void addManifestUID(UID uid){

@@ -73,9 +73,11 @@ public abstract class DGPSPConnection extends PSPConnection {
   //Gets:
   protected RunResult prepResult(DeXMLable obj){
     setStatus("Starting");
-    RunResult rr = new SuccessRunResult(getID(),getRunID());
+    RunResult rr = new SuccessRunResult(getID(),getRunID(),getSimpleName(),getClusterName());
     setStatus("Done");
-    logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
+    if (isMinorEnabled()) {
+      logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
+    }
     return rr;
   }
 
