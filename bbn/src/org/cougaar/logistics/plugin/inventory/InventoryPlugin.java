@@ -257,6 +257,7 @@ public class InventoryPlugin extends ComponentPlugin {
 
     if ((detReqHandler.getDetermineRequirementsTask(aggMILSubscription) != null) &&
 	(logOPlan != null)) {
+      addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
       boolean touchedRemovedProjections = 
 	supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
@@ -423,7 +424,6 @@ public class InventoryPlugin extends ComponentPlugin {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
-    addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
     inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
