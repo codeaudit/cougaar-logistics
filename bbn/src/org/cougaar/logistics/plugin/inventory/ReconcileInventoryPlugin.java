@@ -140,6 +140,12 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return supplyTaskScheduler.getAllTasksCollection();
   }
 
+  public Alarm addAlarm(long timeOut) {
+    Alarm alarm = new CougTimeAlarm(timeOut);
+    alarmService.addAlarm(alarm);
+    return alarm;
+  }
+
   public Alarm addRealTimeAlarm(long timeOut) {
     Alarm alarm = new CougTimeAlarm(timeOut);
     alarmService.addRealTimeAlarm(alarm);
@@ -453,9 +459,10 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     // Review: not sure if this is the right place to make this call
     ReconcileSupplyExpander expander = getSupplyExpander();
     if (expander != null) {
-      if (logger.isDebugEnabled() && expander.debugAgent()) {
-        logger.debug(" InventoryPlugin checking the comm status alarms for supply type " + supplyType);
-      }
+     // if (logger.isDebugEnabled() && expander.debugAgent()) {
+        System.out.println("InventoryPlugin checking the comm status alarms for supply type " + supplyType + " time: "
+        + new Date(currentTimeMillis()));
+      //}
       expander.checkCommStatusAlarms();
     }
   }
@@ -1136,6 +1143,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     for (Iterator i = inventories.iterator(); i.hasNext();) {
       Inventory inv = (Inventory) i.next();
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      logInvPG.setStartCDay(logOPlan.getOplanCday());
       logInvPG.reinitialize(logToCSV, this);
       addInventory(inv);
     }
@@ -1648,6 +1656,8 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
     public CougTimeAlarm(long expiration) {
       this.expirationTime = expiration;
+      System.out.println("Alarm constructor called current time : " + new Date(currentTimeMillis()) + " expiration time is " +
+                         new Date(expiration));
     }
 
     public long getExpirationTime() {
@@ -1659,10 +1669,9 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         expired = true;
         BlackboardService bb = getBlackboardService();
         if (bb != null) {
-          if (logger != null && logger.isDebugEnabled()) {
-            logger.debug(
-                "Alarm to trigger at " + (new Date(expirationTime)));
-          }
+         // if (logger != null && logger.isDebugEnabled()) {
+            System.out.println("Alarm expire method called " + new Date(currentTimeMillis()));
+          //}
           bb.signalClientActivity();
         } else {
           if (logger != null && logger.isWarnEnabled()) {
