@@ -168,7 +168,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   private Workflow makeEmptyWorkflow(Task t) {
     NewWorkflow wf = ldmf.newWorkflow();
     wf.setParentTask(t);
-    ((NewTask)t).setWorkflow(wf);
     return wf;
   }
     
@@ -607,10 +606,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 
 	spe.unplan ();
 	Expansion exp = (Expansion) parentTask.getPlanElement();
-	((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	if (exp != null) { // fix for bug #13417
+	  ((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	  publishChange (exp);
+	}
 	handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
 	publishRemove (spe.getTask());
-	publishChange (exp);
 	spe.setTask (null);
 	overlap = true;
       }
