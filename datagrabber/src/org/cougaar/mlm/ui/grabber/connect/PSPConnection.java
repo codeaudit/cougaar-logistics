@@ -60,7 +60,7 @@ import java.text.SimpleDateFormat;
  * Basic infrastructure to talk to a PSP that uses the 
  * XMLable/serializable interfaces
  * 
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/01/01
  **/
@@ -107,6 +107,10 @@ public abstract class PSPConnection extends PSPWork{
 
   protected String getClusterName(){
     return urlConnectData.getClusterName();
+  }
+
+  public String getName(){
+    return super.getName () + " for " + getClusterName();
   }
 
   /**Determine if we should use XML**/

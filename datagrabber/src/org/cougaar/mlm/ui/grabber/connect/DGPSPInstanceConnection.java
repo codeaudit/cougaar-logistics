@@ -280,10 +280,6 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     return irr;
   }
 
-  public String getName(){
-    return super.getName () + " for " + getClusterName();
-  }
-
   //Static functions:
   ///////////////////
 
