@@ -127,8 +127,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       today_bucket = thePG.convertTimeToBucket(today);
       reconcileThePast(today_bucket, thePG);
-      //TODO figure out what the end is
-      // AF - we should get this from the BG (PG)
       int end_bucket = thePG.getLastDemandBucket();
       int lastWithdrawBucket = thePG.getLastWithdrawBucket();
       int firstProjectBucket = thePG.getFirstProjectWithdrawBucket();
