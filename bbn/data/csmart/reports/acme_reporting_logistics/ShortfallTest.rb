@@ -90,11 +90,9 @@ module ACME
       end
       
       def perform
-        shortfall_files = @archive.files_with_description(/shortfall/)
+        shortfall_files = @archive.files_with_description(/Society shortfall data/)
         baseline_name = @archive.group_baseline
-        puts "!!! #{baseline_name}"
         baseline = @archive.open_prior_archive(baseline_name)
-        puts "*** #{baseline}"
         baseline_name = "Missing Baseline" if baseline.nil?
         shortfall_files.uniq.each do |shortfall_file|
           benchmark_pattern = Regexp.new(File.basename(shortfall_file.name))
@@ -127,6 +125,7 @@ module ACME
             report.open_file("shortfall_description.html", "text/html", "Shortfall Report Description") do |file|
               file.puts output
             end
+              puts "#{Time.now}:  Done writing files"
           end
         end
       end
