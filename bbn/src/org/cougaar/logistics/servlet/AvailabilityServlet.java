@@ -144,8 +144,10 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
           printError("End date must be in the future; try again.", out);
           printForm(req, out);
         } else {
+          MutableTimeSpan span = new MutableTimeSpan();
+          span.setTimeSpan(start_date.getTime(), end_date.getTime());
           AvailabilityChangeMessage message = new AvailabilityChangeMessage(Role.getRole(role),
-                                                                            false, new MutableTimeSpan(),
+                                                                            false, span,
                                                                             isAvailable);
           blackboard.openTransaction();
           blackboard.publishAdd(message);
@@ -156,7 +158,9 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     } catch (Exception e) {
       printError("Servlet error: " + e, out);
     } finally {
-      blackboard.closeTransactionDontReset();
+      if (blackboard.isTransactionOpen()) {
+        blackboard.closeTransactionDontReset();
+      }
       out.println("</body>");
       out.flush();
     }
