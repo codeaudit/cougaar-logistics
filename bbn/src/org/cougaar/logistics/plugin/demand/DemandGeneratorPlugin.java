@@ -125,9 +125,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   private IncrementalSubscription projectionTaskSubscription;
 
   /*** MWD Remove
-  private IncrementalSubscription orgActivities;
-  private IncrementalSubscription oplanSubscription;
-  **/
+   private IncrementalSubscription orgActivities;
+   private IncrementalSubscription oplanSubscription;
+   **/
   private IncrementalSubscription logisticsOPlanSubscription;
 
 
@@ -145,16 +145,16 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
   /** MWD Remove
-  private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof Oplan);
-    }
-  };
+   private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
+   public boolean execute(Object o) {
+   return (o instanceof Oplan);
+   }
+   };
 
- **/
+   **/
 
-    /** Selects the LogisticsOPlan objects **/
-  private static class LogisticsOPlanPredicate implements UnaryPredicate{
+  /** Selects the LogisticsOPlan objects **/
+  private static class LogisticsOPlanPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       return o instanceof LogisticsOPlan;
     }
@@ -176,7 +176,8 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         Task task = (Task) o;
         if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
           if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            if (!taskUtils.isMyInventoryProjection(task, orgName)) {
+            //if (!taskUtils.isMyInventoryProjection(task, orgName)) {
+            if (taskUtils.isMyDemandForecastProjection(task,orgName)) {
               return true;
             }
           }
@@ -197,36 +198,36 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   };
 
 
-    /** MWD Remove
-     *  Find the earliest and latest times of all the org activites.
-     *
-    private void computeOrgTimes(Enumeration orgActs) {
-        long latestEnd = 0;
-        long earliestStart = 0;
-        while(orgActs.hasMoreElements()) {
-            OrgActivity oa = (OrgActivity) orgActs.nextElement();
-            long endTime = oa.getEndTime();
-            if (endTime > latestEnd) {
-                latestEnd = endTime;
-            }
-            long startTime = oa.getStartTime();
-            if (startTime < earliestStart) {
-                earliestStart = startTime;
-            }
-        }
-        orgEndTime = latestEnd;
-        orgStartTime = earliestStart;
-    }
-    
-    public long getOrgStartTime() {
-	return orgStartTime;
-    }
+  /** MWD Remove
+   *  Find the earliest and latest times of all the org activites.
+   *
+   private void computeOrgTimes(Enumeration orgActs) {
+   long latestEnd = 0;
+   long earliestStart = 0;
+   while(orgActs.hasMoreElements()) {
+   OrgActivity oa = (OrgActivity) orgActs.nextElement();
+   long endTime = oa.getEndTime();
+   if (endTime > latestEnd) {
+   latestEnd = endTime;
+   }
+   long startTime = oa.getStartTime();
+   if (startTime < earliestStart) {
+   earliestStart = startTime;
+   }
+   }
+   orgEndTime = latestEnd;
+   orgStartTime = earliestStart;
+   }
 
-    public long getOrgEndTime() {
-	return orgEndTime;
-    }
+   public long getOrgStartTime() {
+   return orgStartTime;
+   }
 
-    ***/
+   public long getOrgEndTime() {
+   return orgEndTime;
+   }
+
+   ***/
 
   // get the first day in theater
   public long getLogOPlanStartTime() {
@@ -272,10 +273,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
 
-
-
- public String getOrgName() {
-    if (myOrgName == null) {
+  public String getOrgName() {
+    if ((myOrgName == null) &&
+        (getMyOrganization() != null)) {
       myOrgName = getMyOrganization().getItemIdentificationPG().getItemIdentification();
     }
     return myOrgName;
@@ -318,24 +318,24 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   protected void execute() {
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-      if(myOrganization != null) {
-	  projectionTaskSubscription = (IncrementalSubscription) blackboard.
-	      subscribe(new ProjectionTaskPredicate(supplyType, getOrgName(), taskUtils));
+      if (myOrganization != null) {
+        projectionTaskSubscription = (IncrementalSubscription) blackboard.
+            subscribe(new ProjectionTaskPredicate(supplyType, getOrgName(), taskUtils));
       }
     }
 
     /** MWD Remove
-    if(orgActivities.getCollection().isEmpty()) {
-	return;
-    }
-    else if((orgStartTime == -1) || (orgEndTime == -1)) {
-	computeOrgTimes(orgActivities.elements());
-    }
+     if(orgActivities.getCollection().isEmpty()) {
+     return;
+     }
+     else if((orgStartTime == -1) || (orgEndTime == -1)) {
+     computeOrgTimes(orgActivities.elements());
+     }
 
-    if (oplanSubscription.getCollection().isEmpty()) {
-      return;
-    }
-    **/
+     if (oplanSubscription.getCollection().isEmpty()) {
+     return;
+     }
+     **/
 
     // get the Logistics OPlan (our homegrown version with specific dates).
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -358,18 +358,22 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     //nothing for now
     if (timerExpired()) {
       long planTime = getStartOfPeriod();
-      if(logger.isInfoEnabled()) {
-        logger.info("Timer has gone off.  Planning for the next " + ((int)(frequency / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
+      if (logger.isInfoEnabled()) {
+        logger.info("Timer has gone off.  Planning for the next " + ((int) (frequency / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
       }
       Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
                                                          planTime,
                                                          planTime + frequency);
+      if ((getOrgName() != null) &&
+          (getOrgName().trim().equals("1-35-ARBN"))) {
+        System.out.println("I'm waking up - new period from " + new Date(planTime) + " to " + new Date(planTime + frequency));
+        System.out.println("Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
+      }
       relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
       demandGenerator.generateDemandTasks(planTime, frequency, relevantProjs);
       resetTimer();
     }
   }
-
 
 
   /***
@@ -383,12 +387,12 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    */
   protected Collection filterProjectionsOnTime(Collection projections,
                                                long startGen,
-                                               long endGen){
+                                               long endGen) {
     ArrayList filteredProjs = new ArrayList();
     Iterator projectionIt = projections.iterator();
-    while(projectionIt.hasNext()){
+    while (projectionIt.hasNext()) {
       Task proj = (Task) projectionIt.next();
-      if((TaskUtils.getStartTime(proj) < endGen) &&
+      if ((TaskUtils.getStartTime(proj) < endGen) &&
           (TaskUtils.getEndTime(proj) > startGen)) {
         filteredProjs.add(proj);
       }
@@ -429,17 +433,18 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
 
-public long getFrequency() { return frequency; }
+  public long getFrequency() {
+    return frequency;
+  }
 
   private boolean isLegalFrequency(long frequencyInMSEC) {
-    long remainder = 0;
-      if(frequency >= getTimeUtils().MSEC_PER_DAY) {
-        remainder = frequency % getTimeUtils().MSEC_PER_DAY;
-      }
-      else if(frequency >= getTimeUtils().MSEC_PER_HOUR){
-        remainder = frequency % getTimeUtils().MSEC_PER_HOUR;
-      }
-      return ((frequencyInMSEC > 0) && (remainder==0));
+    long remainder = -1;
+    if (frequency >= getTimeUtils().MSEC_PER_DAY) {
+      remainder = frequency % getTimeUtils().MSEC_PER_DAY;
+    } else if (frequency >= getTimeUtils().MSEC_PER_HOUR) {
+      remainder = frequency % getTimeUtils().MSEC_PER_HOUR;
+    }
+    return ((frequencyInMSEC > 0) && (remainder == 0));
   }
 
 
@@ -448,16 +453,15 @@ public long getFrequency() { return frequency; }
   }
 
   public long getFrequencyUnit() {
-      if(frequency >= getTimeUtils().MSEC_PER_DAY) {
-        return getTimeUtils().MSEC_PER_DAY;
-      }
-      else {
-        return getTimeUtils().MSEC_PER_HOUR;
-      }
+    if (frequency >= getTimeUtils().MSEC_PER_DAY) {
+      return getTimeUtils().MSEC_PER_DAY;
+    } else {
+      return getTimeUtils().MSEC_PER_HOUR;
+    }
   }
 
   private int getFrequencyMultiplier() {
-      return (int) ((int) frequency / getFrequencyUnit());
+    return (int) ((int) frequency / getFrequencyUnit());
   }
 
   /**
@@ -490,9 +494,9 @@ public long getFrequency() { return frequency; }
     //frequency = (new Long((String)map.get(GENERATE_FREQUENCY))).longValue();
     frequency = 24 * 60 * 60;
 
-    frequency = frequency * 10;
+    frequency = frequency * 1000;
 
-    if(!isLegalFrequency(frequency)) {
+    if (!isLegalFrequency(frequency)) {
       logger.error("Illegal Frequency - not in days or hours");
       frequency = -1;
     }
@@ -517,7 +521,7 @@ public long getFrequency() { return frequency; }
     long timeIn = getCurrentTimeMillis();
     long timeOut = 0;
     calendar.setTimeInMillis(timeIn);
-    if(frequencyInDays()) {
+    if (frequencyInDays()) {
       calendar.set(calendar.HOUR_OF_DAY, 0);
     }
     calendar.set(calendar.MINUTE, 0);
@@ -530,8 +534,6 @@ public long getFrequency() { return frequency; }
     }
     return timeOut;
   }
-
-
 
 
   /**
@@ -570,6 +572,11 @@ public long getFrequency() { return frequency; }
         logger.warn(
             "Started service alarm before the blackboard service" +
             " is available");
+      }
+
+      if ((getOrgName() != null) &&
+          (getOrgName().trim().equals("1-35-ARBN"))) {
+        System.out.println("Setting new timer to go at: " + new Date(expiration));
       }
       timer = new CougTimeAlarm(expiration);
       getAlarmService().addRealTimeAlarm(timer);
@@ -638,7 +645,8 @@ public long getFrequency() { return frequency; }
     }
 
     public long getExpirationTime() {
-      return expirationTime;
+      return (System.currentTimeMillis() +
+          (expirationTime - getCurrentTimeMillis()));
     }
 
     public synchronized void expire() {

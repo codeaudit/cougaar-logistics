@@ -115,7 +115,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       Task task = (Task) taskIt.next();
       Workflow wf = task.getWorkflow();
       if (wf == null) {
-        logger.error("Projection task with Null workflow");
+        logger.error("Projection task: " + task.getUID() + " at " + dgPlugin.getOrgName() + " has Null workflow");
         continue;
       }
       Task parTask = wf.getParentTask();
