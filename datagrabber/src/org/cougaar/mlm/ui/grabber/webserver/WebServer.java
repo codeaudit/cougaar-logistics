@@ -104,12 +104,20 @@ public class WebServer extends Thread implements ResultHandler,
       return null;
     }
     logger.logMessage(Logger.IMPORTANT,Logger.DB_CONNECT,
-		      "Connection established");
+		      "WebServer - Database connection established to " + 
+		      dbConfig.getHostName() + 
+		      " - " + dbConfig.getDatabaseName());
     return c;
+  }
+
+  public void shutDown () {
+    closeDBConnection ();
   }
 
   protected void closeDBConnection(){
     try{
+      logger.logMessage(Logger.NORMAL,Logger.DB_CONNECT,"WebServer - Closing db connection.");
+      
       dbConnection.close();
     }catch(SQLException e){
       logger.logMessage(Logger.WARNING,Logger.DB_CONNECT,
