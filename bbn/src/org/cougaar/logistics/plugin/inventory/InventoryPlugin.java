@@ -152,6 +152,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	  }
       });
     System.out.println("\n InventoryPlugin of type: " + supplyType +
+		       "in org: " + getBindingSite().getAgentIdentifier() +
 		       " this plugin is: " + this);
   }
 
