@@ -53,6 +53,14 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   public final static String THREAD_TAG="CLASS_OF_SUPPLY";
   public final static String INVENTORIES_TAG="INVENTORIES";
   public final static String INVENTORY_TAG="INVENTORY";
+  public final static String SHORTFALL_PERIOD_TAG = "SHORTFALL_PERIOD";
+
+  public final static String INVENTORY_ID_ATTR="ID";
+  public final static String INVENTORY_NUM_DEMAND_ATTR="NumDemand";
+  public final static String INVENTORY_NUM_REFILL_ATTR="NumRefill";
+  public final static String INVENTORY_NUM_PROJECTION_ATTR="NumProjection";  
+  public final static String INVENTORY_NUM_ACTUAL_ATTR="NumActual";
+  public final static String INVENTORY_IS_UNEXPECTED_ATTR = "Unexpected";
 
   //Constructors:
   ///////////////
@@ -94,7 +102,11 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
 	Iterator inventoryItems = summary.getShortfallInventories().iterator();
 	while(inventoryItems.hasNext()) {
 	    ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
-	    w.tagln(INVENTORY_TAG,inv.getInvID());
+	    w.optagln(INVENTORY_TAG,
+		      INVENTORY_ID_ATTR,inv.getInvID(),
+		      INVENTORY_IS_UNEXPECTED_ATTR,Boolean.toString(inv.getUnexpected())
+		      );
+	    w.cltagln(INVENTORY_TAG);
 	}
 	w.cltagln(INVENTORIES_TAG);
     }
