@@ -660,9 +660,16 @@ public class InventoryPlugin extends ComponentPlugin
     Iterator taskIt = tasks.iterator();
     while (taskIt.hasNext()) {
       task = (Task) taskIt.next();
-      //	  System.out.println("SDSD rescind: " + task + "\n");
-      alloc = (Allocation)task.getPlanElement();
-      publishRemove(alloc);
+      if (!(task.beforeCommitment(new Date(currentTimeMillis())))) {
+        if (logger.isWarnEnabled()) {
+          logger.warn("rescind unprovided Task Allocations: will not rescind allocation ... after commitment"+
+                      task.getCommitmentDate()+ " task:"+task);
+        }
+      } else {
+        //	  System.out.println("SDSD rescind: " + task + "\n");
+        alloc = (Allocation)task.getPlanElement();
+        publishRemove(alloc);
+      }
     }
   }
 
