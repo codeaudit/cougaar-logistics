@@ -118,7 +118,6 @@ public class RequisitionsChartDataModel
 	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
 	    inventory.getSchedules().get(reqScheduleName);
 	ArrayList requisitions = schedHeader.getSchedule();
-	long baseTime = InventoryChartBaseCalendar.getBaseTime();
 	schedHeader = (InventoryScheduleHeader) 
 	    inventory.getSchedules().get(reqARScheduleName);
 	ArrayList reqARs = schedHeader.getSchedule();
@@ -190,11 +189,5 @@ public class RequisitionsChartDataModel
 	***/
     }
 
-    public void resetInventory(InventoryData newInventory){
-	inventory = newInventory;
-	valuesSet = false;
-	initValues();
-	fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
-    }
 }
 

@@ -146,7 +146,6 @@ public class ProjectionsChartDataModel
 	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
 	    inventory.getSchedules().get(projScheduleName);
 	ArrayList projections = schedHeader.getSchedule();
-	long baseTime = InventoryChartBaseCalendar.getBaseTime();
 	schedHeader = (InventoryScheduleHeader) 
 	    inventory.getSchedules().get(projARScheduleName);
 	ArrayList projARs = schedHeader.getSchedule();
@@ -249,12 +248,6 @@ public class ProjectionsChartDataModel
 	
     }
 
-    public void resetInventory(InventoryData newInventory){
-	inventory = newInventory;
-	valuesSet = false;
-	initValues();
-	fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
-    }
 
 
   /**

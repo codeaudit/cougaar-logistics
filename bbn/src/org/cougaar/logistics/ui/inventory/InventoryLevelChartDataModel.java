@@ -104,7 +104,6 @@ public class InventoryLevelChartDataModel
 	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
 	    inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
 	ArrayList levels = schedHeader.getSchedule();
-	long baseTime = InventoryChartBaseCalendar.getBaseTime();
 
 	computeCriticalNValues();
 
@@ -157,11 +156,7 @@ public class InventoryLevelChartDataModel
 	}
     }
 
-    public void resetInventory(InventoryData newInventory){
-	inventory = newInventory;
-	valuesSet = false;
-	initValues();
-	fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
-    }
+
+
 }
 

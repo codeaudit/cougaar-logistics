@@ -81,7 +81,9 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 
   protected Logger logger;
 
-  public abstract void resetInventory(InventoryData inventory);
+  protected boolean useCDay=false;
+  protected long baseCDayTime=0L;
+  protected long baseTime=0L;
 
   public ChartDataManager getChartDataManager() { 
       return (ChartDataManager)this; 
@@ -90,6 +92,26 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
   public String getDataSourceName() {
       return legendTitle;
   }
+
+  public void resetInventory(InventoryData newInventory){
+      inventory = newInventory;
+      baseCDayTime = inventory.getStartCDay();
+      baseTime = (useCDay) ? baseCDayTime : InventoryChartBaseCalendar.getBaseTime();
+      valuesSet = false;
+      initValues();
+      fireChartDataEvent(ChartDataEvent.RELOAD,0,0);
+  }
+
+  public void setDisplayCDay(boolean doUseCDay) {
+      if(doUseCDay != useCDay) {
+	  useCDay = doUseCDay;
+	  if(inventory != null) { 
+	      resetInventory(inventory);
+	  }
+      }
+  }
+
+
 
   /**
    * Retrieves the specified x-value series
@@ -181,7 +203,6 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
 	    inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
 	ArrayList levels = schedHeader.getSchedule();
-	long baseTime = InventoryChartBaseCalendar.getBaseTime();
 	
 	bucketDays = -1;
 	
