@@ -53,6 +53,8 @@ public class Level2Expander extends Level2TranslatorModule {
   HashMap level2To6Map;
   HashMap endTimeMap;
 
+  private static AllocationResultAggregator expansionARA = new ExpansionARA();
+
   public Level2Expander(Level2TranslatorPlugin level2Translator) {
     super(level2Translator);
     level2To6Map = new HashMap();
@@ -115,9 +117,11 @@ public class Level2Expander extends Level2TranslatorModule {
       Rate origL2Rate = getTaskUtils().getRate(level2Task);
       double origL2BaseQty = deriveTotalQty(countedStartTime, endTime, level2Task);
 //
+      
+      double toleranceFactor = 0.10;  // for ammo within 200 lbs
 
-      if (totalL6BaseQty >= origL2BaseQty) {
-        if((totalL6BaseQty - origL2BaseQty) > 1) {
+      if ((origL2BaseQty - totalL6BaseQty) < toleranceFactor) {
+        if((totalL6BaseQty - origL2BaseQty) > 2.0) {
           logger.warn("level2Task " + level2Task + " has a total qty of " + origL2BaseQty +
                       " which is exceeded by the level 6 tasks with a summed total qty of " + totalL6BaseQty);
         }
@@ -323,6 +327,24 @@ public class Level2Expander extends Level2TranslatorModule {
     }
   }
 
+   /**
+    * Define an ARA that can deal with the expansion of a
+    * Level2 ProjectSupply task to a Ready For Transport Level 2 ProjectSupply Task. 
+    * Mostly, we just clone the result of the single chile Ready for Transport ProjectSupply
+    * task.
+    **/
+    private static class ExpansionARA implements AllocationResultAggregator {
+        public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
+            if (tst.size() != 1)
+                throw new IllegalArgumentException("expansionARA: multiple subtasks");
+            AllocationResult ar = (AllocationResult) tst.getAllocationResult(0);
+            if (ar == null) return null;
+            if (ar.isEqual(currentar)) return currentar;
+            return (AllocationResult) ar.clone();
+        }
+    }
+
+
   private void createAndPublishExpansion(Task parent, NewTask childTask) {
     Workflow wf = buildWorkflow(parent, childTask);
     translatorPlugin.publishAdd(childTask);
@@ -340,6 +362,7 @@ public class Level2Expander extends Level2TranslatorModule {
     NewWorkflow wf = getPlanningFactory().newWorkflow();
     wf.setParentTask(parent);
     wf.setIsPropagatingToSubtasks(true);
+    //wf.setAllocationResultAggregator(expansionARA);
     childTask.setWorkflow(wf);
     wf.addTask(childTask);
 
