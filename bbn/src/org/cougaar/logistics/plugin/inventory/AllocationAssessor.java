@@ -365,8 +365,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                              boolean success) {
       ArrayList phasedResults = new ArrayList();
       double rollupQty = 0;
-      double rollups[];
-      int aspectTypes[];
+      AspectValue avs[];
       
       Task task = td.getTask();
       long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
@@ -378,11 +377,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       
       //initialize the rollup array depending on the verb --sigh...
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
-        rollups = new double[2];
-        aspectTypes = new int[]{AspectType.END_TIME, AspectType.QUANTITY};
+	avs = new AspectValue[2];
       } else {
-        rollups = new double[3];
-        aspectTypes = new int[]{AspectType.END_TIME, AspectType.START_TIME, AlpineAspectType.DEMANDRATE};
+	avs = new AspectValue[3];
       }
 
       ArrayList phases = (ArrayList)td.getAllocationPhases();
@@ -393,9 +390,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
       int rollupEnd = ((AllocPhase) phases.get(phases.size() - 1)).endBucket;
       int rollupStart = ((AllocPhase) phases.get(0)).startBucket;
-      rollups[0] = thePG.convertBucketToTime(rollupEnd);
-      rollups[1] = thePG.convertBucketToTime(rollupStart);
-      
+      avs[0] = AspectValue.newAspectValue(AspectType.END_TIME, 
+					  thePG.convertBucketToTime(rollupEnd));
+      avs[1] = AspectValue.newAspectValue(AspectType.START_TIME, 
+					  thePG.convertBucketToTime(rollupStart));
+
       Iterator phasesIt = phases.iterator();
       
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
@@ -408,7 +407,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           thisPhase[1] = AspectValue.newAspectValue(AspectType.QUANTITY, aPhase.amount);
           phasedResults.add(thisPhase);
         }
-        rollups[1] = rollupQty;
+	avs[1] = AspectValue.newAspectValue(AspectType.QUANTITY, rollupQty);
       } else {
         // project withdraw use start, end and rate
         while (phasesIt.hasNext()) {
@@ -425,13 +424,13 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           // add this phase to our phased results list
           phasedResults.add(thisPhase);
         }
-        AspectValue dav = getDemandRateAV(rollupQty, thePG.convertBucketToTime(rollupEnd) - 
-                                     thePG.convertBucketToTime( rollupStart), thePG);
-        rollups[2] = dav.getValue();
+        avs[2] = getDemandRateAV(rollupQty, thePG.convertBucketToTime(rollupEnd) - 
+				 thePG.convertBucketToTime( rollupStart), thePG);
       }
       
       AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
-        newPhasedAllocationResult(0.9, success, aspectTypes, rollups, (new Vector(phasedResults)).elements());
+        newPhasedAllocationResult(0.9, success, avs, (new Vector(phasedResults)).elements());
+
       compareResults(estimatedResult, task, inv, thePG);
     }
 
