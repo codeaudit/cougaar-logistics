@@ -228,19 +228,22 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 		String refillBucketTime = getTimeUtils().dateString(thePG.convertBucketToTime(refillBucket));
 
 		if((criticalLevel <= 0) || (invLevel <= 0)) {
-		    if((criticalLevel < 0) && logger.isWarnEnabled()) {
+		    if((criticalLevel < -1E-8) && logger.isWarnEnabled()) {
+			// Accounts for rounding errors
 			logger.warn("At " + inventoryPlugin.getOrgName() +
 				    "-" + inventoryPlugin.getSupplyType() +
 				    "-Item:" + myItemId + ":" +
 				    "Critical Level is " + criticalLevel + 
-				    " and inventory level is " + invLevel + "!" );
+				    " and inventory level is " + invLevel +
+				    " at refill bucket time " + refillBucketTime + "!" );
 		    }
 		    else if (logger.isDebugEnabled()) {
 			logger.debug("At " + inventoryPlugin.getOrgName() +
 				     "-" + inventoryPlugin.getSupplyType() +
 				     "-Item:" + myItemId + ":" +
 				     "Critical Level is " + criticalLevel + 
-				     " and inventory level is " + invLevel + "!" );
+				     " and inventory level is " + invLevel + 
+				     " at refill bucket time " + refillBucketTime + "!" );
 		    }
 		}
 		//if the drop below critical level is greater than 5% then log a warning otherwise
