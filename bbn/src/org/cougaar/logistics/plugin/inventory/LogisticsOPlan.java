@@ -32,6 +32,8 @@ import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.util.TimeSpan;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -44,7 +46,7 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
   public LogisticsOPlan(MessageAddress id, Oplan op) {
     super(id, op);
     setUID(UID.toUID(id.toString()+":"+op.getOplanId()+"/1"));
-    arrivalInTheater = getStartTime();
+    arrivalInTheater = Long.MIN_VALUE;
     defensiveSchedule = ScheduleUtils.newObjectSchedule((new Vector()).elements());
   }
   public boolean updateOrgActivities(IncrementalSubscription orgActivitySubscription) {
@@ -57,7 +59,7 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
 
   public void updateArrivalInTheater(IncrementalSubscription orgActivitySubscription) {
     // Arrival in theater is the end date of the Deployment orgActivity
-    long arrival = getStartTime();
+    long arrival = Long.MIN_VALUE;
     OrgActivity activity;
     Enumeration activities = orgActivitySubscription.elements();
 
@@ -65,13 +67,13 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
     while (activities.hasMoreElements()) {
       activity = (OrgActivity)activities.nextElement();
       if (activity.getActivityType().equals(OrgActivity.DEPLOYMENT)) {
-	if (activity.getEndTime() > arrival) {
-	  arrival = activity.getEndTime();
-	}
+        if (activity.getEndTime() > arrival) {
+          arrival = activity.getEndTime();
+        }
       }
     }
     arrivalInTheater = arrival;
-  }    
+  }
 
   public long getArrivalTime() {
     return arrivalInTheater;
@@ -109,6 +111,16 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
 
   public void setUID(UID theUID) {
     this.theUID = theUID;
+  }
+
+  public long getStartTime() {
+    TimeSpan oplanSpan = getOplanSpan();
+    return oplanSpan.getStartTime();
+  }
+
+  public long getEndTime() {
+    TimeSpan oplanSpan = getOplanSpan();
+    return oplanSpan.getEndTime();
   }
 
   public String toString() {
