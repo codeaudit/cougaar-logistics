@@ -36,6 +36,9 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.util.Date;
 
+import java.io.ObjectInputStream;
+import java.io.IOException;
+
 public class InventoryPolicy extends Policy {
   public static final String AgentID = "AgentID";
   public static final String ResourceType = "ResourceType";
@@ -51,7 +54,7 @@ public class InventoryPolicy extends Policy {
   public static final String SupplierArrivalTime = "SupplierArrivalTime";
 
   public SimpleDateFormat dateFormatter;
-  private Logger logger;
+  private transient Logger logger;
 
   public InventoryPolicy() {
     dateFormatter = new SimpleDateFormat("MM/dd/yyyy HH:mm");
@@ -388,4 +391,10 @@ public class InventoryPolicy extends Policy {
       // Print exception, waiting for a static logger
     }
   }
+
+  private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
+    stream.defaultReadObject();
+    logger =  Logging.getLogger(this);
+  }
+
 }
