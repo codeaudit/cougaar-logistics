@@ -98,6 +98,8 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     //long start = getTimeUtils().addNDays(today, orderShipTime);
     long start;
 
+
+
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       // clear the refill lists from the last inventory
@@ -111,6 +113,16 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
               searchForPropertyGroup(LogisticsInventoryPG.class);
 
       start = today + (orderShipTime * thePG.getBucketMillis());
+
+      // DEBUG
+      //   String myOrgName = inventoryPlugin.getOrgName();
+      // String myItemId = anInventory.getItemIdentificationPG().getItemIdentification();
+      
+      //Only magically recalculate the initial inventory level
+      //(the prepo) up to when the prepo arrives.
+      if(today <= inventoryPlugin.getPrepoArrivalTime()) {
+	  thePG.recalculateInitialLevel();
+      }
 
       // only process Level 6 inventories
       if (! thePG.getIsLevel2()) {
@@ -127,6 +139,9 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         // bucket.  This prevents us from removing refills that because of OST, cannot be
         // replaced leaving holes in supply.
         int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
+	int firstLegalRefillBucket = 
+	    thePG.convertTimeToBucket(inventoryPlugin.getRefillStartTime(),true) + orderShipTime;
+
         double prevTarget = 0;
 
         //calculate inventory levels for time ZERO through start (today + OST)
@@ -138,6 +153,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         //  create the refills
         // RJB
         int lastRefillBucket=refillBucket;
+	
         while (refillBucket <= maxLeadBucket) {
           double invLevel = thePG.getLevel(startBucket) -
                   thePG.getActualDemand(refillBucket);
@@ -205,7 +221,12 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 //                               inventoryPlugin.getClusterId() + " supplytype:" +
 //                               inventoryPlugin.getSupplyType() + " for item:"+
 //                               debugItem);
-            if(refillQty > 0.00) {
+	    if(refillBucket < firstLegalRefillBucket) {
+		if(logger.isWarnEnabled()) {
+		    logger.warn("At " + inventoryPlugin.getOrgName() + " not ordering a refill on day when we've fallen below critical level, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+		}
+	    }
+            else if(refillQty > 0.00) {
               lastRefillBucket=refillBucket;
               if (logger.isDebugEnabled()) {
                 logger.debug("\n Creating Refill for bucket: " + refillBucket +
@@ -300,6 +321,16 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
+
+    //TODO:MWD turn this from debug to warn when all classes are incorporated
+    if((endDay < inventoryPlugin.getRefillStartTime()) &&
+        (logger.isWarnEnabled())){
+      logger.warn("Creating new refill task for day " + getTimeUtils().dateString(endDay) +
+                  " before arrival in theatre time or arrival of supplier of "
+                  + getTimeUtils().dateString(inventoryPlugin.getRefillStartTime()) +
+                  ".  The task that is about to be published is " + newRefill);
+    }
+
     return newRefill;
   }
 
