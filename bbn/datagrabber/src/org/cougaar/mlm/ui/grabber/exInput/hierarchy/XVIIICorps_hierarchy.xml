@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hierarchy RootID="XVIIICorps">
+<Org>
+<OrgID>XVIIICorps</OrgID>
+<Name>XVIIICorps</Name>
+<Rel OrgID="3ID" Rel="0"/>
+</Org>
+<Org>
+<OrgID>3ID</OrgID>
+<Name>3ID</Name>
+<Rel OrgID="1BDE-3ID" Rel="0"/>
+</Org>
+<Org>
+<OrgID>1BDE-3ID</OrgID>
+<Name>1BDE-3ID</Name>
+<Rel OrgID="3-69-ARBN" Rel="0"/>
+<Rel OrgID="3-72-ARBN" Rel="0"/>
+</Org>
+<Org>
+<OrgID>3-69-ARBN</OrgID>
+<Name>3-69-ARBN</Name>
+</Org>
+<Org>
+<OrgID>3-72-ARBN</OrgID>
+<Name>3-72-ARBN</Name>
+</Org>
+</Hierarchy>

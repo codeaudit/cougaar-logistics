@@ -1,0 +1,37 @@
+<?xml version='1.0'?>
+<Hierarchy RootID="TRANSCOM">
+<Org>
+<OrgID>TRANSCOM</OrgID>
+<Name>TRANSCOM</Name>
+<Rel OrgID="GlobalAir" Rel="0"/>
+<Rel OrgID="GlobalSea" Rel="0"/>
+</Org>
+<Org>
+<OrgID>GlobalAir</OrgID>
+<Name>GlobalAir</Name>
+<Rel OrgID="PlanePacker" Rel="0"/>
+</Org>
+<Org>
+<OrgID>PlanePacker</OrgID>
+<Name>PlanePacker</Name>
+</Org>
+<Org>
+<OrgID>GlobalSea</OrgID>
+<Name>GlobalSea</Name>
+<Rel OrgID="CONUSGround" Rel="0"/>
+<Rel OrgID="ShipPacker" Rel="0"/>
+<Rel OrgID="TheaterGround" Rel="0"/>
+</Org>
+<Org>
+<OrgID>TheaterGround</OrgID>
+<Name>TheaterGround</Name>
+</Org>
+<Org>
+<OrgID>CONUSGround</OrgID>
+<Name>CONUSGround</Name>
+</Org>
+<Org>
+<OrgID>ShipPacker</OrgID>
+<Name>ShipPacker</Name>
+</Org>
+</Hierarchy>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hierarchy RootID="Transcom">
+<Org>
+<OrgID>Transcom</OrgID>
+<Name>US Transcom</Name>
+<Rel OrgID="GlobalSea" Rel="0"/>
+</Org>
+<Org>
+<OrgID>GlobalSea</OrgID>
+<Name>Global Sea</Name>
+</Org>
+</Hierarchy>

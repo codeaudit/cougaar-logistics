@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Population>
+ <ConveyancePrototype>
+  <UID>ConvPrototype1</UID>
+  <Type>4</Type>
+  <Vol>1000.5</Vol>
+  <Area>100.3</Area>
+  <Weight>2000.05</Weight>
+  <Speed>2.005</Speed>
+  <ALPTypeID>RORO</ALPTypeID>
+  <Nomen>Boat</Nomen>
+ </ConveyancePrototype>
+ <ConveyanceInstance>
+  <UID>ConvInstance1</UID>
+  <Prototype>ConvPrototype1</Prototype>
+  <BumperNo>Bumper1</BumperNo>
+  <HomeBase>BOSP</HomeBase>
+  <Owner>GlobalSea</Owner>
+  <SelfProp>T</SelfProp>
+ </ConveyanceInstance>
+</Population>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataGrabber>
+ <Verbosity>Normal</Verbosity>
+ <ControllerMaxThreads>20</ControllerMaxThreads>
+ <WebServerConfig>
+  <Port>7000</Port>
+  <DocumentRoot>webcontent</DocumentRoot>
+  <Timeout>10000</Timeout>
+  <CommandRefresh>1</CommandRefresh>
+  <ViewRefresh>300</ViewRefresh>
+  <CompletionPSP>
+   <URLConnection>
+    <Host>SOMEHOST</Host>
+    <Port>5555</Port>
+    <ClusterName>TRANSCOM</ClusterName>
+    <Package>alpine/demo</Package>
+    <PspID>COMPLETION.PSP</PspID>
+    <UseXML>N</UseXML>
+   </URLConnection>
+  </CompletionPSP>
+ </WebServerConfig>
+ <DBConfig>
+  <User>tops</User>
+  <Password>tops</Password>
+  <DriverClass>org.gjt.mm.mysql.Driver</DriverClass>
+  <ConnectionURL>jdbc:mysql://localhost/gatherer</ConnectionURL>
+  <Syntax>MySQL</Syntax>
+ </DBConfig>
+ <HierarchyPSP Society="Tops">
+  <URLConnection>
+   <Host></Host>
+   <Port></Port>
+   <ClusterName>transcom</ClusterName>
+   <Package></Package>
+   <PspID></PspID>
+   <UseXML>Y</UseXML>
+   <ThisFileInstead>exInput/hierarchy/</ThisFileInstead>
+  </URLConnection>
+ </HierarchyPSP>
+ <HierarchyPSP Society="Demand" 
+               VirtualRoot="HigherAuthority" 
+               VirtualRootName="Higher Authority">
+  <Cluster>XVIIICorps</Cluster>
+  <Cluster>VIICorps</Cluster>
+  <URLConnection>
+   <Host></Host>
+   <Port></Port>
+   <ClusterName></ClusterName>
+   <Package></Package>
+   <PspID></PspID>
+   <UseXML>Y</UseXML>
+   <ThisFileInstead>exInput/hierarchy/</ThisFileInstead>
+  </URLConnection>
+ </HierarchyPSP>
+ <DataGathererPSP>
+  <URLConnection>
+   <Host></Host>
+   <Port></Port>
+   <ClusterName></ClusterName>
+   <Package></Package>
+   <PspID></PspID>
+   <UseXML>Y</UseXML>
+   <ThisFileInstead>exInput/gatherer/</ThisFileInstead>
+  </URLConnection>
+ </DataGathererPSP>
+ <DerivedTablesConfig>
+  <FirstLegTable>false</FirstLegTable>
+  <RollupTable>true</RollupTable>
+  <CargoTypeTable>true</CargoTypeTable>
+  <CargoInstanceTable>false</CargoInstanceTable>
+  <CargoLegTable>true</CargoLegTable>
+  <CarrierTypeTable>true</CarrierTypeTable>
+  <CarrierInstanceTable>true</CarrierInstanceTable>
+ </DerivedTablesConfig>
+</DataGrabber>

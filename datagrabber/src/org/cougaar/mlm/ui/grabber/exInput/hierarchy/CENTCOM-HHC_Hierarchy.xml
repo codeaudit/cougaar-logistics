@@ -1,0 +1,217 @@
+<?xml version='1.0'?>
+<Hierarchy RootID="CENTCOM-HHC">
+<Org>
+<OrgID>CENTCOM-HHC</OrgID>
+<Name>CENTCOM-HHC</Name>
+<Rel OrgID="JTF-HHC" Rel="0"/>
+<Rel OrgID="DLAHQ" Rel="0"/>
+<Rel OrgID="FUTURE" Rel="0"/>
+<Rel OrgID="INDUSTRIAL-BASE" Rel="0"/>
+</Org>
+<Org>
+<OrgID>DLAHQ</OrgID>
+<Name>DLAHQ</Name>
+<Rel OrgID="SparePartsICP" Rel="0"/>
+<Rel OrgID="MedicalICP" Rel="0"/>
+<Rel OrgID="SubsistenceICP" Rel="0"/>
+<Rel OrgID="FuelICP" Rel="0"/>
+</Org>
+<Org>
+<OrgID>MedicalICP</OrgID>
+<Name>MedicalICP</Name>
+</Org>
+<Org>
+<OrgID>FuelICP</OrgID>
+<Name>FuelICP</Name>
+</Org>
+<Org>
+<OrgID>SubsistenceICP</OrgID>
+<Name>SubsistenceICP</Name>
+</Org>
+<Org>
+<OrgID>SparePartsICP</OrgID>
+<Name>SparePartsICP</Name>
+</Org>
+<Org>
+<OrgID>FUTURE</OrgID>
+<Name>FUTURE</Name>
+</Org>
+<Org>
+<OrgID>JTF-HHC</OrgID>
+<Name>JTF-HHC</Name>
+<Rel OrgID="3ID-HHC" Rel="0"/>
+<Rel OrgID="DFSP" Rel="0"/>
+<Rel OrgID="HNS" Rel="0"/>
+<Rel OrgID="HOST-NATION-REFINERY" Rel="0"/>
+</Org>
+<Org>
+<OrgID>3ID-HHC</OrgID>
+<Name>3ID-HHC</Name>
+<Rel OrgID="2-BDE-3ID-HHC" Rel="0"/>
+<Rel OrgID="3-DISCOM-HHC" Rel="0"/>
+<Rel OrgID="703-MSB" Rel="0"/>
+<Rel OrgID="1-BDE-3ID-HHC" Rel="0"/>
+<Rel OrgID="3-BDE-2ID-HHC" Rel="0"/>
+<Rel OrgID="24-SPTGP-HHC" Rel="0"/>
+</Org>
+<Org>
+<OrgID>3-DISCOM-HHC</OrgID>
+<Name>3-DISCOM-HHC</Name>
+</Org>
+<Org>
+<OrgID>2-BDE-3ID-HHC</OrgID>
+<Name>2-BDE-3ID-HHC</Name>
+<Rel OrgID="2-7-INFBN" Rel="0"/>
+<Rel OrgID="3-69-ARBN" Rel="0"/>
+<Rel OrgID="3-FSB" Rel="0"/>
+<Rel OrgID="4-64-ARBN" Rel="0"/>
+</Org>
+<Org>
+<OrgID>3-FSB</OrgID>
+<Name>3-FSB</Name>
+</Org>
+<Org>
+<OrgID>2-7-INFBN</OrgID>
+<Name>2-7-INFBN</Name>
+</Org>
+<Org>
+<OrgID>3-69-ARBN</OrgID>
+<Name>3-69-ARBN</Name>
+</Org>
+<Org>
+<OrgID>4-64-ARBN</OrgID>
+<Name>4-64-ARBN</Name>
+</Org>
+<Org>
+<OrgID>24-SPTGP-HHC</OrgID>
+<Name>24-SPTGP-HHC</Name>
+<Rel OrgID="21-MED-CSHOSP" Rel="0"/>
+<Rel OrgID="10-TCBN-HHC" Rel="0"/>
+<Rel OrgID="180-TCBN-HHD" Rel="0"/>
+<Rel OrgID="24-CSB-HHD" Rel="0"/>
+<Rel OrgID="553-CSB-HHD" Rel="0"/>
+</Org>
+<Org>
+<OrgID>21-MED-CSHOSP</OrgID>
+<Name>21-MED-CSHOSP</Name>
+<Rel OrgID="147-MEDLOGBN" Rel="0"/>
+<Rel OrgID="61-ASMEDBN-MEDCO" Rel="0"/>
+</Org>
+<Org>
+<OrgID>147-MEDLOGBN</OrgID>
+<Name>147-MEDLOGBN</Name>
+</Org>
+<Org>
+<OrgID>61-ASMEDBN-MEDCO</OrgID>
+<Name>61-ASMEDBN-MEDCO</Name>
+</Org>
+<Org>
+<OrgID>180-TCBN-HHD</OrgID>
+<Name>180-TCBN-HHD</Name>
+<Rel OrgID="418-TKCO-POL" Rel="0"/>
+</Org>
+<Org>
+<OrgID>418-TKCO-POL</OrgID>
+<Name>418-TKCO-POL</Name>
+</Org>
+<Org>
+<OrgID>10-TCBN-HHC</OrgID>
+<Name>10-TCBN-HHC</Name>
+<Rel OrgID="416-TKCO-POL" Rel="0"/>
+<Rel OrgID="89-TKCO-CGO" Rel="0"/>
+</Org>
+<Org>
+<OrgID>89-TKCO-CGO</OrgID>
+<Name>89-TKCO-CGO</Name>
+</Org>
+<Org>
+<OrgID>416-TKCO-POL</OrgID>
+<Name>416-TKCO-POL</Name>
+</Org>
+<Org>
+<OrgID>553-CSB-HHD</OrgID>
+<Name>553-CSB-HHD</Name>
+</Org>
+<Org>
+<OrgID>24-CSB-HHD</OrgID>
+<Name>24-CSB-HHD</Name>
+<Rel OrgID="110-QMCO-POLSPLY" Rel="0"/>
+</Org>
+<Org>
+<OrgID>110-QMCO-POLSPLY</OrgID>
+<Name>110-QMCO-POLSPLY</Name>
+</Org>
+<Org>
+<OrgID>1-BDE-3ID-HHC</OrgID>
+<Name>1-BDE-3ID-HHC</Name>
+<Rel OrgID="1-64-ARBN" Rel="0"/>
+<Rel OrgID="26-FSB" Rel="0"/>
+<Rel OrgID="3-15-INFBN" Rel="0"/>
+<Rel OrgID="3-7-INFBN" Rel="0"/>
+</Org>
+<Org>
+<OrgID>1-64-ARBN</OrgID>
+<Name>1-64-ARBN</Name>
+</Org>
+<Org>
+<OrgID>3-7-INFBN</OrgID>
+<Name>3-7-INFBN</Name>
+</Org>
+<Org>
+<OrgID>3-15-INFBN</OrgID>
+<Name>3-15-INFBN</Name>
+</Org>
+<Org>
+<OrgID>26-FSB</OrgID>
+<Name>26-FSB</Name>
+</Org>
+<Org>
+<OrgID>3-BDE-2ID-HHC</OrgID>
+<Name>3-BDE-2ID-HHC</Name>
+<Rel OrgID="126-MEDTM-FSURG" Rel="0"/>
+<Rel OrgID="296-SPTBN" Rel="0"/>
+<Rel OrgID="1-23-INFBN" Rel="0"/>
+<Rel OrgID="2-3-INFBN" Rel="0"/>
+<Rel OrgID="5-20-INFBN" Rel="0"/>
+</Org>
+<Org>
+<OrgID>296-SPTBN</OrgID>
+<Name>296-SPTBN</Name>
+</Org>
+<Org>
+<OrgID>126-MEDTM-FSURG</OrgID>
+<Name>126-MEDTM-FSURG</Name>
+</Org>
+<Org>
+<OrgID>2-3-INFBN</OrgID>
+<Name>2-3-INFBN</Name>
+</Org>
+<Org>
+<OrgID>1-23-INFBN</OrgID>
+<Name>1-23-INFBN</Name>
+</Org>
+<Org>
+<OrgID>5-20-INFBN</OrgID>
+<Name>5-20-INFBN</Name>
+</Org>
+<Org>
+<OrgID>703-MSB</OrgID>
+<Name>703-MSB</Name>
+</Org>
+<Org>
+<OrgID>HNS</OrgID>
+<Name>HNS</Name>
+</Org>
+<Org>
+<OrgID>HOST-NATION-REFINERY</OrgID>
+<Name>HOST-NATION-REFINERY</Name>
+</Org>
+<Org>
+<OrgID>DFSP</OrgID>
+<Name>DFSP</Name>
+</Org>
+<Org>
+<OrgID>INDUSTRIAL-BASE</OrgID>
+<Name>INDUSTRIAL-BASE</Name>
+</Org>
+</Hierarchy>
