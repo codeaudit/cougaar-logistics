@@ -59,7 +59,7 @@ public class MissingPeopleTest extends Test{
 
   /**are we a warning or an error if we fail**/
   public int failureLevel(){
-    return RESULT_ERROR;
+    return RESULT_INFO;
   }
 
   /**for gui**/
@@ -106,65 +106,78 @@ public class MissingPeopleTest extends Test{
   }
 
   protected void insertResults (Logger l, Statement s, int run) {
-	String currentOrg, lastOrg = null;
-	boolean hasPeople = false;
+    String currentOrg, lastOrg = null;
+    boolean hasPeople = false;
     ResultSet rs=null;
-	String sql = null;
+    String sql = null;
 
-	try {
-	  sql = getQuery(run);
-	  rs=s.executeQuery(sql);
-	} catch (SQLException sqle) {
+    try {
+      sql = getQuery(run);
+      rs=s.executeQuery(sql);
+    } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-				   "MissingPeopleTest.insertResults - Problem executing query : " + sql,
-				   sqle);
-	}
+		   "MissingPeopleTest.insertResults - Problem executing query : " + sql,
+		   sqle);
+    }
 
-	try {
-	  while(rs.next()){
-		currentOrg = rs.getString (1);
-		int assetProto = rs.getInt(2);
+    try {
+      boolean noneInserted = true;
 
-		if (lastOrg == null)
-		  lastOrg = currentOrg;
+      while(rs.next()){
+	currentOrg = rs.getString (1);
+	int assetProto = rs.getInt(2);
 
-		if (!currentOrg.equals (lastOrg)) {
-		  l.logMessage(Logger.MINOR,Logger.DB_WRITE,
-					   "MissingPeopleTest.insertResults - " + lastOrg + ((hasPeople) ? " yes " : " NO "));
-		  if (!hasPeople)
-			insertRow (l, s, run, lastOrg, hasPeople);
-		  hasPeople = false;
-		}
-		hasPeople = hasPeople || assetProto == DGPSPConstants.ASSET_CLASS_PERSON;
-		lastOrg = currentOrg;
+	if (lastOrg == null)
+	  lastOrg = currentOrg;
+
+	if (!currentOrg.equals (lastOrg)) {
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,
+		       "MissingPeopleTest.insertResults - " + lastOrg + ((hasPeople) ? " yes " : " NO "));
+	  if (!hasPeople) {
+	    noneInserted = false;
+	    insertRow (l, s, run, lastOrg, hasPeople);
 	  }
-	} catch (SQLException sqle) {
-      l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			"MissingPeopleTest.insertResults - Problem walking results.",sqle);
+	  hasPeople = false;
 	}
+	hasPeople = hasPeople || assetProto == DGPSPConstants.ASSET_CLASS_PERSON;
+	lastOrg = currentOrg;
+      }
+
+      if (noneInserted) {
+	if (l.isTrivialEnabled ()) {
+	  l.logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+		       "MissingPeopleTest.insertResults - no missing people...");
+	}
+	insertRow (l, s, run, "All Units", true);
+      }
+
+    } catch (SQLException sqle) {
+      l.logMessage(Logger.ERROR,Logger.DB_WRITE,
+		   "MissingPeopleTest.insertResults - Problem walking results.",sqle);
+    }
   }
 
-	private void insertRow(Logger l, Statement s, int run, String ownerID, boolean hasPeople) throws SQLException {
-	  String sql = null;
-	  try {
-		StringBuffer sb=new StringBuffer();
-		sb.append("INSERT INTO ");
-		sb.append(getTableName(run));
-		sb.append(" (");
-		sb.append(DGPSPConstants.COL_OWNER);sb.append(",");
-		sb.append(COL_HASPEOPLE);
-		sb.append(") VALUES('");
-		sb.append(ownerID);sb.append("',");
-		sb.append(((hasPeople) ? "'Yes'" : "'No'"));
-		sb.append(")");
-		sql = sb.toString();
-		s.executeUpdate(sql);
-	  } catch (SQLException sqle) {
-		l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-					 "MissingPeopleTest.insertRow - Problem inserting rows in table. Sql was " + sql,
-					 sqle);
-	  }
-	}
+  private void insertRow(Logger l, Statement s, int run, String ownerID, boolean hasPeople) throws SQLException {
+    String sql = null;
+    try {
+      StringBuffer sb=new StringBuffer();
+      sb.append("INSERT INTO ");
+      sb.append(getTableName(run));
+      sb.append(" (");
+      sb.append(DGPSPConstants.COL_OWNER);sb.append(",");
+      sb.append(COL_HASPEOPLE);
+      sb.append(") VALUES('");
+      sb.append(ownerID);sb.append("',");
+      sb.append(((hasPeople) ? "'Yes'" : "'No'"));
+      sb.append(")");
+      sql = sb.toString();
+      s.executeUpdate(sql);
+    } catch (SQLException sqle) {
+      l.logMessage(Logger.ERROR,Logger.DB_WRITE,
+		   "MissingPeopleTest.insertRow - Problem inserting rows in table. Sql was " + sql,
+		   sqle);
+    }
+  }
   
   /**Get header strings for the table**/
   public String[] getHeaders(){
