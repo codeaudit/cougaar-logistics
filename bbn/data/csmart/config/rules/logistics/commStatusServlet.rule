@@ -4,10 +4,12 @@
 commStatusServlet = "org.cougaar.logistics.servlet.CommStatusServlet"
 agentList = ["123-MSB", "47-FSB"]
 
-  society.each_agent do |agent|
-    if (agentList.include?(agent.name))
+society.each_agent do |agent|
+  agentList.each do |item| 
+    if agent.name.include?(item) 
       agent.add_component do |c|
-      c.classname = commStatusServlet
+        c.classname = commStatusServlet
+      end
     end
   end
 end
