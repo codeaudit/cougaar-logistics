@@ -575,9 +575,33 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
         //  } else {
   }
 
-  public void determineCommStatus(IncrementalSubscription commStatusSub) {
-    updateCommStatus(commStatusSub.getAddedCollection());
-    updateCommStatus(commStatusSub.getChangedCollection());
+  public void determineCommStatus(IncrementalSubscription commStatusSub, Collection addedSupply) {
+    Collection added = commStatusSub.getAddedCollection();
+    Collection changed = commStatusSub.getChangedCollection();
+    //    updateCommStatus(commStatusSub.getAddedCollection(), addedSupply);
+    //    updateCommStatus(commStatusSub.getChangedCollection(), addedSupply);
+    updateCommStatus(added, addedSupply);
+    updateCommStatus(changed, addedSupply);
+    //if there aren't any comms status subscription changes, but we are waiting on addedSupply
+    //check things out to see its time to add the alarm
+    if ( (added.isEmpty()) && (changed.isEmpty()) 
+         && (!commStatusSub.isEmpty()) && (!addedSupply.isEmpty()) ) {
+      for (Iterator iter = commStatusSub.iterator(); iter.hasNext();) {
+        CommStatus cs = (CommStatus) iter.next();
+        String customerName = cs.getConnectedAgentName();
+        CustomerState state = (CustomerState) customerStates.get(customerName);
+        if ( (state != null) && (state.getCommsUpAlarm() == null) ) {
+          if ( (state.isCommsUp()) && (cs.isCommUp()) ) {
+            Alarm alarm = ((ReconcileInventoryPlugin) inventoryPlugin).addAlarm(inventoryPlugin.getCurrentTimeMillis() +
+                                                                                COMMS_UP_DELAY);
+            state.setCommsUpAlarm(alarm);
+            if (logger.isDebugEnabled()) {
+              logger.debug("Have new supply tasks... setting ReconcileSupplyExpander alarm");
+            }
+          }
+        }
+      }
+    }
   }
 
   public void checkCommStatusAlarms() {
@@ -631,7 +655,8 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     }
     return uniqueItems;
   }
-  private void updateCommStatus(Collection commStatus) {
+  private void updateCommStatus(Collection commStatus, Collection addedSupply) {
+    boolean newSupplyTasks = (!addedSupply.isEmpty());
     for (Iterator iter = commStatus.iterator(); iter.hasNext();) {
       CommStatus cs = (CommStatus) iter.next();
       String customerName = cs.getConnectedAgentName();
@@ -663,9 +688,15 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
         if (logger.isDebugEnabled() && debugAgent()) {
           logger.debug("Comms came up for  " + customerName);
         }
-        Alarm alarm = ((ReconcileInventoryPlugin) inventoryPlugin).addAlarm(inventoryPlugin.getCurrentTimeMillis() +
-                                                                                    COMMS_UP_DELAY);
-        state.setCommsUpAlarm(alarm);
+        // only set the Alarm if comms are up and we have atleast some new supply tasks
+        if (newSupplyTasks) {
+          Alarm alarm = ((ReconcileInventoryPlugin) inventoryPlugin).addAlarm(inventoryPlugin.getCurrentTimeMillis() +
+                                                                              COMMS_UP_DELAY);
+          state.setCommsUpAlarm(alarm);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Have new supply tasks... setting ReconcileSupplyExpander alarm");
+          }
+        }
         state.setCommsUp(true);
       }
     }
@@ -762,8 +793,10 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       for (int p = 0; p < pUids.size(); p++) {
         String s = (String) pUids.get(p);
         ar.addAuxiliaryQueryInfo(p, s);
-        System.out.println(" add a aux query on the AR  " + j + " pred uid " + s +
-                           " task uid is " + task.getUID());
+        if (logger.isDebugEnabled() && debugAgent()) {
+          logger.debug(inventoryPlugin.getSupplyType() + " add a aux query on the AR  " + j + " pred uid " + s +
+                       " task uid is " + task.getUID());
+        }
       }
       if (logger.isDebugEnabled() && debugAgent()) {
         logger.debug(inventoryPlugin.getSupplyType() + " - Published new disposition on task " + task.getUID()
