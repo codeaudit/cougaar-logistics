@@ -201,7 +201,7 @@ public class ProjectionsChartDataModel
                 if (graphBucket < 0)
                     logger.error("Array out of bounds alright.  The Graphday is negative");
                 if (graphBucket < nValues)
-                    projYValues[0][graphBucket] += task.getDailyRate();
+                    projYValues[0][graphBucket] += (task.getDailyRate() * unitFactor);
                 else {
                     if (logger.isInfoEnabled()) {
                         logger.info("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphBucket);
@@ -222,7 +222,7 @@ public class ProjectionsChartDataModel
                     if (graphBucket < 0)
                         logger.error("Array out of bounds alright.  The Graphday is negative");
                     if (graphBucket < nValues)
-                        projYValues[1][graphBucket] += ar.getDailyRate();
+                        projYValues[1][graphBucket] += (ar.getDailyRate() * unitFactor);
                     else {
                         if (logger.isInfoEnabled()) {
                             logger.info("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphBucket);

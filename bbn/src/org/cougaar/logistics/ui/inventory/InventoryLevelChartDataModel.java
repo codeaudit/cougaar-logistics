@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -44,152 +44,105 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 /**
  * <pre>
  *
- * The InventoryLevelChartDataModel is the ChartDataModel for the
- * InventoryLevelChart.    It calculates the inventory, reorder,
- * and target levels for puts them in x and y coordinates.
+ * The InventoryLevelChartDataModel is a ChartDataModel for the
+ * InventoryLevelChart.    It calculates the inventory
+ * levels for puts them in x and y coordinates.
  *
  *
  * @see InventoryBaseChartDataModel
+ * @see TargetReorderLevelChartDataModel
  *
  **/
 
 public class InventoryLevelChartDataModel
-        extends InventoryBaseChartDataModel {
+    extends InventoryBaseChartDataModel {
 
 
-    public static final String INVENTORY_LEVEL_SERIES_LABEL = "Inventory Level";
-    public static final String REORDER_LEVEL_SERIES_LABEL = "Reorder Level";
-    public static final String TARGET_LEVEL_SERIES_LABEL = "Target Level";
-    public static final String ORG_ACTIVITY_SERIES_LABEL = "Activity Level";
+  public static final String INVENTORY_LEVEL_SERIES_LABEL = "Inventory Level";
 
-    public static final String INVENTORY_LEVEL_LEGEND = "Inventory Key Levels";
+  public static final String INVENTORY_LEVEL_LEGEND = "Inventory Key Levels";
 
-    public InventoryLevelChartDataModel() {
-        this(null, INVENTORY_LEVEL_LEGEND);
+  public InventoryLevelChartDataModel() {
+    this(null, INVENTORY_LEVEL_LEGEND);
+  }
+
+  public InventoryLevelChartDataModel(String legendTitle) {
+    this(null, legendTitle);
+  }
+
+
+  public InventoryLevelChartDataModel(InventoryData data,
+                                      String theLegendTitle) {
+    inventory = data;
+    legendTitle = theLegendTitle;
+    nSeries = 1;
+    seriesLabels = new String[nSeries];
+    seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
+    logger = Logging.getLogger(this);
+    initValues();
+  }
+
+  public void setValues() {
+    if (valuesSet) return;
+    setInventoryValues();
+    valuesSet = true;
+  }
+
+  public void setInventoryValues() {
+
+    if (inventory == null) {
+      xvalues = new double[nSeries][0];
+      yvalues = new double[nSeries][0];
+      return;
     }
 
-    public InventoryLevelChartDataModel(String legendTitle) {
-        this(null, legendTitle);
+    InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
+        inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
+    ArrayList levels = schedHeader.getSchedule();
+
+    computeCriticalNValues();
+
+    xvalues = new double[nSeries][];
+    yvalues = new double[nSeries][];
+    //initZeroYVal(nValues);
+    for (int i = 0; i < nSeries ; i++) {
+      xvalues[i] = new double[nValues];
+      yvalues[i] = new double[nValues];
+      for (int j = 0; j < nValues; j++) {
+        xvalues[i][j] = minBucket + (j * bucketDays);
+        yvalues[i][j] = 0;
+      }
     }
 
+    ArrayList targetLevels = new ArrayList();
+    ArrayList orgActLevels = new ArrayList();
 
-    public InventoryLevelChartDataModel(InventoryData data,
-                                        String theLegendTitle) {
-        inventory = data;
-        legendTitle = theLegendTitle;
-        nSeries = 3;
-        seriesLabels = new String[nSeries];
-        seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
-        seriesLabels[1] = REORDER_LEVEL_SERIES_LABEL;
-        seriesLabels[2] = TARGET_LEVEL_SERIES_LABEL;
-        logger = Logging.getLogger(this);
-        initValues();
+    //Need to add target level which is a little more complicated
+    //than you think.  We don't know how many values there are
+    //in this third series. We have to add them if they are non null
+    //to a vector, allocated the third series same length as the
+    //vector and put them into there. mildly tricky business.
+    for (int i = 0; i < levels.size(); i++) {
+      InventoryLevel level = (InventoryLevel) levels.get(i);
+      long startTime = level.getStartTime();
+      long endTime = level.getEndTime();
+      int startBucket = (int) computeBucketFromTime(startTime);
+      int endBucket = (int) computeBucketFromTime(endTime);
+      Double invQty = level.getInventoryLevel();
+      for (int j = startBucket; j <= endBucket; j += bucketDays) {
+        if (invQty != null) {
+          try {
+          yvalues[0][(j - minBucket) / bucketDays] = (invQty.doubleValue() * unitFactor);
+          }
+          catch(java.lang.NullPointerException e) {
+            System.out.println("Yikes NPE! " + invQty + " " + invQty.doubleValue() + " unit Factor: " + unitFactor);
+            throw e;
+          }
+        }
+
+      }
     }
-
-    public void setValues() {
-        if (valuesSet) return;
-        setInventoryValues();
-        valuesSet = true;
-    }
-
-    public void setInventoryValues() {
-
-        if (inventory == null) {
-            xvalues = new double[nSeries][0];
-            yvalues = new double[nSeries][0];
-            return;
-        }
-
-        InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
-                inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
-        ArrayList levels = schedHeader.getSchedule();
-
-        computeCriticalNValues();
-
-        xvalues = new double[nSeries][];
-        yvalues = new double[nSeries][];
-        //initZeroYVal(nValues);
-        for (int i = 0; i < (nSeries - 1); i++) {
-            xvalues[i] = new double[nValues];
-            yvalues[i] = new double[nValues];
-            for (int j = 0; j < nValues; j++) {
-                xvalues[i][j] = minBucket + (j * bucketDays);
-                yvalues[i][j] = 0;
-            }
-        }
-
-        ArrayList targetLevels = new ArrayList();
-        ArrayList orgActLevels = new ArrayList();
-
-        //Need to add target level which is a little more complicated
-        //than you think.  We don't know how many values there are
-        //in this third series. We have to add them if they are non null
-        //to a vector, allocated the third series same length as the
-        //vector and put them into there. mildly tricky business.
-        for (int i = 0; i < levels.size(); i++) {
-            InventoryLevel level = (InventoryLevel) levels.get(i);
-            long startTime = level.getStartTime();
-            long endTime = level.getEndTime();
-            int startBucket = (int) computeBucketFromTime(startTime);
-            int endBucket = (int) computeBucketFromTime(endTime);
-            Double invQty = level.getInventoryLevel();
-            double reorderQty = level.getReorderLevel();
-            for (int j = startBucket; j <= endBucket; j += bucketDays) {
-                if(invQty != null) {
-                  yvalues[0][(j - minBucket) / bucketDays] = invQty.doubleValue();
-                }
-                yvalues[1][(j - minBucket) / bucketDays] = reorderQty;
-            }
-            if (level.getTargetLevel() != null) {
-                targetLevels.add(level);
-            }
-            if (level.getActivityType() != null){
-                orgActLevels.add(level);
-            }
-        }
-
-        xvalues[2] = new double[targetLevels.size()];
-        yvalues[2] = new double[targetLevels.size()];
-
-        for (int i = 0; i < targetLevels.size(); i++) {
-            InventoryLevel level = (InventoryLevel) targetLevels.get(i);
-            long startTime = level.getStartTime();
-            int startDay = (int) computeBucketFromTime(startTime);
-            double targetLevel = level.getTargetLevel().doubleValue();
-           //TODO: Remove
-          //maxQty = Math.max(maxQty,targetLevel);
-            xvalues[2][i] = startDay;
-            yvalues[2][i] = targetLevel;
-        }
-
-
-        /**
-
-        xvalues[ORG_ACTIVITY_SERIES_INDEX] = new double[orgActLevels.size()];
-        yvalues[ORG_ACTIVITY_SERIES_INDEX] = new double[orgActLevels.size()];
-
-        offensiveQty = maxQty + 5;
-        defensiveQty = offensiveQty * .25;
-
-
-        for (int i = 0; i < orgActLevels.size(); i++) {
-            InventoryLevel level = (InventoryLevel) orgActLevels.get(i);
-            long startTime = level.getStartTime();
-            int startDay = (int) computeBucketFromTime(startTime);
-            double orgActQty = offensiveQty;
-            if(level.getActivityType().trim().toLowerCase().equals("defensive")){
-                  orgActQty = defensiveQty;
-            }
-            xvalues[ORG_ACTIVITY_SERIES_INDEX][i] = startDay;
-            yvalues[ORG_ACTIVITY_SERIES_INDEX][i] = orgActQty;
-        }
-
-        **/
-
-
-    }
-
-
+  }
 
 
 }

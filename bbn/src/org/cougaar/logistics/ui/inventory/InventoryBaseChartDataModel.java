@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
- 
+
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.ArrayList;
@@ -40,6 +40,7 @@ import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleHeader;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
+import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
 
 /**
  * <pre>
@@ -78,6 +79,9 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
     protected String legendTitle;
 
     protected InventoryData inventory;
+    protected InventoryPreferenceData prefData;
+
+    protected double unitFactor;
 
     protected boolean valuesSet;
 
@@ -100,6 +104,7 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
         inventory = newInventory;
         baseCDayTime = inventory.getStartCDay();
         baseTime = (useCDay) ? baseCDayTime : InventoryChartBaseCalendar.getBaseTime();
+        unitFactor = (InventoryChart.getConversionTable().getConversionForData(newInventory,prefData)).getFactor();
         valuesSet = false;
         initValues();
         fireChartDataEvent(ChartDataEvent.RELOAD, 0, 0);
@@ -256,6 +261,11 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
                 logger.debug("computeNValues:minBucket=" + minBucket + " maxBucket=" + maxBucket + " bucketDays=" + bucketDays + " nValues=" + nValues);
             }
         }
+    }
+
+    public void prefDataChanged(InventoryPreferenceData origData,
+                                InventoryPreferenceData newData) {
+      prefData=newData;
     }
 }
 

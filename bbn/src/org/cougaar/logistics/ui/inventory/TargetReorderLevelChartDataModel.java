@@ -44,81 +44,52 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 /**
  * <pre>
  *
- * The OrgActivityChartDataModel is the 2nd ChartDataModel for the
- * InventoryLevelChart.    It shows the defensive and offensive,
- * org activities as background to the inventory levels.
+ * The TargetReorderLevelChartDataModel is a ChartDataModel for the
+ * InventoryLevelChart.    It calculates the
+ * target and reorder levels for puts them in x and y coordinates.
  *
  *
  * @see InventoryBaseChartDataModel
+ * @see InventoryLevelChartDataModel
  *
  **/
 
-public class OrgActivityChartDataModel
+public class TargetReorderLevelChartDataModel
     extends InventoryBaseChartDataModel {
 
 
-  private double offensiveQty = 0.0;
-  private double defensiveQty = 0.0;
+  public static final String TARGET_LEVEL_SERIES_LABEL = "Target Level";
+  public static final String REORDER_LEVEL_SERIES_LABEL = "Reorder Level";
 
-  private ArrayList orgActs;
+  //public static final String SYMBOL = " Symbol";
 
-  public static final int OFFENSIVE_SERIES_INDEX = 0;
-  public static final int DEFENSIVE_SERIES_INDEX = 1;
+  public static final String TARGET_REORDER_LEVEL_LEGEND = "Target And Reorder Levels";
 
-  public static final String ORG_ACTIVITY_SERIES_LABEL = "Activity Level";
-
-  public static final String OFFENSIVE_SERIES_LABEL = "Offensive";
-  public static final String DEFENSIVE_SERIES_LABEL = "Defensive";
-
-  public static final String ORG_ACTIVITY_LEGEND = "";
-
-  public OrgActivityChartDataModel() {
-    this(null, ORG_ACTIVITY_LEGEND);
+  public TargetReorderLevelChartDataModel() {
+    this(null, TARGET_REORDER_LEVEL_LEGEND);
   }
 
-  public OrgActivityChartDataModel(String legendTitle) {
+  public TargetReorderLevelChartDataModel(String legendTitle) {
     this(null, legendTitle);
   }
 
-  public OrgActivityChartDataModel(InventoryData data,
-                                   String theLegendTitle) {
+
+  public TargetReorderLevelChartDataModel(InventoryData data,
+                                          String theLegendTitle) {
     inventory = data;
     legendTitle = theLegendTitle;
     nSeries = 2;
     seriesLabels = new String[nSeries];
-    seriesLabels[OFFENSIVE_SERIES_INDEX] = OFFENSIVE_SERIES_LABEL;
-    seriesLabels[DEFENSIVE_SERIES_INDEX] = DEFENSIVE_SERIES_LABEL;
+    seriesLabels[0] = REORDER_LEVEL_SERIES_LABEL;
+    seriesLabels[1] = TARGET_LEVEL_SERIES_LABEL;
     logger = Logging.getLogger(this);
-    orgActs = new ArrayList();
     initValues();
-  }
-
-
-  public String getActivityFromLevel(double value) {
-    if (value == defensiveQty) {
-      return "Defensive";
-    } else {
-      return "Offensive";
-    }
-  }
-
-
-  public double getLevelFromActivity(String value) {
-    if (value.trim().toLowerCase().equals("defensive")) {
-      return defensiveQty;
-    } else {
-      return offensiveQty;
-    }
   }
 
   public void setValues() {
     if (valuesSet) return;
     setInventoryValues();
     valuesSet = true;
-  }
-
-  public boolean hasOrgActivities() {
-    return !orgActs.isEmpty();
   }
 
   public void setInventoryValues() {
@@ -138,7 +109,7 @@ public class OrgActivityChartDataModel
     xvalues = new double[nSeries][];
     yvalues = new double[nSeries][];
     //initZeroYVal(nValues);
-    for (int i = 0; i < (nSeries); i++) {
+    for (int i = 0; i < (nSeries - 1); i++) {
       xvalues[i] = new double[nValues];
       yvalues[i] = new double[nValues];
       for (int j = 0; j < nValues; j++) {
@@ -147,9 +118,7 @@ public class OrgActivityChartDataModel
       }
     }
 
-    orgActs.clear();
-
-    double maxQty = 0;
+    ArrayList targetLevels = new ArrayList();
 
     //Need to add target level which is a little more complicated
     //than you think.  We don't know how many values there are
@@ -158,42 +127,29 @@ public class OrgActivityChartDataModel
     //vector and put them into there. mildly tricky business.
     for (int i = 0; i < levels.size(); i++) {
       InventoryLevel level = (InventoryLevel) levels.get(i);
-      Double invQty = level.getInventoryLevel();
-      if (invQty != null) {
-        maxQty = Math.max(maxQty, (invQty.doubleValue() * unitFactor));
-      }
+      long startTime = level.getStartTime();
+      long endTime = level.getEndTime();
+      int startBucket = (int) computeBucketFromTime(startTime);
+      int endBucket = (int) computeBucketFromTime(endTime);
       double reorderQty = level.getReorderLevel();
-      maxQty = Math.max(maxQty, reorderQty);
-      if (level.getTargetLevel() != null) {
-        maxQty = Math.max(maxQty, level.getTargetLevel().doubleValue());
+      for (int j = startBucket; j <= endBucket; j += bucketDays) {
+        yvalues[0][(j - minBucket) / bucketDays] = (reorderQty * unitFactor);
       }
-      if (level.getActivityType() != null) {
-        orgActs.add(level);
+      if (level.getTargetLevel() != null) {
+        targetLevels.add(level);
       }
     }
 
+    xvalues[1] = new double[targetLevels.size()];
+    yvalues[1] = new double[targetLevels.size()];
 
-    offensiveQty = maxQty * 1.15;
-    //offensiveQty = maxQty + 5;
-    //defensiveQty = offensiveQty * .25;
-    //offensiveQty = defensiveQty;
-    defensiveQty = offensiveQty;
-
-    for (int i = 0; i < orgActs.size(); i++) {
-      InventoryLevel level = (InventoryLevel) orgActs.get(i);
+    for (int i = 0; i < targetLevels.size(); i++) {
+      InventoryLevel level = (InventoryLevel) targetLevels.get(i);
       long startTime = level.getStartTime();
-      long endTime = level.getEndTime();
       int startDay = (int) computeBucketFromTime(startTime);
-      int endDay = (int) computeBucketFromTime(endTime);
-      String actType = level.getActivityType();
-      //xvalues[OFFENSIVE_SERIES_INDEX][i] = startDay;
-      for (int j = startDay; j < endDay; j += bucketDays) {
-        if (actType.trim().toLowerCase().equals("defensive")) {
-          yvalues[DEFENSIVE_SERIES_INDEX][(j - minBucket) / bucketDays] = defensiveQty;
-        } else {
-          yvalues[OFFENSIVE_SERIES_INDEX][(j - minBucket) / bucketDays] = offensiveQty;
-        }
-      }
+      double targetLevel = level.getTargetLevel().doubleValue();
+      xvalues[1][i] = startDay;
+      yvalues[1][i] = (targetLevel * unitFactor);
     }
   }
 }

@@ -62,6 +62,12 @@ public class ShortfallChartDataModel
     public static final int ACTUAL_SERIES_INDEX = 1;
 
 
+    public ShortfallChartDataModel() {
+        inventory = null;
+        logger = Logging.getLogger(this);
+    }
+
+
     public ShortfallChartDataModel(RequisitionsChartDataModel reqDM,
                                    ProjectionsChartDataModel projDM) {
         this(SHORTFALL_LEGEND, reqDM, projDM);

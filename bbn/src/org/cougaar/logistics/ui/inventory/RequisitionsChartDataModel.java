@@ -138,7 +138,7 @@ public class RequisitionsChartDataModel
             InventoryTask task = (InventoryTask) requisitions.get(i);
             long endTime = task.getEndTime();
             int endBucket = (int) computeBucketFromTime(endTime);
-            yvalues[0][endBucket - minBucket] += task.getQty();
+            yvalues[0][endBucket - minBucket] += (task.getQty() * unitFactor);
         }
 
         for (int i = 0; i < reqARs.size(); i++) {
@@ -146,7 +146,7 @@ public class RequisitionsChartDataModel
             if (ar.isSuccess()) {
                 long endTime = ar.getEndTime();
                 int endBucket = (int) computeBucketFromTime(endTime);
-                yvalues[1][endBucket - minBucket] += ar.getQty();
+                yvalues[1][endBucket - minBucket] += (ar.getQty() * unitFactor);
             }
         }
 
