@@ -21,6 +21,7 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
@@ -77,31 +78,31 @@ public class InventoryPlugin extends ComponentPlugin
   private TaskUtils taskUtils;
   private TimeUtils timeUtils;
   private AssetUtils AssetUtils;
-  private ScheduleUtils scheduleUtils;
+  protected ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
-  private HashMap inventoryHash;
-  private HashMap inventoryInitHash;
-  private HashSet touchedInventories;
+  protected HashMap inventoryHash;
+  protected HashMap inventoryInitHash;
+  protected HashSet touchedInventories;
     // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private boolean touchedChangedProjections = false;
-  private String supplyType;
+  protected String supplyType;
   private String inventoryFile;
 //   private boolean fillToCapacity; Will be added bug #1482
 //   private boolean maintainAtCapacity; Will be added bug #1482
-  private DetReqAggHandler detReqHandler;
-  private Organization myOrganization;
+  protected DetReqAggHandler detReqHandler;
+  protected Organization myOrganization;
   private String myOrgName;
-  private SupplyExpander supplyExpander;
-  private ExternalAllocator externalAllocator;
-  private RefillGenerator refillGenerator;
-  private RefillProjectionGenerator refillProjGenerator;
-  private RefillComparator refillComparator;
+  private ExpanderModule supplyExpander;
+  protected AllocatorModule externalAllocator;
+  private RefillGeneratorModule refillGenerator;
+  private RefillProjectionGeneratorModule refillProjGenerator;
+  private ComparatorModule refillComparator;
   private AllocationAssessor allocationAssessor;
-  private long startTime;
+  protected long startTime;
   private long cycleStamp;
-  private boolean logToCSV=false;
-  private transient ArrayList newRefills = new ArrayList();
+  protected boolean logToCSV=false;
+  protected transient ArrayList newRefills = new ArrayList();
   private boolean rehydrateInvs = false;
   private boolean OMChange = false;
   private long prevLevel6;
@@ -122,14 +123,14 @@ public class InventoryPlugin extends ComponentPlugin
   public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
 
   // OPlan variable
-  LogisticsOPlan logOPlan = null;
+  protected LogisticsOPlan logOPlan = null;
 
   // Policy variables
   private InventoryPolicy inventoryPolicy = null;
-  private int criticalLevel = 3;
-  private int reorderPeriod = 3;
-  private long bucketSize = TimeUtils.MSEC_PER_DAY;
-  private boolean fillToCapacity = false;
+  protected int criticalLevel = 3;
+  protected int reorderPeriod = 3;
+  protected long bucketSize = TimeUtils.MSEC_PER_DAY;
+  protected boolean fillToCapacity = false;
 
   public void load() {
     super.load();
@@ -141,11 +142,11 @@ public class InventoryPlugin extends ComponentPlugin
     detReqHandler = new DetReqAggHandler(this);
     // readParameters() initializes supplyType and inventoryFile
     pluginParams = readParameters();
-    supplyExpander = new SupplyExpander(this);
-    externalAllocator = new ExternalAllocator(this,getRole(supplyType));
-    refillGenerator = new RefillGenerator(this);
-    refillProjGenerator = new RefillProjectionGenerator(this);
-    refillComparator = new RefillComparator(this);
+    supplyExpander = getExpanderModule();
+    externalAllocator = getAllocatorModule();
+    refillGenerator = getRefillGeneratorModule();
+    refillProjGenerator = getRefillProjectionGeneratorModule();
+    refillComparator = getComparatorModule();
     allocationAssessor = new AllocationAssessor(this,getRole(supplyType));
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
@@ -430,7 +431,7 @@ public class InventoryPlugin extends ComponentPlugin
   private IncrementalSubscription detReqSubscription;
   
   /** Subscription for the aggregated support request **/
-  private CollectionSubscription aggMILSubscription;
+  protected CollectionSubscription aggMILSubscription;
   
   /** Subscription for the MIL tasks **/
   private IncrementalSubscription milSubscription;
@@ -972,7 +973,7 @@ public class InventoryPlugin extends ComponentPlugin
 
   // Determines which tasks should be expanded and which should be
   // re-allocated to a supplier
-  private Collection sortIncomingSupplyTasks(Collection tasks) {
+  protected Collection sortIncomingSupplyTasks(Collection tasks) {
     ArrayList expandList = new ArrayList();
     ArrayList passThruList = new ArrayList();
     Task t;
@@ -1015,7 +1016,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
   
-  private void addInventory(Inventory inventory) {
+  protected void addInventory(Inventory inventory) {
     String item = getInventoryType(inventory);
     inventoryHash.put(item, inventory);
   }
@@ -1306,7 +1307,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  private Role getRole(String supply_type) {
+  protected Role getRole(String supply_type) {
     if (supply_type.equals("Ammunition"))
       return Constants.Role.AMMUNITIONPROVIDER;
     if (supply_type.equals("BulkPOL"))
@@ -1456,7 +1457,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   // We only want to process inventories that we have no new refills for.
-  private Collection getActionableInventories(){
+  protected Collection getActionableInventories(){
     ArrayList actionableInvs = new ArrayList(touchedInventories);
     Task refill;
     Asset asset;
@@ -1482,6 +1483,46 @@ public class InventoryPlugin extends ComponentPlugin
 	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       thePG.rebuildCustomerHash();
     }
+  }
+
+  protected ExpanderModule getExpanderModule() {
+    return new SupplyExpander(this);
+  }
+
+  protected AllocatorModule getAllocatorModule() {
+    return new ExternalAllocator(this,getRole(supplyType));
+  }
+
+  protected RefillGeneratorModule getRefillGeneratorModule() {
+    return new RefillGenerator(this);
+  }
+
+  protected RefillProjectionGeneratorModule getRefillProjectionGeneratorModule() {
+    return new RefillProjectionGenerator(this);
+  }
+
+  protected ComparatorModule getComparatorModule() {
+    String comparatorClass = (String)pluginParams.get("COMPARATOR");
+    if (comparatorClass == null) {
+      return new RefillComparator(this);
+    } else {
+      if (comparatorClass.indexOf('.') == -1) {
+        comparatorClass = "org.cougaar.logistics.plugin.inventory."+comparatorClass;
+      }
+      try {
+	Class[] paramTypes = {this.getClass()};
+	Object[] initArgs = {this};
+	Class cls = Class.forName(comparatorClass);
+	Constructor constructor = cls.getConstructor(paramTypes);
+	ComparatorModule comparator = (ComparatorModule)constructor.newInstance(initArgs);
+	logger.info("Using comparator "+comparatorClass);
+	return comparator;
+      } catch (Exception e) {
+	logger.error(e+" Unable to create Expander instance of "+comparatorClass+". "+
+		     "Loading default org.cougaar.logistics.plugin.inventory.RefillComparator");
+      }
+    }
+    return new RefillComparator(this); 
   }
 
   /**
