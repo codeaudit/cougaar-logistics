@@ -149,7 +149,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	  }
       });
     //  System.out.println("\n InventoryPlugin of type: " + supplyType +
-//  		       "in org: " + getBindingSite().getAgentIdentifier() +
+//  		       "in org: " + getMyOrganization().getClusterPG().getClusterIdentifier().toString() +
 //  		       " this plugin is: " + this);
   }
 
@@ -203,7 +203,7 @@ public class InventoryPlugin extends ComponentPlugin {
       if (logger.isInfoEnabled ())
 	logger.info("\n InventoryPlugin " + supplyType + 
 		    " not ready to process tasks yet." +
-		    " my inv policy is: " + inventoryPolicy + " in " + getBindingSite().getAgentIdentifier());
+		    " my inv policy is: " + inventoryPolicy + " in " + getMyOrganization().getClusterPG().getClusterIdentifier().toString());
       return;
     }
 	
@@ -237,15 +237,16 @@ public class InventoryPlugin extends ComponentPlugin {
 
     if ((detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) &&
 	(logOPlan != null)) {
-      touchedProjections = 
+      boolean touchedRemovedProjections = 
 	supplyExpander.handleRemovedProjections(projectionTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(supplyTaskSubscription.getRemovedCollection());
+      handleRemovedRefills(refillSubscription.getRemovedCollection());
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
-      touchedProjections |= expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+      touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
       if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections
-	  if (touchedProjections) {
+	  if (touchedProjections || touchedRemovedProjections) {
 	      refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
 							     criticalLevel, 
 							     getEndOfLevelSix(), 
@@ -291,6 +292,9 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for Allocations on outgoing Refill (Supply & ProjectSupply) tasks **/
   private IncrementalSubscription refillAllocationSubscription;
 
+  /** Subscription for my Refill (Supply & ProjectSupply) tasks **/
+  private IncrementalSubscription refillSubscription;
+
   /** Subscription for Supply/ProjectSupply Expansions **/
   private IncrementalSubscription expansionSubscription;
 
@@ -317,6 +321,7 @@ public class InventoryPlugin extends ComponentPlugin {
     projectionTaskSubscription = (IncrementalSubscription) blackboard.subscribe( new ProjectionTaskPredicate(supplyType, myOrgName, taskUtils));
     refillAllocationSubscription = (IncrementalSubscription) blackboard.subscribe(new RefillAllocPredicate(supplyType, myOrgName, taskUtils));
     expansionSubscription = (IncrementalSubscription)blackboard.subscribe(new ExpansionPredicate(supplyType, myOrgName, taskUtils));
+    refillSubscription = (IncrementalSubscription)blackboard.subscribe(new RefillPredicate(supplyType, myOrgName, taskUtils));
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -548,6 +553,34 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
 
+  //Refill tasks
+  static class RefillPredicate implements UnaryPredicate {
+    String type_;
+    String orgName_;
+    TaskUtils taskUtils;
+    
+    public RefillPredicate(String type, String orgName, TaskUtils aTaskUtils) {
+      type_ = type;
+      orgName_ = orgName;
+      taskUtils = aTaskUtils;
+    }
+    
+    public boolean execute(Object o) {
+      if (o instanceof Task ) {
+	Task task = (Task)o;
+	if (task.getVerb().equals(Constants.Verb.SUPPLY) ||
+	    task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+	  if (taskUtils.isDirectObjectOfType(task, type_)) {
+            if (taskUtils.isMyRefillTask(task, orgName_)){
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+  }
+
   private class ExpansionPredicate implements UnaryPredicate {
     String supplyType;
     String orgName;
@@ -588,12 +621,12 @@ public class InventoryPlugin extends ComponentPlugin {
 	if (type.equals(this.type)) {
 	  if (logger.isInfoEnabled()) 
 	    logger.info("Found an inventory policy for "+this.type + "agent is: " +
-			getBindingSite().getAgentIdentifier());
+			getMyOrganization().getClusterPG().getClusterIdentifier().toString());
 	  return true;
 	} else {
 	  if (logger.isDebugEnabled()) 
 	    logger.debug("Ignoring type of: "+type + " in " +
-			 getBindingSite().getAgentIdentifier() + " this type is: " + 
+			 getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " this type is: " + 
 			 this.type);
 	}
       }
@@ -971,13 +1004,13 @@ public class InventoryPlugin extends ComponentPlugin {
       publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON+"_"+supplyType, rangeList,
 							 LEVEL_6_TIME_HORIZON_DEFAULT));
     } catch (Exception e) {  
-      logger.error (getBindingSite().getAgentIdentifier() + " got exception creating operating modes.", e); 
+      logger.error (getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " got exception creating operating modes.", e); 
     } finally {
       getBlackboardService().closeTransaction();
     }
 
     if(logger.isInfoEnabled())
-      logger.info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
+      logger.info (getMyOrganization().getClusterPG().getClusterIdentifier().toString() + " created operating modes - " + 
 		   "level 2 time horizon is " + level2Horizon + 
 		   " and level 6 is " + level6Horizon);
   }
@@ -1003,6 +1036,26 @@ public class InventoryPlugin extends ComponentPlugin {
       LEVEL_2_MIN.intValue() : LEVEL_2_MAX.intValue();
 
     return timeUtils.addNDays(now, days);
+  }
+
+  /** When one of our Refill tasks gets removed (Supply or ProjectSupply),
+   *  remove it from the BG list.
+   *  @param Collection The collection of removed refill tasks.
+   **/
+  public void handleRemovedRefills(Collection removedTasks) {
+    Iterator removedIter = removedTasks.iterator();
+    while (removedIter.hasNext()) {
+      Task removed = (Task) removedIter.next();
+      String item = removed.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
+      Inventory inventory = (Inventory) inventoryHash.get(item);
+      LogisticsInventoryPG invPG = (LogisticsInventoryPG)
+        inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+      if (removed.getVerb().equals(Constants.Verb.SUPPLY)) {
+        invPG.removeRefillRequisition(removed);
+      } else {
+        invPG.removeRefillProjection(removed);
+      }
+    }
   }
 
   /**

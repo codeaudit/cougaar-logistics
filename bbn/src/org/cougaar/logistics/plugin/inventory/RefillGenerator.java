@@ -128,7 +128,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
         //  create the refills
         while (refillBucket <= maxLeadBucket) {
           double invLevel = thePG.getLevel(startBucket) - 
-          thePG.getActualDemand(refillBucket);
+            thePG.getActualDemand(refillBucket);
           if (thePG.getCriticalLevel(refillBucket) < invLevel) {
             thePG.setLevel(refillBucket, invLevel);
 	  } else {
@@ -278,11 +278,12 @@ public class RefillGenerator extends InventoryLevelGenerator {
     double alpha = .25;
     Vector points = new Vector();
 
-    AspectScorePoint earliest = new AspectScorePoint(today, alpha);
-    AspectScorePoint best = new AspectScorePoint(bestDay, 0.0);
+    AspectScorePoint earliest = new AspectScorePoint(today, alpha, AspectType.END_TIME);
+    AspectScorePoint best = new AspectScorePoint(bestDay, 0.0, AspectType.END_TIME);
     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
-                                                       alpha);
-    AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score));
+                                                       alpha, AspectType.END_TIME);
+    AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score), 
+                                                   AspectType.END_TIME);
 
     points.addElement(earliest);
     points.addElement(best);
@@ -378,6 +379,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
     int reorderPeriodEndBucket = startBucket + reorderPeriod;
     int lastDemandBucket = thePG.getLastDemandBucket();
     double criticalLevelBegin, criticalLevelEnd;
+    int startReorderBucket = -1;
+    int startTarget = -1;
     while (currentBucket <= lastDemandBucket) {
       criticalLevelBegin = thePG.getCriticalLevel(currentBucket);
       criticalLevelEnd = thePG.getCriticalLevel(reorderPeriodEndBucket);
@@ -389,6 +392,12 @@ public class RefillGenerator extends InventoryLevelGenerator {
       if (target < 0.0) {
 	target = 0.0;
       }
+      // if (startReorderBucket != -1) {
+//         // set the inventory levels for the entire reorder period based on the two
+//         // target levels we have
+//         if (startTarget == target) {
+//           // set all the days using target
+          
       thePG.setTarget(currentBucket, target);
       currentBucket += reorderPeriod;
       reorderPeriodEndBucket = currentBucket + reorderPeriod;
