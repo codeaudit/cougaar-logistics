@@ -27,7 +27,7 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Rate;
-import org.cougaar.planning.ldm.measure.FlowRate;
+import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.plan.Service;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
@@ -46,7 +46,6 @@ public class AmmoConsumerBG extends ConsumerBG {
   protected AmmoConsumerPG myPG;
   MEIPrototypeProvider parentPlugin;
   String supplyType = "Ammunition";
-  Schedule mergedSchedule = null;
   HashMap consumptionRates = new HashMap();
   private transient LoggingService logger;
 
@@ -103,11 +102,7 @@ public class AmmoConsumerBG extends ConsumerBG {
     if (myOrgName.indexOf("35-ARBN") >= 0) {
       System.out.println("getParamSched() MERGED "+paramSchedule);
     }
-    if (mergedSchedule == null) {
-      mergedSchedule = paramSchedule;
-      return paramSchedule;
-    }
-    return null; // diff'ed schedule
+    return paramSchedule;
   }
 
   public Rate getRate(Asset asset, List params) {
@@ -154,7 +149,7 @@ public class AmmoConsumerBG extends ConsumerBG {
       }
       return r;
     }
-    r = FlowRate.newGallonsPerDay (d.doubleValue()*qty.doubleValue());
+    r = CountRate.newEachesPerDay (d.doubleValue()*qty.doubleValue());
     if (myOrgName.indexOf("35-ARBN") >= 0) {
       System.out.println("getRate() Rate is  "+ r +", for "+
 			 asset.getTypeIdentificationPG().getNomenclature());
@@ -166,9 +161,10 @@ public class AmmoConsumerBG extends ConsumerBG {
     if (consumptionRates.isEmpty()) {
       Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
 							      myPG.getService(), myPG.getTheater());
-      parseResults(result);
-      if (consumptionRates.isEmpty()) {
+      if (result == null) {
 	logger.error("getConsumed(): Database query returned EMPTY result set");
+      } else {
+	parseResults(result);
       }
     }
     return consumptionRates.keySet();
@@ -187,10 +183,7 @@ public class AmmoConsumerBG extends ConsumerBG {
     double dcr;
     Asset newAsset;
     HashMap map = null;
-    // AMY FIX THIS: I'm not sure if this is ok but it prevents an NPE
-    if (result == null) {
-      return;
-    }
+
     Enumeration results = result.elements();
     Object row[];
 
