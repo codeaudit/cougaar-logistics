@@ -462,7 +462,7 @@ public abstract class DataComputer {
     if (leg.legType == Leg.LEG_TYPE_TRANSPORTING) {
       // get the route
       TransportationRoute transRoute = 
-        getTransportationRoute(task, null);
+        getTransportationRoute(task);
       if (transRoute != null) {
         leg.routeUID = DataRegistry.registerRoute(toReg, transRoute);
       }
@@ -532,7 +532,7 @@ public abstract class DataComputer {
     if (legType == Leg.LEG_TYPE_TRANSPORTING) {
       // get the route
       TransportationRoute transRoute = 
-        getTransportationRoute(task, ie);
+        getTransportationRoute(task);
       if (transRoute != null) {
         leg.routeUID = DataRegistry.registerRoute(toReg, transRoute);
       }
@@ -738,9 +738,7 @@ public abstract class DataComputer {
    * Currently there is only one route per task, so we don't use 
    * the itinerary (for now).
    */
-  private static TransportationRoute getTransportationRoute(
-      Task task,
-      ItineraryElement transIE) {
+  private static TransportationRoute getTransportationRoute(Task task) {
     try {
       PrepositionalPhrase prepVia = 
         task.getPrepositionalPhrase(Constants.Preposition.VIA);

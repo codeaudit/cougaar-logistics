@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 2001 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -56,13 +56,13 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.ConvoyNode;
 public class AssetInstanceQuery extends SqlQuery {
 
   boolean debugALot = false;
-  boolean debug = 
-    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.AssetInstanceQuery.debug", 
+  boolean debug =
+    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.AssetInstanceQuery.debug",
 				       "false"));
-  boolean showSqlTime = 
-    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.AssetInstanceQuery.showSqlTime", 
+  boolean showSqlTime =
+    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.AssetInstanceQuery.showSqlTime",
 				       "false"));
-    
+
   protected FilterClauses filterClauses;
   protected DatabaseRun run;
 
@@ -78,26 +78,26 @@ public class AssetInstanceQuery extends SqlQuery {
     tree.setRoot (new Node ()); // root could be anything
     UIDGenerator generator = tree.getGenerator ();
     int recentRun = run.getRunID ();
-	
+
     // timing stuff
     Date then = new Date();
 
     // Get ResultSet
-    ResultSet rs = getResultSet(connection, formCarrierSql(filterClauses, recentRun)); 
+    ResultSet rs = getResultSet(connection, formCarrierSql(recentRun));
 
     Map carrierToConvoy    = new HashMap ();
     Map convoyToStartEnd   = new HashMap ();
     Map convoyToCarrierMap = new HashMap ();
     Map uidToCarrierNode   = new HashMap ();
-	
+
     // Build tree (Response has stuff added in this function)
-    buildPrototypeTreesFromResult(response, rs, generator, carrierToConvoy, convoyToStartEnd, convoyToCarrierMap, uidToCarrierNode,
+    buildPrototypeTreesFromResult(rs, generator, carrierToConvoy, convoyToStartEnd, convoyToCarrierMap, uidToCarrierNode,
 				  tree);
 
-    rs = getResultSet(connection, formConvoyLegSql(filterClauses, recentRun)); 
+    rs = getResultSet(connection, formConvoyLegSql(recentRun));
 
     // Build tree (Response has stuff added in this function)
-    attachLegsFromResult(response, rs, generator, carrierToConvoy, convoyToStartEnd, convoyToCarrierMap, uidToCarrierNode, tree);
+    attachLegsFromResult(rs, generator, carrierToConvoy, convoyToStartEnd, convoyToCarrierMap, uidToCarrierNode, tree);
 
     // end timing stuff
     if (showSqlTime) {
@@ -105,17 +105,17 @@ public class AssetInstanceQuery extends SqlQuery {
       long diff = now.getTime()-then.getTime();
       System.out.println ("AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
     }
-	
+
     response.addTree (tree);
 
-    if (debug) 
+    if (debug)
       tree.show();
 
     return response;
   }
 
-  private void buildPrototypeTreesFromResult(QueryResponse response, ResultSet rs, UIDGenerator generator,
-					     Map carrierToConvoy, Map convoyToStartEnd, Map convoyToCarrierMap, 
+  private void buildPrototypeTreesFromResult(ResultSet rs, UIDGenerator generator,
+					     Map carrierToConvoy, Map convoyToStartEnd, Map convoyToCarrierMap,
 					     Map uidToCarrierNode, Tree tree) {
     List baseNames = new LinkedList();
     List convoys = new LinkedList();
@@ -132,7 +132,7 @@ public class AssetInstanceQuery extends SqlQuery {
     Date end = null;
 
     Node tempInstance = null;
-	
+
     if (debug) System.out.println("AssetInstanceQuery.buildPrototypeTreesFromResult - ");
 
     // Note: The workings of the following are very dependent on the sort order created by the SQL query
@@ -146,22 +146,22 @@ public class AssetInstanceQuery extends SqlQuery {
 	end   = rs.getTimestamp(DGPSPConstants.COL_ENDTIME);
 	String convoyid = rs.getString(DGPSPConstants.COL_CONVOYID);
 	String convoyName = rs.getString(DGPSPConstants.COL_PRETTYNAME);
-		  
+
 	if (debugALot) System.out.println("convID: "+convID+"  legID: "+legID+"  start: "+start+"  end: "+end);
-		    
+
 	// new baseName - create Node in tree / grab LocationNode
-	// remember that response is ordered by baselocid so you will only change baselocid when 
+	// remember that response is ordered by baselocid so you will only change baselocid when
 	// a new one appears
 	if (!baseNames.contains(baseName)) {
 	  locationNode = createLocationNode(generator,baseName,convType);
 	  baseNames.add(baseName);
 	  tree.addNode (tree.getRoot().getUID(), locationNode);
-		  
+
 	  if (debug) {
 	    System.out.println ("AssetInstanceQuery.buildPrototypeTreesFromResult - starting subtree with root " +
 				locationNode);
-	  } 
-	} 
+	  }
+	}
 
 	Node goodParent = null;
 
@@ -182,7 +182,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	  convoyToStartEnd.put (convoyid, new Date [] {start, end});
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid + 
+	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid +
 				" to start, end " + startEnd);
 
 	} else {
@@ -195,16 +195,16 @@ public class AssetInstanceQuery extends SqlQuery {
 	  Node instanceNode = createCarrierNode(generator, convID, convType, bumperno);
 	  instances.add(convID);
 	  uidToCarrierNode.put(convID,instanceNode);
-			
+
 	  tree.addNode(goodParent.getUID(),instanceNode);
-			
+
 	  List convoysForCarrier = (List) carrierToConvoy.get(convID);
 	  if (convoysForCarrier == null)
 	    carrierToConvoy.put (convID, convoysForCarrier=new ArrayList());
 	  convoysForCarrier.add (convoyid);
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid + 
+	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid +
 				" to carrier " + convoysForCarrier);
 
 	  Map uidToNode = (Map) convoyToCarrierMap.get(convoyid);
@@ -213,7 +213,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	  uidToNode.put (convID, instanceNode);
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping carrier " + convID + 
+	    System.out.println ("AssetInstanceQuery - mapping carrier " + convID +
 				" to node " + instanceNode);
 	}
       }
@@ -222,15 +222,15 @@ public class AssetInstanceQuery extends SqlQuery {
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
 
   }
 
-  private void attachLegsFromResult(QueryResponse response, ResultSet rs, UIDGenerator generator,
-				    Map carrierToConvoy, Map convoyToStartEnd, Map convoyToCarrierMap, 
+  private void attachLegsFromResult(ResultSet rs, UIDGenerator generator,
+				    Map carrierToConvoy, Map convoyToStartEnd, Map convoyToCarrierMap,
 				    Map uidToCarrierNode, Tree carrierTree) {
     try {
       Date lastEnd = null;
@@ -244,15 +244,15 @@ public class AssetInstanceQuery extends SqlQuery {
 	Date legStart = rs.getTimestamp(3);
 	Date legEnd   = rs.getTimestamp(4);
 	int  legType  = rs.getInt (5);
-		
+
 	if (lastEnd == null)
 	  lastEnd = legEnd;
-		
+
 	List convoys = (List) carrierToConvoy.get (carrierConvID);
-	if (debug) 
-	  System.out.println("AssetInstanceQuery.attachLegs for carrier " + carrierConvID + " convoys " + 
+	if (debug)
+	  System.out.println("AssetInstanceQuery.attachLegs for carrier " + carrierConvID + " convoys " +
 			     convoys);
-	if (debug) 
+	if (debug)
 	  System.out.println("AssetInstanceQuery.attachLegs leg " + legID + " start " + legStart + " end " + legEnd);
 
 	for (int i = 0; i < convoys.size(); i++) {
@@ -261,8 +261,8 @@ public class AssetInstanceQuery extends SqlQuery {
 	    Node instanceNode = (Node) uidToCarrierNode.get (carrierConvID);
 
 	    if (lastEnd.getTime() != legStart.getTime()) {
-	      if (debug) 
-		System.out.println("AssetInstanceQuery.attachLegs creating mission node b/c lastEnd " + lastEnd + 
+	      if (debug)
+		System.out.println("AssetInstanceQuery.attachLegs creating mission node b/c lastEnd " + lastEnd +
 				   " != legStart " + legStart);
 	      missionNode = createMissionNode(generator,legID,legStart,legEnd, instanceNode.getMode());
 	      carrierTree.addNode(instanceNode.getUID(), missionNode);
@@ -275,7 +275,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	    Date [] startEnd = (Date []) convoyToStartEnd.get(convoyID);
 	    if (legStart.getTime () >= startEnd[0].getTime () &&
 		legEnd.getTime ()   <= startEnd[1].getTime ()) {
-	      if (debug) 
+	      if (debug)
 		System.out.println("AssetInstanceQuery.attachLegs found time match for convoy " + convoyID);
 
 	      Map uidToNode = (Map) convoyToCarrierMap.get (convoyID);
@@ -291,7 +291,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	      legNode = createLegNode(generator,legID,legStart,legEnd, instanceNode.getMode(), legType);
 	      carrierTree.addNode(missionNode.getUID(), legNode);
 	      lastEnd = legEnd;
-	    } 
+	    }
 	  }
 	}
       }
@@ -302,13 +302,13 @@ public class AssetInstanceQuery extends SqlQuery {
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
   }
-  
-  private String formCarrierSql(FilterClauses filterclauses, int recentRun) {
+
+  private String formCarrierSql(int recentRun) {
     String instanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
     String legTable = DGPSPConstants.CONVEYED_LEG_TABLE + "_" +recentRun;
     String protoTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
@@ -326,10 +326,10 @@ public class AssetInstanceQuery extends SqlQuery {
     String convoyid = DGPSPConstants.COL_CONVOYID;
     String prettyname = DGPSPConstants.COL_PRETTYNAME;
 
-    String sqlQuery = 
+    String sqlQuery =
       "select " + baseloc + ", " + instanceTable+"."+convid + ", "
       + convType + ", " + bumperno + ", "
-      + starttime + ", " + endtime + ", " + convoyTable+"."+convoyid +", " 
+      + starttime + ", " + endtime + ", " + convoyTable+"."+convoyid +", "
       + prettyname +"\n" +
       "from " + legTable + ", " + protoTable + ", " + instanceTable +
       "\nleft join "+convoyTable+" using ("+convid+") left join "
@@ -338,14 +338,14 @@ public class AssetInstanceQuery extends SqlQuery {
       + protoTable + "." + prototypeid + " =  '" + queriedPrototype + "'" + " and \n"
       + instanceTable + "." + prototypeid + " =  '" + queriedPrototype + "'" + // " and \n" +
       "order by " + baseloc + ", " + convoyid + ", "+ convid + ", " + starttime;
-	
-    if (debug) 
+
+    if (debug)
       System.out.println ("AssetInstanceQuery.formSql - \n" + sqlQuery);
-	
+
     return sqlQuery;
   }
 
-  private String formConvoyLegSql(FilterClauses filterclauses, int recentRun) {
+  private String formConvoyLegSql(int recentRun) {
     String carrierInstanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
     String legTable = DGPSPConstants.CONVEYED_LEG_TABLE + "_" +recentRun;
     String queriedPrototype = (String)filterClauses.getCarrierTypes().get(0);
@@ -358,17 +358,17 @@ public class AssetInstanceQuery extends SqlQuery {
     String legEndTime   = legTable+"."+DGPSPConstants.COL_ENDTIME;
     String cLegType     = legTable+"."+DGPSPConstants.COL_LEGTYPE;
 
-    String sqlQuery = 
+    String sqlQuery =
       "select " + carrierConvID + ", " + legid + ", " + legStartTime    + ", " + legEndTime + ", " + cLegType +
-      "\nfrom "   + legTable + ", " + carrierInstanceTable + 
-      "\nwhere " + 
+      "\nfrom "   + legTable + ", " + carrierInstanceTable +
+      "\nwhere " +
       carrierInstancePrototypeID + " = '" + queriedPrototype + "'" + " and \n" +
-      carrierConvID + " = " + legConvID + 
+      carrierConvID + " = " + legConvID +
       "\norder by " + carrierConvID + ", " + legStartTime;
-	
-    if (debug) 
+
+    if (debug)
       System.out.println ("AssetInstanceQuery.formSql - \n" + sqlQuery);
-	
+
     return sqlQuery;
   }
 
@@ -410,7 +410,7 @@ public class AssetInstanceQuery extends SqlQuery {
     leg.setLegType(legType);
     return leg;
   }
-  
+
   private Node createMissionNode(UIDGenerator generator, String id, Date start, Date end, int mode) {
     MissionNode leg = new MissionNode (generator, id);
     leg.setDisplayName ("");
