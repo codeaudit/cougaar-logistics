@@ -27,9 +27,10 @@ import org.cougaar.planning.ldm.policy.StringRuleParameter;
 
 public class InventoryPolicy extends Policy {
   public static final String ResourceType = "ResourceType";
+  public static final String InventoryManagerSpecifier = "InventoryManagerSpecifier";
   public static final String CriticalLevel = "CriticalLevel";
-  public static final String SlackTime = "SlackTime";
-  public static final String OrderFrequency = "OrderFrequency";
+  public static final String SupplierAdvanceNoticeTime = "SupplierAdvanceNoticeTime";
+  public static final String ReorderPeriod = "ReorderPeriod";
   public static final String HandlingTime = "HandlingTime";
   public static final String TransportTime = "TransportTime";
 
@@ -41,6 +42,13 @@ public class InventoryPolicy extends Policy {
       System.out.println(ex);
     }
     Add(type);
+    StringRuleParameter specifier = new StringRuleParameter(InventoryManagerSpecifier);
+    try {
+      type.setValue(new String());
+    } catch (RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+    Add(specifier);
     IntegerRuleParameter cl = new IntegerRuleParameter(CriticalLevel, 1, 40);
     try {
       cl.setValue(new Integer(3));
@@ -48,14 +56,14 @@ public class InventoryPolicy extends Policy {
       System.out.println(ex);
     }
     Add(cl);
-    IntegerRuleParameter st = new IntegerRuleParameter(SlackTime, 1, 40);
+    IntegerRuleParameter st = new IntegerRuleParameter(SupplierAdvanceNoticeTime, 1, 40);
     try {
       st.setValue(new Integer(1));
     } catch (RuleParameterIllegalValueException ex) {
       System.out.println(ex);
     }
     Add(st);
-    IntegerRuleParameter of = new IntegerRuleParameter(OrderFrequency, 1, 40);
+    IntegerRuleParameter of = new IntegerRuleParameter(ReorderPeriod, 1, 40);
     try {
       of.setValue(new Integer(3));
     } catch (RuleParameterIllegalValueException ex) {
@@ -94,6 +102,22 @@ public class InventoryPolicy extends Policy {
     }
   }
 
+  public String getInventoryManagerSpecifier() {
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(InventoryManagerSpecifier);
+    return (String)param.getValue();
+  }
+  
+  public void setInventoryManagerSpecifier(String name) {
+    StringRuleParameter param = (StringRuleParameter)
+      Lookup(InventoryManagerSpecifier);
+    try {
+      param.setValue(name);
+    } catch(RuleParameterIllegalValueException ex) {
+      System.out.println(ex);
+    }
+  }
+
   public int getCriticalLevel() {
     IntegerRuleParameter param = (IntegerRuleParameter)
       Lookup(CriticalLevel);
@@ -110,15 +134,15 @@ public class InventoryPolicy extends Policy {
     }
   }
 
-  public int getSlackTime() {
+  public int getSupplierAdvanceNoticeTime() {
     IntegerRuleParameter param = (IntegerRuleParameter)
-      Lookup(SlackTime);
+      Lookup(SupplierAdvanceNoticeTime);
     return ((Integer)(param.getValue())).intValue();
   }
 
-  public void setSlackTime(int i) {
+  public void setSupplierAdvanceNoticeTime(int i) {
     IntegerRuleParameter param = (IntegerRuleParameter)
-      Lookup(SlackTime);
+      Lookup(SupplierAdvanceNoticeTime);
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
@@ -126,15 +150,15 @@ public class InventoryPolicy extends Policy {
     }
   }
 
-  public int getOrderFrequency() {
+  public int getReorderPeriod() {
     IntegerRuleParameter param = (IntegerRuleParameter)
-      Lookup(OrderFrequency);
+      Lookup(ReorderPeriod);
     return ((Integer)(param.getValue())).intValue();
   }
 
-  public void setOrderFrequency(int i) {
+  public void setReorderPeriod(int i) {
     IntegerRuleParameter param = (IntegerRuleParameter)
-      Lookup(OrderFrequency);
+      Lookup(ReorderPeriod);
     try {
       param.setValue(new Integer(i));
     } catch(RuleParameterIllegalValueException ex) {
