@@ -36,6 +36,7 @@ delegates=LogisticsInventoryBG logInvBG
 
 logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin); \
 	void addWithdrawProjection(Task task); \
+	double getProjectionTaskDemand(Task task, int bucket, long start, long end); \
 	void addWithdrawRequisition(Task task); \
 	void removeWithdrawProjection(Task task); \
 	void removeWithdrawRequisition(Task task); \
@@ -60,6 +61,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	double getReorderPeriod(); \
 	Collection getWithdrawTasks(int bucket); \
 	Collection getProjectWithdrawTasks(int bucket); \
+	void rebuildCustomerHash(); \
 	long convertBucketToTime(int bucket); \
 	int  convertTimeToBucket(long time); \
 	long getStartTime(); \

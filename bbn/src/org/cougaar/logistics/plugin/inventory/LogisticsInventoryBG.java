@@ -37,6 +37,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.GLMFactory;
 import org.cougaar.glm.ldm.plan.PlanScheduleType;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.plugin.util.AllocationResultHelper;
@@ -146,8 +147,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public void addWithdrawProjection(Task task) {
     compute_critical_levels = true;
-    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
-    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    long start = getStartTime(task);
+    long end = getEndTime(task);
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
     if (bucket_end >= projectedDemandArray.length) {
@@ -186,12 +187,9 @@ public class LogisticsInventoryBG implements PGDelegate {
   // Boundary condition bug - daily projected demands do not
   // jive when comparing daily buckets to 3-day buckets
   // Updates the running demand sum per bucket
-  private void updateProjectedDemandList(Task task, int bucket,
-					 long start, long end, boolean add) {
-    int days_spanned = getDaysSpanned(bucket, start, end);
-    Rate rate = taskUtils.getRate(task);
-    Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
-    double demand = taskUtils.getDouble(scalar);
+  private void updateProjectedDemandList(Task task, int bucket, long start, long end, boolean add) {
+
+    double demand = getProjectionTaskDemand(task, bucket, start, end);
     if (add)
       projectedDemandArray[bucket] += demand;
     else
@@ -200,6 +198,12 @@ public class LogisticsInventoryBG implements PGDelegate {
 //  		 projectedDemandArray[bucket]);
   }
 
+  public double getProjectionTaskDemand(Task task, int bucket, long start, long end) {
+    int days_spanned = getDaysSpanned(bucket, start, end);
+    Rate rate = taskUtils.getRate(task);
+    Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
+    return taskUtils.getDouble(scalar);
+  }
   // Beth,  Because allocation results on Withdraw tasks can change,
   // from one transaction to the next, I do not know which bucket to
   // look in for this task.  Is there a better way of doing this?
@@ -495,6 +499,31 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public Collection getProjectWithdrawTasks(int bucket) {
     return getTasks(bucket, Constants.Verb.PROJECTWITHDRAW);
+  }
+
+  public void rebuildCustomerHash() {
+    customerHash.clear();
+    ArrayList list;
+    Iterator listIter;
+    Task task;
+    Object org;
+    Long lastActualSeen;
+    long endTime;
+    for (int i=dueOutList.size()-1; i >= 0; i--) {
+      list = (ArrayList)dueOutList.get(i);
+      if (!list.isEmpty()) {
+	listIter = list.iterator();
+	while (listIter.hasNext()) {
+	  task = (Task)listIter.next();
+	  org = TaskUtils.getCustomer(task);
+	  endTime = getEndTime(task);
+	  lastActualSeen = (Long)customerHash.get(org);
+	  if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
+	    customerHash.put(org, new Long(endTime));
+	  }
+	}
+      }
+    }  
   }
 
   public void logAllToCSVFile(long aCycleStamp) {

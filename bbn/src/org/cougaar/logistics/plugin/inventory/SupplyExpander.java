@@ -208,9 +208,9 @@ public class SupplyExpander extends InventoryModule {
 	boolean newProjections = false;
 	LogisticsInventoryPG logInvPG;
 	Task aTask, wdrawTask;
-	Iterator tasksIter = tasks.iterator();
-	while (tasksIter.hasNext()) {
-	    aTask = (Task)tasksIter.next();
+	Iterator taskIter = tasks.iterator();
+	while (taskIter.hasNext()) {
+	    aTask = (Task)taskIter.next();
 	    wdrawTask = expandDemandTask(aTask, createProjectWithdrawTask(aTask));
 	    logInvPG = getLogisticsInventoryPG(wdrawTask);
 	    if (logInvPG != null) {
@@ -226,9 +226,9 @@ public class SupplyExpander extends InventoryModule {
   public void expandAndDistributeRequisitions(Collection tasks) {
 	LogisticsInventoryPG logInvPG;
 	Task aTask, wdrawTask;
-	Iterator tasksIter = tasks.iterator();
-	while (tasksIter.hasNext()) {
-	    aTask = (Task)tasksIter.next();
+	Iterator taskIter = tasks.iterator();
+	while (taskIter.hasNext()) {
+	    aTask = (Task)taskIter.next();
 	    wdrawTask = expandDemandTask(aTask, createWithdrawTask(aTask));
 	    logInvPG = getLogisticsInventoryPG(wdrawTask);
 	    if (logInvPG != null) {
@@ -238,6 +238,75 @@ public class SupplyExpander extends InventoryModule {
 	}
     }
 
+  public void handleRemovedRequisitions(Collection tasks) {
+    LogisticsInventoryPG thePG;
+    Task aTask;
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      aTask = (Task)taskIter.next();
+      thePG = getLogisticsInventoryPG(aTask);
+      if (thePG != null) {
+	thePG.removeWithdrawRequisition(aTask);
+      }
+    }
+  }
+
+  public void handleRemovedProjections(Collection tasks) {
+    LogisticsInventoryPG thePG;
+    Task aTask;
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      aTask = (Task)taskIter.next();
+      thePG = getLogisticsInventoryPG(aTask);
+      if (thePG != null) {
+	thePG.removeWithdrawProjection(aTask);
+      }
+    }
+  }
+
+  public void updateChangedRequisitions(Collection tasks) {
+    LogisticsInventoryPG thePG;
+    Task aTask;
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      aTask = (Task)taskIter.next();
+      thePG = getLogisticsInventoryPG(aTask);
+      if (thePG != null) {
+	thePG.updateWithdrawRequisition(aTask);
+      }
+    }
+  } 
+
+  public void updateChangedProjections(Collection tasks) {
+    LogisticsInventoryPG thePG;
+    Expansion exp;
+    Task projSupply, task;
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      projSupply = (Task)taskIter.next();
+      exp = (Expansion)projSupply.getPlanElement();
+      Workflow wf = exp.getWorkflow();
+      Enumeration subTasks = wf.getTasks();
+      while (subTasks.hasMoreElements()) {
+	task = (Task)subTasks.nextElement();
+	if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+	  thePG = getLogisticsInventoryPG(projSupply);
+	  if (thePG != null) {
+	    thePG.removeWithdrawProjection(task);
+	    ((NewWorkflow)wf).removeTask(task);
+	    inventoryPlugin.publishRemove(task);
+	    NewTask newtask = createProjectWithdrawTask(projSupply);
+	    inventoryPlugin.publishAdd(task);
+	    ((NewWorkflow)wf).addTask(newtask);
+	    thePG.addWithdrawProjection(task);
+	  }
+	} else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
+	  ((NewTask)task).setPrepositionalPhrases(projSupply.getPrepositionalPhrases());
+	  inventoryPlugin.publishChange(task);
+	}
+      }
+    }
+  }
 
   public LogisticsInventoryPG getLogisticsInventoryPG(Task wdrawTask) {
 	LogisticsInventoryPG logInvPG = null;

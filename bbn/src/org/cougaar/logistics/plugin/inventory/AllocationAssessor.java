@@ -23,8 +23,11 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.*;
 
+import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
+import org.cougaar.core.plugin.util.AllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 
 import org.cougaar.planning.ldm.plan.Allocation;
@@ -45,7 +48,57 @@ import org.cougaar.planning.ldm.plan.Role;
  **/
 
 public class AllocationAssessor extends InventoryLevelGenerator {
-  private transient ArrayList trailingPointers = new ArrayList();
+  public class TaskDeficit {
+    public int deficitStartBucket;
+    public ArrayList allocated = new ArrayList();
+    public ArrayList deficit = new ArrayList();
+
+    public TaskDeficit(int bucket, double availAmt, double defAmt) {
+      deficitStartBucket = bucket;
+      allocated.add(new Double(availAmt));
+      deficit.add(new Double(defAmt));
+    }
+
+    public void addBucket(double availAmt, double defAmt) {
+      allocated.add(new Double(availAmt));
+      deficit.add(new Double(getAccumulatedDeficit()+defAmt));
+    }
+
+    public int getDeficitStartBucket() { return deficitStartBucket;}
+    
+    public double getAllocated(int bucket) { 
+      if (bucket < allocated.size()) {
+	return ((Double)allocated.get(bucket)).doubleValue();
+      }
+      return 0.0;
+    }
+
+    public double getDeficit(int bucket) {
+      if (bucket < deficit.size()) {
+	return ((Double)deficit.get(bucket)).doubleValue();
+      }
+      return 0.0;
+    }
+
+    public double getAccumulatedDeficit() {
+      double sum = 0.0;
+      for (int i=0; i <= deficit.size(); i++) {
+	  sum += getDeficit(i);
+	}
+      return sum;
+    }
+   
+    public double getAccumulatedAllocation(int bucket) {
+      double sum = 0.0;
+      for (int i=0; i < allocated.size(); i++) {
+	sum += getAllocated(i);
+      }
+      return sum;
+    }
+  }
+
+  private transient HashMap trailingPointersHash = new HashMap();
+  private transient ArrayList allocatedProjections = new ArrayList();
   private Role myRole;
 
   /** Constructor for this module
@@ -70,7 +123,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     LogisticsInventoryPG thePG;
     while (inv_list.hasNext()) {
       // clear out the trailing pointers every time we get another inventory
-      trailingPointers.clear();
+      trailingPointersHash.clear();
+      allocatedProjections.clear();
       inventory = (Inventory)inv_list.next();
       thePG = (LogisticsInventoryPG)
         inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
@@ -83,7 +137,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if (today_bucket < lastRefillBucket) {
         createWithdrawAllocations(today_bucket, lastRefillBucket, inventory, thePG);
       }
-      createWithdrawProjectionAllocations(lastRefillBucket+1, end_bucket, inventory, thePG);
+      determineProjectionAllocations(lastRefillBucket+1, end_bucket, inventory, thePG);
     }
   }
 
@@ -117,7 +171,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
       Collection wdTasks = thePG.getActualDemandTasks(currentBucket);
 
-      if (! trailingPointers.isEmpty()) {
+      if (! trailingPointersHash.isEmpty()) {
         //process any withdraws from previous days that we haven't been able
         // to allocate - if we process some return their qty to take them into 
         // account for today's levels.
@@ -142,9 +196,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           }
         } else {
           //if we can't fulfill this withdraw add it for later
-          trailingPointers.add(withdraw);
+          trailingPointersHash.put(withdraw, new TaskDeficit(currentBucket, 0, qty));
           // if it already has a pe - should we rescind it?
-          // if (pe != null) publishRemove(pe);
+          // if (pe != null) publishRemove(pe);	  
         }
       }
       //when we are done going through all the tasks for the day set the level
@@ -165,48 +219,109 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                       Inventory inv, LogisticsInventoryPG thePG) {
     double filled = 0;
     double qty, checkQty;
-    ArrayList processed = new ArrayList();
     // need to go through and calculate scores for the late withdraws and 
     //allocate the high scores first.
     // should be based on scoring functions or TimeLate * Quantity.
     // for now just do first come, first serve
-    Iterator tpIter = trailingPointers.iterator();
+    Iterator tpIter = trailingPointersHash.keySet().iterator();
     while (tpIter.hasNext()) {
       Task task = (Task) tpIter.next();
-      qty = getTaskUtils().getPreference(task, AspectType.QUANTITY);
+      if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	qty = getTaskUtils().getPreference(task, AspectType.QUANTITY);
+      } else {
+	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+	qty = thePG.getProjectionTaskDemand(task, currentBucket, start, end);
+      }
       checkQty = filled + qty;
       if ((level - checkQty) >= 0) {
         //TODO - should the Alloc date be the start time of the currentBucket
         // or should it be the end time??
-        createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
-                             inv, thePG);
+	if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	  createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
+			       inv, thePG);
+	  trailingPointersHash.remove(task);
+	} else {
+	  // Tasks remain in the trailingPointersHash (just projections for now)
+	  // in order to create the complete allocation result (will handle split-
+	  // deliveries for actuals later.)
+	  TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(task);
+	  taskdeficit.addBucket(qty, 0);
+	}
         filled = filled + qty;
-        processed.add(task);
       } else {
-        // we could break here, but its conceivable that the next late
-        // withdraw could be filled if its quantity is less
-        // when we put in spit deliveries, this will be taken care of.
+	// For now, only handle projections
+	TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(task);
+	taskdeficit.addBucket(0, qty);	
       }
-    }
-    // remove the processed tasks from the trailingPointers collection
-    if (!processed.isEmpty()) {
-      trailingPointers.removeAll(processed);
     }
     return filled;
   }
 
-  /** Create and update Project Withdraw Task Allocations for a particular Inventory
+  /** Determine the Projection Allocations and create Allocations for
+   *  late delivery Withdraw tasks.
    *  @param startBucket This is the starting bucket to process
    *  @param endBucket Whats the last valid bucket for the inventory
    *  @param inv The Inventory we are processing
    *  @param the PG This is the PG for the Inventory we are processing
    **/
-  private void createWithdrawProjectionAllocations(int startBucket, int endBucket, 
-                                                   Inventory inv, 
-                                                   LogisticsInventoryPG thePG) {
+  private void determineProjectionAllocations(int startBucket, int endBucket, 
+					      Inventory inv, 
+					      LogisticsInventoryPG thePG) {
     //calculate levels by adding in all refill projection results
-    // go through each projectwithdraw - allocate and reset the inventory?
+    // go through each projectwithdraw - allocate to the inventory
+    int currentBucket = startBucket;
+    double qty = 0;
+    double runningQty = 0;
+    double todayLevel, yesterdayLevel, todayRefill, testLevel, testQty;
 
+    // loop through the bucket in the inventory
+    while (currentBucket <= endBucket) {
+      yesterdayLevel = thePG.getLevel(currentBucket - 1);
+      Task refill = thePG.getRefillProjection(currentBucket);
+      long start = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.START_TIME);
+      long end = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.END_TIME);
+      todayRefill = thePG.getProjectionTaskDemand(refill, currentBucket, start, end);
+      runningQty = 0;
+      if (! trailingPointersHash.isEmpty()) {
+  	runningQty = processLateWithdraws(currentBucket, yesterdayLevel+todayRefill,
+ 					  inv, thePG);
+      }
+
+      Collection wdTasks = thePG.getActualDemandTasks(currentBucket);
+      Iterator wdIter = wdTasks.iterator();
+      while (wdIter.hasNext()) {
+	Task projWdraw = (Task)wdIter.next();
+	start = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.START_TIME);
+	end = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.END_TIME);
+	qty = thePG.getProjectionTaskDemand(projWdraw, currentBucket, start, end);
+	testQty = runningQty + qty;
+	testLevel = yesterdayLevel - testQty + todayRefill;
+	if (testLevel >= 0.0) {
+	  // if its ok give it a pe and update the quantity  
+	  runningQty = runningQty + qty;
+	  if (projWdraw.getPlanElement() == null) {
+	    TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
+	    if (taskdeficit == null) {
+	      allocatedProjections.add(projWdraw);
+	    } else {
+	      taskdeficit.addBucket(qty, 0);
+	    }
+	  }
+	} else {
+	  allocatedProjections.remove(projWdraw);
+	  TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
+	  if (taskdeficit == null) {
+	    trailingPointersHash.put(projWdraw, new TaskDeficit(currentBucket, 0, qty));
+	  } else {
+	    taskdeficit.addBucket(0, qty);
+	  }
+	}
+      }
+      todayLevel = yesterdayLevel - runningQty + todayRefill;
+      thePG.setLevel(currentBucket, todayLevel);
+      currentBucket = currentBucket + 1;
+    }
   }
 
   /** Utility method to create an Allocation that matches the
@@ -246,6 +361,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                         estimatedResult, myRole);
     inventoryPlugin.publishAdd(lateAlloc);
     thePG.updateWithdrawRequisition(withdraw);
+  }
+
+  private void createProjectionAllocation(Task projWdraw, Inventory inv, 
+					  LogisticsInventoryPG thePG, long start, long end) {
+    AllocationResultHelper helper = new AllocationResultHelper(projWdraw, null);
+    helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
+    AllocationResult ar = helper.getAllocationResult(1.0);
+    Allocation alloc = inventoryPlugin.getRootFactory().
+      createAllocation(projWdraw.getPlan(), projWdraw, inv, ar, myRole);
+    inventoryPlugin.publishAdd(alloc);
+    // Only need to update BG for late deliveries
   }
 
   /** Method which checks a previously created planelement for the withdraw task

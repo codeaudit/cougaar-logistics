@@ -125,7 +125,6 @@ public class InventoryPlugin extends ComponentPlugin {
     inventoryInitHash = new HashMap();
     touchedInventories = new ArrayList();
     touchedProjections = false;
-    getInventoryData();
     startTime = currentTimeMillis();
     // TODO replace with real VTH Knob
     endOfLevelSix = timeUtils.addNDays(startTime, 40);
@@ -188,6 +187,8 @@ public class InventoryPlugin extends ComponentPlugin {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if ((myOrganization != null) && (supplyTaskSubscription == null)) {
 	myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
+	inventoryFile = getInventoryFile(supplyType);
+	getInventoryData();
 	supplyExpander.initialize(myOrganization);
 	setupSubscriptions2();
       }
@@ -687,7 +688,7 @@ public class InventoryPlugin extends ComponentPlugin {
      Initializes supplyType and inventoryFile
   **/
   private HashMap readParameters() {
-    final String errorString = "InventoryPlugin requires 2 parameters, Supply Type and Inventory filename.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("+SUPPLY_TYPE+"=BulkPOL, "+INVENTORY_FILE+"=BulkPOLInvItems.inv, ENABLE_CSV_LOGGING=true);";
+    final String errorString = "InventoryPlugin requires 1 parameter, Supply Type.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("+SUPPLY_TYPE+"=BulkPOL, ENABLE_CSV_LOGGING=true);";
     Collection p = getParameters();
     
     if (p.isEmpty()) {
@@ -706,8 +707,8 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
     supplyType = (String)map.get(SUPPLY_TYPE);
-    inventoryFile = (String)map.get(INVENTORY_FILE);
-    if ((supplyType == null) || (inventoryFile == null))
+//      inventoryFile = (String)map.get(INVENTORY_FILE);
+    if (supplyType == null)
       logger.error(errorString);
     String loggingEnabled = (String)map.get(ENABLE_CSV_LOGGING);
     if((loggingEnabled != null) &&
@@ -717,6 +718,32 @@ public class InventoryPlugin extends ComponentPlugin {
     return map;
   }
 
+  private String getInventoryFile(String type) {
+    String result = null;
+    // if defined in plugin argument list
+    String inv_file = null;
+    if ((inv_file = (String)pluginParams.get(INVENTORY_FILE)) != null) {
+      result = inv_file;
+    } 
+    else {
+      result = getClusterSuffix(myOrganization.getClusterPG().getClusterIdentifier().toString()) +
+	"_"+type.toLowerCase()+".inv";
+    }
+    return result;
+  }
+  
+  private String getClusterSuffix(String clusterId) {
+    String result = null;
+    int i = clusterId.lastIndexOf("-");
+    if (i == -1) {
+      result = clusterId;
+    } 
+    else {
+      result = clusterId.substring(i+1);
+    }
+    return result;
+  }
+  
   public void publishAddToExpansion(Task parent, Task subtask) {
     //attach the subtask to its parent and the parent's workflow
     PlanElement pe = parent.getPlanElement();
@@ -842,8 +869,10 @@ public class InventoryPlugin extends ComponentPlugin {
   public void automatedSelfTest() {
     if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
     if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
-    if (inventoryInitHash.isEmpty())
+    if (inventoryInitHash.isEmpty()) {
 	logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
+	logger.error("Could not find Inventory file : "+inventoryFile);
+    }
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) == null)
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
     System.out.println("Critical Level is "+criticalLevel);
