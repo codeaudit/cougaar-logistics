@@ -59,7 +59,7 @@ public class MissingCargoTest extends Test{
 
   /**are we a warning or an error if we fail**/
   public int failureLevel(){
-    return RESULT_ERROR;
+    return RESULT_INFO;
   }
 
   /**for gui**/
@@ -121,6 +121,8 @@ public class MissingCargoTest extends Test{
     }
     
     try {
+      boolean noneInserted = true;
+
       while(rs.next()){
 	currentOrg = rs.getString (1);
 	int assetProto = rs.getInt(2);
@@ -129,14 +131,30 @@ public class MissingCargoTest extends Test{
 	  lastOrg = currentOrg;
 	
 	if (!currentOrg.equals (lastOrg)) {
-	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,
+	  int level = hasCargo ? Logger.TRIVIAL : Logger.NORMAL;
+	  l.logMessage(level,Logger.DB_WRITE,
 		       "MissingCargoTest.insertResults - " + lastOrg + ((hasCargo) ? " yes " : " NO "));
-	  if (!hasCargo)
+	  if (!hasCargo) {
+	    noneInserted = false;
+	    if (l.isNormalEnabled ()) {
+	      l.logMessage(level,Logger.DB_WRITE,
+			   "MissingCargoTest.insertResults - inserting row for " + lastOrg);
+	    }
+
 	    insertRow (l, s, run, lastOrg, hasCargo);
+	  }
 	  hasCargo = false;
 	}
 	hasCargo = hasCargo || assetProto != DGPSPConstants.ASSET_CLASS_PERSON;
 	lastOrg = currentOrg;
+      }
+
+      if (noneInserted) {
+	if (l.isTrivialEnabled ()) {
+	  l.logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+		       "MissingCargoTest.insertResults - no missing cargo...");
+	}
+	insertRow (l, s, run, "All Units", true);
       }
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
