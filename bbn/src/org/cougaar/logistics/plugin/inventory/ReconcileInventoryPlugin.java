@@ -153,6 +153,10 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return alarm;
   }
 
+  public BlackboardService getBBService() {
+    return getBlackboardService();
+  }
+
   public TaskUtils getTaskUtils() {
     return taskUtils;
   }
