@@ -151,6 +151,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
 	  startBucket = refillBucket;
 	  refillBucket = startBucket + 1;
 	}
+	// Set the target levels for projection period here since very similar 
+	// calculations are done for both projection and refill period.
+	setTargetForProjectionPeriod(thePG, maxLeadBucket+1);
 	// call the Comparator for this Inventory which will compare the old and
 	// new Refills and then publish the new Refills and Rescind the old Refills.
 	myComparator.compareRefills(newRefills, oldRefills, anInventory);
@@ -364,7 +367,36 @@ public class RefillGenerator extends InventoryLevelGenerator {
     return homeGeoloc;
   }
   
-
+  /** Determines and sets Target Level for projection period.
+   *  Target Level used for display purposes only.
+   *  The calculation for Target Level during the projection period is:
+   *  target = (criticalLevelEnd - criticalLevelBegin) + demand
+   *  @param thePG The LogisticsInventoryPG for current inventory
+   *  @param startBucket The bucket that starts the Projection period.
+   *  @return void  The target level is set in thePG with this method
+   **/
+  private void setTargetForProjectionPeriod(LogisticsInventoryPG thePG, int startBucket){
+    int currentBucket = startBucket;
+    int reorderPeriod = (int)thePG.getReorderPeriod();
+    int reorderPeriodEndBucket = startBucket + reorderPeriod;
+    int lastDemandBucket = thePG.getLastDemandBucket();
+    double criticalLevelBegin, criticalLevelEnd;
+    while (currentBucket <= lastDemandBucket) {
+      criticalLevelBegin = thePG.getCriticalLevel(currentBucket);
+      criticalLevelEnd = thePG.getCriticalLevel(reorderPeriodEndBucket);
+      double demand = calculateDemandForPeriod(thePG, currentBucket, reorderPeriodEndBucket);
+      double target = (criticalLevelEnd - criticalLevelBegin) + demand;
+      logger.debug("bucket: "+currentBucket+", reorderPeriod end bucket: "+reorderPeriodEndBucket+
+		   ", critical begin: "+criticalLevelBegin+", critical end: "+criticalLevelEnd+
+		   ", demand: "+demand+", Target: "+target);
+      if (target < 0.0) {
+	target = 0.0;
+      }
+      thePG.setTarget(currentBucket, target);
+      currentBucket += reorderPeriod;
+      reorderPeriodEndBucket = currentBucket + reorderPeriod;
+    }
+  }
 
 }
     
