@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data.routes;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.xml.*;
 
 import java.io.Writer;
@@ -64,7 +66,7 @@ public class RoutesData implements XMLable, DeXMLable, Serializable{
     return routes.size();
   }
 
-  public Route getRoute(String uid){
+  public Route getRoute(UID uid){
     return (Route)routes.get(uid);
   }
 

@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.grabber.connect;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.xml.DeXMLable;
 import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 import org.cougaar.mlm.ui.psp.transit.data.legs.Leg;
@@ -40,7 +42,7 @@ import java.util.Iterator;
 
 /**
  * Handles getting leg data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/19/01
  **/
@@ -226,9 +228,9 @@ public class DGPSPLegConnection extends DGPSPConnection
     try{
       Iterator iter=l.getCarriedAssetsIterator();
       while(iter.hasNext()){
-	String assetUID=(String)iter.next();
-	s.setString(1, assetUID);
-	s.setString(2, l.UID);
+	UID assetUID=(UID)iter.next();
+	s.setString(1, assetUID.toString());
+	s.setString(2, l.UID.toString());
 	s.addBatch ();
       }
     }catch(SQLException e){
@@ -242,7 +244,7 @@ public class DGPSPLegConnection extends DGPSPConnection
   protected boolean updateConveyedLeg(PreparedStatement s, Leg l){
     boolean ret=false;
     try{
-      s.setString(1, l.UID);
+      s.setString(1, l.UID.toString());
       s.setString(2, dbConfig.dateToSQL(l.startTime));
       s.setString(3, dbConfig.dateToSQL(l.endTime));
       s.setString(4, dbConfig.dateToSQL(l.readyAtTime));
@@ -252,9 +254,9 @@ public class DGPSPLegConnection extends DGPSPConnection
       s.setString(8, l.startLoc);
       s.setString(9, l.endLoc);
       s.setInt(10, pspToDBLegType(l.legType));
-      s.setString(11, l.conveyanceUID);
-      s.setString(12, l.routeUID);
-      s.setString(13, l.missionUID);
+      s.setString(11, l.conveyanceUID.toString());
+      s.setString(12, (l.routeUID != null) ? l.routeUID.toString() : "null");
+      s.setString(13, l.missionUID.toString());
       s.addBatch();
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not add batch to table("+

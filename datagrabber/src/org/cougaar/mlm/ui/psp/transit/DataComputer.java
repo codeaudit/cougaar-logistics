@@ -324,7 +324,7 @@ public abstract class DataComputer {
 
         // register the carrier.  if not already registered then
         //   register the instance as self-propelled.
-        String carrierId = 
+        UID carrierId = 
           DataRegistry.registerCarrierInstance(
               toReg, carrierAsset, true);
 
@@ -348,22 +348,23 @@ public abstract class DataComputer {
 
         int nCargoIds = cargoIds.size();
 
-        // get a unique leg prefix
-        String legIdPrefix = task.getUID().toString() + "-";
-
         // configure and register our legs
-        int i = 0; 
+        long i = 0;
 
         do {
-          Leg li = (Leg)tmpLegs.get(i);
+          Leg li = (Leg)tmpLegs.get((int)i);
 
           // configure leg
-          li.UID = legIdPrefix + Integer.toString(i);
+
+	  // i will probably never not be zero!
+          li.UID = new UID(task.getUID().getOwner(), 
+			   task.getUID().getId()+ (i << 56)); // store the leg ids in upper most 8 bits
+	  
           li.conveyanceUID = carrierId;
           li.isDetail = isDetail;
           // inefficient:
           for (int j = 0; j < nCargoIds; j++) {
-            li.addCarriedAsset((String)cargoIds.get(j));
+            li.addCarriedAsset((UID)cargoIds.get(j));
           }
 
           // register the leg
@@ -434,7 +435,7 @@ public abstract class DataComputer {
     leg.endLoc = endLoc;
 
     // use task's UID as the mission ID
-    leg.missionUID = task.getUID().toString();
+    leg.missionUID = task.getUID();
 
     if (DEBUG) {
       System.out.println(
@@ -553,7 +554,7 @@ public abstract class DataComputer {
     leg.endTime = endTime;
 
     // use task's UID as the mission ID
-    leg.missionUID = task.getUID().toString();
+    leg.missionUID = task.getUID();
 
     // use start/end values for preferred time ranges
     leg.readyAtTime = leg.startTime;

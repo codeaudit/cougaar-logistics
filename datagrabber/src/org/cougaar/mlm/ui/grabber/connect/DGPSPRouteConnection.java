@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.grabber.connect;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.xml.DeXMLable;
 import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 import org.cougaar.mlm.ui.psp.transit.data.routes.Route;
@@ -79,7 +81,7 @@ public class DGPSPRouteConnection extends DGPSPConnection
   protected boolean updateRouteElements(Statement s, Route r){
     boolean ret=false;
     try{
-      String uid=r.getUID();
+      UID uid=r.getUID();
       Iterator iter=r.getSegmentLocIDIterator();
 
       //Go through and create segments w/ start end from linear list:

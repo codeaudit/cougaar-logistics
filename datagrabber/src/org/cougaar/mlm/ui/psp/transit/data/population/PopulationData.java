@@ -20,6 +20,7 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data.population;
 
+import org.cougaar.core.util.UID;
 import org.cougaar.planning.servlet.data.xml.*;
 
 import java.io.Writer;
@@ -71,7 +72,7 @@ public class PopulationData implements XMLable, DeXMLable, Serializable{
     return (ConveyancePrototype)conveyancePrototypes.get(uid);
   }
 
-  public ConveyanceInstance getInstance(String uid){
+  public ConveyanceInstance getInstance(UID uid){
     return (ConveyanceInstance)conveyanceInstances.get(uid);
   }
 

@@ -22,6 +22,8 @@ package org.cougaar.mlm.ui.psp.transit.data.population;
 
 import org.cougaar.planning.servlet.data.xml.*;
 
+import org.cougaar.core.util.UID;
+
 import java.io.Writer;
 import java.io.IOException;
 import java.io.Serializable;
@@ -52,8 +54,8 @@ public class ConveyanceInstance implements XMLable, DeXMLable, Serializable{
   protected static final String SELF_PROP_TAG = "SelfProp";
 
   //Variables:
-  public String UID;
-  public String prototypeUID;
+  public UID UID;
+  public String prototypeUID; // may not look like a Cougaar UID
   public String bumperNo;
   /**item nomenclature, not to be confused with the proto's *type* nomen**/
   public String itemNomen;
@@ -80,7 +82,7 @@ public class ConveyanceInstance implements XMLable, DeXMLable, Serializable{
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(NAME_TAG);
 
-    w.tagln(UID_TAG,UID);
+    w.tagln(UID_TAG,UID.toString());
     w.tagln(PROTOTYPE_TAG,prototypeUID);
     w.tagln(BUMPER_TAG,bumperNo);
     w.tagln(ITEM_NOMEN_TAG,itemNomen);
@@ -109,7 +111,7 @@ public class ConveyanceInstance implements XMLable, DeXMLable, Serializable{
     try{
       if(name.equals(NAME_TAG)){
       }else if(name.equals(UID_TAG)){
-	UID=data;
+	UID=UID.toUID(data);
       }else if(name.equals(PROTOTYPE_TAG)){
 	prototypeUID=data;
       }else if(name.equals(BUMPER_TAG)){

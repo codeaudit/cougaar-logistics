@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.grabber.connect;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.xml.DeXMLable;
 import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 import org.cougaar.mlm.ui.psp.transit.data.instances.Instance;
@@ -241,7 +243,7 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     Iterator iter=data.getInstancesIterator();
     while(iter.hasNext()){
       Instance part=(Instance)iter.next();
-      String muid=part.manifestUID;
+      UID muid=part.manifestUID;
       /**if a Container, MilVan, or Pallet**/
       if(!(muid==null||muid.equals(""))){
 	irr.addManifestUID(muid);
@@ -263,7 +265,7 @@ public class DGPSPInstanceConnection extends DGPSPConnection
       super(id,runID);
       this.manifestUIDs=new HashSet(89);
     }
-    public void addManifestUID(String uid){
+    public void addManifestUID(UID uid){
       manifestUIDs.add(uid);
     }
     public Iterator getManifestUIDIterator(){

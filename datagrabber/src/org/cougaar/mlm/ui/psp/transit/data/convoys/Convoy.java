@@ -21,14 +21,16 @@
 package org.cougaar.mlm.ui.psp.transit.data.convoys;
 
 import org.cougaar.planning.servlet.data.xml.*;
+import org.cougaar.core.util.UID;
 
-import java.io.Writer;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.List;
+import java.io.Writer;
+
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import org.xml.sax.Attributes;
 
@@ -113,11 +115,11 @@ public class Convoy implements XMLable, DeXMLable, Serializable{
   }
 
   /** Get the UID of a conveyance that is a member of this convoy**/
-  public String getConveyanceIDAt(int i){
-    return (String)conveyances.get(i);
+  public UID getConveyanceIDAt(int i){
+    return (UID)conveyances.get(i);
   }
 
-  public void addConveyanceID(String conveyanceID) {
+  public void addConveyanceID(UID conveyanceID) {
     conveyances.add(conveyanceID);
   }
 
@@ -135,7 +137,7 @@ public class Convoy implements XMLable, DeXMLable, Serializable{
 	      PRETTY_NAME_ATTR, getPrettyName());
 
     for(int i=0;i<numConveyances();i++)
-      w.tagln(CONVEYANCE_ID_TAG,getConveyanceIDAt(i));
+      w.tagln(CONVEYANCE_ID_TAG,getConveyanceIDAt(i).toString());
     w.cltagln(NAME_TAG);
   }
 
@@ -161,7 +163,8 @@ public class Convoy implements XMLable, DeXMLable, Serializable{
 	endTime=Long.parseLong(attr.getValue(END_TIME_ATTR));
 	prettyName=attr.getValue(PRETTY_NAME_ATTR);
       }else if(name.equals(CONVEYANCE_ID_TAG)){
-        addConveyanceID(data);
+	UID uid = org.cougaar.core.util.UID.toUID(data);
+        addConveyanceID(uid);
       }else{
 	throw new UnexpectedXMLException("Unexpected tag: "+name);    
       }

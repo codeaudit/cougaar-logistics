@@ -21,10 +21,14 @@
 package org.cougaar.mlm.ui.psp.transit.data.legs;
 
 import org.cougaar.planning.servlet.data.xml.*;
+import org.cougaar.core.util.UID;
 
 import java.io.Writer;
 import java.io.IOException;
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+//import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -38,7 +42,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class Leg implements XMLable, DeXMLable, Serializable{
+public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
 
   //Constants:
   ////////////
@@ -81,7 +85,7 @@ public class Leg implements XMLable, DeXMLable, Serializable{
   //Variables:
   ////////////
 
-  public String UID;
+  public UID UID;
   public long startTime;
   public long endTime;
   public long readyAtTime;
@@ -92,10 +96,10 @@ public class Leg implements XMLable, DeXMLable, Serializable{
   public String endLoc;
   /**Use LEG_TYPE_* constants**/
   public int legType;
-  public String conveyanceUID;
-  public String routeUID;
+  public UID conveyanceUID;
+  public UID routeUID;
   /**unique identifier to group missions**/
-  public String missionUID;
+  public UID missionUID;
 
   /**this leg provides detail (that is additional information, 
    * ie what deck) for another existing leg that exactly mirrors it in time
@@ -132,11 +136,11 @@ public class Leg implements XMLable, DeXMLable, Serializable{
   }
 
   /** Get the UID of a carried asset**/
-  public String getCarriedAssetAt(int i){
-    return (String)assetsOnLeg.get(i);
+  public UID getCarriedAssetAt(int i){
+    return (UID)assetsOnLeg.get(i);
   }
 
-  public void addCarriedAsset(String uid){
+  public void addCarriedAsset(UID uid){
     if(assetsOnLeg==null)
       assetsOnLeg = new ArrayList();
     assetsOnLeg.add(uid);
@@ -151,7 +155,7 @@ public class Leg implements XMLable, DeXMLable, Serializable{
    **/
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(NAME_TAG,
-	      UID_ATTR, UID,
+	      UID_ATTR, UID.toString(),
 	      START_TIME_ATTR, Long.toString(startTime),
 	      END_TIME_ATTR, Long.toString(endTime),
 	      READYAT_ATTR, Long.toString(readyAtTime),
@@ -161,15 +165,71 @@ public class Leg implements XMLable, DeXMLable, Serializable{
 	      START_LOC_ATTR, startLoc,
 	      END_LOC_ATTR, endLoc,
 	      LEG_TYPE_ATTR, Integer.toString(legType),
-	      CONV_ID_ATTR, conveyanceUID,
-	      ROUTE_ID_ATTR, routeUID,
-	      MISSION_ID_ATTR, missionUID,
+	      CONV_ID_ATTR, conveyanceUID.toString(),
+	      ROUTE_ID_ATTR, routeUID.toString(),
+	      MISSION_ID_ATTR, missionUID.toString(),
 	      IS_DETAIL_ATTR, isDetail?"T":"F");
 
     for(int i=0;i<numCarriedAssets();i++)
-      w.tagln(ASSET_TAG,getCarriedAssetAt(i));
+      w.tagln(ASSET_TAG,getCarriedAssetAt(i).toString());
 
     w.cltagln(NAME_TAG);
+  }
+
+  /**
+   * Mandatory writeExternal method. 
+   * @serialData 
+   *             
+   */
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(UID);
+    out.writeLong(startTime);
+    out.writeLong(endTime);
+    out.writeLong(readyAtTime);
+    out.writeLong(earliestEndTime);
+    out.writeLong(latestEndTime);
+    out.writeObject(startLoc.intern());
+    out.writeObject(endLoc.intern());
+    out.writeInt(legType);
+    out.writeObject(conveyanceUID);
+    out.writeObject(routeUID);
+    out.writeObject(missionUID);
+    out.writeBoolean(isDetail);
+    out.writeInt (assetsOnLeg.size());
+
+    for (Iterator iter = assetsOnLeg.iterator(); iter.hasNext(); ) {
+      out.writeObject(iter.next());
+    }
+  }
+
+    /**
+     * Mandatory readExternal method. Will read in the data that we wrote out
+     * in the writeExternal method. MUST BE IN THE SAME ORDER and type as we
+     * wrote it out. By the time, readExternal is called, an object of this 
+     * class has already been created using the public no-arg constructor,
+     * so this method is used to restore the data to all of the fields of the 
+     * newly created object.
+     */
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    UID = (UID)in.readObject();
+    startTime = in.readLong();
+    endTime = in.readLong();
+    readyAtTime = in.readLong();
+    earliestEndTime = in.readLong();
+    latestEndTime = in.readLong();
+    startLoc = (String) in.readObject();
+    endLoc = (String) in.readObject();
+    legType = in.readInt();
+    conveyanceUID = (UID) in.readObject();
+    routeUID = (UID) in.readObject();
+    missionUID = (UID) in.readObject();
+    isDetail = in.readBoolean();
+
+    int numToRead = in.readInt();
+
+    for (int i = 0; i < numToRead; i++) {
+      addCarriedAsset ((UID) in.readObject());
+    }
   }
 
   //DeXMLable members:
@@ -189,7 +249,7 @@ public class Leg implements XMLable, DeXMLable, Serializable{
 
     try{
       if(name.equals(NAME_TAG)){
-	UID=attr.getValue(UID_ATTR);
+	UID=UID.toUID(attr.getValue(UID_ATTR));
 	startTime=Long.parseLong(attr.getValue(START_TIME_ATTR));
 	endTime=Long.parseLong(attr.getValue(END_TIME_ATTR));
 	readyAtTime=Long.parseLong(attr.getValue(READYAT_ATTR));
@@ -199,12 +259,12 @@ public class Leg implements XMLable, DeXMLable, Serializable{
 	startLoc=attr.getValue(START_LOC_ATTR);
 	endLoc=attr.getValue(END_LOC_ATTR);
 	legType=Integer.parseInt(attr.getValue(LEG_TYPE_ATTR));
-	conveyanceUID=attr.getValue(CONV_ID_ATTR);
-	routeUID=attr.getValue(ROUTE_ID_ATTR);
-	missionUID=attr.getValue(MISSION_ID_ATTR);
+	conveyanceUID=UID.toUID(attr.getValue(CONV_ID_ATTR));
+	routeUID=UID.toUID(attr.getValue(ROUTE_ID_ATTR));
+	missionUID=UID.toUID(attr.getValue(MISSION_ID_ATTR));
 	isDetail=attr.getValue(IS_DETAIL_ATTR).equals("Y");
       }else if(name.equals(ASSET_TAG)){
-	addCarriedAsset(data);
+	addCarriedAsset(UID.toUID(data));
       }else{
 	throw new UnexpectedXMLException("Unexpected tag: "+name);    
       }

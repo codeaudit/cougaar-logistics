@@ -22,6 +22,8 @@ package org.cougaar.mlm.ui.psp.transit.data.instances;
 
 import org.cougaar.planning.servlet.data.xml.*;
 
+import org.cougaar.core.util.UID;
+
 import java.io.Writer;
 import java.io.IOException;
 import java.io.Serializable;
@@ -56,14 +58,14 @@ public class Instance implements XMLable, DeXMLable, Serializable{
   //Variables:
   ////////////
 
-  public String UID;
+  public UID UID;
   /**item nomenclature, not to be confused with the proto's *type* nomen**/
   public String itemNomen;
   public long aggregateNumber;
   public String prototypeUID;
   public String ownerID;
   /**if a Container, MilVan, or Pallet**/
-  public String manifestUID;
+  public UID manifestUID;
   public boolean hasManifest;
   public List nomenclatures;
   public List typeIdentifications;
@@ -89,12 +91,12 @@ public class Instance implements XMLable, DeXMLable, Serializable{
    **/
   public void toXML(XMLWriter w) throws IOException{
     w.sitagln(NAME_TAG, 
-	      UID_ATTR,UID,
+	      UID_ATTR,UID.toString(),
 	      ITEM_NOMEN_ATTR,itemNomen,
 	      AGGREGATE_ATTR,Long.toString(aggregateNumber),
 	      PROTOTYPE_UID_ATTR,prototypeUID,
 	      OWNER_ID_ATTR, ownerID,
-	      MANIFEST_UID_ATTR,manifestUID,
+	      MANIFEST_UID_ATTR,manifestUID.toString(),
 	      NAME_ATTR,name);
   }
 
@@ -114,12 +116,12 @@ public class Instance implements XMLable, DeXMLable, Serializable{
     throws UnexpectedXMLException{
     try{
       if(name.equals(NAME_TAG)){
-	UID=attr.getValue(UID_ATTR);
+	UID=UID.toUID(attr.getValue(UID_ATTR));
 	itemNomen=attr.getValue(ITEM_NOMEN_ATTR);
 	aggregateNumber=Long.parseLong(attr.getValue(AGGREGATE_ATTR));
 	prototypeUID=attr.getValue(PROTOTYPE_UID_ATTR);
 	ownerID=attr.getValue(OWNER_ID_ATTR);
-	manifestUID=attr.getValue(MANIFEST_UID_ATTR);
+	manifestUID=UID.toUID(attr.getValue(MANIFEST_UID_ATTR));
 	name=attr.getValue(NAME_ATTR);
       }else{
 	throw new UnexpectedXMLException("Unexpected tag: "+name);    

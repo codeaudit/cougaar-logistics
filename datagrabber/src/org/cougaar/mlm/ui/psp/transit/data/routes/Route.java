@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data.routes;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.xml.*;
 
 import java.io.Writer;
@@ -54,7 +56,7 @@ public class Route implements XMLable, DeXMLable, Serializable{
   //Variables:
   ////////////
 
-  String UID;
+  UID UID;
   List segments;
   
   //Constructors:
@@ -67,11 +69,11 @@ public class Route implements XMLable, DeXMLable, Serializable{
   //Members:
   //////////
 
-  public void setUID(String UID){
+  public void setUID(UID UID){
     this.UID=UID;
   }
 
-  public String getUID(){
+  public UID getUID(){
     return UID;
   }
 
@@ -100,7 +102,7 @@ public class Route implements XMLable, DeXMLable, Serializable{
    * @param w output Writer
    **/
   public void toXML(XMLWriter w) throws IOException{
-    w.optagln(NAME_TAG, UID_ATTR, getUID());
+    w.optagln(NAME_TAG, UID_ATTR, getUID().toString());
 
     for(int i=0;i<numSegments();i++)
       w.sitagln(SEGMENT_TAG,
@@ -127,7 +129,7 @@ public class Route implements XMLable, DeXMLable, Serializable{
 
     try{
       if(name.equals(NAME_TAG)){
-	UID=attr.getValue(UID_ATTR);
+	UID=UID.toUID(attr.getValue(UID_ATTR));
       }else if(name.equals(SEGMENT_TAG)){
         String attrVal = attr.getValue(SEGMENT_LOC_ATTR);
         if (attrVal != null) {

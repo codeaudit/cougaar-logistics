@@ -22,9 +22,12 @@ package org.cougaar.mlm.ui.psp.transit.data.legs;
 
 import org.cougaar.planning.servlet.data.xml.*;
 
-import java.io.Writer;
+import org.cougaar.core.util.UID;
+
 import java.io.IOException;
+import java.io.Writer;
 import java.io.Serializable;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,7 +67,7 @@ public class LegsData implements XMLable, DeXMLable, Serializable{
     return legs.size();
   }
 
-  public Leg getLeg(String uid){
+  public Leg getLeg(UID uid){
     return (Leg)legs.get(uid);
   }
 

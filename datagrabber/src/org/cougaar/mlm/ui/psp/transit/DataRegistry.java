@@ -111,11 +111,11 @@ public abstract class DataRegistry {
   /**
    * Register a <code>Leg</code>, return it's globally unique identifier.
    */
-  public static String registerLeg(
+  public static UID registerLeg(
       Registry toReg, 
       Leg leg) {
     // get id
-    String id = leg.UID;
+    UID id = leg.UID;
 
     // check if leg is registered
     if (toReg.legs.getLeg(id) == null) {
@@ -251,7 +251,7 @@ public abstract class DataRegistry {
         int n = groupL.size();
         for (int i = 0; i < n; i++) {
           Asset ai = (Asset)groupL.get(i);
-          String aiId;
+          UID aiId;
           try {
             aiId = registerCarrierInstance(toReg, ai, true);
           } catch (RuntimeException e) {
@@ -292,12 +292,12 @@ public abstract class DataRegistry {
    * @param selfPropIfUnreg this applies only to an unregistered carrier -- 
    *   if true then register the instance as self-propelled.
    */
-  public static String registerCarrierInstance(
+  public static UID registerCarrierInstance(
       Registry toReg, 
       Asset instAsset,
       boolean selfPropIfUnreg) {
     // get id
-    String instId = instAsset.getUID().toString();
+    UID instId = instAsset.getUID();
 
     // check if carrier instance is registered
     if (toReg.carriers.getInstance(instId) == null) {
@@ -620,7 +620,7 @@ typical_case:
       int n = groupL.size();
       for (int i = 0; i < n; i++) {
         Asset ai = (Asset)groupL.get(i);
-        String aiId = null;
+        UID aiId = null;
         try {
           aiId = registerCargoInstance(toReg, ai);
         } catch (RuntimeException e) {
@@ -638,7 +638,7 @@ typical_case:
       }
     } else {
       // add the single element
-      String aiId = registerCargoInstance(toReg, instAsset);
+      UID aiId = registerCargoInstance(toReg, instAsset);
       toCargoIds.add(aiId);
     }
 
@@ -651,8 +651,8 @@ typical_case:
    *
    * Only for use by <tt>registerCargoInstance(Registry,List,Asset)</tt>!
    */
-  private static String registerCargoInstance(Registry toReg, 
-					      Asset instAsset) {
+  private static UID registerCargoInstance(Registry toReg, 
+					   Asset instAsset) {
     //
     // ASSERT(!(instAsset instanceof AssetGroup));
     //
@@ -660,7 +660,7 @@ typical_case:
     // a single asset
 
     // get the cargo id
-    String instId = instAsset.getUID().toString();
+    UID instId = instAsset.getUID();
 
     LowFidelityAssetPG lowFiUID = (LowFidelityAssetPG)
       instAsset.resolvePG (LowFidelityAssetPG.class);
@@ -669,7 +669,7 @@ typical_case:
     if (isLowFiCargo) {
       if (DEBUG)
 	System.out.println (Thread.currentThread () + ".registerCargoInstance - found low fi pg for asset " + instId);
-      instId    = lowFiUID.getOriginalAsset().getUID().toString();
+      instId    = lowFiUID.getOriginalAsset().getUID();
       instAsset = lowFiUID.getOriginalAsset();
     }
     else {
@@ -1198,11 +1198,11 @@ typical_case:
    * Register a <code>TransportationRoute</code>, returns a 
    * <code>String</code> route identifier.
    */
-  public static String registerRoute(
+  public static UID registerRoute(
       Registry toReg,
       TransportationRoute transRoute) {
 
-    String routeId = transRoute.getUID().toString();
+    UID routeId = transRoute.getUID();
 
     if (toReg.routes.getRoute(routeId) == null) {
       // must register this route

@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data.instances;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.mlm.ui.psp.transit.data.prototypes.Prototype;
 import org.cougaar.planning.servlet.data.xml.*;
 
@@ -69,7 +71,7 @@ public class InstancesData implements XMLable, DeXMLable, Serializable{
     return instances.size();
   }
 
-  public Instance getInstance(String uid){
+  public Instance getInstance(UID uid){
     return (Instance)instances.get(uid);
   }
 

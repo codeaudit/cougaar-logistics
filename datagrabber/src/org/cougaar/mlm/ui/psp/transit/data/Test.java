@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.psp.transit.data;
 
+import org.cougaar.core.util.UID;
+
 import org.cougaar.planning.servlet.data.Failure;
 import org.cougaar.planning.servlet.data.xml.*;
 import org.cougaar.planning.servlet.data.hierarchy.*;
@@ -120,7 +122,7 @@ public class Test{
       pd1.addPrototype(cp1);
 
       ConveyanceInstance ci1 = new ConveyanceInstance();
-      ci1.UID="UID2";
+      ci1.UID=UID.toUID("UID2/1");
       ci1.prototypeUID="UID1";
       ci1.bumperNo="B1";
       ci1.itemNomen="ItNom";
@@ -205,7 +207,7 @@ public class Test{
       
       InstancesData id1 = new InstancesData();
       Instance i1 = new Instance();
-      i1.UID="UID1";
+      i1.UID=UID.toUID("UID1/1");
       i1.itemNomen="INomen";
       i1.aggregateNumber=4;
       i1.prototypeUID="UID2";
@@ -244,14 +246,14 @@ public class Test{
       
       LegsData ld1 = new LegsData();
       Leg l1 = new Leg();
-      l1.UID="UID1";
+      l1.UID=UID.toUID("UID1");
       l1.startTime=123121;
       l1.endTime=2134123;
       l1.startLoc="gsds";
       l1.endLoc="fdss";
       l1.legType=Leg.LEG_TYPE_TRANSPORTING;
-      l1.conveyanceUID="UID35463";
-      l1.addCarriedAsset("UID234");
+      l1.conveyanceUID=UID.toUID("UID35463");
+      l1.addCarriedAsset(UID.toUID("UID/234"));
 
       ld1.addLeg(l1);
 
