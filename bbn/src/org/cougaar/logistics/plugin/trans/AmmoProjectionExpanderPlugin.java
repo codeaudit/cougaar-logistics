@@ -69,9 +69,18 @@ import org.cougaar.glm.ldm.asset.PhysicalAsset;
  *
  */
 public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin {
-    public static long CHUNK_DAYS = 30;
-    public static long MILLIS_PER_DAY = 1000*60*60*24;
-    public static long SECS_PER_DAY = 60*60*24;
+  public long CHUNK_DAYS = 30;
+  public static long MILLIS_PER_DAY = 1000*60*60*24;
+  public static long SECS_PER_DAY = 60*60*24;
+
+  public void localSetup () {
+    super.localSetup ();
+    
+    try {
+      if (getMyParams ().hasParam ("CHUNK_DAYS"))
+	CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
+    } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
+  }
 
   /**
    * State that we are interested in all transport tasks
