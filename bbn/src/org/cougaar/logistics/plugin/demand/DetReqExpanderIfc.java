@@ -42,8 +42,9 @@ public interface DetReqExpanderIfc {
    * Expand DetermineRequirements tasks into GenerateProjections tasks. 
    **/
 
-  void expandDetermineRequirements(Task detReqTask, Collection assets);
-  
+    void expandDetermineRequirements(Task detReqTask, Collection assets);
+    
+    void removeSubtasksFromDetermineRequirements(Task detReqTask, Collection removedAssets);
 
 }
 
