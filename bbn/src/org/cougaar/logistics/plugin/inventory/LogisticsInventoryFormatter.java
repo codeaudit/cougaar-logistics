@@ -210,7 +210,12 @@ public class LogisticsInventoryFormatter {
 		    else {
 			outputStr += getDateString(results[startInd],expandTimestamp) + ",";
 		    }
-		    outputStr += getDateString(results[endInd],expandTimestamp) + ",";
+		    if(endInd == -1) {
+			outputStr += ",";
+		    }
+		    else {
+			outputStr += getDateString(results[endInd],expandTimestamp) + ",";
+		    }
 		    if((qtyInd >= results.length) ||
 		       (qtyInd < 0)){
 			logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
