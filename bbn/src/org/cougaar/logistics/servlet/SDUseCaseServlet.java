@@ -3,11 +3,11 @@
  *  Copyright 2002-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -48,7 +48,14 @@ import java.text.ParsePosition;
 public class SDUseCaseServlet extends ComponentServlet implements BlackboardClient {
 
     private BlackboardService blackboard;
-    private static String ROLE = "BulkPOLProvider";
+    private static String ROLE = "PackagedPOLSupplyProvider";
+    /*AmmunitionProvider
+    FuelSupplyProvider
+    PackagedPOLSupplyProvider
+    SparePartsProvider
+    StrategicTransportationProvider
+    SubsistenceSupplyProvider
+    */
     private static String PATH = "/SD_Use_Case";
     private static String ROLE_PARAMETER = "role";
     private static String END_DATE_PARAMETER = "enddate";
@@ -134,7 +141,7 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
 		    printError("End date must be in the future; try again.", out);
 		    printForm(req, out);
 		} else {
-		    ALStatusChangeMessage message = 
+		    ALStatusChangeMessage message =
 			new ALStatusChangeMessage(role, false, end_date);
 		    blackboard.publishAdd(message);
 		    printChangeInfo(message, true, out);
@@ -201,5 +208,5 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
     }
 }
 
-    
-    
+
+
