@@ -31,7 +31,8 @@ import java.util.Iterator;
 public class ALCommBasedRegistrationPlugin extends SDCommunityBasedRegistrationPlugin {
 
   protected void handleStatusChange() {
-    for (Iterator iterator = statusChangeSubscription.iterator(); iterator.hasNext();) {
+    Collection adds = statusChangeSubscription.getAddedCollection();
+    for (Iterator iterator = adds.iterator(); iterator.hasNext();) {
       final StatusChangeMessage statusChange = (StatusChangeMessage) iterator.next();
 
       synchronized (statusChange) {
