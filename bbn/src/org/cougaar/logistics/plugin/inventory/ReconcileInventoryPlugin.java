@@ -1466,8 +1466,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
     public CougTimeAlarm(long expiration) {
       this.expirationTime = expiration;
-      System.out.println("Alarm constructor called current time : " + new Date(currentTimeMillis()) + " expiration time is " +
-                         new Date(expiration));
     }
 
     public long getExpirationTime() {
@@ -1479,9 +1477,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
         expired = true;
         BlackboardService bb = getBlackboardService();
         if (bb != null) {
-          // if (logger != null && logger.isDebugEnabled()) {
-          System.out.println("Alarm expire method called " + new Date(currentTimeMillis()));
-          //}
           bb.signalClientActivity();
         } else {
           if (logger != null && logger.isWarnEnabled()) {
