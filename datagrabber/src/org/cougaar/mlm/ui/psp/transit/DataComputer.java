@@ -36,7 +36,8 @@ import org.cougaar.glm.ldm.plan.*;
 
 import org.cougaar.mlm.ui.psp.transit.data.legs.Leg;
 
-import org.cougaar.lib.util.UTILPrepPhrase;
+// Only use of this toolkit module class is commented out below
+//import org.cougaar.lib.util.UTILPrepPhrase;
 
 /**
  * The <code>DataComputer</code> contains all the "TOPS-guts" for the
