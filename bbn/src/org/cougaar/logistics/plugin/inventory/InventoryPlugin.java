@@ -111,9 +111,12 @@ public class InventoryPlugin extends ComponentPlugin
   private boolean OMChange = false;
   private long prevLevel6;
 
+  private int prepoArrivalOffset=3;
+
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
+  public final String PREPO_ARRIVAL_OFFSET = "PREPO_ARRIVAL_OFFSET";
 
   // as a default make the max the end of the oplan (225)
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
@@ -207,6 +210,10 @@ public class InventoryPlugin extends ComponentPlugin
 
   public Organization getMyOrganization() {
     return myOrganization;
+  }
+
+  public String getOrgName() {
+      return myOrgName;
   }
 
   public long getCurrentTimeMillis() {
@@ -1167,8 +1174,9 @@ public class InventoryPlugin extends ComponentPlugin
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
       logInvPG.setOrg(getMyOrganization());
+      logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, getCurrentTimeMillis(), logToCSV, new Date(logOPlan.getOplanCday()), this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, getOPlanArrivalInTheaterTime(), new Date(logOPlan.getOplanCday()), this);
 
       NewTypeIdentificationPG ti =
           (NewTypeIdentificationPG) inventory.getTypeIdentificationPG();
@@ -1249,6 +1257,20 @@ public class InventoryPlugin extends ComponentPlugin
     if ((loggingEnabled != null) &&
         (loggingEnabled.trim().equals("true"))) {
       logToCSV = true;
+    }
+
+    String prepoOffsetStr = (String) map.get(PREPO_ARRIVAL_OFFSET);
+    if((prepoOffsetStr != null) &&
+       !(prepoOffsetStr.trim().equals(""))) {
+      try {
+        int prepoOffset = Integer.parseInt(prepoOffsetStr);
+        prepoArrivalOffset = prepoOffset;
+      }
+      catch(NumberFormatException ex) {
+        logger.error("InventoryPlugin(" + PREPO_ARRIVAL_OFFSET + "=" + prepoOffsetStr +
+                     ") value is not a parseable integer.  Defaulting to " + prepoArrivalOffset);
+      }
+
     }
     return map;
   }
@@ -1354,6 +1376,10 @@ public class InventoryPlugin extends ComponentPlugin
     return logOPlan.getArrivalTime();
   }
 
+  public long getPrepoArrivalTime() {
+    return getOPlanArrivalInTheaterTime() - (bucketSize * prepoArrivalOffset);
+  }
+
   public void getInventoryData() {
     String invFile = getInventoryFileName();
     if (invFile != null) {
@@ -1433,6 +1459,14 @@ public class InventoryPlugin extends ComponentPlugin
 
   public int getOrderShipTime() {
     return inventoryPolicy.getOrderShipTime();
+  }
+
+  public long getSupplierArrivalTime() {
+    return inventoryPolicy.getSupplierArrivalTime();
+  }
+
+  public long getRefillStartTime() {
+	return Math.max(getOPlanArrivalInTheaterTime(),getSupplierArrivalTime());
   }
 
   public int getMaxLeadTime() {
