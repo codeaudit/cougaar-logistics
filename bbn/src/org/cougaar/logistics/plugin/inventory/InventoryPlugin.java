@@ -48,7 +48,6 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.plugin.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
-import org.cougaar.logistics.ldm.asset.*;
 
 public class InventoryPlugin extends ComponentPlugin {
 
@@ -465,7 +464,7 @@ public class InventoryPlugin extends ComponentPlugin {
     levels = (double[])inventoryInitHash.get(item);
     if (levels != null) {
       NewLogisticsInventoryPG logInvPG = 
-	(NewLogisticsInventoryPG)org.cougaar.logistics.ldm.asset.PropertyGroupFactory.newLogisticsInventoryPG();
+	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       logInvPG.setCapacity(levels[0]);
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);

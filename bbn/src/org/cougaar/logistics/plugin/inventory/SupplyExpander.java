@@ -59,7 +59,6 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.logistics.ldm.asset.LogisticsInventoryPG;
 
 public class SupplyExpander extends InventoryModule {
 
