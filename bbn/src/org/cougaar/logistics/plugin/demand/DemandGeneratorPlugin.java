@@ -183,7 +183,6 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     //oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
 
-    resetTimer();
   }
 
   private void checkDateOfBlackboard() {
@@ -417,9 +416,36 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       return;
     }
 
-    //nothing for now
-    if (timerExpired()) {
-      long planTime = getStartOfPeriod(getCurrentTimeMillis());
+
+    if((projectionTaskSubscription == null) ||
+       (projectionTaskSubscription.isEmpty()) ||
+       (logOPlan == null)) {
+       if (logger.isInfoEnabled()) {
+	   logger.info("\n DemandGeneratorPlugin " + supplyType +
+		       " not ready to process tasks yet." +
+		       " my org is: " + myOrganization);
+       }
+       return;
+    }
+
+    boolean generateDemand=false;
+    long planTime = getStartOfPeriod(getCurrentTimeMillis());
+
+    if(periodInDemandPeriod(projectionTaskSubscription, planTime, planTime+period)) {
+	generateDemand = ((timer == null) || (timerExpired()));
+    }
+    else {
+	long nextDemandPeriod = nextDemandPeriod(projectionTaskSubscription,
+						 planTime + period);
+	setTimerToTopOfPeriod(nextDemandPeriod);
+	return;
+    }
+
+
+
+    //if its time to generate demand do so.
+    if (generateDemand) {
+      
       if (logger.isInfoEnabled()) {
         logger.info("Timer has gone off.  Planning for the next " +
                     ((int) (period / getTimeUtils().MSEC_PER_HOUR))
@@ -480,6 +506,53 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
     return filteredProjs;
   }
+
+
+ /***
+   * Find out if passed in time is in a demand period
+   *
+   * @param projections - whole collection of projection tasks
+   * @param startGen - time concerned with to find whether in a demand period
+   * @param endGen - time concerned with to find whether in a demand period
+   * @return Collection of projection tasks filtered by start and end time.
+   */
+  protected boolean periodInDemandPeriod(Collection projections,
+				       long startGen,
+				       long endGen) {
+    Iterator projectionIt = projections.iterator();
+    while (projectionIt.hasNext()) {
+      Task proj = (Task) projectionIt.next();
+      if((TaskUtils.getStartTime(proj) < endGen) &&
+	 (TaskUtils.getEndTime(proj) > startGen)){
+	  return true;
+      }
+    }
+    return false;
+  }
+
+
+ /***
+   * Find the earliest projection after the time passed in.
+   *
+   * @param projections - whole collection of projection tasks
+   * @param aTime - time concerned with to find whether in a demand period
+   * @return Collection of projection tasks filtered by start and end time.
+   */
+  protected long  nextDemandPeriod(Collection projections,long aTime) {
+    long earliestNext = Long.MAX_VALUE;
+    Iterator projectionIt = projections.iterator();
+    while (projectionIt.hasNext()) {
+      Task proj = (Task) projectionIt.next();
+      long startTime = TaskUtils.getStartTime(proj);
+      if(startTime > aTime) {
+	  earliestNext = Math.min(earliestNext,startTime);
+      }
+    }
+    return earliestNext;
+  }
+
+
+
 
 
   /**
@@ -663,6 +736,12 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
     }
     return timeOut;
+  }
+
+
+  protected void setTimerToTopOfPeriod(long goOffAt) {
+    long expiration = getStartOfPeriod(goOffAt);
+    resetTimer(expiration);
   }
 
 
