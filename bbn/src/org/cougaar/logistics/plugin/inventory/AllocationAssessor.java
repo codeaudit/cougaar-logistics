@@ -79,7 +79,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       //TODO figure out what the end is
       // AF - we should get this from the BG (PG)
       int end_bucket = 180;
-      createWithdrawAllocations(today_bucket, end_bucket, inventory, thePG);
+      int lastRefillBucket = thePG.getLastRefillRequisitionBucket();
+      if (today_bucket < lastRefillBucket) {
+        createWithdrawAllocations(today_bucket, lastRefillBucket, inventory, thePG);
+      }
+      createWithdrawProjectionAllocations(lastRefillBucket+1, end_bucket, inventory, thePG);
     }
   }
 
@@ -106,15 +110,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
     // loop through the buckets in the inventory
     while (currentBucket <= endBucket) {
+
       yesterdayLevel = thePG.getLevel(currentBucket - 1);
       todayRefill = findCommittedRefill(currentBucket, thePG);
       runningQty = 0;
 
-       //TODO...
-      //should we really use getActualDemandTasks so we know when
-      // withdraw tasks are being counted?
-      // NOTE:  right now ProjectWithdraws are being ignored
-      Collection wdTasks = thePG.getWithdrawTasks(currentBucket);
+      Collection wdTasks = thePG.getActualDemandTasks(currentBucket);
 
       if (! trailingPointers.isEmpty()) {
         //process any withdraws from previous days that we haven't been able
@@ -177,7 +178,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if ((level - checkQty) >= 0) {
         //TODO - should the Alloc date be the start time of the currentBucket
         // or should it be the end time??
-        createLateAllocation(task, thePG.convertBucketToTime(currentBucket), inv, thePG);
+        createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
+                             inv, thePG);
         filled = filled + qty;
         processed.add(task);
       } else {
@@ -193,6 +195,19 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     return filled;
   }
 
+  /** Create and update Project Withdraw Task Allocations for a particular Inventory
+   *  @param startBucket This is the starting bucket to process
+   *  @param endBucket Whats the last valid bucket for the inventory
+   *  @param inv The Inventory we are processing
+   *  @param the PG This is the PG for the Inventory we are processing
+   **/
+  private void createWithdrawProjectionAllocations(int startBucket, int endBucket, 
+                                                   Inventory inv, 
+                                                   LogisticsInventoryPG thePG) {
+    //calculate levels by adding in all refill projection results
+    // go through each projectwithdraw - allocate and reset the inventory?
+
+  }
 
   /** Utility method to create an Allocation that matches the
    *  best preferences for the withdraw task
