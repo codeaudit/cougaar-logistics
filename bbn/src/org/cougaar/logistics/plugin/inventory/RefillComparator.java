@@ -39,7 +39,7 @@ import java.util.Iterator;
  *  Also applies the new Refill tasks to the Inventory's BG.
  **/
 
-public class RefillComparator extends InventoryModule {
+public class RefillComparator extends InventoryModule implements ComparatorModule {
 
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
