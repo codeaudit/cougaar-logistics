@@ -62,6 +62,30 @@ import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 
 public class LogisticsInventoryFormatter {
 
+    public final static String INVENTORY_DUMP_TAG="INVENTORY_DUMP";
+
+    public final static String SUPPLY_TASKS_TAG="SUPPLY_TASKS";
+    public final static String WITHDRAW_TASKS_TAG="WITHDRAW_TASKS";
+    public final static String PROJECTSUPPLY_TASKS_TAG="PROJECTSUPPLY_TASKS";
+    public final static String PROJECTWITHDRAW_TASKS_TAG="PROJECTWITHDRAW_TASKS";
+
+    public final static String SUPPLY_TASK_ARS_TAG="SUPPLY_TASK_ALLOCATION_RESULTS";
+    public final static String WITHDRAW_TASK_ARS_TAG="WITHDRAW_TASK_ALLOCATION_RESULTS";
+    public final static String PROJECTSUPPLY_TASK_ARS_TAG="PROJECTSUPPLY_TASK_ALLOCATION_RESULTS";
+    public final static String PROJECTWITHDRAW_TASK_ARS_TAG="PROJECTWITHDRAW_TASK_ALLOCATION_RESULTS";
+    
+    public final static String RESUPPLY_SUPPLY_TASKS_TAG="RESUPPLY_SUPPLY_TASKS";
+    public final static String RESUPPLY_PROJECTSUPPLY_TASKS_TAG="RESUPPLY_PROJECTSUPPLY_TASKS";
+    public final static String RESUPPLY_SUPPLY_TASK_ARS_TAG="RESUPPLY_SUPPLY_TASK_ALLOCATION_RESULTS";
+    public final static String RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG="RESUPPLY_PROJECTSUPPLY_TASK_ALLOCATION_RESULTS";
+    public final static String INVENTORY_LEVELS_TAG="INVENTORY_LEVELS";
+
+
+    public final static String TASKS_TYPE="TASKS";
+    public final static String PROJ_TASKS_TYPE="PROJ_TASKS";
+    public final static String ARS_TYPE="ARS";
+    public final static String PROJ_ARS_TYPE="PROJ_ARS";
+    public final static String LEVELS_TYPE="LEVELS";
 
     public final static String AR_SUCCESS_STR = "SUCCESS";
     public final static String AR_FAILURE_STR = "FAIL";
@@ -115,7 +139,7 @@ public class LogisticsInventoryFormatter {
 	if(aTask == null){ return; }
 	String taskStr = buildTaskPrefixString(aTask);
 	if(TaskUtils.getPreferenceBest(aTask, AspectType.START_TIME) == null) {
-	    taskStr+= ",,";
+	    taskStr+= ",";
 	}
 	else {
 	    taskStr = taskStr + getDateString(TaskUtils.getStartTime(aTask),expandTimestamp) + ",";
@@ -151,6 +175,7 @@ public class LogisticsInventoryFormatter {
 	    ar = pe.getEstimatedResult();
 	}
 	if(ar != null) {
+	    logger.warn("Hey we have an allocation Result");
 	    String taskStr = buildTaskPrefixString(aTask);
 	    taskStr = taskStr + resultType + ",";
 	    if(ar.isSuccess()) {
@@ -181,8 +206,14 @@ public class LogisticsInventoryFormatter {
 			outputStr += getDateString(results[startInd],expandTimestamp) + ",";
 		    }
 		    outputStr += getDateString(results[endInd],expandTimestamp) + ",";
-		    outputStr += results[qtyInd];
-		    writeln(outputStr);
+		    if((qtyInd >= results.length) ||
+		       (qtyInd < 0)){
+			logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
+		    }
+		    else {
+			outputStr += results[qtyInd];
+			writeln(outputStr);
+		    }
 		}
 	    }
 	}
@@ -212,7 +243,7 @@ public class LogisticsInventoryFormatter {
 	outputStr += reorderLevel.getQuantity() + ",";
 	if(invLevelsInRange.isEmpty()) {
 	    if(logger.isWarnEnabled()) {
-		logger.warn("logLevel:no inventory level in range " + outputStr);
+		//logger.warn("logLevel:no inventory level in range " + outputStr);
 	    }
 	    writeln(outputStr);
 	}
@@ -225,7 +256,7 @@ public class LogisticsInventoryFormatter {
 		outputStr += invLevel.getQuantity();
 		if(moreThanOne && !alreadyLogged) {
 		    if(logger.isWarnEnabled()) {
-			logger.warn("logLevel:More than one inventory level in range " + outputStr);			
+		    logger.warn("logLevel:More than one inventory level in range " + outputStr);			
 		    }
 		    alreadyLogged=true;
 		}
@@ -401,12 +432,12 @@ public class LogisticsInventoryFormatter {
 			       long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
-	String assetName = invAsset.getItemIdentificationPG().getItemIdentification();
-	writeNoCycleLn("<INVENTORY_DUMP org=" + orgId + " item=" + assetName + ">");
+	String assetName = invAsset.getTypeIdentificationPG().getTypeIdentification();
+	writeNoCycleLn("<" + INVENTORY_DUMP_TAG + " org=" + orgId + " item=" + assetName + ">");
 	logDemandToXMLOutput(withdrawList,projWithdrawList,aCycleStamp);
 	logResupplyToXMLOutput(resupplyList,projResupplyList,aCycleStamp);
 	logLevelsToXMLOutput(reorderLevels,inventoryLevels,aCycleStamp);
-	writeNoCycleLn("</INVENTORY_DUMP>");
+	writeNoCycleLn("</" + INVENTORY_DUMP_TAG + ">");
 	try {
 	    output.flush();
 	}
@@ -440,31 +471,31 @@ public class LogisticsInventoryFormatter {
 	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
 	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
 
-	writeNoCycleLn("<SUPPLY TASKS type=TASKS>");
+	writeNoCycleLn("<" + SUPPLY_TASKS_TAG + " type=TASKS>");
 	logTasks(supplyList,aCycleStamp,false);
-	writeNoCycleLn("</SUPPLY TASKS>");
-	writeNoCycleLn("<WITHDRAW TASKS type=TASKS>");
+	writeNoCycleLn("</" + SUPPLY_TASKS_TAG + ">");
+	writeNoCycleLn("<" + WITHDRAW_TASKS_TAG + " type=TASKS>");
 	logTasks(withdrawList,aCycleStamp,false);
-	writeNoCycleLn("</WITHDRAW TASKS>");
-	writeNoCycleLn("<PROJECTSUPPLY TASKS type=PROJTASKS>");
+	writeNoCycleLn("</" + WITHDRAW_TASKS_TAG + ">");
+	writeNoCycleLn("<" + PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
 	logTasks(projSupplyList,aCycleStamp,false);
-	writeNoCycleLn("</PROJECTSUPPLY TASKS>");
-	writeNoCycleLn("<PROJECTWITHDRAW TASKS type=PROJTASKS>");
+	writeNoCycleLn("</" + PROJECTSUPPLY_TASKS_TAG + ">");
+	writeNoCycleLn("<" + PROJECTWITHDRAW_TASKS_TAG + " type=PROJTASKS>");
 	logTasks(projWithdrawList,aCycleStamp,false);
-	writeNoCycleLn("</PROJECTWITHDRAW TASKS>");
+	writeNoCycleLn("</" + PROJECTWITHDRAW_TASKS_TAG + ">");
 
-	writeNoCycleLn("<SUPPLY TASK ALLOCATION RESULTS type=ARS>");
+	writeNoCycleLn("<" + SUPPLY_TASK_ARS_TAG + " type=ARS>");
 	logAllocationResults(supplyList,aCycleStamp,false);
-	writeNoCycleLn("</SUPPLY TASK ALLOCATION RESULTS");
-	writeNoCycleLn("<WITHDRAW TASK ALLOCATION RESULTS type=ARS>");
+	writeNoCycleLn("</" + SUPPLY_TASK_ARS_TAG + ">");
+	writeNoCycleLn("<" + WITHDRAW_TASK_ARS_TAG + " type=ARS>");
 	logAllocationResults(withdrawList,aCycleStamp,false);
-	writeNoCycleLn("</WITHDRAW TASK ALLOCATION RESULTS");
-	writeNoCycleLn("<PROJECTSUPPLY TASK ALLOCATION RESULTS type=PROJ_ARS>");
+	writeNoCycleLn("</" + WITHDRAW_TASK_ARS_TAG + ">");
+	writeNoCycleLn("<" + PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
 	logAllocationResults(projSupplyList,aCycleStamp,false);
-	writeNoCycleLn("</PROJECTSUPPLY TASK ALLOCATION RESULTS");
-	writeNoCycleLn("<PROJECTWITHDRAW TASK ALLOCATION RESULTS type=PROJ_ARS>");
+	writeNoCycleLn("</" + PROJECTSUPPLY_TASK_ARS_TAG + ">");
+	writeNoCycleLn("<" + PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
 	logAllocationResults(projWithdrawList,aCycleStamp,false);
-	writeNoCycleLn("</PROJECTWITHDRAW TASK ALLOCATION RESULTS>");
+	writeNoCycleLn("</" + PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 
     }
 
@@ -473,28 +504,28 @@ public class LogisticsInventoryFormatter {
 					  long aCycleStamp) {
 	cycleStamp = aCycleStamp;
 
-	writeNoCycleLn("<RESUPPLY SUPPLY TASKS type=TASKS");
+	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASKS_TAG + " type=TASKS>");
 	logTasks(resupplyList,aCycleStamp,false);
-	writeNoCycleLn("</RESUPPLY SUPPLY TASKS");
-	writeNoCycleLn("<RESUPPLY PROJECTSUPPLY TASKS type=PROJTASKS");
+	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASKS_TAG + ">");
+	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + " type=PROJTASKS>");
 	logTasks(projResupplyList,aCycleStamp,false);
-	writeNoCycleLn("</RESUPPLY PROJECTSUPPLY TASKS");
+	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + ">");
 
-	writeNoCycleLn("<RESUPPLY SUPPLY TASK ALLOCATION RESULTS type=ARS>");
-	excelLogARs(resupplyList,aCycleStamp);
-	writeNoCycleLn("</RESUPPLY SUPPLY TASK ALLOCATION RESULTS>");
-	writeNoCycleLn("<RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS type=PROJ_ARS>");
-	excelLogARs(projResupplyList,aCycleStamp);
-	writeNoCycleLn("</RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS>");
+	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASK_ARS_TAG + " type=ARS>");
+	logAllocationResults(resupplyList,aCycleStamp,false);
+	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASK_ARS_TAG + ">");
+	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + "type=PROJ_ARS>");
+	logAllocationResults(projResupplyList,aCycleStamp,false);
+	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + ">");
 
     }
 
     protected void logLevelsToXMLOutput(Schedule reorderLevels,
 					Schedule inventoryLevels,
 					long aCycleStamp) {
-	writeNoCycleLn("<INVENTORY LEVELS type=LEVELS>");
+	writeNoCycleLn("<" + INVENTORY_LEVELS_TAG + " type=LEVELS>");
 	logLevels(reorderLevels,inventoryLevels,aCycleStamp,false);
-	writeNoCycleLn("<INVENTORY LEVELS: END>");
+	writeNoCycleLn("</" + INVENTORY_LEVELS_TAG + ">");
     }
 
     public void writeln(String csvString) {
