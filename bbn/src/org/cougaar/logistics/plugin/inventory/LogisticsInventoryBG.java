@@ -27,6 +27,7 @@ import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.core.service.LoggingService;
@@ -68,6 +69,11 @@ public class LogisticsInventoryBG implements PGDelegate {
   // contains the sum of all Projected Demand for corresponding
   // bucket in dueOutList
   protected ArrayList projectedDemandList;
+  // Lists for csv logging
+  protected ArrayList projWithdrawList;
+  protected ArrayList withdrawList;
+  protected ArrayList projSupplyList;
+  protected ArrayList supplyList;
 
   public LogisticsInventoryBG(LogisticsInventoryPG pg) {
     myPG = pg;
@@ -80,6 +86,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     for (int i=0; i <= 14; i++) {
       durationArray[i] = Duration.newDays(0.0+i);
     }
+    projWithdrawList = new ArrayList();
+    withdrawList = new ArrayList();
+    projSupplyList = new ArrayList();
+    supplyList = new ArrayList();
   }
 
   public void initialize(long today, InventoryPlugin parentPlugin) {
@@ -102,9 +112,11 @@ public class LogisticsInventoryBG implements PGDelegate {
   public void addWithdrawTask(Task task) {
     if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
       addDueOut(task);
+      withdrawList.add(task);
       earliestDemand = Math.min(earliestDemand, PluginHelper.getEndTime(task));
     } else if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
       addDueOutProjection(task);
+      projWithdrawList.add(task);
       earliestDemand = Math.min(earliestDemand, PluginHelper.getStartTime(task));
     }
   }
@@ -163,27 +175,106 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void removeWithdrawTask(Task task) {
+    int index;
+    for (int i=0; i < dueOutList.size(); i++) {
+      ArrayList list = (ArrayList)dueOutList.get(i);
+      while ((index = list.indexOf(task)) != -1) {
+	list.remove(index);
+      }
+    }
+    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
+      if ((index = withdrawList.indexOf(task)) != -1) {
+	withdrawList.remove(index);
+      }
+    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+      while ((index = projWithdrawList.indexOf(task)) != -1) {
+	projWithdrawList.remove(index);
+      }
+    }
   }
 
   public void addRefillTask(Task task) {
     if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
       addDueIn(task);
+      supplyList.add(task);
     } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
       addDueInProjection(task);
+      projSupplyList.add(task);
     }
   }
 
   private void addDueIn(Task task) {
+    long endTime = PluginHelper.getEndTime(task);
+    int bucket = convertTimeToBucket(endTime);
+    while (bucket >= dueInList.size()) {
+      dueInList.add(new ArrayList());
+    }
+    ArrayList list = (ArrayList)dueInList.get(bucket);
+    list.add(task);
   }
 
   private void addDueInProjection(Task task) {
+    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    int bucket_start = convertTimeToBucket(start);
+    int bucket_end = convertTimeToBucket(end);
+    while (bucket_end >= dueInList.size()) {
+      dueInList.add(new ArrayList());
+    }
+    for (int i=bucket_start; i < bucket_end; i++) {
+      ArrayList list = (ArrayList)dueInList.get(i);
+      list.add(task);
+    }
   }
 
-  public List clearRefillTasks() {
+  // Might want to refactor and combine with removeWithdrawTask()
+  public void removeRefillTask(Task task) {
+    int index;
+    for (int i=0; i < dueInList.size(); i++) {
+      ArrayList list = (ArrayList)dueInList.get(i);
+      while ((index = list.indexOf(task)) != -1) {
+	list.remove(index);
+      }
+    }
+    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
+      if ((index = supplyList.indexOf(task)) != -1) {
+	supplyList.remove(index);
+      }
+    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+      while ((index = projSupplyList.indexOf(task)) != -1) {
+	projSupplyList.remove(index);
+      }
+    }
+  }
+
+  public List clearRefillTasks(Date now) {
     // remove uncommitted refill tasks and refill
     // projections from the list.  Add all removed
     // tasks to a second list that will be returned
     // for comparison
+    Task task;
+    ArrayList taskList = new ArrayList();
+    for (int i=0; i < dueInList.size(); i++) {
+      ArrayList list = (ArrayList)dueInList.get(i);
+      for (int j=0; j < list.size(); j++) {
+	task = (Task)list.get(j);
+	if (task.beforeCommitment(now)) {
+	  taskList.add(task);
+	  list.remove(j);
+	  int index;
+	  if ((index = supplyList.indexOf(task)) != -1) {
+	    supplyList.remove(index);
+	  }
+	  if ((index = projSupplyList.indexOf(task)) != -1) {
+	    projSupplyList.remove(index);
+	  }
+	}
+      }
+    }
+    return taskList;
+  }
+
+  public Schedule getReorderLevel() {
     return null;
   }
 
@@ -224,7 +315,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   /**
    * Convert a bucket (int) into the start time of the bucket.
    * The end time of the bucket must be inferred from the 
-   * next sequential bucket's start time.
+   * next sequential bucket's start time (non-inclusive).
    **/
   private long convertBucketToTime(int bucket) {
     return (bucket + timeZero) * MSEC_PER_BUCKET;
