@@ -83,7 +83,7 @@ public class ConditionServlet extends ServletBase {
   public static final String CONDITION_IDENTIFIER = "ConditionServlet.DoubleCondition";
 
   private static final OMCRange[] Condition_RANGES = {
-    new ConditionRange(0.0, 1.0)
+    new ConditionRange(0.0, 10.0)
   };
 
   protected static class ConditionRange extends OMCRange {
