@@ -217,8 +217,8 @@ public class LogisticsInventoryBG implements PGDelegate {
             }
             return;
           } else {
-            if (logger.isWarnEnabled()) {
-              logger.warn("addWithdrawProjection not adding projection to deleted buckets. "+
+            if (logger.isInfoEnabled()) {
+              logger.info("addWithdrawProjection not adding projection to deleted buckets. "+
                           "startBucket is "+TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
                           ", task "+taskUtils.taskDesc(task));
             }
@@ -310,8 +310,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 	bucket = 0;
       }
       if (bucket < getStartBucket()) {
-        if (logger.isWarnEnabled()) {
-          logger.warn("updateProjectedDemandList not adding demand for old projection. startBucket is "+
+        if (logger.isInfoEnabled()) {
+          logger.info("updateProjectedDemandList not adding demand for old projection. startBucket is "+
                       TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
                       ", task "+taskUtils.taskDesc(task));
         }
@@ -618,8 +618,8 @@ public class LogisticsInventoryBG implements PGDelegate {
           }
           return;
         } else {
-          if (logger.isWarnEnabled()) {
-            logger.warn("addRefillProjection not adding projection to deleted buckets. "+
+          if (logger.isInfoEnabled()) {
+            logger.info("addRefillProjection not adding projection to deleted buckets. "+
                         "startBucket is "+TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
                         ", task "+taskUtils.taskDesc(task));
           }

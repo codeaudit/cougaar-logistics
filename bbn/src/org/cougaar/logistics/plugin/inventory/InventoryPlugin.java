@@ -477,8 +477,8 @@ public class InventoryPlugin extends ComponentPlugin
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.Supply);
           if (!unalloc.isEmpty()){
-            if (logger.isWarnEnabled())
-              logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
+            if (logger.isInfoEnabled())
+              logger.info("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
             externalAllocator.allocateRefillTasks(unalloc);
           }
         }
@@ -486,8 +486,8 @@ public class InventoryPlugin extends ComponentPlugin
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.ProjectSupply);
           if (!unalloc.isEmpty()) {
-            if (logger.isWarnEnabled())
-              logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
+            if (logger.isInfoEnabled())
+              logger.info("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
             externalAllocator.allocateRefillTasks(unalloc);
           }
         }
@@ -828,8 +828,8 @@ public class InventoryPlugin extends ComponentPlugin
       logger.debug("number of unprovided tasks is " + unprovidedTasks.size());
     }
     if (!unprovidedTasks.isEmpty()){
-      if (logger.isWarnEnabled()) {
-        logger.warn("Trying to rescind and reallocate unprovided supply refill tasks...");
+      if (logger.isInfoEnabled()) {
+        logger.info("Trying to rescind and reallocate unprovided supply refill tasks...");
       }
       externalAllocator.rescindTaskAllocations(unprovidedTasks);
       externalAllocator.allocateRefillTasks(unprovidedTasks);
@@ -884,8 +884,8 @@ public class InventoryPlugin extends ComponentPlugin
     TimeSpan first = new MutableTimeSpan();
     TimeSpan second = new MutableTimeSpan();
     if (start >= firstlap.getStartTime()) {
-      if (logger.isWarnEnabled()) {
-        logger.warn("GetSplitTimes... task is: " + new Date (start) + " ... " +
+      if (logger.isInfoEnabled()) {
+        logger.info("GetSplitTimes... task is: " + new Date (start) + " ... " +
                      new Date(end) + "  overlapping relationship is: " +
                      new Date(firstlap.getStartTime()) + " ... " +
                      new Date(firstlap.getEndTime()));
@@ -896,8 +896,8 @@ public class InventoryPlugin extends ComponentPlugin
       ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
       ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
     } else {
-      if (logger.isWarnEnabled()) {
-        logger.warn("GetSplitTimes... task is: " + new Date (start) + " ... " +
+      if (logger.isInfoEnabled()) {
+        logger.info("GetSplitTimes... task is: " + new Date (start) + " ... " +
                     new Date(end) + "  overlapping relationship is: " +
                     new Date(firstlap.getStartTime()) + " ... " +
                     new Date(firstlap.getEndTime()));
