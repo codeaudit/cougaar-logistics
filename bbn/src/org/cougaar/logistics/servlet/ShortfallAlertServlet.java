@@ -174,8 +174,10 @@ extends BaseServletComponent
 
   protected AlarmService alarmService;
 
-  protected SimpleDateFormat dayFormat=null;
-  protected SimpleDateFormat hourFormat=null;
+  protected static boolean setTimeZone=false;
+
+  protected static SimpleDateFormat dayFormat=new SimpleDateFormat("MM/dd/yyyy");
+  protected static SimpleDateFormat hourFormat=new SimpleDateFormat("MM/dd/yyyy HH:mm");
 
   
 
@@ -184,10 +186,15 @@ extends BaseServletComponent
   public ShortfallAlertServlet() {
     super();
     path = getDefaultPath();
-    dayFormat = new SimpleDateFormat("MM/dd/yyyy");
-    dayFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    hourFormat= new SimpleDateFormat("MM/dd/yyyy HH:mm");
-    hourFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    setTimeZonesInit();
+  }
+
+  protected void setTimeZonesInit() {
+      if(!setTimeZone) {
+	dayFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	hourFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	setTimeZone=true;
+      }
   }
 
   public void setParameter(Object o) {
@@ -375,6 +382,30 @@ extends BaseServletComponent
   protected String getTitlePrefix() {
     return ""; // must not contain special URL characters
   }
+
+    public static String createTimeString(long time, long bucketSize, long startC0Day) {
+	return createTimeString(time,bucketSize,calcCBucket(time,bucketSize,startC0Day));
+
+    }
+
+    public static String createTimeString(long time, long bucketSize, int cBucket) {
+	String timeString = "";
+	if(bucketSize == TimeUtils.MSEC_PER_DAY) {
+	    timeString = dayFormat.format(new Date(time));
+	}
+	else if (bucketSize == TimeUtils.MSEC_PER_HOUR) {    
+	    timeString = hourFormat.format(new Date(time));
+	}
+	timeString = timeString + " (C" + cBucket + ")";
+	return timeString;
+    }
+
+    public static int calcCBucket(long time, long bucketSize, long c0Day) {
+	int cBucket = ((int) ((time-c0Day) / bucketSize));
+	return cBucket;
+    }
+
+
 
   /**
    * Inner-class that's registered as the servlet.
@@ -1010,23 +1041,13 @@ extends BaseServletComponent
     }
 
     protected String getTimeString(long time, long bucketSize) {
-	String timeString = "";
-	if(bucketSize == TimeUtils.MSEC_PER_DAY) {
-	    timeString = dayFormat.format(new Date(time));
-	}
-	else if (bucketSize == TimeUtils.MSEC_PER_HOUR) {    
-	    timeString = hourFormat.format(new Date(time));
-	}
-	timeString = timeString + " (C" + getCBucket(time,bucketSize) + ")";
-	return timeString;
+	return createTimeString(time,bucketSize,getCBucket(time,bucketSize));
     }
-
 
 
     protected int getCBucket(long time, long bucketSize) {
 	long c0Day = startCDay.getTime();
-	int cBucket = ((int) ((time-c0Day) / bucketSize));
-	return cBucket;
+	return calcCBucket(time,bucketSize,c0Day);
     }
 
     protected Date getStartDate() {
@@ -1313,16 +1334,22 @@ extends BaseServletComponent
       Collection summaries = getAllShortfallSummaries();
       long nowTime = System.currentTimeMillis();
       startCDay = getStartDate();
+      long c0Time = startCDay.getTime();
+
       ShortfallShortData data;
       if(showTables) {
 	  data = new FullShortfallData(getEncodedAgentName(),
+				       getGeoLocString(),
 				       nowTime,
+				       c0Time,
 				       summaries,
 				       userMode);
       }
       else {
 	  data = new ShortfallShortData(getEncodedAgentName(),
+					getGeoLocString(),
 					nowTime,
+                                        c0Time,
 					summaries,
 					userMode);
       }
