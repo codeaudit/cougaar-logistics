@@ -165,6 +165,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   private IncrementalSubscription selfOrganizations;
 
   private IncrementalSubscription projectionTaskSubscription;
+  private IncrementalSubscription genSupplyTaskSubscription;
 
   /*** TODO: MWD Remove
    private IncrementalSubscription orgActivities;
@@ -409,6 +410,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
             blackboard.subscribe(new LocalTaskPredicate(supplyType, getOrgName(),
                                                         Constants.Verb.ProjectSupply,
                                                         taskUtils));
+
+        genSupplyTaskSubscription = 
+            (IncrementalSubscription) 
+             blackboard.subscribe(new LocalTaskPredicate(supplyType, getOrgName(), Constants.Verb.Supply, taskUtils));
+
       }
       // the didRehydrate flag will be reset after the first transaction, if org is still null
       // this is a problem
@@ -467,6 +473,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
     //if its time to generate demand do so.
     if (generateDemand) {
+
+      
+
+      
+
       
       if (logger.isInfoEnabled()) {
         logger.info("Timer has gone off.  Planning for the next " +
@@ -479,6 +490,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         //(stepPeriod -1)
         Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
                                                            time, time + (stepPeriod - 1));
+
+        Collection relevantSupplys = filterSupplyTasksOnTime(genSupplyTaskSubscription, time, time + (stepPeriod));
+
         //TODO: MWD Remove debug statements:
         if ((getOrgName() != null) &&
             (getOrgName().trim().equals("1-35-ARBN")) &&
@@ -493,7 +507,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
         //filter and create task from time to time plus step period inclusive
         //(stepPeriod -1)
-        List demandTasks = demandGenerator.generateDemandTasks(time, (stepPeriod - 1), relevantProjs);
+        List demandTasks = demandGenerator.generateDemandTasks(time, (stepPeriod - 1), relevantProjs,relevantSupplys);
 
         if (demandOutputModule != null) {
           demandOutputModule.writeDemandOutputToFile(demandTasks);
@@ -528,6 +542,32 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
     return filteredProjs;
   }
+
+
+  /***
+   * Filter the passed in collection of projection tasks to those overlapping the period
+   * between the start and end time.
+   *
+   * @param projections - whole collection of projection tasks
+   * @param startGen - start time for generating supply tasks
+   * @param endGen -  end time for generating supply tasks
+   * @return Collection of projection tasks filtered by start and end time.
+   */
+  protected Collection filterSupplyTasksOnTime(Collection supplyTasks,
+                                               long startGen,
+                                               long endGen) {
+    ArrayList filteredSupplys = new ArrayList();
+    Iterator supplyTaskIt = supplyTasks.iterator();
+    while (supplyTaskIt.hasNext()) {
+      Task actual = (Task) supplyTaskIt.next();
+      if ((TaskUtils.getEndTime(actual) < endGen) &&
+          (TaskUtils.getEndTime(actual) >= startGen)) {
+        filteredSupplys.add(actual);
+      }
+    }
+    return filteredSupplys;
+  }
+
 
 
  /***

@@ -156,9 +156,12 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
    * @param start start time of period over which to collect data and create demand
    * @param duration duration of period over which to collect data and create demand
    * @param relevantProjectSupplys NOT USED
+   * @param relevantSupplys        
    */
-  public List generateDemandTasks(long start, long duration, Collection relevantProjectSupplys) {
+  public List generateDemandTasks(long start, long duration, Collection relevantProjectSupplys, Collection relevantSupplys) {
     ArrayList demandTasks = new ArrayList();
+
+    regenerateSupplyHash(relevantSupplys);
 
     // Make sure the file reader is initialized
     initReader();
@@ -252,6 +255,24 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
 	  }
           continue;
         }
+
+        HashMap supplyAssetMap = (HashMap) supplyHash.get(gpTask);
+        Collection issuedSupplyTasks = null;
+        if(supplyAssetMap != null) {
+          issuedSupplyTasks = (Collection) supplyAssetMap.get(consumed);
+        }
+        //If a supply task hasn't already been created for this day,asset
+        //then generate the demand task
+        if((issuedSupplyTasks != null) &&
+           (!issuedSupplyTasks.isEmpty())) {
+          if(logger.isWarnEnabled()) {
+            logger.warn("Supply task already issued on this day for " + consumed + " not re-issuing.");
+          }
+          continue;
+
+        }
+
+
 
         // Create the geoloc for delivery
         GeolocLocationImpl geoLoc = new GeolocLocationImpl(Latitude.newLatitude(lat),

@@ -63,12 +63,14 @@ public class DemandTaskGenerator extends DemandGeneratorModule
 
 
   protected HashMap projHash;
+  protected HashMap supplyHash;
 
   protected Random poissonGen;
 
   public DemandTaskGenerator(DemandGeneratorPlugin demandGeneratorPlugin) {
     super(demandGeneratorPlugin);
     projHash = new HashMap();
+    supplyHash = new HashMap();
     poissonGen = new Random();
   }
 
@@ -76,9 +78,10 @@ public class DemandTaskGenerator extends DemandGeneratorModule
    * Generate actual demand tasks from the passed in projections
    **/
 
-  public List generateDemandTasks(long start, long duration, Collection relevantProjectSupplys) {
+  public List generateDemandTasks(long start, long duration, Collection relevantProjectSupplys, Collection relevantSupplys) {
     ArrayList demandTasks = new ArrayList();
     regenerateProjectionHash(relevantProjectSupplys);
+    regenerateSupplyHash(relevantSupplys);
     long end = start + duration;
     Iterator gpTasksIt = projHash.keySet().iterator();
     while (gpTasksIt.hasNext()) {
@@ -105,12 +108,22 @@ public class DemandTaskGenerator extends DemandGeneratorModule
         Iterator projTaskIt = projTasks.iterator();
 
         if((taskQty > 0) && (projTaskIt.hasNext())) {
-          supplyTasks.add(createNewDemandTask(gpTask,
-                                                  (Task) projTaskIt.next(),
-                                                  consumed,
-                                                  start,
-                                                  start+duration,
-                                                  taskQty));
+          HashMap supplyAssetMap = (HashMap) supplyHash.get(gpTask);
+          Collection issuedSupplyTasks = null;
+          if(supplyAssetMap != null) {
+            issuedSupplyTasks = (Collection) supplyAssetMap.get(consumed);
+          }
+          //If a supply task hasn't already been created for this day,asset
+          //then generate the demand task
+          if((issuedSupplyTasks == null) ||
+             (issuedSupplyTasks.isEmpty())) {
+            supplyTasks.add(createNewDemandTask(gpTask,
+                                                (Task) projTaskIt.next(),
+                                                consumed,
+                                                start,
+                                                start+duration,
+                                                taskQty));
+          }
         }
       }
       if(!supplyTasks.isEmpty()){
@@ -125,35 +138,43 @@ public class DemandTaskGenerator extends DemandGeneratorModule
   }
 
   protected void regenerateProjectionHash(Collection tasks) {
-    projHash.clear();
+    regenerateTaskHash(tasks,projHash);
+  }
+
+  protected void regenerateSupplyHash(Collection tasks) {
+    regenerateTaskHash(tasks,supplyHash);
+  }
+
+  protected void regenerateTaskHash(Collection tasks, HashMap hash) {
+    hash.clear();
     Iterator taskIt = tasks.iterator();
     while (taskIt.hasNext()) {
       Task task = (Task) taskIt.next();
       Workflow wf = task.getWorkflow();
       if (wf == null) {
 	if(logger.isErrorEnabled()) {
-          logger.error("Projection task: " + task.getUID() + " at " + dgPlugin.getOrgName() + " has Null workflow");
+          logger.error("" + task.getVerb() + " task: " + task.getUID() + " at " + dgPlugin.getOrgName() + " has Null workflow");
 	}
         continue;
       }
       Task parTask = wf.getParentTask();
       if (parTask == null) {
 	if(logger.isErrorEnabled()) {
-          logger.error("Projection task with no parent");
+          logger.error("" + task.getVerb() + " task with no parent");
 	}
         continue;
       }
       if (!(parTask.getVerb().equals
           (Constants.Verb.GENERATEPROJECTIONS))) {
 	if(logger.isErrorEnabled()) {
-          logger.error("Projection task with non generate projections parent");
+          logger.error("" + task.getVerb() + " task with non generate projections parent");
 	}
         continue;
       }
-      HashMap assetMap = (HashMap) projHash.get(parTask);
+      HashMap assetMap = (HashMap) hash.get(parTask);
       if (assetMap == null) {
         assetMap = new HashMap();
-        projHash.put(parTask, assetMap);
+        hash.put(parTask, assetMap);
       }
       Asset asset = task.getDirectObject();
       ArrayList tasksWAsset = (ArrayList) assetMap.get(asset);

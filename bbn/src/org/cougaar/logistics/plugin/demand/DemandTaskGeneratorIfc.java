@@ -50,6 +50,6 @@ public interface DemandTaskGeneratorIfc {
    * Expand DetermineRequirements tasks into GenerateProjections tasks.
    **/
 
-  List generateDemandTasks(long startGen, long duration, Collection relevantProjectSupplys);
+  List generateDemandTasks(long startGen, long duration, Collection relevantProjectSupplys, Collection relevantSupplys);
 }
 
