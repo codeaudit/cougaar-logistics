@@ -71,6 +71,7 @@ import org.cougaar.planning.ldm.asset.LocationSchedulePG;
 import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.Location;
 import org.cougaar.planning.ldm.plan.LocationScheduleElement;
 import org.cougaar.planning.ldm.plan.NewSchedule;
@@ -82,6 +83,7 @@ import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.planning.ldm.plan.ScheduleImpl;
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
 
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.log.Logger;
@@ -161,6 +163,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   }
 
   public boolean interestingExpandedTask(Task t) {
+    if (!t.getSource ().equals (getAgentIdentifier ()))
+      return true;
     return glmPrepHelper.hasPrepNamed(t, GLMTransConst.SequentialSchedule);
   }
 
@@ -221,6 +225,23 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   }
 
   public void handleChangedOrganization (Enumeration e) {}
+
+  public void handleTask(Task t) {
+    NewTask subtask = expandHelper.makeSubTask (ldmf, t, t.getDirectObject(), getAgentIdentifier());
+    subtask.setContext (t.getContext());
+
+    NewWorkflow wf  = ldmf.newWorkflow();
+    wf.setParentTask(t);
+    ((NewTask)t).setWorkflow(wf);
+    wf.addTask (subtask);
+
+    Expansion   exp = ldmf.createExpansion(t.getPlan(), t, wf, null);
+
+    publishAdd(subtask);
+    publishAdd(exp);
+
+    super.handleTask (subtask);
+  }
 
   public Schedule createEmptyPlan(Task parent) {
     TheaterPortion theater = new TheaterPortion(parent);

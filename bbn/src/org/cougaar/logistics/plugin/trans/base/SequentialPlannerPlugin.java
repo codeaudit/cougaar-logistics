@@ -341,7 +341,12 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	
     Task task = exp.getTask();
     Schedule sched = null;
-	
+
+    if (!prepHelper.hasPrepNamed (task, GLMTransConst.SequentialSchedule)) {
+      updateAllocationResult (exp); 
+      return;
+    }
+
     try {
       sched = (Schedule)prepHelper.getPrepNamed(task, GLMTransConst.SequentialSchedule).getIndirectObject();
     } catch (Exception e) {
