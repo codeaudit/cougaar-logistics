@@ -522,10 +522,18 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     LogisticsAllocationResultHelper helper = new LogisticsAllocationResultHelper(task, null);
     long msecperbucket = thePG.getBucketMillis();
     long start = thePG.convertBucketToTime(deficit.getDeficitStartBucket());
+    // Create successful allocation for the period before the start of the deficit
+    long pref_start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+    if (pref_start < start) {
+      helper.setBest(AlpineAspectType.DEMANDRATE, pref_start, start);
+    }
+    // Create allocation for the late deliveries
     int size = deficit.getAllocatedArraySize();
+    long current_start = start;
     for (int i=0; i < size; i++)  {
-      helper.setPartial(AlpineAspectType.DEMANDRATE, start, start+msecperbucket, 
+      helper.setPartial(AlpineAspectType.DEMANDRATE, current_start, current_start+msecperbucket, 
 			deficit.getAllocated(i));
+      current_start +=msecperbucket;
     }
     AllocationResult ar = helper.getAllocationResult(0.9);
     Allocation alloc = inventoryPlugin.getRootFactory().
