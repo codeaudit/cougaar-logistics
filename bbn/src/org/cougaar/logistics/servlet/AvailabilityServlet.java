@@ -26,16 +26,15 @@ import org.cougaar.core.agent.service.alarm.ExecutionTimer;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.servlet.ComponentServlet;
-import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.planning.ldm.plan.HasRelationships;
-import org.cougaar.planning.ldm.plan.Relationship;
-import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.servicediscovery.description.AvailabilityChangeMessage;
 import org.cougaar.servicediscovery.description.ProviderCapabilities;
 import org.cougaar.servicediscovery.description.ProviderCapability;
+import org.cougaar.servicediscovery.transaction.ServiceContractRelay;
 import org.cougaar.util.MutableTimeSpan;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,12 +53,12 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   private BlackboardService blackboard;
   private List registeredRoles;
-  private List rolesWithClients;
-  private static String PATH = "/availabilityServlet";
-  private static String ROLE_PARAMETER = "role";
-  private static String START_DATE_PARAMETER = "startdate";
-  private static String END_DATE_PARAMETER = "enddate";
-  private Organization myOrg;
+  private final static String PATH = "/availabilityServlet";
+  private final static String ROLE_PARAMETER = "role";
+  private final static String AVAILABILITY_PARAMETER = "Availability";
+  private final static String START_DATE_PARAMETER = "startdate";
+  private final static String END_DATE_PARAMETER = "enddate";
+  private static Logger logger = Logging.getLogger(AvailabilityServlet.class);
 
   public void init() {
     // get the blackboard service
@@ -102,13 +101,18 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   public void doGet(HttpServletRequest req,
                     HttpServletResponse res) throws IOException {
 
-    Organization myOrg = getMyOrganization();
+    //myOrg = getMyOrganization();
     registeredRoles = getProviderRoles();
     PrintWriter out = res.getWriter();
     Collection col;
     String start_date_string = req.getParameter(START_DATE_PARAMETER);
     String end_date_string = req.getParameter(END_DATE_PARAMETER);
     String role = req.getParameter(ROLE_PARAMETER);
+    String available = req.getParameter(AVAILABILITY_PARAMETER);
+    boolean isAvailable = true;
+    if (available != null) {
+      isAvailable = available.equals("available");
+    }
     SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
     Date start_date = null;
     Date end_date = null;
@@ -140,8 +144,8 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
           printError("End date must be in the future; try again.", out);
           printForm(req, out);
         } else {
-          AvailabilityChangeMessage message =
-              new AvailabilityChangeMessage(Role.getRole(role), false, new MutableTimeSpan(), false);
+          AvailabilityChangeMessage message = new AvailabilityChangeMessage(Role.getRole(role),
+                                                                            false, new MutableTimeSpan(), isAvailable);
           blackboard.publishAdd(message);
           printChangeInfo(message, true, out);
         }
@@ -181,31 +185,33 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   }
 
   private void printForm(HttpServletRequest req, PrintWriter out) {
-    myOrg = getMyOrganization();
+    String tableHeader;
     String optionString = "";
+    StringBuffer elements = new StringBuffer();
 
-    out.print("<p>\n" + "<table border>" + "<tr><th colspan=1>" + "Registered Roles" + "</th>" + "<th colspan=1>"
-              + "Clients" + "</th></tr>");
+    tableHeader = "<p>\n" + "<table border>"
+        + "<tr><th colspan=1>" + "Registered Roles" + "</th>" + "<th colspan=1>"
+        + "Clients" + "</th></tr>";
     Iterator iter = registeredRoles.iterator();
     while (iter.hasNext()) {
       Role role = (Role) iter.next();
       String client = "No";
-      if (hasClientRelationship(role)) {
+      if (hasServiceContract(role)) {
         client = "Yes";
       }
-      out.print("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
-      optionString = optionString.concat(
-          "<option value=\"" + role + "\">" + role + "</option>" + "\n");
+      elements.append("<tr><td>" + role + "</td><td align=center>" + client + "</td></tr>");
+      optionString = "<option value=\"" + role + "\">" + role + "</option>" + "\n";
     }
-    out.print("</table>");
-
+    out.print(tableHeader + elements.toString() + "</table>");
     out.print("<form method=\"GET\" action=\"" +
               req.getRequestURI() +
               "\">\n" +
-              "Enter role: " +
+              "Select role: " +
               "<select size=1 name=\"" + ROLE_PARAMETER + "\">\n" +
               optionString +
               "</select>" +
+              "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"available\">Available" +
+              "<input type=radio name=\"" + AVAILABILITY_PARAMETER + "\" value=\"unavailable\">Unavailable<BR>" +
               "<p>Enter new start date (MM/DD/YYYY): " +
               "<input type=\"text\" name=\"" + START_DATE_PARAMETER + "\" size=40>\n" +
               "</select>" +
@@ -236,57 +242,18 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
                 "<p>");
   }
 
-  private String headWithTitle(String title) {
-    return "<HEAD><TITLE>" + title + "</TITLE></HEAD>";
-  }
-
-  private List getAllRelationshipRoles(Collection roles) {
-    RelationshipSchedule relSched = myOrg.getRelationshipSchedule();
-    ArrayList list = new ArrayList();
-    for (Iterator iterator = roles.iterator(); iterator.hasNext();) {
-      Role role = (Role) iterator.next();
-      Collection relationships = relSched.getMatchingRelationships(role);
-      Iterator rit = relationships.iterator();
-      while (rit.hasNext()) {
-        Relationship r = (Relationship) rit.next();
-        HasRelationships hr = relSched.getOther(r);
-        //HasRelationships hr = r.getA();
-        if (hr instanceof Organization) {
-          Role cr = relSched.getOtherRole(r);
-          //Role role = relSched.getMyRole(r);
-          //RelationshipSchedule rs = hr.getRelationshipSchedule();
-          list.add(cr);
-          //roles.add(rs.getMyRole(r));
-        }
+  private boolean hasServiceContract(Role role) {
+    blackboard.openTransaction();
+    Collection serviceContracts = blackboard.query(serviceContractRelayPred);
+    blackboard.closeTransaction();
+    for (Iterator iterator = serviceContracts.iterator(); iterator.hasNext();) {
+      ServiceContractRelay scr = (ServiceContractRelay) iterator.next();
+      if (role.equals(scr.getServiceContract().getServiceRole())) {
+        return true;
       }
     }
-
-    return list;
+    return false;
   }
-
-  private boolean hasClientRelationship(Role role) {
-    RelationshipSchedule relSched = myOrg.getRelationshipSchedule();
-    Collection relationships = relSched.getMatchingRelationships(role);
-    return !relationships.isEmpty();
-  }
-
-  protected Organization getMyOrganization(Iterator orgs) {
-    Organization myOrg = null;
-    // look for this organization
-    if (orgs.hasNext()) {
-      myOrg = (Organization) orgs.next();
-    }
-    return myOrg;
-  }
-
-  protected static UnaryPredicate orgsPredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      if (o instanceof Organization) {
-        return ((Organization) o).isSelf();
-      }
-      return false;
-    }
-  };
 
   protected static UnaryPredicate capabilitiesPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -294,12 +261,16 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     }
   };
 
-  public Organization getMyOrganization() {
-    blackboard.openTransaction();
-    Collection orgsCollection = blackboard.query(orgsPredicate);
-    blackboard.closeTransaction();
-    return getMyOrganization(orgsCollection.iterator());
-  }
+  private UnaryPredicate serviceContractRelayPred = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof ServiceContractRelay) {
+        ServiceContractRelay relay = (ServiceContractRelay) o;
+        return (relay.getProviderName().equals(getEncodedAgentName()));
+      } else {
+        return false;
+      }
+    }
+  };
 
   public Collection getMyCapabilities() {
     blackboard.openTransaction();
@@ -310,8 +281,8 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     }
     // I think there should only be one
     if (capCollect.size() > 1) {
-      //TODO:  add a logger
-      System.out.println("There is more than one ProviderCapability object: " + capCollect.size());
+      if (logger.isErrorEnabled())
+        logger.error("There is more than one ProviderCapability object: " + capCollect.size());
     }
     ProviderCapabilities pc = (ProviderCapabilities) capCollect.iterator().next();
     Collection capabilites = pc.getCapabilities();
