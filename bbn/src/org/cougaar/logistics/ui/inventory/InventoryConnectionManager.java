@@ -32,6 +32,9 @@ import javax.swing.JOptionPane;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.nio.charset.Charset;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -132,34 +135,41 @@ public class InventoryConnectionManager implements InventoryDataSource
 
     public String getCurrentInventoryData() { return invXMLStr; }
 
-    public String getInventoryData(String orgName, String assetName) {
-	InputStream is = null;
-	ConnectionHelper connection=null;
-	String orgURL = (String)orgURLs.get(orgName);
-	
-    
-	logger.info("ExecutingQuery: " + assetName + " to: " + orgURL +
-                       " for: " + SERV_ID);
+  public String getInventoryData(String orgName, String assetName) {
+InputStream is = null;
+ConnectionHelper connection=null;
+String orgURL = (String)orgURLs.get(orgName);
 
-	try {
-	    connection = 
-		new ConnectionHelper( orgURL, SERV_ID);
-	    
-	    connection.sendData(assetName);
-	    is = connection.getInputStream();
-	} catch (Exception e) {
-	    displayErrorString(e.toString());
-	}
-	
-	invXMLStr = null;
-	try {
-	    ObjectInputStream p = new ObjectInputStream(is);
-	    invXMLStr = (String)p.readObject();
-	    p.close();
-	    connection.closeConnection();
-	} catch (Exception e) {
-	    displayErrorString("getInventoryData:Object read exception: " + e);
-	}
+ if(logger.isInfoEnabled()) {
+logger.info("ExecutingQuery: " + assetName + " to: " + orgURL +
+                     " for: " + SERV_ID);
+ }
+
+try {
+    connection =
+  new ConnectionHelper( orgURL, SERV_ID);
+    connection.sendData(assetName);
+    is = connection.getInputStream();
+} catch (Exception e) {
+    displayErrorString(e.toString());
+}
+
+invXMLStr = null;
+try {
+    //ObjectInputStream p = new ObjectInputStream(is);
+    //invXMLStr = (String)p.readObject();
+    BufferedReader p = new BufferedReader(new InputStreamReader(is,Charset.forName("ASCII")));
+    invXMLStr = p.readLine() + "\n";
+    String currLine = p.readLine();
+    while(currLine != null) {
+	invXMLStr =  invXMLStr + currLine + "\n";
+	currLine = p.readLine();
+    }
+    p.close();
+    connection.closeConnection();
+} catch (Exception e) {
+    displayErrorString("getInventoryData:Object read exception: " + e);
+}
 
 	//parse here
 
@@ -273,7 +283,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 		if (i != -1) {
 		    servHost = hostAndPort.substring(0, i);
 		    servPort = hostAndPort.substring(i+1);
-		    System.out.println("getOrgHostAndPort url = " + getURLString());
+		    //System.out.println("getOrgHostAndPort url = " + getURLString());
 		    return true;
 		}
 	    }
