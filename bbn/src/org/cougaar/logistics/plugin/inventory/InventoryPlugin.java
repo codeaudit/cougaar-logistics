@@ -1864,7 +1864,7 @@ public class InventoryPlugin extends ComponentPlugin
   protected ComparatorModule getComparatorModule() {
     String comparatorClass = (String) pluginParams.get("COMPARATOR");
     if (comparatorClass == null) {
-      return new RefillComparator(this);
+      return new DiffBasedComparator(this);
     } else {
       if (comparatorClass.indexOf('.') == -1) {
         comparatorClass = "org.cougaar.logistics.plugin.inventory." + comparatorClass;
@@ -1880,7 +1880,7 @@ public class InventoryPlugin extends ComponentPlugin
         return comparator;
       } catch (Exception e) {
         logger.error(e + " Unable to create Expander instance of " + comparatorClass + ". " +
-                     "Loading default org.cougaar.logistics.plugin.inventory.RefillComparator");
+                     "Loading default org.cougaar.logistics.plugin.inventory.DiffBasedComparator");
       }
     }
     return new RefillComparator(this);
