@@ -1225,6 +1225,49 @@ public class LogisticsInventoryBG implements PGDelegate {
         return actualDemandTasksList;
     }
 
+    public boolean hasShortfall() {
+	return ((countFailures(getSupplyList()) > 0) ||
+		(countFailures(getProjSupplyList()) > 0) ||
+		(countFailures(getProjWithdrawList()) > 0) ||
+		(countFailures(getWithdrawList()) > 0));
+    }
+
+    public int numResupplySupplyFailures() {
+      return countFailures(getSupplyList());
+    }
+
+    public int numResupplyProjFailures() {
+      return countFailures(getProjSupplyList());
+    }
+    
+    public int numDemandSupplyFailures() {
+      return countFailures(getWithdrawList());
+    }
+
+    public int numDemandProjFailures() {
+      return countFailures(getProjWithdrawList());
+    }
+
+    protected static int countFailures(ArrayList taskList) {
+	Iterator it = taskList.iterator();
+	int ctr=0;
+	while(it.hasNext()) {
+	    Task t = (Task) it.next();
+	    PlanElement pe = t.getPlanElement();
+	    if (pe != null) {
+		AllocationResult ar = pe.getReportedResult();
+		if (ar == null) {
+		    ar = pe.getEstimatedResult();
+		}
+		if((ar != null) && (!ar.isSuccess())) {
+		    ctr++;
+		}
+	    }
+	}
+	return ctr;
+    }
+
+
     /**
      *  Take the incomming time and convert it to the beginning of the bucket
      *  in which it falls

@@ -47,6 +47,7 @@ import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.utils.TaskScheduler;
 import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
 import org.cougaar.logistics.servlet.CommStatus;
+import org.cougaar.logistics.servlet.LogisticsInventoryServlet;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
@@ -176,6 +177,7 @@ public class InventoryPlugin extends ComponentPlugin
                                         }
                                       });
 
+
     nodeIdService = (NodeIdentificationService)
        getServiceBroker().getService( this,
                                     NodeIdentificationService.class,
@@ -185,8 +187,15 @@ public class InventoryPlugin extends ComponentPlugin
     }
 
     if (uidService == null) {
-      uidService = (UIDService) 
-        getServiceBroker().getService(this, UIDService.class, null);
+	uidService = (UIDService)
+	    getServiceBroker().getService(this,
+					  UIDService.class,
+					  new ServiceRevokedListener() {
+					      public void serviceRevoked(ServiceRevokedEvent re) {
+						  if (UIDService.class.equals(re.getService()))
+						  uidService = null;
+					      }
+					  });
     }
 
     //   System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
@@ -768,6 +777,8 @@ public class InventoryPlugin extends ComponentPlugin
   /** Subscription for removed dispositions, need to reconcile with prediction tasks **/
   private IncrementalSubscription dispositions;
 
+  private IncrementalSubscription shortfallSummary;
+
   protected void setupSubscriptions() {
     if (!getBlackboardService().didRehydrate()) {
       setupOperatingModes();
@@ -828,6 +839,10 @@ public class InventoryPlugin extends ComponentPlugin
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
     nonrefillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new NonRefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+
+    shortfallSummary = (IncrementalSubscription) blackboard.
+	subscribe(new ShortfallSumPredicate(getSupplyType()));
+    
 
 
     //LogOPlan replacment
@@ -904,6 +919,23 @@ public class InventoryPlugin extends ComponentPlugin
       return false;
     }
   };
+
+  private static class ShortfallSumPredicate implements UnaryPredicate {
+
+    String supplyType;
+
+    public ShortfallSumPredicate(String aSupplyType) {
+	supplyType = aSupplyType;
+    }
+
+    public boolean execute(Object o) {
+      if (o instanceof ShortfallSummary) {
+        return (((ShortfallSummary) o).getSupplyType().equals(supplyType));
+      }
+      return false;
+    }
+  };
+    
 
   private static class SupplyTaskPredicate
       implements TaskSchedulingPolicy.Predicate {
@@ -1554,7 +1586,88 @@ public class InventoryPlugin extends ComponentPlugin
       // Force incremental persistence snapshots to include changes to these
       publishChange(inv);
     }
+    checkShortfallStatus(inventories);
   }
+
+  public void checkShortfallStatus(Collection inventories) {
+    Inventory inv;
+    Iterator inv_it = inventories.iterator();
+    LogisticsInventoryPG logInvPG = null;
+    ArrayList shortfallInvs = new ArrayList();
+    ArrayList nonShortfallInvs = new ArrayList();
+    while (inv_it.hasNext()) {
+      inv = (Inventory) inv_it.next();
+      String invID = LogisticsInventoryServlet.getNomenclature(inv);
+
+      ShortfallInventory shortfallInv=checkForShortfall(inv);
+      if(shortfallInv != null) {
+	  shortfallInvs.add(shortfallInv);
+      }
+      else {
+	  nonShortfallInvs.add(invID);
+      }
+    }
+    ShortfallSummary shortSum =null;
+    if(!shortfallSummary.isEmpty()) {
+	shortSum = (ShortfallSummary)shortfallSummary.iterator().next();
+    }
+    //If the shortfall summary doesn't exist yet and there are shortfall inventories
+    //Create and publish add the shortfall summary.
+    if (shortSum == null) {
+	if(!shortfallInvs.isEmpty()){
+	    shortSum = new ShortfallSummary(getSupplyType(),uidService.nextUID());
+	    Iterator it = shortfallInvs.iterator();
+	    shortSum.setShortfallInventories(shortfallInvs);
+	    publishAdd(shortSum);
+	}
+	return;
+    }
+    boolean addedShort = shortSum.addShortfallInventories(shortfallInvs);
+    boolean removedShort = shortSum.removeShortfallInventories(nonShortfallInvs);
+
+    if(addedShort || removedShort){
+	if(!shortSum.getShortfallInventories().isEmpty()) {
+	    /***
+	    if(getOrgName().startsWith("47-FSB")) {
+		logger.warn("47-FSB - num short:" + shortSum);
+	    }
+	    **/
+	    publishChange(shortSum);
+	}
+	else {
+	    publishRemove(shortSum);
+	    /***
+	    if(getOrgName().startsWith("47-FSB")) {
+		logger.warn("47-FSB - Removing ShortfallSummary");
+	    }
+	    **/
+	    
+	}
+    }
+    
+  }
+
+
+    public ShortfallInventory checkForShortfall(Inventory inv) {
+      LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      String invID = LogisticsInventoryServlet.getNomenclature(inv);
+      
+      ShortfallInventory shortfallInv=new ShortfallInventory(invID);
+
+      shortfallInv.setNumResupplySupply(logInvPG.numResupplySupplyFailures());
+      shortfallInv.setNumResupplyProj(logInvPG.numResupplyProjFailures());
+      shortfallInv.setNumDemandSupply(logInvPG.numDemandSupplyFailures());
+      shortfallInv.setNumDemandProj(logInvPG.numDemandProjFailures());
+	  
+
+
+      if(shortfallInv.getNumPermShortfall() > 0) {
+	  return shortfallInv;
+      }
+      else {
+	  return null;
+      }
+    }
 
   /**
    Read the Plugin parameters(Accepts key/value pairs)

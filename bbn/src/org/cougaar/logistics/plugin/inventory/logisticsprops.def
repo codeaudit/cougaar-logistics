@@ -104,8 +104,12 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	long getEffectiveProjectionStart(Task task, long start); \
 	void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin); \
         void clearTargetLevels(int startBucket); \
-	void recalculateInitialLevel();
-
+	void recalculateInitialLevel(); \
+	boolean hasShortfall(); \
+	int numResupplySupplyFailures(); \
+	int numResupplyProjFailures(); \
+	int numDemandSupplyFailures(); \
+	int numDemandProjFailures();
 ;;
 ;; examples
 ;;
