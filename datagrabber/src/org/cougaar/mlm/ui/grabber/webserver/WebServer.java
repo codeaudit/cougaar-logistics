@@ -61,6 +61,7 @@ public class WebServer extends Thread implements ResultHandler,
   protected DBConfig dbConfig;
   protected Logger logger;
   protected Connection dbConnection;
+  protected DBConnectionProvider dbConnectionProvider;
 
   protected boolean halt;
 
@@ -84,6 +85,7 @@ public class WebServer extends Thread implements ResultHandler,
     this.workQ=new WorkQueue(this,this);
     this.controller=c;
     this.requestHandlerFactory = new RequestHandlerFactory(controller);
+    this.dbConnectionProvider = controller;
   }
 
   //Members:
@@ -178,7 +180,7 @@ public class WebServer extends Thread implements ResultHandler,
 	//logMessage(Logger.TRIVIAL,Logger.WEB_IO,"Read header");
 	RequestHandler rh = 
 	  requestHandlerFactory.getRequestHandler(dbConfig,
-						  dbConnection,
+						  dbConnectionProvider,
 						  config, request);
 	//logMessage(Logger.TRIVIAL,Logger.WEB_IO,"Got RequestHandler");
 	workQ.enque(rh);
