@@ -39,7 +39,6 @@ import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
-import org.cougaar.logistics.plugin.utils.ConsumerPredicate;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -73,6 +72,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
   private HashMap pgToPredsHash;
+  private HashMap pgToGPTaskHash;
   private HashMap subToPGsHash;
   private HashMap predToSubHash;
   private boolean rehydrate = false;
@@ -111,6 +111,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
 
     pgToPredsHash = new HashMap();
+    pgToGPTaskHash = new HashMap();
     subToPGsHash = new HashMap();
     predToSubHash = new HashMap();
 
@@ -203,8 +204,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   protected void execute() {
     if ((supplyClassPG == null) ||
         (oplanSubscription.isEmpty()) ||
-        (orgActivities.isEmpty()) ||
-        (detReqSubscription.isEmpty())) {
+        (orgActivities.isEmpty())) {
       processedDetReq = false;
       return;
     }
@@ -213,27 +213,28 @@ public class DemandForecastPlugin extends ComponentPlugin
       Iterator detReqIt = detReqSubscription.iterator();
       Task detReqTask = (Task) detReqIt.next();
       processedDetReq = (!(detReqTask.getPlanElement() == null));
-    }
 
-    //There should be both a determineRequirements task
-    //and an oplan before kicking off the expander for the first time.
-    //from then on out we should be catching additional assets added, or removed.
-    //It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
 
-    //if there is a new determine requirements task or new oplan do this
-    if (((!orgActivities.getAddedCollection().isEmpty()) &&
-        (!processedDetReq)) ||
-        (!detReqSubscription.getAddedCollection().isEmpty())) {
-      processDetReq(detReqSubscription,
-                    assetsWithPGSubscription);
-    }
-    //otherwise just issue a new
-    else if (!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
-      processDetReq(detReqSubscription,
-                    assetsWithPGSubscription.getAddedCollection());
-    } else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
-      removeFromDetReq(detReqSubscription,
-                       assetsWithPGSubscription.getRemovedCollection());
+      //There should be both a determineRequirements task
+      //and an oplan before kicking off the expander for the first time.
+      //from then on out we should be catching additional assets added, or removed.
+      //It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
+
+      //if there is a new determine requirements task or new oplan do this
+      if (((!orgActivities.getAddedCollection().isEmpty()) &&
+          (!processedDetReq)) ||
+          (!detReqSubscription.getAddedCollection().isEmpty())) {
+        processDetReq(detReqSubscription,
+                      assetsWithPGSubscription);
+      }
+      //otherwise just issue a new
+      else if (!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
+        processDetReq(detReqSubscription,
+                      assetsWithPGSubscription.getAddedCollection());
+      } else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
+        removeFromDetReq(detReqSubscription,
+                         assetsWithPGSubscription.getRemovedCollection());
+      }
     }
 
     if (myOrganization == null) {
@@ -254,6 +255,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
 
     if (genProjSubscription.hasChanged()) {
+      if (!genProjSubscription.getRemovedCollection().isEmpty()) {
+        processRemovedGenProjs(genProjSubscription.getRemovedCollection());
+      }
       if (!genProjSubscription.getAddedCollection().isEmpty()) {
         processNewGenProjs(genProjSubscription.getAddedCollection());
       }
@@ -616,6 +620,16 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   }
 
+  /**
+   * This method processes the new GenerateProjection tasks.   Basically it
+   * just adds this tasks unique PG and GP and updates the hash maps
+   * with the new information.   We don't typically do the expansion here
+   * because the newly added subscriptions (due to new PG) will be triggered
+   * and caught by the checkAndProcessHashSubscriptions() method called later
+   * in the same execute cycle, and expanded there.
+   *
+   * @param addedGPs - The collection of new GenerateProjections tasks
+   */
 
   private void processNewGenProjs(Collection addedGPs) {
     Iterator gpIt = addedGPs.iterator();
@@ -626,10 +640,27 @@ public class DemandForecastPlugin extends ComponentPlugin
         asset = ((AggregateAsset) asset).getAsset();
       }
       PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
-      //invokeGenProjectionsExp(pg, genProj);
 
+      pgToGPTaskHash.put(pg, genProj);
+
+      /*
+      * If there is a new pg (every new GP task has a new distinct MEI,
+      * that has a distinct PG that has a distinct ConsumerPredicate),
+      * add it to the hash tables, which will have the side effect
+      * of subscribing the new ConsumerPredicate on the blackboard.
+      * Later in the same execute cycle checkAndProcessHashSubscriptions()
+      * will be called and fire for each new GP - because of the new ConsumerPredicate
+      * firing.
+      */
       if (!pgToPredsHash.containsKey(pg)) {
         addNewPG(pg);
+      }
+      // For each new GP task it actually has a new unique PGImpl, so
+      // this code should never be called.   Especially if all the
+      // hash tables are kept in line with whats on the blackboard.
+      else {
+        logger.error("Surprise!!!! - unexpected expansion code firing in processNewGenProjs");
+        invokeGenProjectionsExp(pg, genProj);
       }
 
 
@@ -644,6 +675,48 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     }
   }
+
+  /**
+   *     This method keeps all the state hashTables in line with the GPTasks
+   *  processed.   When GenerateProjection tasks are removed off the blackboard
+   *  This method is called to take all related PG hash and subscription hashes
+   *  up to date.
+   *
+   * @param removedGPs - The collection of GenerateProjection tasks just removed
+   * from the blackboard.
+   */
+
+  private void processRemovedGenProjs(Collection removedGPs) {
+    Iterator gpIt = removedGPs.iterator();
+    while (gpIt.hasNext()) {
+      Task genProj = (Task) gpIt.next();
+      Asset asset = genProj.getDirectObject();
+      if (asset instanceof AggregateAsset) {
+        asset = ((AggregateAsset) asset).getAsset();
+      }
+      PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
+
+      Collection preds = (Collection) pgToPredsHash.get(pg);
+      pgToPredsHash.remove(pg);
+      pgToGPTaskHash.remove(pg);
+
+      if (preds != null) {
+        Iterator predsIt = preds.iterator();
+        while (predsIt.hasNext()) {
+          UnaryPredicate pred = (UnaryPredicate) predsIt.next();
+          IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
+          Collection subsPGs = (Collection) subToPGsHash.get(sub);
+          subsPGs.remove(pg);
+          if (subsPGs.isEmpty()) {
+            subToPGsHash.remove(sub);
+            predToSubHash.remove(pred);
+          }
+        }
+      }
+
+    }
+  }
+
 
   /**
    * This method goes through the subscriptions hash table and sees if any
@@ -661,7 +734,6 @@ public class DemandForecastPlugin extends ComponentPlugin
       UnaryPredicate pred = (UnaryPredicate) entry.getKey();
       IncrementalSubscription sub = (IncrementalSubscription) entry.getValue();
 
-      //TODO: MWD ConsumerPredicate problem debugging below must go away (w/problem)
       if ((!sub.getChangedCollection().isEmpty()) ||
           (!sub.getRemovedCollection().isEmpty()) ||
           (!sub.getAddedCollection().isEmpty())) {
@@ -674,22 +746,6 @@ public class DemandForecastPlugin extends ComponentPlugin
                        +sub.getRemovedCollection().size() + " Changed: " +
                        +sub.getChangedCollection().size());
         }
-
-
-        /*
-         * TODO: MWD Remove
-         if (pred instanceof ConsumerPredicate) {
-           if ((getOrgName().equals("1-35-ARBN") &&
-               sub.getAddedCollection().size() > 0)) {
-             Asset asset = (Asset) sub.getCollection().iterator().next();
-             if (asset instanceof AggregateAsset) {
-               asset = ((AggregateAsset) asset).getAsset();
-             }
-             String nomen = asset.getTypeIdentificationPG().getNomenclature();
-             System.out.println("-!!-" + getOrgName() + "-" + getSupplyType() + "=First asset added is : " + asset + ":" + nomen);
-           }
-         } else {
-         */
         Collection subPGs = (Collection) subToPGsHash.get(sub);
         PGs.addAll(subPGs);
       }
@@ -699,7 +755,9 @@ public class DemandForecastPlugin extends ComponentPlugin
         logger.debug("No subscription change,no PGs to notfiy! subToPGsHash is: " + subToPGsHash);
       }
     } else {
-      System.out.println("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
+      if (logger.isDebugEnabled()) {
+        //logger.debug("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
+      }
       processSubscriptionChangedPG(PGs);
     }
   }
@@ -712,27 +770,42 @@ public class DemandForecastPlugin extends ComponentPlugin
       //ConsumerPG pg = (ConsumerPG) pgIt.next();
       //Asset asset = pg.getMei();
       PropertyGroup pg = (PropertyGroup) pgIt.next();
-      Asset asset = getMEI(pg);
-      if (asset instanceof AggregateAsset) {
-        asset = ((AggregateAsset) asset).getAsset();
-      }
-      Iterator gpIt = genProjSubscription.iterator();
-      while (gpIt.hasNext()) {
-        Task gp = (Task) gpIt.next();
-        PlanElement pe = gp.getPlanElement();
-        if ((pe == null) ||
-            (!(pe instanceof Disposition))) {
-          Asset directObj = gp.getDirectObject();
-          if (directObj instanceof AggregateAsset) {
-            directObj = ((AggregateAsset) directObj).getAsset();
-          }
-          if (directObj.equals(asset)) {
-            System.out.println("******* invoking BG and GPE with changed Subscriptions **********");
-            invokeGenProjectionsExp(pg, gp);
-            break;
-          }
+      Task gp = (Task) pgToGPTaskHash.get(pg);
+      if (gp != null) {
+        logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
+        invokeGenProjectionsExp(pg, gp);
+      } else {
+        if (logger.isErrorEnabled()) {
+          logger.error("Property group :" + pg + " does not have an associated GenerateProjections task in the HashMap.");
         }
       }
+
+      /**
+       *  TODO: MWD Remove this code which has been handled instead
+       * by the hash table code up above.
+
+       Asset asset = getMEI(pg);
+       if (asset instanceof AggregateAsset) {
+       asset = ((AggregateAsset) asset).getAsset();
+       }
+       Iterator gpIt = genProjSubscription.iterator();
+       while (gpIt.hasNext()) {
+       Task gp = (Task) gpIt.next();
+       PlanElement pe = gp.getPlanElement();
+       if ((pe == null) ||
+       (!(pe instanceof Disposition))) {
+       Asset directObj = gp.getDirectObject();
+       if (directObj instanceof AggregateAsset) {
+       directObj = ((AggregateAsset) directObj).getAsset();
+       }
+       if (directObj.equals(asset)) {
+       System.out.println("******* invoking BG and GPE with changed Subscriptions **********");
+       invokeGenProjectionsExp(pg, gp);
+       break;
+       }
+       }
+       }
+       **/
     }
   }
 
@@ -818,14 +891,16 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void rehydrateHashMaps() {
-    Iterator meiIt = assetsWithPGSubscription.iterator();
-    while (meiIt.hasNext()) {
-      Asset mei = (Asset) meiIt.next();
+    Iterator gpIt = genProjSubscription.iterator();
+    while (gpIt.hasNext()) {
+      Task gpTask = (Task)gpIt.next();
+      Asset mei = gpTask.getDirectObject();
       if (mei instanceof AggregateAsset) {
         mei = ((AggregateAsset) mei).getAsset();
       }
       PropertyGroup pg = mei.searchForPropertyGroup(supplyClassPG);
       addNewPG(pg);
+      pgToGPTaskHash.put(pg,gpTask);
     }
   }
 
