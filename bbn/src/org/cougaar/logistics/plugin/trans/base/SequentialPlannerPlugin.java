@@ -46,9 +46,6 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.NewTask;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.NewSchedule;
-import org.cougaar.planning.ldm.plan.ScheduleImpl;
-import org.cougaar.planning.ldm.plan.ScheduleElementImpl;
 
 import org.cougaar.planning.ldm.asset.Asset;
 
@@ -63,13 +60,8 @@ import org.cougaar.lib.callback.UTILExpansionCallback;
 import org.cougaar.lib.callback.UTILExpandableTaskCallback;
 import org.cougaar.lib.callback.UTILFilterCallback;
 import org.cougaar.lib.callback.UTILGenericListener;
-import org.cougaar.lib.filter.UTILBufferingPlugin;
 import org.cougaar.lib.filter.UTILBufferingPluginAdapter;
-import org.cougaar.lib.filter.UTILPlugin;
-import org.cougaar.lib.util.UTILPrepPhrase;
-import org.cougaar.lib.util.UTILExpand;
 import org.cougaar.lib.util.UTILPluginException;
-import org.cougaar.lib.util.UTILAllocationResultAggregator;
 import org.cougaar.lib.util.UTILAllocate;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
@@ -83,7 +75,6 @@ import org.cougaar.util.UnaryPredicate;
  ** Handles the state transitions of each schedule element that makes up the schedule
  ** attached to each parent task.
  **/
-
 public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   implements UTILAllocationListener, UTILAssetListener, UTILExpansionListener {
     
@@ -134,34 +125,36 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
   }  
     
-    protected List getPrunedTaskList (List tasks) {
-	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+  /** probably unnecessary */
+  protected List getPrunedTaskList (List tasks) {
+    java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
 
-	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+    Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
 
-	for (Iterator iter = tasks.iterator(); iter.hasNext();){
-	    Task task = (Task) iter.next();
-	    if (removed.contains(task)) {
-		if (isInfoEnabled()) {
-		    info ("ignoring task on removed list " + task.getUID());
-		}
-	    }
-	    else
-		prunedTasks.add (task);
+    for (Iterator iter = tasks.iterator(); iter.hasNext();){
+      Task task = (Task) iter.next();
+      if (removed.contains(task)) {
+	if (isWarnEnabled()) {
+	  warn ("ignoring task on removed list " + task.getUID());
 	}
-	return prunedTasks;
+      }
+      else
+	prunedTasks.add (task);
     }
+    return prunedTasks;
+  }
 
-  // handleTask creates an empty schedule and attaches it to the parent task. It also creates 
-  // an expansion which starts empty and initiates a "planning cycle".
-
+  /**
+   * handleTask creates an empty schedule and attaches it to the parent task. It also creates 
+   * an expansion which starts empty and initiates a "planning cycle".
+   */
   public void handleTask(Task t) {
     if (isDebugEnabled())
       debug(getName () + ".handleTask, adding schedule prep to task " + t);
 
     prepHelper.addPrepToTask(t, prepHelper.makePrepositionalPhrase(ldmf,
-								       GLMTransConst.SequentialSchedule,
-								       createEmptyPlan(t)));
+								   GLMTransConst.SequentialSchedule,
+								   createEmptyPlan(t)));
     
     publishChange (t); // we added a prep, should publish change it
 
@@ -176,7 +169,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     NewWorkflow wf = ldmf.newWorkflow();
     wf.setParentTask(t);
     ((NewTask)t).setWorkflow(wf);
-    //    wf.setAllocationResultAggregator (new UTILAllocationResultAggregator());
     return wf;
   }
     
@@ -184,9 +176,14 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
    * turnCrank is a basic planning cycle. It looks through all the elements in the empty
    * schedule and if one is ready to be planned it plans it. It also places the parenttask in a
    * hashtable so it can be easily retrieved later when the subtask is succesfully allocated.
+   *
+   * Operates on the parent task of a backwards-planning expansion, e.g. the parent task
+   * of a typical Conus->Air/Sea->Theater triplet workflow.
+   *
+   * @param task parent task of expansion
    */
   public void turnCrank(Task task) {
-    if (isDebugEnabled()) debug(getName () + "---Turning Crank: S");
+    if (isDebugEnabled()) debug(getName () + "---Turning Crank: S " + task.getUID());
 
     PrepositionalPhrase prep = prepHelper.getPrepNamed(task, GLMTransConst.SequentialSchedule);
     
@@ -211,12 +208,13 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	childToParentUID.put(subtask.getUID().toString(), task);
       }
     }
-    if (isDebugEnabled()) debug(getName () + "---Turning Crank: E");
+    if (isDebugEnabled()) debug(getName () + "---Turning Crank: E" + task.getUID());
   }
     
   /**
-   ** attachSubtask connects a created subtask to the expansion.
-   ** 
+   * attachSubtask adds a created subtask to the parent task's expansion.
+   * remembers subtask->schedule element mapping in a map.
+   * sets the task pointer on the schedule element
    */
   protected void attachSubtask (Task subtask, SequentialScheduleElement spe) {
     enterHash(subtask.getUID().toString(), spe);
@@ -226,10 +224,14 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	
     // Not needed down the line
     prepHelper.removePrepNamed(subtask, GLMTransConst.SequentialSchedule);
+
+    // don't do this - drags info into downstream agents
     // add back pointer to spe
+    /*
     prepHelper.addPrepToTask(subtask, prepHelper.makePrepositionalPhrase(ldmf,
 										 GLMTransConst.SCHEDULE_ELEMENT,
 										 spe));
+    */
 	
     Expansion exp = (Expansion)spe.getParentTask().getPlanElement();
     if (exp == null) {
@@ -251,9 +253,18 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }  // else Workflow is empty, so publishAdd already done
   }	
   
-  // createEmptyPlan creates an empty schedule made up of custom schedule elements. These
-  // schedule elements essentially know how to plan themselves.
-
+  /**
+   * createEmptyPlan creates an empty schedule (there are no tasks 
+   * yet in the workflow) made up of custom schedule elements. These 
+   * schedule elements define a <code>planMe</code> method that adds a 
+   * subtask to the parent task's workflow.  Generally for each schedule
+   * element in the schedule returned here, there will be a subtask added
+   * to the workflow.
+   *
+   * @see org.cougaar.logistics.plugin.trans.base.SequentialScheduleElement#planMe
+   * @param parent referenced by sequential schedule elements in the returned schedule
+   * @return Schedule of sequential schedule elements that represent the steps of the backwards planning
+   */
   public abstract Schedule createEmptyPlan(Task parent);
 
 
@@ -332,12 +343,15 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   public void publishChangedExpansion(Expansion exp) {
     publishChange(exp);
   }
-    
+
+  /** 
+   * Mainly just calls updateAllocationResult on <code>exp</code>
+   * Also prints debug info when tasks fail.
+   */
   public void reportChangedExpansion(Expansion exp) {
-    if (isDebugEnabled()) debug(getName () + "---reportChangedExpansion: S"); 
-    if (isDebugEnabled())
-      debug (getName () + 
-	    " : reporting changed expansion to superior.");
+    if (isDebugEnabled()) {
+      debug(getName () + "---reportChangedExpansion: S - reporting changed expansion to superior.");
+    }
 	
     Task task = exp.getTask();
     Schedule sched = null;
@@ -373,7 +387,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   }
     
   public void handleSuccessfulExpansion(Expansion exp, List successfulSubtasks) { 
-    if (isDebugEnabled()) debug(getName () + "---handleSuccesfulExpansion: S"); 
     if (isDebugEnabled()) {
       AllocationResult estAR = exp.getEstimatedResult();
       AllocationResult repAR = exp.getReportedResult();
@@ -390,7 +403,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	     " : got successful expansion for task " + exp.getTask ().getUID() + 
 	     est + rep);
     }
-    if (isDebugEnabled()) debug(getName () + "---handleSuccesfulExpansion: S"); 
   }
     
   /***************************/
@@ -402,7 +414,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   protected UTILAllocationCallback getAllocCallback    () { return myAllocCallback; }
     
   public boolean interestingNotification(Task t) { 
-      boolean interest = interestingTask (t);
+    boolean interest = interestingTask (t);
     if (isDebugEnabled()) {
       if (interest) {
 	debug(getName()+": noticing expansion I made of " + t.getUID() + " changed.");
@@ -418,7 +430,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     
 
   public void handleRemovedAlloc (Allocation alloc) {
-    if (isDebugEnabled()) debug("---handleRemovedAlloc: S"); 		
     if (isDebugEnabled()) {
       String unit = "Undefined";//(prepHelper.hasPrepNamed(alloc.getTask (), Constants.Preposition.FOR)) ? 
       //("" + prepHelper.getPrepNamed(alloc.getTask (), Constants.Preposition.FOR)) : "nonUnit";
@@ -426,7 +437,6 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	    alloc.getTask ().getUID () + " w/ d.o. " +
 	    alloc.getTask ().getDirectObject () + " from " + unit);
     }
-    if (isDebugEnabled()) debug("---handleRemovedAlloc: E"); 		
   }
     
   public void publishRemovalOfAllocation(Allocation alloc) {
@@ -448,13 +458,14 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
    * This would indicate that an allocation to an actual resource has been done. If there is
    * a successful allocation the schedule element corresponding to the task will be grabbed and
    * finishPlan will be run on it. Then another planning cycle will begin.
+   *
+   * @param alloc that has been changed (i.e. a downstream agent has sent back an allocation result)
    */
   public void handleSuccessfulAlloc(Allocation alloc) {
-    if (isDebugEnabled()) debug(getName () + "---handleSuccessfulAlloc: S"); 		
     if (isDebugEnabled()) {
       String assetInfo = (alloc.getAsset() instanceof PhysicalAsset) ? 
 	" is physical asset " : " is not physical, is " + alloc.getAsset().getClass();
-      debug(getName () + "---handleSuccessfulAlloc: task allocated to "+alloc.getAsset()+" "+ assetInfo);
+      debug(getName () + "---handleSuccessfulAlloc: task allocated to "+alloc.getAsset().getUID()+" "+ assetInfo);
     }
     AllocationResult AR = alloc.getReportedResult() == null ? alloc.getEstimatedResult() : alloc.getReportedResult(); 
     if (!AR.isSuccess ()) {
@@ -466,43 +477,66 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 		
     if ((alloc.getReportedResult() != null && alloc.getReportedResult().getConfidenceRating() >= UTILAllocate.HIGHEST_CONFIDENCE) ||
 	alloc.getAsset() instanceof PhysicalAsset || alloc.getAsset() instanceof Deck) {
-      if (isDebugEnabled()) debug(getName () + "------non-null reported result with highest confidence");
+      // if (isDebugEnabled()) debug(getName () + "------non-null reported result with highest confidence");
       Task t = alloc.getTask();
       String uid = t.getUID().toString();
 	    
-      if (isDebugEnabled()) debug(getName () + "***Getting "+uid);
+      if (isDebugEnabled()) {
+	debug(getName () + ".handleSuccessfulAlloc - considering finishing planning for allocation's task "+uid);
+      }
 
-      SequentialScheduleElement sse = getElement (t, uid);
+      SequentialScheduleElement sse = null;
+      Task parenttask = getParentTask(t, uid);
+      if (parenttask == null) {
+	if (isWarnEnabled()) {
+	  warn(getName () + ".handleSuccessfulAlloc - no parent of task " + uid + 
+	       " - must be during rescinds.  Skipping seq. planning."); 
+	}
+      }
+      else {
+	sse = getElement (t, parenttask, uid);
+      }
 
       if (sse == null) {
-	error(getName () + ".handleSuccessfulAlloc - ERROR - could not find sse for task "+ uid);
+	if (parenttask != null)
+	  error(getName () + ".handleSuccessfulAlloc - could not find seq. schedule element for task "+ uid);
+	else if (isInfoEnabled()) {
+	  info(getName () + ".handleSuccessfulAlloc - no parent task of task " + uid + 
+	       " must be during rescinds.  Skipping seq. planning."); 
+	}
       } else if (!sse.isPlanned()) {
-	if (isDebugEnabled()) 
-	  debug(getName () + ".handleSuccessfulAlloc - checking element " + sse + 
-	       (sse.isPlanned() ? " is planned " : " not yet planned"));
 	if (isInfoEnabled()) {
-	    info(getName () + ".handleSuccessfulAlloc - final planning of element " + sse + 
-		 " b/c sibling task completed : " + uid);
+	  info(getName () + ".handleSuccessfulAlloc - finishing planning of element " + sse + 
+	       " b/c task completed : " + uid);
 	}
 	sse.finishPlan(alloc, this);
-	//debug("***Removing "+uid);
-	//TaskToSSE.remove(uid);
-		
-	Task parenttask = getParentTask(t, uid);
+
+	//Task parenttask = getParentTask(t, uid);
 	if (parenttask == null) {
-	    if (isInfoEnabled()) {
-		info(getName () + ".handleSuccessfulAlloc - no parent task of task " + t.getUID() + " must be during rescinds.  Skipping seq. planning."); 
-	    }
+	  if (isInfoEnabled()) {
+	    info(getName () + ".handleSuccessfulAlloc - no parent task of task " + uid + 
+		 " - must be during rescinds.  Skipping seq. planning."); 
+	  }
 	}
 	else {
-	    turnCrank(parenttask);
+	  // this subtask is done, check to see if another subtask that depended on it can now be planned
+	  turnCrank(parenttask); 
 	}
       }
     }
-    if (isDebugEnabled()) debug(getName () + "---handleSuccessfulAlloc: E"); 		
+
+    if (isDebugEnabled()) {
+      debug(getName () + "---handleSuccessfulAlloc: E of processing for " + alloc.getAsset().getUID()); 		
+    }
   }
 
-  /** deals with post-rehydration state */
+  /** 
+   * Gets the parent task for the child task with the UID uid.
+   * Uses a map to look up parents of child - if no key in the map,
+   * does a blackboard query (CPU expensive!).
+   *
+   * deals with post-rehydration state 
+   */
   public Task getParentTask (Task child, String uid) {
     Task parenttask = (Task) childToParentUID.get(uid);
 
@@ -525,25 +559,79 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     return parenttask;
   }
  
-  /** deals with post-rehydration state */
-  public SequentialScheduleElement getElement(Task child, String uid) {
+  /** 
+   * Finds the schedule element for the <code>child</code> task in the taskToSSE map.
+   * If the map is empty (after rehydration) we look up the schedule element in the 
+   * parent task's schedule.
+   *
+   * If we were to attach the schedule element to the child task (which would be 
+   * the easier approach) we would drag the dependencies and all the tasks hanging
+   * off them into the downstream agent, which sucks from a memory point-of-view.
+   *
+   * Deals with post-rehydration state by looking at parent task.
+   * @param child task to look for matching SequentialScheduleElement
+   * @param parent of child task (where we look for the schedule elements)
+   * @param uid of child task
+   * @return SequentialScheduleElement that has the planning info for <code>child</code>
+   */
+  protected SequentialScheduleElement getElement(Task child, Task parent, String uid) {
+    if (isDebugEnabled()) {
+      debug (getName ()+ ".getElement - getting schedule for " + uid + " parent " + parent.getUID());
+    }
+
     SequentialScheduleElement sse = (SequentialScheduleElement)taskToSSE.get(uid);
 
-    if (sse != null)
+    if (sse != null) {
       return sse;
+    }
+    else {
+      if (isWarnEnabled()) {
+	warn (getName() + ".getElement - no schedule element for " + uid + 
+	      " in hash with " + taskToSSE.size() + " elements.");
+      }
+    }
 
     // in case of rehydration, re-enter mapping into hash map
 
-    sse =
-      (SequentialScheduleElement)
-      prepHelper.getPrepNamed(child, GLMTransConst.SCHEDULE_ELEMENT).getIndirectObject();
+    PrepositionalPhrase prep = prepHelper.getPrepNamed(parent, GLMTransConst.SequentialSchedule);
+    
+    if (prep == null) {
+      error(getName () + ".getElement - no prep named " + GLMTransConst.SequentialSchedule +
+	    " on task " + parent);
+      return null;
+    }
+
+    Schedule sched = (Schedule) prep.getIndirectObject();
+
+    for (Enumeration enum = sched.getAllScheduleElements(); enum.hasMoreElements();) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+      if (spe.getTask () == child) {
+	if (isInfoEnabled()) {
+	  info (getName () + ".getElement - found schedule for " + spe.getTask().getUID());
+	}
+
+	sse = spe;
+      }
+      else {
+	if (isInfoEnabled()) {
+	  info (getName () + ".getElement - schedule task " + spe.getTask().getUID () + " != examined task " + child.getUID());
+	}
+      }
+    }
+
+    if (sse == null) {
+      error (getName () + ".getElement - no schedule element for " + child.getUID());
+    }
 
     enterHash(child.getUID().toString(), sse);
 
     return sse;
   }
 
-  /** for post-rehydration phase */
+  /** 
+   * for post-rehydration phase 
+   * @see #getParentTask
+   */
   class TaskCatcher implements UnaryPredicate {
     UID parentUID;
 	
@@ -580,16 +668,10 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     return myClusterName;
   }
 
-  /*** Another dumb function to connect SSE to task so that you can do SSE processing when task returns ***/
+  /*** connect SSE to task so that you can do SSE processing when task returns ***/
   public void enterHash(String key, SequentialScheduleElement obj) {
-    if (isDebugEnabled()) debug(getName () + ".enterHash - ***Putting "+key);
     taskToSSE.put(key,obj);
   }
 
   public Map getChildToParentUID() { return childToParentUID; }
 }
-
-
-  
-
-
