@@ -25,6 +25,8 @@ import java.util.*;
 
 import org.cougaar.core.util.UID;
 import org.cougaar.util.log.*;
+
+// This next import is the only datagrabber dependency on the toolkit module
 import org.cougaar.lib.util.UTILAsset;
 
 import org.cougaar.planning.ldm.asset.*;
@@ -41,6 +43,10 @@ import org.cougaar.glm.ldm.asset.*;
 
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.util.AssetUtil;
+
+// These next 2 are in the albbn module. Other than use
+// of the InvChart ConnectionHelper.java in the SD UI, these
+// 2 are the reason datagrabber depends on albbn
 import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
 import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
 
