@@ -58,7 +58,12 @@ public class LogisticsAllocationResultHelper {
     }
 
     public long getEndTime() {
-      if (endix < 0) throw new RuntimeException("No END_TIME for " + task);
+      if (endix < 0) {
+        // for now try to get the start time
+        // this has to do with the results being passed back from the universal allocator
+        return getStartTime();
+        // throw new RuntimeException("No END_TIME for " + task);
+      }
       return (long) result[endix].getValue();
     }
 
