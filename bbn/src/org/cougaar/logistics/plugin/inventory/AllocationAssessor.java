@@ -227,6 +227,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
       // remove any trailing pointers we filled
       trailingPointers.removeAll(trailingPointersRemove);
+      trailingPointersRemove.clear();
 
       // Fill any counted tasks with remaining inventory (if any)
 
