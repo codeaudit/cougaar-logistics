@@ -167,7 +167,7 @@ public class ShortfallShortData implements XMLable, Serializable{
     protected void computeNumShortfallWithRules() {
 	Collection summaries = getShortfallSummaries().values();
 	Iterator summaryIT = summaries.iterator();
-	int numUnexpectedShortfallInventories=0;
+	numUnexpectedShortfallInventories=0;
 	while(summaryIT.hasNext()) {
 	    ShortfallSummary summary = (ShortfallSummary) summaryIT.next();
 	    Iterator invIT = summary.getShortfallInventories().iterator();
