@@ -48,7 +48,7 @@ public class InventoryLevelGenerator extends InventoryModule {
         level = thePG.getLevel(startBucket - 1) -
           thePG.getActualDemand(startBucket);
       }
-      double committedRefill = findCommittedRefill(startBucket, thePG);
+      double committedRefill = findCommittedRefill(startBucket, thePG, true);
       thePG.setLevel(startBucket, (level + committedRefill) );
       startBucket = startBucket + 1;
     }
@@ -60,9 +60,10 @@ public class InventoryLevelGenerator extends InventoryModule {
    *  Estimated AllocationResult for the Task!
    *  @param bucket The time bucket to match the Task with
    *  @param thePG The PG for the Inventory the Tasks are against
+   *  @param countProjections Count projection refill results
    *  @return double The quantity of the committed Refill Task for the time period.
    **/
-  protected double findCommittedRefill(int bucket, LogisticsInventoryPG thePG) {
+  protected double findCommittedRefill(int bucket, LogisticsInventoryPG thePG, boolean countProjections) {
     double refillQty = 0;
     ArrayList reqs = thePG.getRefillRequisitions();
     Task refill = null;
@@ -80,7 +81,7 @@ public class InventoryLevelGenerator extends InventoryModule {
     // check that the bucket we're looking at is in the projection period and its
     // not just an off day during the Requisition period
     int lastReqBucket = thePG.getLastRefillRequisition();
-    if ((refill == null) && (bucket > lastReqBucket)) {
+    if ((refill == null) && (bucket > lastReqBucket) && (countProjections)) {
       refill = thePG.getRefillProjection(bucket);
     }
 
@@ -220,6 +221,7 @@ public class InventoryLevelGenerator extends InventoryModule {
     double demandForPeriod = calculateDemandForPeriod(thePG, 
                                                       refillBucket, 
                                                       reorderPeriodEndBucket-1);
+
     targetLevel = criticalAtEndOfPeriod + demandForPeriod + .0005;
 
     return targetLevel;

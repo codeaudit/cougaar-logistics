@@ -128,7 +128,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 
         //calculate inventory levels for time ZERO through start (today + OST)
 	//Time period which refillGenerator should not touch
-	calculateInventoryLevels(0, startBucket, thePG);
+	calculateInventoryLevelsForRG(0, startBucket, thePG);
 
 // 	System.out.println("##############  ITEM "+debugItem);
 
@@ -373,6 +373,25 @@ public class RefillGenerator extends InventoryLevelGenerator {
     }
     return homeGeoloc;
   }
+
+ protected void calculateInventoryLevelsForRG(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
+    //calculate inventory levels for today through start (today + OST)
+    while (startBucket <= endBucket) {
+      double level;
+      if (startBucket == 0) {
+        level = thePG.getLevel(0);
+      } else {
+        level = thePG.getLevel(startBucket - 1) -
+          thePG.getActualDemand(startBucket);
+      }
+      int lastReqBucket = thePG.getLastRefillRequisition();
+      double committedRefill = findCommittedRefill(startBucket, thePG, false);
+      thePG.setLevel(startBucket, (level + committedRefill) );
+      startBucket = startBucket + 1;
+    }
+
+  }
+
 }
     
 

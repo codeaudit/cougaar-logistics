@@ -205,7 +205,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     // loop through the buckets in the inventory
     while (currentBucket <= endBucket) {
 
-      todayRefill = findCommittedRefill(currentBucket, thePG);
+      todayRefill = findCommittedRefill(currentBucket, thePG, true);
       todayLevel = thePG.getLevel(currentBucket - 1) + todayRefill;
       
 
