@@ -369,11 +369,14 @@ public class InventoryPlugin extends ComponentPlugin
     // before this agent.  The supplyExpander obviously will not run.
     if (orgActSubscription.isEmpty()) {
       if (logger.isWarnEnabled()) {
-        logger.warn(myOrgName+" - Bug #13532 - Execute cycle terminated, missing OrgActs. "+
-                    "Sizeof incoming Projections subscription "+
-                    projectionTaskScheduler.getAddedCollection().size()+
-                    ".  Sizeof incoming Actuals subscription "+
-                    supplyTaskScheduler.getAddedCollection().size());
+        if ((projectionTaskScheduler.getAddedCollection().size() > 0) ||
+            (supplyTaskScheduler.getAddedCollection().size() > 0)) {
+          logger.warn(myOrgName+" - Bug #13532 - Execute cycle terminated, missing OrgActs. "+
+                      "Sizeof incoming Projections subscription "+
+                      projectionTaskScheduler.getAddedCollection().size()+
+                      ".  Sizeof incoming Actuals subscription "+
+                      supplyTaskScheduler.getAddedCollection().size());
+        }
       }
       return;
     }
