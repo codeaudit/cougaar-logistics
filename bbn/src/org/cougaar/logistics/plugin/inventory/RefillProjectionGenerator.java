@@ -203,10 +203,17 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
           //if there's a change in the demand, create a refill projection 
 	  //BUT only if demand is non-zero 
 	  if (projDemand > 0.0) {
+
 	    Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
 						 thePG.convertBucketToTime(currentBucket),
 						 projDemand, thePG);
-	    refillProjections.add(refill);
+            if (startBucket >= currentBucket) {
+              logger.error("Invalid task : "+getTaskUtils().taskDesc(refill)+", startDay: "+
+                           getTimeUtils().dateString(startDay)+", startBucket: "+startBucket+
+                           ", currentBucket: "+currentBucket);
+            } else {
+              refillProjections.add(refill);
+            }
 	  }
           //then reset the start bucket and the new demand 
           startBucket = currentBucket;
@@ -225,8 +232,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 	  Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
 						   thePG.convertBucketToTime(currentBucket),
 						   projDemand, thePG);
-	  refillProjections.add(lastRefill);
-	}
+          if (startBucket >= currentBucket) {
+            logger.error("Invalid task : "+getTaskUtils().taskDesc(lastRefill)+", startDay: "+
+                         getTimeUtils().dateString(startDay)+", startBucket: "+startBucket+
+                         ", currentBucket: "+currentBucket);
+          } else {
+            refillProjections.add(lastRefill);
+          }
+        }
       }
       // send the new projections and the old projections to the Comparator
       // the comparator will rescind the old and publish the new projections
