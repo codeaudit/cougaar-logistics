@@ -75,7 +75,7 @@ public class ExtractionHelper
 
   static
   {
-    // create mapping from inventory metric to MyInventoryWrapper method name
+    // create mapping from inventory metric to InventoryWrapper method name
     for (Iterator m=InventoryMetric.getValidValues().iterator(); m.hasNext();)
     {
       InventoryMetric metric = (InventoryMetric)m.next();
@@ -220,7 +220,7 @@ public class ExtractionHelper
 
   /**
    * Used in unary predicates for collecting plan objects required for creating
-   * MyInventoryWrapper objects.
+   * InventoryWrapper objects.
    *
    * @param assets collection of asset type id strings that are of interest.
    *               if null, all assets are of interest.
@@ -249,7 +249,6 @@ public class ExtractionHelper
       System.err.println(" No typeIdentificationPG for asset");
       return false;
     }
-System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + typeIdPG);
     
     return assets == null ||
            assets.contains(typeIdPG.getTypeIdentification());
@@ -267,14 +266,14 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
       Object obj = i.next();
       if (!(obj instanceof Inventory))
         continue;
-      MyInventoryWrapper inventory = new MyInventoryWrapper((Inventory)obj);
+      InventoryWrapper inventory = new InventoryWrapper((Inventory)obj);
       inventories.add(inventory);
     }
 
     return inventories;
   }
 
-  // inventories is a collection of MyInventoryWrapper objects
+  // inventories is a collection of InventoryWrapper objects
   public static Collection
     getInventorySchedules(String metricName, Collection inventories)
       throws Exception
@@ -282,7 +281,7 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
     Collection dataAtomCollection = new LinkedList();
     for (Iterator i= inventories.iterator(); i.hasNext();)
     {
-      MyInventoryWrapper inv = (MyInventoryWrapper)i.next();
+      InventoryWrapper inv = (InventoryWrapper)i.next();
       inv.computeSimulatedProjectionSchedules();
       Schedule schedule = getInventorySchedule(metricName, inv);
       dataAtomCollection.addAll(
@@ -328,7 +327,7 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
     Collection dataAtomCollection = new LinkedList();
     for (Iterator i= inventories.iterator(); i.hasNext();)
     {
-      MyInventoryWrapper inv = (MyInventoryWrapper)i.next();
+      InventoryWrapper inv = (InventoryWrapper)i.next();
       inv.computeSimulatedProjectionSchedules();
 
       Stack stack = new Stack();
@@ -1098,7 +1097,7 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
   }
 
   private static Schedule
-    getInventorySchedule(String metricName, MyInventoryWrapper inventory)
+    getInventorySchedule(String metricName, InventoryWrapper inventory)
       throws Exception
   {
     return
@@ -1106,11 +1105,11 @@ System.err.println("Found AN ASSET, assets = " + assets + ", typeIdPG = " + type
   }
 
   private static Schedule
-    getInventorySchedule(InventoryMetric metric, MyInventoryWrapper inventory)
+    getInventorySchedule(InventoryMetric metric, InventoryWrapper inventory)
       throws Exception
   {
     String methodName = (String)metricMethodMap.get(metric);
-    Method invAccessMethod = MyInventoryWrapper.class.getMethod(methodName, null);
+    Method invAccessMethod = InventoryWrapper.class.getMethod(methodName, null);
     return (Schedule)invAccessMethod.invoke(inventory, null);
   }
 
