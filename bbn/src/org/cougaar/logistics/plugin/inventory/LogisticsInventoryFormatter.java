@@ -118,6 +118,7 @@ public class LogisticsInventoryFormatter {
 
     protected void logAllocationResult(Task aTask, boolean expandTimestamp) {
 	PlanElement pe = aTask.getPlanElement();
+	if(pe == null) { return; }
 	String resultType="REPORTED";
 	AllocationResult ar = pe.getReportedResult();
 	if(ar == null) {
@@ -197,7 +198,7 @@ public class LogisticsInventoryFormatter {
 		    }
 		    alreadyLogged=true;
 		}
-		writeln(outputStr + invLevel.getQuantity());
+		writeln(outputStr);
 		moreThanOne=true;
 	    }
 	}

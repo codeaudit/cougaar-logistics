@@ -21,6 +21,7 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
@@ -67,18 +68,23 @@ public class LogisticsInventoryLogger extends FileWriter{
 
     public static LogisticsInventoryLogger 
 	createInventoryLogger(Asset invAsset, 
-			      Organization anOrg, 
+			      Organization anOrg,
 			      InventoryPlugin invPlugin){
 	LogisticsInventoryLogger newLogger=null;
 	LoggingService classLogger = invPlugin.getLoggingService(LogisticsInventoryLogger.class);
 	initializeClass(classLogger);
 	//Initialize the file to COUGAAR_WORKSPACE\inventory\organizationid\datestamp\NSNinv.csv
 	String orgId = anOrg.getItemIdentificationPG().getItemIdentification();
+	orgId = orgId.replaceAll("UIC/","");
 	String pathId = baseDir + File.separator + "inventory" + File.separator + orgId + File.separator + datestamp;
-	String fileId = pathId + File.separator + invAsset.getItemIdentificationPG().getItemIdentification() + "inv.csv";
+	String item = invAsset.getTypeIdentificationPG().getTypeIdentification();
+	item = item.replaceAll("/","-");
+	String fileId = pathId + File.separator + item + "inv.csv";
 	File csvFile = new File(fileId);
+	File pathDirs = new File(pathId);
 	try {
-	    csvFile.mkdirs();
+	    pathDirs.mkdirs();
+	    csvFile.createNewFile();
 	    newLogger = new LogisticsInventoryLogger(csvFile,false,invPlugin);
 	}
 	catch(Exception e) {
@@ -96,12 +102,26 @@ public class LogisticsInventoryLogger extends FileWriter{
 	super.finalize();
     }
 
+    private static String prependSingle(int digit) {
+	if(digit < 10) {
+	    return "0" + digit;
+	}
+	else {
+	    return "" + digit;
+	}
+    }
+
     private static void initializeClass(LoggingService classLogger) {
 	if(datestamp == null) {
-	    GregorianCalendar now = new GregorianCalendar();
+	    //TimeZone est = TimeZone.getTimeZone("EST");
+	    TimeZone gmt = TimeZone.getDefault();
+	    GregorianCalendar now = new GregorianCalendar(gmt);
+	    now.setTime(new Date());
 	    datestamp = "" + now.get(Calendar.YEAR);
-	    datestamp = datestamp + now.get(Calendar.MONTH) + now.get(Calendar.DAY_OF_MONTH);
-	    datestamp = datestamp + now.get(Calendar.HOUR_OF_DAY) + now.get(Calendar.MINUTE);
+	    datestamp += prependSingle(now.get(Calendar.MONTH) + 1);
+	    datestamp += prependSingle(now.get(Calendar.DAY_OF_MONTH));
+	    datestamp += prependSingle(now.get(Calendar.HOUR_OF_DAY));
+	    datestamp += prependSingle(now.get(Calendar.MINUTE));
 	    baseDir = System.getProperty("org.cougaar.workspace");
 	    if((baseDir == null) ||
 	       (baseDir.equals(""))) {

@@ -42,6 +42,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.plugin.util.AllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.glm.plugins.TimeUtils;
+import org.cougaar.glm.ldm.asset.Organization;
 
 import org.cougaar.logistics.plugin.inventory.InventoryPlugin;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryLogger;
@@ -63,8 +64,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected long startTime;
   protected int timeZero;
   private LoggingService logger;
-  private LogisticsInventoryLogger csvLogger=null;
-  private LogisticsInventoryFormatter csvWriter=null;
+  private transient LogisticsInventoryLogger csvLogger=null;
+  private transient LogisticsInventoryFormatter csvWriter=null;
   // customerHash holds the time(long) of the last actual is seen
   // for each customer
   private HashMap customerHash;
@@ -126,7 +127,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     inventoryLevelsArray[0] = myPG.getInitialLevel();
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
-	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),parentPlugin.getMyOrganization(),parentPlugin);
+	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),parentPlugin);
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();

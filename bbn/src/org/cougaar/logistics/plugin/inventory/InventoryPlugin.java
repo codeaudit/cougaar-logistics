@@ -181,6 +181,7 @@ public class InventoryPlugin extends ComponentPlugin {
   protected void execute() {
     updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
     updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
+    cycleStamp = (new Date()).getTime();
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if ((myOrganization != null) && (supplyTaskSubscription == null)) {
@@ -211,7 +212,7 @@ public class InventoryPlugin extends ComponentPlugin {
       // touchedInventories should not be cleared until the end of transaction
       touchedInventories.clear();
       touchedProjections = false;
-//    testBG();
+      //testBG();
     }
   }
 
@@ -555,19 +556,19 @@ public class InventoryPlugin extends ComponentPlugin {
       ((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
       NewLogisticsInventoryPG logInvPG = 
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
+      inventory.addOtherPropertyGroup(logInvPG);
+
       logInvPG.setCapacity(levels[0]);
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
+      logInvPG.setOrg(getMyOrganization());
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
       logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, logToCSV, this);
-
-      inventory.addOtherPropertyGroup(logInvPG);
 
       NewTypeIdentificationPG ti = 
 	(NewTypeIdentificationPG)inventory.getTypeIdentificationPG();
       ti.setTypeIdentification("InventoryAsset");
       ti.setNomenclature("Inventory Asset");
-
 
       NewScheduledContentPG scp;
       scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
@@ -600,6 +601,9 @@ public class InventoryPlugin extends ComponentPlugin {
       inv = (Inventory)inv_it.next();
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       logInvPG.takeSnapshot(inv);
+      if(logToCSV) {
+	  logInvPG.logAllToCSVFile(cycleStamp);
+      }
     }
   }
 
@@ -776,11 +780,15 @@ public class InventoryPlugin extends ComponentPlugin {
     Iterator inv_it = inventoryHash.values().iterator();
     Inventory inv;
     LogisticsInventoryPG logInvPG = null;
+    cycleStamp = (new Date()).getTime();
     while (inv_it.hasNext()) {
       inv = (Inventory)inv_it.next();
       System.out.println("***"+inv.getItemIdentificationPG().getItemIdentification());
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       logInvPG.takeSnapshot(inv);
+      if(logToCSV) {
+	  logInvPG.logAllToCSVFile(cycleStamp);
+      }
       logInvPG.Test();
     }
   }
