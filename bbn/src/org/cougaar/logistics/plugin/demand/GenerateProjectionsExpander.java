@@ -81,7 +81,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
 
     if (gpTask.getPlanElement() != null) {
-      System.out.println(" pg task plan element is of type " + gpTask.getPlanElement());
       if (gpTask.getPlanElement() instanceof Expansion) {
         handleExpandedGpTask(gpTask, schedule, consumer, pg);
       }
