@@ -125,17 +125,23 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       Task task = (Task) taskIt.next();
       Workflow wf = task.getWorkflow();
       if (wf == null) {
-        logger.error("Projection task: " + task.getUID() + " at " + dgPlugin.getOrgName() + " has Null workflow");
+	if(logger.isErrorEnabled()) {
+          logger.error("Projection task: " + task.getUID() + " at " + dgPlugin.getOrgName() + " has Null workflow");
+	}
         continue;
       }
       Task parTask = wf.getParentTask();
       if (parTask == null) {
-        logger.error("Projection task with no parent");
+	if(logger.isErrorEnabled()) {
+          logger.error("Projection task with no parent");
+	}
         continue;
       }
       if (!(parTask.getVerb().equals
           (Constants.Verb.GENERATEPROJECTIONS))) {
-        logger.error("Projection task with non generate projections parent");
+	if(logger.isErrorEnabled()) {
+          logger.error("Projection task with non generate projections parent");
+	}
         continue;
       }
       HashMap assetMap = (HashMap) projHash.get(parTask);
@@ -301,7 +307,9 @@ public class DemandTaskGenerator extends DemandGeneratorModule
    pp_vector.addElement
    (newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
    } catch (NullPointerException npe) {
-   logger.error("Geoloc not found");
+     if(logger.isErrorEnabled()) {
+       logger.error("Geoloc not found");
+     }
    }
    }
 

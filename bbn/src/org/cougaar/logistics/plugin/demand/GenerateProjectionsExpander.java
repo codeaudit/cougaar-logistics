@@ -110,7 +110,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
       assetList.clear();
       assetList.add(asset);
-      logger.debug("Handling consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
+      if(logger.isDebugEnabled()) {
+        logger.debug("Handling consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
+      }
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
       if (publishedTasks.isEmpty() && newTasks.isEmpty()) {
         continue;
@@ -170,8 +172,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
             }
             continue;
           }
-          logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
+	  if(logger.isInfoEnabled()) {
+	    logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
 		      " rate "+getDailyQuantity(rate));
+	  }
           subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                                ose.getEndTime(), rate));
         }
@@ -272,7 +276,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         geoloc = (GeolocLocation) dfPlugin.getMyOrganization().getMilitaryOrgPG().getHomeLocation();
         prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
       } catch (NullPointerException npe) {
-        logger.error("demandTaskPrepPhrases(), Unable to find Location for Transport");
+	if(logger.isErrorEnabled()) {
+          logger.error("demandTaskPrepPhrases(), Unable to find Location for Transport");
+	}
       }
     }
   }
@@ -302,8 +308,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
-    logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
-     dfPlugin.publishAdd(expansion);
+    if(logger.isInfoEnabled()) {
+      logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
+    }
+    dfPlugin.publishAdd(expansion);
   }
 
   private void addToAndPublishExpansion(Task parent, Collection subtasks) {
@@ -320,8 +328,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
-                                          long end, Rate rate) {
+            
+					  long end, Rate rate) {
+    //if(logger.isInfoEnabled()) {
     //logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
+    //}
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
@@ -471,11 +482,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // Check for an empty schedule
     if (newtask_schedule.isEmpty()) {
       // Rescind any tasks that were not accounted for
-      logger.debug("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
+      if(logger.isDebugEnabled()) {
+        logger.debug("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
+      }
       Enumeration e = published_schedule.getAllScheduleElements();
       while (e.hasMoreElements()) {
         Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
-        logger.debug(printProjection("********** Removing task --> \n", task));
+	if(logger.isDebugEnabled()) {
+          logger.debug(printProjection("********** Removing task --> \n", task));
+	}
         publishRemoveFromExpansion(task);
       }
       return Collections.EMPTY_LIST;
@@ -518,27 +533,37 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
           ((NewTask)published_task).setPreference(new_task.getPreference(AspectType.END_TIME));
         } // synch
 
-        logger.debug( printProjection("extend old end", published_task));
+	if(logger.isDebugEnabled()) {
+	  logger.debug( printProjection("extend old end", published_task));
+	}
         dfPlugin.publishChange(published_task);
       } else {
         // check to make sure start_time is not before now
         // long that is the maximum of now and the start_time
         long when = Math.max(now, TaskUtils.getStartTime(new_task));
         setEndTimePreference((NewTask) published_task, when);
-        logger.debug(printProjection("truncate old end 1", published_task));
+	if(logger.isDebugEnabled()) {
+	  logger.debug(printProjection("truncate old end 1", published_task));
+	}
         dfPlugin.publishChange(published_task);
         setStartTimePreference((NewTask) new_task, when);
-        logger.debug(printProjection("truncate new start 1", new_task));
+	if(logger.isDebugEnabled()) {
+	  logger.debug(printProjection("truncate new start 1", new_task));
+	}
         add_tasks.add(new_task);
       }
     } else if (new_task != null) {
       setStartTimePreference((NewTask) new_task, now);
-      logger.debug(printProjection("truncate new start 2", new_task));
+      if(logger.isDebugEnabled()) {
+        logger.debug(printProjection("truncate new start 2", new_task));
+      }
       add_tasks.add(new_task);
     } else if (published_task != null) {
       setEndTimePreference((NewTask) published_task, now);
       dfPlugin.publishChange(published_task);
-      logger.debug(printProjection("truncate old end 2", published_task));
+      if(logger.isDebugEnabled()) {
+        logger.debug(printProjection("truncate old end 2", published_task));
+      }
     }
 
     // Compare new tasks to previously scheduled tasks, if a published task is found that
@@ -554,7 +579,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
       }
       else {
-        logger.error("publishChangeProjection(), Bad Schedule: "+newtask_schedule);
+	if(logger.isErrorEnabled()) {
+	  logger.error("publishChangeProjection(), Bad Schedule: "+newtask_schedule);
+	}
         return Collections.EMPTY_LIST;
       }
       // Get overlapping schedule elements from start to end of new task
@@ -565,11 +592,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
-        logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+	if(logger.isDebugEnabled()) {
+	  logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
                      " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
+	}
         published_task = TaskUtils.changeTask(published_task, new_task);
         if (published_task != null) {
-          logger.debug(printProjection("********** Replaced task with ---> \n", published_task));
+	  if(logger.isDebugEnabled()) {
+            logger.debug(printProjection("********** Replaced task with ---> \n", published_task));
+	  }
           dfPlugin.publishChange(published_task);
         }
       }
@@ -582,7 +613,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Enumeration e = published_schedule.getAllScheduleElements();
     while (e.hasMoreElements()) {
       Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
-      logger.debug(printProjection("********** Removing task --> \n", task));
+      if(logger.isDebugEnabled()) {
+        logger.debug(printProjection("********** Removing task --> \n", task));
+      }
       publishRemoveFromExpansion(task);
     }
     return add_tasks;
@@ -626,7 +659,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     } else if (measure instanceof Mass) {
       result = ((Mass)measure).getShortTons();
     } else {
-      logger.error("cannot determine type of measure");
+      if(logger.isErrorEnabled()) {
+        logger.error("cannot determine type of measure");
+      }
     }
     return result;
   }

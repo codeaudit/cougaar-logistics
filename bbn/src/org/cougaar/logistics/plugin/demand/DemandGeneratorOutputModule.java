@@ -95,7 +95,9 @@ public class DemandGeneratorOutputModule {
             dgPlugin.getBlackboardService().didRehydrate()));
       }
       catch (IOException ioe) {
-        logger.error("Unable to open output file: " + file.toString());
+	if(logger.isErrorEnabled()) {
+          logger.error("Unable to open output file: " + file.toString());
+	}
         aborted = true;
         return;
       }
@@ -132,7 +134,9 @@ public class DemandGeneratorOutputModule {
       SupplyClassPG supplyPG = (SupplyClassPG)consumed.searchForPropertyGroup(
             org.cougaar.glm.ldm.asset.SupplyClassPG.class);
         if (supplyPG == null) {
-          logger.error("Unable to retrieve SupplyClassPG for " + consumedId);
+	  if(logger.isErrorEnabled()) {
+            logger.error("Unable to retrieve SupplyClassPG for " + consumedId);
+	  }
           continue;
         }
         String type = supplyPG.getSupplyType();

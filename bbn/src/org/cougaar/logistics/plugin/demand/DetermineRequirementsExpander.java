@@ -85,8 +85,10 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
       }
     }
     if (gpTasks.isEmpty()) {
-      logger.warn("Cannot expand - no subtasks for determine requirements task "
+      if(logger.isWarnEnabled()) {
+        logger.warn("Cannot expand - no subtasks for determine requirements task "
                   + getTaskUtils().taskDesc(detReqTask));
+      }
     } else {
       PlanElement pe = detReqTask.getPlanElement();
       if ((pe != null) && (pe instanceof Disposition)) {
@@ -101,7 +103,9 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
       else if (pe instanceof Expansion) {
         addToAndPublishExpansion(detReqTask, gpTasks);
       } else {
-        logger.error("Unhandled plan element type on DetermineRequirementsTask :" + pe.getClass().getName());
+	if(logger.isErrorEnabled()) {
+          logger.error("Unhandled plan element type on DetermineRequirementsTask :" + pe.getClass().getName());
+	}
       }
     }
 

@@ -120,9 +120,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
       String demandGen = (String)pluginParams.get(DEMAND_GENERATOR);
       if (demandGen != null && demandGen.endsWith("DemandGeneratorInputModule")) {
-        logger.warn("Invalid Combination of Plugin Params: Cannot output AND " +
-                    "input demand info in same run.  Changing Demand " +
-                    "Generator Module to default!");
+	if(logger.isWarnEnabled()) {
+          logger.warn("Invalid Combination of Plugin Params: Cannot output AND " +
+                      "input demand info in same run.  Changing Demand " +
+                      "Generator Module to default!");
+	}
         pluginParams.remove(DEMAND_GENERATOR);
       }
     }
@@ -464,11 +466,15 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         Class cls = Class.forName(demGenClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         DemandTaskGeneratorIfc demandGen = (DemandTaskGeneratorIfc) constructor.newInstance(initArgs);
-        logger.info("Using RequirementsExpander " + demGenClass);
+	if(logger.isInfoEnabled()) {
+          logger.info("Using RequirementsExpander " + demGenClass);
+	}
         return demandGen;
       } catch (Exception e) {
-        logger.error(e + " Unable to create demandTaskGeneratorModule instance of " + demGenClass + ". " +
+	if(logger.isErrorEnabled()) {
+	  logger.error(e + " Unable to create demandTaskGeneratorModule instance of " + demGenClass + ". " +
                      "Loading default org.cougaar.logistics.plugin.demand.DemandTaskGenerator");
+	}
       }
     }
 
@@ -559,7 +565,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
 
     if (!isLegalPeriod(period)) {
-      logger.error("Illegal Period - not in days or hours");
+      if(logger.isErrorEnabled()) {
+        logger.error("Illegal Period - not in days or hours");
+      }
       period = -1;
     }
 
@@ -578,7 +586,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
 
     if (!isLegalPeriod(stepPeriod)) {
-      logger.error("Illegal Step Period - not in days or hours");
+      if(logger.isErrorEnabled()) {
+        logger.error("Illegal Step Period - not in days or hours");
+      }
       stepPeriod = -1;
     }
 
@@ -588,7 +598,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     if (poissonOnString != null) {
       poissonOnString = poissonOnString.trim().toLowerCase();
       poissonOn = (poissonOnString.equals("true"));
+      //if(logger.isShoutEnabled()) {
       //logger.shout("RANDOM_DEVIATION_ON=" + poissonOn);
+      //}
     }
 
     if (((supplyType == null) ||
@@ -614,33 +626,14 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     //Multiply it back to which gives the start of the period.
     long timeOut = periods * period;
     if (timeIn == timeOut) {
-      logger.debug("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
-
+      if(logger.isDebugEnabled()) {
+        logger.debug("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
+      }
     }
     return timeOut;
   }
 
-  /** TODO: MWD take out this older verion of getStartOfPeriod()
 
-   protected long getStartOfPeriod() {
-   long timeIn = getCurrentTimeMillis();
-   long timeOut = 0;
-   calendar.setTimeInMillis(timeIn);
-   if (periodInDays()) {
-   calendar.set(calendar.HOUR_OF_DAY, 0);
-   }
-   calendar.set(calendar.MINUTE, 0);
-   calendar.set(calendar.SECOND, 0);
-   calendar.set(calendar.MILLISECOND, 0);
-   timeOut = calendar.getTimeInMillis();
-   if (timeIn == timeOut) {
-   logger.error("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
-
-   }
-   return timeOut;
-   }
-
-   **/
   /**
    * Schedule a timer for midnight tonight.
    *

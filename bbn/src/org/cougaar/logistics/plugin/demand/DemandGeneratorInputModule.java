@@ -140,7 +140,9 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
       reader = new BufferedReader(new FileReader(file));
     }
     catch (IOException ioe) {
-      logger.warn("Unable to open demand input file: " + file.toString());
+      if(logger.isWarnEnabled()) {
+        logger.warn("Unable to open demand input file: " + file.toString());
+      }
     }
   }
 
@@ -222,7 +224,9 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
         SupplyClassPG supplyPG = (SupplyClassPG)consumed.searchForPropertyGroup(
             org.cougaar.glm.ldm.asset.SupplyClassPG.class);
         if (supplyPG == null) {
-          logger.error("Unable to retrieve SupplyClassPG for " + consumedItem);
+	  if(logger.isErrorEnabled()) {
+            logger.error("Unable to retrieve SupplyClassPG for " + consumedItem);
+	  }
           continue;
         }
         String type = supplyPG.getSupplyType();
@@ -237,8 +241,10 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
             maintainedItemId, maintainedNomen, this.dgPlugin);
         Task gpTask = getGenerateProjectionsTask(item, type);
         if (gpTask == null) {
-          logger.error("Unable to find GenerateProjections task for item type id = '" +
+	  if(logger.isErrorEnabled()) {
+            logger.error("Unable to find GenerateProjections task for item type id = '" +
                        item.getTypeIdentification() + "' and type = '" + type + "'");
+	  }
           continue;
         }
 
@@ -263,7 +269,9 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
       }
     }
     catch (IOException ioe) {
-      logger.error("Unable to parse demand input file: '" + line + "'");
+      if(logger.isErrorEnabled()) {
+        logger.error("Unable to parse demand input file: '" + line + "'");
+      }
       ioe.printStackTrace();
       return demandTasks;
     }

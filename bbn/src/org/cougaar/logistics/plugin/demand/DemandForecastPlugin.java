@@ -284,7 +284,9 @@ public class DemandForecastPlugin extends ComponentPlugin
 //          genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
         }
       } else {// wait for logOPlan
-        logger.debug("OrgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
+	if(logger.isDebugEnabled()) {
+	  logger.debug("OrgActivities received but no LogOPlan object. "+getOrgName()+" waiting...");
+	}
         return;
       }
     }
@@ -409,17 +411,21 @@ public class DemandForecastPlugin extends ComponentPlugin
       try {
         is = getConfigFinder().open ("demandSchedPolicy.xml");
       } catch (Exception e) {
-        logger.error ("Could not find file demandSchedPolicy.xml");
+	if(logger.isErrorEnabled()) {
+          logger.error ("Could not find file demandSchedPolicy.xml");
+	}
       }
       genProjTaskScheduler = new TaskScheduler
         (new GenProjPredicate (supplyType, taskUtils),
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
          blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
     } else {
-      logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
-     genProjTaskScheduler = new TaskScheduler
-      (new GenProjPredicate (supplyType, taskUtils),
-       new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
+      if(logger.isDebugEnabled()) {
+        logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
+      }
+      genProjTaskScheduler = new TaskScheduler
+        (new GenProjPredicate (supplyType, taskUtils),
+           new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
                                      {TaskSchedulingPolicy.PASSALL}),
        blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
     }
@@ -635,9 +641,11 @@ public class DemandForecastPlugin extends ComponentPlugin
       try {
         supplyClassPG = Class.forName(supplyClassPGStr);
       } catch (Exception e) {
-        logger.error("Problem loading SUPPLY_PG_CLASS-" + supplyClassPGStr +
+	if(logger.isErrorEnabled()) {
+          logger.error("Problem loading SUPPLY_PG_CLASS-" + supplyClassPGStr +
                      "- exeception: " + e);
-        logger.error(errorString);
+          logger.error(errorString);
+	}
         supplyClassPG = null;
       }
     }
@@ -705,7 +713,11 @@ public class DemandForecastPlugin extends ComponentPlugin
       // hash tables are kept in line with whats on the blackboard.
       else {
 	  //with new TaskScheduler this is no longer a surprise, but is expected behavior.
-	  //logger.error("Surprise!!!! - unexpected expansion code firing in processNewGenProjs");
+	  /**
+	     if(logger.isErrorEnabled()) {
+	       logger.error("Surprise!!!! - unexpected expansion code firing in processNewGenProjs");
+	     }
+	  **/
         invokeGenProjectionsExp(pg, genProj,timeSpan);
       }
 
@@ -858,16 +870,16 @@ public class DemandForecastPlugin extends ComponentPlugin
    protected void processAllHashSubscriptions() {
    Set PGs = pgToPredsHash.keySet();
    if (PGs.isEmpty()) {
-   if (logger.isDebugEnabled()) {
-   logger.debug("No PGs in the hash tables: " + pgToPredsHash);
-   }
+     if (logger.isDebugEnabled()) {
+       logger.debug("No PGs in the hash tables: " + pgToPredsHash);
+     }
    } else {
-   if (logger.isDebugEnabled()) {
-   //logger.debug("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
-   logger.debug("DemandForecastPlugin::ProcessAllHashSubscriptions at " + myOrganization +
-   "with Num PGs: " + PGs.size());
-   }
-   processSubscriptionChangedPG(PGs);
+     if (logger.isDebugEnabled()) {
+       //logger.debug("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
+       logger.debug("DemandForecastPlugin::ProcessAllHashSubscriptions at " + myOrganization +
+       "with Num PGs: " + PGs.size());
+     }
+     processSubscriptionChangedPG(PGs);
    }
    }
 
@@ -886,7 +898,9 @@ public class DemandForecastPlugin extends ComponentPlugin
         PlanElement pe = gp.getPlanElement();
         if ((pe == null) ||
             (!(pe instanceof Disposition))) {
-          logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
+	    if(logger.isDebugEnabled()) {
+	      logger.debug("******* invoking BG and GPE with changed Subscriptions **********");
+	    }
           invokeGenProjectionsExp(pg, gp, projectSpan);
         }
       } else {
@@ -1020,11 +1034,15 @@ public class DemandForecastPlugin extends ComponentPlugin
         Class cls = Class.forName(expanderClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         DetReqExpanderIfc expander = (DetReqExpanderIfc) constructor.newInstance(initArgs);
-        logger.info("Using RequirementsExpander " + expanderClass);
+	if(logger.isInfoEnabled()) {
+          logger.info("Using RequirementsExpander " + expanderClass);
+	}
         return expander;
       } catch (Exception e) {
-        logger.error(e + " Unable to create RequirementsExpander instance of " + expanderClass + ". " +
+	if(logger.isErrorEnabled()) {
+	  logger.error(e + " Unable to create RequirementsExpander instance of " + expanderClass + ". " +
                      "Loading default org.cougaar.logistics.plugin.projection.DetermineRequirementsExpander");
+	}
       }
     }
     return new DetermineRequirementsExpander(this);
@@ -1047,11 +1065,15 @@ public class DemandForecastPlugin extends ComponentPlugin
         Class cls = Class.forName(expanderClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         GenProjExpanderIfc expander = (GenProjExpanderIfc) constructor.newInstance(initArgs);
-        logger.info("Using ProjectionsExpander " + expanderClass);
+	if(logger.isInfoEnabled()) {
+	  logger.info("Using ProjectionsExpander " + expanderClass);
+	}
         return expander;
       } catch (Exception e) {
-        logger.error(e + " Unable to create ProjectionsExpander instance of " + expanderClass + ". " +
+	if(logger.isErrorEnabled()) {
+          logger.error(e + " Unable to create ProjectionsExpander instance of " + expanderClass + ". " +
                      "Loading default org.cougaar.logistics.plugin.projections.GenerateProjectionsExpander");
+	}
       }
     }
     return new GenerateProjectionsExpander(this);
@@ -1171,7 +1193,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     Schedule paramSchedule = null;
 
     if(projectSpan.getEndTime() <= projectSpan.getStartTime()) {
-	logger.error("Was going to call getParameterSchedule, but the projectSpan spans a zero time span!");
+	if(logger.isErrorEnabled()) {
+	  logger.error("Was going to call getParameterSchedule, but the projectSpan spans a zero time span!");
+	}
     }
     else {
 	Class parameters[] = {Collection.class, TimeSpan.class};
