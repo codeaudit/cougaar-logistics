@@ -71,12 +71,17 @@ public class Level2Disposer extends Level2TranslatorModule {
    * and then successfully dispose of this one.
    **/
   public void disposeAndRemoveExpansion(Task level2Task) {
-
+    boolean doDispose=true;
     PlanElement pe = level2Task.getPlanElement();
     if ((pe != null) && (pe instanceof Expansion)) {
       removeExpansion(level2Task);
     }
-    disposeOfTask(level2Task);
+    else if ((pe != null) && (pe instanceof Disposition)) {
+      doDispose = removeDisposition(level2Task);
+    }
+    if(doDispose) {
+	disposeOfTask(level2Task);
+    }
   }
 
   public void removeExpansion(Task level2Task) {
@@ -91,6 +96,24 @@ public class Level2Disposer extends Level2TranslatorModule {
     //Do you need to remove the workflow?
     //translatorPlugin.publishRemove(wf);
     translatorPlugin.publishRemove(expansion);
+  }
+
+  public boolean removeDisposition(Task level2Task) {
+    Disposition disposition = (Disposition) level2Task.getPlanElement();
+    AllocationResult ar = disposition.getEstimatedResult();
+    if(getTaskUtils().getQuantity(level2Task) == getTaskUtils().getQuantity(level2Task,ar)) {
+      if(logger.isWarnEnabled()) {
+	logger.warn("Quantity on task is same as on disposition - not re-disposing");
+      }
+      return false;
+    }
+    else {
+      if(logger.isWarnEnabled()) {
+	logger.warn("Quantity on task is " + getTaskUtils().getQuantity(level2Task) + " while the estimate result says " + getTaskUtils().getQuantity(level2Task,ar));
+      }
+      translatorPlugin.publishRemove(disposition);
+      return true;
+    }
   }
 
 

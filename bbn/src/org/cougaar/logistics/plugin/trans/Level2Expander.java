@@ -111,6 +111,10 @@ public class Level2Expander extends Level2TranslatorModule {
 
     if (lastActualSeen >= endTime) {
       doneLevel2Task = level2Task;
+      //If alreadyDisposed and still done we don't want to re-dispose. Just because its after the last actual seen
+      if (alreadyDisposed) {
+	  return null;
+      }
     } else {
       long countedStartTime = Math.max(startTime, lastActualSeen);
       double totalL6BaseQty = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
@@ -125,6 +129,7 @@ public class Level2Expander extends Level2TranslatorModule {
           logger.warn("level2Task " + level2Task + " has a total qty of " + origL2BaseQty +
                       " which is exceeded by the level 6 tasks with a summed total qty of " + totalL6BaseQty);
         }
+	//If already disposed we still want to redispose in case there has been a qty change
         doneLevel2Task = level2Task;
       } else {
         double durationMillis = (endTime - countedStartTime);
@@ -145,11 +150,7 @@ public class Level2Expander extends Level2TranslatorModule {
         }
       }
     }
-    //If alreadyDisposed and still done we don't want to re-dispose.
-    //If alreadyDisposed and we just expanded it, we don't want to dispose.
-    if (alreadyDisposed) {
-      return null;
-    }
+
     return doneLevel2Task;
   }
 
