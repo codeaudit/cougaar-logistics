@@ -105,9 +105,11 @@ class Sizer {
 
     if ((quantityType < MIN_UNIT) ||
         (quantityType > MAX_UNIT)) {
-      logger.error("Sizer: invalid quantity unit specified - " +
-                   quantityType +
-                   " - assuming TONS.");
+      if (logger.isErrorEnabled()) {
+        logger.error("Sizer: invalid quantity unit specified - " +
+                     quantityType +
+                     " - assuming TONS.");
+      }
       _quantityType = TONS;
     } else {
       _quantityType = quantityType;
@@ -140,13 +142,20 @@ class Sizer {
         _remainder = taskMass.getShortTons();
 
         if (_expansionQueue != null) {
-          logger.error("Sizer.provide : ERROR - Expansion queue is not null - we will drop tasks :");
-          for (Iterator iter = _expansionQueue.iterator(); iter.hasNext();)
-            logger.error("\t" + ((Task) iter.next()).getUID());
+          if (logger.isErrorEnabled()) {
+            logger.error("Sizer.provide : ERROR - Expansion queue is not null - we will drop tasks :");
+          }
+          for (Iterator iter = _expansionQueue.iterator();
+               iter.hasNext();)
+            if (logger.isErrorEnabled()) {
+              logger.error("\t" + ((Task) iter.next()).getUID());
+            }
         }
         _expansionQueue = new ArrayList();
       } else {
-        logger.error("Sizer.provide : ERROR - no current task...");
+        if (logger.isErrorEnabled()) {
+          logger.error("Sizer.provide : ERROR - no current task...");
+        }
         return null; // should never happen
       }
     }
@@ -207,7 +216,10 @@ class Sizer {
       _expansionQueue.add(0, ret);
       _remainder = _remainder - requestedAmt;
       if (_remainder == 0.0)
-        logger.error("Sizer.provide : ERROR - We will drop task " + ret.getUID());
+        if (logger.isErrorEnabled()) {
+          logger.error("Sizer.provide : ERROR - We will drop task " +
+                       ret.getUID());
+        }
     }
     return ret;
   }
@@ -287,7 +299,9 @@ class Sizer {
     // TODO delme
     double provided = nt.getPreferredValue(AspectType.QUANTITY);
     if (provided != size)
-      logger.info("requested " + size + " != quantity pref " + provided);
+      if (logger.isInfoEnabled()) {
+        logger.info("requested " + size + " != quantity pref " + provided);
+      }
     return nt;
   }
 
@@ -330,9 +344,11 @@ class Sizer {
                         Mass.SHORT_TONS);
 
       default:
-        logger.error("Sizer: invalid quantity unit specified - " +
-                     quantityUnit +
-                     " - assuming TONS.");
+        if (logger.isErrorEnabled()) {
+          logger.error("Sizer: invalid quantity unit specified - " +
+                       quantityUnit +
+                       " - assuming TONS.");
+        }
         return new Mass(task.getPreferredValue(AspectType.QUANTITY),
                         Mass.SHORT_TONS);
     }
