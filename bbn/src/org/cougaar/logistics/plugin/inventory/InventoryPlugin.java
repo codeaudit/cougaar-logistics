@@ -105,7 +105,7 @@ public class InventoryPlugin extends ComponentPlugin {
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
   public final Integer LEVEL_2_MAX = new Integer(80);
   public final Integer LEVEL_6_MIN = new Integer(20);
-  public final Integer LEVEL_6_MAX = new Integer(40);
+  public final Integer LEVEL_6_MAX = new Integer(180);
 
   public final String  LEVEL_2_TIME_HORIZON = "Level2TimeHorizon";
   public final Integer LEVEL_2_TIME_HORIZON_DEFAULT = LEVEL_2_MAX;
