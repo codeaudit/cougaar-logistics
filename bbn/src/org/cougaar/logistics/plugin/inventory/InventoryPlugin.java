@@ -52,6 +52,11 @@ import org.cougaar.core.plugin.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
 
+import org.cougaar.core.adaptivity.OMCRange;
+import org.cougaar.core.adaptivity.OMCRangeList;
+import org.cougaar.core.adaptivity.OperatingMode;
+import org.cougaar.core.adaptivity.OperatingModeImpl;
+
 /** The InventoryPlugin is the Glue of inventory management.
  *  It handles all blackboard services for its modules, 
  *  facilitates inter-module communication and manages the
@@ -95,6 +100,17 @@ public class InventoryPlugin extends ComponentPlugin {
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
+
+  public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
+  public final Integer LEVEL_2_MAX = new Integer(80);
+  public final Integer LEVEL_6_MIN = new Integer(20);
+  public final Integer LEVEL_6_MAX = new Integer(40);
+
+  public final String  LEVEL_2_TIME_HORIZON = "Level2TimeHorizon";
+  public final Integer LEVEL_2_TIME_HORIZON_DEFAULT = LEVEL_2_MAX;
+  public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
+  public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
+
   // Policy variables
   private InventoryPolicy inventoryPolicy = null;
   private int criticalLevel = 3;
@@ -102,9 +118,6 @@ public class InventoryPlugin extends ComponentPlugin {
   private int handlingTime = 0;
   private int transportTime = 1;
   private int bucketSize = 1;
-  //TODO replace these with real VTH Knob values
-  private long endOfLevelSix;
-  private long endOfLevelTwo;
 
   public void load() {
     super.load();
@@ -126,9 +139,8 @@ public class InventoryPlugin extends ComponentPlugin {
     touchedInventories = new ArrayList();
     touchedProjections = false;
     startTime = currentTimeMillis();
-    // TODO replace with real VTH Knob
-    endOfLevelSix = timeUtils.addNDays(startTime, 40);
-    endOfLevelTwo = timeUtils.addNDays(startTime, 80);
+
+    setupOperatingModes();
     domainService = (DomainService) 
 	getServiceBroker().getService(this,
 				      DomainService.class,
@@ -202,8 +214,8 @@ public class InventoryPlugin extends ComponentPlugin {
 	  if (touchedProjections) {
 	      refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
 							     criticalLevel, 
-							     endOfLevelSix, 
-							     endOfLevelTwo, 
+							     getEndOfLevelSix(), 
+							     getEndOfLevelTwo(), 
 							     refillComparator);
 	  }
 	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
@@ -861,6 +873,57 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
     return changed;
+  }
+
+  /** VTH operating modes */
+  protected OperatingMode level2Horizon, level6Horizon;
+
+  /** create and publish VTH Operating Modes */
+  protected void setupOperatingModes () {
+    try {
+      getBlackboardService().openTransaction();
+      OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
+      OMCRangeList rangeList = new OMCRangeList (level2Range);
+      publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
+							 LEVEL_2_TIME_HORIZON_DEFAULT));
+
+      OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
+      rangeList = new OMCRangeList (level6Range);
+      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
+							 LEVEL_6_TIME_HORIZON_DEFAULT));
+    } catch (Exception e) {  
+      logger.error (getBindingSite().getAgentIdentifier() + " got exception creating operating modes.", e); 
+    } finally {
+      getBlackboardService().closeTransaction();
+    }
+
+    if(logger.isInfoEnabled())
+      logger.info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
+		   "level 2 time horizon is " + level2Horizon + 
+		   " and level 6 is " + level6Horizon);
+  }
+
+  /** tiny helper class for VTH Operating Modes */
+  protected static class IntRange extends OMCRange {
+    public IntRange (int a, int b) { super (a, b); }
+  }
+
+  /** relative to now -- this is correct, isn't it? */
+  protected long getEndOfLevelSix () {
+    long now = currentTimeMillis();
+    int days = (level6Horizon.getValue().equals (LEVEL_6_MIN))?
+      LEVEL_6_MIN.intValue() : LEVEL_6_MAX.intValue();
+
+    return timeUtils.addNDays(now, days);
+  } 
+
+  /** relative to now -- this is correct, isn't it? */
+  protected long getEndOfLevelTwo () {
+    long now = currentTimeMillis();
+    int days = (level2Horizon.getValue().equals (LEVEL_2_MIN))?
+      LEVEL_2_MIN.intValue() : LEVEL_2_MAX.intValue();
+
+    return timeUtils.addNDays(now, days);
   }
 
   /**
