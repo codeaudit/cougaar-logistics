@@ -229,15 +229,26 @@ public class InventorySelectionPanel extends JPanel
     }
 
     public void setAssetNames(Vector assets) {
+	assetNamesBox.removeItemListener(this);
 	assetNamesBox.removeAllItems();
-	currAssetName = null;
+	int currAssetIndex=-1;
 	for(int i=0; i < assets.size() ; i++) {
 	    String assetName = (String) assets.elementAt(i);
 	    assetNamesBox.addItem(assetName);
+	    if(assetName.equals(currAssetName)) {
+		currAssetIndex = i;
+	    }
 	}
-	if(assets.size() > 1) {
+	if(currAssetIndex >= 0) {
+	    assetNamesBox.setSelectedIndex(currAssetIndex);
+	}
+	else if(assets.size() > 1) {
 	    currAssetName = (String) assetNamesBox.getItemAt(0);
 	}
+	else {
+	    currAssetName = null;
+	}
+	assetNamesBox.addItemListener(this);
     }
 
 
