@@ -23,29 +23,29 @@
     "21-TSC-HQ".
   -->
   <Community Name="MiniTestConfig" >
-    <Attribute ID="CommunityType"    Value="Domain" />
+    <Attribute ID="CommunityType"    Value="AdaptiveLogistics" />
     <Attribute ID="CommunityManager" Value="Manager" />
     <Entity Name="1BDE" >
-      <Attribute ID="MemberType"   Value="Agent"  />
+      <Attribute ID="EntityType"   Value="Agent"  />
       <Attribute ID="Role"         Value="Member" />
     </Entity>
     <Entity Name="3-69-ARBN"  >
-      <Attribute ID="MemberType"   Value="Agent"  />
+      <Attribute ID="EntityType"   Value="Agent"  />
       <Attribute ID="Role"         Value="Member" />
     </Entity>
     <Entity Name="3ID"  >
-      <Attribute ID="MemberType"   Value="Agent"  />
+      <Attribute ID="EntityType"   Value="Agent"  />
       <Attribute ID="Role"         Value="Member" />
       <Attribute ID="Role"         Value="StrategicTransportationProvider" />      
     </Entity>
     <Entity Name="MCCGlobalMode"  >
-      <Attribute ID="MemberType"   Value="Agent"  />
+      <Attribute ID="EntityType"   Value="Agent"  />
       <Attribute ID="Role"         Value="Member" />
       <Attribute ID="Role"         Value="StrategicTransportationProvider" />      
     </Entity>
     <Entity Name="Manager" >
-      <Attribute ID="MemberType"   Value="Agent"  />
-      <Attribute ID="Role"         Value="Manager" />
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="AdaptiveLogisticsManager" />
     </Entity>
   </Community>
 
