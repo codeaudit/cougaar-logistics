@@ -112,6 +112,9 @@ public class InventoryPlugin extends ComponentPlugin {
   public final String  LEVEL_6_TIME_HORIZON = "Level6TimeHorizon";
   public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
 
+  // OPlan variable
+  LogisticsOPlan logOPlan = null;
+
   // Policy variables
   private InventoryPolicy inventoryPolicy = null;
   private int criticalLevel = 3;
@@ -230,7 +233,19 @@ public class InventoryPlugin extends ComponentPlugin {
       setupSubscriptions2();
     } 
 
-    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
+    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
+      Collection c = logisticsOPlanSubscription.getCollection();
+      for (Iterator i = c.iterator(); i.hasNext();) {
+	logOPlan = (LogisticsOPlan)i.next();
+	break;
+      }
+    }
+
+    if ((detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) &&
+	(logOPlan != null)) {
+//       touchedProjections = 
+// 	supplyExpander.handleRemovedProjections(projectionTaskSubscription.getRemovedCollection());
+//       supplyExpander.handleRemovedRequisitions(supplyTaskSubscription.getRemovedCollection());
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
@@ -288,6 +303,9 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for InventoryPolicy **/
   private IncrementalSubscription inventoryPolicySubscription;
 
+  /** Subscription for LogisticsOPlan object **/
+  private IncrementalSubscription logisticsOPlanSubscription;
+
 
   protected void setupSubscriptions() {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
@@ -297,6 +315,7 @@ public class InventoryPlugin extends ComponentPlugin {
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
     inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
+    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
 
   protected void setupSubscriptions2() {
@@ -421,6 +440,15 @@ public class InventoryPlugin extends ComponentPlugin {
 	}
       }
       return false;
+    }
+  }
+
+  /** 
+      Selects the LogisticsOPlan objects
+  **/
+  private static class LogisticsOPlanPredicate implements UnaryPredicate{
+    public boolean execute(Object o) {
+ 	return o instanceof LogisticsOPlan;
     }
   }
   
@@ -852,6 +880,18 @@ public class InventoryPlugin extends ComponentPlugin {
     return myOrg;
   }
 
+  public long getOPlanStartTime() {
+    return logOPlan.getStartTime();
+  }
+
+  public long getOPlanEndTime() {
+    return logOPlan.getEndTime();
+  }
+
+  public long getOPlanArrivalInTheaterTime() {
+    return logOPlan.getArrivalTime();
+  }
+
   public void getInventoryData() {
     String invFile = getInventoryFileName();
     if (invFile != null) {
@@ -980,6 +1020,8 @@ public class InventoryPlugin extends ComponentPlugin {
     }
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) == null)
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
+    if (logOPlan == null)
+      logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
     System.out.println("Critical Level is "+criticalLevel);
     System.out.println("Reorder Period is "+reorderPeriod);
     System.out.println("Days per bucket is "+bucketSize);
