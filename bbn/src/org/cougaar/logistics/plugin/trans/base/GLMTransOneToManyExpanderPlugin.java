@@ -183,8 +183,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	    return new UnaryPredicate() {
 		    public boolean execute(Object o) { 
 			boolean val = (o instanceof OperatingMode);
-			if (val && isInfoEnabled())
-			    info (getName () + ".getPredicate - interested in " + o);
+			if (val && logger.isInfoEnabled())
+			    logger.info ("GLMTransOneToManyExpanderPlugin.OperatingModeCallback.getPredicate - interested in " + o);
 			return val;
 		    }
 		};
@@ -298,7 +298,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	
     if (!taskTiming)
       return false;
-	
+
+    if (glmPrepHelper == null)
+	error (getName() + ".isTaskWellFormed - huh? glmPrepHelper is null??");
+
     GeolocLocation start = 
       (GeolocLocation) glmPrepHelper.getIndirectObject (taskToCheck, Constants.Preposition.FROM);
     GeolocLocation end   = 
@@ -343,6 +346,28 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     }
     return true;
   }
+
+  public void processTasks (java.util.List tasks) {
+      super.processTasks (getPrunedTaskList(tasks));
+  }
+
+    protected List getPrunedTaskList (List tasks) {
+	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+
+	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
+
+	for (Iterator iter = tasks.iterator(); iter.hasNext();){
+	    Task task = (Task) iter.next();
+	    if (removed.contains(task)) {
+		if (isInfoEnabled()) {
+		    info ("ignoring task on removed list " + task.getUID());
+		}
+	    }
+	    else
+		prunedTasks.add (task);
+	}
+	return prunedTasks;
+    }
 
   public void handleTask(Task parentTask) {
     int mode = getMode (parentTask);
