@@ -324,10 +324,10 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       Disposition aDisp = (Disposition) dispIter.next();
       Task aTask = aDisp.getTask();
       if (aTask != null) {
-        if (logger.isDebugEnabled()) {
-          logger.debug(" INSIDE remove reqs, task has aux query " + hasAuxQuery(aDisp, aTask));
-        }
         if (hasAuxQuery(aDisp, aTask)) {
+          if (logger.isDebugEnabled()) {
+            logger.debug(" INSIDE remove reqs, task has aux query ");
+          }
           publishRemovePrediction(aDisp, aTask);
         }
       } else {
@@ -877,7 +877,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
         if (! predTasks.isEmpty()) {
           inventoryPlugin.publishRemove(predTasks.iterator().next());
           if (logger.isDebugEnabled()) {
-            logger.debug("Reconciled task was removed... Removing matching prediction " + uid);
+            logger.debug(inventoryPlugin.getSupplyType() + " Reconciled task was removed... Removing matching prediction " + uid);
           }
         } else if (logger.isDebugEnabled()) {
           logger.debug("Query for matching prediction retruned an empty set for uid: " + uid);
