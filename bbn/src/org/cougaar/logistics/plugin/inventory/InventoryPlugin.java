@@ -896,9 +896,11 @@ public class InventoryPlugin extends ComponentPlugin {
   public String getInventoryType(Inventory inventory) {
     ScheduledContentPG scp = inventory.getScheduledContentPG();
     Asset proto = scp.getAsset();
-    if (proto == null && logger.isErrorEnabled()) {
-      logger.error("getInventoryType failed to get asset for "+
-		   inventory.getScheduledContentPG().getAsset().getTypeIdentificationPG());
+    if (proto == null) {
+      if (logger.isErrorEnabled()) {
+        logger.error("getInventoryType failed to get asset for "+
+                     inventory.getScheduledContentPG().getAsset().getTypeIdentificationPG());
+      }
       return "";
     }
     return proto.getTypeIdentificationPG().getTypeIdentification();
@@ -1233,10 +1235,11 @@ public class InventoryPlugin extends ComponentPlugin {
       getBlackboardService().closeTransaction();
     }
 
-    if(logger.isInfoEnabled())
+    if(logger.isInfoEnabled()) {
       logger.info ("" + getMyOrganization() + " created operating modes - " + 
 		   "level 2 time horizon is " + level2Horizon + 
 		   " and level 6 is " + level6Horizon);
+    }
   }
 
   /** tiny helper class for VTH Operating Modes */

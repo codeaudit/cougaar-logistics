@@ -912,8 +912,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     QuantityScheduleElement qse;
     while (elements.hasMoreElements()) {
       qse = (QuantityScheduleElement)elements.nextElement();
-      logger.info("qty: "+qse.getQuantity()+
-		  " "+qse.getStartDate()+" to "+ qse.getEndDate());
+      if (logger.isInfoEnabled()) {
+        logger.info("qty: "+qse.getQuantity()+
+                    " "+qse.getStartDate()+" to "+ qse.getEndDate());
+      }
     }
     return 0;
   }
