@@ -1,0 +1,17 @@
+# This is for debugging purposes and should not be added by default but 
+# only if necessary for debugging.  It queries every agent and adds 
+# the parameter "TASK_SCHEDULER_OFF=True" to the 
+# org.cougaar.logistics.inventory.InventoryPlugin parameter list
+
+plugin = "org.cougaar.logistics.plugin.demand.DemandForecastPlugin"
+arg = "TASK_SCHEDULER_OFF=True"
+
+society.each_agent do |agent|
+  agent.each_component do |comp|
+    if comp.name == plugin
+      comp.add_argument(arg)
+      break
+    end
+  end
+end
+
