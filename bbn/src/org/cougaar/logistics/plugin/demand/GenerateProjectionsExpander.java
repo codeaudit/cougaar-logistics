@@ -34,6 +34,7 @@ import org.cougaar.logistics.ldm.asset.NewFuelConsumerPG;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
 
@@ -43,6 +44,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * <pre>
@@ -60,6 +63,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   public GenerateProjectionsExpander(DemandForecastPlugin dfPlugin) {
     super(dfPlugin);
   }
+
   /**
    * Expand the passed in GenerateProjectins task into the requisite ProjectSupply
    * tasks - one for each resource need of this MEI/Asset determined by the
@@ -78,7 +82,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
 //     FuelConsumerBG bg = new FuelConsumerBGImpl("foo", new Service("bar"), "shebop");
     NewFuelConsumerPG pg =
-        (NewFuelConsumerPG)getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
+        (NewFuelConsumerPG) getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
 //     pg.setMei(anAsset);
     pg.setService("bar");
     pg.setTheater("shebop");
@@ -96,7 +100,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       while (scheduleElements.hasMoreElements()) {
         ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
         rate = bg.getRate(consumedItem, (List) ose.getObject());
-        subTasks.add(createProjectSupplyTask(gpTask,  consumer, consumedItem, ose.getStartTime(),
+        subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                              ose.getEndTime(), rate));
       }
       createAndPublishExpansion(gpTask, subTasks);
@@ -117,13 +121,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     long end = dfPlugin.getOplan().getEndDay().getTime();
     //double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
     // TODO:  fix this what should it be?????
-    double daysBetween = ((end - bestDay)  / 86400000);
+    double daysBetween = ((end - bestDay) / 86400000);
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
     double alpha = .25;
     Vector points = new Vector();
-   // long early = TimeUtils.subtractNDays(bestDay, 1);
+    // long early = TimeUtils.subtractNDays(bestDay, 1);
     TimeUtils t = dfPlugin.getTimeUtils();
     long early = t.subtractNDays(bestDay, 1);
     AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
@@ -153,8 +157,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    * FIXME time - used to find the OPlan and the geoloc for the TO preposition
    * @return Vector of PrepostionalPhrases
    **/
-  protected Vector createPrepPhrases(Object consumer, Task parentTask)
-  {
+  protected Vector createPrepPhrases(Object consumer, Task parentTask) {
 
     Vector prepPhrases = new Vector();
 
@@ -164,10 +167,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     GeolocLocation geoloc = getGeolocLocation(parentTask, dfPlugin.getCurrentTimeMillis());
     if (geoloc != null) {
       prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
-    }
-    else { // Try to use HomeLocation
+    } else { // Try to use HomeLocation
       try {
-        geoloc = (GeolocLocation)dfPlugin.getMyOrganization().getMilitaryOrgPG().getHomeLocation();
+        geoloc = (GeolocLocation) dfPlugin.getMyOrganization().getMilitaryOrgPG().getHomeLocation();
         prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
       } catch (NullPointerException npe) {
         logger.error("demandTaskPrepPhrases(), Unable to find Location for Transport");
@@ -177,8 +179,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (consumer != null) {
       MaintainedItem itemID;
       if (consumer instanceof Asset) {
-        TypeIdentificationPG tip = ((Asset)consumer).getTypeIdentificationPG();
-        ItemIdentificationPG iip = ((Asset)consumer).getItemIdentificationPG();
+        TypeIdentificationPG tip = ((Asset) consumer).getTypeIdentificationPG();
+        ItemIdentificationPG iip = ((Asset) consumer).getItemIdentificationPG();
         if (iip != null) {
           itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
                                                            iip.getItemIdentification(), tip.getNomenclature(),
@@ -199,7 +201,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   protected GeolocLocation getGeolocLocation(Task parent_task, long time) {
     Enumeration geolocs = AssetUtils.getGeolocLocationAtTime(dfPlugin.getMyOrganization(), time);
     if (geolocs.hasMoreElements()) {
-      GeolocLocation geoloc = (GeolocLocation)geolocs.nextElement();
+      GeolocLocation geoloc = (GeolocLocation) geolocs.nextElement();
 //    GLMDebug.DEBUG("GenerateSupplyDemandExpander", clusterId_, "At "+TimeUtils.dateString(time)+ " the geoloc is "+geoloc);
       return geoloc;
     }
@@ -209,7 +211,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
   protected void createAndPublishExpansion(Task parent, Collection subtasks) {
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       dfPlugin.publishAdd(subtasksIT.next());
     }
     Workflow wf = buildWorkflow(parent, subtasks);
@@ -221,7 +223,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
       dfPlugin.publishAdd(task);
       wf.addTask(task);
@@ -251,8 +253,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Vector childPhrases = createPrepPhrases(consumer, parentTask);
     if (parentPhrases.hasMoreElements()) {
       newTask.setPrepositionalPhrases(addPrepositionalPhrase(parentPhrases, childPhrases).elements());
-    }
-    else {
+    } else {
       newTask.setPrepositionalPhrases(childPhrases.elements());
     }
 
@@ -271,7 +272,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     wf.setIsPropagatingToSubtasks(true);
     NewTask t;
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       t = (NewTask) subtasksIT.next();
       t.setWorkflow(wf);
       wf.addTask(t);
@@ -280,7 +281,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   private PrepositionalPhrase newPrepositionalPhrase(String preposition,
-   Object io) {
+                                                     Object io) {
     NewPrepositionalPhrase pp = getPlanningFactory().newPrepositionalPhrase();
     pp.setPreposition(preposition);
     pp.setIndirectObject(io);
@@ -295,6 +296,61 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     phrases.addAll(childPhrases);
     return phrases;
   }
+
+  public Collection getConsumed(PropertyGroup pg) {
+    Collection preds = null;
+    Class parameters[] = {};
+    Object arguments[] = {};
+    Method m = null;
+    try {
+      m = dfPlugin.getSupplyClassPG().getMethod("getConsumed", parameters);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
+    try {
+      preds = (Collection) m.invoke(pg, arguments);
+      return preds;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return new ArrayList();
+  }
+
+
+  public Rate getRate(PropertyGroup pg,
+                      Asset consumedItem,
+                      List params) {
+    Rate rate = null;
+    Class parameters[] = {Asset.class, List.class};
+    Object arguments[] = {consumedItem, params};
+    Method m = null;
+    try {
+      m = dfPlugin.getSupplyClassPG().getMethod("getRate", parameters);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
+    try {
+      rate = (Rate) m.invoke(pg, arguments);
+      return rate;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+
 }
 
 
