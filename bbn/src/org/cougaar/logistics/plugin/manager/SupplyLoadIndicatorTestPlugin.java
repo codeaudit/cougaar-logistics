@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -23,9 +23,9 @@ package org.cougaar.logistics.plugin.manager;
 import java.util.*;
 
 import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
@@ -139,11 +139,11 @@ public class SupplyLoadIndicatorTestPlugin extends SimplePlugin {
            iterator.hasNext();) {
         String community = (String) iterator.next();
         LoadIndicator loadIndicator = 
-          new LoadIndicator(this, 
-                            getBindingSite().getAgentIdentifier().toString(),
+          new LoadIndicator(this.getClass(), 
+                            getAgentIdentifier().toString(),
                             myUIDService.nextUID(),
                             LoadIndicator.MODERATE_LOAD);
-        loadIndicator.addTarget(new AttributeBasedAddress(community,
+        loadIndicator.addTarget(AttributeBasedAddress.getAttributeBasedAddress(community,
                                                           "Role", 
                                                           "AdaptiveLogisticsManager"));
         if (myLoggingService.isDebugEnabled()) {
@@ -198,9 +198,4 @@ public class SupplyLoadIndicatorTestPlugin extends SimplePlugin {
 
                        
 }
-
-
-
-
-
 

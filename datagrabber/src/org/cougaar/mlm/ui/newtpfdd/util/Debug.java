@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.4 2002-08-16 15:03:37 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.5 2003-02-03 22:28:00 mthome Exp $ */
 
  /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights

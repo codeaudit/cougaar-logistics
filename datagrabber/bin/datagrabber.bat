@@ -1,7 +1,7 @@
 @echo OFF
 
 REM "<copyright>"
-REM " Copyright 2001 BBNT Solutions, LLC"
+REM " Copyright 2001-2003 BBNT Solutions, LLC"
 REM " under sponsorship of the Defense Advanced Research Projects Agency (DARPA)."
 REM ""
 REM " This program is free software; you can redistribute it and/or modify"
@@ -32,10 +32,9 @@ REM Modify the argument org.cougaar.ui.userAuthClass to use a
 REM UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
 
 REM PROPERTIES -
-set MYPROPERTIES=-Xms384m -Xmx448m
 
-echo "java -server %MYPROPERTIES% -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%"
+echo "java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
 
-java -server %MYPROPERTIES% -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
+java -server -Duser.timezone=GMT -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -classpath %LIBPATHS% org.cougaar.bootstrap.Bootstrapper org.cougaar.mlm.ui.grabber.DataGrabber %CONFIG_FILE%
 
 

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -77,13 +77,13 @@ public class TransportAggregatorPlugin extends VishnuAggregatorPlugin {
 	Preference pref = (Preference) prefs.nextElement ();
 	int aspectType = pref.getAspectType ();
 
-	AspectValue lower = new AspectValue (aspectType, 0.0d);
+	AspectValue lower = AspectValue.newAspectValue (aspectType, 0.0d);
 
 	Calendar cal = java.util.Calendar.getInstance();
 	cal.set(2200, 0, 0, 0, 0, 0);
 	cal.set(Calendar.MILLISECOND, 0);
 	double endOfRange = (double) ((Date) cal.getTime()).getTime();
-	AspectValue upper = new AspectValue (aspectType, endOfRange);
+	AspectValue upper = AspectValue.newAspectValue (aspectType, endOfRange);
 
 	print (pref, pref.getScoringFunction().getDefinedRange (),
 	       pref.getScoringFunction().getValidRanges (lower, upper), logger);

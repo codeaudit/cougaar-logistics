@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import org.cougaar.core.domain.LDMServesClient;
-import org.cougaar.core.domain.LDMServesPlugin;
-import org.cougaar.core.plugin.PluginBindingSite;
+import org.cougaar.planning.ldm.LDMServesPlugin;
 
 import org.cougaar.glm.ldm.Constants;
 
@@ -192,7 +190,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     try{
       if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY) &&
 	  (!isSelfPropelled  (task, task.getDirectObject()) || 
-	   (getBindingSite().getAgentIdentifier().toString().indexOf("Packer") != -1))) {
+	   (getAgentIdentifier().toString().indexOf("Packer") != -1))) {
 	expandLowFi (task, subtasks);
       }
       else if (task.getDirectObject () instanceof AggregateAsset) {
@@ -237,7 +235,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
   protected ForUnitPG getForUnitPG (Asset asset) {
     return (ForUnitPG) asset.resolvePG(org.cougaar.glm.ldm.asset.ForUnitPG.class, 
-				       LDMServesClient.UNSPECIFIED_TIME);
+				       Asset.UNSPECIFIED_TIME);
   }
 
   /**
@@ -602,7 +600,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
   protected String getUniqueID (Asset boxProto) {
     return boxProto.getTypeIdentificationPG().getTypeIdentification() + "_" + 
-      ((PluginBindingSite)getBindingSite()).getAgentIdentifier() + "_" + uniqueID++;
+      getAgentIdentifier() + "_" + uniqueID++;
   }
   
   protected void adjustDimensions (GLMAsset asset, PhysicalPG originalPhysicalPG, double tons) {
@@ -647,7 +645,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     Task newtask = expandHelper.makeSubTask (ldmf,
 					     parentTask,
 					     directObject,
-					     ((PluginBindingSite)getBindingSite()).getAgentIdentifier());
+					     getAgentIdentifier());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
 
     if (unitPG == null) {

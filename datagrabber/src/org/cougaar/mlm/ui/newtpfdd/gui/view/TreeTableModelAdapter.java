@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModelAdapter.java,v 1.2 2002-08-16 14:30:06 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModelAdapter.java,v 1.3 2003-02-03 22:28:00 mthome Exp $ */
 
 /*
  * %W% %E%

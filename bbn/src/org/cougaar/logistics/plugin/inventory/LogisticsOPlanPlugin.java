@@ -1,6 +1,6 @@
 /**
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -21,9 +21,8 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
-
 import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.core.service.DomainService;
 
 import org.cougaar.util.UnaryPredicate;
@@ -31,10 +30,10 @@ import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.plugin.LDMService;
+import org.cougaar.planning.service.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
@@ -61,7 +60,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
   private IncrementalSubscription selfOrganizations;
   private LoggingService logger;
   private Organization myOrganization;
-  protected ClusterIdentifier clusterId;
+  protected MessageAddress clusterId;
 
 
   // oplan
@@ -113,7 +112,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
       if (myOrganization == null) {
 	return;
       } else {
-	clusterId = myOrganization.getClusterPG().getClusterIdentifier();
+	clusterId = myOrganization.getClusterPG().getMessageAddress();
       }
     }
     updateOplans();
@@ -141,7 +140,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if (myOrganization != null) {
-	clusterId = myOrganization.getClusterPG().getClusterIdentifier();
+	clusterId = myOrganization.getClusterPG().getMessageAddress();
       }
     }
     int waited = 0;

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -464,7 +464,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
 						  parentTask,
 						  parentTask.getDirectObject(),
-						  myPlugin.publicGetClusterIdentifier());
+						  myPlugin.publicGetMessageAddress());
       // find the theater org
 			
       Organization theater = plugin.findOrgWithRole(GLMTransConst.THEATER_MCC_ROLE);
@@ -525,7 +525,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
 						  parentTask,
 						  parentTask.getDirectObject(),
-						  myPlugin.publicGetClusterIdentifier());
+						  myPlugin.publicGetMessageAddress());
             
       // find the ISB org
       Organization isb = plugin.findOrgWithRole(GLMTransConst.C130_ROLE);
@@ -575,11 +575,11 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       new_task.addPreference (prefHelper.makeCostPreference (myPlugin.publicGetFactory(), myMaxCost));
 
       List aspects = new ArrayList ();
-      aspects.add (new AspectValue (AspectType.START_TIME, 
+      aspects.add (AspectValue.newAspectValue (AspectType.START_TIME, 
 				    (double) prefHelper.getReadyAt(new_task).getTime ()));
-      aspects.add (new AspectValue (AspectType.END_TIME,   
+      aspects.add (AspectValue.newAspectValue (AspectType.END_TIME,   
 				    (double) end.getTime ()));
-      aspects.add (new AspectValue (AspectType.COST, 0));
+      aspects.add (AspectValue.newAspectValue (AspectType.COST, 0));
 
       PlanElement c130_alloc = plugin.getAllocHelper().makeAllocation (myPlugin,
 								       myPlugin.publicGetFactory(),
@@ -614,7 +614,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
 						  parentTask,
 						  parentTask.getDirectObject(),
-						  myPlugin.publicGetClusterIdentifier());
+						  myPlugin.publicGetMessageAddress());
 
       Vector getDependencies = getDependencies();
 
@@ -677,9 +677,9 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       Organization middleOrg = plugin.findOrgForMiddleStep ();
 			
       List aspects = new ArrayList ();
-      aspects.add (new AspectValue (AspectType.START_TIME, 
+      aspects.add (AspectValue.newAspectValue (AspectType.START_TIME, 
 				    (double) plugin.getPrefHelper().getReadyAt(new_task).getTime ()));
-      aspects.add (new AspectValue (AspectType.END_TIME,   
+      aspects.add (AspectValue.newAspectValue (AspectType.END_TIME,   
 				    (double) best.getTime ()));
 
       plugin.removePrepsFromMiddleStep (new_task);
@@ -722,7 +722,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
 						  parentTask,
 						  parentTask.getDirectObject(),
-						  myPlugin.publicGetClusterIdentifier());
+						  myPlugin.publicGetMessageAddress());
 
       if (!getDependencies().isEmpty()) {
 	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);

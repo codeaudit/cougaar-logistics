@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -25,8 +25,8 @@ import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.plugin.util.PluginHelper;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -38,7 +38,7 @@ import org.cougaar.glm.ldm.Constants;
 
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.core.plugin.util.AllocationResultHelper;
+import org.cougaar.planning.plugin.util.AllocationResultHelper;
 
 import org.cougaar.glm.ldm.asset.Organization;
 
@@ -126,7 +126,7 @@ public class ExternalAllocator extends InventoryModule {
     /** build Allocation with an estimated alloc result */
     private Allocation buildAllocation(Task t, Asset a, Role r)
     {
-	return inventoryPlugin.getRootFactory().createAllocation(t.getPlan(), t, a, null, r);
+	return inventoryPlugin.getPlanningFactory().createAllocation(t.getPlan(), t, a, null, r);
     }
 
     private AllocationResult createPredictedAllocationResult(Task task) {
@@ -134,7 +134,7 @@ public class ExternalAllocator extends InventoryModule {
 	//from the predictor.
 	return new AllocationResultHelper(task, null).getAllocationResult(0.25, true);
 	// return PluginHelper.createEstimatedAllocationResult(task, 
-// 							    inventoryPlugin.getRootFactory(), 
+// 							    inventoryPlugin.getPlanningFactory(), 
 // 							    0.25, true);
     }
 

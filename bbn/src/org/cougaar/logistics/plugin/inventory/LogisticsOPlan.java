@@ -1,6 +1,6 @@
 /**
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@ package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.glm.plugins.ClusterOPlan;
 import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.util.UniqueObject;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -37,7 +37,7 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
   long arrivalInTheater;
   UID theUID;
 
-  public LogisticsOPlan(ClusterIdentifier id, Oplan op) {
+  public LogisticsOPlan(MessageAddress id, Oplan op) {
     super(id, op);
     setUID(UID.toUID(id.toString()+":"+op.getOplanId()+"/1"));
     arrivalInTheater = getStartTime();

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -73,6 +73,7 @@ import org.cougaar.glm.util.GLMPreference;
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
 import org.cougaar.lib.callback.*;
 
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.Expansion;
@@ -227,7 +228,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 							 LEVEL_6_TIME_HORIZON_DEFAULT));
 
       if (isInfoEnabled())
-	info (getBindingSite().getAgentIdentifier() + " created operating modes - " + 
+	info (getAgentIdentifier() + " created operating modes - " + 
 	      "level 2 time horizon is " + level2Horizon + 
 	      " and level 6 is " + level6Horizon);
 
@@ -766,7 +767,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     if (firstItem instanceof AggregateAsset) { // there is only one item...
       if (realAssets.size () > 1)
-	logger.error (getBindingSite().getAgentIdentifier() + " found aggregate, but skipping some expanded items???");
+	logger.error (getAgentIdentifier() + " found aggregate, but skipping some expanded items???");
 
       AggregateAsset aggAsset = (AggregateAsset) firstItem;
       GLMAsset baseAsset = (GLMAsset)aggAsset.getAsset();
@@ -881,7 +882,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     if (movabilityPG == null) {
       ccc = "XXX";
-      logger.warn (getBindingSite().getAgentIdentifier() + " " + asset +
+      logger.warn (getAgentIdentifier() + " " + asset +
 		   " was missing a movability PG, so could not determine cargo cat code.");
     }
     else {
@@ -1018,7 +1019,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     Task newtask = expandHelper.makeSubTask (ldmf,
 					     parentTask,
 					     directObject,
-					     getBindingSite().getAgentIdentifier());
+					     getAgentIdentifier());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
 
     // Next four lines create a Property Group for unit and attach it to all assets attached to task
@@ -1093,7 +1094,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       if (isDebugEnabled())
 	debug (getName() + ".expandAsset - expanding aggregate asset " + asset);
 
-      Vector items = glmAssetHelper.ExpandAsset(getDomainService().getFactory (), asset);
+      PlanningFactory ldmf = (PlanningFactory)
+        getDomainService().getFactory("planning");
+      Vector items = glmAssetHelper.ExpandAsset(ldmf, asset);
       if (isDebugEnabled())
 	debug (getName() + ".expandAsset - aggregate asset had " + items.size () + " items.");
       return items;

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,7 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.*;
 
+import org.cougaar.core.mts.*;
 import org.cougaar.glm.plugins.FileUtils;
 import org.cougaar.glm.plugins.ScheduleUtils;
 
@@ -36,20 +37,20 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.core.service.DomainService;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.Enumerator;
-import org.cougaar.core.plugin.util.PluginHelper;
+import org.cougaar.planning.plugin.util.PluginHelper;
 
 import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.plugin.LDMService;
+import org.cougaar.planning.service.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
 
@@ -159,7 +160,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	  }
       });
   //   System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
-//  		       "in org: " + getBindingSite().getAgentIdentifier().toString() +
+//  		       "in org: " + getAgentIdentifier().toString() +
 //    		       " this plugin is: " + this);
   }
 
@@ -179,11 +180,8 @@ public class InventoryPlugin extends ComponentPlugin {
     public long getCurrentTimeMillis() { return currentTimeMillis(); }
 
   public boolean publishAdd(Object o) {
-    boolean success = getBlackboardService().publishAdd(o);
-    if (!success && logger.isErrorEnabled()) {
-      logger.error (getMyOrganization() + " - publishAdd failed for " + o);
-    }
-    return success;
+    getBlackboardService().publishAdd(o);
+    return true;
   }
 
   public void publishAddExpansion(Expansion expansion) {
@@ -191,17 +189,19 @@ public class InventoryPlugin extends ComponentPlugin {
   }
 
     public boolean publishChange(Object o) {
-	return getBlackboardService().publishChange(o);
+	getBlackboardService().publishChange(o);
+        return true;
     }
 
     public boolean publishRemove(Object o) {
-	return getBlackboardService().publishRemove(o);
+	getBlackboardService().publishRemove(o);
+        return true;
     }
 
-    public RootFactory getRootFactory() { 
-	RootFactory rootFactory=null;
+    public PlanningFactory getPlanningFactory() { 
+	PlanningFactory rootFactory=null;
 	if(domainService != null) {
-		rootFactory = domainService.getFactory();
+		rootFactory = (PlanningFactory) domainService.getFactory("planning");
 	}
 	return rootFactory; 
     }
@@ -1065,7 +1065,7 @@ public class InventoryPlugin extends ComponentPlugin {
     Inventory inventory = null;
     levels = (double[])inventoryInitHash.get(item);
     if (levels != null) {
-      inventory=(Inventory)getRootFactory().createAsset("Inventory");
+      inventory=(Inventory)getPlanningFactory().createAsset("Inventory");
       NewLogisticsInventoryPG logInvPG = 
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       inventory.addOtherPropertyGroup(logInvPG);
@@ -1173,7 +1173,7 @@ public class InventoryPlugin extends ComponentPlugin {
       result = inv_file;
       //   } 
  //    else {
-//       result = getClusterSuffix(myOrganization.getClusterPG().getClusterIdentifier().toString()) +
+//       result = getClusterSuffix(myOrganization.getClusterPG().getMessageAddress().toString()) +
 // 	"_"+type.toLowerCase()+".inv";
     } else {
        result = getClusterSuffix(getAgentIdentifier().toString()) +
@@ -1203,7 +1203,7 @@ public class InventoryPlugin extends ComponentPlugin {
     ((NewTask) subtask).setPlan(parent.getPlan());
     // Task has not been expanded, create an expansion
     if (pe == null) {
-      RootFactory factory = getRootFactory();
+      PlanningFactory factory = getPlanningFactory();
       // Create workflow
       wf = (NewWorkflow)factory.newWorkflow();
       wf.setParentTask(parent);
@@ -1230,9 +1230,8 @@ public class InventoryPlugin extends ComponentPlugin {
     }
  
    // Publish new task
-    if (!publishAdd(subtask) && logger.isErrorEnabled()) {
-      logger.error("publishAddToExpansion fail to publish task "+taskUtils.taskDesc(subtask));
-    }
+    publishAdd(subtask);
+
     if((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
        (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
       newRefills.add(subtask);
@@ -1415,7 +1414,7 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
 
-  public ClusterIdentifier getClusterId() {
+  public MessageAddress getClusterId() {
     return getAgentIdentifier();
   }
 

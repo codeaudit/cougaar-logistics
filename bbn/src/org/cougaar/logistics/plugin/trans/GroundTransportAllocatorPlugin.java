@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -233,8 +233,8 @@ public class GroundTransportAllocatorPlugin extends TransportAllocatorPlugin {
 		 " - best " + to + " confidence " + confidence);
 
 	AspectValue [] values = new AspectValue [2];
-	values[0] = new AspectValue (AspectType.START_TIME, (double)from.getTime());
-	values[1] = new AspectValue (AspectType.END_TIME,   (double)to.getTime());
+	values[0] = AspectValue.newAspectValue (AspectType.START_TIME, from.getTime());
+	values[1] = AspectValue.newAspectValue (AspectType.END_TIME,   to.getTime());
 
 	PlanElement pe = allocHelper.makeAllocation(this,
 						    ldmf, realityPlan, t, a, 

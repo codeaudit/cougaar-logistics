@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 
 import org.cougaar.glm.callback.GLMLocationListener;
 import org.cougaar.glm.callback.GLMLocationCallback;
@@ -80,7 +80,7 @@ public class LocatorImpl implements Locator {
   protected double MAX_GROUND_DISTANCE;
   private static double EARTH_RADIUS = Distance.newNauticalMiles (3437.75d).getMiles(); // originally nmi
 
-  public void setFactory (RootFactory ldmf) {
+  public void setFactory (PlanningFactory ldmf) {
     routeFinder = new RouteFinder (logger);
     routeFinder.setFactory (ldmf);
 

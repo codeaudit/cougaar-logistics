@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -21,10 +21,10 @@
  
 package org.cougaar.logistics.servlet;
 
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 
-import org.cougaar.core.domain.RootFactory;
-import org.cougaar.core.domain.LDMServesPlugin;
+import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.ldm.LDMServesPlugin;
 
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.BlackboardQueryService;
@@ -32,7 +32,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.SchedulerService;
 
-import org.cougaar.core.servlet.BlackboardServletSupport;
+import org.cougaar.planning.servlet.BlackboardServletSupport;
 
 import org.cougaar.util.ConfigFinder;
 
@@ -51,13 +51,13 @@ import org.cougaar.util.ConfigFinder;
 public class ConditionSupport extends BlackboardServletSupport {
   public ConditionSupport(
       String path,
-      ClusterIdentifier agentId,
+      MessageAddress agentId,
       BlackboardQueryService blackboardQuery,
       NamingService ns,
       LoggingService logger,
       BlackboardService blackboard,
       ConfigFinder configFinder,
-      RootFactory ldmf,
+      PlanningFactory ldmf,
       LDMServesPlugin ldm,
       SchedulerService scheduler,
       String conditionName) {

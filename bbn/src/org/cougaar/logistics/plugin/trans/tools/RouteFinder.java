@@ -1,3 +1,23 @@
+/*
+ * <copyright>
+ *  Copyright 2003 BBNT Solutions, LLC
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ */
 package org.cougaar.logistics.plugin.trans.tools;
 
 import org.cougaar.glm.ldm.asset.GLMAsset;
@@ -24,7 +44,7 @@ import org.cougaar.logistics.plugin.seanet.Node;
 
 import java.util.*;
 
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.util.log.Logger;
 
 public class RouteFinder {
@@ -33,7 +53,7 @@ public class RouteFinder {
   int numRoutes = 0;
   int numNodes = 0;
   int numLinks = 0;
-  RootFactory factory;
+  PlanningFactory factory;
   Logger logger;
 
   public RouteFinder (Logger logger) { 
@@ -41,7 +61,7 @@ public class RouteFinder {
     this.logger = logger;
   }
 
-  public void setFactory (RootFactory factory) { this.factory = factory; }
+  public void setFactory (PlanningFactory factory) { this.factory = factory; }
 
   /** caches routes after getting them from the handy seanet facility! */
   public Distance getDistance (GeolocLocation from, GeolocLocation to) { 

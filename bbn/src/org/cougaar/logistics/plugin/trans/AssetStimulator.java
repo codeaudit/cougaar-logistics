@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ import org.cougaar.lib.callback.UTILAssetCallback;
 import org.cougaar.lib.callback.UTILAssetListener;
 import org.cougaar.glm.parser.GLMTaskParser;
 import org.cougaar.glm.util.AssetUtil;
-import org.cougaar.core.domain.LDMServesPlugin;
+import org.cougaar.planning.ldm.LDMServesPlugin;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.PhysicalAsset;
 import org.cougaar.planning.ldm.plan.Schedule;

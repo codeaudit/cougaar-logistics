@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -344,9 +344,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @return Task The new Projection Refill
    **/
   private Task createProjectionRefill(long start, long end,
-                                      double demand, LogisticsInventoryPG thePG) {
+                                      double demand,
+                                      LogisticsInventoryPG thePG) {
     //create a projection refill task
-    NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
+    NewTask newRefill = inventoryPlugin.getPlanningFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(thePG.getResource());
     newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
@@ -368,7 +369,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
                                                LogisticsInventoryPG level2PG,
                                                Inventory level2Inv) {
     //create a level two projection refill task
-    NewTask newAggRefill = inventoryPlugin.getRootFactory().newTask();
+    NewTask newAggRefill = inventoryPlugin.getPlanningFactory().newTask();
     newAggRefill.setVerb(Constants.Verb.ProjectSupply);
     //TODO - for now physical pg can stay the same as the demand task
     //physical pg needs to represent demand
@@ -457,7 +458,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     points.addElement(latest);
     ScoringFunction timeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
-    return inventoryPlugin.getRootFactory().
+    return inventoryPlugin.getPlanningFactory().
       newPreference(aspectType, timeSF);
   }
 
@@ -468,18 +469,18 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    **/
   private Preference createRefillRatePreference(double refill_qty, long bucketMillis) {
     double ratevalue = refill_qty / (bucketMillis / getTimeUtils().MSEC_PER_DAY);
-    AspectRate bestAV;
+    AspectValue bestAV;
     //highAV could be bumped to more than refill_qty + 1 if needed
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-      bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              FlowRate.newGallonsPerDay(ratevalue));
+      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
+                                          FlowRate.newGallonsPerDay(ratevalue));
     } else {
-      bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              CountRate.newEachesPerDay(ratevalue));
+      bestAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
+                                          CountRate.newEachesPerDay(ratevalue));
     }
     ScoringFunction qtySF = ScoringFunction.
 	createStrictlyAtValue(bestAV);
-    return  inventoryPlugin.getRootFactory().
+    return  inventoryPlugin.getPlanningFactory().
 	newPreference(AlpineAspectType.DEMANDRATE, qtySF);
   }
 
@@ -489,7 +490,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @return PrepositionalPhrase  A new prep phrase for the task
    **/
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
-    NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().
+    NewPrepositionalPhrase newpp = inventoryPlugin.getPlanningFactory().
 	newPrepositionalPhrase();
     newpp.setPreposition(prep);
     newpp.setIndirectObject(io);

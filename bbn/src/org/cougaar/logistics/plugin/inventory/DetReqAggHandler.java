@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -25,8 +25,8 @@ import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.blackboard.CollectionSubscription;
-import org.cougaar.core.domain.RootFactory;
-import org.cougaar.core.plugin.util.PluginHelper;
+import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.planning.ldm.plan.*;
@@ -126,9 +126,9 @@ public class DetReqAggHandler extends InventoryModule{
       maxEndTime = Math.max(maxEndTime, getTaskUtils().getEndTime(parent));
       AllocationResult estAR =
 	PluginHelper.createEstimatedAllocationResult(parent, 
-                                                     inventoryPlugin.getRootFactory(), 
+                                                     inventoryPlugin.getPlanningFactory(), 
                                                      1.0, true);
-      Aggregation agg = inventoryPlugin.getRootFactory().
+      Aggregation agg = inventoryPlugin.getPlanningFactory().
         createAggregation(parent.getPlan(), parent,
                           composition, estAR);
       composition.addAggregation(agg);      
@@ -149,7 +149,7 @@ public class DetReqAggHandler extends InventoryModule{
    *  @param parent The Top maintain inventory task
    **/
   private void createTopMIExpansion(Task parent) {
-    RootFactory factory = inventoryPlugin.getRootFactory();
+    PlanningFactory factory = inventoryPlugin.getPlanningFactory();
     // Create workflow
     NewWorkflow wf = (NewWorkflow)factory.newWorkflow();
     wf.setParentTask(parent);
@@ -157,7 +157,7 @@ public class DetReqAggHandler extends InventoryModule{
     // Build Expansion
     AllocationResult estAR =
       PluginHelper.createEstimatedAllocationResult(parent, 
-                                                   inventoryPlugin.getRootFactory(), 
+                                                   inventoryPlugin.getPlanningFactory(), 
                                                    0.25, true);
     Expansion expansion = factory.createExpansion(parent.getPlan(), parent, wf, estAR);
     // Publish Expansion
@@ -170,7 +170,7 @@ public class DetReqAggHandler extends InventoryModule{
      a subtask of the aggregated determine requirements tasks.
   **/
   private NewTask createMILTask(Task parent, Inventory inventory) {
-    NewTask subtask = inventoryPlugin.getRootFactory().newTask();
+    NewTask subtask = inventoryPlugin.getPlanningFactory().newTask();
     subtask.setDirectObject(inventory);
     subtask.setParentTask(parent);
     subtask.setVerb(new Verb(Constants.Verb.MAINTAININVENTORY));
@@ -189,8 +189,8 @@ public class DetReqAggHandler extends InventoryModule{
      rescinded only if all the parent tasks are rescinded.
   **/
   public NewMPTask createAggTask(Collection parents) {
-    NewMPTask mpTask = inventoryPlugin.getRootFactory().newMPTask();
-    NewComposition composition = inventoryPlugin.getRootFactory().newComposition();
+    NewMPTask mpTask = inventoryPlugin.getPlanningFactory().newMPTask();
+    NewComposition composition = inventoryPlugin.getPlanningFactory().newComposition();
     composition.setIsPropagating(false);
     mpTask.setComposition(composition);
     composition.setCombinedTask(mpTask);
@@ -248,9 +248,9 @@ public class DetReqAggHandler extends InventoryModule{
   private void setStartTimePreference(NewTask mpTask, long newStartTime) {
     ScoringFunction sf;
     Preference pref;
-    sf = ScoringFunction.createStrictlyAtValue(new AspectValue(AspectType.START_TIME,
+    sf = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.START_TIME,
 							       newStartTime));
-    pref = inventoryPlugin.getRootFactory().newPreference(AspectType.START_TIME, sf);
+    pref = inventoryPlugin.getPlanningFactory().newPreference(AspectType.START_TIME, sf);
     mpTask.setPreference(pref);
     //    mpTask.setCommitmentDate(new Date(newStartTime));
   }
@@ -258,9 +258,9 @@ public class DetReqAggHandler extends InventoryModule{
   private void setEndTimePreference(NewTask mpTask, long newEndTime) {
     ScoringFunction sf;
     Preference pref;
-    sf = ScoringFunction.createStrictlyAtValue(new AspectValue(AspectType.END_TIME,
+    sf = ScoringFunction.createStrictlyAtValue(AspectValue.newAspectValue(AspectType.END_TIME,
 							       newEndTime));
-    pref = inventoryPlugin.getRootFactory().newPreference(AspectType.END_TIME, sf);
+    pref = inventoryPlugin.getPlanningFactory().newPreference(AspectType.END_TIME, sf);
     mpTask.setPreference(pref);
   }
   

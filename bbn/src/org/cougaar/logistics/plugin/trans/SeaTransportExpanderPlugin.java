@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -29,10 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
-
-import org.cougaar.core.domain.LDMServesClient;
-import org.cougaar.core.domain.LDMServesPlugin;
-import org.cougaar.core.plugin.PluginBindingSite;
 
 import org.cougaar.glm.ldm.Constants;
 

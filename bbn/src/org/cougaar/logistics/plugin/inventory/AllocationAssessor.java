@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
-import org.cougaar.core.plugin.util.PluginHelper;
+import org.cougaar.planning.plugin.util.PluginHelper;
 
 import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.AllocationResult;
@@ -354,7 +354,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 		// it has not previously had a deficit
 		createBestAllocation(task, inv, thePG);
 	    } else {
-		//this project withdraw has never had a deficit and does not end during this bucket`
+		//this project withdraw has never had a deficit and does not end during this bucket
 		//  do nothing -- hope for createBestAllocation
 	    }
 	}
@@ -404,8 +404,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           AllocPhase aPhase = (AllocPhase) phasesIt.next();
           AspectValue thisPhase[] = new AspectValue[2];
           rollupQty = rollupQty + aPhase.amount;
-          thisPhase[0] = new AspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
-          thisPhase[1] = new AspectValue(AspectType.QUANTITY, aPhase.amount);
+          thisPhase[0] = AspectValue.newAspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
+          thisPhase[1] = AspectValue.newAspectValue(AspectType.QUANTITY, aPhase.amount);
           phasedResults.add(thisPhase);
         }
         rollups[1] = rollupQty;
@@ -419,8 +419,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           // take the min startBucket for the rollup start time
           if (aPhase.startBucket < rollupStart) { rollupStart = aPhase.startBucket;}
           rollupQty = rollupQty + ((aPhase.endBucket - aPhase.startBucket) * aPhase.amount);
-          thisPhase[0] = new AspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
-          thisPhase[1] = new AspectValue(AspectType.START_TIME, thePG.convertBucketToTime(aPhase.startBucket));
+          thisPhase[0] = AspectValue.newAspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
+          thisPhase[1] = AspectValue.newAspectValue(AspectType.START_TIME, thePG.convertBucketToTime(aPhase.startBucket));
           thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis(), thePG);
           // add this phase to our phased results list
           phasedResults.add(thisPhase);
@@ -430,7 +430,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         rollups[2] = dav.getValue();
       }
       
-      AllocationResult estimatedResult = inventoryPlugin.getRootFactory().
+      AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
         newPhasedAllocationResult(0.9, success, aspectTypes, rollups, (new Vector(phasedResults)).elements());
       compareResults(estimatedResult, task, inv, thePG);
     }
@@ -473,7 +473,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         //bucket of the end time pref is not equal to or past the countedBucket
 	//Since endTime is not inclusive of the bucket it falls in decrement by 1
         // countedBucket is the firstCountedProjection - if the projection spans both
-        //the uncounted and counted windows - don't blindly allocate it here ... it should
+        //the uncounted and counted windows - dont blindly allocate it here ... it should
         // be picked up by the counted projections allocation method.
         if ((endTimePref != Double.NaN) &&
 	    ((thePG.convertTimeToBucket((long)endTimePref) - 1) < countedBucket)) {
@@ -498,7 +498,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   private void createBestAllocation(Task withdraw, Inventory inv, 
                                     LogisticsInventoryPG thePG) {
     AllocationResult estimatedResult = PluginHelper.
-      createEstimatedAllocationResult(withdraw, inventoryPlugin.getRootFactory(), 
+      createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(), 
                                       0.9, true);
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
@@ -516,7 +516,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                     Inventory inv, LogisticsInventoryPG thePG) {
     int aspectTypes[] = {AspectType.END_TIME, AspectType.QUANTITY};
     double results[] = {(double) end, getTaskUtils().getPreference(withdraw, AspectType.QUANTITY)};
-    AllocationResult estimatedResult = inventoryPlugin.getRootFactory().
+    AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
       newAllocationResult(0.9, true, aspectTypes, results);
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
@@ -540,11 +540,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  results = new double[]{failed_time, failed_time, qty};
       }
       AllocationResult failed = 
-	  inventoryPlugin.getRootFactory().newAllocationResult(0.9, false, 
+	  inventoryPlugin.getPlanningFactory().newAllocationResult(0.9, false, 
 							     aspectTypes, results);
       PlanElement prevPE = task.getPlanElement();
       if (prevPE == null) {
-	  Allocation alloc = inventoryPlugin.getRootFactory().
+	  Allocation alloc = inventoryPlugin.getPlanningFactory().
 	      createAllocation(task.getPlan(), task, inventory, 
 			       failed, myRole);
 	  inventoryPlugin.publishAdd(alloc);
@@ -570,7 +570,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     PlanElement pe = withdraw.getPlanElement();
     AllocationResult ar = pe.getEstimatedResult();
     AllocationResult estimatedResult = PluginHelper.
-        createEstimatedAllocationResult(withdraw, inventoryPlugin.getRootFactory(), 
+        createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(), 
                                         0.9, true);
     if (ar == null || !ar.equals(estimatedResult)) {
       pe.setEstimatedResult(estimatedResult);
@@ -583,7 +583,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                              Inventory inv, LogisticsInventoryPG thePG) {
     PlanElement prevPE = withdraw.getPlanElement();
     if (prevPE == null) {
-      Allocation alloc = inventoryPlugin.getRootFactory().
+      Allocation alloc = inventoryPlugin.getPlanningFactory().
         createAllocation(withdraw.getPlan(), withdraw, inv, 
                          estimatedResult, myRole);
       inventoryPlugin.publishAdd(alloc);
@@ -610,16 +610,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   }
 
   public AspectValue getDemandRateAV(double amount, long millis, LogisticsInventoryPG thePG) {
-    AspectValue demandRateAV = null;
+    AspectValue demandRateAV = null; 
     Duration dur = new Duration(millis, Duration.MILLISECONDS);
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
       Volume vol = new Volume(amount, Volume.GALLONS);
-      demandRateAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                                    new FlowRate(vol, dur));
+      demandRateAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
+                                                new FlowRate(vol, dur));
+
     } else {
       Count cnt = new Count(amount, Count.EACHES);
-      demandRateAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                                    new CountRate(cnt, dur));
+      demandRateAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, 
+                                                new CountRate(cnt, dur));
     }
     return demandRateAV;
   }

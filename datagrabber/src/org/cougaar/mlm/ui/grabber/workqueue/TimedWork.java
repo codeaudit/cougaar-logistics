@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 BBNT Solutions, LLC
+ *  Copyright 2002-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@ package org.cougaar.mlm.ui.grabber.workqueue;
 
 /**
  * Defines a timed piece of work to do
- * @author Gordon Vidaver; last modified by: $Author: gvidaver $
+ * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 01/11/02
  **/

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
  *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- *  PERFORMANCE OF THE COUGAAR SOFTWARE.q
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
  
@@ -44,8 +44,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
 import javax.swing.Box;
 import javax.swing.JFileChooser;
-import javax.swing.SwingUtilities;
-import javax.swing.event.MouseInputAdapter;
 
 import java.awt.Container;
 import java.awt.BorderLayout;
@@ -56,10 +54,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
-import java.awt.Cursor;
-import java.awt.Component;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -92,12 +86,6 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
 public class InventoryUIFrame extends JFrame 
     implements ActionListener,InventorySelectionListener
 {
-
-
-    static final Cursor waitCursor    =
-	Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR);
-    static final Cursor defaultCursor =
-	Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
     InventoryDataSource dataSource;
     private Container contentPane;
@@ -313,49 +301,13 @@ public class InventoryUIFrame extends JFrame
 	    fileChooser.setSelectedFile(new File(fileID));
 	}
 	*/
-	fileChooser.setMultiSelectionEnabled(true);
 	int retval = fileChooser.showOpenDialog(this);
-	if(retval == fileChooser.APPROVE_OPTION) {   
-	    File[] openFiles = fileChooser.getSelectedFiles();
-	    timeConsumingTaskStart(this);
-	    try {
-		Thread openXMLThread = new Thread(new OpenXMLRunnable(openFiles));
-		openXMLThread.start();
-	    }
-	    catch(Exception e) {
-		e.printStackTrace();
-	    }
-	}
-    }
-
-
-    public void doOpenXML(File[] openFiles) {
-	InventoryFileManager fm=null;
-	String invXML="";
-
-	try {
-	    SwingUtilities.invokeAndWait(new TaskStartRunnable(this));
-	}
-	catch(Exception e) {
-	    e.printStackTrace();
-	}
-
-
-	if(openFiles.length > 0) {
-	    if(dataSource instanceof InventoryFileManager)  {
-		fm = (InventoryFileManager) dataSource;
-	    }
-	    else {
-		fm = new InventoryFileManager(this);
-		dataSource = fm;
-	    }
-	}
-	for(int i=0; i < openFiles.length; i++) {
-	    File openFile = openFiles[i];
-	    invXML="";
+	if(retval == fileChooser.APPROVE_OPTION) {
+	    File openFile = fileChooser.getSelectedFile();
+	    String invXML="";
 	    try{
 		BufferedReader br = new BufferedReader(new FileReader(openFile));
-		
+
 		String nextLine = br.readLine();
 		while(nextLine != null) {
 		    invXML = invXML + nextLine + "\n";
@@ -366,25 +318,18 @@ public class InventoryUIFrame extends JFrame
 	    catch(IOException ioe) {
 		throw new RuntimeException(ioe);
 	    }
-	    
-		inventory = parser.parseString(invXML);
-		fm.addItem(inventory,invXML);
-	}
-	try {
-	    SwingUtilities.invokeAndWait(new FlushXMLToScreenRunnable(invXML,openFiles,fm));
-	}
-	catch(Exception e) {
-	    e.printStackTrace();
-	}
-	fileChooser.setMultiSelectionEnabled(false);
-    }
 
-    public void flushXMLToScreen(String invXML,
-				 File[] openFiles,
-				 InventoryFileManager fm) {
-	if((openFiles.length > 0) &&
-	   (inventory != null)) {
+	    InventoryFileManager fm;
+	    if(dataSource instanceof InventoryFileManager)  {
+		fm = (InventoryFileManager) dataSource;
+	    }
+	    else {
+		fm = new InventoryFileManager(this);
+		dataSource = fm;
+	    }
+	    inventory = parser.parseString(invXML);
 	    editPane.setText(invXML);
+	    fm.addItem(inventory,invXML);
 	    Vector orgs = dataSource.getOrgNames();
 	    String[] fileType = dataSource.getSupplyTypes();
 	    selector.initializeComboBoxes(orgs,fileType);
@@ -392,45 +337,7 @@ public class InventoryUIFrame extends JFrame
 	    selector.setAssetNames(assetNames);
 	    selector.setSelectedOrgAsset(inventory.getOrg(),fm.getFullItemName(inventory));
 	    multiChart.setData(inventory);	    
-	}	
-	timeConsumingTaskEnd(this);
-    }
-
-
-    public static void timeConsumingTaskStart(Component c) {
-	JFrame frame = null;
-	if (c != null)
-	    frame = (JFrame) SwingUtilities.getRoot(c);
-	if (frame == null)
-	    return;
-	timeConsumingTaskStart(frame);
-    }
-
-    public static void timeConsumingTaskStart(JFrame frame) {
-	Component glass = frame.getGlassPane();
-	glass.setCursor(waitCursor);
-	glass.addMouseListener(new DoNothingMouseListener());
-	glass.setVisible(true);
-    }
-
-    public static void timeConsumingTaskEnd(Component c) {
-	JFrame frame = null;
-	if (c != null)
-	    frame = (JFrame) SwingUtilities.getRoot(c);
-	if (frame == null) 
-	    return;
-	timeConsumingTaskEnd(frame);
-    }
-
-    public static void timeConsumingTaskEnd(JFrame frame) {
-	Component glass = frame.getGlassPane();
-	MouseListener[] mls = 
-	    (MouseListener[])glass.getListeners(MouseListener.class);
-	for (int i = 0; i < mls.length; i++)
-	    if (mls[i] instanceof DoNothingMouseListener)
-		glass.removeMouseListener(mls[i]);
-	glass.setCursor(defaultCursor);
-	glass.setVisible(false);
+	}		
     }
 
     protected void connectToServlet() {
@@ -510,75 +417,6 @@ public class InventoryUIFrame extends JFrame
 	}
 	
     }
-
-    protected class OpenXMLRunnable implements Runnable {
-
-	protected File[] openFiles;
-
-	public OpenXMLRunnable(File[] filesToOpen) {
-	    openFiles = filesToOpen;
-	}
-
-	public void run() {
-	    doOpenXML(openFiles);
-	}
-    }
-
-    protected class TaskStartRunnable implements Runnable {
-
-	InventoryUIFrame frame;
-
-	public TaskStartRunnable(InventoryUIFrame aFrame) {
-	    frame = aFrame;
-	}
-
-	public void run() {
-	    timeConsumingTaskStart(frame);
-	}
-    }
-    
-    protected class FlushXMLToScreenRunnable implements Runnable {
-
-	protected File[] openFiles;
-	protected String invXML;
-	protected InventoryFileManager fm;
-
-	public FlushXMLToScreenRunnable(String xmlStr,
-					File[] filesToOpen,
-					InventoryFileManager fileMgr) {
-	    invXML = xmlStr;
-	    openFiles = filesToOpen;
-	    fm = fileMgr;
-	}
-
-	public void run() {
-	    flushXMLToScreen(invXML,openFiles,fm);
-	}
-    }
-
-  static  class DoNothingMouseListener extends MouseInputAdapter {
-    public void mouseClicked(MouseEvent e) {
-      e.consume();
-    }
-    public void mouseDragged(MouseEvent e) {
-      e.consume();
-    }
-    public void mouseEntered(MouseEvent e) {
-      e.consume();
-    }
-    public void mouseExited(MouseEvent e) {
-      e.consume();
-    }
-    public void mouseMoved(MouseEvent e) {
-      e.consume();
-    }
-    public void mousePressed(MouseEvent e) {
-      e.consume();
-    }
-    public void mouseReleased(MouseEvent e) {
-      e.consume();
-    }
-  }
 
   public static void main(String[] args)
   {

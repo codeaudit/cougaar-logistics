@@ -1,9 +1,12 @@
 /*
  * <copyright>
+ *  Copyright 2003 BBNT Solutions, LLC
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- *
+ * 
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -17,9 +20,6 @@
  */
 package org.cougaar.logistics.plugin.manager;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-
 import org.cougaar.core.adaptivity.ConstrainingClause;
 import org.cougaar.core.adaptivity.ConstraintOperator;
 import org.cougaar.core.adaptivity.ConstraintPhrase;
@@ -27,14 +27,10 @@ import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
 import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.PolicyKernel;
 
-import org.cougaar.core.util.XMLize;
-import org.cougaar.core.util.XMLizable;
-
-
 /**
  * Relay used to notify logistics community of changes in load status
  **/
-public class FallingBehindPolicy extends InterAgentOperatingModePolicy implements XMLizable {
+public class FallingBehindPolicy extends InterAgentOperatingModePolicy {
   public static String FALLING_BEHIND = "FallingBehind";
 
   public FallingBehindPolicy(double fallingBehindValue) {
@@ -57,18 +53,6 @@ public class FallingBehindPolicy extends InterAgentOperatingModePolicy implement
       new PolicyKernel(ConstrainingClause.TRUE_CLAUSE, omConstraints);
 
     setPolicyKernel(policyKernel);
-  }
-
-  // XMLizable interface
-  /** getXML - add the Alert to the document as an XML Element and return the
-   *
-   * BOZO - not currently handling XML
-   *
-   * @param doc Document to which XML Element will be added
-   * @return Element
-   **/
-  public Element getXML(Document doc) {
-    return XMLize.getPlanObjectXML(this, doc);
   }
 
   /**

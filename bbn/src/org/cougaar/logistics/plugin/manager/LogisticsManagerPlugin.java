@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
-import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
@@ -229,7 +229,7 @@ public class LogisticsManagerPlugin extends SimplePlugin {
         new FallingBehindPolicy(getFallingBehindValue());
       fallingBehindPolicy.setUID(myUIDService.nextUID());
       String community = (String) iterator.next();
-      fallingBehindPolicy.setTarget(new AttributeBasedAddress(community,
+      fallingBehindPolicy.setTarget(AttributeBasedAddress.getAttributeBasedAddress(community,
                                                               "Role",
                                                               "Member"));
       publishAdd(fallingBehindPolicy);

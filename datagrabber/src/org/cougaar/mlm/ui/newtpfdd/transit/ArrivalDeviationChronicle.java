@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@ import org.cougaar.mlm.ui.newtpfdd.transit.UnitChronicle.UnitTally;
 /**
  * Holds a Chronicle of data about the location of a unit's arrival deviation
  *
- * @author Benjamin Lubin; last modified by $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by $Author: mthome $
  *
  * @since 12/02/00
  */

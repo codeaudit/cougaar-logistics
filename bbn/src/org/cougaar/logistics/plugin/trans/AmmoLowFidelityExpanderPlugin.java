@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -21,8 +21,6 @@
 package org.cougaar.logistics.plugin.trans;
 
 import java.util.*;
-
-import org.cougaar.core.plugin.PluginBindingSite;
 
 import org.cougaar.glm.ldm.Constants;
 
@@ -122,7 +120,7 @@ public class AmmoLowFidelityExpanderPlugin extends UTILExpanderPluginAdapter {
     Task newtask = expandHelper.makeSubTask (ldmf,
 					     parentTask,
 					     directObject,
-					     ((PluginBindingSite)getBindingSite()).getAgentIdentifier());
+					     getAgentIdentifier());
     glmPrepHelper.removePrepNamed(newtask, Constants.Preposition.OFTYPE);
     // mark the new task as an aggregate low fi task
     glmPrepHelper.addPrepToTask (newtask, 

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -45,8 +45,6 @@ import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.Workflow;
 import org.cougaar.planning.ldm.asset.AssetGroup;
-
-import org.cougaar.core.plugin.PluginBindingSite;
 
 import org.cougaar.glm.ldm.Constants;
 
@@ -335,6 +333,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	  numMilvans++;
 	  if (isWarnEnabled())
 	      warn ("Got mass that was zero : " + massInSTons);
+	  massInSTons += 0.1;
       }
       double tonsLeft = massInSTons;
       
@@ -378,9 +377,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Date endOfRange = (Date) cal.getTime();
 
     Enumeration validRanges = 
-      endDatePref.getScoringFunction().getValidRanges (new TimeAspectValue (AspectType.END_TIME,
+      endDatePref.getScoringFunction().getValidRanges (TimeAspectValue.create (AspectType.END_TIME,
 									    0l),
-						       new TimeAspectValue (AspectType.END_TIME,
+						       TimeAspectValue.create (AspectType.END_TIME,
 									    endOfRange));
     return validRanges;
   }
@@ -434,7 +433,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     wantConfidence = true;
     handleTask(t);
     Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
-    double ratePerSec = prefHelper.getPreferenceBestValue (pref);
+    AspectValue ratePerSec = pref.getScoringFunction().getBest().getAspectValue();
     if (isInfoEnabled ()) 
       info (getName () + ".handleTask - task " + t.getUID() + " had p.e. " + t.getPlanElement().getUID());
     if (t.getPlanElement () instanceof Expansion) {
@@ -450,12 +449,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       warn (getName () + ".handleTask - task " + t.getUID() + " had no p.e.???");
   }
 
-  protected void addToEstimatedAR (PlanElement exp, double rate) {
+  protected void addToEstimatedAR (PlanElement exp, AspectValue rate) {
     AllocationResult estAR = exp.getEstimatedResult ();
     AspectValue [] aspectValues = estAR.getAspectValueResults();
     AspectValue [] copy = new AspectValue [aspectValues.length+1];
     System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
-    copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, rate);
+    copy[aspectValues.length] = rate;
 
     AllocationResult replacement =  
       ldmf.newAVAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
@@ -497,21 +496,21 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
 	//        double prefValue = getScaledRate (cpe); 
 	Task task = cpe.getTask();
-	double prefValue = 
-	  task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
+	AspectValue prefRate = 
+	  task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue();
 	
         AspectValue[] aspectValues = cpe.getEstimatedResult().getAspectValueResults();
 
 	AspectValue [] copy = new AspectValue [aspectValues.length+1];
 	System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
-	copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, prefValue);
+	copy[aspectValues.length] = prefRate;
 
 	// fix start time to echo start time preference
 	for (int i = 0; i < copy.length; i++) {
 	  AspectValue value = copy[i];
 	  if (value.getAspectType () == AspectType.START_TIME) {
 	    Date preferredStart = prefHelper.getReadyAt (task);
-	    copy[i] = new TimeAspectValue (AspectType.START_TIME, preferredStart);
+	    copy[i] = AspectValue.newAspectValue (AspectType.START_TIME, preferredStart);
 	    break;
 	  }
 	}
@@ -529,9 +528,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	blackboard.publishChange(cpe);
       }
     }
-    else if (!cpe.getTask().getSource ().equals (((PluginBindingSite)getBindingSite()).getAgentIdentifier())) {
-      error ("ERROR! " + getName () + 
-	     " : "     + cpe.getTask ().getUID () + 
+    else if (!cpe.getTask().getSource().equals(getAgentIdentifier())) {
+      error ("ERROR! " + getName() + 
+	     " : "     + cpe.getTask().getUID() + 
 	     " has a null reported allocation.");
     }
   }

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@ package org.cougaar.logistics.plugin.trans.tools;
 import java.util.Collection;
 import java.util.Set;
 
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 
 import org.cougaar.glm.callback.GLMLocationListener;
 
@@ -51,7 +51,7 @@ public interface Locator extends GLMLocationListener {
 
   int getNumKnownLocations ();
 
-  void setFactory (RootFactory ldmf);
+  void setFactory (PlanningFactory ldmf);
 
   TransportationRoute getRoute (GeolocLocation fromGeoloc, GeolocLocation toGeoloc, 
 				//				boolean fromIsPOE, boolean toIsPOD,

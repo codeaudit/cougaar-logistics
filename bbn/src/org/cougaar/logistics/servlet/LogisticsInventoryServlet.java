@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
  *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- *  PERFORMANCE OF THE COUGAAR SOFTWARE.q
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
  
@@ -30,7 +30,7 @@ import java.util.Vector;
 import java.util.Date;
 
 
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.core.blackboard.Subscription;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -432,14 +432,14 @@ class RolePredicate implements UnaryPredicate {
   
 class InventoryPredicate implements UnaryPredicate {
   String desiredAssetName; // nomenclature:type id
-  ClusterIdentifier myClusterId;
+  MessageAddress myClusterId;
   LoggingService logger;
     
   public InventoryPredicate(String desiredAssetName, 
 			    String myCluster,
 			    LoggingService aLogger) {
     this.desiredAssetName = desiredAssetName;
-    myClusterId = new ClusterIdentifier(myCluster);
+    myClusterId = MessageAddress.getMessageAddress(myCluster);
     logger = aLogger;
   }
     

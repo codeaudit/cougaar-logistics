@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@ import java.util.HashMap;
  * and takes it off the list of available threads.
  *
  * </pre>
- * @author Gordon Vidaver; last modified by: $Author: tom $
+ * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 2/01/01
  **/

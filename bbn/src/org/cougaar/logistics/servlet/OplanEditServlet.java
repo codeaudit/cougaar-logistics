@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -31,8 +31,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.BlackboardClient;
+import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.util.UID;
@@ -60,7 +61,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
   //private HashSet changedOplans = new HashSet();
 
 
-  protected ClusterIdentifier agentId;
+  protected MessageAddress agentId;
 
   protected BlackboardService blackboard;
 
@@ -120,14 +121,14 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     this.blackboard = blackboard;
   }
 
-  // aquire services:
-  public void load() {
-    // FIXME need AgentIdentificationService
-    org.cougaar.core.plugin.PluginBindingSite pbs =
-      (org.cougaar.core.plugin.PluginBindingSite) bindingSite;
-    this.agentId = pbs.getAgentIdentifier();
-
-    super.load();
+  public final void setAgentIdentificationService(AgentIdentificationService ais) {
+    MessageAddress an;
+    if ((ais != null) &&
+        ((an = ais.getMessageAddress()) instanceof MessageAddress)) {
+      this.agentId = (MessageAddress) an;
+    } else {
+      // FIXME: Log something?
+    }
   }
 
   // release services:
@@ -144,7 +145,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     return "/editOplan";
   }
 
-  protected ClusterIdentifier getAgentID() {
+  protected MessageAddress getAgentID() {
     return agentId;
   }
 
@@ -568,11 +569,11 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       orgActivity.setTimeSpan(modifiedOrgActivity.getTimeSpan());
 
       /*
-	boolean status = blackboard.publishChange(orgActivity);
-	System.out.println("Publish status of " + status + " for " + orgActivity);
-	System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
-	orgActivity.getTimeSpan().getStartDate() + " " +
-	orgActivity.getTimeSpan().getEndDate());
+      blackboard.publishChange(orgActivity);
+      System.out.println("Publish status of " + status + " for " + orgActivity);
+      System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
+                         orgActivity.getTimeSpan().getStartDate() + " " +
+                         orgActivity.getTimeSpan().getEndDate());
       */
     }
     /*

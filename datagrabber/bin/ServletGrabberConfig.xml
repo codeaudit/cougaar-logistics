@@ -10,8 +10,7 @@
   <ViewRefresh>120</ViewRefresh>
   <CompletionPSP>
    <URLConnection>
-    <Protocol>http</Protocol>
-    <Host>{TOPSHost}</Host>
+    <Host>u195</Host>
     <Port>8800</Port>
     <ClusterName>TRANSCOM</ClusterName>
     <Package></Package>
@@ -23,19 +22,16 @@
  <DBConfig>
 <!-- that these lines are commented out means we are getting these values from cougaar.rc -->
 <!-- can override by un-commenting  -->
-<!--
-  <User>{yourUserName}</User>
-  <Password>{yourPassword}</Password>
+  <User>society_config</User>
+  <Password>s0c0nfig</Password>
   <DriverClass>org.gjt.mm.mysql.Driver</DriverClass>
-  <ConnectionURL>jdbc:mysql://{mySQLhost}/{yourDatabase}</ConnectionURL>
+  <ConnectionURL>jdbc:mysql://u052/grabber</ConnectionURL>
   <Syntax>MySQL</Syntax>
--->
  </DBConfig>
  <HierarchyPSP Society="Tops">
   <Cluster>TRANSCOM</Cluster>
   <URLConnection>
-   <Protocol>http</Protocol>
-   <Host>{TOPSHost}</Host>
+   <Host>u195</Host>
    <Port>8800</Port>
    <ClusterName>TRANSCOM</ClusterName>
    <Package></Package>
@@ -48,9 +44,9 @@
                VirtualRoot="HigherAuthority" 
                VirtualRootName="Higher Authority">
   <Cluster>USEUCOM</Cluster>
+  <Cluster>OSC</Cluster>
   <URLConnection>
-   <Protocol>http</Protocol>
-   <Host>{TOPSHost}</Host>
+   <Host>u195</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>
    <Package></Package>
@@ -61,8 +57,7 @@
  </HierarchyPSP>
  <DataGathererPSP>
   <URLConnection>
-   <Protocol>http</Protocol>
-   <Host>{TOPSHost}</Host>
+   <Host>u195</Host>
    <Port>8800</Port>
    <ClusterName>USEUCOM</ClusterName>
    <Package></Package>
@@ -70,7 +65,6 @@
    <UseXML>N</UseXML>
    <ThisFileInstead></ThisFileInstead>
   </URLConnection>
-  <IncludeTransitLegs>Y</IncludeTransitLegs>
  </DataGathererPSP>
  <DerivedTablesConfig>
   <FirstLegTable>false</FirstLegTable>

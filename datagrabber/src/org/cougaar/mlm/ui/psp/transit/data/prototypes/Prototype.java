@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@ import org.xml.sax.Attributes;
  * derivations from the 'true' prototypes with some of the fields changed
  * to fit a specific instance.  In this case, the parentUID field should
  * reflect the 'true' prototype from which the 'sub' prototype is derived.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/28/01
  **/

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@ import org.xml.sax.Attributes;
 
 /**
  *
- * @author Gordon Vidaver; last modified by: $Author: gvidaver $
+ * @author Gordon Vidaver; last modified by: $Author: mthome $
  *
  * @since 06/24/02
  **/

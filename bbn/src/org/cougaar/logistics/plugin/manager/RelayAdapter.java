@@ -1,9 +1,12 @@
 /*
  * <copyright>
+ *  Copyright 2003 BBNT Solutions, LLC
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- *
+ * 
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -23,22 +26,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.relay.Relay;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.util.UniqueObject;
-import org.cougaar.core.util.XMLize;
-import org.cougaar.core.util.XMLizable;
 
 /**
  * Implementation of RelayAdapter.
  * Declared abstract because it does not include the ability to convey content.
  * Extenders are responsible for defining content semantics.
  **/
-abstract public class RelayAdapter implements Relay.Source, Relay.Target, UniqueObject, XMLizable, Cloneable {
+abstract public class RelayAdapter implements Relay.Source, Relay.Target, UniqueObject, Cloneable {
 
   private transient Set myTargetSet = null;
 
@@ -254,18 +252,6 @@ abstract public class RelayAdapter implements Relay.Source, Relay.Target, Unique
   public int updateContent(Object content, Token token) {
     return (contentChanged((RelayAdapter) content) ?
             Relay.CONTENT_CHANGE : Relay.NO_CHANGE);
-  }
-
-  // XMLizable interface
-  /** getXML - add the Alert to the document as an XML Element and return the
-   *
-   * BOZO - not currently handling XML
-   *
-   * @param doc Document to which XML Element will be added
-   * @return Element
-   **/
-  public Element getXML(Document doc) {
-    return XMLize.getPlanObjectXML(this, doc);
   }
 
   protected Object clone() throws CloneNotSupportedException {

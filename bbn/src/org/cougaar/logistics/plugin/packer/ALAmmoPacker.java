@@ -1,6 +1,23 @@
-// Copyright (10/99) Honeywell Inc.
-// Unpublished - All rights reserved. This software was developed with funding 
-// under U.S. government contract MDA972-97-C-0800
+/*
+ * <copyright>
+ *  Copyright 1997-2003 BBNT Solutions, LLC
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ */
 
 package org.cougaar.logistics.plugin.packer; 
 
@@ -20,7 +37,7 @@ import org.cougaar.glm.ldm.asset.Ammunition;
 import org.cougaar.glm.packer.Packer;
 import org.cougaar.glm.packer.AggregationClosure;
 import org.cougaar.glm.packer.AmmoTransport;
-import org.cougaar.core.plugin.util.PluginHelper;
+import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AllocationResultDistributor;
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -132,7 +149,7 @@ public class ALAmmoPacker extends Packer {
           if (aspectValues[i].getAspectType() == AspectType.QUANTITY) {
             if (aspectValues[i].getValue() != prefValue) {
               // set the quantity to be the preference quantity
-              aspectValues[i].setValue(prefValue); 
+              aspectValues[i] = aspectValues[i].dupAspectValue(prefValue); 
               needToCorrectQuantity = true;
             }
 	    foundQuantity = true;
@@ -148,7 +165,7 @@ public class ALAmmoPacker extends Packer {
 	if (!foundQuantity) {
 	  AspectValue [] copy = new AspectValue [aspectValues.length+1];
 	  System.arraycopy(aspectValues,0,copy,0,aspectValues.length);
-	  copy[aspectValues.length] = new AspectValue (AspectType.QUANTITY, prefValue);
+	  copy[aspectValues.length] = AspectValue.newAspectValue (AspectType.QUANTITY, prefValue);
 	  aspectValues=copy;
 	  if (getLoggingService().isDebugEnabled()) {
             getLoggingService().debug("Packer.updateAllocationResult - fixing quantity on estimated AR of pe " + pe.getUID() + 

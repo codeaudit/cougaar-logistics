@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001-2 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -29,11 +29,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.cougaar.core.agent.ClusterIdentifier;
-import org.cougaar.core.plugin.PluginBindingSite;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UniqueObject;
 
-import org.cougaar.core.domain.RootFactory;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.plan.Plan;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
@@ -549,7 +548,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
   /*** Set of dumb functions to get around incredibly annoying Java Compiler bugs ***/
   // The following just allow protected plugin stuff to be called from the custom schedude
   // elements. It should probably be replaced with a delegate.
-  public RootFactory publicGetFactory() {
+  public PlanningFactory publicGetFactory() {
     return ldmf;
   }
   public Plan publicGetRealityPlan() {
@@ -563,8 +562,8 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     if (isDebugEnabled()) debug(getName () + " - publicPublishAdd of : " + (UniqueObject) o );
     publishAdd(o);
   }
-  public ClusterIdentifier publicGetClusterIdentifier() {
-    return ((PluginBindingSite)getBindingSite()).getAgentIdentifier();
+  public MessageAddress publicGetMessageAddress() {
+    return getAgentIdentifier();
   }
   public String publicGetMyClusterName() {
     return myClusterName;

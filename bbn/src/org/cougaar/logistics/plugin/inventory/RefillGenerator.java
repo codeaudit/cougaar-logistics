@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -221,7 +221,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
                                 LogisticsInventoryPG thePG, 
                                 long today, int ost) {
     // make a new task
-    NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
+    NewTask newRefill = inventoryPlugin.getPlanningFactory().newTask();
     newRefill.setVerb(Constants.Verb.Supply);
     newRefill.setDirectObject(thePG.getResource());
     //set the commitment date to endDay - ost.
@@ -292,7 +292,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     points.addElement(latest);
     ScoringFunction endTimeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
-    return inventoryPlugin.getRootFactory().
+    return inventoryPlugin.getPlanningFactory().
       newPreference(AspectType.END_TIME, endTimeSF);
     
   }
@@ -308,8 +308,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
    **/
   private Preference createRefillQuantityPreference(double refill_qty) {
     ScoringFunction qtySF = ScoringFunction.
-      createStrictlyAtValue(new AspectValue(AspectType.QUANTITY, refill_qty));
-    return  inventoryPlugin.getRootFactory().
+      createStrictlyAtValue(AspectValue.newAspectValue(AspectType.QUANTITY, refill_qty));
+    return  inventoryPlugin.getPlanningFactory().
       newPreference(AspectType.QUANTITY, qtySF);
   }
 
@@ -319,7 +319,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @return PrepositionalPhrase  A new prep phrase for the task
    **/
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
-    NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().
+    NewPrepositionalPhrase newpp = inventoryPlugin.getPlanningFactory().
       newPrepositionalPhrase();
     newpp.setPreposition(prep);
     newpp.setIndirectObject(io);

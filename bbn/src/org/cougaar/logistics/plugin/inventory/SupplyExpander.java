@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 BBNT Solutions, LLC
+ *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@ import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.TaskScoreTable;
@@ -52,9 +52,9 @@ import org.cougaar.glm.ldm.asset.Inventory;
 
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 
-import org.cougaar.core.plugin.util.PluginHelper;
+import org.cougaar.planning.plugin.util.PluginHelper;
 
-import org.cougaar.core.plugin.util.AllocationResultHelper;
+import org.cougaar.planning.plugin.util.AllocationResultHelper;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -197,7 +197,7 @@ public class SupplyExpander extends InventoryModule {
     private static AllocationResultAggregator projectionARA = new ProjectionARA();
     private static AllocationResultAggregator supplyARA = new SupplyARA();
 
-  private ClusterIdentifier clusterId;
+  private MessageAddress clusterId;
 
 
     public SupplyExpander(InventoryPlugin imPlugin) {
@@ -370,7 +370,7 @@ public class SupplyExpander extends InventoryModule {
       transportTask = createTransportTask(parentTask, withdrawTask);
       expand_tasks.addElement(transportTask);
     }
-    Expansion expansion = PluginHelper.wireExpansion(parentTask, expand_tasks, inventoryPlugin.getRootFactory());
+    Expansion expansion = PluginHelper.wireExpansion(parentTask, expand_tasks, inventoryPlugin.getPlanningFactory());
     inventoryPlugin.publishAddExpansion(expansion);
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     wf.setAllocationResultAggregator(new AllocationResultAggregator.DefaultARA());
@@ -416,7 +416,7 @@ public class SupplyExpander extends InventoryModule {
 
 	// Create new task
 	Asset prototype = parentTask.getDirectObject();
-	NewTask subtask = inventoryPlugin.getRootFactory().newTask();
+	NewTask subtask = inventoryPlugin.getPlanningFactory().newTask();
 	// attach withdraw task to parent and fill it in
 	subtask.setDirectObject( prototype);
 	subtask.setParentTask( parentTask );

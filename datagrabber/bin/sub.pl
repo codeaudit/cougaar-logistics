@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
-# $Header: /opt/rep/cougaar/logistics/datagrabber/bin/sub.pl,v 1.1 2002-05-14 20:41:04 gvidaver Exp $
+# $Header: /opt/rep/cougaar/logistics/datagrabber/bin/sub.pl,v 1.2 2003-02-03 22:27:58 mthome Exp $
 
 # <copyright>
-#  Copyright 2001 BBNT Solutions, LLC
+#  Copyright 2001-2003 BBNT Solutions, LLC
 #  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
 # 
 #  This program is free software; you can redistribute it and/or modify

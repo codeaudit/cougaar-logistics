@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.ldm.plan.Role;
 
 /**
@@ -101,10 +101,10 @@ public class GLMTransConst {
 
   // CONUSGround needs to be the only of whatever role we assign to it/it to
   public static final Role CONUSGROUND = Role.getRole("CONUSGroundTransportationProvider");
-  public static final ClusterIdentifier GROUND_CLUSTER_ID = 
-    new ClusterIdentifier("GlobalGround");
-  public static final ClusterIdentifier THEATER_CLUSTER_ID = 
-    new ClusterIdentifier("JMCC");
+  public static final MessageAddress GROUND_CLUSTER_ID = 
+    MessageAddress.getMessageAddress("GlobalGround");
+  public static final MessageAddress THEATER_CLUSTER_ID = 
+    MessageAddress.getMessageAddress("JMCC");
 
   public static final String AIRCREW_READY = "AIRCREW_READY";
   public static final String AIRCREW_JOB = "AIRCREW_JOB";

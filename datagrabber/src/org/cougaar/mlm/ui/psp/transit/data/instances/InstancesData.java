@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ import org.xml.sax.Attributes;
  * a prototype returned by the Prototypes PSP, but containing some altered
  * values (usually a container whose weight has changed etc).  Make sure
  * such prototypes have their parentUID field filled in.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 1/28/01
  **/

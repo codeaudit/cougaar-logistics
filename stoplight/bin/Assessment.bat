@@ -1,6 +1,6 @@
 
 REM "<copyright>"
-REM " Copyright 2001 BBNT Solutions, LLC"
+REM " Copyright 2001-2003 BBNT Solutions, LLC"
 REM " under sponsorship of the Defense Advanced Research Projects Agency (DARPA)."
 REM ""
 REM " This program is free software; you can redistribute it and/or modify"
