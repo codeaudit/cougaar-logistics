@@ -108,9 +108,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   protected OperatingMode level2Horizon, level6Horizon;
 
   public final Integer LEVEL_2_MIN = new Integer(2); // later, these should be parameters to plugin...
-  public final Integer LEVEL_2_MAX = new Integer(180);
+  public final Integer LEVEL_2_MAX = new Integer(365);
   public final Integer LEVEL_6_MIN = new Integer(1);
-  public final Integer LEVEL_6_MAX = new Integer(180);
+  public final Integer LEVEL_6_MAX = new Integer(365);
   public final int LEVEL_6_MODE = 0;
   public final int LEVEL_2_MODE = 1;
   /** currently not supported **/
