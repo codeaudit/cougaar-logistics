@@ -177,6 +177,10 @@ public class InventoryPlugin extends ComponentPlugin {
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+      takeInventorySnapshot(getTouchedInventories());
+
+      // touchedInventories should not be cleared until the end of transaction
+      touchedInventories.clear();
 //    testBG();
     }
   }
@@ -552,6 +556,21 @@ public class InventoryPlugin extends ComponentPlugin {
 
   public Collection getTouchedInventories() {
     return touchedInventories;
+  }
+
+  public Collection getInventories() {
+    return inventoryHash.values();
+  }
+
+  public void takeInventorySnapshot(Collection inventories) {
+    Inventory inv;
+    Iterator inv_it = inventories.iterator();
+    LogisticsInventoryPG logInvPG = null;
+    while (inv_it.hasNext()) {
+      inv = (Inventory)inv_it.next();
+      logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      logInvPG.takeSnapshot(inv);
+    }
   }
 
   /**
