@@ -96,7 +96,7 @@ public class MultiChartPanel extends JPanel
     private JCheckBox cdaysModeCheck;
     private JCheckBox shortfallModeCheck;
 
-    private boolean displayCDay = false;
+    protected boolean displayCDay = false;
     private long baseCDayTime = InventoryChartBaseCalendar.getBaseTime();
 
     private long bucketSize = MILLIS_IN_DAY;
@@ -134,7 +134,7 @@ public class MultiChartPanel extends JPanel
         pointLabel = new JLabel(INITIAL_POINT_LABEL, JLabel.CENTER);
         pointLabel.setBackground(Color.magenta);
 
-        cdaysModeCheck = new JCheckBox(CDAY_MODE, false);
+        cdaysModeCheck = new JCheckBox(CDAY_MODE, displayCDay);
         Font newFont = cdaysModeCheck.getFont();
         newFont = newFont.deriveFont(newFont.getStyle(), (float) 15);
         cdaysModeCheck.setFont(newFont);
