@@ -89,31 +89,31 @@ public class MultiChartPanel extends JPanel
 
   protected InventoryData inventory = null;
 
-  private static int LEVEL_CHART_INDEX = 0;
-  private static int REFILL_CHART_INDEX = 1;
-  private static int DEMAND_CHART_INDEX = 2;
+  protected final static int LEVEL_CHART_INDEX = 0;
+  protected final static int REFILL_CHART_INDEX = 1;
+  protected final static int DEMAND_CHART_INDEX = 2;
 
-  private static Insets BLANK_INSETS = new Insets(0, 0, 0, 0);
+  protected final static Insets BLANK_INSETS = new Insets(0, 0, 0, 0);
 
-  private static int LEVEL_CHART_HEIGHT = 6;
-  private static int BAR_CHART_HEIGHT = 3;
-  private static int REFILL_CHART_HEIGHT = BAR_CHART_HEIGHT;
-  private static int DEMAND_CHART_HEIGHT = BAR_CHART_HEIGHT;
-  private static GridBagConstraints LEVEL_CHART_CONSTRAINTS =
+  protected final  static int LEVEL_CHART_HEIGHT = 6;
+  protected final  static int BAR_CHART_HEIGHT = 3;
+  protected final  static int REFILL_CHART_HEIGHT = BAR_CHART_HEIGHT;
+  protected final  static int DEMAND_CHART_HEIGHT = BAR_CHART_HEIGHT;
+  protected final  static GridBagConstraints LEVEL_CHART_CONSTRAINTS =
       new GridBagConstraints(0, GridBagConstraints.RELATIVE,
                              1, LEVEL_CHART_HEIGHT, 1.0, 0.6,
                              GridBagConstraints.CENTER,
                              GridBagConstraints.BOTH,
                              BLANK_INSETS, 0, 0);
 
-  private static GridBagConstraints REFILL_CHART_CONSTRAINTS =
+  protected final static GridBagConstraints REFILL_CHART_CONSTRAINTS =
       new GridBagConstraints(0, GridBagConstraints.RELATIVE,
                              1, BAR_CHART_HEIGHT, 1.0, 0.3,
                              GridBagConstraints.CENTER,
                              GridBagConstraints.BOTH,
                              BLANK_INSETS, 0, 0);
 
-  private static GridBagConstraints DEMAND_CHART_CONSTRAINTS = REFILL_CHART_CONSTRAINTS;
+  protected final static GridBagConstraints DEMAND_CHART_CONSTRAINTS = REFILL_CHART_CONSTRAINTS;
 
   protected MouseAdapter mouseAdapter = new MouseAdapter() {
     public void mousePressed(MouseEvent e) {
@@ -130,15 +130,15 @@ public class MultiChartPanel extends JPanel
   private JButton resetButton;
 
   protected boolean displayCDay = false;
-  private long baseCDayTime = InventoryChartBaseCalendar.getBaseTime();
+  protected long baseCDayTime = InventoryChartBaseCalendar.getBaseTime();
 
-  private long bucketSize = MILLIS_IN_DAY;
+  protected long bucketSize = MILLIS_IN_DAY;
 
-  private boolean displayShortfall = false;
+  protected boolean displayShortfall = false;
 
-  private boolean showInitialShortfall = true;
+  protected boolean showInitialShortfall = true;
 
-  private InventoryPreferenceData prefData = null;
+  protected InventoryPreferenceData prefData = null;
 
   public MultiChartPanel() {
     super();

@@ -105,8 +105,8 @@ public class InventoryUIFrame extends JFrame
   protected InventorySelectionPanel selector;
   protected InventoryXMLParser parser;
 
-  InventoryPreferenceData prefData;
-  InventoryPreferenceDialog prefDialog = null;
+  protected InventoryPreferenceData prefData;
+  protected InventoryPreferenceDialog prefDialog = null;
 
 
   protected boolean showInitialShortfall = true;
