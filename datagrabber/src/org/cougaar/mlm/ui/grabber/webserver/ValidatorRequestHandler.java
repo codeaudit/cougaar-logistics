@@ -208,11 +208,20 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
     h.tHead("Run started");
     h.tHead("Run Completed");
     h.tHead("Status");
+    h.tHead("Condition*");
+    //    h.tHead("Warn");
+    //    h.tHead("Info");
     h.tHead("Action");
     h.eRow();
     
     Set testStatusCore = ResultTable.getTestStatus(h,s,Validator.CORE_TESTS);
     Set testStatusAll = ResultTable.getTestStatus(h,s,Validator.ALL_TESTS);
+    Map runToNumberOfResults = ResultTable.getTestResults(h, s);
+    int numInfo    = validator.getNumTestsOfType (Validator.INFO_TESTS);
+    int numWarning = validator.getNumTestsOfType (Validator.WARNING_TESTS);
+    int numError   = validator.getNumTestsOfType (Validator.ERROR_TESTS);
+
+    Map runToNumberOfTestsRun = ResultTable.getNumTestsRun(h, s);
 
     ResultSet rs=s.executeQuery(getRunListSql());
     while(rs.next()){
@@ -230,6 +239,58 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
 		     ControllerRequestHandler.COM_LISTLOG,
 		     "?run="+r),
 	      Run.CONDITIONS[condition]);
+      int []numberOfResults  = (int []) runToNumberOfResults.get(new Integer (r));
+      int []numberOfTestsRun = (int []) runToNumberOfTestsRun.get(new Integer (r));
+
+      int numInfoRun    = 0;
+      int numWarningRun = 0;
+      int numErrorRun   = 0;
+      if (numberOfTestsRun != null) {
+	numInfoRun    = numberOfTestsRun[Test.RESULT_INFO];
+	numWarningRun = numberOfTestsRun[Test.RESULT_WARNING];
+	numErrorRun   = numberOfTestsRun[Test.RESULT_ERROR];
+      }
+
+      if (numberOfResults == null) {
+	//	h.tData ("0/" + numErrorRun    + "/" +numError);
+	//	h.tData ("0/" + numWarningRun  + "/" +numWarning);
+	//	h.tData ("0/" + numInfoRun     + "/" +numInfo);
+	h.tData ("NO TESTS RUN");
+      }
+      else {
+	if (numberOfResults[Test.RESULT_ERROR] > 0 || numberOfResults[Test.RESULT_WARNING] > 0) {
+	  String info = "";
+
+	  // error column
+	  if (numberOfResults[Test.RESULT_ERROR] > 0) {
+	    String prefix = "<font color='red'>";
+	    String suffix = "</font>";
+	    info = 
+	      prefix + "ERROR " + numberOfResults[Test.RESULT_ERROR] + "/" + numErrorRun+ "/" + numError + suffix;
+	  }
+
+	  // warn column
+	  if (numberOfResults[Test.RESULT_WARNING] > 0) {
+	    String prefix = "<font color='orange'>";
+	    String suffix = "</font>";
+	    info   = info + " " + "WARN " + 
+	      prefix + numberOfResults[Test.RESULT_WARNING] + "/" + numWarningRun + "/" + numWarning + suffix;
+	  }
+
+	  h.tData (info);
+	}
+	else if (numErrorRun != numError) {
+	  h.tData ("NO ERRORS, NOT ALL RUN");
+	}
+	else if (numWarningRun != numWarning) {
+	  h.tData ("NO WARNINGS, NOT ALL RUN");
+	}
+	else {
+	  h.tData ("<font color='green'>COMPLETELY TESTED AND CLEAN</font>");
+	}
+	// info column
+	//h.tData (numberOfResults[Test.RESULT_INFO] + "/" + numInfoRun+ "/" + numInfo);
+      }
 
       StringBuffer sb=new StringBuffer();
       sb.append("[");
@@ -256,6 +317,10 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
     }
     rs.close();
     h.eTable();
+    // h.p("* if error or warning, data is (# tests returning level / # tests of that level run / total # tests for level)");
+    h.print("<br>* if error or warning, data is (# tests returning level / # tests of that level run / total # tests for level)");
+    // h.p("e.g. (5/10/15) in the error column means 5 tests out of 10 run returned error, ");
+    // h.p("but there were 15 possible error tests, of which 5 were not run.");
   }
 
   protected void sendRunMenu(HTMLizer h, Statement s)
