@@ -51,7 +51,7 @@ import java.text.SimpleDateFormat;
  * are misleading, as a single CarrierInstanceSegment can represent multiple
  * movements, possibly in opposite directions...
  *
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 4/19/01
  **/
@@ -156,11 +156,9 @@ public class CarrierInstanceSegment extends RouteSegment {
     if(getStartLocID().equals(sLocID)){
       forwardLegInfoList.add(li);
       myAddArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_FORWARD);
-      setArrowHeadColor(ARROW_FORWARD, getColor(getMode(),getForwardType()));
     }else if(getStartLocID().equals(eLocID)){
       backwardLegInfoList.add(li);
       myAddArrowHead(OMArrowHead.ARROWHEAD_DIRECTION_BACKWARD);
-      setArrowHeadColor(ARROW_BACKWARD, getColor(getMode(),getBackwardType()));
     }else{
       System.err.println("CarrierInstanceSegment -- Mismatched Loc ID");
     }

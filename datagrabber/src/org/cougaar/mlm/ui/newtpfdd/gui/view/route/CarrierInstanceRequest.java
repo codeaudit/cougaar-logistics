@@ -39,7 +39,7 @@ import java.util.Date;
 
 /**
  * A request for an CarrierInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2//01
  **/
@@ -245,7 +245,7 @@ public class CarrierInstanceRequest extends RouteViewRequest{
       clLegType+"="+DGPSPConstants.LEG_TYPE_POSITIONING+" or "+
       clLegType+"="+DGPSPConstants.LEG_TYPE_RETURNING+
       ")"+"\nand "+
-      clRouteID+" is null"+"\nand "+
+      clRouteID+"='null'"+"\nand "+
       ciConvID+"='"+carrierid+"'";
 
     if(unit!=null){
