@@ -136,7 +136,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     // set by the behavior group of the inventory.
     timeZero = (int)((startTime/MSEC_PER_BUCKET) - 1);
     int now_bucket = convertTimeToBucket(now);
-    Arrays.fill(inventoryLevelsArray, 0, now_bucket, myPG.getInitialLevel());
+    //Initialize with initial level since the refill generator won't start setting inv levels
+    //until the first day it processes which is today + OST - so depending on OST it could be a while.
+    Arrays.fill(inventoryLevelsArray, 0, 180, myPG.getInitialLevel());
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),parentPlugin);
@@ -311,6 +313,10 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public int getFirstProjectWithdrawBucket() {
     Iterator list = customerHash.values().iterator();
+    // if we don't have any actual demand signal with -1
+    if (!list.hasNext()) {
+	return -1;
+    }
     long firstSeen = convertBucketToTime(dueOutList.size()-1);
     while (list.hasNext()) {
       long time = ((Long)list.next()).longValue();
@@ -320,6 +326,18 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     return convertTimeToBucket(firstSeen);
   }
+
+    public int getLastRefillRequisition() {
+	int lastRefill = -1;
+	for (int i=0; i < refillRequisitions.size(); i++) {
+	   Task task = (Task)refillRequisitions.get(i);
+	   if (task != null) {
+	       lastRefill = i;
+	   }
+	}
+	return lastRefill;
+    }
+	
 
   public int getLastDemandBucket() {
     return dueOutList.size()-1;
@@ -412,8 +430,6 @@ public class LogisticsInventoryBG implements PGDelegate {
   private double[] computeCriticalLevels() {
     long days_per_bucket = MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY;
     double cl_per_bucket = (double)criticalLevel/(double)days_per_bucket;
-//      System.out.println("criticalLevel: "+criticalLevel+", days_per_bucket: "+
-//  		       days_per_bucket+", cl_per_bucket: "+cl_per_bucket);
     int mode = (int)Math.floor(cl_per_bucket);
     double Ci;
     criticalLevelsArray = new double[projectedDemandArray.length];
