@@ -252,6 +252,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
       totalQuantity += quantity;
 
+      //  CHANGE to JUST Grab the d.o.?
+
       // set item id pg to show it's a reservation, and not a normal task's asset
 
       ItemIdentificationPG itemIDPG = (ItemIdentificationPG) supplyAsset.getItemIdentificationPG();
@@ -455,14 +457,27 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
         cpe.setEstimatedResult(reportedresult);
 
-        double prefValue = 
-          cpe.getTask().getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
-
+	//        double prefValue = getScaledRate (cpe); 
+	Task task = cpe.getTask();
+	double prefValue = 
+	  task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
+	
         AspectValue[] aspectValues = cpe.getEstimatedResult().getAspectValueResults();
 
 	AspectValue [] copy = new AspectValue [aspectValues.length+1];
 	System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
 	copy[aspectValues.length] = new AspectValue (AlpineAspectType.DEMANDRATE, prefValue);
+
+	// fix start time to echo start time preference
+	for (int i = 0; i < copy.length; i++) {
+	  AspectValue value = copy[i];
+	  if (value.getAspectType () == AspectType.START_TIME) {
+	    Date preferredStart = prefHelper.getReadyAt (task);
+	    copy[i] = new TimeAspectValue (AspectType.START_TIME, preferredStart);
+	    break;
+	  }
+	}
+
 	AllocationResult correctedAR = 
 	  new AllocationResult(reportedresult.getConfidenceRating(),
 			       reportedresult.isSuccess(),
@@ -481,6 +496,35 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	     " : "     + cpe.getTask ().getUID () + 
 	     " has a null reported allocation.");
     }
+  }
+
+  /** 
+   * scale the rate to make it the rate over the time of the performance of the 
+   * task, so that when the inventory does days*rate, they come up with the original
+   * requested quantity.
+   *
+   * The problem is that we're translating from one meaning of start and end date to another.
+   * The start->end date window on a project supply task means "I need X widgets per day, each
+   * day, over this period."  The transportation start->end window means "The move started on this
+   * day and ended on this other day."  So they mean different things.
+   */
+  protected double getScaledRate (PlanElement planElement) {
+    Task task = planElement.getTask();
+    double prefRate = 
+      task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
+    
+    Date preferredStart = prefHelper.getReadyAt (task);
+    Date preferredEnd   = prefHelper.getBestDate(task);
+
+    Date reportedStart  = prefHelper.getReportedReadyAt (planElement);
+    Date reportedEnd    = prefHelper.getReportedEndDate (planElement);
+    
+    long preferredWindow = preferredEnd.getTime () - preferredStart.getTime();
+    long reportedWindow  = reportedEnd.getTime  () - reportedStart.getTime();
+    
+    double ratio = (double)preferredWindow/(double)reportedWindow;
+
+    return prefRate*ratio;
   }
 
   /** checks to see if the AllocationResult is equal to this one.
@@ -545,6 +589,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       int type1 = av1.getAspectType();
       if (type1 == AlpineAspectType.DEMANDRATE)
 	continue; // ignore DEMAND RATE!
+      if (type1 == AspectType.START_TIME)
+	continue; // ignore Start time, since it doesn't mean the same in the inventory world
     inner:
       for (int j = 0; j < len; j++) {
         int k = (i + j) % len;
@@ -1035,24 +1081,26 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	}
 					     );
 
-      Task parent = (Task) parents.iterator ().next();
-      PlanElement exp = parent.getPlanElement();
-      if (exp == null) {
-	if (isWarnEnabled ()) {
-	  warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
+      if (!parents.isEmpty()) { // I guess if the task is being removed, the parent could be missing from the blackboard
+	Task parent = (Task) parents.iterator ().next();
+	PlanElement exp = parent.getPlanElement();
+	if (exp == null) {
+	  if (isWarnEnabled ()) {
+	    warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
+	  }
+	} 
+	else {
+	  publishRemove(exp);
+	  if (isInfoEnabled ()) {
+	    info ("removing expansion of task " + exp.getTask().getUID());
+	  }
+	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
+	  Disposition disposition =
+	    ldmf.createDisposition(parent.getPlan(), parent, ar);
+	  publishAdd (disposition);
+	  if (isInfoEnabled ())
+	    info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
 	}
-      } 
-      else {
-	publishRemove(exp);
-	if (isInfoEnabled ()) {
-	  info ("removing expansion of task " + exp.getTask().getUID());
-	}
-	AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
-	Disposition disposition =
-	  ldmf.createDisposition(parent.getPlan(), parent, ar);
-	publishAdd (disposition);
-	if (isInfoEnabled ())
-	  info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
       }
     }
 
