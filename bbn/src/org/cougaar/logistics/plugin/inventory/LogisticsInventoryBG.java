@@ -35,10 +35,15 @@ import org.cougaar.logistics.plugin.inventory.InventoryPlugin;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryLogger;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 
+/** The LogisticsInventoryBG is responsible for maintaining all
+ *  information concerning an Inventory Asset.  The Logistics
+ *  InventoryBG collects Withdraws, ProjectWithdraws, Supply and
+ *  ProjectSupply tasks as well as calculated information such as
+ *  inventory levels, refill levels and demand distribution over
+ *  time.
+ **/
 public class LogisticsInventoryBG implements PGDelegate {
 
-  // Beth, if you can come up with something better than 
-  // 'bucket', I'd appreciate it.
   // Bucket will be a knob, this implementation temporary
   private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY;
   protected LogisticsInventoryPG myPG;
@@ -47,7 +52,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   private boolean initialized;
   private LoggingService logger;
   private LogisticsInventoryLogger csvLogger=null;
-  // customerHash holds the time(long) the last actual is seen
+  // customerHash holds the time(long) of the last actual is seen
   // for each customer
   private HashMap customerHash;
   private long earliestDemand;
@@ -126,6 +131,28 @@ public class LogisticsInventoryBG implements PGDelegate {
   public void removeWithdrawTask(Task task) {
   }
 
+  public void addRefillTask(Task task) {
+    if (task.getVerb().equals(Constants.Verb.SUPPLY)) {
+      addDueIn(task);
+    } else if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+      addDueInProjection(task);
+    }
+  }
+
+  private void addDueIn(Task task) {
+  }
+
+  private void addDueInProjection(Task task) {
+  }
+
+  public List clearRefillTasks() {
+    // remove uncommitted refill tasks and refill
+    // projections from the list.  Add all removed
+    // tasks to a second list that will be returned
+    // for comparison
+    return null;
+  }
+
   public void updateRefillAllocation(Task task) {
     // need to update DueIn list
     // different updates obviously needed for Supply
@@ -169,11 +196,6 @@ public class LogisticsInventoryBG implements PGDelegate {
 	  }
 	  csvLogger.write("DUE_OUTS:END");
       }
-  }
-
-  public void addRefillTask(Task task) {
-    // I'm not sure how this is going to work in the new
-    // design
   }
 
   public long getStartTime() {
