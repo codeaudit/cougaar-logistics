@@ -61,22 +61,6 @@ LOCK TABLES asb_component_hierarchy WRITE;
 UNLOCK TABLES;
 
 --
--- Dumping data for table 'asb_oplan'
---
-
-
-LOCK TABLES asb_oplan WRITE;
-UNLOCK TABLES;
-
---
--- Dumping data for table 'asb_oplan_agent_attr'
---
-
-
-LOCK TABLES asb_oplan_agent_attr WRITE;
-UNLOCK TABLES;
-
---
 -- Dumping data for table 'community_attribute'
 --
 
