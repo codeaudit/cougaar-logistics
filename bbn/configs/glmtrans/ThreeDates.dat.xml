@@ -1,0 +1,176 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE tasklist SYSTEM "ClusterInput.dat.dtd" []>
+
+<!-- basic test for GLMTrans - one air and one sea task -->
+<tasklist>
+  <task id="test_task">
+    <verb>Transport</verb>
+    <directobject>
+        <aggregateasset prototype="TANK" quantity="2"/>
+    </directobject>
+    <for>3ID-HHC</for>
+    <from>
+      <geoloc>HKUZ</geoloc>
+      <latitude>31.850000</latitude>    
+      <longitude>-81.60000</longitude>
+	  <name>Fort_Stewart</name>
+    </from>
+    <to>
+      <geoloc>31DA</geoloc>
+      <latitude>14.88</latitude>    
+      <longitude>39.32</longitude>
+      <name>Over_There_In_Eritrea</name>
+    </to>
+    <startdate>  
+      <readyatdate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>10</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </readyatdate>
+    </startdate> 
+    <enddate>    
+      <earlydate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>20</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </earlydate>
+      <bestdate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>21</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+      <latedate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>22</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </latedate>
+    </enddate>   
+  </task>
+
+  <task id="test_task">
+    <verb>Transport</verb>
+    <directobject>
+        <aggregateasset prototype="TANK" quantity="2"/>
+    </directobject>
+    <for>3ID-HHC</for>
+    <from>
+      <geoloc>HKUZ</geoloc>
+      <latitude>31.850000</latitude>    
+      <longitude>-81.60000</longitude>
+	  <name>Fort_Stewart</name>
+    </from>
+    <to>
+      <geoloc>31DA</geoloc>
+      <latitude>14.88</latitude>    
+      <longitude>39.32</longitude>
+      <name>Over_There_In_Eritrea</name>
+    </to>
+    <startdate>  
+      <readyatdate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>10</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </readyatdate>
+    </startdate> 
+    <enddate>    
+      <earlydate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>30</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </earlydate>
+      <bestdate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>31</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+      <latedate>
+        <year>2005</year> 
+        <month>09</month> 
+        <day>01</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </latedate>
+    </enddate>   
+  </task>
+  <task id="test_task">
+    <verb>Transport</verb>
+    <directobject>
+        <aggregateasset prototype="TANK" quantity="2"/>
+    </directobject>
+    <for>3ID-HHC</for>
+    <from>
+      <geoloc>HKUZ</geoloc>
+      <latitude>31.850000</latitude>    
+      <longitude>-81.60000</longitude>
+	  <name>Fort_Stewart</name>
+    </from>
+    <to>
+      <geoloc>31DA</geoloc>
+      <latitude>14.88</latitude>    
+      <longitude>39.32</longitude>
+      <name>Over_There_In_Eritrea</name>
+    </to>
+    <startdate>  
+      <readyatdate>
+        <year>2005</year> 
+        <month>08</month> 
+        <day>10</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </readyatdate>
+    </startdate> 
+    <enddate>    
+      <earlydate>
+        <year>2005</year> 
+        <month>09</month> 
+        <day>20</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </earlydate>
+      <bestdate>
+        <year>2005</year> 
+        <month>09</month> 
+        <day>21</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+      <latedate>
+        <year>2005</year> 
+        <month>09</month> 
+        <day>22</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </latedate>
+    </enddate>   
+  </task>
+</tasklist>
+
+
+
