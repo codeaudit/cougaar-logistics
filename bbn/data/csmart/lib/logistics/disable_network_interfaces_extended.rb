@@ -7,6 +7,7 @@ description: Disable the network interfaces for the node given in the argument.
 insert_after :after_stage_2 do
   do_action "InfoMessage", "Advancing time to SEPT 8 (C+24), 1 day steps, quiescing between steps"
   do_action "AdvanceTime", 25.days
+  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "Before_CommLoss"
   do_action "DisableNetworkInterfaces", "2-BDE-NODE"
   do_action "GenericAction" do |run|
     uri=run.society.agents['123-MSB-POL.DISCOM.1-AD.ARMY.MIL'].uri+"/commStatus?commUp=false&connectedAgentName=47-FSB.DISCOM.1-AD.ARMY.MIL"
@@ -76,5 +77,5 @@ insert_after :after_stage_2 do
   do_action "InfoMessage", "Advance to Sept 28th"
   do_action "AdvanceTime", 15.days
  # wait_for "Command", "ok"
-  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "POST_RESTORE_PLUS_5_DAYS"
+  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "POST_RESTORE_PLUS_15_DAYS"
 end

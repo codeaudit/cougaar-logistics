@@ -8,6 +8,7 @@ description: Disable the router interfaces for the K links and subnets given in 
 insert_after parameters[:tag_location] do
   do_action "InfoMessage", "Advancing time to SEPT 8 (C+24), 1 day steps, quiescing between steps"
   do_action "AdvanceTime", 25.days
+  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "Before_CommLoss"
 
   do_action "InfoMessage", "Deactivate DIV--2-BDE,2-BDE---DIV K links"
   do_action "DeactivateKLinks", "DIV-router", "2-BDE"
@@ -85,5 +86,5 @@ insert_after parameters[:tag_location] do
   do_action "InfoMessage", "Advance to Sept 28th"
   do_action "AdvanceTime", 15.days
 #  wait_for "Command", "ok"
-  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "POST_RESTORE_PLUS_5_DAYS"
+  include "#{CIP}/csmart/lib/isat/post_stage_data.inc", "POST_RESTORE_PLUS_15_DAYS"
 end
