@@ -180,6 +180,12 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addWithdrawProjection(Task task) {
+    if (!task.getVerb().equals (Constants.Verb.PROJECTWITHDRAW)) { // assertion/pre-condition
+      Exception exception = new Exception ("Adding non-PROJECTWITHDRAW task to inventory BG");
+      logger.error(".addWithdrawProjection - adding non-PROJECTWITHDRAW task " + task + 
+		   " to inventory BG.", exception);
+    }
+
     // Adding projections mean changed critical levels and
     // target levels.  Set boolean to recompute critical
     // levels and clear targetLevelsList for CSV logging
@@ -205,6 +211,12 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addWithdrawRequisition(Task task) {
+    if (!task.getVerb().equals (Constants.Verb.WITHDRAW)) { // assertion/pre-condition
+      Exception exception = new Exception ("Adding non-WITHDRAW task to inventory BG");
+      logger.error(".addWithdrawRequisition - adding non-WITHDRAW task " + task + 
+		   " to inventory BG.", exception);
+    }
+
     long endTime = taskUtils.getEndTime(task);
     Object org = TaskUtils.getCustomer(task);
     if (org != null) {
