@@ -136,8 +136,6 @@ public class ConditionComponent extends BlackboardServletComponent {
 	getDomainService().getFactory(),
 	getLDMService().getLDM(),
 	getSchedulerService(),
-	getConditionService(),
-	serviceBroker,
 	conditionName);
   }
 

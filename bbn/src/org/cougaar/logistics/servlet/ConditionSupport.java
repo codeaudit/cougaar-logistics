@@ -1,22 +1,37 @@
+/*
+ * <copyright>
+ *  Copyright 1997-2002 BBNT Solutions, LLC
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ */
+ 
 package org.cougaar.logistics.servlet;
 
 import org.cougaar.core.agent.ClusterIdentifier;
 
-import org.cougaar.core.domain.*;
+import org.cougaar.core.domain.RootFactory;
+import org.cougaar.core.domain.LDMServesPlugin;
 
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceRevokedEvent;
-import org.cougaar.core.component.ServiceRevokedListener;
-
-import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.BlackboardQueryService;
-import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.SchedulerService;
 
-import org.cougaar.core.servlet.SimpleServletSupportImpl;
 import org.cougaar.core.servlet.BlackboardServletSupport;
 
 import org.cougaar.util.ConfigFinder;
@@ -33,7 +48,7 @@ import org.cougaar.util.ConfigFinder;
  * is "DoubleCondition".
  * </pre>
  */
-public class ConditionSupport extends BlackboardServletSupport implements ServiceRevokedListener {
+public class ConditionSupport extends BlackboardServletSupport {
   public ConditionSupport(
       String path,
       ClusterIdentifier agentId,
@@ -45,22 +60,15 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
       RootFactory ldmf,
       LDMServesPlugin ldm,
       SchedulerService scheduler,
-      ConditionService condition,
-      ServiceBroker broker,
       String conditionName) {
     super (path, agentId, blackboardQuery, ns, logger, blackboard, configFinder, ldmf, ldm, scheduler);
-    this.conditionService = condition;
     this.conditionName = conditionName;
-    this.broker = broker;
 
     publishCondition ();
   }
 
   /** publishes the condition to blackboard, if the condition service is available. */
   public void publishCondition () {
-    if (didPublish)
-      return;
-
     ConditionServlet.DoubleCondition doubleCondition = 
       new ConditionServlet.DoubleCondition(conditionName);
 
@@ -77,25 +85,6 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
     finally{
      getBlackboardService().closeTransactionDontReset();
     }  
-    
-    didPublish = true;
-  }
-
-  /**
-   * Get the condition service. <p>
-   *
-   * @return null if there is no condition service provider in this agent
-   */
-  protected ConditionService getConditionService() {
-    if (conditionService == null)
-      publishCondition (); // may fail if configuration is bad
-
-    return conditionService;
-  }
-
-  /** condition service went away? */
-  public void serviceRevoked(ServiceRevokedEvent re) {
-    conditionService = null;
   }
 
   protected void setCondition (ConditionServlet.DoubleCondition condition) { this.condition = condition; }
@@ -104,10 +93,6 @@ public class ConditionSupport extends BlackboardServletSupport implements Servic
 
   protected String getConditionName () { return conditionName; }
 
-  protected ConditionService conditionService;
   protected ConditionServlet.DoubleCondition condition;
   protected String conditionName;
-  protected ServiceBroker broker = null;
-
-  protected boolean didPublish = false;
 }
