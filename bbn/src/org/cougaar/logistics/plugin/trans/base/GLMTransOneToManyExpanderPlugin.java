@@ -35,6 +35,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.ForUnitPG;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.MovabilityPG;
+import org.cougaar.glm.ldm.asset.NewMovabilityPG;
 import org.cougaar.glm.ldm.asset.NewForUnitPG;
 import org.cougaar.glm.ldm.asset.NewPhysicalPG;
 import org.cougaar.glm.ldm.asset.PhysicalPG;
@@ -93,9 +94,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   /** VTH operating modes */
   protected OperatingMode level2Horizon, level6Horizon;
 
-  public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
+  public final Integer LEVEL_2_MIN = new Integer(2); // later, these should be parameters to plugin...
   public final Integer LEVEL_2_MAX = new Integer(180);
-  public final Integer LEVEL_6_MIN = new Integer(20);
+  public final Integer LEVEL_6_MIN = new Integer(1);
   public final Integer LEVEL_6_MAX = new Integer(180);
   public final int LEVEL_6_MODE = 0;
   public final int LEVEL_2_MODE = 1;
@@ -222,9 +223,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	return false;
       }
       else if (isDebugEnabled()) 
-	info (".isTaskWellFormed\n\tTask : " + 
-	      taskToCheck + "\nstart (long, lat) is (" + 
-	      lon.getDegrees () + "," + lat.getDegrees () + ")");
+	debug (".isTaskWellFormed\n\tTask : " + 
+	       taskToCheck + "\nstart (long, lat) is (" + 
+	       lon.getDegrees () + "," + lat.getDegrees () + ")");
 
       lon = end.getLongitude ();
       lat = end.getLatitude ();
@@ -296,7 +297,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in LOW fidelity mode. d.o. is " + parentTask.getDirectObject());
 
-      childTasks = getLowFidelityTask (parentTask);
+      Set [] categories = sortAssetsByCategory(expandAsset(parentTask.getDirectObject()));
+
+      for (int i = 0; i < 4; i++) {
+	if (!categories[i].isEmpty())
+	  childTasks.add(getLowFidelityTask (parentTask, categories[i]));
+      }
     }
     else {
       if (isDebugEnabled()) 
@@ -334,26 +340,73 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return LEVEL_2_MODE;
   }
 
+  protected Set [] sortAssetsByCategory (Collection assets) {
+    Set [] categories = new Set[4];
+
+    categories[0] = new HashSet();
+    categories[1] = new HashSet();
+    categories[2] = new HashSet();
+    categories[3] = new HashSet();
+
+    Set category;
+
+    for (Iterator iter = assets.iterator(); iter.hasNext();) { 
+      GLMAsset asset = (GLMAsset) iter.next();
+      String ccc = getCategory(asset);
+
+      switch (ccc.charAt(1)) {
+      case '0': // non-air
+	categories[0].add(asset);
+	break;
+      case '1': // outsized
+	categories[1].add(asset);
+	break;
+      case '2': // oversized
+	categories[2].add(asset);
+	break;
+      default: // bulk or unknown
+	categories[3].add(asset);
+	break;
+      }
+    }
+
+    return categories;
+  }
+
   /** create level 2 task by aggregating the contents of the direct object **/
-  protected Vector getLowFidelityTask (Task parentTask) {
-    Vector retval = new Vector ();
+  protected Task getLowFidelityTask (Task parentTask, Set uniformAssets) {
     Task newTask = null;
 
     GLMAsset lowFiAsset = 
       (GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "Level2Prototype", "Level2_" + getNextID());
     NewLowFidelityAssetPG lowFiPG = 
       (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
-    lowFiPG.setOriginalAsset (lowFiAsset);
-    attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
+    NewMovabilityPG movabilityPG = 
+      (NewMovabilityPG)ldmf.createPropertyGroup(MovabilityPG.class);
 
-    Asset asset = parentTask.getDirectObject();
-    Set cccds = null;
+    lowFiPG.setOriginalAsset (lowFiAsset); // now subobject can have a pointer back to parent
+    lowFiAsset.addOtherPropertyGroup(lowFiPG);
+    lowFiAsset.setMovabilityPG(movabilityPG);
+
     try {
       NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-      lowFiPG.setCCCDims(setDimensions (newPhysicalPG, expandAsset (asset)));
+      Set cccDims = setDimensions (newPhysicalPG, uniformAssets);
+      lowFiPG.setCCCDims(cccDims);
+      if (cccDims.size() > 1)
+	logger.error ("huh?  ccc dims size > 1 : " + cccDims.size());
+
+      CargoCatCodeDimensionPG cccd = (CargoCatCodeDimensionPG) cccDims.iterator().next();
       lowFiAsset.setPhysicalPG (newPhysicalPG);
+      movabilityPG.setCargoCategoryCode(cccd.getCargoCatCode());
+
+      if (!movabilityPG.getCargoCategoryCode().equals(cccd.getCargoCatCode()))
+	logger.error ("huh? for asset " + lowFiAsset + " on task " + parentTask.getUID() +  
+		      " movabilityPG ccc " + lowFiAsset.getMovabilityPG ().getCargoCategoryCode() + 
+		      " != " + cccd.getCargoCatCode());
+ 
     } catch (Exception e) { 
-      logger.error ("problem processing " + asset, e);
+      Asset asset = parentTask.getDirectObject();
+      logger.error ("problem processing task " + parentTask.getUID() + "'s d.o. asset" + asset, e);
     }
 
     ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("Level2Aggregate");
@@ -372,10 +425,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 								 GLMTransConst.LOW_FIDELITY,
 								 GLMTransConst.LOW_FIDELITY));
 
-    retval.add(newTask);
-
-    return retval;
+    return newTask;
   }
+
 
   /** 
    * Recovers owner of task's d.o. from either a FOR prep on the task
@@ -495,21 +547,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     if (firstItem instanceof AggregateAsset) { // there is only one item...
       if (realAssets.size () > 1)
-	logger.error (getBindingSite().getAgentIdentifier() + " skipping some expanded items???");
+	logger.error (getBindingSite().getAgentIdentifier() + " found aggregate, but skipping some expanded items???");
 
       AggregateAsset aggAsset = (AggregateAsset) firstItem;
       PhysicalPG itemPhysicalPG = ((GLMAsset)aggAsset.getAsset()).getPhysicalPG();
-      MovabilityPG movabilityPG = ((GLMAsset)aggAsset.getAsset()).getMovabilityPG();
-      String ccc = null;
-
-      if (movabilityPG == null)
-	logger.warn (getBindingSite().getAgentIdentifier() + " " + aggAsset.getAsset() +
-		     " was missing a movability PG, so could not determine cargo cat code.");
-      else {
-	ccc = movabilityPG.getCargoCategoryCode();
-	if (logger.isInfoEnabled ())
-	  logger.info ("Aggregate's base asset " + aggAsset.getAsset() + " ccc was " + ccc);
-      }
+      String ccc = getCategory((GLMAsset)aggAsset.getAsset());
 
       if (itemPhysicalPG == null) {
 	if (!((GLMAsset)aggAsset.getAsset()).hasPersonPG())
@@ -536,19 +578,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       for (Iterator iter = realAssets.iterator(); iter.hasNext();) {
 	GLMAsset asset = (GLMAsset)iter.next();
 	PhysicalPG itemPhysicalPG = asset.getPhysicalPG();
-
-	MovabilityPG movabilityPG = asset.getMovabilityPG();
-
-	String ccc = null;
-
-	if (movabilityPG == null)
-	  logger.warn (getBindingSite().getAgentIdentifier() + " " + asset +
-		       " was missing a movability PG, so could not determine cargo cat code.");
-	else {
-	  ccc = movabilityPG.getCargoCategoryCode();
-	  if (logger.isInfoEnabled ())
-	    logger.info (asset.toString () + " ccc was " + ccc);
-	}
+	String ccc = getCategory(asset);
 
 	if (itemPhysicalPG == null)
 	  error ("Asset " + asset + " doesn't have a physical PG.");
@@ -589,6 +619,25 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return cccds;
   }
 
+  protected String getCategory (GLMAsset asset) {
+    MovabilityPG movabilityPG = asset.getMovabilityPG();
+
+    String ccc;
+
+    if (movabilityPG == null) {
+      ccc = "XXX";
+      logger.warn (getBindingSite().getAgentIdentifier() + " " + asset +
+		   " was missing a movability PG, so could not determine cargo cat code.");
+    }
+    else {
+      ccc = movabilityPG.getCargoCategoryCode();
+      if (logger.isDebugEnabled ())
+	logger.debug (asset.toString () + " ccc was " + ccc);
+    }
+
+    return ccc;
+  }
+
   protected void addToDimension (String ccc, 
 				 double quantity,
 				 PhysicalPG itemPhysicalPG,
@@ -603,10 +652,6 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     NewPhysicalPG outsizePG  = (NewPhysicalPG) cccdOutsizePG.getDimensions();
     NewPhysicalPG nonAirPG   = (NewPhysicalPG) cccdNonAirPG.getDimensions();
 
-    if (bulkPG == null) {
-      logger.error ("bulk Physical PG is null???");
-    }
-    
     switch (ccc.charAt(1)) {
     case '0': // non-air
       whichPG = (NewPhysicalPG) nonAirPG;
@@ -629,18 +674,24 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       break;
     }
 
+    //    if (isInfoEnabled())
+    //      info (".addToDimension adding " + ccc + " with dim " +itemPhysicalPG + " to " +whichPG);
+
     if (whichPG == null) {
       logger.error ("Could not set physical PG?");
     }
 
     String pgCCCString = whichCCCDimPG.getCargoCatCode();
 
-    if (pgCCCString == null)
+    if (pgCCCString == null) // we've never set the cargo cat code
       whichCCCDimPG.setCargoCatCode(ccc);
     else if (!pgCCCString.equals(ccc)) {
       char [] pgCCC = pgCCCString.toCharArray();
       char [] newCCC = new char [3];
       char [] cccArray = ccc.toCharArray ();
+
+      if (isDebugEnabled())
+	debug (".addToDimension old " + new String(pgCCC) + " additional ccc " + ccc);
 
       if (cccArray[0] != pgCCC[0])
 	newCCC[0]='X';
@@ -648,14 +699,14 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	newCCC[0]=pgCCC[0];
 
       if (cccArray[1] != pgCCC[1])
-	newCCC[0]='X';
+	newCCC[1]='X';
       else 
-	newCCC[0]=pgCCC[1];
+	newCCC[1]=pgCCC[1];
 
       if (cccArray[2] != pgCCC[2])
-	newCCC[0]='X';
+	newCCC[2]='X';
       else 
-	newCCC[0]=pgCCC[2];
+	newCCC[2]=pgCCC[2];
 
       whichCCCDimPG.setCargoCatCode(new String(newCCC));
     }
@@ -676,6 +727,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 				   itemPhysicalPG.getVolume().getCubicMeters() * quantity, Volume.CUBIC_METERS));
     whichPG.setMass (new Mass (mass +
 			       itemPhysicalPG.getMass().getKilograms() * quantity, Mass.KILOGRAMS));
+
+    if (isDebugEnabled())
+      debug (".addToDimension final dim for " + ccc + " - " + 
+	     whichPG.getFootprintArea().getSquareMeters() + " m^2" + 
+	     whichPG.getVolume().getCubicMeters() + " m^3 " + 
+	     whichPG.getMass().getShortTons() + " short tons.");
   }
 
   /** 
@@ -766,7 +823,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       if (isDebugEnabled())
 	debug (getName() + ".expandAsset - expanding aggregate asset " + asset);
 
-      return glmAssetHelper.ExpandAsset(getDomainService().getFactory (), asset);
+      Vector items = glmAssetHelper.ExpandAsset(getDomainService().getFactory (), asset);
+      if (isDebugEnabled())
+	debug (getName() + ".expandAsset - aggregate asset had " + items.size () + " items.");
+      return items;
     }
     else if (asset instanceof AssetGroup) {
       if (isDebugEnabled())
