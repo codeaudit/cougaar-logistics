@@ -350,7 +350,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       (long bestTime, int aspectType) {
 
     long bucketStart = dgPlugin.getStartOfPeriod();
-    long bucketEnd = bucketStart + dgPlugin.getFrequency();
+    long bucketEnd = bucketStart + dgPlugin.getPeriod();
     long earliestTime = dgPlugin.getLogOPlanStartTime();
 // Get the later of now and org report time
     if (bucketStart > dgPlugin.getLogOPlanStartTime()) {
@@ -359,7 +359,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     long theBadPast = bucketStart - 1;
     long latestTime = dgPlugin.getLogOPlanEndTime();
 
-    double bucketsBetween = ((latestTime - bestTime) / dgPlugin.getFrequency()) - 1;
+    double bucketsBetween = ((latestTime - bestTime) / dgPlugin.getPeriod()) - 1;
 //Use .0033 as a slope for now
     double lateScore = .0033 * bucketsBetween;
 // use some baseline score for earlier or 1 day late
@@ -373,7 +373,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     AspectScorePoint best = new AspectScorePoint
         (AspectValue.newAspectValue(aspectType, bestTime), 0.0);
     AspectScorePoint first_late = new AspectScorePoint
-        (AspectValue.newAspectValue(aspectType, bestTime + dgPlugin.getFrequency()), alpha);
+        (AspectValue.newAspectValue(aspectType, bestTime + dgPlugin.getPeriod()), alpha);
     AspectScorePoint latest = new AspectScorePoint
         (AspectValue.newAspectValue(aspectType, latestTime), alpha + lateScore);
 

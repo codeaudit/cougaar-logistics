@@ -60,10 +60,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   private DGClass9Scheduler class9Scheduler;
 
   private String supplyType;
-  private long frequency;
+  private long period;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
-  public final String GENERATE_FREQUENCY = "GENERATE_FREQUENCY";
+  public final String GENERATE_PERIOD = "GENERATE_PERIOD";
 
   public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
 
@@ -83,7 +83,8 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   /** Lock for accessing timer **/
   private final Object timerLock = new Object();
 
-  private Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+  //TODO: remove calendar variable that old version of getStartOfPeriod() depended upon.
+  //private Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 
   public void load() {
     super.load();
@@ -359,11 +360,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     if (timerExpired()) {
       long planTime = getStartOfPeriod();
       if (logger.isInfoEnabled()) {
-        logger.info("Timer has gone off.  Planning for the next " + ((int) (frequency / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
+        logger.info("Timer has gone off.  Planning for the next " + ((int) (period / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
       }
       Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
                                                          planTime,
-                                                         planTime + frequency);
+                                                         planTime + period);
       //TODO: MWD Remove debug statements:
       if ((getOrgName() != null) &&
           (getOrgName().trim().equals("1-35-ARBN"))) {
@@ -371,7 +372,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
 
       relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
-      demandGenerator.generateDemandTasks(planTime, frequency, relevantProjs);
+      demandGenerator.generateDemandTasks(planTime, period, relevantProjs);
       resetTimer();
     }
   }
@@ -434,35 +435,35 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
 
-  public long getFrequency() {
-    return frequency;
+  public long getPeriod() {
+    return period;
   }
 
-  private boolean isLegalFrequency(long frequencyInMSEC) {
+  private boolean isLegalPeriod(long periodInMSEC) {
     long remainder = -1;
-    if (frequency >= getTimeUtils().MSEC_PER_DAY) {
-      remainder = frequency % getTimeUtils().MSEC_PER_DAY;
-    } else if (frequency >= getTimeUtils().MSEC_PER_HOUR) {
-      remainder = frequency % getTimeUtils().MSEC_PER_HOUR;
+    if (period >= getTimeUtils().MSEC_PER_DAY) {
+      remainder = period % getTimeUtils().MSEC_PER_DAY;
+    } else if (period >= getTimeUtils().MSEC_PER_HOUR) {
+      remainder = period % getTimeUtils().MSEC_PER_HOUR;
     }
-    return ((frequencyInMSEC > 0) && (remainder == 0));
+    return ((periodInMSEC > 0) && (remainder == 0));
   }
 
 
-  public boolean frequencyInDays() {
-    return (getFrequencyUnit() == getTimeUtils().MSEC_PER_DAY);
+  public boolean periodInDays() {
+    return (getPeriodUnit() == getTimeUtils().MSEC_PER_DAY);
   }
 
-  public long getFrequencyUnit() {
-    if (frequency >= getTimeUtils().MSEC_PER_DAY) {
+  public long getPeriodUnit() {
+    if (period >= getTimeUtils().MSEC_PER_DAY) {
       return getTimeUtils().MSEC_PER_DAY;
     } else {
       return getTimeUtils().MSEC_PER_HOUR;
     }
   }
 
-  private int getFrequencyMultiplier() {
-    return (int) ((int) frequency / getFrequencyUnit());
+  private int getPeriodMultiplier() {
+    return (int) ((int) period / getPeriodUnit());
   }
 
   /**
@@ -470,7 +471,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    Initializes supplyType and inventoryFile
    **/
   private HashMap readParameters() {
-    final String errorString = "DemandGeneratorPlugin requires 2 parameters, Supply Type and Gemerate Frequency (secs).  Generate Frequency must be in whole days or whole hours (< 24)";
+    final String errorString = "DemandGeneratorPlugin requires 2 parameters, Supply Type and Gemerate Period (secs).  Generate Period must be in whole days or whole hours (< 24)";
     Collection p = getParameters();
 
     if (p.isEmpty()) {
@@ -492,18 +493,30 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
 
-    //frequency = (new Long((String)map.get(GENERATE_FREQUENCY))).longValue();
-    frequency = 24 * 60 * 60;
+    String periodString = (String)map.get(GENERATE_PERIOD);
 
-    frequency = frequency * 1000;
+    if((periodString != null) &&
+       (!(periodString.trim().equals("")))) {
+      try {
+        period = (new Long(periodString)).longValue();
+      }
+      catch(Exception e) {
+        period = -1;
+      }
+    }
+    else {
+      //Default is 24 hours
+      period = 24 * 60 * 60;
+      period = period * 1000;
+    }
 
-    if (!isLegalFrequency(frequency)) {
-      logger.error("Illegal Frequency - not in days or hours");
-      frequency = -1;
+    if (!isLegalPeriod(period)) {
+      logger.error("Illegal Period - not in days or hours");
+      period = -1;
     }
 
     if (((supplyType == null) ||
-        (frequency <= 0) &&
+        (period <= 0) &&
         logger.isErrorEnabled())) {
       logger.error(errorString);
     }
@@ -520,9 +533,24 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    */
   protected long getStartOfPeriod() {
     long timeIn = getCurrentTimeMillis();
+    //truncate to the whole number that represents the period num since the start of time.
+    long periods = (long) (timeIn/period);
+    //Multiply it back to which gives the start of the period.
+    long timeOut = periods * period;
+    if (timeIn == timeOut) {
+      logger.error("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
+
+    }
+    return timeOut;
+  }
+
+  /** TODO: MWD take out this older verion of getStartOfPeriod()
+
+    protected long getStartOfPeriod() {
+    long timeIn = getCurrentTimeMillis();
     long timeOut = 0;
     calendar.setTimeInMillis(timeIn);
-    if (frequencyInDays()) {
+    if (periodInDays()) {
       calendar.set(calendar.HOUR_OF_DAY, 0);
     }
     calendar.set(calendar.MINUTE, 0);
@@ -536,14 +564,14 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     return timeOut;
   }
 
-
+   **/
   /**
    * Schedule a timer for midnight tonight.
    *
    */
 
   protected void resetTimer() {
-    long expiration = getStartOfPeriod() + frequency;
+    long expiration = getStartOfPeriod() + period;
     resetTimer(expiration);
   }
 
@@ -585,7 +613,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
        */
 
       timer = new CougTimeAlarm(expiration);
-      getAlarmService().addRealTimeAlarm(timer);
+      getAlarmService().addAlarm(timer);
     }
   }
 
@@ -651,8 +679,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
 
     public long getExpirationTime() {
-      return (System.currentTimeMillis() +
-          (expirationTime - getCurrentTimeMillis()));
+      return expirationTime;
     }
 
     public synchronized void expire() {
