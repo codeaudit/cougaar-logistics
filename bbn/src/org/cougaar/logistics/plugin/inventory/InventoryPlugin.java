@@ -469,11 +469,7 @@ public class InventoryPlugin extends ComponentPlugin
           logger.debug("ORG RELATIONSHIPS CHANGED SDSD myorg: " + myOrganization + " supply type:" +
                       supplyType + " role: " + getRole(supplyType) + "\n");
         }
-        // Handle unprovided tasks
-        HashMap providerStartDates = new HashMap();
-	HashMap providerEndDates = new HashMap();
         HashMap providerAvailSchedule = relationshipScheduleMap();
-        Collection unprovidedTasks;
         getOverlappingTasks(refillAllocationSubscription, Constants.Verb.Supply,
                                               providerAvailSchedule);
         getOverlappingTasks(refillAllocationSubscription, Constants.Verb.ProjectSupply,
@@ -776,7 +772,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   protected void getOverlappingTasks(Collection refill_allocations, Verb verb, HashMap providersSched) {
-     RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
+    RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
     Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
     ArrayList partial = new ArrayList();
@@ -821,7 +817,7 @@ public class InventoryPlugin extends ComponentPlugin
             if (enclosed.size() == 0) {
               if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
                 logger.debug("Adding task to list  " + start + "  " + new Date(taskEnd) +
-                                   unprovidedTasks.size());
+                             unprovidedTasks.size());
               }
               unprovidedTasks.add(task);
             }
@@ -842,13 +838,25 @@ public class InventoryPlugin extends ComponentPlugin
     if (!partial.isEmpty()) {
       ArrayList partialsToAlloc = new ArrayList();
       Iterator partIt = partial.iterator();
+      ArrayList failedSplits = new ArrayList();
       while (partIt.hasNext()) {
         Task taskToSplit = (Task) partIt.next();
-        List splitTimes = getSplitTimes(taskToSplit, providersSched);
+        List splitTimes = getSplitTimes(taskToSplit, relationshipScheduleMap());
+        if (splitTimes.isEmpty()) {
+          failedSplits.add(taskToSplit);
+          continue;
+        }
         Collection newPartialTasks = getTaskUtils().splitProjection(taskToSplit, splitTimes, this);
         partialsToAlloc.addAll(newPartialTasks);
       }
-      externalAllocator.allocateRefillTasks(partialsToAlloc);
+
+      if (! failedSplits.isEmpty()) {
+        externalAllocator.rescindTaskAllocations(failedSplits);
+        externalAllocator.allocateRefillTasks(failedSplits);
+      }
+      if (! partialsToAlloc.isEmpty()) {
+        externalAllocator.allocateRefillTasks(partialsToAlloc);
+      }
     }
     //return unprovidedTasks;
   }
