@@ -87,7 +87,7 @@ public class InventoryUIFrame extends JFrame
   public static final String INVENTORY_PREF_FILE_NAME = "InventoryPreferences.txt";
 
   protected InventoryDataSource dataSource;
-  private Container contentPane;
+  protected Container contentPane;
 
   protected JTextArea editPane;
   protected JFileChooser fileChooser;
@@ -101,11 +101,11 @@ public class InventoryUIFrame extends JFrame
 
   protected Logger logger;
 
-  String cip;
-  String defaultSaveCSVPath;
-  String defaultOpenCSVPath;
-  String defaultPrefsPath;
-  String helpFileStr;
+  protected String cip;
+  protected String defaultSaveCSVPath;
+  protected String defaultOpenCSVPath;
+  protected String defaultPrefsPath;
+  protected String helpFileStr;
 
 
   protected InventorySelectionPanel selector;
@@ -250,6 +250,10 @@ public class InventoryUIFrame extends JFrame
     selector.addInventorySelectionListener(this);
 
     contentPane.add(selector, BorderLayout.SOUTH);
+  }
+
+  public void setMultiChart(MultiChartPanel mcp) {
+    multiChart = mcp;
   }
 
   protected JMenuBar makeMenus() {
@@ -629,16 +633,16 @@ public class InventoryUIFrame extends JFrame
     }
   }
 
-  private static void displayErrorString(String reply) {
+  protected static void displayErrorString(String reply) {
       displayErrorString(reply,reply);
   }
 
-  private static void displayErrorString(String title, String reply) {
+  protected static void displayErrorString(String title, String reply) {
     JOptionPane.showMessageDialog(null, reply, title,
                                   JOptionPane.ERROR_MESSAGE);
   }
 
-  private static void displayWarnString(String title, String reply) {
+  protected static void displayWarnString(String title, String reply) {
     JOptionPane.showMessageDialog(null, reply, title,
                                   JOptionPane.WARNING_MESSAGE);
   }
@@ -718,7 +722,7 @@ public class InventoryUIFrame extends JFrame
     return datestamp;
   }
 
-  private static String prependSingle(int digit) {
+  protected static String prependSingle(int digit) {
     if (digit < 10) {
       return "0" + digit;
     } else {
