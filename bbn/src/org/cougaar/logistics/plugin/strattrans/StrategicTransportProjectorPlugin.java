@@ -468,9 +468,36 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       return getSubtasks(task, subscriptionResults);
   }
 
-  /** overloaded for efficient checking of subscriptions */
+  /** overloaded for efficient checking of subscriptions.
+    *   Returns empty vector if the task is in the past. 
+    *   (note: still processes task if the deploy time span is null.  May need to change this?)
+    */
   public Vector getSubtasks(Task task, SubscriptionResults subscriptionResults){
       Vector subtasks = new Vector();
+
+      // TIME-CHECK
+      //   First, check time preference on self org to see if the task is in the past.
+      //   Compare endDate with the cougaar currentTimeMillis(), 
+      //   return empty vector if too early so that task is effectively ignored.
+
+      // get start/end time
+      TimeSpan actTS = subscriptionResults.selfDeployOrgActivity.getTimeSpan();
+      Date thruTime = null, startTime = null;
+      if (actTS != null) {
+        // do we want to fix dates to be after System time?
+    	// startDate will be null if OffsetDays days wasn't an command line parameter
+        thruTime = actTS.getEndDate();
+    	startTime = actTS.getStartDate();
+      }
+
+      if (thruTime != null) {
+          long curr = currentTimeMillis();
+          long thru = thruTime.getTime();
+          if (thru < curr) {
+              logger.warn(getName () + ": Task " + task.getUID() + " is in the past and will be ignored: task-date: " + thruTime.toString() + " vs. cougaar-date: " + (new Date(curr)).toString());
+              return (new Vector());  // return empty vector
+          }
+      }
 
       // PREPOSITIONS ====== extract information from buckets and create prepositions
 
@@ -523,18 +550,8 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 
       Vector preferences = new Vector();
 
-      // 1. ---------- get start and end time
-
-      // get start/end time
-      TimeSpan actTS = subscriptionResults.selfDeployOrgActivity.getTimeSpan();
-      Date thruTime = null, startTime = null;
-      if (actTS != null) {
-        // do we want to fix dates to be after System time?
-    	// startDate will be null if OffsetDays days wasn't an command line parameter
-        thruTime = actTS.getEndDate();
-    	startTime = actTS.getStartDate();
-      }
-      
+      // 5. ---------- get start and end time
+ 
       preferences.add(prefHelper.makeStartDatePreference(ldmf, startTime));
       //preferences.add(prefHelper.makeEndDatePreference(ldmf, thruTime));
 
