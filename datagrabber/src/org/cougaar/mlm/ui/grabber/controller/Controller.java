@@ -60,7 +60,7 @@ import java.sql.Statement;
  *
  * @since 2/01/01
  **/
-public class Controller extends Thread implements ResultHandler{
+public class Controller extends Thread implements ResultHandler, DBConnectionProvider {
 
   //Constants:
   ////////////
@@ -82,6 +82,7 @@ public class Controller extends Thread implements ResultHandler{
   protected DataGrabberConfig dgConfig;
   protected Connection dbConnection;
   protected List dbConnections = new ArrayList();
+  int dbConnectionRequest = 0;
 
   protected Map runMap;
 
@@ -226,11 +227,23 @@ public class Controller extends Thread implements ResultHandler{
     return dbConnection!=null;
   }
 
-  //Gets:
-
+  /** 
+   * round-robin connection choice 
+   */
   public Connection getDBConnection(){
-    return dbConnection;
+    Connection connection;
+    connection = (Connection) dbConnections.get(dbConnectionRequest);
+
+    dbConnectionRequest = (dbConnectionRequest+1) % dbConnections.size ();
+
+    return connection;
   }
+
+  public int getNumDBConnections () { return dbConnections.size(); }
+
+  public List getAllDBConnections () { return dbConnections; }
+
+  //Gets:
 
   public synchronized Run getRunForID(int id){
     return (Run)runMap.get(new Integer(id));
@@ -264,10 +277,7 @@ public class Controller extends Thread implements ResultHandler{
     run.setController(this);
     run.setWorkQueue(workQ);
     run.setDGConfig(dgConfig);
-    // run.setDBConnection(dbConnection);
-    for (Iterator iter = dbConnections.iterator (); iter.hasNext(); ) {
-      run.addDBConnection((Connection) iter.next());
-    }
+    run.setDBConnectionProvider (this);
 
     run.setLogger(logger);
     addRun(run);
