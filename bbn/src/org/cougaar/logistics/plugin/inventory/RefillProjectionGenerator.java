@@ -90,17 +90,15 @@ public class RefillProjectionGenerator extends InventoryModule {
     //get today to see where we are with respect to the VTH windows
     long today = inventoryPlugin.getCurrentTimeMillis();
     
-    // TODO need whole list of inventories
-    ArrayList inventories = new ArrayList();
     if (today < endOfLevelSix) {
       calculateLevelSixProjections(touchedInventories, daysOnHand, endOfLevelSix);
-      calculateLevelTwoProjections(inventories, daysOnHand, 
+      calculateLevelTwoProjections(inventoryPlugin.getInventories(), daysOnHand, 
                                    getTimeUtils().addNDays(endOfLevelSix, 1),
                                    endOfLevelTwo);
     }
 
     if ((today > endOfLevelSix) && (today < endOfLevelTwo)) {
-      calculateLevelTwoProjections(inventories, daysOnHand, 
+      calculateLevelTwoProjections(inventoryPlugin.getInventories(), daysOnHand, 
                                    getTimeUtils().addNDays(endOfLevelSix, 1),
                                    endOfLevelTwo);
     } 
@@ -120,8 +118,8 @@ public class RefillProjectionGenerator extends InventoryModule {
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-      //TODO: clear the projected refills from the bg
-      //thePG.clearRefillProjections();
+      // clear all of the projections
+      thePG.clearRefillProjectionTasks();
 
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
@@ -175,8 +173,9 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param start The start time of the Level 2 VTH window
    *  @param endOfLevelTwo The end time of the Level 2 VTH window
    **/
-  private void calculateLevelTwoProjections(ArrayList myInventories, int daysOnHand, 
+  private void calculateLevelTwoProjections(Collection inventories, int daysOnHand, 
                                             long start, long endOfLevelTwo) {
+      ArrayList myInventories = new ArrayList(inventories);
     //since all Inventories in the agent will use the same bucket size
     // get a token inventory to convert the start and end times to buckets
     // so that we don't have to deal with times and buckets for each inventory.

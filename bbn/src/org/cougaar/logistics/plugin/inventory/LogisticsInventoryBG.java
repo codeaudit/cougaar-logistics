@@ -243,8 +243,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
   
   public List clearRefillTasks(Date now) {
-    // remove uncommitted refill tasks and refill
-    // projections from the list.  Add all removed
+    // remove uncommitted refill tasks. Add all removed
     // tasks to a second list that will be returned
     // for comparison
     Task task;
@@ -256,17 +255,17 @@ public class LogisticsInventoryBG implements PGDelegate {
 	taskList.add(task);
       }
     }
-    for (int i=0; i < refillProjections.size(); i++) {
-      task = (Task)refillProjections.get(i);
-      if ((task != null) && task.beforeCommitment(now)) {
-	refillProjections.set(i, null);
-	if (!taskList.contains(task)) {
-	  taskList.add(task);
-	}
-      }
-    }	
-    return taskList;
+     return taskList;
   }
+
+  // clear the projections (all of them)
+  // and return the removed tasks for comparison
+  public List clearRefillProjectionTasks() {
+    ArrayList removedTaskList = new ArrayList(refillProjections);
+    refillProjections.clear();
+    return removedTaskList;
+  }
+	
 
   public ArrayList getRefillRequisitions() {
     return (ArrayList)refillRequisitions.clone();
