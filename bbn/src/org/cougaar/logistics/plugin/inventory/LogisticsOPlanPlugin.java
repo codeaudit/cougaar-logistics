@@ -148,16 +148,22 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     int waited = 0;
     while (c.isEmpty()) {
       try {
-	logger.error("starting to sleep for oplan objects at "+waited+" seconds at "+clusterId);
+        if (logger.isErrorEnabled()) {
+          logger.error("starting to sleep for oplan objects at "+waited+" seconds at "+clusterId);
+        }
 	Thread.currentThread().sleep(3000);
 	waited=waited+3;
       } catch (Exception ex) {
-	logger.error("Exception sleeping for OPlan "+ex);
+        if (logger.isErrorEnabled()) {
+          logger.error("Exception sleeping for OPlan "+ex);
+        }
 	ex.printStackTrace();
       }
       c = getBlackboardService().query(logisticsOPlanPredicate);
     }
-    logger.debug("Got the OPlan at "+clusterId);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Got the OPlan at "+clusterId);
+    }
     for (Iterator i = c.iterator(); i.hasNext(); ) {
       LogisticsOPlan loplan = (LogisticsOPlan) i.next();
       oplanHash.put(loplan.getOplanUID(), loplan);
@@ -175,7 +181,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 
   private boolean updateOplans() {
     boolean oplanChange = false;
-    logger.debug("starting updateOplans");
+    if (logger.isDebugEnabled()) {
+      logger.debug("starting updateOplans");
+    }
     if (oplans.hasChanged()) {
       doUpdateOplans();
       oplanChange = true;
@@ -185,7 +193,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 
   // Process Oplan subscription
   private void doUpdateOplans() {
-    logger.debug("Updating the Oplans!");
+    if (logger.isDebugEnabled()) {
+      logger.debug("Updating the Oplans!");
+    }
     Enumeration enum;
     // Create new LogisticsOPlan objects for each added Oplan
     if (oplans.getAddedList().hasMoreElements()) {
@@ -205,7 +215,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 	  loplan = new LogisticsOPlan(clusterId, oplan);
 	  oplanHash.put(oplanUID, loplan);
 	  getBlackboardService().publishAdd(loplan);
-	  logger.debug("Published LogisticsOPlan "+loplan+" for "+clusterId);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Published LogisticsOPlan "+loplan+" for "+clusterId);
+          }
 	}
       }
     }
@@ -226,7 +238,7 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 	break;
       }
     }
-    if (oplanHash.isEmpty()) {
+    if (oplanHash.isEmpty() && logger.isErrorEnabled()) {
       logger.error(" updateOplans no OPLAN");
     }
   }

@@ -382,7 +382,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     if (myOrg == null) {
       myOrg = inventoryPlugin.getMyOrganization();
       // if we still don't have it after we ask the inventory plugin, throw an error!
-      if (myOrg == null) {
+      if (myOrg == null && logger.isErrorEnabled()) {
         logger.error("RefillGenerator can not get MyOrganization from " +
                      "the InventoryPlugin");
       }
@@ -409,8 +409,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
           homeGeoloc = geoloc;
         } else {
           //if we can't find the home loc either print an error
-          logger.error("RefillGenerator can not generate a " +
-                       "Home Geoloc for org: " + org);
+          if (logger.isErrorEnabled()) {
+            logger.error("RefillGenerator can not generate a " +
+                         "Home Geoloc for org: " + org);
+          }
         }  
       }
     }

@@ -149,8 +149,10 @@ public class LogisticsInventoryBG implements PGDelegate {
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, startCDay, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
-
-    logger.debug("Start day: "+TimeUtils.dateString(startTime)+", time zero "+TimeUtils.dateString(timeZero));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Start day: "+TimeUtils.dateString(startTime)+", time zero "+
+                   TimeUtils.dateString(timeZero));
+    }
     this.criticalLevel = criticalLevel;
     this.reorderPeriod = reorderPeriod;
     this.bucketSize = bucketSize;
@@ -575,9 +577,11 @@ public class LogisticsInventoryBG implements PGDelegate {
 	    scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
 	    actualDemand += taskUtils.getDouble(scalar);	
 	  } catch(Exception e) {
-	    logger.error(taskUtils.taskDesc(task)+
-			 " Start: "+TimeUtils.dateString(start)+
-			 " days_spanned: "+days_spanned);
+	    if (logger.isErrorEnabled()) {
+              logger.error(taskUtils.taskDesc(task)+
+                           " Start: "+TimeUtils.dateString(start)+
+                           " days_spanned: "+days_spanned);
+            }
 	  }
 	}
       } else {
@@ -636,13 +640,17 @@ public class LogisticsInventoryBG implements PGDelegate {
 // 		   "interval end: "+TimeUtils.dateString(interval_end));
 //     }
     if (value > bucketSize) {
-      logger.error("bucket "+bucket+", Bucket start "+TimeUtils.dateString(bucket_start)+
-		   ", end "+TimeUtils.dateString(bucket_end));
-      logger.error("Task start "+TimeUtils.dateString(start)+", end "+TimeUtils.dateString(end));
-      logger.error("Interval start "+TimeUtils.dateString(interval_start)+", end "+
-		   TimeUtils.dateString(interval_end));
+      if (logger.isErrorEnabled()) {
+        logger.error("bucket "+bucket+", Bucket start "+TimeUtils.dateString(bucket_start)+
+                     ", end "+TimeUtils.dateString(bucket_end));
+        logger.error("Task start "+TimeUtils.dateString(start)+", end "+TimeUtils.dateString(end));
+        logger.error("Interval start "+TimeUtils.dateString(interval_start)+", end "+
+                     TimeUtils.dateString(interval_end));
+      }
       int b_end = convertTimeToBucket(end);
-      logger.error("Calculated bucket end "+b_end+", task end "+TimeUtils.dateString(end));
+      if (logger.isErrorEnabled()) {
+        logger.error("Calculated bucket end "+b_end+", task end "+TimeUtils.dateString(end));
+      }
     }
     return value;
   }
@@ -925,26 +933,28 @@ public class LogisticsInventoryBG implements PGDelegate {
 //        logger.error("Bucket "+i+", Demand "+getActualDemand(i)+", criticalLevel "+
 //  			 criticalLevelsArray[i]+" Level "+inventoryLevelsArray[i]);
 //      }
-    logger.error("********* ProjectWithdrawList ********");
-    for (int i=0; i < projWithdrawList.size(); i++) {
-      logger.error(taskUtils.taskDesc((Task)projWithdrawList.get(i)));
+    if (logger.isErrorEnabled()) {
+      logger.error("********* ProjectWithdrawList ********");
+      for (int i=0; i < projWithdrawList.size(); i++) {
+        logger.error(taskUtils.taskDesc((Task)projWithdrawList.get(i)));
+      }
+      logger.error("********* WithdrawList ********");
+      for (int i=0; i < withdrawList.size(); i++) {
+        logger.error(taskUtils.taskDesc((Task)withdrawList.get(i)));
+      }
+      logger.error("********* ProjectSupplyList ********");
+      for (int i=0; i < projSupplyList.size(); i++) {
+        logger.error(taskUtils.taskDesc((Task)projSupplyList.get(i)));
+      }
+      logger.error("********* SupplyList ********");
+      for (int i=0; i < supplyList.size(); i++) {
+        logger.error(taskUtils.taskDesc((Task)supplyList.get(i)));
+      }
+      logger.error("********* Buffered Critical Levels ********");
+      printQuantityScheduleTimes(bufferedCriticalLevels);
+      logger.error("********* Buffered Inventory Levels ********");
+      printQuantityScheduleTimes(bufferedInventoryLevels);
     }
-    logger.error("********* WithdrawList ********");
-    for (int i=0; i < withdrawList.size(); i++) {
-      logger.error(taskUtils.taskDesc((Task)withdrawList.get(i)));
-    }
-    logger.error("********* ProjectSupplyList ********");
-    for (int i=0; i < projSupplyList.size(); i++) {
-      logger.error(taskUtils.taskDesc((Task)projSupplyList.get(i)));
-    }
-    logger.error("********* SupplyList ********");
-    for (int i=0; i < supplyList.size(); i++) {
-      logger.error(taskUtils.taskDesc((Task)supplyList.get(i)));
-    }
-    logger.error("********* Buffered Critical Levels ********");
-    printQuantityScheduleTimes(bufferedCriticalLevels);
-    logger.error("********* Buffered Inventory Levels ********");
-    printQuantityScheduleTimes(bufferedInventoryLevels);
   }
 
 }

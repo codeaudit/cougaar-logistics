@@ -175,8 +175,9 @@ public class InventoryPlugin extends ComponentPlugin {
 
   public boolean publishAdd(Object o) {
     boolean success = getBlackboardService().publishAdd(o);
-    if (!success)
+    if (!success && logger.isErrorEnabled()) {
       logger.error (getMyOrganization() + " - publishAdd failed for " + o);
+    }
     return success;
   }
 
@@ -216,10 +217,11 @@ public class InventoryPlugin extends ComponentPlugin {
     cycleStamp = (new Date()).getTime();
 
     if (inventoryPolicy ==null) {
-      if (logger.isInfoEnabled ())
+      if (logger.isInfoEnabled ()) {
 	logger.info("\n InventoryPlugin " + supplyType + 
 		    " not ready to process tasks yet." +
 		    " my inv policy is: " + inventoryPolicy + " in " + getMyOrganization());
+      }
       return;
     }
 	
@@ -228,10 +230,11 @@ public class InventoryPlugin extends ComponentPlugin {
     }
 
     if (myOrganization == null) {
-      if (logger.isInfoEnabled())
+      if (logger.isInfoEnabled()) {
 	logger.info("\n InventoryPlugin " + supplyType + 
 		    " not ready to process tasks yet." +
 		    " my org is: " + myOrganization);
+      }
       return;
     }
 
@@ -397,7 +400,7 @@ public class InventoryPlugin extends ComponentPlugin {
     MITopExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new MITopExpansionPredicate());
     DetReqInvExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
 
-    if (getAgentIdentifier() == null) {
+    if (getAgentIdentifier() == null && logger.isErrorEnabled()) {
       logger.error("No agentIdentifier ... subscriptions need this info!!  In plugin: " + this);
     }
     refillAllocationSubscription = (IncrementalSubscription) blackboard.
@@ -740,15 +743,17 @@ public class InventoryPlugin extends ComponentPlugin {
       if (o instanceof org.cougaar.logistics.plugin.inventory.InventoryPolicy) {
 	String type = ((InventoryPolicy)o).getResourceType();
 	if (type.equals(this.type)) {
-	  if (logger.isInfoEnabled()) 
+	  if (logger.isInfoEnabled()) {
 	    logger.info("Found an inventory policy for "+this.type + "agent is: " +
 			getMyOrganization());
+          }
 	  return true;
 	} else {
-	  if (logger.isDebugEnabled()) 
+	  if (logger.isDebugEnabled()) { 
 	    logger.debug("Ignoring type of: "+type + " in " +
 			 getMyOrganization() + " this type is: " + 
 			 this.type);
+          }
 	}
       }
       return false;
@@ -766,9 +771,10 @@ public class InventoryPlugin extends ComponentPlugin {
       Task task = (Task) iter.next();
 	
       if (task.getPlanElement() != null) {
-	if (logger.isDebugEnabled())
+	if (logger.isDebugEnabled()) {
 	  logger.debug (getMyOrganization() + " - found task that already had a p.e. attached? : " + 
 			task.getUID() + " - so skipping it.");
+        }
       }
       else {
 	tasksWithoutPEs.add (task);
@@ -882,7 +888,7 @@ public class InventoryPlugin extends ComponentPlugin {
   public String getInventoryType(Inventory inventory) {
     ScheduledContentPG scp = inventory.getScheduledContentPG();
     Asset proto = scp.getAsset();
-    if (proto == null) {
+    if (proto == null && logger.isErrorEnabled()) {
       logger.error("getInventoryType failed to get asset for "+
 		   inventory.getScheduledContentPG().getAsset().getTypeIdentificationPG());
       return "";
@@ -903,10 +909,14 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
     if (inventory == null) {
-      logger.debug("Inventory is null for "+item);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Inventory is null for "+item);
+      }
     } else {
-      logger.debug("findOrMakeInventory(), CREATED inventory bin for: "+
-		   AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
+      if (logger.isDebugEnabled()) {
+        logger.debug("findOrMakeInventory(), CREATED inventory bin for: "+
+                     AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
+      }
     }
     return inventory;
   }
@@ -984,7 +994,9 @@ public class InventoryPlugin extends ComponentPlugin {
     Collection p = getParameters();
     
     if (p.isEmpty()) {
-      logger.error(errorString);
+      if (logger.isErrorEnabled()) {
+        logger.error(errorString);
+      }
       return null;
     }
     HashMap map = new HashMap();
@@ -1000,8 +1012,9 @@ public class InventoryPlugin extends ComponentPlugin {
     }
     supplyType = (String)map.get(SUPPLY_TYPE);
 //      inventoryFile = (String)map.get(INVENTORY_FILE);
-    if (supplyType == null)
+    if (supplyType == null && logger.isErrorEnabled()) {
       logger.error(errorString);
+    }
     String loggingEnabled = (String)map.get(ENABLE_CSV_LOGGING);
     if((loggingEnabled != null) &&
        (loggingEnabled.trim().equals("true"))) {
@@ -1069,11 +1082,13 @@ public class InventoryPlugin extends ComponentPlugin {
       publishChange(expansion);
     }
     else {
-      logger.error("publishAddToExpansion: problem pe not Expansion? "+pe);	    
+      if (logger.isErrorEnabled()) {
+        logger.error("publishAddToExpansion: problem pe not Expansion? "+pe);	    
+      }
     }
  
    // Publish new task
-    if (!publishAdd(subtask)) {
+    if (!publishAdd(subtask) && logger.isErrorEnabled()) {
       logger.error("publishAddToExpansion fail to publish task "+taskUtils.taskDesc(subtask));
     }
     if((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
@@ -1151,7 +1166,9 @@ public class InventoryPlugin extends ComponentPlugin {
       return Constants.Role.PACKAGEDPOLSUPPLYPROVIDER;
     if (supply_type.equals("Subsistence"))
       return Constants.Role.SUBSISTENCESUPPLYPROVIDER;
-    logger.error("Unsupported Supply Type");
+    if (logger.isErrorEnabled()) {
+      logger.error("Unsupported Supply Type");
+    }
     return null;
   }
 
@@ -1201,7 +1218,9 @@ public class InventoryPlugin extends ComponentPlugin {
       publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON+"_"+supplyType, rangeList,
 							 LEVEL_6_TIME_HORIZON_DEFAULT));
     } catch (Exception e) {  
-      logger.error ("" + getMyOrganization() + " got exception creating operating modes.", e); 
+      if (logger.isErrorEnabled()) {
+        logger.error ("" + getMyOrganization() + " got exception creating operating modes.", e); 
+      }
     } finally {
       getBlackboardService().closeTransaction();
     }
@@ -1303,19 +1322,21 @@ public class InventoryPlugin extends ComponentPlugin {
      Self-Test
   **/
   public void automatedSelfTest() {
-    if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
-    if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
-    if (inventoryInitHash.isEmpty()) {
+    if (logger.isErrorEnabled()) {
+      if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
+      if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
+      if (inventoryInitHash.isEmpty()) {
 	logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
 	logger.error("Could not find Inventory file : "+inventoryFile);
+      }
+      if (detReqHandler.getDetermineRequirementsTask(aggMILSubscription) == null)
+        logger.error("Missing DetermineRequirements for MaintainInventory task.");
+      if (logOPlan == null)
+        logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
+      logger.error("Critical Level is "+criticalLevel);
+      logger.error("Reorder Period is "+reorderPeriod);
+      logger.error("Days per bucket is "+bucketSize);
     }
-    if (detReqHandler.getDetermineRequirementsTask(aggMILSubscription) == null)
-      logger.error("Missing DetermineRequirements for MaintainInventory task.");
-    if (logOPlan == null)
-      logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
-    logger.error("Critical Level is "+criticalLevel);
-    logger.error("Reorder Period is "+reorderPeriod);
-    logger.error("Days per bucket is "+bucketSize);
   }
 
   private void testBG() {
@@ -1325,7 +1346,9 @@ public class InventoryPlugin extends ComponentPlugin {
     cycleStamp = (new Date()).getTime();
     while (inv_it.hasNext()) {
       inv = (Inventory)inv_it.next();
-      logger.error("***"+inv.getItemIdentificationPG().getItemIdentification());
+      if (logger.isErrorEnabled()) {
+        logger.error("***"+inv.getItemIdentificationPG().getItemIdentification());
+      }
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       logInvPG.takeSnapshot(inv);
       if(logToCSV) {
