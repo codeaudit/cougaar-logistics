@@ -191,7 +191,13 @@ public class LogisticsInventoryFormatter {
 	    }
 	    else {
 		int[] ats = ar.getAspectTypes();
-		int qtyInd = getIndexForType(ats,AspectType.QUANTITY);
+		int qtyInd = -1;
+		if(taskUtils.isProjection(aTask)) {
+		    qtyInd = getIndexForType(ats,AlpineAspectType.DEMANDRATE);
+		}
+		else {
+		    qtyInd = getIndexForType(ats,AspectType.QUANTITY);
+		}
 		int startInd = getIndexForType(ats,AspectType.START_TIME);
 		int endInd = getIndexForType(ats,AspectType.END_TIME);
 		Enumeration phasedResults = ar.getPhasedResults();
