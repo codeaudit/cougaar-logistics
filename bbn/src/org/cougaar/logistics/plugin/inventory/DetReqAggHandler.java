@@ -31,6 +31,7 @@ import java.util.*;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.plugin.util.AllocationResultHelper;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.logistics.ldm.Constants;
@@ -145,7 +146,7 @@ public class DetReqAggHandler extends InventoryModule{
     inventoryPlugin.publishAdd(mpTask);
     // create an expty expansion for the mp maintain inv task to be filled
     // in later with a MaintainInventory task for each maintained item
-    createTopMIExpansion(mpTask);
+    createTopMIDisposition(mpTask);
   }
 
   /** Create an empty expansion pe for the top level maintain inventory task
@@ -153,7 +154,7 @@ public class DetReqAggHandler extends InventoryModule{
    *  Maintained item.
    *  @param parent The Top maintain inventory task
    **/
-  private void createTopMIExpansion(Task parent) {
+  private Expansion createTopMIExpansion(Task parent) {
     PlanningFactory factory = inventoryPlugin.getPlanningFactory();
     // Create workflow
     NewWorkflow wf = (NewWorkflow)factory.newWorkflow();
@@ -167,6 +168,20 @@ public class DetReqAggHandler extends InventoryModule{
     Expansion expansion = factory.createExpansion(parent.getPlan(), parent, wf, estAR);
     // Publish Expansion
     inventoryPlugin.publishAdd(expansion);
+    return expansion;
+  }
+
+  /**Create a disposition pe for the top level maintain inventory task
+   * that will be removed when the first child maintain inventory task needs to
+   * be added to the expansion.
+   **/
+  private void createTopMIDisposition(Task parent) {
+    // Dispose of task immediately so UA won't fail completion tests before planning
+    AllocationResultHelper helper = new AllocationResultHelper(parent, null);
+    AllocationResult dispAR = helper.getAllocationResult(1.0, true);
+    Disposition disposition =
+      inventoryPlugin.getPlanningFactory().createDisposition(parent.getPlan(), parent, dispAR);
+    inventoryPlugin.publishAdd(disposition);
   }
   
   /**
@@ -242,6 +257,10 @@ public class DetReqAggHandler extends InventoryModule{
       }
       milTask = createMILTask(parent, inventory);
       PlanElement pe = parent.getPlanElement();
+      if (pe instanceof Disposition) {
+        inventoryPlugin.publishRemove(pe);
+        pe = createTopMIExpansion(parent);
+      }
       if (pe instanceof Expansion) {
         Expansion expansion =(Expansion)pe;
         NewWorkflow wf = (NewWorkflow)expansion.getWorkflow();
