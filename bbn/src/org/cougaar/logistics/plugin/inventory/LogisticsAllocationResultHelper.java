@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.core.plugin.util;
+package org.cougaar.logistics.plugin.inventory;
 
 import java.util.Enumeration;
 import java.util.Iterator;
