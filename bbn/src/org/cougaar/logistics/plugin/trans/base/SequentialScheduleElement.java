@@ -112,7 +112,7 @@ public abstract class SequentialScheduleElement extends ScheduleElementImpl {
     }
     return true;
   }
-	
+
   /**
    * planMe does the essential planning on a schedule element. Presumbly it will create
    * a task and allocate it. If it does not this architecture will fail

@@ -29,8 +29,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 import java.util.Random;
+import java.util.Set;
+import java.util.Vector;
 
 import org.cougaar.core.service.BlackboardService;
 
@@ -78,6 +79,7 @@ import org.cougaar.planning.ldm.plan.LocationScheduleElement;
 import org.cougaar.planning.ldm.plan.NewSchedule;
 import org.cougaar.planning.ldm.plan.NewTask;
 import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Relationship;  
 import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.Role;
@@ -974,6 +976,91 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     return orgs;
   }
 
+  /**
+   * re-examine the workflow to see if the any tasks overlap the time
+   * of the recently changed allocation, if they do, replan tasks
+   * that depend on it.
+   */
+  protected void replanDependingTasks (Task parentTask, long beforeTime) {
+    Expansion exp = (Expansion) parentTask.getPlanElement();
+    if (exp == null) {
+      if (isInfoEnabled()) {
+	info ("no expansion for " + parentTask.getUID() + " must be in middle of rescinds.");
+      }
+
+      return;
+    }
+      
+    PrepositionalPhrase prep = prepHelper.getPrepNamed(parentTask, GLMTransConst.SequentialSchedule);
+    Schedule sched = (Schedule) prep.getIndirectObject();
+    Enumeration enum = sched.getAllScheduleElements();
+    boolean overlap = false;
+    Set toReplan = new HashSet();
+
+    while (enum.hasMoreElements()) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+      String uid = "<NO TASK>";
+      if (spe.getTask () != null)
+	uid = spe.getTask ().getUID ().toString();
+
+      if (isInfoEnabled ()) {
+	info ("for task " + parentTask.getUID() + 
+	      " spe task " + uid +
+	      " spe planned " + spe.isPlanned () +
+	      " spe end date " + spe.getEndDate () + 
+	      " before time " + new Date(beforeTime));
+      }
+
+      if (spe.isPlanned ()) {
+	for (Iterator iter = spe.getDependencies ().iterator (); iter.hasNext(); ) {
+	  SequentialScheduleElement dependency = (SequentialScheduleElement)iter.next();
+
+	  // |--- spe ---|               (overlap) 
+	  //    |--- dep ---|
+	  //   OR 
+	  // |--- dep ---| |--- spe ---| (dependency should always be after!)
+
+	  if (spe.overlapSchedule (dependency) || dependency.getEndTime () < spe.getStartTime()) {
+	    if (isInfoEnabled ()) {
+	      info ("for task " + parentTask.getUID() + " replanning spe at " + spe.getEndDate ());
+	    }
+	    toReplan.add (spe);
+	  }
+	}
+      }
+    }
+
+    for (Iterator iter = toReplan.iterator(); iter.hasNext(); ) {
+      SequentialScheduleElement replanSSE = (SequentialScheduleElement) iter.next();
+      replanPortion (exp, replanSSE);
+    }
+
+    // let's replan!
+    if (!toReplan.isEmpty()) {
+      if (isInfoEnabled ()) {
+	info ("got overlap of " + parentTask.getUID());
+      }
+      turnCrank (parentTask);
+    }
+  }
+
+  protected void replanPortion (Expansion exp, SequentialScheduleElement spe) {
+    handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
+    publishRemove (spe.getTask());
+    if (exp != null) { // fix for bug #13417
+      try {
+	((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+      } catch (IllegalArgumentException iae) {
+	error (getName () + " - task " + spe.getTask().getUID () + 
+	       " is not in workflow for task " + exp.getTask().getUID() + 
+	       " - likely rescinds happening concurrently. Exception was " + iae);
+      }
+      publishChange (exp);
+    }
+
+    spe.unplan ();
+    spe.setTask (null);
+  }
 
   /** 
    * this could be more sophisticated in the future 

@@ -202,6 +202,10 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	     spe.isPlanned() + " is ready " + 
 	     spe.isReady ());
       if ((!spe.isPlanned()) && (spe.isReady())) {
+	if (spe.getTask () != null) {
+	  error ("huh? there already is a task " + spe.getTask().getUID () + " for " + spe);
+	}
+
 	Task subtask = spe.planMe(this);
 	attachSubtask (subtask, spe);
 	childToParentUID.put(subtask.getUID().toString(), task);
@@ -248,6 +252,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     boolean workflowWasEmpty = !wf.getTasks().hasMoreElements();
 
     wf.addTask(subtask);
+
+    //    if (wf.getTasksIDs().length > 3) {
+    //      error ("parent " + parentTask.getUID ()+ " has " + wf.getTasksIDs ().length + " subtasks?");
+    //    }
+
     ((NewTask)subtask).setWorkflow(wf);
     ((NewTask)subtask).setParentTask(parentTask);
     publishAdd(subtask);
@@ -570,7 +579,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	// did the reported time get earlier?
 	if (returnedStart < sse.getStartDate ().getTime ()) {
 	  // find tasks that depended on this one and replan them
-	  replanEarlierTasks (parenttask, returnedStart);
+	  replanDependingTasks (parenttask, returnedStart);
 	}
       }
     }
@@ -585,65 +594,7 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
    * of the recently changed allocation, if they do, replan tasks
    * that depend on it.
    */
-  protected void replanEarlierTasks (Task parentTask, long beforeTime) {
-    Expansion exp = (Expansion) parentTask.getPlanElement();
-    if (exp == null) {
-      if (isInfoEnabled()) {
-	info ("no expansion for " + parentTask.getUID() + " must be in middle of rescinds.");
-      }
-
-      return;
-    }
-      
-    PrepositionalPhrase prep = prepHelper.getPrepNamed(parentTask, GLMTransConst.SequentialSchedule);
-    Schedule sched = (Schedule) prep.getIndirectObject();
-    Enumeration enum = sched.getAllScheduleElements();
-    boolean overlap = false;
-    while (enum.hasMoreElements()) {
-      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
-      String uid = "<NO TASK>";
-      if (spe.getTask () != null)
-	uid = spe.getTask ().getUID ().toString();
-
-      if (isInfoEnabled ()) {
-	info ("for task " + parentTask.getUID() + 
-	      " spe task " + uid +
-	      " spe planned " + spe.isPlanned () +
-	      " spe end date " + spe.getEndDate () + 
-	      " before time " + new Date(beforeTime));
-      }
-
-      if (spe.isPlanned () && (beforeTime < spe.getEndDate().getTime())) {
-	if (isInfoEnabled ()) {
-	  info ("for task " + parentTask.getUID() + " replanning spe at " + spe.getEndDate ());
-	}
-
-	spe.unplan ();
-	if (exp != null) { // fix for bug #13417
-	  try {
-	    ((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
-	  } catch (IllegalArgumentException iae) {
-	    error (getName () + " - task " + spe.getTask().getUID () + 
-		   " is not in workflow for task " + parentTask.getUID() + 
-		   " - likely rescinds happening concurrently. Exception was " + iae);
-	  }
-	  publishChange (exp);
-	}
-	handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
-	publishRemove (spe.getTask());
-	spe.setTask (null);
-	overlap = true;
-      }
-    }
-
-    // let's replan!
-    if (overlap) {
-      if (isInfoEnabled ()) {
-	info ("got overlap of " + parentTask.getUID());
-      }
-      turnCrank (parentTask);
-    }
-  }
+  protected void replanDependingTasks (Task parentTask, long beforeTime) {}
 
   /** 
    * Gets the parent task for the child task with the UID uid.
