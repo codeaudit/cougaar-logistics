@@ -1160,7 +1160,7 @@ typical_case:
 
     MovabilityPG movabilityPG = null;
     if (alpProt != null)
-      alpProt.getMovabilityPG();
+      movabilityPG = alpProt.getMovabilityPG();
 
     String cccString = "XXX";
     
