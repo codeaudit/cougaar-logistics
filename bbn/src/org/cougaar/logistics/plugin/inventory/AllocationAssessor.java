@@ -249,10 +249,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
             }
             // if it already has a pe we could check it - but for now we won't
 	}
-	else if ((myOrgName.indexOf("102-POL-SUPPLYCO") >= 0) &&
-		 (myItemId.indexOf("NSN/9130010315816") >= 0)) {
-	    System.out.println("Not allocating JP8 where endTimePref is " + new Date((long) endTimePref) + " which equals bucket " + thePG.convertTimeToBucket((long) endTimePref) + " and the counted bucket is " + countedBucket);
-	}
       }
       //bump the bucket
       currentBucket = currentBucket + 1;
