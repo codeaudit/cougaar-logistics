@@ -27,6 +27,7 @@ import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.glm.ldm.oplan.Oplan;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 import java.io.Serializable;
 import java.util.*;
 
@@ -40,13 +41,36 @@ public class LogisticsOPlan extends ClusterOPlan implements Serializable {
   }
   public boolean updateOrgActivities(IncrementalSubscription orgActivitySubscription) {
     boolean update = super.updateOrgActivities(orgActivitySubscription);
-    updateArrivalInTheater();
+    updateArrivalInTheater(orgActivitySubscription);
     return update;
   }
 
-  public void updateArrivalInTheater() {
-    // Use start time for now, need to find out how to derive arrival in theater
-    arrivalInTheater = getStartTime();
+  public void updateArrivalInTheater(IncrementalSubscription orgActivitySubscription) {
+    // Arrival in theater is the end date of the Deployment orgActivity
+    long arrival = getStartTime();
+    OrgActivity activity;
+    Enumeration activities = orgActivitySubscription.elements();
+
+    // search for Deployment orgActivity
+    while (activities.hasMoreElements()) {
+      activity = (OrgActivity)activities.nextElement();
+      if (activity.getActivityType().equals(OrgActivity.DEPLOYMENT)) {
+	if (activity.getEndTime() > arrival) {
+	  arrival = activity.getEndTime();
+	}
+      }
+    }
+    arrivalInTheater = arrival;
   }    
+
+  public long getArrivalTime() {
+    return arrivalInTheater;
+  }
+
+  public String toString() {
+    return new String(super.toString()+" Start: "+TimeUtils.dateString(getStartTime())+
+		      " End: "+TimeUtils.dateString(getEndTime())+" Arrival: "+
+		      TimeUtils.dateString(arrivalInTheater));
+  }
 }
 
