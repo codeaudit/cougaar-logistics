@@ -198,28 +198,35 @@ public class InventoryPlugin extends ComponentPlugin {
     updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
     updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
     cycleStamp = (new Date()).getTime();
+
+    if (inventoryPolicy ==null) {
+      if (logger.isDebugEnabled ())
+	logger.debug("\n InventoryPlugin " + supplyType + 
+		     " not ready to process tasks yet." +
+		     " my inv policy is: " + inventoryPolicy);
+      return;
+    }
+	
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-      if ((myOrganization != null) && (supplyTaskSubscription == null) && 
-	  (inventoryPolicy !=null)) {
-	myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
-	inventoryFile = getInventoryFile(supplyType);
-	getInventoryData();
-	supplyExpander.initialize(myOrganization);
-	setupSubscriptions2();
-      } else {
-	if (logger.isDebugEnabled()) {
-	  logger.debug("\n InventoryPlugin " + supplyType + 
-		       " not ready to process tasks yet." +
-		       " my org is: " + myOrganization + " my inv policy is: " + 
-		       inventoryPolicy + " my supply task subscription is: " + 
-		       supplyTaskSubscription);
-	}
-
-	return; // we're not ready, let's hope we are in the next execution cycle.
-	// this is a little dangerous -- what if we never get kicked again?
-      }
     }
+
+    if (myOrganization == null) {
+      if (logger.isDebugEnabled())
+	logger.debug("\n InventoryPlugin " + supplyType + 
+		     " not ready to process tasks yet." +
+		     " my org is: " + myOrganization);
+      return;
+    }
+
+    if (supplyTaskSubscription == null) {
+      myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
+      inventoryFile = getInventoryFile(supplyType);
+      getInventoryData();
+      supplyExpander.initialize(myOrganization);
+      setupSubscriptions2();
+    } 
+
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {// && 
 //        myOrganization != null ) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
