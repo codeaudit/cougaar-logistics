@@ -175,15 +175,15 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
       
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
-      int startBucket = thePG.convertTimeToBucket(startDay);
+      int startBucket = thePG.convertTimeToBucket(startDay, true);
       int currentBucket = startBucket;
 //       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
-//                                                            addNDays(startDay, daysOnHand));
-      int customerDemandBucket = thePG.convertTimeToBucket(startDay) + daysOnHand;
+//                                                            addNDays(startDay, daysOnHand), true);
+      int customerDemandBucket = thePG.convertTimeToBucket(startDay, true) + daysOnHand;
  
       double projDemand = 0;
       double nextProjDemand = 0;
-      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix);
+      int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix, true);
       thePG.setEndOfLevelSixBucket(endOfLevelSixBucket);
       
       //get the initial demand for the customer for startBucket + daysOnHand
@@ -270,7 +270,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     // this will have to change once we have mismatched level 2 windows
     oldProjections.addAll(level2PG.clearRefillProjectionTasks());
 
-    int startBucket = level2PG.convertTimeToBucket(start);
+    int startBucket = level2PG.convertTimeToBucket(start, true);
     // int currentBucket = startBucket;
 //     int customerDemandBucket = level2PG.convertTimeToBucket(getTimeUtils().
 //                                                            addNDays(start, daysOnHand));
@@ -283,7 +283,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     startBucket = currentBucket;
     int customerDemandBucket = startBucket;
 
-    int endOfLevelTwoBucket = level2PG.convertTimeToBucket(endOfLevelTwo);
+    int endOfLevelTwoBucket = level2PG.convertTimeToBucket(endOfLevelTwo, true);
     // get intital demand level
     double projDemand = level2PG.getProjectedDemand(customerDemandBucket);
     double nextProjDemand = 0;

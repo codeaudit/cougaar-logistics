@@ -178,8 +178,8 @@ public class LogisticsInventoryBG implements PGDelegate {
         targetLevelsList.clear();
         long start = taskUtils.getStartTime(task);
         long end = taskUtils.getEndTime(task);
-        int bucket_start = convertTimeToBucket(start);
-        int bucket_end = convertTimeToBucket(end);
+        int bucket_start = convertTimeToBucket(start, true);
+        int bucket_end = convertTimeToBucket(end, true);
         if (bucket_end >= projectedDemandArray.length) {
             projectedDemandArray = expandArray(projectedDemandArray);
         }
@@ -210,7 +210,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 customerHash.put(org, new Long(endTime));
             }
         }
-        int bucket = convertTimeToBucket(endTime);
+        int bucket = convertTimeToBucket(endTime, true);
         while (bucket >= dueOutList.size()) {
             dueOutList.add(new ArrayList());
         }
@@ -295,7 +295,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public void addRefillRequisition(Task task) {
         long endTime = getEndTime(task);
-        int bucket = convertTimeToBucket(endTime);
+        int bucket = convertTimeToBucket(endTime, true);
         while (bucket >= refillRequisitions.size()) {
             refillRequisitions.add(null);
         }
@@ -311,7 +311,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 lastSeen = time;
             }
         }
-        return convertTimeToBucket(lastSeen);
+        return convertTimeToBucket(lastSeen, true);
     }
 
     public int getFirstProjectWithdrawBucket() {
@@ -329,7 +329,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         // return the bucket after the first seen actual's end time bucket
         // consistent with getEffectiveProjectionStart
-        return (convertTimeToBucket(firstSeen) + 1);
+        return (convertTimeToBucket(firstSeen, true) + 1);
     }
 
     public int getLastRefillRequisition() {
@@ -363,8 +363,8 @@ public class LogisticsInventoryBG implements PGDelegate {
         if (start == 0L) {
             return;
         }
-        int bucket_start = convertTimeToBucket(start);
-        int bucket_end = convertTimeToBucket(end);
+        int bucket_start = convertTimeToBucket(start, true);
+        int bucket_end = convertTimeToBucket(end, true);
         while (bucket_end >= refillProjections.size()) {
             refillProjections.add(null);
         }
@@ -649,7 +649,7 @@ public class LogisticsInventoryBG implements PGDelegate {
                 logger.error("Interval start " + TimeUtils.dateString(interval_start) + ", end " +
                              TimeUtils.dateString(interval_end));
             }
-            int b_end = convertTimeToBucket(end);
+            int b_end = convertTimeToBucket(end, true);
             if (logger.isErrorEnabled()) {
                 logger.error("Calculated bucket end " + b_end + ", task end " + TimeUtils.dateString(end));
             }
@@ -780,7 +780,7 @@ public class LogisticsInventoryBG implements PGDelegate {
      *  in which it falls
      */
     public long truncateToBucketStart(long aTime) {
-        int bucket = convertTimeToBucket(aTime);
+        int bucket = convertTimeToBucket(aTime, true);
         return convertBucketToTime(bucket);
     }
 
@@ -788,13 +788,15 @@ public class LogisticsInventoryBG implements PGDelegate {
      * Convert a time (long) into a bucket of this inventory that can be
      * used to index duein/out vectors, levels, etc.
      **/
-    public int convertTimeToBucket(long time) {
+    public int convertTimeToBucket(long time, boolean partialBuckets) {
         int thisBucket = (int) (time / MSEC_PER_BUCKET);
-	// FCS - HOURLY : Added this code from Bug #2413
-	if ((time % MSEC_PER_BUCKET) > 0.0) {
-	    thisBucket += 1;
+	if (partialBuckets) {
+	  // FCS - HOURLY : Added this code from Bug #2413
+	  if ((time % MSEC_PER_BUCKET) > 0.0) {
+ 	    thisBucket += 1;
+	  }
+	  // FCS - HOURLY : End added code
 	}
-	// FCS - HOURLY : End added code
 	return thisBucket - timeZero;
     }
 

@@ -159,10 +159,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       thePG = (LogisticsInventoryPG)
         inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
 
-      today_bucket = thePG.convertTimeToBucket(today);
+      today_bucket = thePG.convertTimeToBucket(today, true);
       reconcileThePast(today_bucket, thePG);
       int end_bucket = thePG.getLastDemandBucket();
-      int endOfLevel2Bucket = thePG.convertTimeToBucket(endOfLevel2);
+      int endOfLevel2Bucket = thePG.convertTimeToBucket(endOfLevel2, true);
       if (end_bucket > endOfLevel2Bucket) {
 	end_bucket = endOfLevel2Bucket;
       }
@@ -475,7 +475,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         //the uncounted and counted windows - dont blindly allocate it here ... it should
         // be picked up by the counted projections allocation method.
         if ((endTimePref != Double.NaN) &&
-	    ((thePG.convertTimeToBucket((long)endTimePref) - 1) < countedBucket)) {
+	    ((thePG.convertTimeToBucket((long)endTimePref, true) -1) < countedBucket)) {
             if (withdrawProj.getPlanElement() == null) {
               createBestAllocation(withdrawProj, inventory, thePG);
             }

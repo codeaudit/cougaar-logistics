@@ -90,7 +90,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     ArrayList oldRefills = new ArrayList();
     int orderShipTime = inventoryPlugin.getOrderShipTime();
     int maxLeadTime = inventoryPlugin.getMaxLeadTime();
-    
+
     //Should we push now to the end of today? For now we WILL NOT.
     //long today = getTimeUtils().
     //  pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
@@ -118,13 +118,16 @@ public class RefillGenerator extends InventoryLevelGenerator {
 	//clear the refills
 	oldRefills.addAll(thePG.clearRefillTasks(new Date(today)));
 
-	int startBucket = thePG.convertTimeToBucket(start);
+	int startBucket = thePG.convertTimeToBucket(start, false);
         // refill time is start + 1 bucket (k+1)
         int refillBucket = startBucket + 1; 
         // max lead day is today + maxLeadTime
 //         int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-// 						      addNDays(today, maxLeadTime));
-	int maxLeadBucket = thePG.convertTimeToBucket(today) + maxLeadTime;
+// 						      addNDays(today, maxLeadTime), true);
+	// Do not count partial buckets hear because when planning we want the start of the
+	// bucket.  This prevents us from removing refills that because of OST, cannot be
+	// replaced leaving holes in supply.
+	int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
 	double prevTarget = 0;
 
         //calculate inventory levels for time ZERO through start (today + OST)
