@@ -32,7 +32,7 @@ import org.xml.sax.Attributes;
 
 /**
  * Represents the data leaving the PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: ahelsing $
  *
  * @since 1/24/01
  **/
@@ -51,6 +51,12 @@ public class ConveyancePrototype implements XMLable, DeXMLable, Serializable{
   protected static final String AVE_SPEED_TAG = "Speed";
   protected static final String ALP_TYPEID_TAG = "ALPTypeID";
   protected static final String NOMENCLATURE_TAG = "Nomen";
+
+
+  // WARNING: These next type constants are used in the uiframework module.
+  // They have been copied there to avoid dependency.
+  // See org.cougaar.lib.uiframework.ui.map.layer.AssetTypeConstants
+  // If the numbers here are changed, change them there as well.
 
   //Constants:
   //types:

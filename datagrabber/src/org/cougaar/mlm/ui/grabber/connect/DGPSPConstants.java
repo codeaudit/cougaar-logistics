@@ -26,7 +26,7 @@ import org.cougaar.mlm.ui.psp.transit.data.population.ConveyancePrototype;
 
 /**
  * Constants for the DataGathererPSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: ahelsing $
  *
  * @since 2/18/01
  **/
@@ -184,6 +184,10 @@ public interface DGPSPConstants{
   public static final String COL_WEIGHT_CAP="weightcapacity"; // grams
   public static final String COL_AVE_SPEED="avespeed";        // miles/hour
   
+
+  // WARNING: These next type constants are used in the uiframework module.
+  // They have been copied there to avoid dependency.
+  // See org.cougaar.lib.uiframework.ui.map.layer.AssetTypeConstants
   //types:
   public static final int CONV_TYPE_UNKNOWN=
     ConveyancePrototype.ASSET_TYPE_UNKNOWN;
