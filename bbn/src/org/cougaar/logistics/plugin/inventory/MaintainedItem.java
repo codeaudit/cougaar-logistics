@@ -35,7 +35,7 @@ import java.util.HashMap;
 public class MaintainedItem implements Serializable {
     
   protected transient Logger logger;
-  protected transient InventoryPlugin invPlugin;
+  protected transient UtilsProvider utilsPlugin;
 
   protected String maintainedItemType = null;
   protected String typeIdentification = null;
@@ -46,17 +46,17 @@ public class MaintainedItem implements Serializable {
  
   public MaintainedItem() {}
 
-  public MaintainedItem(String type, String typeId, String itemId, String nomen, InventoryPlugin aPlugin) {
+  public MaintainedItem(String type, String typeId, String itemId, String nomen, UtilsProvider aPlugin) {
     maintainedItemType = type;
     typeIdentification = typeId;
     itemIdentification = itemId;
     nomenclature = nomen;
-    invPlugin = invPlugin;
-    if(aPlugin == null) {
+    utilsPlugin = aPlugin;
+    if(utilsPlugin == null) {
 	logger = NullLoggingServiceImpl.getLoggingService();
     }
     else {
-	logger = (Logger)aPlugin.getLoggingService(this);
+	logger = (Logger)utilsPlugin.getLoggingService(this);
     }
   }
 
@@ -76,7 +76,7 @@ public class MaintainedItem implements Serializable {
     return nomenclature;
   }
 
-  public static MaintainedItem findOrMakeMaintainedItem(String type, String typeId, String itemId, String nomen, InventoryPlugin aPlugin) {
+  public static MaintainedItem findOrMakeMaintainedItem(String type, String typeId, String itemId, String nomen, UtilsProvider aPlugin) {
     if (type == null || typeId == null) {
 	if(aPlugin != null) {
 	    Logger aLogger = (Logger)aPlugin.getLoggingService("MaintainedItem");

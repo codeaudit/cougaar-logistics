@@ -424,7 +424,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     TypeIdentificationPG tip = thePG.getResource().getTypeIdentificationPG();
     MaintainedItem itemID = MaintainedItem.
       findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(), 
-                               null, tip.getNomenclature(), inventoryPlugin);
+                               null, tip.getNomenclature(), (UtilsProvider)inventoryPlugin);
     pp_vector.add(createPrepPhrase(Constants.Preposition.MAINTAINING, itemID));
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
     
