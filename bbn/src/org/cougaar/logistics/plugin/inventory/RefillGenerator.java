@@ -28,9 +28,11 @@ import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
+import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
@@ -98,6 +100,7 @@ public class RefillGenerator extends InventoryModule {
       //clear the refills
       thePG.clearRefillTasks(new Date(start));
 
+      int inventoryBucket = thePG.convertTimeToBucket(today);
       int startBucket = thePG.convertTimeToBucket(start);
       // refill time is start + 1 bucket (k+1)
       int refillBucket = startBucket + 1; 
@@ -105,12 +108,22 @@ public class RefillGenerator extends InventoryModule {
       int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
                                              addNDays(today, maxLeadTime));
 
+      //calculate inventory levels for today through start (today + OST)
+      while (inventoryBucket <= startBucket) {
+	  double level = thePG.getLevel(inventoryBucket) -
+	      thePG.getActualDemand(inventoryBucket + 1);
+	  double committedRefill = findCommittedRefill(inventoryBucket, thePG);
+	  thePG.setLevel(inventoryBucket, (level + committedRefill) );
+	  inventoryBucket = inventoryBucket + 1;
+      }
+
+
       //  create the refills
       while (refillBucket <= maxLeadBucket) {
          double invLevel = thePG.getLevel(startBucket) - 
           thePG.getActualDemand(refillBucket);
         if (thePG.getCriticalLevel(refillBucket) < invLevel) {
-          thePG.setLevel(refillBucket, 0);
+          thePG.setLevel(refillBucket, invLevel);
         } else {
           int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
           double refillQty = generateRefill(invLevel, refillBucket, 
@@ -118,7 +131,7 @@ public class RefillGenerator extends InventoryModule {
           // make a task for this refill and publish it to glue plugin
           // and apply it to the LogisticsInventoryBG
           createRefillTask(refillQty, thePG.convertBucketToTime(refillBucket), 
-                           anInventory, thePG, today);
+                           anInventory, thePG, today, orderShipTime);
           thePG.setLevel(refillBucket, (invLevel + refillQty));
         }
         //reset the buckets
@@ -182,14 +195,17 @@ public class RefillGenerator extends InventoryModule {
    *  @param inv  The Inventory this Refill Task is resupplying
    *  @param thePG  The LogisticsInventoryPG for the Inventory.
    *  @param today  Time representing now to use as the earliest possible delivery
+   *  @param ost The OrderShipTime used to calculate the CommitmentDate
    **/
   private void createRefillTask(double quantity, long endDay, 
                                 Asset inv, LogisticsInventoryPG thePG, 
-                                long today) {
+                                long today, int ost) {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.Supply);
     newRefill.setDirectObject(inv);
+    //set the commitment date to endDay - ost.
+    newRefill.setCommitmentDate(new Date(getTimeUtils().subtractNDays(endDay, ost)));
     // create preferences
     Vector prefs = new Vector();
     Preference p_end,p_qty;
@@ -320,6 +336,33 @@ public class RefillGenerator extends InventoryModule {
     return homeGeoloc;
   }
   
+  /**Utility method to help find commited refills 
+   *  NOTE this only finds a quantity IF there is a reported AllocationResult
+   *  for the Task!
+   **/
+  private double findCommittedRefill(int bucket, LogisticsInventoryPG thePG) {
+    double refillQty = 0;
+    ArrayList reqs = thePG.getRefillRequisitions();
+    Iterator reqsIter = reqs.iterator();
+    while (reqsIter.hasNext()) {
+      Task refill = (Task) reqsIter.next();
+      PlanElement pe = refill.getPlanElement();
+	if (pe !=null ) {
+	  AllocationResult ar = pe.getReportedResult();
+	  if (ar != null) {
+	    double endTime = ar.getValue(AspectType.END_TIME);
+	    if (bucket == thePG.convertTimeToBucket((long)endTime)) {
+	      // we found a refill for this bucket
+	      refillQty = ar.getValue(AspectType.QUANTITY);
+	      return refillQty;
+	     }
+	  }
+	}
+    }
+    // if we did not find a match return 0.0
+    return refillQty;
+  }
+
 
 }
     

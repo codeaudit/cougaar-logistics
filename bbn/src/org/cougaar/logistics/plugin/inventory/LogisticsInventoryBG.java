@@ -268,6 +268,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     return taskList;
   }
 
+  public ArrayList getRefillRequisitions() {
+    return (ArrayList)refillRequisitions.clone();
+  }
+
   public double getCriticalLevel(int bucket) {
     if (compute_critical_levels) {
       computeCriticalLevels();
