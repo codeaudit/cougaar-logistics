@@ -133,9 +133,13 @@ public abstract class Test{
    **/
   protected int determineResult(Statement s, int run)
     throws SQLException{
-    ResultSet rs=s.executeQuery("SELECT COUNT(*) FROM "+getTableName(run));
+    String sql = "SELECT COUNT(*) FROM "+getTableName(run);
+    ResultSet rs=s.executeQuery(sql);
     rs.next();
-    if(rs.getInt(1)!=0){
+    int value;
+    if((value = rs.getInt(1))!=0){
+      // should pass in logger so we can log this...
+      // System.out.println ("Test.determineResult - for query " + sql + " there was a difference of " + value + " rows.");
       return failureLevel();
     }
     return RESULT_OK;
@@ -296,6 +300,20 @@ public abstract class Test{
   public static final int EQUALTO = 0;
   public static final int CONFLICT = 2;
 
+  /** 
+   * <pre>
+   * The crucial test to determine whether two rows are equal
+   * in tests from two different runs.
+   *
+   * It does this by iterating over the columns in each row
+   * and comparing them in each result set.
+   * </pre>
+   * @param logger to log errors to
+   * @param hasLine1 is there a row in the first result set
+   * @param hasLine2 is there a row in the second result set
+   * @param columns many columns to compare
+   * @return either EQUALTO, GREATERTHAN, LESSTHAN, CONFLICT
+   */
   public int linesEqual(Logger logger,
 			ResultSet rs1, boolean hasLine1, 
 			ResultSet rs2, boolean hasLine2,
@@ -319,12 +337,30 @@ public abstract class Test{
     return retval;
   }
 
+  /** 
+   * Compare a column from two different result sets 
+   * @return EQUALTO, GREATERTHAN, or LESSTHAN
+   */
   protected int columnCompare(Logger logger, ResultSet rs1, ResultSet rs2, 
 			      int column) {
     int retval = EQUALTO;
     int x = 0;
+    int columnType;
+
+    try { columnType = rs1.getMetaData().getColumnType(column); }
+    catch(SQLException e){
+      logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			"Problem getting column type from meta-data.",e);
+      return retval;
+    }
+
+    if (logger.isMinorEnabled()) {
+      logger.logMessage(Logger.MINOR,Logger.DB_WRITE,"Calling columnCompare on column " + column + 
+			" - type is " + columnType);
+    }
+
     try {
-      switch (rs1.getMetaData().getColumnType(column)) {
+      switch (columnType) {
       case Types.CHAR:
       case Types.VARCHAR:
 	x = ((String)rs1.getString(column)).compareTo((String)rs2.getString(column));
@@ -334,13 +370,29 @@ public abstract class Test{
 	x = new Integer(rs1.getInt(column)).compareTo(new Integer(rs2.getInt(column)));
 	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
 	break;
+      case Types.DOUBLE:
+	double first  = rs1.getDouble(column);
+	double second = rs2.getDouble(column);
+	x = new Double(first).compareTo(new Double(second));
+	if (logger.isMinorEnabled()) {
+	  logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
+			    "Comparing rs 1 column " + column + " value " + first + 
+			    " is " + ((x<0) ? "<" : ((x>0) ? ">" : "==")) +
+			    " rs 2 column " + column + " value " + second);
+	}
+	if (x<0) retval=LESSTHAN; if (x>0) retval=GREATERTHAN; // normalize return value
+	break;
       default:
+	logger.logMessage(Logger.WARNING,Logger.DB_WRITE,
+			  "Comparing column with type " + columnType+ " that is unsupported.");
 	break;
       }
-    }catch(SQLException e){
+    } 
+    catch (SQLException sqle) {
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			"Problems comparing columns",e);
+			"Problem comparing columns.",sqle);
     }
+
     return retval;
   }
 
