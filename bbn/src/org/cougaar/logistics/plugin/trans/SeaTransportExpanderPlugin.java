@@ -462,14 +462,23 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
 
   /** calculates the max contain -- smallest of all seen */
   protected void calculateCommonMaxContain (double [] maxcontain) {
-    if (maxcontain[0] < maxAreaCapacity && maxcontain[0] > 0)
+    if (maxcontain[0] < maxAreaCapacity && maxcontain[0] > 0 && 
+	(maxcontain[0] > 0)) {
       maxAreaCapacity   = maxcontain[0];
+      warn ("Max Area now " + maxAreaCapacity);
+    }
 
-    if (maxcontain[1] < maxVolumeCapacity && maxcontain[1] > 0)
+    if (maxcontain[1] < maxVolumeCapacity && maxcontain[1] > 0 &&
+	(maxcontain[1] > 0)) {
       maxVolumeCapacity = maxcontain[1];
+      warn ("Max Volume now " + maxVolumeCapacity);
+    }
 
-    if (maxcontain[1] < maxContainerCapacity && maxcontain[2] > 0)
+    if (maxcontain[2] < maxContainerCapacity && maxcontain[2] > 0 &&
+	(maxcontain[2] > 0)) {
       maxContainerCapacity = maxcontain[2];
+      warn ("Max container now " + maxContainerCapacity);
+    }
   }
 
   protected double maxAreaCapacity      = Double.MAX_VALUE;
