@@ -104,54 +104,55 @@ public class RefillGenerator extends InventoryModule {
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
-      //clear the refills
-      oldRefills.addAll(thePG.clearRefillTasks(new Date(start)));
+      // only process Level 6 inventories
+      if (! thePG.getIsLevel2()) {
+	//clear the refills
+	oldRefills.addAll(thePG.clearRefillTasks(new Date(start)));
 
-      int inventoryBucket = thePG.convertTimeToBucket(today);
-      int startBucket = thePG.convertTimeToBucket(start);
-      // refill time is start + 1 bucket (k+1)
-      int refillBucket = startBucket + 1; 
-      // max lead day is today + maxLeadTime
-      int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-                                             addNDays(today, maxLeadTime));
+        int inventoryBucket = thePG.convertTimeToBucket(today);
+        int startBucket = thePG.convertTimeToBucket(start);
+        // refill time is start + 1 bucket (k+1)
+        int refillBucket = startBucket + 1; 
+        // max lead day is today + maxLeadTime
+        int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+						      addNDays(today, maxLeadTime));
 
-      //calculate inventory levels for today through start (today + OST)
-      while (inventoryBucket <= startBucket) {
+        //calculate inventory levels for today through start (today + OST)
+        while (inventoryBucket <= startBucket) {
 	  double level = thePG.getLevel(inventoryBucket) -
 	      thePG.getActualDemand(inventoryBucket + 1);
 	  double committedRefill = findCommittedRefill(inventoryBucket, thePG);
 	  thePG.setLevel(inventoryBucket, (level + committedRefill) );
 	  inventoryBucket = inventoryBucket + 1;
-      }
+	}
 
-
-      //  create the refills
-      while (refillBucket <= maxLeadBucket) {
-         double invLevel = thePG.getLevel(startBucket) - 
+        //  create the refills
+        while (refillBucket <= maxLeadBucket) {
+          double invLevel = thePG.getLevel(startBucket) - 
           thePG.getActualDemand(refillBucket);
-        if (thePG.getCriticalLevel(refillBucket) < invLevel) {
-          thePG.setLevel(refillBucket, invLevel);
-        } else {
-          int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
-          double refillQty = generateRefill(invLevel, refillBucket, 
-                                            reorderPeriodEndBucket, thePG);
-          // make a task for this refill and publish it to glue plugin
-          // and apply it to the LogisticsInventoryBG
-          Task theRefill = createRefillTask(refillQty, 
-					    thePG.convertBucketToTime(refillBucket), 
-					    anInventory, thePG, 
-					    today, orderShipTime);
-	  newRefills.add(theRefill);
-          thePG.setLevel(refillBucket, (invLevel + refillQty));
-        }
-        //reset the buckets
-        startBucket = refillBucket;
-        refillBucket = startBucket + 1;
-      }
-      // call the Comparator for this Inventory which will compare the old and
-      // new Refills and then publish the new Refills and Rescind the old Refills.
-      myComparator.compareRefills(newRefills, oldRefills, anInventory);
-    
+          if (thePG.getCriticalLevel(refillBucket) < invLevel) {
+            thePG.setLevel(refillBucket, invLevel);
+	  } else {
+            int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
+            double refillQty = generateRefill(invLevel, refillBucket, 
+					      reorderPeriodEndBucket, thePG);
+            // make a task for this refill and publish it to glue plugin
+            // and apply it to the LogisticsInventoryBG
+	    Task theRefill = createRefillTask(refillQty, 
+					      thePG.convertBucketToTime(refillBucket), 
+					      anInventory, thePG, 
+					      today, orderShipTime);
+	    newRefills.add(theRefill);
+	    thePG.setLevel(refillBucket, (invLevel + refillQty));
+	  }
+	  //reset the buckets
+	  startBucket = refillBucket;
+	  refillBucket = startBucket + 1;
+	}
+	// call the Comparator for this Inventory which will compare the old and
+	// new Refills and then publish the new Refills and Rescind the old Refills.
+	myComparator.compareRefills(newRefills, oldRefills, anInventory);
+      } // end of if not level 2 inventory
     } // done going through inventories
   }
 
