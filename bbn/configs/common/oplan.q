@@ -26,7 +26,7 @@ orgActivityQuery.handler=NewOrgActivityQueryHandler
 OplanTimeframeQuery = select OPERATION_NAME, min_planning_offset, start_offset, end_offset from oplan where oplan_id = ':oplanid:'
 
 # get Oplan Stage info
-OplanStageQuery = select stage_name, stage_num from oplan_stage where oplan_id = ':oplanid:'
+OplanStageQuery = select stage_name, stage_num, description from oplan_stage where oplan_id = ':oplanid:'
 
 # get AlpLoc info
 AlpLocQuery = select alploc_code, location_name, latitude, longitude from alploc
