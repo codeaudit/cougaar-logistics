@@ -300,7 +300,8 @@ public class RefillProjectionGenerator extends InventoryModule {
     //create a projection refill task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
-    newRefill.setDirectObject(inv);
+    //newRefill.setDirectObject(inv);
+    newRefill.setDirectObject(thePG.getResource());
     newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
                            demand, thePG);
     return newRefill;

@@ -210,7 +210,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.Supply);
-    newRefill.setDirectObject(inv);
+    //newRefill.setDirectObject(inv);
+    newRefill.setDirectObject(thePG.getResource());
     //set the commitment date to endDay - ost.
     newRefill.setCommitmentDate(new Date(getTimeUtils().subtractNDays(endDay, ost)));
     // create preferences
