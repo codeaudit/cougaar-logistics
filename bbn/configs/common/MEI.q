@@ -25,7 +25,7 @@ ConsumableArmyNSN=select MEI_NSN, PART_NSN, OPTEMPO, DCR from army_spares_dcr_by
 PackagedPOLArmyNSN=select MEI_NSN, PACKAGED_NSN, OPTEMPO, DCR from army_packaged_dcr_by_optempo where MEI_NSN = :nsn order by DCR desc
 #BulkPOLArmyNSN=select NSN, FUEL_NSN, OPTEMPO, GALLONS_PER_DAY from army_fuels_dcr_by_optempo where NSN = :nsn order by GALLONS_PER_DAY desc
 BulkPOLArmyNSN=select NSN, FUEL_NSN, UPPER(OPTEMPO), GALLONS_PER_DAY from alp_mei_fuel where NSN = :nsn order by GALLONS_PER_DAY desc
-AmmunitionArmyNSN=select MEI_NSN, DODIC, UPPER(OPTEMPO), TONS_PER_DAY from alp_mei_dodic_2_view where MEI_NSN = :nsn order by TONS_PER_DAY desc
+AmmunitionArmyNSN=select MEI_NSN, DODIC, UPPER(OPTEMPO), TONS_PER_DAY from oplog_ammorate where MEI_NSN = :nsn order by TONS_PER_DAY desc
 MeiConsumption=select CONSUME_AMMO, CONSUME_FUEL, CONSUME_PKG_POL, CONSUME_SPARES from mei_consumption where NSN = :nsn
 # Level2
 Level2BulkPOLRate=select optempo, gallons_per_day from level_2_fuel_rate where org_id = :org
