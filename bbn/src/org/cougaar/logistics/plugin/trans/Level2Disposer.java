@@ -107,14 +107,14 @@ public class Level2Disposer extends Level2TranslatorModule {
     Disposition disposition = (Disposition) level2Task.getPlanElement();
     AllocationResult ar = disposition.getEstimatedResult();
     if(getTaskUtils().getDailyQuantity(level2Task) == getTaskUtils().getQuantity(level2Task,ar)) {
-      if(logger.isWarnEnabled()) {
-	logger.warn("Quantity on task is same as on disposition - not re-disposing (Bug 13424)");
+      if(logger.isInfoEnabled()) {
+	logger.info("Quantity on task is same as on disposition - not re-disposing (Bug 13424)");
       }
       return false;
     }
     else {
-      if(logger.isWarnEnabled()) {
-	logger.warn("Re-disposing: Quantity on task is " + getTaskUtils().getDailyQuantity(level2Task) + " while the estimate result says " + getTaskUtils().getQuantity(level2Task,ar) + " - (Bug 13424)");
+      if(logger.isInfoEnabled()) {
+	logger.info("Re-disposing: Quantity on task is " + getTaskUtils().getDailyQuantity(level2Task) + " while the estimate result says " + getTaskUtils().getQuantity(level2Task,ar) + " - (Bug 13424)");
       }
       translatorPlugin.publishRemove(disposition);
       return true;
