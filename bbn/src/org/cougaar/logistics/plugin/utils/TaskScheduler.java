@@ -22,6 +22,7 @@
 package org.cougaar.logistics.plugin.utils;
 
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.util.TimeSpan;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.BlackboardService;
@@ -120,6 +121,20 @@ public class TaskScheduler {
    */
   public void requeueForExecute() {
     blackboard.signalClientActivity();
+  }
+
+  /**
+   * Only call this method when you want to clear out all the
+   * state information from the task scheduler
+   */
+  public void clearAllCollections() {
+    for (int i = 0; i < policy.numPriorities(); i++) {
+      for (int j = 0; j < policy.numPhases(); j++) {
+        addedLists[i][j].clear();
+        changedLists[i][j].clear();
+        removedLists[i][j].clear();
+      }
+    }
   }
 
   /**
@@ -244,7 +259,7 @@ public class TaskScheduler {
   /**
    * Tell the time interval associate with a phase
    */
-  public TaskSchedulingPolicy.TimePeriod getTimeInterval (int phase) {
+  public TimeSpan getTimeInterval (int phase) {
     return policy.getPhases()[phase];
   }
 

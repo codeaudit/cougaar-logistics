@@ -24,6 +24,7 @@ package org.cougaar.logistics.plugin.utils;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.Preference;
+import org.cougaar.util.TimeSpan;
 import java.util.*;
 
 /**
@@ -48,24 +49,12 @@ public class TaskSchedulingPolicy {
   // list of Predicates with 0th element corresponding to priority 0, etc.
   private Predicate[] priorityTests;
 
-  // list of TimePeriods specifying phases of processing for tasks
-  private TimePeriod[] phases;
+  // list of TimeSpans specifying phases of processing for tasks
+  private TimeSpan[] phases;
 
   /** Like UnaryPredicate except that object must always be a Task */
   public static interface Predicate {
     public boolean execute (Task t);
-  }
-
-  /** Specifies a time period over which to process tasks */
-  public static class TimePeriod {
-    private long start;
-    private long end;
-    public TimePeriod (long start, long end) {
-      this.start = start;
-      this.end = end;
-    }
-    public long getStart()  { return start; }
-    public long getEnd()  { return end; }
   }
 
   /**
@@ -83,15 +72,32 @@ public class TaskSchedulingPolicy {
    * Constructor when using just phases and not priorities
    * @param phases A set of time intervals in order of how to hanlde
    */
-  public TaskSchedulingPolicy (TimePeriod[] phases) {
+  public TaskSchedulingPolicy (TimeSpan[] phases) {
     this (new Predicate[] { PASSALL }, phases);
+  }
+
+  /** Specifies a time period over which to process tasks */
+  public static class TimePeriod implements TimeSpan {
+    private long start;
+    private long end;
+    public TimePeriod (long start, long end) {
+      this.start = start;
+      this.end = end;
+    }
+    public long getStartTime()  { return start; }
+    public long getEndTime()  { return end; }
+  }
+
+  /** Get a time span object */
+  public static TimeSpan makeTimeSpan (long start, long end) {
+    return new TimePeriod (start, end);
   }
 
   /**
    * Constructor specifying both priorities and phases
    */
   public TaskSchedulingPolicy (Predicate[] priorityTests,
-                               TimePeriod[] phases) {
+                               TimeSpan[] phases) {
     this.priorityTests = priorityTests;
     this.phases = phases;
   }
@@ -137,7 +143,7 @@ public class TaskSchedulingPolicy {
     }
   }
 
-  public TimePeriod[] getPhases() {
+  public TimeSpan[] getPhases() {
     return phases;
   }
 
