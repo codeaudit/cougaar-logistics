@@ -41,6 +41,7 @@ import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 import org.cougaar.mlm.ui.grabber.controller.FailureRunResult;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -229,6 +230,22 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
   
   //Constructors:
   ///////////////
+
+  public PrepareDerivedTables(int id, int runID, 
+			      DBConfig dbConfig,
+			      Connection dbConnection,
+			      DerivedTablesConfig dtConfig,
+			      Logger logger){
+    super(id,runID,dbConfig,dbConnection,logger);
+    this.dtConfig=dtConfig;
+    for(int i=0;i<buildTable.length;i++)
+      buildTable[i]=false;
+
+    workQ = new WorkQueue(logger, this);
+    List connections = new ArrayList ();
+    connections.add (dbConnection);
+    this.dbConnections = connections;
+  }
 
   public PrepareDerivedTables(int id, int runID, 
 			      DBConfig dbConfig,
