@@ -435,7 +435,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return list;
   }
 
-  public static Schedule newObjectSchedule(Collection tasks) {
+  public Schedule newObjectSchedule(Collection tasks) {
     Vector os_elements = new Vector();
     ScheduleImpl s = new ScheduleImpl();
     s.setScheduleElementType(PlanScheduleElementType.OBJECT);
@@ -443,8 +443,15 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
       Task task = (Task)iterator.next();
+      try {
       os_elements.add(new ObjectScheduleElement(getStartTime(task),
                                                 getEndTime(task), task));
+      } catch (IllegalArgumentException iae) {
+        if (logger.isErrorEnabled()) {
+          logger.error("newObjectSchedule failed, start and end time is " + new Date(getStartTime(task)) +
+              " for task " + task + "\n" + iae.getMessage());
+        }
+      }
     }
     s.setScheduleElements(os_elements.elements());
     return s;
