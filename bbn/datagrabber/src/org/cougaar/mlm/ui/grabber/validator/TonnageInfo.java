@@ -129,8 +129,8 @@ public class TonnageInfo extends Test implements Graphable {
     for (int i = 0; i < count-2; i++) {
       types[i] = TYPE_STRING;
     }
-	types[count-2] = TYPE_INT;
-	types[count-1] = TYPE_TONNAGE;
+    types[count-2] = TYPE_INT;
+    types[count-1] = TYPE_TONNAGE;
     return types;
   }
 
@@ -324,6 +324,42 @@ public class TonnageInfo extends Test implements Graphable {
 	}
 	}
   
+  /** 
+   * <pre>
+   * The crucial test to determine whether two rows are equal
+   * in tests from two different runs.
+   *
+   * It does this by iterating over the columns in each row
+   * and comparing them in each result set.
+   * </pre>
+   * @param logger to log errors to
+   * @param hasLine1 is there a row in the first result set
+   * @param hasLine2 is there a row in the second result set
+   * @param columns many columns to compare
+   */
+  public int linesEqual(Logger logger,
+			ResultSet rs1, boolean hasLine1, 
+			ResultSet rs2, boolean hasLine2,
+			int columns) {
+    if (!hasLine1 && !hasLine2) return EQUALTO;
+    if (!hasLine1 && hasLine2) return GREATERTHAN;
+    if (hasLine1 && !hasLine2) return LESSTHAN;
+
+    int [] types = getTypes ();
+    int tonnageColumn = types.length-1;
+
+    if (logger.isMinorEnabled()) {
+      if (types[tonnageColumn] == TYPE_TONNAGE)
+	logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
+			  "TonnageInfo.linesEqual on column for tonnage");
+      else
+	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			  "TonnageInfo.linesEqual on column of type " + types[tonnageColumn] + "?");
+    }
+      
+    return columnCompare(logger, rs1, rs2, tonnageColumn+1);
+  }
+
   //InnerClasses:
   ///////////////
 }
