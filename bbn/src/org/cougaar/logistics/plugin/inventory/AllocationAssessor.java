@@ -61,40 +61,38 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
     public void addBucket(double availAmt, double defAmt) {
       allocated.add(new Double(availAmt));
-      deficit.add(new Double(getAccumulatedDeficit()+defAmt));
+      deficit.add(new Double(defAmt));
     }
 
     public int getDeficitStartBucket() { return deficitStartBucket;}
     
-    public double getAllocated(int bucket) { 
-      if (bucket < allocated.size()) {
-	return ((Double)allocated.get(bucket)).doubleValue();
+    public double getAllocated(int index) { 
+      if (index < allocated.size()) {
+	return ((Double)allocated.get(index)).doubleValue();
       }
       return 0.0;
     }
 
-    public double getDeficit(int bucket) {
-      if (bucket < deficit.size()) {
-	return ((Double)deficit.get(bucket)).doubleValue();
+    public double getDeficit(int index) {
+      if (index < deficit.size()) {
+	return ((Double)deficit.get(index)).doubleValue();
       }
       return 0.0;
     }
 
     public double getAccumulatedDeficit() {
-      double sum = 0.0;
-      for (int i=0; i <= deficit.size(); i++) {
-	  sum += getDeficit(i);
-	}
-      return sum;
+      return getDeficit(deficit.size()-1);
     }
    
-    public double getAccumulatedAllocation(int bucket) {
+    public double getAccumulatedAllocation() {
       double sum = 0.0;
       for (int i=0; i < allocated.size(); i++) {
 	sum += getAllocated(i);
       }
       return sum;
     }
+
+    public int getAllocatedArraySize() { return allocated.size(); }
   }
 
   private transient HashMap trailingPointersHash = new HashMap();
@@ -138,8 +136,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         createWithdrawAllocations(today_bucket, lastRefillBucket, inventory, thePG);
       }
       determineProjectionAllocations(lastRefillBucket+1, end_bucket, inventory, thePG);
-      createProjectionAllocations(allocatedProjections, inventory);
-      // createLateProjectionAllocations(trailingPointersHash, inventory);
+      createBestProjectionAllocations(allocatedProjections, inventory);
+      allocateLateDeliveries(trailingPointersHash, inventory);
     }
   }
 
@@ -234,6 +232,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
 	qty = thePG.getProjectionTaskDemand(task, currentBucket, start, end);
+	TaskDeficit deficit = (TaskDeficit)trailingPointersHash.get(task);
+	qty += deficit.getAccumulatedDeficit();
       }
       checkQty = filled + qty;
       if ((level - checkQty) >= 0) {
@@ -365,7 +365,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     thePG.updateWithdrawRequisition(withdraw);
   }
 
-  private void createProjectionAllocations(Collection list, Inventory inv) {
+  private void createBestProjectionAllocations(Collection list, Inventory inv) {
     LogisticsAllocationResultHelper helper;
     Task task;
     AllocationResult ar;
@@ -378,7 +378,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
 	helper = new LogisticsAllocationResultHelper(task, null);
 	helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
-	ar = helper.getAllocationResult(1.0);
+	ar = helper.getAllocationResult(0.9);
 	alloc = inventoryPlugin.getRootFactory().
 	  createAllocation(task.getPlan(), task, inv, ar, myRole);
 	inventoryPlugin.publishAdd(alloc);
@@ -387,6 +387,60 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
     }
     // Only need to update BG for late deliveries
+  }
+
+  private void allocateLateDeliveries(HashMap trailingPointersHash, Inventory inventory) {
+    Iterator tpIter = trailingPointersHash.keySet().iterator();
+    while (tpIter.hasNext()) {
+      Task task = (Task) tpIter.next();
+      if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	createFailedAllocation(task, inventory);
+      } else {
+	TaskDeficit deficit = (TaskDeficit)trailingPointersHash.get(task);
+	if (deficit.getAccumulatedAllocation() > 0.0) {
+	  createLateProjectionAllocation(task, inventory);
+	} else {
+	  createFailedAllocation(task, inventory);
+	}
+	// update BG with late deliveries
+	LogisticsInventoryPG thePG = (LogisticsInventoryPG)
+	  inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+	thePG.updateWithdrawProjection(task);
+      }
+    }
+  }
+
+  private void createFailedAllocation(Task task, Inventory inventory) {
+    LogisticsAllocationResultHelper helper = new LogisticsAllocationResultHelper(task, null);
+    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+      helper.setFailed(AspectType.QUANTITY, start, end);
+    } else {
+      helper.setFailed(AlpineAspectType.DEMANDRATE, start, end);
+    }
+    AllocationResult ar = helper.getAllocationResult(0.9);
+    Allocation alloc = inventoryPlugin.getRootFactory().
+      createAllocation(task.getPlan(), task, inventory, ar, myRole);
+    inventoryPlugin.publishAdd(alloc);
+  }
+
+  private void createLateProjectionAllocation(Task task, Inventory inventory) {
+    TaskDeficit deficit = (TaskDeficit)trailingPointersHash.get(task);
+    LogisticsInventoryPG thePG = (LogisticsInventoryPG)
+      inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+    LogisticsAllocationResultHelper helper = new LogisticsAllocationResultHelper(task, null);
+    long msecperbucket = thePG.getBucketMillis();
+    long start = thePG.convertBucketToTime(deficit.getDeficitStartBucket());
+    int size = deficit.getAllocatedArraySize();
+    for (int i=0; i < size; i++)  {
+      helper.setPartial(AlpineAspectType.DEMANDRATE, start, start+msecperbucket, 
+			deficit.getAllocated(i));
+    }
+    AllocationResult ar = helper.getAllocationResult(0.9);
+    Allocation alloc = inventoryPlugin.getRootFactory().
+      createAllocation(task.getPlan(), task, inventory, ar, myRole);
+    inventoryPlugin.publishAdd(alloc); 
   }
 
   /** Method which checks a previously created planelement for the withdraw task
