@@ -93,7 +93,7 @@ public class RequestHandlerFactory implements HttpConstants{
 					       config,request);
       }else if(file.startsWith(config.getBaseDirectory
 			       (WebServerConfig.COMPARATOR))){
-	return new ComparisonRequestHandler(dbConfig,connection,
+	return new ComparisonRequestHandler(dbConfig,connectionProvider,
 					   config,request);
       }else{
 	return new FileRequestHandler(config,request);

@@ -33,6 +33,7 @@ import org.cougaar.mlm.ui.grabber.config.DBConfig;
 
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.controller.Controller;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
 import org.cougaar.mlm.ui.grabber.controller.Run;
 import org.cougaar.mlm.ui.grabber.validator.*;
 
@@ -88,15 +89,17 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
   protected int main=0;
 
   protected Contrastor contrastor; // functions as a Validator as well for some purposes
+  protected DBConnectionProvider connectionProvider;
 
   //Constructors:
   ///////////////
 
-  public ComparisonRequestHandler(DBConfig dbConfig, Connection connection,
+  public ComparisonRequestHandler(DBConfig dbConfig, DBConnectionProvider connectionProvider,
 				  WebServerConfig config, 
 				  HttpRequest request){
-    super(dbConfig, connection,config,request);
+    super(dbConfig, connectionProvider.getDBConnection(),config,request);
     contrastor=new Contrastor(dbConfig);
+    this.connectionProvider = connectionProvider;
   }
 
   //Members
@@ -663,7 +666,10 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
       h.sCenter();
       h.dismissLink();
-      contrastor.runTest(h,s1,s2,s3,compone,comptwo,test);
+      Date then = new Date ();
+      contrastor.runTest(h,connectionProvider,compone,comptwo,test);
+      Date now = new Date();
+      h.p ("Done in " + ((now.getTime()-then.getTime())/1000) + " seconds.");
       h.eCenter();
       emptyFooter(h);
     }else{
