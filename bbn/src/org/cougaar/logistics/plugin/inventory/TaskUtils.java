@@ -310,8 +310,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
         //for times say they are nearly equal if they are within the same hour
         // it could be longer if we only had daily buckets - but this should
         // work for both daily and hourly buckets
-        long aHourLong = (new Double(av/3600000).longValue());
-        long bHourLong = (new Double(bv/3600000).longValue());
+        long aHourLong = (long) av/3600000;
+        long bHourLong = (long) bv/3600000;
         if (aHourLong != bHourLong) return false;
       }  else {
         if (!MoreMath.nearlyEquals(av, bv, 0.0001)) return false;
