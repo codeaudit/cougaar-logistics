@@ -98,6 +98,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     private boolean regenerate_projected_demand = false;
     private boolean recalculate_initial_level = true;
 
+
     public LogisticsInventoryBG(LogisticsInventoryPG pg) {
         myPG = pg;
         customerHash = new HashMap();
@@ -132,7 +133,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	this.bucketSize = bucketSize;
 	MSEC_PER_BUCKET = this.bucketSize;
         timeZero = (int) ((startTime / MSEC_PER_BUCKET) - 1);
-
+        
         //Initialize with initial level since the refill generator won't start setting inv levels
         //until the first day it processes which is today + OST - so depending on OST it could be a while.
         inventoryLevelsArray[0] = myPG.getInitialLevel();
@@ -443,6 +444,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         int bucket_start = convertTimeToBucket(start, true);
         int bucket_end = convertTimeToBucket(end, true);
+
         while (bucket_end >= refillProjections.size()) {
             refillProjections.add(null);
         }
@@ -452,10 +454,18 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public void removeRefillProjection(Task task) {
-        int index;
-        while ((index = refillProjections.indexOf(task)) != -1) {
-            refillProjections.set(index, null);
+      Task refillProj = null;
+      for (int i=0; i < refillProjections.size(); i++) {
+        refillProj = (Task)refillProjections.get(i);
+        if ((refillProj != null) &&
+            (refillProj.getUID().equals(task.getUID()))) {
+          refillProjections.set(i, null);
         }
+      }
+//         int index;
+//         while ((index = refillProjections.indexOf(task)) != -1) {
+//             refillProjections.set(index, null);
+//         }
     }
 
     public void removeRefillRequisition(Task task) {
@@ -496,8 +506,10 @@ public class LogisticsInventoryBG implements PGDelegate {
 		  refillProjections.set(i, null);
 		  removedTaskList.add(t);
 	      } else if ((start < now) && (taskUtils.getEndTime(t) > now)) {
-		  //this task spans now - shorten it		     
+		  //this task spans now - shorten it	
+                if (!overlappingRefillProjections.contains(t)) {
 		  overlappingRefillProjections.add(t);
+                }
 	      }
 	  }
       }
@@ -997,7 +1009,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         // If the task has no plan element then return the StartTime Pref
         if (pe == null) {
             return PluginHelper.getStartTime(task);
-        }
+        } 
         return (long) PluginHelper.getStartTime(pe.getEstimatedResult());
     }
 
@@ -1008,6 +1020,7 @@ public class LogisticsInventoryBG implements PGDelegate {
             return PluginHelper.getEndTime(task);
         }
         AllocationResult ar = pe.getEstimatedResult();
+
         // make sure that we got atleast a valid reported OR estimated allocation result
         if (ar != null) {
             double resultTime;
@@ -1138,6 +1151,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 							    PlanScheduleType.OTHER);
 	NewScheduledContentPG scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
 	scp.setSchedule(bufferedInventoryLevels);
+
     }
 
     public boolean getFailuresFlag() {
