@@ -41,7 +41,7 @@ import java.sql.Types;
  *
  * @since 2/26/01
  **/
-public abstract class Test{
+public abstract class Test implements Comparable {
 
   //Constants:
   ////////////
@@ -342,6 +342,14 @@ public abstract class Test{
     } 
     if (retval!=EQUALTO && keysEqual) retval = CONFLICT;
     return retval;
+  }
+
+  /**
+   * sort by name 
+   */
+  public int compareTo(Object o) {
+    Test other = (Test) o;
+    return getDescription().compareTo(other.getDescription());
   }
 
   /** 
