@@ -122,6 +122,29 @@ public class LogisticsInventoryServlet
     }
   }
 
+    public static String getNomenclature(Inventory inv) {
+	 LogisticsInventoryPG logInvPG=null;
+	 logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+	 TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
+	 String nomenclature = typeIdPG.getNomenclature();
+// 	 String typeId = typeIdPG.getTypeIdentification();
+	 String typeId = inv.getItemIdentificationPG().getItemIdentification();
+         int idx = typeId.indexOf(':');
+         typeId = typeId.substring(idx+1);
+	 if (nomenclature != null) {
+	     nomenclature = nomenclature + ":" + typeId;
+	 }
+	 else {
+	     nomenclature = typeId;
+	 }
+	 if(logInvPG.getIsLevel2()) {
+	     nomenclature = typeId;
+	 }
+	 
+	 return nomenclature;
+
+    }
+
   /**
    * This inner class does all the work.
    * <p>
@@ -218,6 +241,10 @@ public class LogisticsInventoryServlet
 	 Collection container = support.queryBlackboard(assetNamePredicate);
 	 for (Iterator i = container.iterator(); i.hasNext(); ) {
 	 Inventory inv = (Inventory)(i.next());
+
+	 String nomenclature = getNomenclature(inv);
+
+	 /***
 	 logInvPG=null;
 	 logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
 	 TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
@@ -235,6 +262,7 @@ public class LogisticsInventoryServlet
 	 if(logInvPG.getIsLevel2()) {
 	     nomenclature = typeId;
 	 }
+	 ***/
 
 	 assetNames.addElement(nomenclature);
 	 }
@@ -667,6 +695,8 @@ class AssetUIDPredicate implements UnaryPredicate {
     }
     return true;
   }
+
+
 
 }
 
