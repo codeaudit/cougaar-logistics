@@ -21,6 +21,8 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
+import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -58,39 +60,43 @@ public class InventoryLevelGenerator extends InventoryModule {
   protected double findCommittedRefill(int bucket, LogisticsInventoryPG thePG) {
     double refillQty = 0;
     ArrayList reqs = thePG.getRefillRequisitions();
-    Iterator reqsIter = reqs.iterator();
-    while (reqsIter.hasNext()) {
-      Task refill = (Task) reqsIter.next();
-      //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
-      // filled with null instead of a task - so make sure you really have a task!
-      if (refill != null) {
-	PlanElement pe = refill.getPlanElement();
-	AllocationResult ar = null;
-	if (pe !=null ) {
-	  //try to use the reported result - but if its null - use the 
-	  // estimated result
-	  if (pe.getReportedResult() != null) {
-	    ar = pe.getReportedResult();
-	  } else {
-	    ar = pe.getEstimatedResult();
-	  }
-	  // make sure that we got atleast a valid reported OR estimated allocation result
-	  if (ar != null) {
-            double resultTime;
-            // make sure END_TIME is specified - otherwise use START_TIME
-            // UniversalAllocator plugin only gives start times
-            if (ar.isDefined(AspectType.END_TIME)) {
-              resultTime = ar.getValue(AspectType.END_TIME);
-            } else {
-              resultTime = ar.getValue(AspectType.START_TIME);
+    Task refill = null;
+    if (bucket < reqs.size()) {
+      refill = (Task) reqs.get(bucket);
+    }
+    if (refill == null) {
+      refill = thePG.getRefillProjection(bucket);
+    }
+    
+    //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
+    // filled with null instead of a task - so make sure you really have a task!
+    if (refill != null) {
+      PlanElement pe = refill.getPlanElement();
+      AllocationResult ar = null;
+      if (pe !=null ) {
+        //try to use the reported result - but if its null - use the 
+        // estimated result
+        if (pe.getReportedResult() != null) {
+          ar = pe.getReportedResult();
+        } else {
+          ar = pe.getEstimatedResult();
+        }
+        // make sure that we got atleast a valid reported OR estimated allocation result
+        if (ar != null) {
+          if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+            //demandrate
+            refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+          } else {
+            try {
+              refillQty = ar.getValue(AspectType.QUANTITY);
+            } catch (Exception e) {
+              System.err.println(" Task is " + getTaskUtils().taskDesc(refill) );
+              e.printStackTrace();
             }
-	    if (bucket == thePG.convertTimeToBucket((long)resultTime)) {
-	      // we found a refill for this bucket
-	      refillQty = ar.getValue(AspectType.QUANTITY);
-	      return refillQty;
-	    }
-	  }
-	}
+          }
+          return refillQty;
+	  
+        }
       }
     }
     // if we did not find a match return 0.0

@@ -52,8 +52,9 @@ import org.cougaar.glm.ldm.asset.Inventory;
 
 import org.cougaar.planning.ldm.plan.ScoringFunction;
 
-import org.cougaar.core.plugin.util.AllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
+
+import org.cougaar.core.plugin.util.AllocationResultHelper;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -409,13 +410,13 @@ public class SupplyExpander extends InventoryModule {
   }
 
   public void updateAllocationResult(IncrementalSubscription sub) {
-    Enumeration subE = sub.elements();
-    while (subE.hasMoreElements()) {
-      PlanElement pe = (PlanElement) subE.nextElement();
-      if (PluginHelper.updatePlanElement(pe)) {
-        inventoryPlugin.publishChange(pe);
+      Iterator subIt = sub.iterator();
+      while (subIt.hasNext()) {
+	  PlanElement pe = (PlanElement) subIt.next();
+	  if (PluginHelper.updatePlanElement(pe)) {
+	      inventoryPlugin.publishChange(pe);
+	  }
       }
-    }
   }
   
 }

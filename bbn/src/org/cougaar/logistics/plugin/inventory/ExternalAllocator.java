@@ -36,9 +36,9 @@ import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.Constants;
 
-import org.cougaar.core.plugin.util.AllocationResultHelper;
-
 import org.cougaar.util.UnaryPredicate;
+
+import org.cougaar.core.plugin.util.AllocationResultHelper;
 
 import org.cougaar.glm.ldm.asset.Organization;
 
@@ -117,6 +117,9 @@ public class ExternalAllocator extends InventoryModule {
 	//MWD in the future this will have to generate the expected result
 	//from the predictor.
 	return new AllocationResultHelper(task, null).getAllocationResult(0.25, true);
+	// return PluginHelper.createEstimatedAllocationResult(task, 
+// 							    inventoryPlugin.getRootFactory(), 
+// 							    0.25, true);
     }
 
     /** Figure out which organization supplying item is best for us. */
@@ -180,13 +183,15 @@ public class ExternalAllocator extends InventoryModule {
     }
 
 
-  public void updateAllocationResult(Collection sub) {
+  public HashSet updateAllocationResult(Collection sub) {
+    //    System.out.println("ex alloc update ARs being called in" + inventoryPlugin.getClusterId());
+      HashSet backwardFlowInventories = new HashSet();
     // Set up the affected inventories for the AllocationAssessor
     Task refill;
     Asset asset;
     Allocation alloc;
     Inventory inventory;
-    LogisticsInventoryPG logInvPG;
+    LogisticsInventoryPG logInvPG = null;
     Iterator refill_list = sub.iterator(); // ###
     while (refill_list.hasNext()) {
       alloc = (Allocation) refill_list.next();
@@ -194,18 +199,28 @@ public class ExternalAllocator extends InventoryModule {
       refill = alloc.getTask();
       asset = (Asset)refill.getDirectObject();
       inventory = inventoryPlugin.findOrMakeInventory(asset);
-      logInvPG = (LogisticsInventoryPG)
-	inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-      if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-	logInvPG.updateRefillProjection(refill);
+      if (inventory != null) {
+        logInvPG = (LogisticsInventoryPG)
+          inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+        if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+          logInvPG.updateRefillProjection(refill);
+        } else {
+          logInvPG.updateRefillRequisition(refill);
+        }
       } else {
-	logInvPG.updateRefillRequisition(refill);
+        // this is a pass-thru
       }
+        
       if (PluginHelper.updatePlanElement(alloc)) {
         inventoryPlugin.publishChange(alloc);
+        if (inventory != null) {
+          //System.out.println("ex all publish changing and added to AA's inventory list " + logInvPG.getResource());
+          backwardFlowInventories.add(inventory);
+        }
       }
     }
     rebuildPGCustomerHash();
+    return backwardFlowInventories;
   }
 
   private void rebuildPGCustomerHash() {

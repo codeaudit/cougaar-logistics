@@ -27,6 +27,7 @@ import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
@@ -41,7 +42,6 @@ import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.plugin.util.AllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.glm.plugins.TimeUtils;
 import org.cougaar.glm.ldm.asset.Organization;
@@ -178,20 +178,33 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addWithdrawProjectionAllocation(Task task) {
-    LogisticsAllocationResultHelper helper = 
-      new LogisticsAllocationResultHelper(task, task.getPlanElement());
-    for (int i=0, n=helper.getPhaseCount(); i < n; i++) {
-      LogisticsAllocationResultHelper.Phase phase =
-	(LogisticsAllocationResultHelper.Phase) helper.getPhase(i);
-//       double qty = phase.getAspectValue(AlpineAspectType.DEMANDRATE).getValue();
-      int start = convertTimeToBucket(phase.getStartTime());
-      int end = convertTimeToBucket(phase.getEndTime());
+    AllocationResult result = task.getPlanElement().getEstimatedResult();
+    Iterator it = null;
+    if (result.isPhased()) {
+      it = result.getPhasedAspectValueResults().iterator();
+    } else {
+      ArrayList tmp = new ArrayList();
+      tmp.add(result.getAspectValueResults());
+      it = tmp.iterator();
+    }
+    while (it.hasNext()) {
+      AspectValue phase[] = (AspectValue[]) it.next();
+      int start = 0;
+      int end = 0;
+      for (int i=0; i <phase.length;i++) {
+        AspectValue aValue = phase[i];
+        if (aValue.getAspectType() == AspectType.END_TIME) {
+          end = convertTimeToBucket((long) aValue.getValue());
+        } else if (aValue.getAspectType() == AspectType.START_TIME) {
+          start = convertTimeToBucket((long) aValue.getValue());
+        }
+      }
       while (end >= dueOutList.size()) {
-	dueOutList.add(new ArrayList());
+        dueOutList.add(new ArrayList());
       }
       for (; start < end; start++) {
-	ArrayList list = (ArrayList)dueOutList.get(start);
-	list.add(task);
+        ArrayList list = (ArrayList)dueOutList.get(start);
+        list.add(task);
       }
     }
   }
@@ -784,8 +797,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     if (pe == null) {
       return PluginHelper.getStartTime(task);
     }
-    AllocationResultHelper helper = new AllocationResultHelper(task, pe);
-    return (long)PluginHelper.getStartTime(helper.getAllocationResult());
+    return (long)PluginHelper.getStartTime(pe.getEstimatedResult());
   }
 
   private long getEndTime(Task task) {
@@ -794,17 +806,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     if (pe == null) {
       return PluginHelper.getEndTime(task);
     }
-    //AllocationResultHelper helper = new AllocationResultHelper(task, pe);
-    //return (long)PluginHelper.getEndTime(helper.getAllocationResult());
-
-    //try to use the reported result - but if its null - use the 
-    // estimated result
-    AllocationResult ar = null;
-    if (pe.getReportedResult() != null) {
-      ar = pe.getReportedResult();
-    } else {
-      ar = pe.getEstimatedResult();
-    }
+    AllocationResult ar = pe.getEstimatedResult();
     // make sure that we got atleast a valid reported OR estimated allocation result
     if (ar != null) {
       double resultTime;

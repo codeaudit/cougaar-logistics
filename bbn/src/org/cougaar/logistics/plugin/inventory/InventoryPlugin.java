@@ -77,7 +77,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private HashMap inventoryHash;
   private HashMap inventoryInitHash;
   private HashSet touchedInventories;
-  private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
+    // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private String supplyType;
   private String inventoryFile;
@@ -139,7 +139,7 @@ public class InventoryPlugin extends ComponentPlugin {
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
     touchedInventories = new HashSet();
-    backwardFlowInventories = new HashSet();
+    //backwardFlowInventories = new HashSet();
     touchedProjections = false;
     startTime = currentTimeMillis();
 
@@ -300,8 +300,8 @@ public class InventoryPlugin extends ComponentPlugin {
 					   refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
         } 
-        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
-        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
+	//        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
+	//        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
 
         // if we are in downward flow ONLY check the withdraw expansion results
         // note we may go through the whole list multiple times - but this seems like the
@@ -311,6 +311,9 @@ public class InventoryPlugin extends ComponentPlugin {
         // so we will not be waking up the whole chain by checking these more than once.
         if (getTouchedInventories().isEmpty()) {
           supplyExpander.updateAllocationResult(expansionSubscription);
+	  HashSet backwardFlowTouched = 
+	      externalAllocator.updateAllocationResult(refillAllocationSubscription); 
+	  allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
         }
         // update the Maintain Inventory Expansion results
         PluginHelper.updateAllocationResult(MIExpansionSubscription);
@@ -321,7 +324,7 @@ public class InventoryPlugin extends ComponentPlugin {
         
         // touchedInventories should not be cleared until the end of transaction
         touchedInventories.clear();
-	backwardFlowInventories.clear(); //###
+	//backwardFlowInventories.clear(); //###
         touchedProjections = false;
         //testBG();
       }
@@ -659,9 +662,9 @@ public class InventoryPlugin extends ComponentPlugin {
 	  if (taskUtils.isDirectObjectOfType(task, type_)) {
 	    // need to check if externally allocated
 	    if(((Allocation)o).getAsset() instanceof Organization) {
-	      if (taskUtils.isMyRefillTask(task, orgName_)){
+	      //if (taskUtils.isMyRefillTask(task, orgName_)){
 		return true;
-	      }
+                //}
 	    }
 	  }
 	}
@@ -1265,25 +1268,25 @@ public class InventoryPlugin extends ComponentPlugin {
   // We only want to process AllocationResults for inventories with unchanged demand
   // Sort through Refill Allocation results to find all inventories in backward flow.
   // Save off inventory for later use by AllocationAssessor and return actionableARs.
-  private Collection getActionableRefillAllocations(){
-    ArrayList actionableARs = new ArrayList();
-    Task refill;
-    Asset asset;
-    Allocation alloc;
-    Inventory inventory;
-    Iterator alloc_list = refillAllocationSubscription.getChangedCollection().iterator();
-    while (alloc_list.hasNext()) {
-      alloc = (Allocation)alloc_list.next();
-      refill = alloc.getTask();
-      asset = (Asset)refill.getDirectObject();
-      inventory = findOrMakeInventory(asset);
-      if (!touchedInventories.contains(inventory)) {
-	actionableARs.add(alloc);
-	backwardFlowInventories.add(inventory);
-      }
-    }
-    return actionableARs;
-  }
+  // private Collection getActionableRefillAllocations(){
+//     ArrayList actionableARs = new ArrayList();
+//     Task refill;
+//     Asset asset;
+//     Allocation alloc;
+//     Inventory inventory;
+//     Iterator alloc_list = refillAllocationSubscription.getChangedCollection().iterator();
+//     while (alloc_list.hasNext()) {
+//       alloc = (Allocation)alloc_list.next();
+//       refill = alloc.getTask();
+//       asset = (Asset)refill.getDirectObject();
+//       inventory = findOrMakeInventory(asset);
+//       if (!touchedInventories.contains(inventory)) {
+// 	actionableARs.add(alloc);
+// 	backwardFlowInventories.add(inventory);
+//       }
+//     }
+//     return actionableARs;
+//   }
 
   /**
      Self-Test

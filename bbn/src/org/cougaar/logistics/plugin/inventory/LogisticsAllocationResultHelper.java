@@ -113,8 +113,18 @@ public class LogisticsAllocationResultHelper {
 	phasedResults = new ArrayList(1);
 	phasedResults.add(ar.getAspectValueResults());
       }
-      setTypeIndexes((AspectValue[]) phasedResults.get(0));
-      //              checkPhases(phasedResults);
+
+      // NOTE that getPhasedAspectValueResults can return a list of lists
+      // OR a list of AspectValue[]s depending on what constructor was used
+      // in AllocationResult - this is clearly an infrastructure bug
+      if (phasedResults.get(0) instanceof AspectValue[]) {
+        setTypeIndexes((AspectValue[]) phasedResults.get(0));
+        //              checkPhases(phasedResults);
+      } else {
+        ArrayList result = (ArrayList) phasedResults.get(0);
+        AspectValue avs[] = (AspectValue[]) result.toArray(new AspectValue[0]);
+        setTypeIndexes(avs);
+      }
     } else {
       phasedResults = new ArrayList(1);
       phasedResults.add(taskAVS);
@@ -134,6 +144,7 @@ public class LogisticsAllocationResultHelper {
   }
 
   private AspectValue[] getPerfectResult(AspectValue[] avs) {
+    setTypeIndexes(avs);
     AspectValue[] result = new AspectValue[avs.length];
     result = AspectValue.clone((AspectValue[]) phasedResults.get(0));
     for (int i = 0; i < avs.length; i++) {

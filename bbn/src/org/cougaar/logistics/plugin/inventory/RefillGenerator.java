@@ -227,7 +227,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
                                 int reorderPeriodEndBucket, 
                                 LogisticsInventoryPG thePG) {
     double targetLevel = 0;
-    double criticalAtEndOfPeriod = Math.max(.9, thePG.getCriticalLevel(reorderPeriodEndBucket));
+    //    double criticalAtEndOfPeriod = Math.max(.9, thePG.getCriticalLevel(reorderPeriodEndBucket));
+    double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
     double demandForPeriod = calculateDemandForPeriod(thePG, 
                                                       refillBucket, 
                                                       reorderPeriodEndBucket);
