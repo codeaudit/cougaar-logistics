@@ -27,6 +27,7 @@ package org.cougaar.mlm.ui.grabber.validator;
 
 import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
 import org.cougaar.mlm.ui.grabber.controller.FailureRunResult;
 
 import org.cougaar.mlm.ui.grabber.workqueue.Result;
@@ -34,7 +35,10 @@ import org.cougaar.mlm.ui.grabber.workqueue.ResultHandler;
 import org.cougaar.mlm.ui.grabber.workqueue.Work;
 import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 
+import java.sql.Connection;
 import java.sql.Statement;
+import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -472,86 +476,135 @@ public class Validator{
   }
 
   /** test has a ONE based index, 0 is reserved for 'all tests'**/
-  public void runTest(final HTMLizer h, Statement s, int run, int test){
+  public void runTest(final HTMLizer h, 
+		      DBConnectionProvider connectionProvider, 
+		      int run, int test){
     // keep track of whether this category has been run
-    if (isTestCategory(test))
-      ResultTable.updateStatus(h,s,this,run,test);
-
-    workQ = new WorkQueue(h, new ResultHandler () {
-	public void handleResult(Result r) {
-	  if (h.isTrivialEnabled ()) {
-	    h.logMessage (Logger.TRIVIAL, Logger.GENERIC, "Returned " + r);
-	  }
-	  if (h.isMinorEnabled ()) {
-	    h.logMessage (Logger.MINOR, Logger.GENERIC, 
-			  "Now " + workQ.getNumActiveWork () + 
-			  " active tests, " + workQ.getNumWorkWaitingOnQueue () + 
-			  " waiting to be worked on.");
-	  }
-	  if (r instanceof FailureRunResult) {
-	    if (h.isWarningEnabled ()) {
-	      h.logMessage (Logger.WARNING, Logger.GENERIC, "Stopping all work because of failure : " + r);
-	    }
-	    workQ.haltAllWork (); // stop on any failure
-	  }
-	}      
-      });
-
-    List l = getTestIndicesForTestType(test);
-    for(int i=0;i<l.size();i++){
-      int idx=((Integer)l.get(i)).intValue();
-      Work work = new TestWork (100+i, s, idx, getDescription (idx), h, run, this);
-      if (h.isMinorEnabled()) {
-	h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
+    try {
+      Statement s = connectionProvider.getDBConnection ().createStatement();
+      if (isTestCategory(test)) {
+	ResultTable.updateStatus(h,s,this,run,test);
       }
-      workQ.enque (work);
+      s.close();
+
+      ValidatorResultHandler resultHandler = new ValidatorResultHandler (h);
+      workQ = new WorkQueue (h, resultHandler);
+      resultHandler.setWorkQ (workQ);
+
+      List l = getTestIndicesForTestType(test);
+      for(int i=0;i<l.size();i++){
+	int idx=((Integer)l.get(i)).intValue();
+	Work work = new TestWork (100+i, connectionProvider.getDBConnection(), 
+				  idx, getDescription (idx), h, run, this);
+	if (h.isMinorEnabled()) {
+	  h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
+	}
+	workQ.enque (work);
+      }
+
+      while (workQ.isBusy ()) {
+	synchronized (this) {
+	  try {wait(5000);} catch (Exception e) {e.printStackTrace();}
+	}
+      }
     }
-
-    while (workQ.isBusy ()) {
-      synchronized (this) {
-	try {wait(5000);} catch (Exception e) {e.printStackTrace();}
-      }
+    catch (SQLException sqle) {
+      h.logMessage (Logger.WARNING, Logger.GENERIC, "Got SQL error : " + sqle);
+      sqle.printStackTrace();
     }
 
     h.p("<BR><B>Finished Validating</B>");
   }
 
+  class ValidatorResultHandler implements ResultHandler {
+    WorkQueue workQ;
+    HTMLizer htmlizer;
+
+    public ValidatorResultHandler (HTMLizer htmlizer) {
+      this.htmlizer = htmlizer;
+    }
+    
+    public void setWorkQ (WorkQueue workQ) {
+      this.workQ = workQ;
+    }
+
+    public void handleResult(Result r) {
+      if (htmlizer.isTrivialEnabled ()) {
+	htmlizer.logMessage (Logger.TRIVIAL, Logger.GENERIC, "Returned " + r);
+      }
+      if (htmlizer.isMinorEnabled ()) {
+	htmlizer.logMessage (Logger.MINOR, Logger.GENERIC, 
+		      "Now " + workQ.getNumActiveWork () + 
+		      " active tests, " + workQ.getNumWorkWaitingOnQueue () + 
+		      " waiting to be worked on.");
+      }
+      if (r instanceof FailureRunResult) {
+	if (htmlizer.isWarningEnabled ()) {
+	  htmlizer.logMessage (Logger.WARNING, Logger.GENERIC, "Stopping all work because of failure : " + r);
+	}
+	workQ.haltAllWork (); // stop on any failure
+      }
+    }      
+  }
+
   public class TestWork implements Work {
     int id;
     boolean halt = false;
-    Statement statement;
+    Connection connection;
     String testName;
     int testIndex;
     HTMLizer htmlizer;
     int run;
     Validator validator;
 
-    public TestWork (int id, Statement statement, int testIndex, String testName, HTMLizer htmlizer, int run,
-		     Validator validator) { 
+    public TestWork (int id, Connection connection, 
+		     int testIndex, String testName, 
+		     HTMLizer htmlizer, int run,
+		     Validator validator) {
       this.id = id; 
-      this.statement = statement;
+      this.connection = connection;
       this.testName = testName;
       this.testIndex = testIndex;
       this.htmlizer = htmlizer;
       this.run = run;
       this.validator = validator;
+
+      if (htmlizer.isMinorEnabled()) {
+	htmlizer.logMessage (Logger.MINOR, Logger.GENERIC, 
+			     "Using connection " + connection + 
+			     " for test " + this);
+      }
     }
 
     public int getID() { return id; }
     public String getStatus() { return "doing test " + this; }
     public void halt() { halt = true;}
     public Result perform(Logger l) { 
-      if (doTest ()) {
-	return new Result () { 
-	    public int getID () { return id; }
-	    public String toString () { return "Successful run of test \"" + testName + "\" on run #" + run; }
-	  };
-      } else {
-	return new FailureRunResult (id, run, "running test " + this, false);
+      Statement statement = null;
+      Result result = null;
+      try {
+	if (doTest (statement = connection.createStatement())) {
+	  result = new Result () { 
+	      public int getID () { return id; }
+	      public String toString () { return "Successful run of test \"" + testName + "\" on run #" + run; }
+	    };
+	} else {
+	  result = new FailureRunResult (id, run, "failed running test " + this, false);
+	}
+      } catch (SQLException sqle){
+	htmlizer.logMessage (Logger.ERROR, Logger.GENERIC, "Got sql exception " + sqle);
+	sqle.printStackTrace ();
+	result = new FailureRunResult (id, run, "sql error - failed running test " + this, false);
+      } finally {
+	if (statement != null) {
+	  try { statement.close(); } catch (Exception e) {}
+	}
       }
+
+      return result;
     }
 
-    protected boolean doTest () {
+    protected boolean doTest (Statement statement) {
       try {
 	if (!halt) {
 	  getTest(testIndex).prepare(htmlizer,statement,run);
