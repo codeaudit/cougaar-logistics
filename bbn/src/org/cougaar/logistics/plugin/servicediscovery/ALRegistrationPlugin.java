@@ -45,7 +45,6 @@ public class ALRegistrationPlugin extends SimplePlugin {
     for (Iterator iterator = statusChangeMessages.iterator(); iterator.hasNext();) {
       ALStatusChangeMessage statusChange = (ALStatusChangeMessage) iterator.next();
       statusChange.setRegistryUpdated(true);
-      System.out.println("ALRegistrationPlugin change registration here");
       publishChange(statusChange);
     }
 

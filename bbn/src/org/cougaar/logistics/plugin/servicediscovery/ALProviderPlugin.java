@@ -13,7 +13,7 @@ import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-//import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.planning.ldm.plan.Preference;
 
@@ -48,7 +48,7 @@ public class ALProviderPlugin extends SimplePlugin {
   private IncrementalSubscription mySelfOrgSubscription;
 
   private String myAgentName;
-
+  private LoggingService myLoggingService;
   private SDFactory mySDFactory;
 
   private UnaryPredicate mySelfOrgPred = new UnaryPredicate() {
@@ -81,6 +81,8 @@ public class ALProviderPlugin extends SimplePlugin {
   };
 
   protected void setupSubscriptions() {
+    myLoggingService =
+      (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
     myStatusChangeSubscription =
       (IncrementalSubscription) subscribe(statusChangePredicate);
     myServiceContractRelaySubscription = (IncrementalSubscription) subscribe(myServiceContractRelayPred);
@@ -97,8 +99,9 @@ public class ALProviderPlugin extends SimplePlugin {
       while(it.hasNext()) {
         ALStatusChangeMessage m = (ALStatusChangeMessage)it.next();
 
-        System.out.println("ALProviderPlugin found ALStatusChangeMessage");
-
+        if (myLoggingService.isDebugEnabled()) {
+          myLoggingService.debug("ALProviderPlugin found ALStatusChangeMessage, registry updated: " + m.registryUpdated());
+        }
         //only proceed if the registry has already been updated to reflect service disruption
         if(m.registryUpdated()) {
           Iterator contracts = myServiceContractRelaySubscription.getCollection().iterator();
@@ -110,9 +113,11 @@ public class ALProviderPlugin extends SimplePlugin {
               contractRelay.setServiceContract(getAlteredServiceContract(contractRelay, m));
               publishChange(contractRelay);
 
-              System.out.println("ALProviderPlugin found publishChange contract relay");
-              System.out.println("provider " + contractRelay.getProviderName());
-              System.out.println("role "+contractRelay.getServiceContract().getServiceRole().getName());
+              if (myLoggingService.isDebugEnabled()) {
+                myLoggingService.debug("ALProviderPlugin found publishChange contract relay"+
+                                       " provider " + contractRelay.getProviderName() +
+                                       " role "+contractRelay.getServiceContract().getServiceRole().getName());
+              }
             }
           }
         }
