@@ -1,4 +1,9 @@
 <!-- Autobuild-generated ANT v1.5 script for building the Cougaar module "stoplight". -->
+
+<!--                                                 -->
+<!-- THIS IS A MACHINE GENERATED FILE - DO NOT EDIT! -->
+<!--                                                 -->
+
 <!-- The source for this file is in build/data/moduleTemplate.xml -->
 
 <!-- autobuild might execute this with something like:
@@ -63,9 +68,17 @@
     <!-- Set properties to values specific to this module, if any -->
     <property file="${MODSOURCE}/module.properties" />  <!-- per-module properties file! -->
 
+    <!-- if the module source has a file named "custom-build.xml",
+    then we will give it a chance to contribute to the build process.
+    Sortof clunky but it does work.  The main point is that the
+    custom-build.xml file must contain all pre- and post-targets
+    referenced in this file, even if they are empty.  E.g. for now,
+    {pre,post}.{install,clean,junit,rmic,codegen,compile,examples,javadocs}
+    -->
+    <property name="custom.xml" value="${MODSOURCE}/custom-build.xml"/>
+
     <!-- TARGETBASE is where we will install files -->
-    <!-- In a developer environment, this is usually
-    COUGAAR_INSTALL_PATH -->
+    <!-- In a developer environment, this is usually COUGAAR_INSTALL_PATH -->
     <property name="TARGETBASE" value=".." />
     <!-- Set any not-yet-set properties to values specific to this
     installation -->
@@ -88,7 +101,7 @@
     <!-- Include extra debug info in compilations -->
     <property name="build.compiler.debug" value="on"/>
     <!-- Do not include deprecation warnings -->
-    <property name="build.compiler.deprecation" value="off"/>
+    <property name="build.compiler.deprecation" value="on"/>
     <!-- Don't exclude basic debug info -->
     <property name="build.compiler.optimize" value="off"/>
 
@@ -106,8 +119,15 @@
     <!-- Individuals should not need to modify below here. -->
 
     <!-- These are target base directories -->
+    <!-- lib is for cougaar runtime jars -->
     <property name="target.lib" value="${TARGETBASE}/lib" />
+    <!-- sys is for 3rd party jars -->
     <property name="target.sys" value="${TARGETBASE}/sys" />
+    <!-- clib is for cougaar compile-time jars (codegen, etc) -->
+    <property name="target.clib" value="${TARGETBASE}/clib" />
+    <!-- dir is which of lib or clib the jar gets installed to -->
+    <property name="target.dir" value="${TARGETBASE}/lib"/>
+
     <!-- Single module Javadocs go in doc/api.  Not used if is.unified.javadoc -->
     <property name="javadoc.target" value="${TARGETBASE}/${module}/doc/api" />
     <!-- Target tree for modules which contribute to the unified javadoc  -->
@@ -188,10 +208,35 @@
 
     <!-- Define paths for doing codegen stuff -->
     <path id="codegen.path">
-      <pathelement path="${target.lib}/build.jar"/>
+      <pathelement path="${target.clib}/build.jar"/>
       <path refid="compile.classpath"/>
     </path>
     <property name="genpath" refid="codegen.path"/>
+
+    <!-- patterns -->
+    <!-- ps.jar.extras are sourcefiles which will be added to the jar -->
+    <patternset id="ps.jar.extras">
+      <include name="**/*.def"/>
+      <include name="**/*.gif"/>
+      <include name="**/*.html"/>
+      <include name="**/*.htm"/>
+      <include name="**/*.jpg"/>
+      <include name="**/*.bmp"/>
+      <include name="**/*.png"/>
+      <include name="**/*.properties"/>
+      <include name="**/*.xml"/>
+      <include name="**/*.wav"/>
+      <include name="**/*.au"/>
+    </patternset>
+
+    <patternset id="ps.notsources">
+      <exclude name="**/CVS"/>
+      <exclude name="**/*#"/>
+      <exclude name="**/*~"/>
+      <exclude name="**/*.class"/>
+      <exclude name="**/*.flc"/>
+      <exclude name="**/.cvsignore"/>
+    </patternset>
 
     <!-- ================ Targets ================ -->
 
@@ -211,13 +256,14 @@
       <property name="zipdir.regress" value="${zipbase}/${module}/regress"/>
       <property name="zipdir.examples" value="${zipbase}/${module}/examples"/>
       <property name="zipdir.lib" value="${zipbase}/lib"/>
+      <property name="zipdir.clib" value="${zipbase}/clib"/>
     </target>
     
     <!-- ========================================================== -->
     <!-- Test for presence of JUnit. Skip JUnit targets if not found. -->
     <!-- Also skip if there is no regress directory -->	
     <!-- ========================================================== -->
-    <target name="junit" depends="prepare" if="has.Regress">
+    <target name="junit" depends="prepare" if="has.regress">
       <available property="junit.present" classname="junit.framework.TestCase" classpathref="junit.classpath"/>
     </target>
 
@@ -289,7 +335,7 @@
       <!-- Copy any gifs and HTML help files over as well -->
       <copy todir="${module.examples}" >
 	<fileset dir="${examples}">
-	  <patternset id="images.and.html.and.def"/>
+	  <patternset refid="ps.jar.extras"/>
 	</fileset>
       </copy>
     </target>
@@ -305,6 +351,7 @@
     <!-- Prepares all the build directories		               	   -->
     <!-- ============================================================= -->
     <target name="prepare">
+      <available property="has.custom.xml" file="${custom.xml}"/>
       <available property="has.examples" file="${examples}"/>
       <available property="has.build" file="${module.classes}"/>
       <available property="has.src" file="${src}"/>
@@ -313,7 +360,7 @@
       <available property="has.configs" file="${configs}"/>
       <available property="has.dev" file="${dev}"/>
       <available property="has.doc" file="${doc}"/>
-      <available property="has.Regress" file="${regress}"/>
+      <available property="has.regress" file="${regress}"/>
       <available property="has.lib" file="${local.lib}"/>
       
       <!-- Create the timestamp -->
@@ -324,7 +371,7 @@
 	    if="has.src">
       
       <!-- Need build.jar -->
-      <available property="have.buildjar" file="${target.lib}/build.jar"/>
+      <available property="have.buildjar" file="${target.clib}/build.jar"/>
       
       <!-- Check if defrunner is required -->
       <uptodate property="defrunner.notRequired">
@@ -385,15 +432,7 @@
       <!-- Copy any gifs and HTML help files over as well -->
       <copy todir="${module.classes}" >
 	<fileset dir="${src}">
-	  <patternset id="images.and.html.and.def">
-	    <include name="**/*.def"/>
-	    <include name="**/*.gif"/>
-	    <include name="**/*.html"/>
-	    <include name="**/*.htm"/>
-	    <include name="**/*.jpg"/>
-	    <include name="**/*.bmp"/>
-	    <include name="**/*.png"/>
-	  </patternset>
+	  <patternset refid="ps.jar.extras"/>
 	</fileset>
       </copy>
     </target>
@@ -408,13 +447,21 @@
       
 
     <!-- Do the basic installation - called by base product Ant script -->
-    <target name="install" depends="install.jar, install.lib">
+    <target name="install" depends="pre.install, really.install, post.install">
+    </target>
+    <target name="really.install" depends="install.jar, install.lib">
+    </target>
+    <target name="pre.install" if="has.custom.xml">
+      <ant antfile="${custom.xml}" dir="${MODSOURCE}" target="pre.install" inheritAll="true"/>
+    </target>
+    <target name="post.install" if="has.custom.xml">
+      <ant antfile="${custom.xml}" dir="${MODSOURCE}" target="post.install" inheritAll="true"/>
     </target>
 
     <!-- Install the Jar file in the target lib directory -->
     <target name="install.jar" depends="jar.build" if="has.build">
-      <mkdir dir="${target.lib}"/>
-      <copy file="${module.jar}" todir="${target.lib}"/>
+      <mkdir dir="${target.dir}"/>
+      <copy file="${module.jar}" todir="${target.dir}"/>
     </target>
 
     <!-- If there are any extra included jar files, install them -->
@@ -437,9 +484,7 @@
     <target name="clean" depends="clean-gencode" description="Delete compiled code">
       <delete dir="${module.classes}" />
       <delete>
-      <!-- FIXME: What about the -(date) jar files? -->
-	<fileset dir="${target.lib}" includes="**/${module.jar}" />
-<!--	<fileset dir="${target.lib}" includes="**/${module}-*.jar" /> -->
+	<fileset dir="${target.dir}" includes="**/${module.jar}" />
       </delete>
     </target>
 
@@ -468,7 +513,7 @@
     <!-- ====================================================================== -->
     <!-- Run the regression tests     				          -->
     <!-- ====================================================================== -->
-    <target name="test-module" depends="compile-all" if="junit.present" description="Run JUnit tests for this module">
+    <target name="test" depends="compile-all" if="junit.present" description="Run JUnit tests for this module">
       <junit printsummary="yes" fork="yes" dir="">
 	<classpath>
 	  <pathelement location="${module.regress}" />
@@ -483,6 +528,8 @@
 	<!--			<test name="Regress" /> -->
       </junit>
     </target>
+
+    <target name="test-module" depends="test" description="alias for test"/>
 
     <!-- ====================================================================== -->
     <!-- Create a Jar for the module     				          -->
@@ -514,11 +561,11 @@
 	       author="true"
 	       version="true"
 	       doclet="org.cougaar.tools.javadoc.CougaarDoclet"
-	       docletpath="${target.lib}/build.jar"
-	       additionalparam="-breakiterator -source 1.4 -tagletpath ${target.lib}/build.jar -taglet org.cougaar.tools.javadoc.PropertyTaglet -taglet org.cougaar.tools.javadoc.NoteTaglet -taglet org.cougaar.tools.javadoc.ToDoTaglet -taglet org.cougaar.tools.javadoc.GeneratedTaglet"
+	       docletpath="${target.clib}/build.jar"
+	       additionalparam="-breakiterator -source 1.4 -tagletpath ${target.clib}/build.jar -taglet org.cougaar.tools.javadoc.PropertyTaglet -taglet org.cougaar.tools.javadoc.NoteTaglet -taglet org.cougaar.tools.javadoc.ToDoTaglet -taglet org.cougaar.tools.javadoc.GeneratedTaglet"
 	       windowtitle="${moduleUp} API"
 	       doctitle="${moduleUp} API"
-	       bottom="Copyright &#169; 2002 by BBNT Solutions LLC, all rights reserved.">
+	       bottom="Copyright &#169; 2003 by BBNT Solutions LLC, all rights reserved.">
 	<classpath refid="javadoc.path" />
       </javadoc>
     </target>
@@ -573,14 +620,7 @@
       <copy todir="${zipdir.src}">
 	<!-- skip CVS, #, ~, .class -->
 	<fileset dir="${src}">
-	  <patternset id="real.sources">
-	    <exclude name="**/CVS"/>
-	    <exclude name="**/*#"/>
-	    <exclude name="**/*~"/>
-	    <exclude name="**/*.class"/>
-	    <exclude name="**/*.flc"/>
-	    <exclude name="**/.cvsignore"/>
-	  </patternset>
+	  <patternset refid="ps.notsources"/>
 	</fileset>
       </copy>
     </target>
@@ -589,15 +629,15 @@
       <mkdir dir="${zipdir.examples}"/>
       <copy todir="${zipdir.examples}">
 	<fileset dir="${examples}">
-	  <patternset id="real.sources"/>
+	  <patternset refid="ps.notsources"/>
 	</fileset>
       </copy>
     </target>
-    <target name="zip-copy-test" depends="set-zip-dirs, junit" if="has.Regress">
+    <target name="zip-copy-test" depends="set-zip-dirs, junit" if="has.regress">
       <mkdir dir="${zipdir.regress}"/>
       <copy todir="${zipdir.regress}">
 	<fileset dir="${regress}">
-	  <patternset id="real.sources"/>
+	  <patternset refid="ps.notsources"/>
 	</fileset>
       </copy>
     </target>
@@ -605,7 +645,7 @@
       <mkdir dir="${zipdir.dev}"/>
       <copy todir="${zipdir.dev}">
 	<fileset dir="${dev}">
-	  <patternset id="real.sources"/>
+	  <patternset refid="ps.notsources"/>
 	</fileset>
       </copy>
     </target>
@@ -620,9 +660,19 @@
 	jar? And get glmtrans when want just glm -->
 	<fileset dir="${target.lib}" includes="${module}*.jar"/>
       </copy>
+      <copy todir="${zipdir.clib}">
+	<fileset dir="${target.clib}" includes="${module}*.jar"/>
+      </copy>
     <!-- FIXME: Put zip files someplace relative to TARGETBASE? -->
     <!-- FIXME: This fails if no zipbase: If these dirs dont exist. -->
+		<!-- Ant zip target loses execute bit. Invoke zip
+		directly therefore. Note OS dependency!  -->
+		<!-- Note that Ant copy target also loses permissions,
+		so you must call chmod after the copy below -->
       <zip zipfile="../${module}.zip" basedir="${zipbase}"/>
+<!--      <exec dir="${zipbase}" executable="zip">
+	 <arg line="-qr ../${module} ." />
+      </exec> -->
       <delete dir="${zipdir.lib}"/>
       <delete dir="${zipdir.bin}"/>
       <delete dir="${zipdir.data}"/>
@@ -634,12 +684,20 @@
       <copy todir="${zipdir.bin}">
 	<fileset dir="${bin}" />
       </copy>
+      <!-- copy drops execute bits -->
+      <!-- Note this only works on Un*x platforms -->
+<!--      <chmod dir="${zipdir.bin}" perm="ugo+rx"
+      includes="**/*.sh"/> -->
     </target>
     <target name="zip-copy-data" depends="prepare, set-zip-dirs" if="has.data">
       <mkdir dir="${zipdir.data}"/>
       <copy todir="${zipdir.data}">
 	<fileset dir="${data}" />
       </copy>
+      <!-- copy drops execute bits -->
+      <!-- Note this only works on Un*x platforms -->
+<!--      <chmod dir="${zipdir.data}" perm="ugo+rx"
+      includes="**/*.sh"/> -->
     </target>
     <target name="zip-copy-configs" depends="prepare, set-zip-dirs" if="has.configs">
       <mkdir dir="${zipdir.configs}"/>
