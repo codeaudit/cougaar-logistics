@@ -1,0 +1,62 @@
+Execution Testing
+Sept 19th, 2002
+Gordon Vidaver (gvidaver@bbn.com 617 873 3558)
+
+Here is the execution test we've been running.
+
+1) Turn on persistence by setting these system properties:
+
+org.cougaar.core.persistence.enable true
+org.cougaar.core.persistence.clear  false
+
+2) Increase the persistence interval to 10 minutes (this will let time advance more quickly when you get to Aug. 25th)
+
+org.cougaar.core.persistence.lazyInterval 600000 
+
+Yes, it's in millis.
+
+By default it's 5 minutes.
+
+3) Run the society, and once oplan and gls have been sent, use the completionControl servlet in NCA.
+
+Set the Number of Time Steps to Advance to 20. This will set the move the c-day to c-20 or August 30th.
+Set the Automatic Refresh Interval (seconds) to 5.
+Hit submit
+
+This will move the society, one day at a time, to c-20.  
+It moves quickly until Aug. 25th, after which point it slows down a lot, perhaps 5-10 minutes per day advance, in SMALL.  
+If it stops at a day for more than 10 minutes, check the completion servlet - Show All Agents view to see if 
+any agent has incomplete tasks. 
+These prevent the advance of time.
+
+4) Once the servlet reports all 20 days have moved forward, wait for all agents to persist. 
+This means watching for Ps in the output. 
+When 10 minutes (our whatever interval you set in step 2) have elapsed without a P, 
+you have persisted all agents and are ready to continue to the next step.
+
+5) Kill the society, and bring it back up. Also, copy the workspace/P directory to a copy, so that you can 
+start up from the same stored state every time. (If you don't, the society will change the persisted state 
+as you run from the rehydrated state.) If you want to rerun from the persisted state, just copy the copy 
+onto the P directory before re-running.
+
+6) You should eventually see the society quiesce.  This typically is in the range of 10 minutes for SMALL.
+
+7) You can now do either of two perturbations : 
+
+  a) choose an agent, say the 1-35-ARBN, and use oplanEdit servlet in NCA to move it's 
+Employment-Defensive C+10 To C+75 period (the second one) from low optempo to high. You do this by 
+clicking on the link, then choosing high, then hitting the save button. 
+Finally hit the publish button in the main window.
+
+  b) use the stimulator servlet in a supply agent, say 47-FSB, to inject a supply task. 
+You can do this by running the servlet and specifying the file Supply.dat.xml as the file and 
+47-FSB as the Override "FOR" prepositional phrase value. Check the completion servlet on this 
+agent before clicking submit and after and note that the number of complete tasks increases. 
+
+Observed Result:
+
+For both perturbations, you can see in the inventory display (al-inventory.sh/bat) the results 
+of these perturbations. 
+
+For a) you can see an extended period of high inventory. 
+For b) you should see slightly higher inventory levels at the time of the Supply task that was injected.
