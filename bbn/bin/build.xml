@@ -516,6 +516,9 @@ ARCHIVE_TIME=${build.time}
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
+		<copy todir="${zipbase}/${module}/csmart">
+			<fileset dir="data/csmart"/>
+		</copy>
 		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
       <move todir="${zipbase}/${module}/Manifest"> 
         <fileset dir="Manifest"/>
