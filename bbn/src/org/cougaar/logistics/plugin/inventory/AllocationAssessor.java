@@ -354,7 +354,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	    }
 	  }
 	} else {
-	  logger.error("AA.determineProjectionAllocations " +
+	  logger.debug("AA.determineProjectionAllocations " +
 		       "Got SUPPLY task while processing ProjecWithdraws : " +
 		       getTaskUtils().taskDesc(projWdraw));
 	}
