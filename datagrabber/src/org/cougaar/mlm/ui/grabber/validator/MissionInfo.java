@@ -230,8 +230,11 @@ public class MissionInfo extends Test implements Graphable {
 
   private static final String divider = "^"; 
   private String formKey(String partA, int partB) {
-    if (byAirport) return "default" + divider + partB;
-    else return partA + divider + partB;
+    if (byAirport) {
+        return "default" + divider + partB;
+    } else {
+        return partA + divider + partB;
+    }
   }
   private String disectKeyForAirport(Object obj) {
     String key = (String)obj;

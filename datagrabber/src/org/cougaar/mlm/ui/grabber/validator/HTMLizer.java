@@ -28,7 +28,7 @@ import java.text.NumberFormat;
 
 /**
  * HTMLization
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -303,10 +303,11 @@ public class HTMLizer implements Logger{
   
   /** right justifies number */
   public void tData(double d, int format){
-    if (format == NO_FRACTION_FORMAT)
+    if (format == NO_FRACTION_FORMAT) {
       tDataRightJustify(noExponentNoFractionDoubleFormat.format(d));
-    else
+    } else {
       tDataRightJustify(noExponentThreeDigits.format(d));
+    }
   }
   
   public void tData(Date d){

@@ -99,11 +99,11 @@ public class Controller extends Thread implements ResultHandler{
     RunResult rr=(RunResult)r;
     int resultRunID =rr.getRunID();
     Run run=getRunForID(resultRunID);
-    if(run!=null)
+    if(run!=null) {
       run.handleResult(r);
-    else
-      logger.logMessage(Logger.ERROR,Logger.STATE_CHANGE,
-			"Could not find expected run: "+resultRunID);
+    } else {
+      logger.logMessage(Logger.ERROR,Logger.STATE_CHANGE, "Could not find expected run: "+resultRunID);
+    }
   }
 
   //From thread:

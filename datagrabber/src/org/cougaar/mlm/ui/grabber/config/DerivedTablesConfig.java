@@ -34,7 +34,7 @@ import java.io.File;
 
 /**
  * Data for configuring derived table generation
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/12/01
  **/
@@ -103,20 +103,21 @@ public class DerivedTablesConfig implements XMLable, DeXMLable{
   public boolean getDoTable(String tableName){
     if(tableName.equals(PrepareDerivedTables.FIRST_LEG)){
       return getDoFirstLeg();
-    }else if(tableName.equals(PrepareDerivedTables.ROLLUP))
+    }else if(tableName.equals(PrepareDerivedTables.ROLLUP)) {
       return getDoRollup();
-    else if(tableName.equals(PrepareDerivedTables.CARGO_TYPE))
+    } else if(tableName.equals(PrepareDerivedTables.CARGO_TYPE)) {
       return getDoCargoType();
-    else if(tableName.equals(PrepareDerivedTables.CARGO_INSTANCE))
+    } else if(tableName.equals(PrepareDerivedTables.CARGO_INSTANCE)) {
       return getDoCargoInstance();
-    else if(tableName.equals(PrepareDerivedTables.CARGO_LEG))
+    } else if(tableName.equals(PrepareDerivedTables.CARGO_LEG)){ 
       return getDoCargoLeg();
-    else if(tableName.equals(PrepareDerivedTables.CARRIER_TYPE))
+    } else if(tableName.equals(PrepareDerivedTables.CARRIER_TYPE)){
       return getDoCarrierType();
-    else if(tableName.equals(PrepareDerivedTables.CARRIER_INSTANCE))
+    } else if(tableName.equals(PrepareDerivedTables.CARRIER_INSTANCE)){
       return getDoCarrierInstance();
-    else
+    } else {
       return false;
+    }
   }
 
   //XMLable:

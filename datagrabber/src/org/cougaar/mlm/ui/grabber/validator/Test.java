@@ -32,7 +32,7 @@ import java.sql.Types;
 
 /**
  * Abstract base class for data tests
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -291,8 +291,11 @@ public abstract class Test{
   public boolean inKeySet(int x) {
     int[] types = getTypes();
     x--; // go from column index to array index
-    if (x == (types.length-1)) return false;
-    else return true;    
+    if (x == (types.length-1)) {
+        return false;
+    } else {
+        return true;
+    }
   }
 
   public static final int LESSTHAN = -1;

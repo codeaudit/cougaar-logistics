@@ -330,10 +330,11 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     public String getStatus() { return "creating table " + tableName; }
     public void halt() { halt = true;}
     public Result perform(Logger l) { 
-      if (createTableForPerform (statement, tableName))
+      if (createTableForPerform (statement, tableName)) {
 	return new Result () { public int getID () { return id; }};
-      else
+    } else {
 	return new FailureRunResult (id, getRunID(), "creating derived table", false);
+    }
     }
 
     public boolean createTableForPerform (Statement s, String tableName){

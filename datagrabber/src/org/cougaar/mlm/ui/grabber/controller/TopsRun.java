@@ -57,7 +57,7 @@ import java.util.Iterator;
 
 /**
  * Represents a single gatherer run
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/12/01
  **/
@@ -236,10 +236,11 @@ public class TopsRun extends Run{
 		   "Query Timed Out : "+desc);
       }
       else {
-	if(desc.startsWith(DESC_TOPS_HIERARCHY))
+	if(desc.startsWith(DESC_TOPS_HIERARCHY)) {
 	  processTransportationHierarchy (hierarchyResult);
-	else
+	} else {
 	  processDemandHierarchy (hierarchyResult);
+    }
 	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
 		   "Obtained portion of "+desc);
       }

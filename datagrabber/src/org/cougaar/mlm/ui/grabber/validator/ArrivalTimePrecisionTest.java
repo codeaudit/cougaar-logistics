@@ -465,10 +465,11 @@ public class ArrivalTimePrecisionTest extends Test{
     double samplingDeviation = benchmarkDeviation / Math.sqrt(sampleSize);
 
     if ((sampleMean > (benchmarkMean + zValue * samplingDeviation)) ||
-	(sampleMean < (benchmarkMean - zValue * samplingDeviation)))
+	(sampleMean < (benchmarkMean - zValue * samplingDeviation))) {
       retval = CONFLICT;
-    else
+    } else {
       retval = EQUALTO;
+    }
     } catch (SQLException sqle) {
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "ArrivalTimePrecisionTest.linesEqual() - Problem walking results.",sqle);

@@ -34,7 +34,7 @@ import java.io.File;
 
 /**
  * Data for configuring the web server
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/8/01
  **/
@@ -234,10 +234,11 @@ public class WebServerConfig implements XMLable, DeXMLable{
    **/
   public void completeSubObject(String name, DeXMLable obj)
     throws UnexpectedXMLException{
-    if(obj instanceof CompletionPSPConfig)
+    if(obj instanceof CompletionPSPConfig) {
       completionPSPConfig=(CompletionPSPConfig)obj;
-    else
+    } else{
       throw new UnexpectedXMLException("Unexpected subobject:"+obj);
+    }
   }
 
   //InnerClasses:
