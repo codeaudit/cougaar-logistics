@@ -42,6 +42,8 @@ import java.nio.charset.Charset;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
+
+// This next is in the albbn module (a utility that could be moved).
 import org.cougaar.logistics.ui.inventory.ConnectionHelper;
 
 
