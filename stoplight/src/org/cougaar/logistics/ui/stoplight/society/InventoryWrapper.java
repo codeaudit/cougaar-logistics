@@ -729,6 +729,10 @@ public class InventoryWrapper {
       return null;
     }
     //    Logger logger = Logging.getLogger(this);
+    //blowing out on logger... why?
+    if (logger == null) {
+      logger = Logging.getLogger(this);
+    }
     if (logger.isDebugEnabled()) {
       logger.debug("Original schedule");
       printSchedule(schedule, logger);
