@@ -35,15 +35,15 @@
        
   -->
   <!-- C17 --> 
-  <instance prototype="C5-B" id="C5" quantity="15">
+  <instance prototype="C5" id="C5-B" quantity="15">
     <schedule end="12/31/06" start="11/07/00"/>
   </instance>
 
-  <instance prototype="C17-B" id="C17" quantity="15">
+  <instance prototype="C17" id="C17-B" quantity="15">
     <schedule end="12/31/06" start="11/07/00"/>
   </instance>
 
-  <instance prototype="B747-B" id="B747" quantity="10">
+  <instance prototype="B747" id="B747-B" quantity="10">
     <schedule end="12/31/06" start="11/07/00"/>
   </instance>
 </AssetList>
