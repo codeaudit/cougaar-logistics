@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import java.text.DecimalFormat;
+import java.math.BigDecimal;
 
 
 /** The Refill Generator Module is responsible for generating new
@@ -182,9 +183,12 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
           // create an offset to account for the ammo rounding - otherwise we refill
           // more then we need to because the refill might cause us to go below the
           // critical level by .05 or so - pad with .06 to make sure we cover the bases.
+	  // Later on this was taken out and set to 0.00 because we were 
+	  // finding this was causing the shortfall at standown at 191.
+	  // See bug #12726
           double criticalLevelOffset = 0.00;
           if (inventoryPlugin.getSupplyType().equals("Ammunition")) {
-            criticalLevelOffset = 0.06;
+            criticalLevelOffset = 0.0;
           }
           if (((thePG.getCriticalLevel(refillBucket) - criticalLevelOffset) < invLevel) ||
                   ((thePG.getCriticalLevel(refillBucket) == 0.0) && (invLevel >= 0.0))){
@@ -214,15 +218,18 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
               }
               targetLevel = capacity;
             }
-            double refillQty = targetLevel-invLevel;
+            double refillQty = (targetLevel-invLevel);
             // do some rounding/formatting
 //            System.out.println("\nrefillqty is:" + refillQty + " for agent:" +
 //                               inventoryPlugin.getClusterId() + " supplytype:" +
 //                               inventoryPlugin.getSupplyType() + " for item:"+
 //                               debugItem);
             if (inventoryPlugin.getSupplyType().equals("Ammunition")) {
+		/**
               String formatted = getDecimalFormatter().format(refillQty);
               refillQty = (new Double(formatted)).doubleValue();
+		***/
+	      refillQty = roundAmmoToHundrethsPlace(refillQty);
             } else {
               // make the refill a integer
               refillQty = Math.ceil(refillQty);
@@ -286,6 +293,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
               // and apply it to the LogisticsInventoryBG
               Task theRefill = createRefillTask(refillQty, thePG.convertBucketToTime(refillBucket),
                                                 thePG, today, orderShipTime);
+
               newRefills.add(theRefill);
               invLevel = invLevel + refillQty;
 
@@ -501,6 +509,11 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     }
     return myDecimalFormatter;
   }
+
+    protected double roundAmmoToHundrethsPlace(double refillQty) {
+	BigDecimal roundedQty = ((new BigDecimal((double)refillQty)).setScale(2,BigDecimal.ROUND_UP));
+	return roundedQty.doubleValue();
+    }
 }
 
 

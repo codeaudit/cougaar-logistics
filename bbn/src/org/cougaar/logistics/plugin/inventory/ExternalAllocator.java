@@ -155,7 +155,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
   private AllocationResult createPredictedAllocationResult(Task task) {
     //MWD in the future this will have to generate the expected result
     //from the predictor.
-    return new AllocationResultHelper(task, null).getAllocationResult(0.25, true);
+    return new AllocationResultHelper(task, null).getAllocationResult(Constants.Confidence.DISPATCHED, true);
         }
 
 

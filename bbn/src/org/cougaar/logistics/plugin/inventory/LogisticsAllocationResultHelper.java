@@ -35,6 +35,8 @@ import org.cougaar.planning.ldm.plan.ScoringFunction;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
 
+import org.cougaar.logistics.ldm.Constants;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -160,7 +162,7 @@ public class LogisticsAllocationResultHelper {
   }
 
   public AllocationResult getAllocationResult() {
-    return getAllocationResult(1.0);
+    return getAllocationResult(Constants.Confidence.OBSERVED);
   }
 
   public AllocationResult getAllocationResult(double confrating) {

@@ -529,7 +529,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
 
     AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
-            newPhasedAllocationResult(0.9, success, avs, (new Vector(phasedResults)).elements());
+            newPhasedAllocationResult(Constants.Confidence.SCHEDULED, success, avs, (new Vector(phasedResults)).elements());
 
     compareResults(estimatedResult, task, inv, thePG);
   }
@@ -636,7 +636,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                     LogisticsInventoryPG thePG) {
     AllocationResult estimatedResult = PluginHelper.
             createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
-                                            0.9, true);
+                                            Constants.Confidence.SCHEDULED, true);
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
 
@@ -656,7 +656,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     avs[1] = AspectValue.newAspectValue(AspectType.QUANTITY,
                                         getTaskUtils().getPreference(withdraw, AspectType.QUANTITY));
     AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
-            newAllocationResult(0.9, true, avs);
+            newAllocationResult(Constants.Confidence.SCHEDULED, true, avs);
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
 
@@ -697,7 +697,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       avs[2] = failedAV;
     }
     AllocationResult failed =
-            inventoryPlugin.getPlanningFactory().newAllocationResult(0.9, false, avs);
+            inventoryPlugin.getPlanningFactory().newAllocationResult(Constants.Confidence.SCHEDULED, false, avs);
     PlanElement prevPE = task.getPlanElement();
     if (prevPE == null) {
       Allocation alloc = inventoryPlugin.getPlanningFactory().
@@ -728,7 +728,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     AllocationResult ar = pe.getEstimatedResult();
     AllocationResult estimatedResult = PluginHelper.
             createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
-                                            0.9, true);
+                                            Constants.Confidence.SCHEDULED, true);
     if (ar == null || !ar.equals(estimatedResult)) {
       pe.setEstimatedResult(estimatedResult);
       inventoryPlugin.publishChange(pe);

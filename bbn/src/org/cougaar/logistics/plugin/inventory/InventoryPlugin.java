@@ -855,8 +855,8 @@ public class InventoryPlugin extends ComponentPlugin
     TimeSpan first = new MutableTimeSpan();
     TimeSpan second = new MutableTimeSpan();
     if (start >= firstlap.getStartTime()) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("GetSplitTimes... task is: " + new Date (start) + " ... " +
+      if (logger.isWarnEnabled()) {
+        logger.warn("GetSplitTimes... task is: " + new Date (start) + " ... " +
                      new Date(end) + "  overlapping relationship is: " +
                      new Date(firstlap.getStartTime()) + " ... " +
                      new Date(firstlap.getEndTime()));
@@ -864,8 +864,8 @@ public class InventoryPlugin extends ComponentPlugin
       ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
       ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
     } else {
-      if (logger.isDebugEnabled()) {
-        logger.debug("GetSplitTimes... task is: " + new Date (start) + " ... " +
+      if (logger.isWarnEnabled()) {
+        logger.warn("GetSplitTimes... task is: " + new Date (start) + " ... " +
                      new Date(end) + "  overlapping relationship is: " +
                      new Date(firstlap.getStartTime()) + " ... " +
                      new Date(firstlap.getEndTime()));
@@ -2109,7 +2109,7 @@ public class InventoryPlugin extends ComponentPlugin
         if (pe == null) {
           // Create Disposition
           AllocationResultHelper helper = new AllocationResultHelper(milTask, null);
-          AllocationResult dispAR = helper.getAllocationResult(1.0, true);
+          AllocationResult dispAR = helper.getAllocationResult(Constants.Confidence.OBSERVED, true);
           Disposition disposition =
             getPlanningFactory().createDisposition(milTask.getPlan(), milTask, dispAR);
           publishAdd(disposition);
