@@ -229,8 +229,12 @@ public class TopsRun extends Run{
     Result result=workGroup.getResult();
     while(result!=null){
       String desc=workGroup.getDesc(result.getID());
-      logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-		 "Removing work "+desc);
+
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "Removing work "+desc);
+      }
+
       workGroup.remove(result.getID());
 
       if(errorFailure(result)) // error - punt!
@@ -247,9 +251,11 @@ public class TopsRun extends Run{
 	  processTransportationHierarchy (hierarchyResult);
 	} else {
 	  processDemandHierarchy (hierarchyResult);
-    }
-	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-		   "Obtained portion of "+desc);
+	}
+	if (isNormalEnabled()) {
+	  logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		     "Obtained portion of "+desc);
+	}
       }
       ret=true;
       result=workGroup.getResult();
@@ -259,14 +265,16 @@ public class TopsRun extends Run{
       hierarchyPostPass();
     }
     else {
-      String detailedPendingWork = 
-	(workGroup.size () > 20) ? 
-	"- more than 20 items so not reporting each one..." :
-	" : " + workGroup.reportPendingWork ();
+      if (isMinorEnabled()) {
+	String detailedPendingWork = 
+	  (workGroup.size () > 20) ? 
+	  "- more than 20 items so not reporting each one..." :
+	  " : " + workGroup.reportPendingWork ();
 
-      logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-		 "Work queue has " + workGroup.size () + 
-		 " work items left " + detailedPendingWork);
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "Work queue has " + workGroup.size () + 
+		   " work items left " + detailedPendingWork);
+      }
     }
     return ret;
   }
@@ -318,11 +326,17 @@ public class TopsRun extends Run{
     Result result=workGroup.getResult();
     while(result!=null){
       String desc=workGroup.getDesc(result.getID());
-      logMessage(Logger.MINOR,Logger.STATE_CHANGE, "Removing work "+desc);
+
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE, "Removing work "+desc);
+      }
+
       workGroup.remove(result.getID());
       if(!errorFailure(result)){
-	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-		   "Post-processing of hierarchy completed");
+	if (isNormalEnabled()) {
+	  logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		     "Post-processing of hierarchy completed");
+	}
 	ret=true;
       }else
 	return false;
@@ -331,9 +345,11 @@ public class TopsRun extends Run{
     if(workGroup.isEmpty())
       initSessions();
     else {
-      logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-		 "Work queue has " + workGroup.size () + " work items left : " +
-		 workGroup.reportPendingWork ());
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "Work queue has " + workGroup.size () + " work items left : " +
+		   workGroup.reportPendingWork ());
+      }
     }
     return ret;
   }
@@ -360,9 +376,11 @@ public class TopsRun extends Run{
 	DGPSPRegistrationConnection.RegistrationRunResult r=
 	  (DGPSPRegistrationConnection.RegistrationRunResult)result;
 	setSessionID(desc,r.getSessionID());
-	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-		   "Registration with "+desc+" resulted in session id: "+
-		   r.getSessionID());
+	if (isNormalEnabled()) {
+	  logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		     "Registration with "+desc+" resulted in session id: "+
+		     r.getSessionID());
+	}
 	ret=true;
       }
       result=workGroup.getResult();
@@ -370,10 +388,12 @@ public class TopsRun extends Run{
     if(workGroup.isEmpty())
       obtainLegs();
     else {
-      logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-		 "InitSessions - Work queue has " + workGroup.size () + 
-		 " work items left : " +
-		 workGroup.reportPendingWork ());
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.STATE_CHANGE,
+		   "InitSessions - Work queue has " + workGroup.size () + 
+		   " work items left : " +
+		   workGroup.reportPendingWork ());
+      }
     }
     return ret;
   }
@@ -463,9 +483,15 @@ public class TopsRun extends Run{
 
   protected void setAutoCommitFalse () {
     try { 
-      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
+      }
+
       getDBConnection().setAutoCommit(false); 
-      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
+
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
+      }
     } 
     catch (Exception e) { 
       logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing setAutoCommit (false) - " + e);
@@ -474,12 +500,25 @@ public class TopsRun extends Run{
 
   protected void setAutoCommitTrue () {
     try { 
-      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
+      }
+
       getDBConnection().commit();
-      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
-      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
+
+      if (isMinorEnabled()) {
+	logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
+      }
+
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
+      }
+
       getDBConnection().setAutoCommit(true); 
-      logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
+
+      if (isTrivialEnabled()) {
+	logMessage(Logger.TRIVIAL,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
+      }
     } 
     catch (Exception e) { 
       logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing commit - " + e);
@@ -647,8 +686,11 @@ public class TopsRun extends Run{
       String desc=workGroup.getDesc(result.getID());
       workGroup.remove(result.getID());
       if(!errorFailure(result)){
-	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-		   "Post-processing of DGPSP completed");
+	if (isNormalEnabled()) {
+	  logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		     "Post-processing of DGPSP completed");
+	}
+
 	ret=true;
       }else
 	return false;
@@ -691,8 +733,11 @@ public class TopsRun extends Run{
     HierarchyPrepareDBTables hpdbt=
       new HierarchyPrepareDBTables(workID,id,getDBConfig(),
 				   getDBConnection(),this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting prepartion of hierarchy tables");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting prepartion of hierarchy tables");
+    }
+
     workQ.enque(hpdbt);
     return workID;
   }
@@ -703,8 +748,11 @@ public class TopsRun extends Run{
     DGPSPPrepareDBTables dgpdbt=
       new DGPSPPrepareDBTables(workID,id,getDBConfig(),
 			       getDBConnection(),this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting prepartion of DataGathererPSP tables");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting prepartion of DataGathererPSP tables");
+    }
+
     workQ.enque(dgpdbt);
     return workID;
   }
@@ -719,8 +767,11 @@ public class TopsRun extends Run{
 			      dgConfig.getDBConfig(),
 			      getDBConnection(),
 			      this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,"Requesting "+
-	       societyStr+"."+cluster+" Hierarchy");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,"Requesting "+
+		 societyStr+"."+cluster+" Hierarchy");
+    }
+
     workQ.enque(hc);
     return workID;
   }
@@ -734,8 +785,11 @@ public class TopsRun extends Run{
 			    dgConfig.getDBConfig(),
 			    getDBConnection(),
 			    this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting hierarchy post-processing");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting hierarchy post-processing");
+    }
+
     workQ.enque(hpp);
     return workID;
   }
@@ -753,8 +807,10 @@ public class TopsRun extends Run{
       new DGPSPRegistrationConnection(workID,id, dgc,
 				      getDBConfig(),
 				      getDBConnection(),this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting DGPSPRegistration for: "+cluster);
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting DGPSPRegistration for: "+cluster);
+    }
     workQ.enque(reg);
     return workID;
   }
@@ -830,8 +886,10 @@ public class TopsRun extends Run{
     DGPSPPostPass dgpp=
       new DGPSPPostPass(workID,id,getDBConfig(),
 			getDBConnection(),this);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting DataGathererPSP post pass");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting DataGathererPSP post pass");
+    }
     workQ.enque(dgpp);
     return workID;
   }
@@ -844,8 +902,10 @@ public class TopsRun extends Run{
 			       getDBConnection(),
 			       getDGConfig().getDerivedTablesConfig(),
 			       this);
-    logMessage(Logger.NORMAL, Logger.STATE_CHANGE,
-	       "Requesting PrepareDerivedTables");
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL, Logger.STATE_CHANGE,
+		 "Requesting PrepareDerivedTables");
+    }
     workQ.enque(pdt);
     return workId;
   }
@@ -864,7 +924,9 @@ public class TopsRun extends Run{
       sb.append((iter.hasNext() ? ", " : ""));
     }
     sb.append("}");
-    logMessage(Logger.NORMAL,Logger.RESULT,sb.toString());
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.RESULT,sb.toString());
+    }
   }
 
   protected void setSessionID(String cluster, String sessionID){
@@ -887,8 +949,10 @@ public class TopsRun extends Run{
       String desc=workGroup.getDesc(result.getID());
       workGroup.remove(result.getID());
       if(!warningFailure(result)){
-	logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-		   description+": "+desc);
+	if (isNormalEnabled()) {
+	  logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		     description+": "+desc);
+	}
 	ret=true;
       }
       result=workGroup.getResult();
@@ -903,8 +967,10 @@ public class TopsRun extends Run{
     String name=getNameForObjectClass(dgpspc);
     setStatus("Starting "+name+" for: "+cluster);
     dgc.setQuery(query);
-    logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
-	       "Requesting "+name+" for: "+cluster);
+    if (isNormalEnabled()) {
+      logMessage(Logger.NORMAL,Logger.STATE_CHANGE,
+		 "Requesting "+name+" for: "+cluster);
+    }
     workQ.enque(dgpspc);
   }
 
