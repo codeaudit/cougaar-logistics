@@ -30,9 +30,9 @@ import java.util.Enumeration;
 import java.util.HashSet;
 
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
-
 import org.cougaar.glm.ldm.Constants;
 
 
@@ -181,7 +181,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 
   protected void disposeOfTask(Task task) {
     AspectValue avs[] = new AspectValue[1];
-    avs[0] = AspectValue.newAspectValue(15, 0.0);
+    avs[0] = AspectValue.newAspectValue(15, CountRate.newEachesPerDay(0.0));
     AllocationResult dispAR =
         getPlanningFactory().newAllocationResult(1.0, true, avs);
     Disposition disposition =
