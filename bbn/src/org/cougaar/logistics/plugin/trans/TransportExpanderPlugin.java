@@ -23,6 +23,7 @@ package org.cougaar.logistics.plugin.trans;
 import java.math.BigDecimal;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -97,7 +98,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
   public void setupFilters () {
     super.setupFilters ();
               
-    addFilter (new UTILAssetCallback(this, logger));
+    addFilter (myAssetCallback = new UTILAssetCallback(this, logger));
   }
 
   /**
@@ -162,6 +163,18 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
   public Vector getSubtasks(Task task){
     Vector subtasks = new Vector();
     ForUnitPG unitPG = getForUnitPG (task.getDirectObject());
+
+    if (!didSetCapacity) {
+      Collection carriers = myAssetCallback.getSubscription().getCollection();
+      handleNewAssets(Collections.enumeration (carriers));
+      if (isWarnEnabled()) 
+	warn (getName() + ".getSubtasks - recalculated maxContainContrib after rehydration.");
+    }
+
+    if (maxContainCapacity == Double.MAX_VALUE) {
+      error (getName() + ".getSubtasks - maxContainCapacity has not been set, it's " + 
+	     maxContainCapacity);
+    }
 
     try{
       if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY) &&
@@ -765,11 +778,15 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     if (maxcontain[1] < maxPassengerCapacity)
       maxPassengerCapacity = maxcontain[1];
+
+    didSetCapacity = true;
   }
 
   protected double maxContainCapacity   = Double.MAX_VALUE;
   protected double maxPassengerCapacity = Double.MAX_VALUE;
-  
+  protected boolean didSetCapacity = false;
+
   protected GLMPrepPhrase glmPrepHelper;
   protected LDMServesPlugin ldmProtoCache;
+  protected UTILAssetCallback myAssetCallback;
 }
