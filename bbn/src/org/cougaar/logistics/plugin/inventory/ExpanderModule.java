@@ -67,6 +67,11 @@ public interface ExpanderModule {
    * the inventory's behavior group.
    **/
   void handleRemovedRequisitions(Collection tasks);
+  /**
+   * Respond to removed dispostions, e.g, remove related predictions.
+   * @param dispositions
+   */
+  void handleRemovedDispositions(Collection dispositions);
 
   /**
    * Given changed Supply tasks, Withdraw tasks are updated and
@@ -85,4 +90,16 @@ public interface ExpanderModule {
    * PlanElements>
    **/
   void updateAllocationResult(IncrementalSubscription sub);
+  
+  /**
+   * Check the alarm status during communications loss.
+   */
+  void checkCommStatusAlarms();
+
+  /**
+   * Determine the state of comms, e.g., is it up/down, did it come back up?
+   * @param commStatusSub
+   * @param tasks
+   */
+  void determineCommStatus(IncrementalSubscription commStatusSub, Collection tasks);
 }
