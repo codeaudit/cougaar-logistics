@@ -59,6 +59,7 @@ public class GLMTransConst {
 
   public static final String VISHNU_DATA = "VISHNU_DATA";
   public static final String SEAROUTE_DISTANCE = "SEAROUTE_DISTANCE";
+  public static final String SEAROUTE = "SEAROUTE";
   public static final String READYAT = "READYAT";
 
   // Ship types

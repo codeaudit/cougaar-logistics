@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import org.cougaar.core.adaptivity.*;
+import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 
 import org.cougaar.glm.ldm.Constants;
@@ -66,13 +67,24 @@ import org.cougaar.planning.ldm.measure.Longitude;
 import org.cougaar.logistics.plugin.trans.NewLowFidelityAssetPG;
 import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
 
+import org.cougaar.glm.util.AssetUtil;
+import org.cougaar.glm.util.GLMPrepPhrase;
+import org.cougaar.glm.util.GLMPreference;
+
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+
+import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
+import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
+
+import org.cougaar.glm.ldm.asset.TransportationRoute;
+
 /**
  * getSubtasks is filled in.  It justs blows up composite
  * tasks into smaller one unit tasks.  Examines each Task.
  *
  * @see UTILExpanderPluginAdapter
  */
-public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
+public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter implements BlackboardPlugin {
   public static final Integer LOW_FIDELITY  = new Integer(0);
   public static final Integer HIGH_FIDELITY = new Integer(1);
   public static final String  FIDELITY_KNOB = "FidelityKnob";
@@ -92,7 +104,13 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
     glmAssetHelper = new AssetUtil (logger);
 
     setupOperatingModes ();
+    portLocator.setFactory (ldmf); // tell route finder the ldm factory to use
   }
+
+   public void setupFilters () {
+     super.setupFilters ();
+     portLocator = new PortLocatorImpl (this, logger);
+   }
 
   protected OperatingMode mode;
 
@@ -403,7 +421,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
    *
    * removes OFTYPE prep, since it's not needed by scheduler 
    **/
-  Task makeTask (Task parentTask, Asset directObject) {
+  protected Task makeTask (Task parentTask, Asset directObject) {
     if (isDebugEnabled()) 
       debug (".makeTask - making subtask of " + parentTask.getUID () + 
 	     " d.o. " + directObject);
@@ -436,7 +454,23 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
     if (prefHelper.hasPrefWithAspectType(newtask, AspectType.QUANTITY))
       prefHelper.removePrefWithAspectType(newtask, AspectType.QUANTITY);
 
+    attachRoute (parentTask, newtask);
+
     return newtask;
+  }
+
+  protected void attachRoute (Task parentTask, Task subtask) {
+    TransportationRoute route = portLocator.getRoute (parentTask);
+
+    glmPrepHelper.addPrepToTask (subtask, 
+				 glmPrepHelper.makePrepositionalPhrase (ldmf,
+									GLMTransConst.SEAROUTE,
+									route));
+    Distance distance = route.getLength();
+    glmPrepHelper.addPrepToTask (subtask, 
+				 glmPrepHelper.makePrepositionalPhrase (ldmf,
+									GLMTransConst.SEAROUTE_DISTANCE,
+									distance));
   }
 
   /**
@@ -496,6 +530,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
   //Domain service (factory service piece of old LDM)
   private DomainService theDomainService = null;
 
+  /** implemented for BlackboardPlugin interface -- need public access! */
+  public BlackboardService getBlackboard () {
+    return blackboard;
+  }
+
   // Utility functions ----------------------------------------------------
 
   private void reportError (String err) { 
@@ -506,4 +545,5 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMPreference glmPrefHelper;
   protected AssetUtil glmAssetHelper;
+  protected PortLocatorImpl portLocator;
 }

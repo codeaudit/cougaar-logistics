@@ -17,10 +17,10 @@ import org.cougaar.planning.ldm.measure.Longitude;
 import org.cougaar.planning.ldm.asset.AbstractAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 
-import org.cougaar.logistics.plugin.seanet.Location;
-import org.cougaar.logistics.plugin.seanet.LocationImpl;
-import org.cougaar.logistics.plugin.seanet.Network;
-import org.cougaar.logistics.plugin.seanet.Node;
+import org.cougaar.glm.seanet.Location;
+import org.cougaar.glm.seanet.LocationImpl;
+import org.cougaar.glm.seanet.Network;
+import org.cougaar.glm.seanet.Node;
 
 import java.util.*;
 
@@ -34,17 +34,21 @@ public class RouteFinder {
   int numNodes = 0;
   int numLinks = 0;
   RootFactory factory;
+  Logger logger;
 
-  public RouteFinder (Logger logger) { measureHelper = new GLMMeasure (logger); }
+  public RouteFinder (Logger logger) { 
+    measureHelper = new GLMMeasure (logger); 
+    this.logger = logger;
+  }
 
   public void setFactory (RootFactory factory) { this.factory = factory; }
 
   /** caches routes after getting them from the handy seanet facility! */
   public Distance getDistance (GeolocLocation from, GeolocLocation to) { 
-    return getRoute (from, to, true).getLength ();
+    return getRoute (from, to).getLength ();
   }
 
-  public TransportationRoute getRoute (GeolocLocation from, GeolocLocation to, boolean includeDestination) {
+  public TransportationRoute getRoute (GeolocLocation from, GeolocLocation to) {
     Map toGeolocRouteMap = (Map) geolocToGeolocToRoute.get (from.getGeolocCode());
     TransportationRoute route = null;
     if (toGeolocRouteMap != null)
@@ -62,19 +66,74 @@ public class RouteFinder {
 
     route = makeRoute ();
 
-    TransportationNode source = null, destination = null; 
-    TransportationNode last = null;
-
     Vector nodes = new Vector (33);
 
+    Iterator routeIter;
+    
+    routeIter = network.routeNoSourceOrDestination ();
+
     // create list of nodes
-    for (Iterator iter = (includeDestination ? network.route () : network.routeNoDestination ());iter.hasNext ();) {
-      Object nextObj = iter.next ();
+    /*
+    System.out.print ("Full Route is ");
+    for (Iterator iter = network.route ();iter.hasNext ();) {
+      Location node = (Location) iter.next ();
+      System.out.print ("(" + node.getLatitude () + "-" + node.getLongitude() + ")\t");
+    }
+    System.out.println ("");
+    */
+
+    /*
+    System.out.print ("Partial Route is ");
+    for (Iterator iter = network.routeNoSourceOrDestination (); iter.hasNext ();) {
+      Location node = (Location) iter.next ();
+      String name = (node instanceof Node) ? ((Node)node).getName () : "anon";
+
+      System.out.println ("(" + name + " " + node.getLatitude () + "-" + node.getLongitude() + ")\t");
+    }
+    */
+
+    for (;routeIter.hasNext ();) {
+      Object nextObj = routeIter.next ();
       nodes.add (0, getNode((Location) nextObj));
     }
+    
+    route = makeRouteFromNodes (nodes);
 
+    if (nodes.size () != route.getNodes().size ())
+      logger.error ("ERROR - nodes in " + nodes.size () + " != nodes out " + route.getNodes().size());
+
+    //    for (int i = 0; i < route.getNodes().size (); i++)
+    //      System.out.println ("Out : " + ((TransportationNode) route.getNodes().get(i)).getGeolocLocation());
+
+    return route;
+  }
+
+  /** this is inefficient, but not awful... */
+  public TransportationRoute makeRouteWithPOEandPOD (TransportationRoute route, GeolocLocation POE, GeolocLocation POD) {
+    Vector nodes = route.getNodes ();
+
+    nodes.add (0, getNode (getLocation(POE)));
+    nodes.add (   getNode (getLocation(POD)));
+
+    TransportationRoute routeOut = makeRouteFromNodes (POE, POD, nodes);
+
+    if (nodes.size () != routeOut.getNodes().size ())
+      logger.error ("ERROR 2 - nodes in " + nodes.size () + " != nodes out " + routeOut.getNodes().size());
+    
+    //    for (int i = 0; i < routeOut.getNodes().size (); i++)
+    //      System.out.println ("Out 2 : " + ((TransportationNode) routeOut.getNodes().get(i)).getGeolocLocation());
+
+    return routeOut;
+  }
+
+  /** this is inefficient, but not awful... */
+  protected TransportationRoute makeRouteFromNodes (GeolocLocation from, GeolocLocation to, Collection nodes) {
+    TransportationNode source = null, destination = null; 
+    TransportationNode last = null;
     TransportationNode node = null;
-    Vector links = new Vector ();
+    Vector links = new Vector (); // has to be a vector because setLinks expects one...
+
+    TransportationRoute route = makeRoute ();
     // now link them
     for (Iterator iter = nodes.iterator (); iter.hasNext ();) {
       node = (TransportationNode) iter.next ();
@@ -99,8 +158,37 @@ public class RouteFinder {
     route.setLinks (links);
     route.setSource (source);
     route.setDestination (destination);
+
+    return route;
+  }
+
+  protected TransportationRoute makeRouteFromNodes (Collection nodes) {
+    TransportationNode source = null, destination = null; 
+    TransportationNode last = null;
+    TransportationNode node = null;
+    Vector links = new Vector (); // has to be a vector because setLinks expects one...
+
+    TransportationRoute route = makeRoute ();
+    // now link them
+    for (Iterator iter = nodes.iterator (); iter.hasNext ();) {
+      node = (TransportationNode) iter.next ();
+      route.addNode (node);
+
+      if (last != null)
+	links.add (linkNodes (last, node));
+
+      if (source == null) {
+	source = node;
+      }
+
+      last = node;
+    }
+
+    destination = node;
     
-    toGeolocRouteMap.put(to.getGeolocCode(), route);
+    route.setLinks (links);
+    route.setSource (source);
+    route.setDestination (destination);
 
     return route;
   }
@@ -154,5 +242,3 @@ public class RouteFinder {
 
   protected GLMMeasure measureHelper;
 }
-
-

@@ -86,20 +86,16 @@ public abstract class SequentialScheduleElement extends ScheduleElementImpl {
   protected Task parentTask;
   protected Vector dependencies = new Vector();
   protected Task task;
-  protected GLMPrepPhrase glmPrepHelper;
-  protected Logger logger;
   
-  public SequentialScheduleElement(Task parent, GLMPrepPhrase glmPrepHelper, Logger logger) {
+  public SequentialScheduleElement(Task parent) {
     parentTask = parent;
-    this.logger = logger;
-    this.glmPrepHelper = glmPrepHelper;
   } 
 	
   public Task getParentTask () { return parentTask; }
   public Task getTask    () { return task; }
   public void setTask    (Task s) { task = s; }
 	
-  // The dependencies are managed as a Vector of other Schedule Elements
+  /** The dependencies are managed as a Vector of other Schedule Elements */
   public void setDependencies(Vector vect) { dependencies = vect; }
   public Vector getDependencies() { return dependencies; }
 	
@@ -125,8 +121,10 @@ public abstract class SequentialScheduleElement extends ScheduleElementImpl {
   public abstract Task planMe(SequentialPlannerPlugin plugin); 
 	
 	
-  // A default finishPlan which simply fills date information into the schedule. Note
-  // that if this is overridden planned must still be set to true.
+  /**
+   * A default finishPlan which simply fills date information into the schedule. Note
+   * that if this is overridden planned must still be set to true.
+   */
   public void finishPlan(Allocation alloc, SequentialPlannerPlugin plugin) {
     AllocationResult AR = alloc.getReportedResult() == null ? alloc.getEstimatedResult() : alloc.getReportedResult(); 
     Double d_start = new Double(AR.getValue(AspectType.START_TIME)); 
@@ -136,19 +134,17 @@ public abstract class SequentialScheduleElement extends ScheduleElementImpl {
     double ds = d_start.doubleValue();
     double de = d_end.doubleValue ();
 		
-    if (de > (ds-0.1) && de < (ds+0.1)) {
-      de += 1000;
+    if (de > (ds-0.1) && de < (ds+0.1)) { // hack so schedule element doesn't complain about a zero length
+      de += 1000;                         // but this may be an error
       d_end = new Double (de);
-      Task task = alloc.getTask();
-      Asset directObject = task.getDirectObject();
-      if (!glmPrepHelper.getFromLocation (task).getGeolocCode ().equals (glmPrepHelper.getToLocation (task).getGeolocCode ()))
-	logger.info ("SequentialScheduleElement.finishPlan - WARNING - start = end time for task " +
-		     task.getUID() + " asset " + directObject.getUID() + 
-		     " from " + glmPrepHelper.getFromLocation (task) +
-		     " to "   + glmPrepHelper.getToLocation (task));
+
+      reportZeroDuration (alloc, plugin);
     }
 		
     setEndDate(new Date(d_end.longValue()));
     planned = true;
   }
+
+  /** default does nothing */
+  protected void reportZeroDuration (Allocation alloc, SequentialPlannerPlugin plugin) {}
 }

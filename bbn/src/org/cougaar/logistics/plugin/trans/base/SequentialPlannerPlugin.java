@@ -325,8 +325,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     Enumeration enum = sched.getAllScheduleElements();
     while (enum.hasMoreElements()) {
       SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
-      if (!spe.isPlanned()) {
-	if (isDebugEnabled()) debug(getName () + "---reportChangedExpansion: E (not updating Alloc)"); 
+      AllocationResult reportedResult = exp.getReportedResult();
+      boolean isFailure = (reportedResult != null) ? !reportedResult.isSuccess () : false;
+ 
+      if (!spe.isPlanned() && !isFailure) {
+ 	if (isDebugEnabled()) debug(getName () + "---reportChangedExpansion: E (not updating Alloc b/c interim change)"); 
 	return;
       }
     }

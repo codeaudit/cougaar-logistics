@@ -20,69 +20,35 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
+import java.util.*;
+
 import org.cougaar.lib.vishnu.client.XMLizer;
 import org.cougaar.lib.vishnu.client.custom.CustomVishnuAggregatorPlugin;
 
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.MPTask;
-import org.cougaar.glm.ldm.Constants;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.TransportationRoute;
-import org.cougaar.glm.util.GLMPrepPhrase;
 import org.cougaar.planning.ldm.asset.AbstractAsset;
 import org.cougaar.planning.ldm.asset.Asset;
+
+import org.cougaar.planning.ldm.plan.MPTask;
+import org.cougaar.planning.ldm.plan.Task;
+
 import org.cougaar.glm.ldm.Constants;
 
-import java.util.*;
+import org.cougaar.glm.ldm.asset.GLMAsset;
+import org.cougaar.glm.ldm.asset.TransportationRoute;
 
-import org.cougaar.logistics.plugin.trans.tools.RouteFinder;
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+
+import org.cougaar.glm.util.GLMPrepPhrase;
 
 /**
  * This class is necessary because the ShipPacker needs a DataXMLizer that <br>
  * adds information specific to the ship packing problem.
  */
-public class SeaVishnuPlugin extends CustomVishnuAggregatorPlugin {
-  RouteFinder routeFinder;
-
+public class SeaVishnuPlugin extends GenericVishnuPlugin {
   public void localSetup () {
     super.localSetup ();
 
-    createRouteFinder (); // allows subclass
     glmPrepHelper = new GLMPrepPhrase (logger);
-  }
-
-  protected void createRouteFinder () {
-    routeFinder = new RouteFinder (logger);
-    routeFinder.setFactory (ldmf);
-  }
-
-  /**
-   * Implemented for UTILAssetListener
-   * <p>
-   * OVERRIDE to see which assets you think are interesting.
-   * <p>
-   * For instance, if you are scheduling trucks/ships/planes, 
-   * you'd want to check like this : 
-   * <code>
-   * return (GLMAsset).hasContainPG ();
-   * </code>
-   * @param a asset to check 
-   * @return boolean true if asset is interesting
-   */
-  public boolean interestingAsset(Asset a) {
-    if (a instanceof GLMAsset) {
-      return ((GLMAsset) a).hasContainPG();
-    }
-    return false;
-  }
-
-  /** 
-   * Looks only at TRANSPORT tasks, must call super to not 
-   * accidentally get one of the tasks from the final expansion 
-   **/
-  public boolean interestingTask (Task task) {
-    boolean interesting = super.interestingTask (task);
-    return interesting && task.getVerb().equals (Constants.Verb.TRANSPORT);
   }
 
   /** 
@@ -91,16 +57,17 @@ public class SeaVishnuPlugin extends CustomVishnuAggregatorPlugin {
    * SeaDataXMLize adds fields for sea-specific info, like dealing with Ammunition
    */
   protected XMLizer createXMLizer (boolean direct) {
-    return new SeaDataXMLize (direct, logger);
+    GenericDataXMLize xmlizer = new SeaDataXMLize (direct, logger);
+    setDataXMLizer(xmlizer);
+    return xmlizer;
   }
 
   protected Task createMainTask (Task task, Asset asset, Date start, Date end, Date setupStart, Date wrapupEnd) {
     Task mainTask = super.createMainTask (task, asset, start, end, setupStart, wrapupEnd);
     
     // attach route
-    TransportationRoute route = routeFinder.getRoute (glmPrepHelper.getFromLocation(mainTask),
-						      glmPrepHelper.getToLocation  (mainTask), 
-						      false /* don't include destination */);
+    TransportationRoute route = (TransportationRoute)
+      glmPrepHelper.getIndirectObject(task, GLMTransConst.SEAROUTE);
 
     glmPrepHelper.addPrepToTask(mainTask, 
 				glmPrepHelper.makePrepositionalPhrase(ldmf,

@@ -1,15 +1,92 @@
 <?xml version="1.0" encoding="US-ASCII"?>
 
 <!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [ 
+<!ENTITY tankprototypes SYSTEM "TankPrototypes.ldm.xml">
+<!ENTITY ammoprototype SYSTEM "Ammo_Prototype.ldm.xml">
 <!ENTITY DummyPrototypes SYSTEM "DummyPrototypes.ldm.xml">
-<!ENTITY TankPrototypes SYSTEM "TankPrototypes.ldm.xml">]>
+<!ENTITY SeaportPrototypes SYSTEM "SeaportPrototypes.ldm.xml">
+<!ENTITY NetworkPrototypes SYSTEM "TransportationNetworkPrototypes.ldm.xml">
+<!ENTITY AirportPrototypes SYSTEM "AirportPrototypes.ldm.xml">]>
 
 <AssetList>
   &DummyPrototypes;
-  &TankPrototypes;
+  &tankprototypes;
+  &ammoprototype;
+
+  &AirportPrototypes;
+  &SeaportPrototypes;
+  &NetworkPrototypes;
 
   <instance prototype="Null_Prototype" id="nullasset" quantity="1">
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                      Now the Instances                      ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  <instance prototype="SAVANNAH_PORT" id="SAVANNAH_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="BEAUMONT_PORT" id="BEAUMONT_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="SUNNY_POINT_PORT" id="SUNNY_POINT_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="GENOA_PORT" id="GENOA_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="MASSAWA_PORT" id="MASSAWA_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="MERSIN_PORT" id="MERSIN_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="ISKENDERUN_PORT" id="ISKENDERUN_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="BREMERHAVEN_PORT" id="BREMERHAVEN_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="ATHENS_PORT" id="ATHENS_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="PALERMO_PORT" id="PALERMO_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="NAPLES_PORT" id="NAPLES_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="LIVORNO_PORT" id="LIVORNO_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="MONOPOLI_PORT" id="MONOPOLI_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="ROTTERDAM_PORT" id="ROTTERDAM_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="IZMIR_PORT" id="IZMIR_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="FELIXSTOWE_PORT" id="FELIXSTOWE_PORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
 </AssetList>
 

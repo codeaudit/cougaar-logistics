@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -20,81 +20,8 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import org.cougaar.glm.callback.GLMOrganizationCallback;
-import org.cougaar.glm.callback.GLMOrganizationListener;
-
-import org.cougaar.glm.ldm.Constants;
-import org.cougaar.glm.ldm.GLMFactory;
-
-import org.cougaar.glm.ldm.asset.AirportPG;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.MilitaryOrgPG;
-import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.glm.ldm.asset.TransportationNode;
-
-import org.cougaar.glm.ldm.plan.GeolocLocation;
-import org.cougaar.glm.ldm.plan.NewGeolocLocation;
-import org.cougaar.glm.ldm.plan.Position;
-
-import org.cougaar.glm.util.AssetUtil;
-import org.cougaar.glm.util.GLMMeasure;
-import org.cougaar.glm.util.GLMPreference;
-import org.cougaar.glm.util.GLMPrepPhrase;
-
-
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.LocationSchedulePG;
-
-import org.cougaar.planning.ldm.measure.Latitude;
-import org.cougaar.planning.ldm.measure.Longitude;
-
-import org.cougaar.planning.ldm.plan.Allocation;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.AuxiliaryQueryType;
-import org.cougaar.planning.ldm.plan.ItineraryElement;
-import org.cougaar.planning.ldm.plan.Location;
-import org.cougaar.planning.ldm.plan.LocationScheduleElement;
-import org.cougaar.planning.ldm.plan.NewItineraryElement;
-import org.cougaar.planning.ldm.plan.NewSchedule;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Priority;
-import org.cougaar.planning.ldm.plan.Relationship;  
-import org.cougaar.planning.ldm.plan.RelationshipSchedule;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.ScheduleImpl;
-import org.cougaar.planning.ldm.plan.ScheduleElementImpl;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.Verb;
-
-
-import org.cougaar.lib.callback.UTILAssetCallback;
-import org.cougaar.lib.callback.UTILExpandableTaskCallback;
-import org.cougaar.lib.callback.UTILFilterCallback;
-import org.cougaar.lib.callback.UTILGenericListener;
-import org.cougaar.lib.callback.UTILWorkflowCallback;
-
-
-import org.cougaar.util.TimeSpan;
-import org.cougaar.util.log.Logger;
-import org.cougaar.lib.util.UTILItinerary;
-import org.cougaar.lib.util.UTILPluginException;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
-import org.cougaar.logistics.plugin.trans.base.SequentialPlannerPlugin;
-import org.cougaar.logistics.plugin.trans.base.SequentialScheduleElement;
-
-import org.cougaar.logistics.plugin.trans.tools.Locator;
-import org.cougaar.logistics.plugin.trans.tools.LocatorImpl;
-import org.cougaar.core.service.BlackboardService;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -103,6 +30,61 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.Random;
+
+import org.cougaar.core.service.BlackboardService;
+
+import org.cougaar.glm.callback.GLMOrganizationCallback;
+import org.cougaar.glm.callback.GLMOrganizationListener;
+
+import org.cougaar.glm.ldm.Constants;
+
+import org.cougaar.glm.ldm.asset.AirportPG;
+import org.cougaar.glm.ldm.asset.GLMAsset;
+import org.cougaar.glm.ldm.asset.MilitaryOrgPG;
+import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.glm.ldm.asset.TransportationNode;
+
+import org.cougaar.glm.ldm.plan.GeolocLocation;
+
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+import org.cougaar.logistics.plugin.trans.base.SequentialPlannerPlugin;
+import org.cougaar.logistics.plugin.trans.base.SequentialScheduleElement;
+
+import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
+import org.cougaar.logistics.plugin.trans.tools.Locator;
+import org.cougaar.logistics.plugin.trans.tools.LocatorImpl;
+
+import org.cougaar.glm.util.AssetUtil;
+import org.cougaar.glm.util.GLMPrepPhrase;
+
+import org.cougaar.lib.callback.UTILExpandableTaskCallback;
+import org.cougaar.lib.callback.UTILFilterCallback;
+import org.cougaar.lib.callback.UTILGenericListener;
+
+import org.cougaar.lib.util.UTILAllocate;
+import org.cougaar.lib.util.UTILExpand;
+import org.cougaar.lib.util.UTILPreference;
+
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.LocationSchedulePG;
+
+import org.cougaar.planning.ldm.plan.Allocation;
+import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.Location;
+import org.cougaar.planning.ldm.plan.LocationScheduleElement;
+import org.cougaar.planning.ldm.plan.NewSchedule;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.Relationship;  
+import org.cougaar.planning.ldm.plan.RelationshipSchedule;
+import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.planning.ldm.plan.ScheduleImpl;
+import org.cougaar.planning.ldm.plan.Task;
+
+import org.cougaar.util.TimeSpan;
+import org.cougaar.util.log.Logger;
 
 /**
  * <pre>
@@ -121,7 +103,7 @@ import java.util.Random;
  * -->
  */
 public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
-  implements GLMOrganizationListener {
+  implements GLMOrganizationListener, BlackboardPlugin {
   
   private static final long ONE_HOUR = 1000l*60l*60l;
   private static final double BILLION = 1000000000.0d;
@@ -132,11 +114,21 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   public void localSetup() {     
     super.localSetup();
 
-    try {bestDateBackoff = getMyParams().getLongParam("bestDateBackoff");}
-    catch(Exception e) {bestDateBackoff = ONE_HOUR;} 
+    try {
+      if (getMyParams().hasParam ("bestDateBackoff"))
+	bestDateBackoff = getMyParams().getLongParam("bestDateBackoff");
+      else
+	bestDateBackoff = ONE_HOUR; 
+    } catch (Exception e) { warn ("got really unexpected exception " + e); }
 
-    outerGLMPrepHelper = new GLMPrepPhrase (logger);
+    if (isDebugEnabled())
+      debug ("localSetup - Creating prep helper and asset helper.");
+
+    glmPrepHelper  = new GLMPrepPhrase (logger);
     glmAssetHelper = new AssetUtil (logger);
+
+    if (isDebugEnabled())
+      debug ("localSetup - this " + this + " prep helper " + glmPrepHelper);
   }
 
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
@@ -170,7 +162,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   }
 
   public boolean interestingExpandedTask(Task t) {
-    return outerGLMPrepHelper.hasPrepNamed(t, GLMTransConst.SequentialSchedule);
+    return glmPrepHelper.hasPrepNamed(t, GLMTransConst.SequentialSchedule);
   }
 
   /*** AssetListener ***/
@@ -197,20 +189,15 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
         
     addFilter (myOrgCallback   = createOrganizationCallback ());
 
-    // Instantiate the Locator, which adds a LocationCallback
-    aPOELocator = new LocatorImpl(this, logger);
+    makeLocator ();
+  }
 
-    if (blackboard.didRehydrate ()) {
-      if (isInfoEnabled())
-	info (".localSetup - didRehydrate!");
-	  
-      if (myAssetCallback == null)
-	info (".localSetup - asset callback is null?");
-
-      handleNewAssets (myAssetCallback.getSubscription().elements());
-    }
+  /** Instantiate the Locator, which adds a LocationCallback */
+  protected void makeLocator () {
+    locator = new LocatorImpl(this, logger);
   }
       
+  /** implemented for BlackboardPlugin interface -- need public access! */
   public BlackboardService getBlackboard () {
     return blackboard;
   }
@@ -234,26 +221,11 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
   public void handleChangedOrganization (Enumeration e) {}
 
-  public void handleNewAssets (Enumeration org_assets) {
-    if (isDebugEnabled()) debug (".handleNewAsset called.");
-
-    for (; org_assets.hasMoreElements ();) {
-      GLMAsset airport = (GLMAsset) org_assets.nextElement ();
-      Position loc = airport.getPositionPG ().getPosition ();
-      String geoloc = ((GeolocLocation)loc).getGeolocCode();
-      geolocToAirport.put (geoloc, airport);
-      airportToLocation.put (airport, loc);
-      if (isDebugEnabled())
-	debug (".handleNewAsset mapping <" + 
-			    geoloc + "> to <" + airport + ">");
-    }
-  }
-
   public Schedule createEmptyPlan(Task parent) {
-    TheaterPortion theater = new TheaterPortion(parent, logger);
+    TheaterPortion theater = new TheaterPortion(parent);
     // IsbPortion isb = new IsbPortion(parent);
-    AirPortion air = new AirPortion(parent, logger);
-    ConusPortion conus = new ConusPortion(parent, logger);
+    AirPortion     air     = new AirPortion(parent);
+    ConusPortion   conus   = new ConusPortion(parent);
 
     boolean needsTheater  = needsTheater (parent);
     // boolean needsISB     = needsISB (parent);
@@ -304,16 +276,10 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     if (isDebugEnabled())
       debug (".createEmptyPlan - " + retSchedule);
     if (retSchedule.isEmpty ()) {
-      Object origin = outerGLMPrepHelper.getFromLocation(parent);
-      Object destination = outerGLMPrepHelper.getToLocation(parent);
+      Object origin = glmPrepHelper.getFromLocation(parent);
+      Object destination = glmPrepHelper.getToLocation(parent);
       error (".createEmptyPlan - created an empty portion schedule. "+
-			  "For task " + parent.getUID () + " going from " + origin + " to " + destination);
-      /*
-      error ("Reasoning is as follows : ");
-      needsTheater (parent);
-      needsAirOrSea (parent);
-      needsCONUS (parent);
-      */
+	     "For task " + parent.getUID () + " going from " + origin + " to " + destination);
     }
 
     return retSchedule;
@@ -326,21 +292,23 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     if (glmAssetHelper.isPassenger(task.getDirectObject()))
       return false;
     boolean inTheater = startsInTheater(task);
-    GeolocLocation destinationGeoloc = (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.TO); 
-    Object airport = geolocToAirport.get (destinationGeoloc.getGeolocCode());
+    GeolocLocation destinationGeoloc = (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.TO); 
+    Object asset = locator.getAssetAtGeolocCode (destinationGeoloc.getGeolocCode());
 
     if (isDebugEnabled()) {
-      if (airport == null)
+      if (asset == null)
 	debug(".needsTheater - Theater move needed, since TO location <" + destinationGeoloc + 
-			   "> is not an airport/seaport among these airports/seaports : " + geolocToAirport.keySet ());
+	      "> is not a " + type () + " among these " + type () +"s : " + locator.knownGeolocCodes ());
       else
 	debug(".needsTheater - no Theater move needed, since TO location <" + destinationGeoloc + 
-			   "> is an airport/seaport (" + airport + ").");
+	      "> is a " + type () + " (" + asset + ").");
     }
   
-    // if the destination is not an airbase, add a theater ground move leg
-    return (inTheater || (airport == null));
+    // if the destination is not an airbase/seaport, add a theater ground move leg
+    return (inTheater || (asset == null));
   }
+
+  protected String type () { return "airport"; }
 
   /** 
    * sort of cheesy, but anything starting east of 25 degrees Longitude gets a final theater leg.
@@ -348,7 +316,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
    */
   boolean startsInTheater (Task task) {
     GeolocLocation sourceGeoloc = 
-      (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
+      (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
     return (sourceGeoloc.getLongitude().getDegrees() > CONUS_THEATER_DIVIDING_LONGITUDE);
   }
 	
@@ -358,7 +326,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
    */
   boolean startsInCONUS (Task task) {
     GeolocLocation sourceGeoloc = 
-      (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.FROM);
+      (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.FROM);
     return (sourceGeoloc.getLongitude().getDegrees() < CONUS_THEATER_DIVIDING_LONGITUDE);
   }
 	
@@ -367,35 +335,35 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
    ** Also, if the task is coming from an airbase, e.g. Rhein Mein in Germany
    **/
   boolean needsAirOrSea (Task task) {
-    String origin = outerGLMPrepHelper.getFromLocation(task).getGeolocCode();
-    Object airport = geolocToAirport.get (origin);
-    boolean startsAtPOE   = startsAtPOE (task);
+    String origin = glmPrepHelper.getFromLocation(task).getGeolocCode();
+    boolean startsAtPOE   = startsAtPOE   (task);
     boolean startsInCONUS = startsInCONUS (task);
 	
     if (isDebugEnabled() && !startsInCONUS && !startsAtPOE) 
       debug (".needsAirOrSea - could not find FROM " + origin + 
-			  " on list of possible POEs : " + geolocToAirport.keySet () + 
-			  " and doesn't start in CONUS.");
+	     " on list of possible POEs : " + locator.knownGeolocCodes() + 
+	     " and doesn't start in CONUS.");
 	
     return startsInCONUS || startsAtPOE;
   }
 
   boolean startsAtPOE (Task task) {
-    String origin = outerGLMPrepHelper.getFromLocation(task).getGeolocCode();
-    Object airport = geolocToAirport.get (origin);
+    String origin = glmPrepHelper.getFromLocation(task).getGeolocCode();
+    Object airport = locator.getAssetAtGeolocCode (origin);
     return (airport != null);
   }
 
+  /*
   boolean needsISB (Task task) {
     GeolocLocation PODGeoloc = 
-      (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.VIA); 
+      (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.VIA); 
     GLMAsset airport = (GLMAsset) geolocToAirport.get (PODGeoloc.getGeolocCode());
 
     try {
       AirportPG airportPG = airport.getAirportPG ();
       if (isDebugEnabled())
 	debug(".needsISB - for " + PODGeoloc + 
-			   " airport is " + airport + " with runway " + airportPG.getRunwayType());
+	      " airport is " + airport + " with runway " + airportPG.getRunwayType());
 		
       return (airportPG.getRunwayType().equals (SAND)); // if the airbase has sand runways, need an isb (= Cairo)
     }
@@ -405,6 +373,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
     return false;
   }
+  */
 
   boolean needsCONUS (Task task) {
     if (glmAssetHelper.isPassenger(task.getDirectObject()))
@@ -414,36 +383,30 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     if (!inCONUS) {
       if (isDebugEnabled()) {
 	GeolocLocation sourceGeoloc = 
-	  (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
+	  (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
 	debug(".needsCONUS - no CONUS move needed, since from " + sourceGeoloc + 
-	     " is not in CONUS.");
+	      " is not in CONUS.");
       }
       return false;
     }
 
     GeolocLocation sourceGeoloc = 
-      (GeolocLocation) outerGLMPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
+      (GeolocLocation) glmPrepHelper.getIndirectObject(task, Constants.Preposition.FROM); 
     String geoloc = sourceGeoloc.getGeolocCode();
-    Object airport = geolocToAirport.get (geoloc);
+    //    Object airport = geolocToAirport.get (geoloc);
+    Object airport = locator.getAssetAtGeolocCode (geoloc);
 	
     if (isDebugEnabled()) {
       if (airport == null)
 	debug(".needsCONUS - CONUS move needed, since from <" + geoloc + 
-			   "> is not an airport/seaport among these airports/seaports : " + geolocToAirport.keySet ());
+	      "> is not a " + type () + " among these " + type () + "s : " + locator.knownGeolocCodes ());
       else
 	debug(".needsCONUS - no CONUS move needed, since from " + sourceGeoloc + 
-			   " is an airport/seaport (" + airport + ").");
+	      " is a " + type () + " (" + airport + ").");
     }
 
     // if the source is not an airbase, add a conus ground move leg to the airbase
     return (airport == null);
-  }
-
-  /** 
-   * Uses locator
-   **/
-  Location getPOD (Task task) {
-    return (Location) aPOELocator.getNearestLocation(outerGLMPrepHelper.getToLocation(task));
   }
 
   public Organization findOrgForMiddleStep () {
@@ -455,86 +418,120 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     }
     return organicAir;
   }
-  
-  public class TheaterPortion extends SequentialScheduleElement {
-    public TheaterPortion(Task parent, Logger logger) {
-      super(parent, outerGLMPrepHelper, logger);
+
+  protected abstract static class ElementBase extends SequentialScheduleElement {
+    protected ElementBase (Task parent) {
+      super (parent);
+    }
+
+    /** check to see if was an error */
+    protected void reportZeroDuration (Allocation alloc, SequentialPlannerPlugin plugin) {
+      GLMPrepPhrase glmPrepHelper = ((SequentialGlobalAirPlugin) plugin).getPrepHelper();
+      Logger logger = ((SequentialGlobalAirPlugin) plugin).getLogger();
+
+      Task task = alloc.getTask();
+      Asset directObject = task.getDirectObject();
+
+      if (!glmPrepHelper.getFromLocation (task).getGeolocCode ().equals (glmPrepHelper.getToLocation (task).getGeolocCode ()))
+	logger.info ("SequentialGlobalAirPlugin.finishPlan - WARNING - start = end time for task " +
+		     task.getUID() + " asset " + directObject.getUID() + 
+		     " from " + glmPrepHelper.getFromLocation (task) + 
+		     " != to "   + glmPrepHelper.getToLocation (task));
+    }
+  }
+
+  protected static class TheaterPortion extends ElementBase {
+    public TheaterPortion(Task parent) {
+      super(parent);
     }
 
     public String toString () { return "TheaterPortion"; }
 	  
     public Task planMe(SequentialPlannerPlugin myPlugin) {
-      if (this.logger.isDebugEnabled())
-	this.logger.debug (".TheaterPortion.planMe - starting planning.");
+      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
+      Logger logger = plugin.getLogger();
+      UTILExpand expandHelper = plugin.getExpandHelper();
+      GLMPrepPhrase glmPrepHelper = plugin.getPrepHelper();
+
+      if (logger.isDebugEnabled())
+	logger.debug (".TheaterPortion.planMe - starting planning.");
 
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
-						parentTask,
-						parentTask.getDirectObject(),
-						myPlugin.publicGetClusterIdentifier());
+						  parentTask,
+						  parentTask.getDirectObject(),
+						  myPlugin.publicGetClusterIdentifier());
       // find the theater org
-      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
 			
       Organization theater = plugin.findOrgWithRole(GLMTransConst.THEATER_MCC_ROLE);
       if (theater == null) {
-	this.logger.error(".TheaterPortion.planMe - ERROR - No subordinate with role " + 
+	logger.error(".TheaterPortion.planMe - ERROR - No subordinate with role " + 
 		     GLMTransConst.THEATER_MCC_ROLE);
 	return null;
       }
 
       // if we've got an air move, find the nearest airbase, otherwise, just do ground move from from loc
       Location PODLocation = 
-	(plugin.startsInTheater(parentTask)) ? outerGLMPrepHelper.getFromLocation(parentTask) : plugin.getPOD (parentTask);
+	(plugin.startsInTheater(parentTask)) ? glmPrepHelper.getFromLocation(parentTask) : plugin.getPOD (parentTask);
 
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(plugin.publicGetFactory(),
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(plugin.publicGetFactory(),
 									    Constants.Preposition.FROM,
 									    PODLocation));
-      outerGLMPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      if (logger.isDebugEnabled())
+	logger.debug (".TheaterPortion.planMe - created leg FROM " + PODLocation + 
+		      " TO " + glmPrepHelper.getToLocation(new_task));
+
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
             
-      PlanElement pe = allocHelper.makeAllocation(myPlugin,
-						   myPlugin.publicGetFactory(), 
-						   myPlugin.publicGetRealityPlan(),
-						   new_task,
-						   theater,   
-						   prefHelper.getReadyAt(new_task),
-						   prefHelper.getBestDate(new_task),
-						   allocHelper.MEDIUM_CONFIDENCE,
-						   Constants.Role.TRANSPORTER);
+      PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
+							      myPlugin.publicGetFactory(), 
+							      myPlugin.publicGetRealityPlan(),
+							      new_task,
+							      theater,   
+							      plugin.getPrefHelper().getReadyAt(new_task),
+							      plugin.getPrefHelper().getBestDate(new_task),
+							      plugin.getAllocHelper().MEDIUM_CONFIDENCE,
+							      Constants.Role.TRANSPORTER);
       myPlugin.publicPublishAdd(pe);
       return new_task;
     }
   }
-    
-  public class IsbPortion extends SequentialScheduleElement {
+
+  /** comment this back in whenever we want to revivify the ISB planning */
+  /*
+  protected class IsbPortion extends ElementBase {
     protected double myMaxCost = BILLION;
         
-    public IsbPortion(Task parent, Logger logger) {
-      super(parent, outerGLMPrepHelper, logger);
+    public IsbPortion(Task parent) {
+      super(parent);
     }
 
     public String toString () { return "IsbPortion"; }
         
     public Task planMe(SequentialPlannerPlugin myPlugin) {
-      if (this.logger.isDebugEnabled())
-	this.logger.debug (".IsbPortion.planMe - starting planning.");
+      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
+      Logger logger = plugin.getLogger();
+      UTILExpand expandHelper = plugin.getExpandHelper();
+      GLMPrepPhrase glmPrepHelper = plugin.getPrepHelper();
+      if (logger.isDebugEnabled())
+	logger.debug (".IsbPortion.planMe - starting planning.");
 
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
-						parentTask,
-						parentTask.getDirectObject(),
-						myPlugin.publicGetClusterIdentifier());
+						  parentTask,
+						  parentTask.getDirectObject(),
+						  myPlugin.publicGetClusterIdentifier());
             
       // find the ISB org
-      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
       Organization isb = plugin.findOrgWithRole(GLMTransConst.C130_ROLE);
       if (isb == null) {
-	this.logger.error(".IsbPortion.planMe - ERROR - No subordinate with role " + 
+	logger.error(".IsbPortion.planMe - ERROR - No subordinate with role " + 
 		     GLMTransConst.C130_ROLE);
 	return null;
       }
 
       Organization theater = plugin.findOrgWithRole(GLMTransConst.THEATER_MCC_ROLE);
       if (theater == null) {
-	this.logger.error(".TheaterPortion.planMe - ERROR - No subordinate with role " + 
+	logger.error(".TheaterPortion.planMe - ERROR - No subordinate with role " + 
 		     GLMTransConst.THEATER_MCC_ROLE);
 	return null;
       }
@@ -543,31 +540,31 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
       if (getDependencies().isEmpty()) { // if there was no theater leg
 	end = prefHelper.getLateDate(parentTask);
-	if (this.logger.isDebugEnabled())
-	  this.logger.debug (".IsbPortion.planMe - no dependencies, end preference is " +
-		       end);
+	if (logger.isDebugEnabled())
+	  logger.debug (".IsbPortion.planMe - no dependencies, end preference is " +
+			end);
       } else {
 	end = ((SequentialScheduleElement)getDependencies().elementAt(0)).getStartDate();
 	prefHelper.replacePreference(new_task, 
-					 prefHelper.makeEndDatePreference(myPlugin.publicGetFactory(), end));
-	if (this.logger.isDebugEnabled())
-	  this.logger.debug (".IsbPortion.planMe - dependent on theater, end preference is " +
-		       end);
+				     prefHelper.makeEndDatePreference(myPlugin.publicGetFactory(), end));
+	if (logger.isDebugEnabled())
+	  logger.debug (".IsbPortion.planMe - dependent on theater, end preference is " +
+			end);
       }
 
       Location isbLocation = plugin.getISBLocation(end); // doesn't matter when
       Location PODLocation = plugin.getPOD (parentTask);
             
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
 									    Constants.Preposition.FROM,
 									    isbLocation));
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
 									    Constants.Preposition.TO,
 									    PODLocation));
 
-      outerGLMPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
 
       new_task.addPreference (prefHelper.makeCostPreference (myPlugin.publicGetFactory(), myMaxCost));
 
@@ -578,34 +575,40 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 				    (double) end.getTime ()));
       aspects.add (new AspectValue (AspectType.COST, 0));
 
-      PlanElement c130_alloc = allocHelper.makeAllocation (myPlugin,
-							    myPlugin.publicGetFactory(),
-							    myPlugin.publicGetRealityPlan(),
-							    new_task,
-							    isb,
-							    (AspectValue []) aspects.toArray (new AspectValue[0]), 
-							    allocHelper.MEDIUM_CONFIDENCE,
-							    Constants.Role.TRANSPORTER);
+      PlanElement c130_alloc = plugin.getAllocHelper().makeAllocation (myPlugin,
+								       myPlugin.publicGetFactory(),
+								       myPlugin.publicGetRealityPlan(),
+								       new_task,
+								       isb,
+								       (AspectValue []) aspects.toArray (new AspectValue[0]), 
+								       plugin.getAllocHelper().MEDIUM_CONFIDENCE,
+								       Constants.Role.TRANSPORTER);
       myPlugin.publicPublishAdd(c130_alloc);
       return new_task;
     }
   }
+  */
 
-  public class AirPortion extends SequentialScheduleElement {
-    public AirPortion(Task parent, Logger logger) {
-      super(parent, outerGLMPrepHelper, logger);
+  protected static class AirPortion extends ElementBase {
+    public AirPortion(Task parent) {
+      super(parent);
     }
         
     public String toString () { return "AirPortion"; }
         
     public Task planMe(SequentialPlannerPlugin myPlugin) {
-      if (this.logger.isDebugEnabled())
-	this.logger.debug (".AirPortion.planMe - starting planning.");
+      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
+      Logger logger = plugin.getLogger();
+      UTILExpand expandHelper = plugin.getExpandHelper();
+      GLMPrepPhrase glmPrepHelper = plugin.getPrepHelper();
+
+      if (logger.isDebugEnabled())
+	logger.debug (".AirPortion.planMe - starting planning.");
 
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
-						parentTask,
-						parentTask.getDirectObject(),
-						myPlugin.publicGetClusterIdentifier());
+						  parentTask,
+						  parentTask.getDirectObject(),
+						  myPlugin.publicGetClusterIdentifier());
 
       Vector getDependencies = getDependencies();
 
@@ -620,7 +623,6 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 	}
       */
 
-      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
       Location [] locations = plugin.getPOEandPOD (parentTask, new_task);
       Location fromLocation = locations[0];
       Location toLocation   = locations[1];
@@ -629,29 +631,40 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       Date early, best;
 
       if (getDependencies().isEmpty()) { // if there was neither a theater nor a isb leg
-	end = prefHelper.getLateDate(parentTask);
+	end = plugin.getPrefHelper().getLateDate(parentTask);
 	best = end;
       } else {
-	end = ((SequentialScheduleElement)getDependencies().elementAt(0)).getStartDate();
-	early = prefHelper.getReadyAt(new_task);
+	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);
+	end = sse.getStartDate();
+	early = plugin.getPrefHelper().getReadyAt(new_task);
 	best  = new Date(end.getTime() - plugin.bestDateBackoff);
 	if (best.getTime () < early.getTime())
 	  best = early;
 			  
-	prefHelper.replacePreference(new_task, 
-					 prefHelper.makeEndDatePreference(myPlugin.publicGetFactory(), 
-									      early,best,end));
+	plugin.getPrefHelper().replacePreference(new_task, 
+						 plugin.getPrefHelper().makeEndDatePreference(myPlugin.publicGetFactory(), 
+											      early,best,end));
+	GeolocLocation theaterLegFrom = plugin.getPrepHelper ().getFromLocation (sse.getTask());
+
+	if (!theaterLegFrom.getGeolocCode ().equals (((GeolocLocation)toLocation).getGeolocCode()))
+	  plugin.getLogger().error (" - Theater leg task " + sse.getTask().getUID () + 
+				    " FROM " + theaterLegFrom + " is not equal to air/sea TO " + toLocation);
+
 	// if (dependsOnISB)
 	//	toLocation = plugin.getISBLocation(end); // doesn't matter when
       }
 
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
+      if (logger.isDebugEnabled())
+	logger.debug (".AirPortion.planMe - created leg FROM " + fromLocation + 
+		     " TO " + toLocation);
+
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
 									    Constants.Preposition.FROM,
 									    fromLocation));
 
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
 									    Constants.Preposition.TO,
 									    toLocation));
             
@@ -659,19 +672,19 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 			
       List aspects = new ArrayList ();
       aspects.add (new AspectValue (AspectType.START_TIME, 
-				    (double) prefHelper.getReadyAt(new_task).getTime ()));
+				    (double) plugin.getPrefHelper().getReadyAt(new_task).getTime ()));
       aspects.add (new AspectValue (AspectType.END_TIME,   
 				    (double) best.getTime ()));
-      outerGLMPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
 
-      PlanElement pe = allocHelper.makeAllocation(myPlugin,
-						   myPlugin.publicGetFactory(), 
-						   myPlugin.publicGetRealityPlan(),
-						   new_task, 
-						   middleOrg,
-						   (AspectValue []) aspects.toArray (new AspectValue[0]), 
-						   allocHelper.MEDIUM_CONFIDENCE,
-						   Constants.Role.TRANSPORTER);
+      PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
+							      myPlugin.publicGetFactory(), 
+							      myPlugin.publicGetRealityPlan(),
+							      new_task, 
+							      middleOrg,
+							      (AspectValue []) aspects.toArray (new AspectValue[0]), 
+							      plugin.getAllocHelper().MEDIUM_CONFIDENCE,
+							      Constants.Role.TRANSPORTER);
 
       myPlugin.publicPublishAdd(pe);
       return new_task;
@@ -679,78 +692,86 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
         
   }
 
-  public class ConusPortion extends SequentialScheduleElement {
-    public ConusPortion(Task parent, Logger logger) {
-      super(parent, outerGLMPrepHelper, logger);
+  protected static class ConusPortion extends ElementBase {
+    public ConusPortion(Task parent) {
+      super(parent);
     }
 
     public String toString () { return "ConusPortion"; }
         
     public Task planMe(SequentialPlannerPlugin myPlugin) {
-      if (this.logger.isDebugEnabled())
-	this.logger.debug (".ConusPortion.planMe - starting planning.");
+      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
+      Logger logger = plugin.getLogger();
+      UTILExpand expandHelper = plugin.getExpandHelper();
+      GLMPrepPhrase glmPrepHelper = plugin.getPrepHelper();
+      Location toLocation;
+      Date end = null;
 
       NewTask new_task = expandHelper.makeSubTask(myPlugin.publicGetFactory(),
-						parentTask,
-						parentTask.getDirectObject(),
-						myPlugin.publicGetClusterIdentifier());
+						  parentTask,
+						  parentTask.getDirectObject(),
+						  myPlugin.publicGetClusterIdentifier());
 
-      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
-      Location toLocation;
-						
-      Date end = null;
       if (!getDependencies().isEmpty()) {
 	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);
 	Task dependingTask = sse.getTask ();
 	end = sse.getStartDate();
-	toLocation = outerGLMPrepHelper.getFromLocation (dependingTask);
+	toLocation = glmPrepHelper.getFromLocation (dependingTask);
       }
       else {
-	end = prefHelper.getLateDate(new_task);
-	toLocation = plugin.getPOENearestToFromLoc (parentTask);
+	end = plugin.getPrefHelper().getLateDate(new_task);
+	toLocation = plugin.getLocator().getPOENearestToFromLoc (parentTask);
       }
 			
-      Date early = prefHelper.getReadyAt(new_task);
+      Date early = plugin.getPrefHelper().getReadyAt(new_task);
       Date best  = new Date(end.getTime() - 1000);
 			  
-      prefHelper.replacePreference(new_task, 
-				       prefHelper.makeEndDatePreference(myPlugin.publicGetFactory(), 
-									    early,best,end));
+      plugin.getPrefHelper().replacePreference(new_task, 
+					       plugin.getPrefHelper().makeEndDatePreference(myPlugin.publicGetFactory(), 
+											    early,best,end));
 
-      outerGLMPrepHelper.replacePrepOnTask(new_task, 
-				      outerGLMPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
+      glmPrepHelper.replacePrepOnTask(new_task, 
+				      glmPrepHelper.makePrepositionalPhrase(myPlugin.publicGetFactory(),
 									    Constants.Preposition.TO,
 									    toLocation));
+      if (logger.isDebugEnabled())
+	logger.debug (".ConusPortion.planMe - created leg FROM " + glmPrepHelper.getFromLocation (new_task) + 
+		      " TO " + toLocation);
 
       Organization conusGround = plugin.findOrgWithRole(GLMTransConst.CONUS_GROUND_ROLE);
       if (conusGround == null) {
-	this.logger.error(".ConusPortion.planMe - ERROR - No subordinate with role " + 
+	logger.error(".ConusPortion.planMe - ERROR - No subordinate with role " + 
 		     GLMTransConst.CONUS_GROUND_ROLE);
 	return null;
       }
 
-      outerGLMPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
 
-      PlanElement pe = allocHelper.makeAllocation(myPlugin,
-						   myPlugin.publicGetFactory(), 
-						   myPlugin.publicGetRealityPlan(),
-						   new_task,
-						   conusGround,    // allocate to conus ground
-						   prefHelper.getReadyAt(new_task),
-						   end,
-						   allocHelper.MEDIUM_CONFIDENCE,
-						   Constants.Role.TRANSPORTER);
+      PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
+							      myPlugin.publicGetFactory(), 
+							      myPlugin.publicGetRealityPlan(),
+							      new_task,
+							      conusGround,    // allocate to conus ground
+							      plugin.getPrefHelper().getReadyAt(new_task),
+							      end,
+							      plugin.getAllocHelper().MEDIUM_CONFIDENCE,
+							      Constants.Role.TRANSPORTER);
       myPlugin.publicPublishAdd(pe);
       return new_task;
     }
 
-    public void finishPlan (Allocation alloc, SequentialPlannerPlugin plugin) {
-      if (this.logger.isDebugEnabled()) 
-	this.logger.debug(".ConusPortion.finishPlan - Planning complete.");
+    public void finishPlan (Allocation alloc, SequentialPlannerPlugin myPlugin) {
+      SequentialGlobalAirPlugin plugin = (SequentialGlobalAirPlugin) myPlugin;
+      Logger logger = plugin.getLogger();
+
+      if (logger.isDebugEnabled()) 
+	logger.debug(".ConusPortion.finishPlan - Planning complete.");
       super.finishPlan (alloc, plugin);
     }
   }
 
+  /** supports finding an ISB at a certain time -- assumes it can move! */
+  /*
   Location getISBLocation (Date when) {
     Organization isb = findOrgWithRole (GLMTransConst.C130_ROLE);
     Location loc = (Location) airportToLocation.get (isb);
@@ -760,6 +781,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     }
     return loc;
   }
+  */
 
   /** 
    * <pre>
@@ -774,52 +796,34 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   protected Location [] getPOEandPOD (Task parentTask, Task subtask) {
     Location [] locs = new Location[2];
     
-    locs[0] = getPOENearestToFromLoc(parentTask);
+    locs[0] = locator.getPOENearestToFromLoc(parentTask);
     locs[1] = getPOD(parentTask);
     
     return locs;
   }
 
   /** 
-   * First check from to see if it's an airport, otherwise, must be a fort 
-   * If so, lookup airbase (APOE) nearest fort.
-   *
-   * @return NULL probably only when no locations have been read in -- an ERROR
-   *  otherwise, the nearest location
+   * Uses locator
    **/
-  Location getPOENearestToFromLoc (Task parentTask) {
-    String origin = outerGLMPrepHelper.getFromLocation(parentTask).getGeolocCode();
-    Object airport = geolocToAirport.get (origin);
-    if (airport != null)
-      return (Location) airportToLocation.get (airport);
-    return getPOENearestToFromLoc (parentTask, Collections.EMPTY_SET);
+  Location getPOD (Task task) {
+    Location POD =locator.getNearestLocation(glmPrepHelper.getToLocation(task));
+    /*
+    System.out.println ("SeqGlobalAir.getPOD - chose POD " + POD + 
+			" nearest to " + glmPrepHelper.getToLocation(task) + " from among " +
+			((LocatorImpl)locator).myLocations);
+    */
+    return (Location) locator.getNearestLocation(glmPrepHelper.getToLocation(task));
   }
 
-  Location getPOENearestToFromLoc (Task parentTask, Collection exceptions) {
-    String origin = outerGLMPrepHelper.getFromLocation(parentTask).getGeolocCode();
-    Object airport = geolocToAirport.get (origin);
-    if (airport != null)
-      return (Location) airportToLocation.get (airport);
-
-    Location poe = aPOELocator.getNearestLocationExcept(outerGLMPrepHelper.getFromLocation(parentTask), exceptions);
-
-    if (poe == null)
-      error(".getPOENearestToFromLoc - could not find POD for task " + 
-	    parentTask.getUID () +
-	    " going to " + outerGLMPrepHelper.getFromLocation(parentTask) + ", though I can choose " +
-	    "from " + aPOELocator.getNumKnownLocations () + " known locations.");
-    return poe;
-  }
-  
   Location getPOENearestToFromLocMiddleStep (Task parentTask) {
-    return getPOENearestToFromLoc (parentTask);
+    return locator.getPOENearestToFromLoc (parentTask);
   }
   
   /** 
-   * cache role to org mapping 
+   * cache role to org mapping <p>
    *
    * Supports spawning -- choosing among several possible subordinates with role 
-   * <tt>role</tt>.
+   * <tt>role</tt>. <p>
    *
    * Calls chooseAmongOrgs.
    *
@@ -846,8 +850,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 	
     if (orgs.isEmpty ()) {
       error (".findOrgWithRole - could not find any organizations with role " + 
-			  role + " among subordinates -- relationship schedule is:\n" + 
-			  getSelf().getRelationshipSchedule());
+	     role + " among subordinates -- relationship schedule is:\n" + 
+	     getSelf().getRelationshipSchedule());
       return null;
     }
 
@@ -882,19 +886,23 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     return lse.getLocation();
   }
 
+  public GLMPrepPhrase  getPrepHelper   () { return glmPrepHelper;  }
+  public AssetUtil      getAssetHelper  () { return glmAssetHelper; }
+  public UTILExpand     getExpandHelper () { return expandHelper; }
+  public UTILPreference getPrefHelper   () { return prefHelper; }
+  public UTILAllocate   getAllocHelper  () { return allocHelper; }
+  public Logger         getLogger       () { return logger; }
+  public Locator        getLocator      () { return locator; }
 
   protected GLMOrganizationCallback myOrgCallback;
     
   protected Map roleToOrg = new HashMap ();
-  protected Map geolocToAirport = new HashMap ();
-  protected Map airportToLocation = new HashMap ();
-  protected int myMaxOrgs;
-  protected Locator aPOELocator;
+  protected Locator locator;
 
   protected long bestDateBackoff;
   boolean shouldRefreshOrgList = false;
   private Random r = new Random();
 
-  protected GLMPrepPhrase outerGLMPrepHelper;
+  protected GLMPrepPhrase glmPrepHelper;
   protected AssetUtil     glmAssetHelper;
 }

@@ -155,6 +155,17 @@ public class Network {
 			       (new LocationImpl(fromLat, fromLon))));
   }
 
+  public Iterator routeNoSource() {
+    return new SequenceIterator (new RouteIterator(this.to),
+				 new SingletonIterator
+				   (new LocationImpl(fromLat, fromLon)));
+  }
+
+
+  public Iterator routeNoSourceOrDestination() {
+    return new RouteIterator(this.to);
+  }
+
   public Iterator routeNoDestination() {
     return new SequenceIterator
       (new SingletonIterator (new LocationImpl(toLat, toLon)),

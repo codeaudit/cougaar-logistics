@@ -20,33 +20,38 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
+import java.util.Collection;
 import java.util.Date;
 
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
+
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+
+import org.cougaar.glm.util.GLMMeasure;
 import org.cougaar.glm.util.GLMPreference;
 import org.cougaar.glm.util.GLMPrepPhrase;
-
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.Asset;
-
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.Relationship;
-import org.cougaar.planning.ldm.plan.RelationshipType;
-import org.cougaar.planning.ldm.plan.Role;
 
 import org.cougaar.lib.util.UTILPreference;
 
 import org.cougaar.lib.vishnu.client.custom.CustomDataXMLize;
 
+import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+
+import org.cougaar.planning.ldm.measure.Distance;
+
+import org.cougaar.planning.ldm.plan.Relationship;
+import org.cougaar.planning.ldm.plan.RelationshipType;
+import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.Task;
+
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.log.Logger;
 
 import org.w3c.dom.Element;
-
-import java.util.Collection;
 
 /**
  * Create either an XML document in the Vishnu Data format or Vishnu objects from ALP objects. <p>
@@ -59,6 +64,7 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     super (direct, logger);
     glmPrepHelper = new GLMPrepPhrase (logger);
     glmPrefHelper = new GLMPreference (logger);
+    measureHelper = new GLMMeasure    (logger);
   }
   
   public boolean interestingTask(Task t) {
@@ -167,17 +173,19 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     // prevents occasional rounding errors from date->string->date
     Date arrival = new Date(glmPrefHelper.getBestDate(task).getTime()-1000l);
     dataHelper.createDateField(object, "arrival", arrival);
+    GeolocLocation from = glmPrepHelper.getFromLocation (task);
+    GeolocLocation to   = glmPrepHelper.getToLocation (task);
 
     try {
       if (direct) {
-	dataHelper.createGeoloc (object, "from", glmPrepHelper.getFromLocation (task));
-	dataHelper.createGeoloc (object, "to",   glmPrepHelper.getToLocation (task));
+	dataHelper.createGeoloc (object, "from", from);
+	dataHelper.createGeoloc (object, "to",   to);
       }
       else {
 	Object field = dataHelper.createField (object, taskName, "from");
-	dataHelper.createGeoloc (field, "from", glmPrepHelper.getFromLocation (task));
+	dataHelper.createGeoloc (field, "from", from);
 	field = dataHelper.createField (object, taskName, "to");
-	dataHelper.createGeoloc (field, "to",   glmPrepHelper.getToLocation (task));
+	dataHelper.createGeoloc (field, "to",   to);
       }
     } catch (Exception e) {
       logger.error ("TranscomDataXMLize.createDoc - ERROR - " + 
@@ -186,12 +194,6 @@ public class TranscomDataXMLize extends CustomDataXMLize {
 
     try {
       dataHelper.createField(object, taskName, "name", getAssetName(task.getDirectObject()));
-    } catch (Exception e) {
-      logger.error ("TranscomDataXMLize.createDoc - ERROR - " + 
-	     " no type id pg on direct object of " + task);
-    }
-
-    try {
       dataHelper.createField(object, taskName, "type", getAssetType(task.getDirectObject()));
     } catch (Exception e) {
       logger.error ("TranscomDataXMLize.createDoc - ERROR - " + 
@@ -214,7 +216,15 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     }
 
     addTaskPersonField (object, baseAsset);
-	
+
+    float distance = (float) 
+      ((glmPrepHelper.hasPrepNamed (task, GLMTransConst.SEAROUTE_DISTANCE)) ?
+       ((Distance) glmPrepHelper.getIndirectObject (task, 
+						    GLMTransConst.SEAROUTE_DISTANCE)).getNauticalMiles() :
+       measureHelper.distanceBetween (from, to).getNauticalMiles());
+
+    dataHelper.createFloatField(object, "distance", distance);
+
     if (logger.isDebugEnabled())
       logger.debug ("TranscomDataXMLize.processTask - did task " + task.getUID());
 
@@ -233,4 +243,5 @@ public class TranscomDataXMLize extends CustomDataXMLize {
 
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMPreference glmPrefHelper;
+  protected GLMMeasure measureHelper;
 }

@@ -100,11 +100,6 @@ public class SeaDataXMLize extends GenericDataXMLize {
     Date latestArrival = new Date(prefHelper.getLateDate(task).getTime());
     dataHelper.createDateField(object, "latestArrival", latestArrival);
 
-    float distance = 
-      (float) ((Distance) prepHelper.getIndirectObject (task, 
-							GLMTransConst.SEAROUTE_DISTANCE)).getNauticalMiles();
-    dataHelper.createFloatField(object, "distance", distance);
-
     return true;
   }
 

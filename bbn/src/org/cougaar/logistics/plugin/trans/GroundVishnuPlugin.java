@@ -36,14 +36,16 @@ import org.cougaar.glm.util.GLMPrepPhrase;
 import org.cougaar.planning.ldm.measure.Distance;
 
 public class GroundVishnuPlugin extends GenericVishnuPlugin {
-  
-  public static int MAX_DISTANCE=Integer.getInteger("GroundVishnuPlugin.MAX_DISTANCE", 2000).intValue(); // miles
-  
   public void localSetup () {
     super.localSetup ();
 
     glmPrepHelper = new GLMPrepPhrase (logger);
     measureHelper = new GLMMeasure    (logger);
+    
+    try {
+      if (getMyParams ().hasParam ("MAX_DISTANCE"))
+	MAX_DISTANCE=getMyParams().getIntParam ("MAX_DISTANCE");
+    } catch (Exception e) { warn ("got unexpected exception " + e); }
   }
 
   /** 
@@ -96,15 +98,19 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
   }
 
   protected void reportIllFormedTask (Task t) {
-    GeolocLocation from = glmPrepHelper.getFromLocation (t);
-    GeolocLocation to   = glmPrepHelper.getToLocation (t);
-	
-    Distance distance = measureHelper.distanceBetween (from, to);
+    super.reportIllFormedTask (t);
 
-    error (getName () + ".reportIllFormedTask - task " + t.getUID() + 
-			" distance between FROM " + from + 
-			" and to " + to +
-			" is > " + MAX_DISTANCE + " miles = " + distance);
+    if (!isTaskWellFormed (t)) {
+      GeolocLocation from = glmPrepHelper.getFromLocation (t);
+      GeolocLocation to   = glmPrepHelper.getToLocation (t);
+      
+      Distance distance = measureHelper.distanceBetween (from, to);
+
+      error (getName () + ".reportIllFormedTask - task " + t.getUID() + 
+	     " distance between FROM " + from + 
+	     " and to " + to +
+	     " is > " + MAX_DISTANCE + " miles = " + distance.getMiles());
+    }
   }
   
   protected boolean isSelfPropelled (Asset directObject) {
@@ -139,7 +145,8 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
   }
 
   boolean complainAboutMissingMovabilityPG = 
-    "true".equals (System.getProperty("glmtrans.plugins.GroundVishnuPlugin.complainAboutMissingMovabilityPG", "false"));
+    "true".equals (System.getProperty("org.cougaar.logistics.plugin.trans.GroundVishnuPlugin.complainAboutMissingMovabilityPG", "false"));
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMMeasure measureHelper;
+  public int MAX_DISTANCE = 2000;
 }

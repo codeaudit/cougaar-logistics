@@ -211,38 +211,44 @@ public class GroundTransportAllocatorPlugin extends TransportAllocatorPlugin {
    * @return the allocation
    */
   public PlanElement createAllocation(Task t, Asset a){
-    if (isSelf (t)) {
-      Date to   = prefHelper.getBestDate (t);
-      Date from = to;
-      GeolocLocation poe = glmPrepHelper.getFromLocation (t);
-      GeolocLocation pod = glmPrepHelper.getToLocation (t);
+    try {
+      if (isSelf (t)) {
+	Date to   = prefHelper.getBestDate (t);
+	Date from = to;
+	GeolocLocation poe = glmPrepHelper.getFromLocation (t);
+	GeolocLocation pod = glmPrepHelper.getToLocation (t);
 
-      double distance = measureHelper.distanceBetween (poe,pod).getMiles();
-      double speed = getSpeed ((GLMAsset) a);
-      long time = (long) ((distance/speed)*60.0d*60.0d*1000.0d); // millis
+	double distance = measureHelper.distanceBetween (poe,pod).getMiles();
+	double speed = getSpeed ((GLMAsset) a);
+	long time = (long) ((distance/speed)*60.0d*60.0d*1000.0d); // millis
 
-      from = new Date (to.getTime () - time);
-      double confidence = allocHelper.HIGHEST_CONFIDENCE;
+	from = new Date (to.getTime () - time);
+	double confidence = allocHelper.HIGHEST_CONFIDENCE;
 
-      if (isDebugEnabled())
-	debug (".createAllocation - for self propelled " + t.getUID() + 
-	       " , ready at " + from + 
-	       " - best " + to + " confidence " + confidence);
+	if (isDebugEnabled())
+	  debug (".createAllocation - for self propelled " + t.getUID() + 
+		 " , ready at " + from + 
+		 " - best " + to + " confidence " + confidence);
 
-      AspectValue [] values = new AspectValue [2];
-      values[0] = new AspectValue (AspectType.START_TIME, (double)from.getTime());
-      values[1] = new AspectValue (AspectType.END_TIME,   (double)to.getTime());
+	AspectValue [] values = new AspectValue [2];
+	values[0] = new AspectValue (AspectType.START_TIME, (double)from.getTime());
+	values[1] = new AspectValue (AspectType.END_TIME,   (double)to.getTime());
 
-      PlanElement pe = allocHelper.makeAllocation(this,
-						  ldmf, realityPlan, t, a, 
-						   values,
-						   confidence,
-						   Constants.Role.TRANSPORTER);
-      return pe;
+	PlanElement pe = allocHelper.makeAllocation(this,
+						    ldmf, realityPlan, t, a, 
+						    values,
+						    confidence,
+						    Constants.Role.TRANSPORTER);
+	return pe;
+      }
+      else 
+	return super.createAllocation (t, a);
+    } catch (Exception e) {
+      error (getName () + ".createAllocation - for task " + t.getUID () + 
+	     " the asset allocated was " + 
+	     a + " which is NOT a GLMAsset.  How strange.");
+      return null;
     }
-    else 
-      return super.createAllocation (t, a);
-      
   }
 
   /** 

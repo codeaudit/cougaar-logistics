@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 BBNT Solutions, LLC
+ *  Copyright 2001-2 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.cougaar.logistics.plugin.trans.tools.LocatorImpl;
+import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
 
 /**
  * <pre>
@@ -57,12 +58,21 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
   public void localSetup() {     
     super.localSetup();
 
-    try {useSeaRoutes = getMyParams().getBooleanParam("useSeaRoutes");}
-    catch(Exception e) {useSeaRoutes = true;} // this is really expensive computationally
+    try {
+      if (getMyParams().hasParam ("useSeaRoutes"))
+	useSeaRoutes = getMyParams().getBooleanParam("useSeaRoutes");
+      else
+	useSeaRoutes = true;
+    } catch(Exception e) {} 
 
     if (useSeaRoutes)
-      aPOELocator.setFactory (ldmf); // tell route finder the ldm factory to use
+      locator.setFactory (ldmf); // tell route finder the ldm factory to use
+
+    if (isDebugEnabled())
+      debug ("localSetup - this " + this + " prep helper " + glmPrepHelper);
   }
+
+  protected String type () { return "seaport"; }
 
   public Organization findOrgForMiddleStep () {
     Organization org = findOrgWithRole(GLMTransConst.SHIP_PACKER_ROLE);
@@ -74,32 +84,12 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
     return org;
   }
 
-  /** 
-   * A new asset has appeared on the blackboard - if it's the ammo port, add it to list of exceptions 
-   * Also, if it's a theater port, mark it as an exception (i.e. don't use it to look for POEs).
-   */
-  public void handleNewAssets (Enumeration org_assets) {
-    Vector newPorts = allocHelper.enumToVector (org_assets);
-    super.handleNewAssets (newPorts.elements());
-    if (exceptions.isEmpty ()) {
-      Object port = geolocToAirport.get ("WMPT");
-      if (port != null)
-	exceptions.add(airportToLocation.get(port));
-    }
-
-    for (Iterator iter = newPorts.iterator (); iter.hasNext(); ) {
-      Asset asset = (Asset) iter.next();
-      if (asset.getTypeIdentificationPG().getTypeIdentification ().equals ("TheaterSeaport"))
-	exceptions.add (airportToLocation.get(asset));
-    }
-  }
-
   /** don't include destination ports as POEs */
   boolean startsAtPOE (Task task) {
-    String origin = outerGLMPrepHelper.getFromLocation(task).getGeolocCode();
-    Object airport = geolocToAirport.get (origin);
+    String origin  = glmPrepHelper.getFromLocation(task).getGeolocCode();
+    Object airport = locator.getAssetAtGeolocCode (origin);
     
-    return (airport != null) && !exceptions.contains (airportToLocation.get(airport));
+    return (airport != null) && !((PortLocatorImpl)locator).isKnownException ((Asset) airport);
   }
 
   /** 
@@ -116,28 +106,11 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
     Location [] locs = new Location[2];
     
     if (useSeaRoutes) {
-      GeolocLocation origin      = outerGLMPrepHelper.getFromLocation(parentTask);
-      GeolocLocation destination = outerGLMPrepHelper.getToLocation  (parentTask);
-
-      // if ammo, we have only one possible POE port, for now
-      if (isAmmo((GLMAsset) parentTask.getDirectObject ())) {
-	Object seaport = geolocToAirport.get ("WMPT");
-	if (seaport != null)
-	  origin = (GeolocLocation) airportToLocation.get (seaport);
-      }
-	
-      // determine POE that has the shortest ship route to the POD
-      // this may differ a great deal from the simple great-circle distance
-      boolean toIsPOD = (geolocToAirport.get (destination.getGeolocCode()) != null);
-      TransportationRoute route = getRoute (origin, destination, toIsPOD);
+      TransportationRoute route = (TransportationRoute)
+	glmPrepHelper.getIndirectObject(parentTask, GLMTransConst.SEAROUTE);
 
       locs[0] = route.getSource().getGeolocLocation();
-      locs[1] = aPOELocator.getNearestLocation(route.getDestination().getGeolocLocation());
-      Distance distance =  route.getLength();
-      outerGLMPrepHelper.addPrepToTask (subtask, 
-					outerGLMPrepHelper.makePrepositionalPhrase (ldmf,
-										    GLMTransConst.SEAROUTE_DISTANCE,
-										    distance));
+      locs[1] = route.getDestination().getGeolocLocation();
     } else { // just use great circle calcs
       locs[0] = getPOENearestToFromLocMiddleStep (parentTask);
       locs[1] = getPOD(parentTask);
@@ -146,80 +119,12 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
     return locs;
   }
 
-  /** caches routes found for FROM-TO pairs */
-  protected TransportationRoute getRoute (GeolocLocation origin, GeolocLocation destination, boolean toIsPOD) {
-    TransportationRoute route = null;
-    Map destinationMap = (Map) routeCache.get (origin.getGeolocCode());
-
-    if (destinationMap != null)
-      route = (TransportationRoute) destinationMap.get (destination.getGeolocCode());
-    else 
-      routeCache.put (origin.getGeolocCode(), (destinationMap = new HashMap()));
-
-    if (route == null) {
-      route = aPOELocator.getRoute (origin, destination, toIsPOD, exceptions);
-      destinationMap.put (destination.getGeolocCode(), route);
-    }
-
-    return route;
-  }
-
   Location getPOENearestToFromLocMiddleStep (Task parentTask) {
-    if (!isAmmo((GLMAsset) parentTask.getDirectObject ())) {
-      return getPOENearestToFromLoc (parentTask, exceptions);
-    }
-
-    Object seaport = geolocToAirport.get ("WMPT");
-    if (seaport != null) {
-      return (Location) airportToLocation.get (seaport);
-    }
-    else {
-      error (".getPOENearestToFromLocMiddleStep - " + 
-	     " could not find sunny point port, using nearest port instead.");
-      return getPOENearestToFromLoc (parentTask);
-    }
+    return ((PortLocatorImpl)locator).getPortNearestToFromLoc (parentTask);
   }
 
-  protected boolean isContainer (GLMAsset asset) { return asset instanceof Container;  }
-
-  protected boolean isAmmo (GLMAsset asset) {
-    boolean isContainer = isContainer(asset);
-    if (!isContainer)
-      return false;
-
-    String unit = "";
-    try{
-      unit = asset.getForUnitPG ().getUnit ();
-    } catch (Exception e) {
-      return false;
-    }
-	
-    return unit.equals ("IOC") || unit.equals ("OSC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
-  }
-
-  protected String getAssetType (Asset asset) {
-    String name = "";
-
-    try {
-      name = asset.getTypeIdentificationPG().getNomenclature();
-    } catch (Exception e) {
-      error ("CustomDataXMLize.createDoc - ERROR - no type id pg on " + asset);
-    }
-
-    if (name == null) {
-      try {
-	name = asset.getTypeIdentificationPG().getTypeIdentification();
-      } catch (Exception e) {
-	error ("CustomDataXMLize.createDoc - ERROR - no type id pg on " + asset);
-      }
-    }
-    if (name == null) name = "";
-    return name;
+  /** Instantiate the Locator, which adds a LocationCallback */
+  protected void makeLocator () {
+    locator = new PortLocatorImpl(this, logger);
   }
 }
-
-
-
-
-
-
