@@ -83,25 +83,48 @@ public class SupplyExpander extends InventoryModule {
 	addTransport = false;
     }
 
-    public void expandAndDistributeDemandTasks(Collection tasks, Organization org) {
-	myOrg = org;
-	clusterId = myOrg.getClusterPG().getClusterIdentifier();
-	Asset asset;
-	Inventory inventory;
+  public void initialize(Organization org) {
+    myOrg = org;
+    clusterId = myOrg.getClusterPG().getClusterIdentifier();
+  }
+
+    public void expandAndDistributeProjections(Collection tasks) {
 	LogisticsInventoryPG logInvPG;
 	Task aTask, wdrawTask;
 	Iterator tasksIter = tasks.iterator();
 	while (tasksIter.hasNext()) {
 	    aTask = (Task)tasksIter.next();
-	    wdrawTask = expandDemandTask(aTask);
-	    asset = (Asset)wdrawTask.getDirectObject();
-	    inventory = inventoryPlugin.findOrMakeInventory(asset);
-	    logInvPG = (LogisticsInventoryPG)
-	      inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-	    logInvPG.addWithdrawTask(wdrawTask);	    
+	    wdrawTask = expandDemandTask(aTask, createProjectWithdrawTask(aTask));
+	    logInvPG = getLogisticsInventoryPG(wdrawTask);
+	    if (logInvPG != null) {
+	      logInvPG.addWithdrawProjection(wdrawTask);
+	    }
 	}
     }
 
+  public void expandAndDistributeRequisitions(Collection tasks) {
+	LogisticsInventoryPG logInvPG;
+	Task aTask, wdrawTask;
+	Iterator tasksIter = tasks.iterator();
+	while (tasksIter.hasNext()) {
+	    aTask = (Task)tasksIter.next();
+	    wdrawTask = expandDemandTask(aTask, createWithdrawTask(aTask));
+	    logInvPG = getLogisticsInventoryPG(wdrawTask);
+	    if (logInvPG != null) {
+	      logInvPG.addWithdrawRequisition(wdrawTask);
+	    }
+	}
+    }
+
+
+  public LogisticsInventoryPG getLogisticsInventoryPG(Task wdrawTask) {
+	LogisticsInventoryPG logInvPG = null;
+	Asset asset = (Asset)wdrawTask.getDirectObject();
+	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
+	logInvPG = (LogisticsInventoryPG)
+	  inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+	return logInvPG;
+  }
 
     public void updateExpandedTasks(Collection changedTasks) {
 	Task aTask;
@@ -112,9 +135,8 @@ public class SupplyExpander extends InventoryModule {
     }
 
 
-  private Task expandDemandTask(Task parentTask) {
+  private Task expandDemandTask(Task parentTask, Task withdrawTask) {
     Vector expand_tasks = new Vector();
-    NewTask withdrawTask = createDemandWithdrawTask(parentTask);
     expand_tasks.addElement(withdrawTask);
     NewTask transportTask = null;
     if (addTransport) {
@@ -128,40 +150,48 @@ public class SupplyExpander extends InventoryModule {
     return withdrawTask;
   }
 
-    protected NewTask createDemandWithdrawTask(Task parentTask) {
+    protected NewTask createWithdrawTask(Task parentTask) {
 	
 	NewTask subtask = createVanillaWithdrawTask(parentTask);
 
-	//This method does the Supply/ProjectSupply specific stuff
+	//This method does the Supply specific stuff
 
         long anticipation = 0L;
         if (addTransport) anticipation += ost;
 
 	// Add preferences for QUANTITY
-	if(parentTask.getVerb().equals(Constants.Verb.SUPPLY)) {
-	    subtask.setVerb(WITHDRAWVERB);
-	    double quantity = getTaskUtils().getPreference(parentTask, AspectType.QUANTITY);
-	    Preference p_qty = createQuantityPreference(AspectType.QUANTITY, quantity);
-	    subtask.addPreference(p_qty);
-	    addEndTimePref(subtask, getTaskUtils().getEndTime(parentTask) - anticipation);
-	}
-	else if(parentTask.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-	    subtask.setVerb(PROJECTWITHDRAWVERB);
-	    Preference pref = parentTask.getPreference(AlpineAspectType.DEMANDRATE);
-	    if (pref.getScoringFunction().getBest().getAspectValue() instanceof AspectRate) {
-	    } else {
-		logger.error("SupplyExpander DEMANDRATE preference not AspectRate:" + pref);
-	    }
-	    subtask.addPreference(pref);
-	    //design issue:
-	    //MWD do we build in ost anticipation to end time pref 
-	    //like above if there is a
-	    //PROJECTTRANSPORT in theatre transportation.
-	}
+	subtask.setVerb(WITHDRAWVERB);
+	double quantity = getTaskUtils().getPreference(parentTask, AspectType.QUANTITY);
+	Preference p_qty = createQuantityPreference(AspectType.QUANTITY, quantity);
+	subtask.addPreference(p_qty);
+	addEndTimePref(subtask, getTaskUtils().getEndTime(parentTask) - anticipation);
 
 	return subtask;
      }
 
+    protected NewTask createProjectWithdrawTask(Task parentTask) {
+	
+	NewTask subtask = createVanillaWithdrawTask(parentTask);
+
+	//This method does the ProjectSupply specific stuff
+
+        long anticipation = 0L;
+        if (addTransport) anticipation += ost;
+
+	subtask.setVerb(PROJECTWITHDRAWVERB);
+	Preference pref = parentTask.getPreference(AlpineAspectType.DEMANDRATE);
+	if (pref.getScoringFunction().getBest().getAspectValue() instanceof AspectRate) {
+	} else {
+	  logger.error("SupplyExpander DEMANDRATE preference not AspectRate:" + pref);
+	}
+	subtask.addPreference(pref);
+	//design issue:
+	//MWD do we build in ost anticipation to end time pref 
+	//like above if there is a
+	//PROJECTTRANSPORT in theatre transportation.
+	
+	return subtask;
+     }
 
     /** creates a Withdraw task from a Supply task **/
     protected NewTask createVanillaWithdrawTask(Task parentTask) {
