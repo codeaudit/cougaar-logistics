@@ -1,0 +1,322 @@
+**********************************************************************
+** This file is used by the TASK.PSP (PSP_PlanView) to specify
+** the default "Advanced Search" Predicates.
+** 
+** Format:
+**   Lines starting with "***" indicate entry separators, and lines
+**   starting with "** " are comments that are ignored.  Between the
+**   "***" lines are the entries, each of which must at least two 
+**   lines or is ignored.  The first line of the entry is the 
+**   description key for the predicate, and the remaining lines 
+**   provide the value.  The keys MUST be unique, otherwise the 
+**   later entries override the earlier entries.
+**
+** Values should not be more than 15 lines long and/or have more 
+** than 70 characters on a line, otherwise they will wrap within the 
+** TASK.PSP's TEXTAREA for the predicate.
+**
+** JavaDocs are in "org.cougaar.lib.planserver.psp.PredTableParser"
+**********************************************************************
+Tasks
+
+// Use the above "Find all" options, or enter a predicate.
+
+(is:Task)
+**********************************************************************
+PlanElements
+// The "(is:..)" operator does an "instanceof" test.
+
+(is:PlanElement)
+**********************************************************************
+Assets
+(is:Asset)
+**********************************************************************
+UniqueObjects
+// Note that this package is not built-in, so one must specify it's 
+// full "org.cougaar..." name.
+
+(is:org.cougaar.core.util.UniqueObject)
+**********************************************************************
+Non-Tasks
+// One can wrap a "(not ..)" around any predicate to select all items 
+// NOT matching the inner predicate.  In this example we will find all 
+// LogPlan items that are not Tasks.
+
+(not
+  (is:Task))
+**********************************************************************
+Non-Tasks (alternate style)
+// This is shorthand for "(not (is:Task))".
+
+(is:Not:Task)
+**********************************************************************
+Trucks and Convoys
+// One can list an arbitrary number of "or" statements, as is also 
+// true for the "and" operator.  In practice one often uses two 
+// sub-predicates...
+
+(or
+  (is:Truck)
+  (is:Convoy))
+**********************************************************************
+Tasks with Expansions
+// Once one does a Task instance check, one can call any method of 
+// Task.  Here we call "getPlanElement" and apply the result to a 
+// further predicate, "(is:Expansion)".
+//
+// FYI, the foundation of the predicate language is the ability to
+// nest predicates in this fashion, which is similar to Lisp's use
+// of s-expressions and prefix notation.
+
+(and
+  (is:Task)
+  (getPlanElement
+    (is:Expansion)))
+**********************************************************************
+Tasks with null PlanElements
+// "(is:Null)" performs an == test for the Java null value.
+
+(and
+  (is:Task)
+  (getPlanElement
+    (is:Null)))
+**********************************************************************
+Tasks with null PlanElements (alternate style)
+// Note the lazy use of parentheses and indentation!
+/* also, these style comments are okay too... */
+
+ (and    is:Task
+  (getPlanElement        /* ignored comment */
+is:Null
+**********************************************************************
+Tasks with non-null PlanElements
+(and
+  (is:Task)
+  (getPlanElement
+    (is:Not:Null)))
+**********************************************************************
+Tasks with Verb "Transport"
+// Verb has an "equals" method, like all Java Objects, and here we 
+// pass the String constant "Transport" to see if
+// Verb.equals("Transport") returns true.
+//
+// In the next example it shows how to check for a null Verb, since
+// the query show below would throw a NullPointerException and cancel 
+// the partial search results!
+
+(and
+  (is:Task)
+  (getVerb
+    (equals "Transport")))
+**********************************************************************
+Tasks with Verb "Transport" (better style)
+// One should always check for nulls, as it will guard against 
+// needless NullPointerExceptions that would cancel your search.
+
+(and
+  (is:Task)
+  (getVerb
+    (and
+      (is:Not:Null)
+      (equals "Transport"))))
+**********************************************************************
+Tasks with Verb "Transport" or "Supply"
+(and
+  (is:Task)
+  (getVerb
+    (and
+      (is:Not:Null)
+      (or
+        (equals "Transport")
+        (equals "Supply")))))
+**********************************************************************
+Tasks estimated as success
+(and
+  (is:Task)
+  (getPlanElement
+    (and
+      (is:Not:Null)
+      (getEstimatedResult
+        (and
+          (is:Not:Null)
+          (isSuccess))))))
+**********************************************************************
+Tasks allocated to Organizations
+(and
+  (is:Task)
+  (getPlanElement
+    (and
+      (is:Allocation)
+      (getAsset
+        (is:Organization)))))
+**********************************************************************
+Tasks with a "FROM" Preposition of "HKUZ"
+// Note that we're checking the Prep's indirectObj's GeoLoc's code
+
+(and
+  (is:Task)
+  (apply
+    (getPrepositionalPhrase "FROM")
+    (and
+      (is:Not:Null)
+      (getIndirectObject
+        (and
+          (is:org.cougaar.glm.ldm.plan.GeolocLocation)
+          (getGeolocCode
+            (and 
+              (is:Not:Null)
+              (equals "HKUZ"))))))))
+**********************************************************************
+Assets with ClusterPGs
+(and
+  (is:Asset)
+  (hasClusterPG))
+**********************************************************************
+Assets with typeId "M1A1"
+(and
+  (is:Asset)
+  (getTypeIdentificationPG
+    (and
+      (is:Not:Null)
+      (getTypeIdentification
+        (and
+          (is:Not:Null)
+          (equals "M1A1"))))))
+**********************************************************************
+Assets with an itemId starting with "vin"
+// Note the use of String's "startsWith" method, since
+// "getItemIdentification" returns a String.  Other valid String
+// methods are:
+//     equals  equalsIgnoreCase  endsWith  regionMatches.
+
+(and
+  (is:Asset)
+  (getItemIdentificationPG
+    (and
+      (is:Not:Null)
+      (getItemIdentification
+        (and
+          (is:Not:Null)
+          (startsWith "vin"))))))
+**********************************************************************
+UniqueObjects with UID "xyz/123"
+// UID.equals(Object) currently doesn't expect a String, so here we 
+// first convert the UID to a String before using
+// String.equals("xyz/123").
+
+(and
+  (is:org.cougaar.core.util.UniqueObject)
+  (getUID
+    (and
+      (is:Not:Null)
+      (toString
+        (equals "xyz/123")))))
+**********************************************************************
+AssetGroups that are empty
+// The "empty" operator examinines Collections, Iterators,
+// Enumerations, and arrays.  (see "all" and "exists")
+//
+// In this example "getAssets()" returns a Vector, which is a 
+// Collection, so we can apply the "empty" operator.
+//
+// "empty" returns true if the argument is null or has
+// (size()==0)/(!hasNext())/(!hasMoreElements())/(length==0)
+
+(and
+  (is:AssetGroup)
+  (getAssets
+    (empty)))
+**********************************************************************
+AssetGroups containing one or more MajorEndItem (VII)
+// The "exists" operator examinines Collections, Iterators,
+// Enumerations, and arrays.  (see "all" and "empty")
+//
+// "exists" returns true if any element returns true for the nested 
+// predicate.  In this case it will return true if any element of 
+// "getAssets" matches the predicate "(is:ClassVIIMajorEndItem)".  
+// If the Collection is null or empty then the result is false.
+
+(and
+  (is:AssetGroup)
+  (getAssets
+    (exists
+      (is:ClassVIIMajorEndItem))))
+**********************************************************************
+AssetGroups containing only MajorEndItems (VII)
+// The "all" operator examinines Collections, Iterators,
+// Enumerations, and arrays.  (see "exists" and "empty")
+//
+// "all" returns true if all the elements return true for the nested 
+// predicate.  If the Collection is null or empty then the result is 
+// true!!!  Yes, that's odd, but logically:
+//   "(all ..)" == "(not (exists ..))".
+// Here we use "(not (empty))" to modify this behavior.
+
+(and
+  (is:AssetGroup)
+  (getAssets
+    (and
+      (not (empty))
+      (all (is:ClassVIIMajorEndItem)))))
+**********************************************************************
+Organizations with a "Strat*" role
+// The OrgPG's "getRoles()" is a Collection of Roles, where we want 
+// at least one Role to exist with a name that starts with "Strat"
+
+(and
+  (is:Organization)
+  (getOrganizationPG
+    (getRoles
+      (exists
+        (and
+          (is:Role)
+          (getName
+            (startsWith "Strat")))))))
+**********************************************************************
+-- matching a complex Java predicate
+// The predicate language is obviously not complete:
+//    few conditional/loop constructs, no named variables,
+//    no built-in math functions, no user-defined functions, etc.
+// Rather than grow the language to excessive (Lisp!) complexity, it 
+// is recommended that one create "public static boolean" Java 
+// methods for complex situations.
+//
+// Here is an example of a call to a static method in PredExamples:
+//   public static boolean examplePredicateB(Task t, String s)
+// which happens to do "instanceof Task".  The "this" operator 
+// returns whatever is being examined at the current point in the 
+// predicate.
+
+(org.cougaar.lib.planserver.psp.PredExamples:examplePredicateA
+  (this))
+**********************************************************************
+-- another complex Java predicate example
+// Another example, which checks for a "Transport" Task.  The static 
+// method's signature is:
+//   public static boolean examplePredicateB(Task t, String s)
+//
+// This illustrates simple argument passing and use of a static
+// method within an outer predicate, which in this case is a cast
+// to Task.
+
+(and
+  (is:Task)
+  (org.cougaar.lib.planserver.psp.PredExamples:examplePredicateB
+    (this)
+    "Transport"))
+**********************************************************************
+-- yet another complex Java predicate example
+// Yet another example, which checks for an Task with an estimated
+//   result over 0.5.  If the second argument is changed to a
+//   String (e.g. "Transport") then only Tasks with a Verb matching 
+//   that String are examined.
+//
+// This illustrates non-String constants, such as null and doubles.
+//
+// Feel free to write your own complicated predicate libraries!!!
+
+(org.cougaar.lib.planserver.psp.PredExamples:examplePredicateC
+  (this)
+  (const "null" "String")
+  (const "double" "0.5"))
+**********************************************************************

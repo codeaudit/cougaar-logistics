@@ -1,0 +1,74 @@
+<commands>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="StrategicTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="StrategicTransportationProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="Consumable_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="MaterielTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="BulkPOL_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="FuelTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="PackagedPOL_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="MaterielTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="Ammunition_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="AmmunitionTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="ClassISubsistence_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="MaterielTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="ClassVIIIMedical_TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="MaterielTransportProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Transport">
+      <phrase oftype="TheaterTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="MaterielTransportProvider" />
+    </allocate>
+  </command>
+</commands>

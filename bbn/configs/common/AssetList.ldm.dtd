@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="US-ASCII" ?>
-
 <!--
 /***********************************************************************************
  *                                                                                 *
@@ -19,24 +17,38 @@
  ***********************************************************************************/
 -->          
 
-<prototype name = "PASSENGER">
-  <object class="org.cougaar.glm.ldm.asset.MilitaryPerson">
+<!ELEMENT AssetList (prototype*, instance*)>
 
-      <field name="TypeIdentificationPG" type="object">
-        <value>
-          <object class="org.cougaar.planning.ldm.asset.NewTypeIdentificationPG">
-          <field name="TypeIdentification" type="String">
-            <value> OTHER/Passenger </value>
-          </field>
-          <field name="Nomenclature" type="String">
-            <value> Passenger </value>
-          </field>
-          </object>
-        </value>
-      </field>
+<!ELEMENT prototype (object)>
+<!ATTLIST prototype name ID #REQUIRED>
 
-  </object>
-</prototype>
+<!ELEMENT instance (schedule)>
+<!ATTLIST instance id ID #REQUIRED>
+<!ATTLIST instance prototype CDATA #REQUIRED>
 
+<!ELEMENT schedule EMPTY>
+<!ATTLIST schedule start CDATA #REQUIRED>
+<!ATTLIST schedule end   CDATA #REQUIRED>
 
+<!ELEMENT object (field*)>
+<!ATTLIST object class CDATA #REQUIRED>
+
+<!ELEMENT field (value+)>
+<!ATTLIST field name ID #REQUIRED>
+<!--
+  Valid field types:
+    primitives: char | byte | boolean | short  | 
+                int  | long | float   | double
+    class: <any>
+    short hand: String -> java.lang.String
+    object: value then object follows
+  If class implements java.util.Collection (e.g. java.util.ArrayList)
+  then a collection will be created and the values placed in that
+  collection.
+-->
+<!ATTLIST field type CDATA #REQUIRED>
+
+<!-- THIS ALLOWS OBJECT COMPOSITION -->
+
+<!ELEMENT value (#PCDATA | object)*>
 

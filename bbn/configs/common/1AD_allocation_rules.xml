@@ -1,0 +1,35 @@
+<commands>
+  <command>
+    <task verb="Transport">
+     <phrase oftype="StrategicTransportation" />
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="StrategicTransportationProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Expand_Runway_Apron">
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="ConstructionProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Build_Short_Runway">
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="ConstructionProvider" />
+    </allocate>
+  </command>
+  <command>
+    <task verb="Build_Small_Tent_City">
+    </task>
+    <allocate>
+      <relation type="Supporting" />
+      <role name="ConstructionProvider" />
+    </allocate>
+  </command>
+</commands>

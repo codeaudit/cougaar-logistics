@@ -35,7 +35,7 @@
        
   -->
   <!-- C17 --> 
-  <instance prototype="C17" id="C17" quantity="50">
+  <instance prototype="C17" id="C17" quantity="60">
     <schedule end="12/31/06" start="11/07/00"/>
   </instance>
 
