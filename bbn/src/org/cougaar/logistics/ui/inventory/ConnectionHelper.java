@@ -219,7 +219,7 @@ return results
                                      "Cluster Location",
                                      OptionPane.QUESTION_MESSAGE,
                                      //null, null, "localhost:5555");
-                                     null, null, host + ":" + port);
+                                     null, null, "http://" + host + ":" + port);
 
   }
 
@@ -242,14 +242,14 @@ return results
       host = host.trim();
       if (host.length() == 0) {
         //host = "localhost:5555";
-        host = "localhost:8800";
+        host = "http://" + "localhost:8800";
       } else {
         if (host.indexOf(':') < 0) {
           //host += ":5555";
           host += ":8800";
         }
       }
-      ConnectionHelper connection = new ConnectionHelper("http://" + host + "/");
+      ConnectionHelper connection = new ConnectionHelper(host + "/");
       return connection.getClusterIdsAndURLs();
     } catch (Exception e) {
       return null;

@@ -52,9 +52,9 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  * charts appropriatly.
  *
  *
- * @see InventoryLevelChart;
- * @see InventoryRefillChart;
- * @see InventoryDemandChart;
+ * @see InventoryLevelChart
+ * @see InventoryRefillChart
+ * @see InventoryDemandChart
  * 
  *
  **/
