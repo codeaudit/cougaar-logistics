@@ -23,11 +23,7 @@ package org.cougaar.logistics.ui.inventory;
 
 import java.util.Date;
 
-import java.awt.Event;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Color;
-import java.awt.Insets;
+import java.awt.*;
 
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
@@ -42,6 +38,7 @@ import com.klg.jclass.chart.*;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
+import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
 
 /**
  * <pre>
@@ -54,61 +51,186 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  *
  **/
 
-public class InventoryLevelChart extends InventoryChart {
+public class InventoryLevelChart extends InventoryShortfallChart {
+
+  protected OrgActivityChartDataModel orgActDM;
 
   protected ChartDataView invChartDataView;
+  protected ChartDataView targetReorderChartDataView;
   protected ChartDataView orgChartDataView;
 
-  public InventoryLevelChart(boolean initialDisplayCDay) {
-    initialize("Inventory",initialDisplayCDay);
+
+  protected boolean displayOrgActivities = true;
+
+  public InventoryLevelChart(boolean initialDisplayCDay, InventoryPreferenceData prefData) {
+    super(prefData);
+    initialize("Inventory", initialDisplayCDay);
   }
 
-  public ChartDataView getInvChartDataView() { return invChartDataView; }
-  public ChartDataView getOrgChartDataView() { return orgChartDataView; }
+  public ChartDataView getInvChartDataView() {
+    return invChartDataView;
+  }
 
+  public ChartDataView getOrgChartDataView() {
+    return orgChartDataView;
+  }
+
+  public void initialize(String title, boolean initialDisplayCDay) {
+    super.initialize(title, initialDisplayCDay);
+    chart.getLegend().setPreferredSize(new Dimension(148, 160));
+  }
 
 
   public void initializeChart() {
 
+
+    reqDM =
+        new RequisitionsChartDataModel("",
+                                       InventoryDemandChart.DEMAND_TASKS,
+                                       InventoryDemandChart.DEMAND_ARS);
+
+    projDM =
+        new ProjectionsChartDataModel("Demand from Customers",
+                                      InventoryDemandChart.DEMAND_PROJ_TASKS,
+                                      InventoryDemandChart.DEMAND_PROJ_ARS,
+                                      InventoryDemandChart.DEMAND_TASKS,
+                                      reqDM,
+                                      false);
+
+
     InventoryLevelChartDataModel idm = new InventoryLevelChartDataModel();
-    invChartDataView = addChartView(JCChart.PLOT, idm);
-
-    OrgActivityChartDataModel oadm = new OrgActivityChartDataModel();
-    orgChartDataView = addChartView(JCChart.BAR, oadm);
-
-    JCBarChartFormat format = (JCBarChartFormat)orgChartDataView.getChartFormat();
-    format.setClusterWidth(100);
-    format.setClusterOverlap(100);
-
-    orgChartDataView.setOutlineColor(Color.gray);
-
-    //chartDataView.setOutlineColor(Color.black);
-    for (int j = 0; j < orgChartDataView.getNumSeries(); j++) {
-      ChartDataViewSeries series = orgChartDataView.getSeries(j);
-      setSeriesColor(series, colorTable.get(series.getLabel()));
-      Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
-      if (symbolColor != null) {
-        series.getStyle().setSymbolColor(symbolColor);
-      }
-
-    }
+    TargetReorderLevelChartDataModel trdm = new TargetReorderLevelChartDataModel("");
 
 
+    orgActDM = new OrgActivityChartDataModel();
 
-// set line width
-    for (int j = 0; j < invChartDataView.getNumSeries(); j++) {
-      ChartDataViewSeries series = invChartDataView.getSeries(j);
-      series.getStyle().setLineWidth(2);
-      series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
-      setSeriesColor(series, colorTable.get(series.getLabel()));
-      if (series.getLabel().equals(idm.TARGET_LEVEL_SERIES_LABEL)) {
-        setSeriesColor(series, Color.yellow);
-        series.getStyle().setSymbolShape(JCSymbolStyle.VERT_LINE);
-        series.getStyle().setSymbolColor(colorTable.get(series.getLabel() + "_SYMBOL"));
-      }
 
-    }
+    shortfallDM =
+        new InventoryShortfallChartDataModel("",
+                                             idm,
+                                             reqDM,
+                                             projDM);
+
+
+    //These are never viewed, but should but are added to get all
+    // the axis et al information.
+    ChartDataView reqView = addChartView(JCChart.BAR, reqDM);
+    ChartDataView projView = addChartView(JCChart.BAR, projDM);
+    reqView.setVisible(false);
+    projView.setVisible(false);
+
+    orgChartDataView = addChartView(JCChart.BAR, orgActDM);
+    orgChartDataView.setVisible(false);
+
+    invChartDataView = addChartView(JCChart.BAR, idm);
+    shortfallChartDataView = addChartView(JCChart.BAR, shortfallDM);
+    //belowZeroDataView = addChartView(JCChart.BAR, belowZeroDM);
+    targetReorderChartDataView = addChartView(JCChart.PLOT, trdm);
+
+    String colorScheme = prefData.getColorScheme();
+    setShortfallChartColors(colorScheme);
+    setInventoryBarChartColors(colorScheme, orgChartDataView);
+    //setBelowZeroChartColors(colorScheme);
+
+    setInventoryBarChartColors(colorScheme, invChartDataView);
+    setLineChartDataViewColors(targetReorderChartDataView);
+
+    displayShortfall = false;
+    updateShortfall();
+    updateOrgActivities();
 
   }
 
+  protected boolean setYAxisMinToZero() {
+    return !displayShortfall;
+  }
+
+  public void setDisplayShortfall(boolean doDisplayShortfall) {
+    if (doDisplayShortfall != displayShortfall) {
+      super.setDisplayShortfall(doDisplayShortfall);
+      resetYMin();
+      //chart.reset();
+    }
+  }
+
+  public boolean hasOrgActivities() {
+    return orgActDM.hasOrgActivities();
+  }
+
+  public void updateOrgActivities() {
+    if (hasOrgActivities()) {
+      orgChartDataView.setVisible(displayOrgActivities);
+      orgChartDataView.setName(InventoryLevelChartDataModel.INVENTORY_LEVEL_LEGEND);
+      invChartDataView.setName("");
+    } else {
+      orgChartDataView.setVisible(false);
+      orgChartDataView.setName("");
+      invChartDataView.setName(InventoryLevelChartDataModel.INVENTORY_LEVEL_LEGEND);
+    }
+  }
+
+
+  public void setData(InventoryData data) {
+    super.setData(data);
+    updateOrgActivities();
+  }
+
+  protected void setInventoryBarChartColors(String colorScheme, ChartDataView theView) {
+    JCBarChartFormat format = (JCBarChartFormat) theView.getChartFormat();
+    format.setClusterWidth(100);
+    format.setClusterOverlap(100);
+
+    theView.setOutlineColor(colorTable.getOutlineColor(colorScheme, theView));
+
+    //chartDataView.setOutlineColor(Color.black);
+    for (int j = 0; j < theView.getNumSeries(); j++) {
+      ChartDataViewSeries series = theView.getSeries(j);
+//      System.out.println("InventoryLevelChart setting bar chart colors for: " + series.getLabel());
+      setSeriesColor(series, colorTable.get(colorScheme, series.getLabel()));
+      int symbolStyle = colorTable.getSymbolShape(colorScheme, series.getLabel());
+      if (symbolStyle != JCSymbolStyle.NONE) {
+        series.getStyle().setSymbolShape(symbolStyle);
+        series.getStyle().setSymbolColor(colorTable.getSymbolColor(colorScheme, series.getLabel()));
+        series.getStyle().setSymbolSize(colorTable.getSymbolSize(colorScheme, series.getLabel()));
+      }
+    }
+  }
+
+  protected void setShortfallChartColors(String colorScheme) {
+    if (shortfallChartDataView != null) {
+      setInventoryBarChartColors(colorScheme, shortfallChartDataView);
+    }
+  }
+
+
+  public void prefDataChanged(InventoryPreferenceData oldData,
+                              InventoryPreferenceData newData) {
+    super.prefDataChanged(oldData, newData);
+    String colorScheme = newData.getColorScheme();
+    if (!colorScheme.equals(oldData.getColorScheme())) {
+      setInventoryBarChartColors(colorScheme, orgChartDataView);
+      setInventoryBarChartColors(colorScheme, invChartDataView);
+      setLineChartDataViewColors(targetReorderChartDataView);
+    }
+  }
+
+
+  private void setLineChartDataViewColors(ChartDataView chartDataView) {
+    // set line width and colors
+    for (int j = 0; j < chartDataView.getNumSeries(); j++) {
+      ChartDataViewSeries series = chartDataView.getSeries(j);
+      series.getStyle().setLineWidth(2);
+      series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
+      setSeriesColor(series, colorTable.get(colorScheme, series.getLabel()));
+      int width = colorTable.getLineWidth(colorScheme, series.getLabel());
+      series.getStyle().setLineWidth(width);
+      int symbolStyle = colorTable.getSymbolShape(colorScheme, series.getLabel());
+      if (symbolStyle != JCSymbolStyle.NONE) {
+        series.getStyle().setSymbolShape(symbolStyle);
+        series.getStyle().setSymbolColor(colorTable.getSymbolColor(colorScheme, series.getLabel()));
+        series.getStyle().setSymbolSize(colorTable.getSymbolSize(colorScheme, series.getLabel()));
+      }
+    }
+
+  }
 }

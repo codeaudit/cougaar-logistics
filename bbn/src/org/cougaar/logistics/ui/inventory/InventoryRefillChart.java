@@ -43,6 +43,7 @@ import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
+import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
 
 /** 
  * <pre>
@@ -76,8 +77,9 @@ public class InventoryRefillChart extends InventoryBarChart{
 
 
 
-    public InventoryRefillChart(boolean initialDisplayCDay) {
-	initialize("Refill",initialDisplayCDay);
+    public InventoryRefillChart(boolean initialDisplayCDay, InventoryPreferenceData prefData) {
+      super(prefData);
+	    initialize("Refill",initialDisplayCDay);
     }
 
 
@@ -105,8 +107,8 @@ public class InventoryRefillChart extends InventoryBarChart{
 	reqChartDataView = addChartView(JCChart.BAR, reqDM);
 	shortfallChartDataView = addChartView(JCChart.PLOT, shortfallDM);
 	
-	setBarChartColors();
-	setShortfallChartColors();
+	setBarChartColors(prefData.getColorScheme());
+	setShortfallChartColors(prefData.getColorScheme());
 
 	displayShortfall=false;
 	updateShortfall();

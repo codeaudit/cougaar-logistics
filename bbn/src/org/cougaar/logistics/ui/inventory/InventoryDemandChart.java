@@ -46,6 +46,7 @@ import com.klg.jclass.util.legend.JCLegend;
 import com.klg.jclass.util.legend.JCMultiColLegend;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
+import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
 
 /** 
  * <pre>
@@ -61,8 +62,6 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  **/
 
 public class InventoryDemandChart extends InventoryBarChart {
-
-
     public final static String DEMAND_TASKS =
 	LogisticsInventoryFormatter.WITHDRAW_TASKS_TAG;
     public final static String DEMAND_ARS =
@@ -72,12 +71,9 @@ public class InventoryDemandChart extends InventoryBarChart {
     public final static String DEMAND_PROJ_ARS =
     	LogisticsInventoryFormatter.COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG;
 
-    public InventoryDemandChart() {
-	initialize("Demand",false);
-    }
-
-    public InventoryDemandChart(boolean initialDisplayCDay) {
-	initialize("Demand",initialDisplayCDay);
+    public InventoryDemandChart(boolean initialDisplayCDay, InventoryPreferenceData prefData) {
+      super(prefData);
+	    initialize("Demand",initialDisplayCDay);
     }
 
     public void initializeChart() {
@@ -104,8 +100,8 @@ public class InventoryDemandChart extends InventoryBarChart {
 	reqChartDataView = addChartView(JCChart.BAR, reqDM);
 	shortfallChartDataView = addChartView(JCChart.PLOT, shortfallDM);
 	
-	setBarChartColors();
-	setShortfallChartColors();
+	setBarChartColors(prefData.getColorScheme());
+	setShortfallChartColors(prefData.getColorScheme());
 
 	displayShortfall=false;
 	updateShortfall();
