@@ -53,7 +53,7 @@ ARCHIVE_TIME=${build.time}
       </patternset>
     </fileset>
   </copy>
-  <zip zipfile="Logistics_bbn_stoplight_overlay.zip" basedir="staging"/>
+  <zip zipfile="AL_stoplight.zip" basedir="staging"/>
   <delete dir="staging"/>
 
 

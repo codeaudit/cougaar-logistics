@@ -533,7 +533,7 @@ ARCHIVE_TIME=${build.time}
         <fileset dir="Manifest"/>
       </move>
 		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-		<zip zipfile="Logistics_bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
+		<zip zipfile="al.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
 

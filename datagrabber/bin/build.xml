@@ -53,7 +53,7 @@ ARCHIVE_TIME=${build.time}
 		<move todir="staging/Manifest">
 			<fileset dir="Manifest"/>
 		</move>
-		<zip zipfile="Logistics_datagrabber_overlay.zip" basedir="staging"/>
+		<zip zipfile="AL_datagrabber.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
 
