@@ -1,0 +1,108 @@
+Instructions for processing the OSMIS data provided by SRA.
+
+This contains data for the header table and the army_spares_dc_by_optempo table.
+
+
+Step 1:
+
+Obtain the OSMIS data processed by SRA:
+
+  osmis.sql
+
+Note that this data is in a SQL script file and that data is provided 
+for only a few items.
+
+
+Step 2:
+
+Process the header data:
+
+Step 2a: 
+
+Extract the header data and put into a temporary CSV files in the 
+format of the header.csv file (located at dbms\data\csv at the time of 
+this writing). Since there was so little data, it was fastest to do this 
+manually. If more data becomes available, it would be a good idea to 
+write a Perl script to do this.
+
+Save the data as osmis_header_raw.csv.
+
+
+Step 2b:
+
+Obtain a copy of the FED LOG CDs and look-up data missing from the header 
+records. Fill in the these values in the header file. For example, you
+should be able to find AAC, price, and ICC.
+
+
+Step 2c:
+
+Add the contents of osmis_header.csv to the end of header.csv. Check to see if 
+there are any duplicate records (same NSN). If so, if there are any fields 
+with NULL values in the new data with values in the old data, copy the old 
+values over. Then, remove the old record.
+
+Save this as header_new.csv.
+
+
+Step 2d:
+
+Make sure the data records end with commas:
+
+   lastcomma.pl header_new.csv  > header_new2.csv
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as header.csv and put it in the appropriate place (dbms\data\csv 
+at the time of this writing).
+
+
+Step 3:
+
+Process the army_spares_dc_by_optempo (asdbo) data:
+
+
+Step 3a: 
+
+Extract the 'insert' records from the asdbo data and save as osmis_asdbo.sql.
+
+
+Step 3b:
+
+Obtain a copy of the current asdbo data. This is in the army_spares.ZIP file
+(located at dbms\data\mysql at the time of this writing); extract it to get 
+army.txt.
+
+
+Step 3c: 
+
+Make sure the asdbo records are using the same format as those in army.txt. 
+If not, edit them to match.  Since there was so little data, it was fastest 
+to do this manually. If more data becomes available, it would be a good 
+idea to write a Perl script to do this.
+
+
+Step 3d:
+
+Add the contents of osmis_asdbo.sql to army.txt. Check to see if 
+there are any duplicate records (same class 9 and class 7 NSNs). If so, 
+remove the old ones.
+
+Save this as army_new.txt.
+
+
+Step 3e:
+
+Make sure the data file is in Unix format instead of PC format. If you have been 
+editing on a PC, you can load the file into Emacs, call 
+'Meta-X set-buffer-file-coding-system', and enter 'unix' at the prompt.
+
+Save the file as army.txt.
+
+
+Step 3f:
+
+Zip the file army.txt into the file army_spares.ZIP and put it in the 
+appropriate place (dbms\data\mysql at the time of this writing).
