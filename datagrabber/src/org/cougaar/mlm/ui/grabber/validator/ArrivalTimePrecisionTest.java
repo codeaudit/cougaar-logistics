@@ -198,11 +198,12 @@ public class ArrivalTimePrecisionTest extends Test{
 	    unitToMean.put(prevOwner, mean);
 	    unitToStdDev.put(prevOwner, new Integer(stddev));
 
-//  	    insertRow(l, s, run, 
-//  		      prevOwner,
-//  		      endTimesForUnit.size(),
-//  		      mean,
-//  		      stddev);
+	    insertUnitRow (l, s, run, 
+			   prevOwner,
+			   endTimesForUnit.size(),
+			   mean,
+			   stddev);
+
 	    endTimesForUnit.clear();
 	  }
 	}
@@ -228,17 +229,42 @@ public class ArrivalTimePrecisionTest extends Test{
 //  		mean,
 //  		stddev);
 
-      // Enter the aggregate values
-      insertRow(l, s, run,
-		"ALL UNITS",
-		totalNumAssets,
-		computeAggregateMean(unitToNumAssets, unitToMean),
-		computeAggregateStdDev(unitToNumAssets, unitToStdDev));
+      // Enter the aggregate values - final row
+      insertFinalRow(l, s, run,
+		     prevOwner,
+		     totalNumAssets,
+		     endTimesForUnit,
+		     unitToNumAssets,
+		     unitToMean,
+		     unitToStdDev);
 
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
 		   "ArrivalTimePrecisionTest.insertResults - Problem walking results.",sqle);
     }
+  }
+
+  /** don't do anything per unit for this test */
+  protected void insertUnitRow (Logger l, Statement s, int run,
+				String owner, 
+				int number, 
+				String mean, int stddev) throws SQLException {
+  }
+
+  protected void insertFinalRow (Logger l, Statement s, int run,
+				 String owner, 
+				 int number, 
+				 Collection endTimesForUnit,
+				 Map unitToNumAssets,
+				 Map unitToMean,
+				 Map unitToStdDev) throws SQLException {
+    String aggregateMean = computeAggregateMean(unitToNumAssets, unitToMean);
+    int aggregateStdDev = computeAggregateStdDev(unitToNumAssets, unitToStdDev);
+
+    insertRow(l, s, run,
+	      "ALL UNITS",
+	      number,
+	      aggregateMean, aggregateStdDev);
   }
   
   // Computes the average arrival date.

@@ -68,94 +68,28 @@ public class UnitArrivalTimePrecisionTest extends ArrivalTimePrecisionTest{
     return "unitarrivalprecision";
   }
 
-  protected void insertResults (Logger l, Statement s, int run) {    
-    ResultSet rs=null;
-    String sql = null;
-	
-    try {
-      sql = getQuery(run);
-      rs=s.executeQuery(sql);
-    } catch (SQLException sqle) {
-      l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-		   "ArrivalTimePrecisionTest.insertResults - Problem executing query : " + sql,
-		   sqle);
-    }
+  protected void insertUnitRow (Logger l, Statement s, int run,
+				String owner, 
+				int number, 
+				String mean, int stddev) throws SQLException {
+    insertRow(l, s, run, 
+	      owner,
+	      number,
+	      mean,
+	      stddev);
+  }
 
-    try {
-      String prevOwner = "";
-      String prevAssetid = "";
-      String prevEndTime = "";
-      boolean firstIteration = true;
-      Collection endTimesForUnit = new LinkedList();
-
-      // aggregate quantities over all units
-      int totalNumAssets = 0;
-      Map unitToNumAssets = new HashMap();
-      Map unitToMean = new HashMap();
-      Map unitToStdDev = new HashMap();
-      
-      while(rs.next()){
-	String owner = rs.getString(1);
-	String assetid = rs.getString(2);
-	String endTime = rs.getString(3);
-	 
-	// Don't do anything for the first row
-	if (!firstIteration) {
-
-	  // Beginning legs for a new asset.  Hence the previous leg processed was the
-	  // last leg of the previous asset.
-	  if (!assetid.equals(prevAssetid))
-	      endTimesForUnit.add(prevEndTime);
-
-	  // Insert an entry if we're starting to look at another unit.  
-	  if (!owner.equals(prevOwner)) {
-	    
-//       System.out.println("ArrivalTimePrecisionTest.insertRow() - unit = " + prevOwner + 
-//  			 " total = " + assetsForUnitCount + 
-//  			 " diff = " + assetsNonBestArrivalCount + 
-//  			 " endTimesForUnit=" + endTimesForUnit);
-
-	    String mean = computeArrivalMean(endTimesForUnit);
-	    int stddev = computeArrivalStdDev(mean, endTimesForUnit);
-
-	    totalNumAssets += endTimesForUnit.size();
-	    unitToNumAssets.put(prevOwner, new Integer(endTimesForUnit.size()));
-	    unitToMean.put(prevOwner, mean);
-	    unitToStdDev.put(prevOwner, new Integer(stddev));
-
-	    insertRow(l, s, run, 
-		      prevOwner,
-		      endTimesForUnit.size(),
-		      mean,
-		      stddev);
-	    endTimesForUnit.clear();
-	  }
-	}
-	prevOwner = owner;
-	prevAssetid = assetid;
-	prevEndTime = endTime;
-	firstIteration = false;
-      }
-
-      // Enter last value
-      endTimesForUnit.add(prevEndTime);
-      String mean = computeArrivalMean(endTimesForUnit);
-      int stddev = computeArrivalStdDev(mean, endTimesForUnit);
-
-      totalNumAssets += endTimesForUnit.size();
-      unitToNumAssets.put(prevOwner, new Integer(endTimesForUnit.size()));
-      unitToMean.put(prevOwner, mean);
-      unitToStdDev.put(prevOwner, new Integer(stddev));
-
-      insertRow(l, s, run, 
-		prevOwner,
-		endTimesForUnit.size(),
-		mean,
-		stddev);
-
-    } catch (SQLException sqle) {
-      l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-		   "ArrivalTimePrecisionTest.insertResults - Problem walking results.",sqle);
-    }
+  protected void insertFinalRow (Logger l, Statement s, int run,
+				 String owner, 
+				 int number, 
+				 Collection endTimesForUnit,
+				 Map unitToNumAssets,
+				 Map unitToMean,
+				 Map unitToStdDev) throws SQLException {
+    insertRow(l, s, run,
+	      owner,
+	      endTimesForUnit.size(),
+	      (String) unitToMean.get(owner),
+	      ((Integer)unitToStdDev.get(owner)).intValue());
   }
 }
