@@ -231,7 +231,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     if (prepHelper.hasPrepNamed(parentTask, GLMTransConst.LOW_FIDELITY)) {
       // pass through
       Asset lowFiAsset = parentTask.getDirectObject();
-      Task subTask = makeTask (parentTask, lowFiAsset);
+      Task subTask = makeTask (parentTask, lowFiAsset, null);
       NewLowFidelityAssetPG lowFiPG = 
 	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
       lowFiPG.setOriginalAsset (lowFiAsset);
@@ -241,7 +241,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	       " by attaching low fi pg to it's d.o. - " + lowFiAsset);
       childTasks.addElement (subTask);
     }
-    else if (mode.getValue ().equals(LOW_FIDELITY)) {
+    else if (mode.getValue ().equals(LOW_FIDELITY) && 
+	     !isPersonTask(parentTask) &&
+	     (parentTask.getDirectObject() instanceof AssetGroup)) {
       if (isDebugEnabled()) 
 	debug (".getSubtasks - processing task " + parentTask.getUID () + 
 	       " in LOW fidelity mode. d.o. is " + parentTask.getDirectObject());
@@ -256,7 +258,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       Vector itemsToMove = expandAsset((Asset)parentTask.getDirectObject());
 
       for (int i = 0; i < itemsToMove.size (); i++) {
-	Task subTask = makeTask (parentTask, (Asset) itemsToMove.elementAt(i));
+	Task subTask = makeTask (parentTask, (Asset) itemsToMove.elementAt(i), null);
 	childTasks.addElement (subTask);
       }
     }
@@ -268,48 +270,58 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     Vector retval = new Vector ();
     Task newTask = null;
 
-    if (isPerson(parentTask)) {
-      // pass through
-      newTask = makeTask (parentTask, parentTask.getDirectObject ()); // revisit later!
+    GLMAsset lowFiAsset = 
+      (GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "LowFidelityPrototype", "LowFi_" + getNextID());
+    NewLowFidelityAssetPG lowFiPG = 
+      (NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
+    lowFiPG.setOriginalAsset (lowFiAsset);
+    attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
+
+    Asset asset = parentTask.getDirectObject();
+
+    try {
+      NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
+      setDimensions (newPhysicalPG, expandAsset (asset));
+      lowFiAsset.setPhysicalPG (newPhysicalPG);
+    } catch (Exception e) { 
+      logger.error ("problem processing " + asset, e);
     }
-    else {
-      GLMAsset lowFiAsset = 
-	(GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "LowFidelityPrototype", "LowFi_" + getNextID());
-      NewLowFidelityAssetPG lowFiPG = 
-	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
-      lowFiPG.setOriginalAsset (lowFiAsset);
-      attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
 
-      Asset asset = parentTask.getDirectObject();
+    ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("LowFidelityAggregate");
 
-      try {
-	NewPhysicalPG newPhysicalPG = PropertyGroupFactory.newPhysicalPG ();
-	setDimensions (newPhysicalPG, expandAsset (asset));
-	lowFiAsset.setPhysicalPG (newPhysicalPG);
-      } catch (Exception e) { 
-	logger.error ("problem processing " + asset, e);
-      }
+    if (isDebugEnabled())
+      debug ("getLowFidelityTask - created low fi asset " + 
+	     lowFiAsset.getUID() + " : " +
+	     lowFiAsset.getItemIdentificationPG().getNomenclature() +  " - " + 
+	     lowFiAsset.getItemIdentificationPG().getItemIdentification());
 
-      ((NewItemIdentificationPG) lowFiAsset.getItemIdentificationPG()).setNomenclature ("LowFidelityAggregate");
-
-      if (isDebugEnabled())
-	debug ("getLowFidelityTask - created low fi asset " + 
-	       lowFiAsset.getUID() + " : " +
-	       lowFiAsset.getItemIdentificationPG().getNomenclature() +  " - " + 
-	       lowFiAsset.getItemIdentificationPG().getItemIdentification());
-
-      newTask = makeTask (parentTask, lowFiAsset);
+    newTask = makeTask (parentTask, lowFiAsset, getOriginalOwner(parentTask));
 
       // mark the new task as an aggregate low fi task
-      prepHelper.addPrepToTask (newTask, 
-				prepHelper.makePrepositionalPhrase(ldmf,
-								   GLMTransConst.LOW_FIDELITY,
-								   GLMTransConst.LOW_FIDELITY));
-    }
+    prepHelper.addPrepToTask (newTask, 
+			      prepHelper.makePrepositionalPhrase(ldmf,
+								 GLMTransConst.LOW_FIDELITY,
+								 GLMTransConst.LOW_FIDELITY));
 
     retval.add(newTask);
 
     return retval;
+  }
+
+  protected String getOriginalOwner (Task parentTask) {
+    if (!glmPrepHelper.hasPrepNamed (parentTask,Constants.Preposition.FOR)) {
+      Asset directObject = parentTask.getDirectObject();
+      String owner = directObject.getUID().getOwner();
+
+      if (isInfoEnabled()) {
+	info (".getOriginalOwner - WARNING : got task " + parentTask.getUID() + 
+	      " which has no FOR unit prep, using owner - " + owner + ".");
+      }
+      
+      return owner;
+    } 
+    else
+      return (String)glmPrepHelper.getIndirectObject(parentTask,Constants.Preposition.FOR);
   }
 
   /** 
@@ -332,11 +344,26 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     }
   }
 
-  protected boolean isPerson (Task parentTask) {
+  protected boolean isPersonTask (Task parentTask) {
     Asset asset = parentTask.getDirectObject();
     if (asset instanceof AggregateAsset) {
       GLMAsset itemProto = (GLMAsset) ((AggregateAsset)asset).getAsset();
       return itemProto.hasPersonPG();
+    }
+    // if aggregate assets of people are inside of an asset group
+    // it's a person...
+    else if (asset instanceof AssetGroup) {
+      AssetGroup group = (AssetGroup) asset;
+      Vector assetList = ((AssetGroup)asset).getAssets();
+      for (int i = 0; i < assetList.size(); i++) {
+	Asset subasset = (Asset)assetList.elementAt(i);
+	if (subasset instanceof AggregateAsset) {
+	  GLMAsset itemProto = (GLMAsset) ((AggregateAsset)subasset).getAsset();
+	  return itemProto.hasPersonPG();
+	}
+	else 
+	  return false;
+      }
     }
     return false;
   }
@@ -421,7 +448,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    *
    * removes OFTYPE prep, since it's not needed by scheduler 
    **/
-  protected Task makeTask (Task parentTask, Asset directObject) {
+  protected Task makeTask (Task parentTask, Asset directObject, String originalOwner) {
     if (isDebugEnabled()) 
       debug (".makeTask - making subtask of " + parentTask.getUID () + 
 	     " d.o. " + directObject);
@@ -435,11 +462,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     // Next four lines create a Property Group for unit and attach it to all assets attached to task
     ForUnitPG unitPG = (ForUnitPG)ldmf.createPropertyGroup(ForUnitPG.class);
     if (!glmPrepHelper.hasPrepNamed (newtask,Constants.Preposition.FOR)) {
-      String owner = directObject.getUID().getOwner();
+      String owner = (originalOwner != null) ? originalOwner : directObject.getUID().getOwner();
 
-      if (isDebugEnabled()) {
-	debug (".getSubtasks - WARNING : got task " + parentTask.getUID() + 
-	       " which has no FOR unit prep, using owner - " + owner + ".");
+      if (isInfoEnabled()) {
+	info (".getSubtasks - WARNING : got task " + parentTask.getUID() + 
+	      " which has no FOR unit prep, using owner - " + owner + ".");
       }
 	
       ((NewForUnitPG)unitPG).setUnit(owner);
