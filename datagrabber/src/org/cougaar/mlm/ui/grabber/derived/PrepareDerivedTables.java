@@ -476,10 +476,7 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
   //FIRST_LEG:
   protected void createFirstLegTable(Statement s){
     String tableName=getDerivedTableName(FIRST_LEG);
-    StringBuffer sb=new StringBuffer();
-    sb.append("create table ");
-    sb.append(tableName);
-    sb.append(" ( ");
+    StringBuffer sb=new StringBuffer(createTableSQL(tableName));
     sb.append(DGPSPConstants.COL_ASSETID);
     sb.append(" VARCHAR(255)");
     sb.append(", ");
@@ -494,6 +491,14 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     sb.append(")");
     prepareTable(s, tableName, sb.toString());
   }
+
+    private String createTableSQL(String tableName) {
+        StringBuffer sb=new StringBuffer();
+        sb.append("create table ");
+        sb.append(tableName);
+        sb.append(" ( ");
+        return sb.toString();
+    }
 
   protected String getFirstLegSql(){
     StringBuffer sb=new StringBuffer();
@@ -528,10 +533,7 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
 
   protected void createRollupTable(Statement s){
     String tableName=getDerivedTableName(ROLLUP);
-    StringBuffer sb=new StringBuffer();
-    sb.append("create table ");
-    sb.append(tableName);
-    sb.append(" ( ");
+      StringBuffer sb=new StringBuffer(createTableSQL(tableName));
     sb.append(HierarchyConstants.COL_RELID);
     sb.append(" VARCHAR(255)");
     sb.append(", ");
