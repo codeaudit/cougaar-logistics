@@ -18,14 +18,14 @@
 
   <mkdir dir="staging"/>
   <mkdir dir="staging/lib"/>
-  <mkdir dir="staging/data"/>
+  <mkdir dir="staging/doc"/>
   <mkdir dir="staging/bin"/>
   <delete dir="${build}"/>
   <mkdir dir="${build}"/>
   <javac classpathref="tic.build.overlay.class.path" srcdir="${src}" destdir="${build}"/>
   <jar jarfile="staging/lib/stoplight.jar" basedir="${build}"/>
 	<signjar jar="staging/lib/stoplight.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-  <copy todir="staging/data">
+  <copy todir="staging/doc">
     <fileset dir="doc">
       <patternset>
         <exclude name="**/CVS/**"/>
@@ -35,7 +35,7 @@
   <copy todir="staging/bin">
     <fileset dir="bin">
       <patternset>
-				<include name="*.bat"/>
+        <include name="*.bat"/>
         <exclude name="**/CVS/**"/>
       </patternset>
     </fileset>

@@ -32,7 +32,7 @@ set DEVELOPMENT_PATH=%DEVELOPMENT_PATH%;C:\alpine\aggregationAgent\aggagent\clas
 rem set DEVELOPMENT_PATH=%DEVELOPMENT_PATH%;C:\alpine\cougaar\uiframework\classes
 set LIB_PATH=%COUGAAR_INSTALL_PATH%\lib
 set SYS_PATH=%COUGAAR_INSTALL_PATH%\sys
-set DATA_PATH=..\data\assessment
+set DATA_PATH=..\doc\assessment
 
 set CP=%DEVELOPMENT_PATH%
 set CP=%CP%;%SYS_PATH%\xerces.jar
