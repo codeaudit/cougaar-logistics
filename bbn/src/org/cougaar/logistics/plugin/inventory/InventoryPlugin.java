@@ -96,6 +96,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private long startTime;
   private long cycleStamp;
   private boolean logToCSV=false;
+  private transient ArrayList newRefills = new ArrayList();
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
@@ -192,6 +193,8 @@ public class InventoryPlugin extends ComponentPlugin {
   }
   
   protected void execute() {
+    //clear our new refill list
+    newRefills.clear();
     updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
     updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
     cycleStamp = (new Date()).getTime();
@@ -220,6 +223,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	  }
 	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
 					   refillComparator);
+          externalAllocator.allocateRefillTasks(newRefills);
       } else { // Backwards Flow
 	externalAllocator.updateAllocationResult(refillAllocationSubscription);
         allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
@@ -796,6 +800,7 @@ public class InventoryPlugin extends ComponentPlugin {
     if (!publishAdd(subtask)) {
       logger.error("publishAddToExpansion fail to publish task "+taskUtils.taskDesc(subtask));
     }
+    newRefills.add(subtask);
   }
 
   // called by the RefillGenerator to hook up the refill task to the maintain

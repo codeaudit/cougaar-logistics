@@ -76,24 +76,12 @@ public class ExternalAllocator extends InventoryModule {
 	}
     }
 
+  // allocate our new refill tasks
     public void allocateRefillTasks(Collection newRefills) {
-	//for each non-projection refill set scoring relaxed scoring function and allocate
 	Task refill;
 	Iterator refillIT = newRefills.iterator();
 	while(refillIT.hasNext()) {
 	    refill = (Task) refillIT.next();
-	    setRefillScoringFunction(refill);
-	    allocateTask(refill);
-	}
-    }
-
-    public void allocateProjectedRefillTasks(Collection newRefills) {
-	//for each projection refill set scoring relaxed scoring function and allocate
-	Task refill;
-	Iterator refillIT = newRefills.iterator();
-	while(refillIT.hasNext()) {
-	    refill = (Task) refillIT.next();	
-	    setProjectedRefillScoringFunction(refill);
 	    allocateTask(refill);
 	}
     }
@@ -122,15 +110,6 @@ public class ExternalAllocator extends InventoryModule {
 	//from the predictor.
 	return new AllocationResultHelper(task, null).getAllocationResult(0.25);
     }
-
-    private void setRefillScoringFunction(Task task) {
-
-    }
-
-    private void setProjectedRefillScoringFunction(Task task) {
-
-    }
-
 
     /** Figure out which organization supplying item is best for us. */
     private Organization findBestSource(Task task) {
