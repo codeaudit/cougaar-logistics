@@ -1235,6 +1235,7 @@ public class InventoryPlugin extends ComponentPlugin
     Expansion expansion;
     NewWorkflow wf;
     ((NewTask) subtask).setParentTask(parent);
+    ((NewTask) subtask).setContext(parent.getContext());
     ((NewTask) subtask).setPlan(parent.getPlan());
     // Task has not been expanded, create an expansion
     if (pe == null) {

@@ -171,6 +171,7 @@ public class DetReqAggHandler extends InventoryModule{
   **/
   private NewTask createMILTask(Task parent, Inventory inventory) {
     NewTask subtask = inventoryPlugin.getPlanningFactory().newTask();
+    subtask.setContext(parent.getContext());
     subtask.setDirectObject(inventory);
     subtask.setParentTask(parent);
     subtask.setVerb(new Verb(Constants.Verb.MAINTAININVENTORY));
@@ -189,7 +190,17 @@ public class DetReqAggHandler extends InventoryModule{
      rescinded only if all the parent tasks are rescinded.
   **/
   public NewMPTask createAggTask(Collection parents) {
+    Task parentTask = null;
+    Iterator tasks = parents.iterator();
+    HashSet set = new HashSet();
+    while (tasks.hasNext()) {
+      parentTask = (Task)tasks.next();
+      if (parentTask.getContext() != null) {
+        set.addAll((ContextOfOplanIds)parentTask.getContext());
+      }
+    }
     NewMPTask mpTask = inventoryPlugin.getPlanningFactory().newMPTask();
+    mpTask.setContext(new ContextOfOplanIds(set));
     NewComposition composition = inventoryPlugin.getPlanningFactory().newComposition();
     composition.setIsPropagating(false);
     mpTask.setComposition(composition);
