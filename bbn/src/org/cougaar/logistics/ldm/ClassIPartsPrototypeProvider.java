@@ -95,22 +95,30 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
    *  this item
    **/
   public boolean canHandle(String typeid, Class class_hint) {
-    logger.debug ("canHandle (typeid:"+typeid+")");
+    if (logger.isDebugEnabled()) {
+      logger.debug("canHandle (typeid:" + typeid + ")");
+    }
 
-    Boolean protoProvider = (Boolean) myParams_.get ("PrototypeProvider");
+    Boolean protoProvider = (Boolean) myParams_.get("PrototypeProvider");
     if ((protoProvider == null) || (protoProvider.booleanValue())) {
       if (class_hint == null) {
-	if (typeid.startsWith("NSN/")) 
-	  return true;
+        if (typeid.startsWith("NSN/"))
+          return true;
       } else {
-	String class_name = class_hint.getName();
-	if (typeid.startsWith("NSN/") && (class_name.equals ("ClassISubsistence")
-					  || class_name.equals("HumanitarianDailyRation"))) {
-	  return true;
-	} // if
+        String class_name = class_hint.getName();
+        if (typeid.startsWith("NSN/") &&
+            (class_name.equals("ClassISubsistence")
+            ||
+            class_name.equals("HumanitarianDailyRation"))) {
+          return true;
+        } // if
       } // if
     } // if
-    logger.debug ("canHandle() could not handle <"+ class_hint + "> for "+ typeid);
+    if (logger.isDebugEnabled()) {
+      logger.debug("canHandle() could not handle <" + class_hint +
+                   "> for " +
+                   typeid);
+    }
     return false;
   } // canHandle
 
@@ -126,32 +134,40 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
     String class_name = null;
     if (class_hint != null) {
       class_name = class_hint.getName();
-      if (!(class_name.equals("ClassISubsistence") 
-	    || class_name.equals("HumanitarianDailyRation"))) {
-	logger.debug ("makePrototype() could not make prototype for<" + type_name);
-	return null;
+      if (!(class_name.equals("ClassISubsistence")
+          || class_name.equals("HumanitarianDailyRation"))) {
+        if (logger.isDebugEnabled()) {
+          logger.debug("makePrototype() could not make prototype for<" +
+                       type_name);
+        }
+        return null;
       } // if
     } //end (class_hint != null)
     if (class_name == null) {
       if (type_name.startsWith("NSN/89")) {
-	if (otherAssetNomenclatures.containsKey(type_name)) {
-	  class_name = (String)otherAssetNomenclatures.get(type_name);
-	} else {
-	  class_name = "ClassISubsistence";
-	} // if
+        if (otherAssetNomenclatures.containsKey(type_name)) {
+          class_name = (String) otherAssetNomenclatures.get(type_name);
+        } else {
+          class_name = "ClassISubsistence";
+        } // if
       } else {
-	logger.debug ("makePrototype() could not make prototype for<" + type_name);
-	return null;
+        if (logger.isDebugEnabled()) {
+          logger.debug("makePrototype() could not make prototype for<" +
+                       type_name);
+        }
+        return null;
       } // if
     } // if
-    String nomenclature = getNomenclature (type_name, class_name);
+    String nomenclature = getNomenclature(type_name, class_name);
     if (nomenclature == null) {
       //If the nomenclature can't be found, we can't handle this item after all.
       return null;
     } // if
     // Create the Asset prototype
-    logger.debug ("makePrototype() making prototype for<" + type_name);
-    return newAsset (type_name,class_name, nomenclature);
+    if (logger.isDebugEnabled()) {
+      logger.debug("makePrototype() making prototype for<" + type_name);
+    }
+    return newAsset(type_name, class_name, nomenclature);
   } // makePrototype
 
 
@@ -167,14 +183,19 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
     String query = 
       substituteList((String)fileParameters_.get(query_name), a, b);
     if (query == null) {
-      logger.error ("doQuery(), query string from file is null"); 
+      if (logger.isErrorEnabled()) {
+        logger.error("doQuery(), query string from file is null");
+      }
       return null;
     } // if
     Vector holdsQueryResult;
     try {
       holdsQueryResult = executeQuery(query);
     } catch (Exception ee) {
-      logger.error ("doQuery(), DB query failed. query= "+ query+ "\n"+ee.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("doQuery(), DB query failed. query= " + query + "\n" +
+                     ee.toString());
+      }
       return null;
     } // try
     return holdsQueryResult;
@@ -218,36 +239,41 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
    * @return Nomenclature
    */
   protected String getNomenclature (String type_id, String type) {
-    String item_id = type_id.substring(type_id.indexOf("/")+1);  // The NSN
-    String query = substituteNSN((String)fileParameters_.get("ClassIData"), item_id, ":nsns");
+    String item_id = type_id.substring(type_id.indexOf("/") + 1);  // The NSN
+    String query = substituteNSN((String) fileParameters_.get("ClassIData"), item_id, ":nsns");
     if (query == null) {
-      logger.error("doQuery(), query string from file is null"); 
+      if (logger.isErrorEnabled()) {
+        logger.error("doQuery(), query string from file is null");
+      }
       return null;
-    } 
+    }
     Vector result;
     try {
       result = executeQuery(query);
     } catch (Exception ee) {
-      logger.error("doQuery(), DB query failed. query= "+ query+ "\n"+ee.toString());
+      if (logger.isErrorEnabled()) {
+        logger.error("doQuery(), DB query failed. query= " + query + "\n" +
+                     ee.toString());
+      }
       return null;
-    }      
+    }
     if (result.isEmpty()) {
       return null;
     } // if
     // parse results
-    Object row[] = (Object[])result.firstElement();
-    String nomen = (String)row[0];
+    Object row[] = (Object[]) result.firstElement();
+    String nomen = (String) row[0];
     if (nomen == null) {
       return null;
     } // if
-    String meal_type = (String)row[1];
+    String meal_type = (String) row[1];
     int rotation_day = intValue(row[3]);
 
     // Optimize this later.
-    if (meal_type == null ) {
+    if (meal_type == null) {
       meal_type = "";
     } // if
-    nomen = nomen+" "+meal_type+" ";
+    nomen = nomen + " " + meal_type + " ";
     if (rotation_day > 0) {
       nomen += rotation_day;
     } // if
@@ -256,7 +282,9 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
     if (pgs != null) {
       propertyGroupTable_.put(type_id, pgs);
     } // if
-    logger.debug ("getNomenclature() returning " + nomen);
+    if (logger.isDebugEnabled()) {
+      logger.debug("getNomenclature() returning " + nomen);
+    }
     return nomen;
   } // getNomenclature
 
@@ -302,7 +330,9 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
     double vol_cubic_feet =doubleValue(row[8]);
     double cost = doubleValue(row[9]);
     if (ui == null) {
-      logger.debug ("Unit of Issue was null, seting to EA !!!!!!!!!!!!!");
+      if (logger.isDebugEnabled()) {
+        logger.debug("Unit of Issue was null, seting to EA !!!!!!!!!!!!!");
+      }
       ui = "EA";
     } // if
     Vector pgs = createPackagePGs(nomenclature, alternate_name, ui, 
@@ -392,19 +422,24 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
 
   // CDW - looks like it's looking for consumed
   public void fillProperties (Asset anAsset) {
-    logger.debug ("fillProperties for " + anAsset);
+    if (logger.isDebugEnabled()) {
+      logger.debug("fillProperties for " + anAsset);
+    }
     Vector pgs = null;
-    if ((anAsset instanceof ClassISubsistence) 
-	|| (anAsset instanceof HumanitarianDailyRation)) {
-      String typeID = anAsset.getTypeIdentificationPG().getTypeIdentification();
+    if ((anAsset instanceof ClassISubsistence)
+        || (anAsset instanceof HumanitarianDailyRation)) {
+      String typeID = anAsset.getTypeIdentificationPG()
+          .getTypeIdentification();
       pgs = (Vector) propertyGroupTable_.get(typeID);
     } // if
     if ((pgs != null) && !pgs.isEmpty()) {
       Enumeration pgs_enum = pgs.elements();
       while (pgs_enum.hasMoreElements()) {
-	NewPropertyGroup pg = (NewPropertyGroup)pgs_enum.nextElement();
-	anAsset.setPropertyGroup(pg);
-	logger.debug ("setting PGs for " + anAsset);
+        NewPropertyGroup pg = (NewPropertyGroup) pgs_enum.nextElement();
+        anAsset.setPropertyGroup(pg);
+        if (logger.isDebugEnabled()) {
+          logger.debug("setting PGs for " + anAsset);
+        }
       } // while
     } // if
   } // fillProperties

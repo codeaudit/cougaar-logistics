@@ -75,7 +75,8 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
         } // if
       } else {
         String class_name = class_hint.getName();
-        if (typeid.startsWith("DODIC/") && class_name.equals("Ammunition")) {
+        if (typeid.startsWith("DODIC/") &&
+            class_name.equals("Ammunition")) {
           return true;
         } else if (typeid.startsWith("NSN/") &&
             (class_name.equals("BulkPOL") ||
@@ -89,13 +90,19 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
         }
       }// if
     } // if
-    logger.debug("CanHandle(), Unable to provider Prototype." +
-                 " ProtoProvider = " + protoProvider + ", typeid= " + typeid);
+    if (logger.isDebugEnabled()) {
+      logger.debug("CanHandle(), Unable to provider Prototype." +
+                   " ProtoProvider = " + protoProvider +
+                   ", typeid= " +
+                   typeid);
+    }
     return false;
   } // canHandle
 
   public Asset makePrototype(String type_name, Class class_hint) {
-    logger.debug("makePrototype() for type " + type_name);
+    if (logger.isDebugEnabled()) {
+      logger.debug("makePrototype() for type " + type_name);
+    }
     String class_name = null;
     if (class_hint != null) {
       class_name = class_hint.getName();
@@ -108,7 +115,10 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
           class_name.equals("BulkPOL") ||
           class_name.equals("Consumable") ||
           class_name.equals("PackagedPOL"))) {
-        logger.error("make prototype How did we get this far?? " + class_hint);
+        if (logger.isErrorEnabled()) {
+          logger.error("make prototype How did we get this far?? " +
+                       class_hint);
+        }
         return null;
       } // if
     } // if
@@ -124,7 +134,9 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
             class_name = "PackagedPOL";
           } else {
             class_name = "Consumable";
-            logger.debug("This is a consumable");
+            if (logger.isDebugEnabled()) {
+              logger.debug("This is a consumable");
+            }
           }  // if
         } // if
       } else if (type_name.startsWith("DODIC/")) {
@@ -132,18 +144,25 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
       } else if (type_name.startsWith(MEIPrototypeProvider.LEVEL2)) {
         class_name = type_name;
       } else {
-        logger.error("make prototype How did we get this far?? " + class_hint);
+        if (logger.isErrorEnabled()) {
+          logger.error("make prototype How did we get this far?? " +
+                       class_hint);
+        }
         return null;
       } // if
     } // if
 
     String nomenclature = getNomenclature(type_name, class_name);
     if (nomenclature == null) {
-      logger.debug("makePrototype() getNomenclature() FAILED to make nomenclature");
+      if (logger.isDebugEnabled()) {
+        logger.debug("makePrototype() getNomenclature() FAILED to make nomenclature");
+      }
       return null;
     } // if
     Asset theAsset = newAsset(type_name, class_name, nomenclature);
-    logger.debug("makePrototype() made for " + theAsset);
+    if (logger.isDebugEnabled()) {
+      logger.debug("makePrototype() made for " + theAsset);
+    }
     return theAsset;
   } // makePrototype
 
@@ -182,7 +201,12 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
           nomen = (String) row[0];
         } // if
       } catch (Exception ee) {
-        logger.error(" retrieveFromDB(), DB query failed. query= " + query + "\n ERROR " + ee);
+        if (logger.isErrorEnabled()) {
+          logger.error(" retrieveFromDB(), DB query failed. query= " +
+                       query +
+                       "\n ERROR " +
+                       ee);
+        }
         return null;
       } // try
     } // if
@@ -191,7 +215,9 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
 
   protected String getNomenclature(String type_id, String type) {
     String nomen = null;
-    logger.debug("getNomenclature() for type " + type_id);
+    if (logger.isDebugEnabled()) {
+      logger.debug("getNomenclature() for type " + type_id);
+    }
     Vector pgs = null;
     // skip whole query process
     if (type.equals("BulkPOL")) {
@@ -208,8 +234,12 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
     // create query
     String query = null;
     if (type.equals("Ammunition")) {
-      query = substituteNSN((String) fileParameters_.get("classVData"), consumer_id);
-      logger.debug("For ammo, use query " + query);
+      query =
+          substituteNSN((String) fileParameters_.get("classVData"),
+                        consumer_id);
+      if (logger.isDebugEnabled()) {
+        logger.debug("For ammo, use query " + query);
+      }
     } else if (type.equals("Consumable")) {
       //			query = substituteNSN ((String) fileParameters_.get ("classIXData"), consumer_id);
 
@@ -219,7 +249,9 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
       //String my_consumer_id = "9150009857236";
 
       // CDW: Original query and substitute
-      query = substituteNSN((String) fileParameters_.get("classIXData"), consumer_id);
+      query =
+          substituteNSN((String) fileParameters_.get("classIXData"),
+                        consumer_id);
 
       // CDW: Uses NSN for Hydraulic Fluid
       //query = "select nomenclature, ui, price, cube, weight from header where nsn='"+my_consumer_id+"'";
@@ -227,26 +259,37 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
       // CDW: Uses current NSN with the info for Hydraulic Fluid
       //query = "select " + consumer_id + ", nomenclature from header where nsn='"+my_consumer_id+"'";
 
-      logger.debug("For consumable, use query " + query);
+      if (logger.isDebugEnabled()) {
+        logger.debug("For consumable, use query " + query);
+      }
     } else if (type.startsWith(MEIPrototypeProvider.LEVEL2)) {
       pgs = addLevel2Pgs(type);
       nomen = type + " asset";
       if (pgs != null) {
-        propertyGroupTable.put (type_id, pgs);
+        propertyGroupTable.put(type_id, pgs);
       }
       return nomen;
     } else if (type.equals("PackagedPOL")) {
-      query = substituteNSN((String) fileParameters_.get("classIIIPackagedData"), consumer_id);
-      logger.debug("For pack pol, use query " + query);
+      query =
+          substituteNSN((String) fileParameters_.get("classIIIPackagedData"),
+                        consumer_id);
+      if (logger.isDebugEnabled()) {
+        logger.debug("For pack pol, use query " + query);
+      }
     } else {
-      logger.error("getNomenclature(), unrecognized type " +
-                   type + " for " + consumer_id);
+      if (logger.isErrorEnabled()) {
+        logger.error("getNomenclature(), unrecognized type " +
+                     type + " for " + consumer_id);
+      }
       return null;
     } // if
 
     // if query not found, return null
     if (query == null) {
-      logger.error("getConsumableNomenclature() Query not found for " + consumer_id);
+      if (logger.isErrorEnabled()) {
+        logger.error("getConsumableNomenclature() Query not found for " +
+                     consumer_id);
+      }
       return null;
     } // if
 
@@ -255,16 +298,27 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
     try {
       result = executeQuery(query);
     } catch (Exception ee) {
-      logger.error(
-          "getConsumableNomenclature(), DB query failed. query= " + query + "\n ERROR " + ee);
+      if (logger.isErrorEnabled()) {
+        logger.error("getConsumableNomenclature(), DB query failed. query= " +
+                     query +
+                     "\n ERROR " +
+                     ee);
+      }
       return null;
     } // try
     if (result.isEmpty()) {
       // PAS not sure why, but this seems to be normal
-      logger.debug("getConsumableNomenclature() no result for " + type_id + " using " + query);
+      if (logger.isDebugEnabled()) {
+        logger.debug("getConsumableNomenclature() no result for " +
+                     type_id +
+                     " using " +
+                     query);
+      }
       return null;
     } else {
-      logger.debug("Got a result:" + result);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Got a result:" + result);
+      }
     } // if
 
     // parse results
@@ -273,25 +327,35 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
 
     if (type.equals("Ammunition")) {
       pgs = parseAmmunitionRow(row);
-      logger.debug("adding pgs for ammo");
+      if (logger.isDebugEnabled()) {
+        logger.debug("adding pgs for ammo");
+      }
     } else if (type.equals("Consumable")) {
       pgs = parseConsumableRow(row);
-      logger.debug("adding pgs for consumable");
+      if (logger.isDebugEnabled()) {
+        logger.debug("adding pgs for consumable");
+      }
     } else if (type.equals("PackagedPOL")) {
       pgs = parsePackagedPOLRow(row);
-      logger.debug("adding pgs for pack pol");
+      if (logger.isDebugEnabled()) {
+        logger.debug("adding pgs for pack pol");
+      }
     } // if
 
     if (pgs != null) {
       propertyGroupTable.put(type_id, pgs);
     } // if
 
-    logger.debug("returning nomen " + nomen);
+    if (logger.isDebugEnabled()) {
+      logger.debug("returning nomen " + nomen);
+    }
     return nomen;
   } // getNomenclature
 
   private Vector parseConsumableRow(Object row[]) {
-    logger.debug("parseConsumableRow()");
+    if (logger.isDebugEnabled()) {
+      logger.debug("parseConsumableRow()");
+    }
     String unit_of_issue = (String) row[1];
     double cost = ((BigDecimal) row[2]).doubleValue();
     double volume = ((BigDecimal) row[3]).doubleValue();
@@ -421,23 +485,33 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
   } // createPhysicalPGs
 
   public void fillProperties(Asset anAsset) {
-    logger.debug("fillProperties() for " + anAsset);
+    if (logger.isDebugEnabled()) {
+      logger.debug("fillProperties() for " + anAsset);
+    }
     Vector pgs = null;
-    if ((anAsset instanceof Ammunition) || (anAsset instanceof Level2Ammunition) ||
+    if ((anAsset instanceof Ammunition) ||
+        (anAsset instanceof Level2Ammunition) ||
         (anAsset instanceof BulkPOL) ||
         (anAsset instanceof PackagedPOL) ||
         (anAsset instanceof Consumable)) {
-      String typeID = anAsset.getTypeIdentificationPG().getTypeIdentification();
+      String typeID = anAsset.getTypeIdentificationPG()
+          .getTypeIdentification();
       pgs = (Vector) propertyGroupTable.get(typeID);
-      logger.debug("typeID " + typeID);
+      if (logger.isDebugEnabled()) {
+        logger.debug("typeID " + typeID);
+      }
     }  // if
     if ((pgs != null) && !pgs.isEmpty()) {
-      logger.debug("ready");
+      if (logger.isDebugEnabled()) {
+        logger.debug("ready");
+      }
       Enumeration pgs_enum = pgs.elements();
       while (pgs_enum.hasMoreElements()) {
         NewPropertyGroup pg = (NewPropertyGroup) pgs_enum.nextElement();
         anAsset.setPropertyGroup(pg);
-        logger.debug("setting PG " + pg);
+        if (logger.isDebugEnabled()) {
+          logger.debug("setting PG " + pg);
+        }
       } // while
     } // if
   } // fillProperties

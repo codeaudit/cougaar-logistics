@@ -146,7 +146,10 @@ public class SubsistenceConsumerBG extends ConsumerBG {
           params.add(parentPlugin.getScheduleUtils().trimObjectSchedule(sched, span));
         }
       } else {
-        logger.error("getParameterSchedule: unknown predicate "+predicate);
+        if (logger.isErrorEnabled()) {
+          logger.error("getParameterSchedule: unknown predicate " +
+                       predicate);
+        }
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
@@ -245,7 +248,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       quantity = ((Double) obj).doubleValue();
     } else {
       if (obj != null) {
-        logger.debug ( "Bad param - expected quantity got " + obj);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Bad param - expected quantity got " + obj);
+        }
       } // if
       return null;
     } // if
@@ -255,7 +260,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       act = (OrgActivity) obj;
     } else {
       if (obj != null) {
-        logger.debug ( "Bad param - expected OrgActivity got " + obj);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Bad param - expected OrgActivity got " + obj);
+        }
       } // if
       return null;
     } // if
@@ -271,7 +278,9 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
     PackagePG ppg = (PackagePG) asset.searchForPropertyGroup(PackagePG.class);
     if (ppg == null) {
-      logger.error("No PackagePG on "+identifier);
+      if (logger.isErrorEnabled()) {
+        logger.error("No PackagePG on " + identifier);
+      }
     }
     //String type = null;
     double resource_count = 0;
@@ -292,63 +301,89 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       
       // Optempo does not over rule
       if (params.size() < 3) {
-        logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
+        if (logger.isErrorEnabled()) {
+          logger.error("Class I ose array in getRate() is missing element " +
+                       2 +
+                       " (meal)");
+        }
       } else {
 	if (params.get(2) != null) {
-	  logger.debug( " meal params is " +
-			params.get(2) + " resource is " + identifier);
-	  if (((HashMap) params.get(2)).containsKey(identifier)) {
-	    // Meals
-	    resource_count += ((Double) ((HashMap)
-					 params.get(2)).get(identifier)).doubleValue();
-	    logger.debug(identifier+" rate is "+resource_count);
-	  } // if
-	  // DEBUG
-	  else {
-	    logger.debug("No meal rates for "+identifier);
-	  }
-	} // if non null params(2)
+      if (logger.isDebugEnabled()) {
+        logger.debug(" meal params is " +
+                     params.get(2) + " resource is " + identifier);
+      }
+      if (((HashMap) params.get(2)).containsKey(identifier)) {
+        // Meals
+        resource_count += ((Double) ((HashMap)
+            params.get(2)).get(identifier)).doubleValue();
+        if (logger.isDebugEnabled()) {
+          logger.debug(identifier + " rate is " + resource_count);
+        }
+      } // if
+      // DEBUG
+      else {
+        if (logger.isDebugEnabled()) {
+          logger.debug("No meal rates for " + identifier);
+        }
+      }
+    } // if non null params(2)
 
 	// Enhancements policy
 	if (params.size() >= 4 && params.get(3) != null) {
 	  if (((HashMap) params.get(3)).containsKey(identifier)) {
-	    // Meals
-	    resource_count += ((Double) ((HashMap)
-					 params.get(3)).get(identifier)).doubleValue();
-	    logger.debug ( " enhance params is " + ((Double)
-						    ((HashMap) params.get(3)).get (identifier)).doubleValue());
-	  }
+        // Meals
+        resource_count += ((Double) ((HashMap)
+            params.get(3)).get(identifier)).doubleValue();
+        if (logger.isDebugEnabled()) {
+          logger.debug(" enhance params is " +
+                       ((Double)
+              ((HashMap) params.get(3)).get(identifier)).doubleValue());
+        }
+      }
 	}
       } // if have at least thru params(3)      
     } // end of case for null keys
 
     // Water
     if (params.size() < 5) {
-      logger.error("Class I ose array in getRate() is missing element "+5+" water");
+      if (logger.isErrorEnabled()) {
+        logger.error("Class I ose array in getRate() is missing element " +
+                     5 +
+                     " water");
+      }
     } else {
       if (params.get(4) != null) {
         if (((HashMap) params.get(4)).containsKey(identifier)) {
           // water  public static HashMap cachedDBValues = new HashMap();
 
           resource_count += ((Double) ((HashMap)
-              params.get (4)).get(identifier)).doubleValue();
-          logger.debug ( " water params is " + ((Double) ((HashMap)
-              params.get(4)).get (identifier)).doubleValue());
+              params.get(4)).get(identifier)).doubleValue();
+          if (logger.isDebugEnabled()) {
+            logger.debug(" water params is " + ((Double) ((HashMap)
+                params.get(4)).get(identifier)).doubleValue());
+          }
         } // if
       } // if
     } // if
 
     if (resource_count > 0) {
       double total =
-          Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity);
+          Math.ceil(resource_count * (1.0 / ppg.getCountPerPack()) *
+                    quantity);
       result = CountRate.newEachesPerDay(total);
       RationPG rpg = (RationPG)
           asset.searchForPropertyGroup(RationPG.class);
-      logger.debug ("\n THE rate is " +
-                    CountRate.newEachesPerDay (total) + " for asset " +
-                    identifier + " the ration type is " + rpg.getRationType());
-      logger.debug ( " Unit of Issue  is " + ppg.getUnitOfIssue()
+      if (logger.isDebugEnabled()) {
+        logger.debug("\n THE rate is " +
+                     CountRate.newEachesPerDay(total) +
+                     " for asset " +
+                     identifier + " the ration type is " +
+                     rpg.getRationType());
+      }
+      if (logger.isDebugEnabled()) {
+        logger.debug(" Unit of Issue  is " + ppg.getUnitOfIssue()
                      + " count per pack" + ppg.getCountPerPack());
+      }
     } // if
     return result;
   } // getRate
@@ -366,8 +401,10 @@ public class SubsistenceConsumerBG extends ConsumerBG {
         if (consumedItems == null){
           consumedItems = parentPlugin.generateRationList();
           if (consumedItems.isEmpty()) {
-            logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-                         myPG.getMei()+", "+supplyType);
+            if (logger.isDebugEnabled()) {
+              logger.debug("getConsumed(): Database query returned EMPTY result set for " +
+                           myPG.getMei() + ", " + supplyType);
+            }
           } else {
             cachedDBValues.put(typeId, consumedItems);
           }

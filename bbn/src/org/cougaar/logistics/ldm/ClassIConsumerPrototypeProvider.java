@@ -138,7 +138,9 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
       scheduleUtils = new ScheduleUtils(this);
       queryService = getBlackboardQueryService(this);
       if (queryService == null) {
-        logger.error("Unable to get query service");
+        if (logger.isErrorEnabled()) {
+          logger.error("Unable to get query service");
+        }
       }
     }
   }
@@ -176,7 +178,9 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
           proto = asset.getPrototype();
         }
         if (proto == null) {
-          logger.error("no prototype for " + asset);
+          if (logger.isErrorEnabled()) {
+            logger.error("no prototype for " + asset);
+          }
         }
         if ((proto != null) && (!good_prototypes.contains(proto))) {
           TypeIdentificationPG tip = asset.getTypeIdentificationPG();
@@ -189,10 +193,14 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
                 logger.debug("Rehydrated asset " + asset + " w/ proto " + proto);
               }
             } else {
-              logger.error("cannot rehydrate " + proto + " no typeId");
+              if (logger.isErrorEnabled()) {
+                logger.error("cannot rehydrate " + proto + " no typeId");
+              }
             }
           } else {
-            logger.error("cannot rehydrate " + proto + " no typeIdPG");
+            if (logger.isErrorEnabled()) {
+              logger.error("cannot rehydrate " + proto + " no typeIdPG");
+            }
           }
         }
       } // end while loop
@@ -268,7 +276,9 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
       if (ration != null) {
         list.add(ration);
       } else {
-        logger.error(" Asset prototype is null");
+        if (logger.isErrorEnabled()) {
+          logger.error(" Asset prototype is null");
+        }
       } // if
     } // for
     return list;
