@@ -28,6 +28,8 @@ import org.cougaar.core.mts.*;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
@@ -83,16 +85,13 @@ public class DemandForecastPlugin extends ComponentPlugin
     private GenProjExpanderIfc generateProjectionsExpander;
     //  private SchedulerModule planningScheduler;
 
+    private boolean processedDetReq=false;
+
 
     public final String SUPPLY_TYPE = "SUPPLY_TYPE";
     public final String SUPPLY_PG_CLASS = "SUPPLY_PG_CLASS";
     public final String REQ_EXPANDER = "REQ_EXPANDER";
     public final String PROJ_EXPANDER = "PROJ_EXPANDER";
-
-
-    // OPlan variable
-    LogisticsOPlan logOPlan = null;
-
 
     private transient ArrayList newRefills = new ArrayList();
 
@@ -196,23 +195,38 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     protected void execute() {
 
-	Collection detReqs = detReqSubscription.getAddedCollection();
-	Collection newAssets = assetsWithPGSubscription.getAddedCollection();
-
+	if((orgActivities.getCollection().isEmpty()) || (detReqSubscription.getCollection().isEmpty())) {
+	    processedDetReq = false;
+	    return;
+	}
+	
+	//There should be both a determineRequirements task
+	//and an oplan before kicking off the expander for the first time.
+	//from then on out we should be catching additional assets added, or removed.
+	//It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
+	
 	//if there is a new determine requirements task or also new assets do this
-	if(!detReqs.isEmpty()) {
-	    processDetReq(detReqs,
+	if(((!orgActivities.getAddedCollection().isEmpty()) &&
+	    (!processedDetReq)) ||
+	   (!detReqSubscription.getAddedCollection().isEmpty())) {
+	    processDetReq(detReqSubscription.getCollection(),
 			  assetsWithPGSubscription.getCollection());
 	}
 	//otherwise just issue a new 
-	else if(!newAssets.isEmpty()) {
-	    processDetReq(detReqSubscription.getCollection(),newAssets);
+	else if(!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
+	    processDetReq(detReqSubscription.getCollection(),
+			  assetsWithPGSubscription.getAddedCollection());
 	}
-
+	else if(!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
+	    removeFromDetReq(detReqSubscription.getCollection(),
+			     assetsWithPGSubscription.getRemovedCollection());
+	    
+	}
+	
         if (myOrganization == null) {
             myOrganization = getMyOrganization(selfOrganizations.elements());
         }
-
+	
         if (myOrganization == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("\n DemandForecastPlugin " + supplyType +
@@ -221,25 +235,18 @@ public class DemandForecastPlugin extends ComponentPlugin
             }
             return;
         }
-
-
-        if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
-            Collection c = logisticsOPlanSubscription.getCollection();
-            for (Iterator i = c.iterator(); i.hasNext();) {
-                logOPlan = (LogisticsOPlan) i.next();
-                break;
-            }
-        }
+	
     }
+
+
+    /** Subscription for aggregatable support requests. **/
+    private IncrementalSubscription orgActivities;
 
     /** Subscription for aggregatable support requests. **/
     private IncrementalSubscription detReqSubscription;
 
      /** Subscription for the Organization(s) in which this plugin resides **/
     private IncrementalSubscription selfOrganizations;
-
-    /** Subscription for LogisticsOPlan object **/
-    private IncrementalSubscription logisticsOPlanSubscription;
 
     /** Subscription for all assets with plugin parameters PG class attached to it **/
     private IncrementalSubscription assetsWithPGSubscription;
@@ -248,9 +255,9 @@ public class DemandForecastPlugin extends ComponentPlugin
 
         selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
-        detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
+	orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPredicate);
 
-        logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+        detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
 
 	assetsWithPGSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
     }
@@ -262,6 +269,12 @@ public class DemandForecastPlugin extends ComponentPlugin
             }
             return false;
         }
+    };
+
+    private static UnaryPredicate orgActivityPredicate = new UnaryPredicate() {
+	public boolean execute(Object o) {
+	    return (o instanceof OrgActivity);
+	}
     };
 
 
@@ -307,16 +320,6 @@ public class DemandForecastPlugin extends ComponentPlugin
             return false;
         } // execute
     } // DetReqPredicate
-
-
-    /**
-     Selects the LogisticsOPlan objects
-     **/
-    private static class LogisticsOPlanPredicate implements UnaryPredicate {
-        public boolean execute(Object o) {
-            return o instanceof LogisticsOPlan;
-        }
-    }
 
 
     /**
@@ -398,6 +401,22 @@ public class DemandForecastPlugin extends ComponentPlugin
       // empty expansion (wf) for the maintain inventory for each item tasks
       synchronized(detReq) {
           determineRequirementsExpander.expandDetermineRequirements(detReq,assets);
+          processedDetReq = true;
+      }
+    }
+  }
+
+    private void removeFromDetReq(Collection addedDRs, Collection removedAssets) {
+    // with one oplan we should only have one DR for MI.
+    Iterator drIt = addedDRs.iterator();
+    if (drIt.hasNext()) {
+      Task detReq = (Task) drIt.next();
+      //synch on the detReq task so only one instance of this plugin
+      // checks and creates a single agg task and then creates an
+      // empty expansion (wf) for the maintain inventory for each item tasks
+      synchronized(detReq) {
+          determineRequirementsExpander.removeSubtasksFromDetermineRequirements(detReq,removedAssets);
+          processedDetReq = true;
       }
     }
   }
@@ -520,19 +539,6 @@ public class DemandForecastPlugin extends ComponentPlugin
         return myOrg;
     }
 
-    public long getOPlanStartTime() {
-        return logOPlan.getStartTime();
-    }
-
-    public long getOPlanEndTime() {
-        return logOPlan.getEndTime();
-    }
-
-    public long getOPlanArrivalInTheaterTime() {
-        return logOPlan.getArrivalTime();
-    }
-
-
     private Role getRole(String supply_type) {
         if (supply_type.equals("Ammunition"))
             return Constants.Role.AMMUNITIONPROVIDER;
@@ -562,12 +568,10 @@ public class DemandForecastPlugin extends ComponentPlugin
     public void automatedSelfTest() {
         if (logger.isErrorEnabled()) {
             if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
-            if (logOPlan == null)
-                logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
             if (myOrganization == null)
                 logger.error("Missing myorganization");
         }
     }
-
 }
+
 
