@@ -9,4 +9,4 @@
 java.Xdebug 
 java.Xnoagent 
 compiler=NONE 
-java.Xrunjdwp:transport dt_socket,server=y,suspend=n,address=5005
+java.Xrunjdwp:transport dt_socket,server=y,suspend=n,address=8001
