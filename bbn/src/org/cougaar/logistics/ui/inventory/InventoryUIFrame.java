@@ -122,6 +122,11 @@ public class InventoryUIFrame extends JFrame
     initializeUIFrame(new HashMap());
   }
 
+  public InventoryUIFrame(String frameTitle) {
+    super(frameTitle);
+    initializeUIFrame(new HashMap());
+  }
+
   public InventoryUIFrame(String[] args) {
     super("Inventory GUI");
     initializeUIFrame(readParameters(args));
