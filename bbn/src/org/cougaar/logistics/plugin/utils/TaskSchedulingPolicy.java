@@ -49,12 +49,24 @@ public class TaskSchedulingPolicy {
   // list of Predicates with 0th element corresponding to priority 0, etc.
   private Predicate[] priorityTests;
 
-  // list of TimeSpans specifying phases of processing for tasks
-  private TimeSpan[] phases;
+  // specifies phases of processing of tasks, including prioritization
+  private PriorityPhaseMix[] ordering;
 
   /** Like UnaryPredicate except that object must always be a Task */
   public static interface Predicate {
     public boolean execute (Task t);
+  }
+
+  /** class that allows specification of a priority and phase jointly */
+  public static class PriorityPhaseMix {
+    private int priority;
+    private TimeSpan timeSpan;
+    public PriorityPhaseMix (int priority, TimeSpan timeSpan) {
+      this.priority = priority;
+      this.timeSpan = timeSpan;
+    }
+    public int getPriority()  { return priority; }
+    public TimeSpan getTimeSpan()  { return timeSpan; }
   }
 
   /**
@@ -65,19 +77,34 @@ public class TaskSchedulingPolicy {
    * of priority i.
    */
   public TaskSchedulingPolicy (Predicate[] priorityTests) {
-    this (priorityTests, null);
+    this.priorityTests = priorityTests;
+    ordering = new PriorityPhaseMix [priorityTests.length];
+    for (int i = 0; i < ordering.length; i++)
+      ordering[i] = new PriorityPhaseMix (i, null);
   }
 
   /**
    * Constructor when using just phases and not priorities
-   * @param phases A set of time intervals in order of how to hanlde
+   * @param phases A set of time intervals in order of how to handle
    */
   public TaskSchedulingPolicy (TimeSpan[] phases) {
-    this (new Predicate[] { PASSALL }, phases);
+    priorityTests = new Predicate[] { PASSALL };
+    ordering = new PriorityPhaseMix [phases.length];
+    for (int i = 0; i < ordering.length; i++)
+      ordering[i] = new PriorityPhaseMix (0, phases[i]);
   }
 
-  /** Specifies a time period over which to process tasks */
-  public static class TimePeriod implements TimeSpan {
+  /**
+   * Constructor specifying both priorities and phases
+   */
+  public TaskSchedulingPolicy (Predicate[] priorityTests,
+                               PriorityPhaseMix[] ordering) {
+    this.priorityTests = priorityTests;
+    this.ordering = ordering;
+  }
+
+  /* Specifies a time period over which to process tasks */
+  private static class TimePeriod implements TimeSpan {
     private long start;
     private long end;
     public TimePeriod (long start, long end) {
@@ -91,15 +118,6 @@ public class TaskSchedulingPolicy {
   /** Get a time span object */
   public static TimeSpan makeTimeSpan (long start, long end) {
     return new TimePeriod (start, end);
-  }
-
-  /**
-   * Constructor specifying both priorities and phases
-   */
-  public TaskSchedulingPolicy (Predicate[] priorityTests,
-                               TimeSpan[] phases) {
-    this.priorityTests = priorityTests;
-    this.phases = phases;
   }
 
   /**
@@ -143,12 +161,17 @@ public class TaskSchedulingPolicy {
     }
   }
 
-  public TimeSpan[] getPhases() {
-    return phases;
+  public PriorityPhaseMix[] getOrdering() {
+    return ordering;
   }
 
-  public int numPhases() {
-    return ((phases == null) || (phases.length == 0)) ? 1 : phases.length;
+  /** number of different phases for a particular priority */
+  public int numPhases (int priority) {
+    int count = 0;
+    for (int i = 0; i < ordering.length; i++)
+      if (ordering[i].getPriority() == priority)
+        count++;
+    return count;
   }
 
   /** number of different priorities */

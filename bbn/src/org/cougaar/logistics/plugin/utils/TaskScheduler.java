@@ -41,8 +41,12 @@ import java.util.*;
  *  so that tasks are not cleared away as they normally are from
  *  a subscription (assuming the plugin properly calls initForExecuteCycle
  *  each time through).
- *  Once the plugin has finished processing a particular priority,
- *  it should clear this list explicitly.
+ *  The TaskScheduler handles the bookkeeping associated with
+ *  stepping through the various phases of processing, based on
+ *  both priorities and time intervals, specified in the policy.
+ *  The plugin must call initForExecuteCycle before processing the
+ *  tasks during each execute cycle and finishedExecuteCycle after
+ *  processing the tasks.
  **/
 
 public class TaskScheduler {
@@ -58,6 +62,9 @@ public class TaskScheduler {
   private ArrayList[][] addedLists;
   private ArrayList[][] changedLists;
   private ArrayList[][] removedLists;
+
+  // current phase of processing
+  private int currentPhase;
   
   /**
    * Call this in the plugin's setupSubscriptions method
@@ -76,6 +83,7 @@ public class TaskScheduler {
     addedLists = setupLists();
     changedLists = setupLists();
     removedLists = setupLists();
+    resetCurrentPhase();
     subscriptions = new IncrementalSubscription [policy.numPriorities()];
     for (int i = 0; i < subscriptions.length; i++) 
       subscriptions[i] = (IncrementalSubscription)
@@ -85,8 +93,12 @@ public class TaskScheduler {
   private ArrayList[][] setupLists() {
     ArrayList[][] lists = new ArrayList [policy.numPriorities()][];
     for (int i = 0; i < policy.numPriorities(); i++) {
-      lists[i] = new ArrayList [policy.numPhases()];
-      for (int j = 0; j < policy.numPhases(); j++)
+      int numPhases = policy.numPhases (i);
+      if (numPhases == 0)
+        logger.error ("There are no phases for priority " + i +
+                      " in a task scheduler.");
+      lists[i] = new ArrayList [numPhases];
+      for (int j = 0; j < numPhases; j++)
         lists[i][j] = new ArrayList();
     }
     return lists;
@@ -108,28 +120,44 @@ public class TaskScheduler {
    */
   public void initForExecuteCycle() {
     for (int i = 0; i < addedLists.length; i++) {
-      addedLists[i][0].addAll (subscriptions[i].getAddedCollection());
-      changedLists[i][0].addAll (subscriptions[i].getChangedCollection());
-      removedLists[i][0].addAll (subscriptions[i].getRemovedCollection());
+      addItems (addedLists[i], subscriptions[i].getAddedCollection());
+      addItems (changedLists[i], subscriptions[i].getChangedCollection());
+      addItems (removedLists[i], subscriptions[i].getRemovedCollection());
     }
   }
 
-  /**
-   * Plugins call this at end of execute cycle if they want to be
-   * requeued for execution and not have to wait for new data to
-   * trigger execution.
-   */
-  public void requeueForExecute() {
-    blackboard.signalClientActivity();
+  private void addItems (ArrayList[] lists, Collection items) {
+    if (lists.length == 0)
+      return;
+    lists[0].addAll (items);
+    if (! items.isEmpty())
+      currentPhase = 0;
   }
 
   /**
-   * Only call this method when you want to clear out all the
-   * state information from the task scheduler
+   * Plugins call this at end of execute cycle
    */
-  public void clearAllCollections() {
-    for (int i = 0; i < policy.numPriorities(); i++) {
-      for (int j = 0; j < policy.numPhases(); j++) {
+  public void finishedExecuteCycle() {
+    shiftCollections();
+    currentPhase++;
+    // only requeue for execution if more to do
+    if (currentPhase < policy.getOrdering().length)
+      blackboard.signalClientActivity();
+    else
+      resetCurrentPhase();
+  }
+
+  private void resetCurrentPhase() {
+    currentPhase = policy.getOrdering().length;
+  }
+
+  /**
+   * Clear out all the state information from the task scheduler
+   */
+  public void clearState() {
+    resetCurrentPhase();
+    for (int i = 0; i < addedLists.length; i++) {
+      for (int j = 0; j < addedLists[i].length; j++) {
         addedLists[i][j].clear();
         changedLists[i][j].clear();
         removedLists[i][j].clear();
@@ -137,130 +165,81 @@ public class TaskScheduler {
     }
   }
 
+  /** check if anything to do in this scheduler */
+  public boolean isEmpty() {
+    return currentPhase >= policy.getOrdering().length;
+  }
+
+  /** Tell the priority associated with the current processing phase */
+  public int getCurrentPriority() {
+    if (isEmpty())
+      return TaskSchedulingPolicy.UNKNOWN_PRIORITY;
+    return policy.getOrdering()[currentPhase].getPriority();
+  }
+
   /**
-   * Plugins must explicitly clear the added, changed and removed task lists
-   * when they are done using them with this method
-   * @param priority Lists for which priority level to clear
+   * Tell the time interval associate with the current phase
    */
-  public void clearCollections (int priority) {
-    clearCollections (priority, 0);
+  public TimeSpan getCurrentTimeSpan() {
+    if (isEmpty())
+      return null;
+    return policy.getOrdering()[currentPhase].getTimeSpan();
   }
 
-  public void clearCollectionsForPhase (int phase) {
-    clearCollections (0, phase);
+  private int getCurrentPhase() {
+    int pri = getCurrentPriority();
+    int phase = 0;
+    for (int i = 0; i < currentPhase; i++)
+      if (policy.getOrdering()[i].getPriority() == pri)
+        phase++;
+    return phase;
   }
 
-  public void clearCollections (int priority, int phase) {
-    if (priority >= policy.numPriorities()) {
-      logger.error ("Bad priority level " + priority);
-      return;
+  private void shiftCollections() {
+    int pri = getCurrentPriority();
+    int phase = getCurrentPhase();
+    if (phase != (addedLists[pri].length - 1)) {
+      addedLists[pri][phase+1].addAll (addedLists[pri][phase]);
+      changedLists[pri][phase+1].addAll (changedLists[pri][phase]);
+      removedLists[pri][phase+1].addAll (removedLists[pri][phase]);
     }
-    if (phase >= policy.numPhases()) {
-      logger.error ("Bad phase level " + phase);
-      return;
-    }
-    if (phase != (policy.numPhases() - 1)) {
-      // do a phase shift
-      addedLists[priority][phase+1].addAll (addedLists[priority][phase]);
-      changedLists[priority][phase+1].addAll (changedLists[priority][phase]);
-      removedLists[priority][phase+1].addAll (removedLists[priority][phase]);
-    }
-    addedLists[priority][phase].clear();
-    changedLists[priority][phase].clear();
-    removedLists[priority][phase].clear();
+    addedLists[pri][phase].clear();
+    changedLists[pri][phase].clear();
+    removedLists[pri][phase].clear();
   }
 
   /** All added tasks at given priority since last cleared */
-  public Collection getAddedCollection (int priority) {
-    return addedLists[priority][0];
-  }
-
-  /** All added tasks at given phase since last cleared */
-  public Collection getAddedCollectionForPhase (int phase) {
-    return addedLists[0][phase];
-  }
-
-  /** All added tasks at given priority and phase since last cleared */
-  public Collection getAddedCollection (int priority, int phase) {
-    return addedLists[priority][phase];
+  public Collection getAddedCollection() {
+    if (isEmpty())
+      return new ArrayList(0);
+    return addedLists[getCurrentPriority()][getCurrentPhase()];
   }
 
   /** All changed tasks at given priority since last cleared */
-  public Collection getChangedCollection (int priority) {
-    return changedLists[priority][0];
-  }
-
-  /** All changed tasks at given phase since last cleared */
-  public Collection getChangedCollectionForPhase (int phase) {
-    return changedLists[0][phase];
-  }
-
-  /** All changed tasks at given priority and phase since last cleared */
-  public Collection getChangedCollection (int priority, int phase) {
-    return changedLists[priority][phase];
+  public Collection getChangedCollection() {
+    if (isEmpty())
+      return new ArrayList(0);
+    return changedLists[getCurrentPriority()][getCurrentPhase()];
   }
 
   /** All removed tasks at given priority since last cleared */
-  public Collection getRemovedCollection (int priority) {
-    return removedLists[priority][0];
-  }
-
-  /** All removed tasks at given phase since last cleared */
-  public Collection getRemovedCollectionForPhase (int phase) {
-    return removedLists[0][phase];
-  }
-
-  /** All removed tasks at given priority and phase since last cleared */
-  public Collection getRemovedCollection (int priority, int phase) {
-    return removedLists[priority][phase];
+  public Collection getRemovedCollection() {
+    if (isEmpty())
+      return new ArrayList(0);
+    return removedLists[getCurrentPriority()][getCurrentPhase()];
   }
 
   /** All tasks in the lists */
   public Iterator getAllTasks() {
     ArrayList al = new ArrayList();
     for (int i = 0; i < addedLists.length; i++) {
-      for (int j = 0; j < addedLists[0].length; j++) {
+      for (int j = 0; j < addedLists[i].length; j++) {
         al.addAll (addedLists[i][j]);
         al.addAll (changedLists[i][j]);
         al.addAll (removedLists[i][j]);
       }
     }
     return al.iterator();
-  }
-
-  /**
-   * Tells the highest priority for which there are entries in
-   * the subscription
-   */
-  public int highestPriorityWithEntries() {
-    for (int i = 0; i < addedLists.length; i++)
-      for (int j = 0; j < addedLists[0].length; j++)
-        if ((addedLists[i][j].size() > 0) ||
-            (changedLists[i][j].size() > 0) ||
-            (removedLists[i][j].size() > 0))
-          return i;
-    return TaskSchedulingPolicy.UNKNOWN_PRIORITY;
-  }
-
-  /**
-   * Tells the earliest phase for which there are entries in
-   *  the subscription
-   */
-  public int earliestPhaseWithEntries() {
-    for (int j = 0; j < addedLists[0].length; j++)
-      for (int i = 0; i < addedLists.length; i++)
-        if ((addedLists[i][j].size() > 0) ||
-            (changedLists[i][j].size() > 0) ||
-            (removedLists[i][j].size() > 0))
-          return j;
-    return TaskSchedulingPolicy.UNKNOWN_PRIORITY;
-  }
-
-  /**
-   * Tell the time interval associate with a phase
-   */
-  public TimeSpan getTimeInterval (int phase) {
-    return policy.getPhases()[phase];
   }
 
 }
