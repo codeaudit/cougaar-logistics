@@ -110,20 +110,29 @@ public class AssetUtils {
     }
 
     public Enumeration getSupportingOrgs(Organization myOrg, Role role, long time) {
-        return getSupportingOrgs(myOrg, role, time, time);
+      RelationshipSchedule rel_sched = myOrg.getRelationshipSchedule();
+      Collection c = rel_sched.getMatchingRelationships(role, time);
+      Vector support_orgs = new Vector();
+      Iterator i = c.iterator();
+      Relationship r;
+      while (i.hasNext()) {
+        r = (Relationship)i.next();
+        support_orgs.add(rel_sched.getOther(r));
+      }
+      return support_orgs.elements();
     }
 
     public Enumeration getSupportingOrgs(Organization myOrg, Role role, long start, long end) {
-	RelationshipSchedule rel_sched = myOrg.getRelationshipSchedule();
-	Collection c = rel_sched.getMatchingRelationships(role, start, end);
-	Vector support_orgs = new Vector();
-	Iterator i = c.iterator();
-	Relationship r;
-	while (i.hasNext()) {
-	    r = (Relationship)i.next();
-	    support_orgs.add(rel_sched.getOther(r));
-	}
-	return support_orgs.elements();
+      RelationshipSchedule rel_sched = myOrg.getRelationshipSchedule();
+      Collection c = rel_sched.getMatchingRelationships(role, start, end);
+      Vector support_orgs = new Vector();
+      Iterator i = c.iterator();
+      Relationship r;
+      while (i.hasNext()) {
+        r = (Relationship)i.next();
+        support_orgs.add(rel_sched.getOther(r));
+      }
+      return support_orgs.elements();
     }
 
    public Enumeration getGeolocLocationAtTime(Organization org, long time) {
