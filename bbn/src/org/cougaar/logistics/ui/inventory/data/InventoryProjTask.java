@@ -48,17 +48,19 @@ public class InventoryProjTask extends InventoryTaskBase {
     protected double rate;
 
     public InventoryProjTask(String aParentUID,
-			     String myUID,
-			     String aVerb,
-			     String aForOrg,
-			     double aRate,
-			     long aStartTime, 
-			     long anEndTime) {
-	super(aParentUID,myUID,aVerb,aForOrg,aStartTime,anEndTime);
-	rate = aRate;
+                             String myUID,
+                             String aVerb,
+                             String aForOrg,
+                             double aRate,
+                             long aStartTime,
+                             long anEndTime) {
+        super(aParentUID, myUID, aVerb, aForOrg, aStartTime, anEndTime);
+        rate = aRate;
     }
 
-    public double getDailyRate() { return rate; }
+    public double getDailyRate() {
+        return rate;
+    }
 
 
     public String getHRHeader() {
@@ -70,39 +72,54 @@ public class InventoryProjTask extends InventoryTaskBase {
     }
 
 
-    public ArrayList explodeToDaily() {
-	ArrayList dailys = new ArrayList();
-	long currStartTime = startTime;
-	while(currStartTime < endTime) {
-	    long currEndTime = (currStartTime+TimeUtils.MSEC_PER_DAY)-1;
-	    dailys.add(new InventoryProjTask(parentUID,
-					     UID,
-					     verb,
-					     forOrg,
-					     rate,
-					     currStartTime,
-					     currEndTime));
-	    currStartTime = currEndTime + 1;
-	}
-	return dailys;
+    public ArrayList explodeToBuckets(long msecUnits, int numUnits) {
+        ArrayList bucketlys = new ArrayList();
+        long currStartTime = startTime;
+        double unitsPerDay = (double) msecUnits/TimeUtils.MSEC_PER_DAY;
+        double bucketRate = rate * unitsPerDay * numUnits;
+        while (currStartTime < endTime) {
+            long currEndTime = (currStartTime + (msecUnits * numUnits)) - 1;
+            bucketlys.add(new InventoryProjTask(parentUID,
+                                                UID,
+                                                verb,
+                                                forOrg,
+                                                bucketRate,
+                                                currStartTime,
+                                                currEndTime));
+            currStartTime = currEndTime + 1;
+        }
+        return bucketlys;
     }
 
+
+    public ArrayList explodeToBuckets(long bucketSize) {
+        ArrayList dailys = new ArrayList();
+        if (bucketSize >= TimeUtils.MSEC_PER_DAY) {
+            int numDays = (int) (bucketSize / TimeUtils.MSEC_PER_DAY);
+            return explodeToBuckets(TimeUtils.MSEC_PER_DAY, numDays);
+        } else {
+            int numHours = (int) (bucketSize / TimeUtils.MSEC_PER_HOUR);
+            return explodeToBuckets(TimeUtils.MSEC_PER_HOUR, numHours);
+        }
+    }
+
+
     public static InventoryProjTask createFromCSV(String csvString) {
-	String[] subStrings = csvString.split(SPLIT_REGEX);
-	
-	double aRate = (new Double(subStrings[RATE_INDEX])).doubleValue();
-	long aStartTime = -0L;
-	String startTimeStr = subStrings[START_TIME_INDEX].trim();
-	if(!(startTimeStr.equals(""))) {
-	    aStartTime = (new Long(startTimeStr)).longValue();
-	}
-	long anEndTime = (new Long(subStrings[END_TIME_INDEX])).longValue();
-	
-	InventoryProjTask newTask = new InventoryProjTask(subStrings[PARENT_UID_INDEX].trim(),
-						  subStrings[UID_INDEX].trim(),
-						  subStrings[VERB_INDEX].trim(),
-						  subStrings[FOR_INDEX].trim(),
-						  aRate,aStartTime,anEndTime);
+        String[] subStrings = csvString.split(SPLIT_REGEX);
+
+        double aRate = (new Double(subStrings[RATE_INDEX])).doubleValue();
+        long aStartTime = -0L;
+        String startTimeStr = subStrings[START_TIME_INDEX].trim();
+        if (!(startTimeStr.equals(""))) {
+            aStartTime = (new Long(startTimeStr)).longValue();
+        }
+        long anEndTime = (new Long(subStrings[END_TIME_INDEX])).longValue();
+
+        InventoryProjTask newTask = new InventoryProjTask(subStrings[PARENT_UID_INDEX].trim(),
+                                                          subStrings[UID_INDEX].trim(),
+                                                          subStrings[VERB_INDEX].trim(),
+                                                          subStrings[FOR_INDEX].trim(),
+                                                          aRate, aStartTime, anEndTime);
 
 	return newTask;
 
@@ -113,17 +130,17 @@ public class InventoryProjTask extends InventoryTaskBase {
     }
 
     public static void main(String[] args) {
-	Date now = new Date();
-	Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
-	InventoryProjTask task = InventoryProjTask.createFromCSV(now.getTime() + ",parent UID,UID, PROJECTSUPPLY,3-69-ARBN," + now.getTime() + "," +  (now.getTime() + (4*TimeUtils.MSEC_PER_DAY)) + "," + 23 +"\n");
-	logger.shout("InventoryProjTask is " + task);
-	InventoryChildProjTask[] expansion = InventoryChildProjTask.expandProjTask(task,
-										   2*TimeUtils.MSEC_PER_DAY);
-	logger.shout("ChildTasks are:");
-	for(int i=0; i < expansion.length; i++){
-	    logger.shout(expansion[i].toString());
-	}
-	
+        Date now = new Date();
+        Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
+        InventoryProjTask task = InventoryProjTask.createFromCSV(now.getTime() + ",parent UID,UID, PROJECTSUPPLY,3-69-ARBN," + now.getTime() + "," + (now.getTime() + (4 * TimeUtils.MSEC_PER_DAY)) + "," + 23 + "\n");
+        logger.shout("InventoryProjTask is " + task);
+        InventoryChildProjTask[] expansion = InventoryChildProjTask.expandProjTask(task,
+                                                                                   2 * TimeUtils.MSEC_PER_DAY);
+        logger.shout("ChildTasks are:");
+        for (int i = 0; i < expansion.length; i++) {
+            logger.shout(expansion[i].toString());
+        }
+
     }
 }
 

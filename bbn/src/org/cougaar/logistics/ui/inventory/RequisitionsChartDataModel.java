@@ -44,149 +44,148 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 
 import org.cougaar.util.TimeSpanSet;
 
-/** 
+/**
  * <pre>
- * 
- * The RequisitionsChartDataModel is the ChartDataModel for the 
+ *
+ * The RequisitionsChartDataModel is the ChartDataModel for the
  * all non projection tasks.   A Schedule of actuals and their
- * corresponding allocation results are given as the 
- * values to compute into the x and y coordinates for the 
- * chart.   
- * 
- * 
+ * corresponding allocation results are given as the
+ * values to compute into the x and y coordinates for the
+ * chart.
+ *
+ *
  * @see InventoryBaseChartDataModel
  *
  **/
 
-public class RequisitionsChartDataModel 
-            extends InventoryBaseChartDataModel {
+public class RequisitionsChartDataModel
+        extends InventoryBaseChartDataModel {
 
     protected String reqScheduleName;
     protected String reqARScheduleName;
 
-    public static final String REQUISITION_SERIES_LABEL="Requisition";
-    public static final String REQUISITION_ALLOCATION_SERIES_LABEL="Requisition Response";
-    public static final String REQUISITION_LEGEND="";
+    public static final String REQUISITION_SERIES_LABEL = "Requisition";
+    public static final String REQUISITION_ALLOCATION_SERIES_LABEL = "Requisition Response";
+    public static final String REQUISITION_LEGEND = "";
 
     public RequisitionsChartDataModel(String aReqScheduleName,
-				     String aReqARScheduleName) {
-	this(REQUISITION_LEGEND,aReqScheduleName,aReqARScheduleName);
+                                      String aReqARScheduleName) {
+        this(REQUISITION_LEGEND, aReqScheduleName, aReqARScheduleName);
     }
 
     public RequisitionsChartDataModel(String legendTitle,
-				     String reqSchedule,
-				     String reqARSchedule) {
-	this(null,reqSchedule,reqARSchedule,legendTitle);
+                                      String reqSchedule,
+                                      String reqARSchedule) {
+        this(null, reqSchedule, reqARSchedule, legendTitle);
     }
 
 
     public RequisitionsChartDataModel(InventoryData data,
-				     String reqSchedule,
-				     String reqARSchedule,
-				     String theLegendTitle) {
-	inventory = data;
-	legendTitle = theLegendTitle;
-	reqScheduleName = reqSchedule;
-	reqARScheduleName = reqARSchedule;
-	nSeries = 2;
-	scheduleNames = new String[2];
-	scheduleNames[0] = reqScheduleName;
-	scheduleNames[1] = reqARScheduleName;
-	seriesLabels = new String[2];
-	seriesLabels[0] = REQUISITION_SERIES_LABEL;
-	seriesLabels[1] = REQUISITION_ALLOCATION_SERIES_LABEL;
-	logger = Logging.getLogger(this);
-	initValues();
+                                      String reqSchedule,
+                                      String reqARSchedule,
+                                      String theLegendTitle) {
+        inventory = data;
+        legendTitle = theLegendTitle;
+        reqScheduleName = reqSchedule;
+        reqARScheduleName = reqARSchedule;
+        nSeries = 2;
+        scheduleNames = new String[2];
+        scheduleNames[0] = reqScheduleName;
+        scheduleNames[1] = reqARScheduleName;
+        seriesLabels = new String[2];
+        seriesLabels[0] = REQUISITION_SERIES_LABEL;
+        seriesLabels[1] = REQUISITION_ALLOCATION_SERIES_LABEL;
+        logger = Logging.getLogger(this);
+        initValues();
     }
 
 
-
     public void setValues() {
-	if(valuesSet) return;
-	setRequisitionValues();
-	valuesSet = true;
+        if (valuesSet) return;
+        setRequisitionValues();
+        valuesSet = true;
     }
 
     public void setRequisitionValues() {
 
-	if(inventory == null) {
-	    xvalues = new double[nSeries][0];
-	    yvalues = new double[nSeries][0];
-	    return;
-	}
+        if (inventory == null) {
+            xvalues = new double[nSeries][0];
+            yvalues = new double[nSeries][0];
+            return;
+        }
 
-	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
-	    inventory.getSchedules().get(reqScheduleName);
-	ArrayList requisitions = schedHeader.getSchedule();
-	schedHeader = (InventoryScheduleHeader) 
-	    inventory.getSchedules().get(reqARScheduleName);
-	ArrayList reqARs = schedHeader.getSchedule();
-   
-	computeCriticalNValues();
+        InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
+                inventory.getSchedules().get(reqScheduleName);
+        ArrayList requisitions = schedHeader.getSchedule();
+        schedHeader = (InventoryScheduleHeader)
+                inventory.getSchedules().get(reqARScheduleName);
+        ArrayList reqARs = schedHeader.getSchedule();
 
-	xvalues = new double[nSeries][nValues];
-	yvalues = new double[nSeries][nValues];
-	//initZeroYVal(nValues);
+        computeCriticalNValues();
 
-	for (int i = 0; i < nSeries; i++) {
-	    for (int j = 0; j < nValues; j++) {
-		xvalues[i][j] = minDay + (j * bucketDays);
-		yvalues[i][j] = 0;
-	    }
-	}
+        xvalues = new double[nSeries][nValues];
+        yvalues = new double[nSeries][nValues];
+        //initZeroYVal(nValues);
 
-	for(int i=0; i < requisitions.size() ; i++) {
-	    InventoryTask task = (InventoryTask) requisitions.get(i);
-	    long endTime = task.getEndTime();
-	    int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
-	    yvalues[0][endDay - minDay]+=task.getQty();
-	}	    
+        for (int i = 0; i < nSeries; i++) {
+            for (int j = 0; j < nValues; j++) {
+                xvalues[i][j] = minBucket + (j * bucketDays);
+                yvalues[i][j] = 0;
+            }
+        }
 
-	for(int i=0; i < reqARs.size() ; i++) {
-	    InventoryAR ar = (InventoryAR) reqARs.get(i);
-	    if(ar.isSuccess()) {
-		long endTime = ar.getEndTime();
-		int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
-		yvalues[1][endDay - minDay]+=ar.getQty();
-	    }
-	}	    
-	    
-	//MWD this is more expensive than it needs to be.
-	//Cheaper to go through through all InventoryTasks
-	//take the end time figure which day it goes into
-	//and sum the value in the array bucket - same for
-	//ARs - fix tommorow.  Probably don't even need 
-	//schedules for this.
-	
-	/***
-	 ** MWD Remove
+        for (int i = 0; i < requisitions.size(); i++) {
+            InventoryTask task = (InventoryTask) requisitions.get(i);
+            long endTime = task.getEndTime();
+            int endBucket = (int) computeBucketFromTime(endTime);
+            yvalues[0][endBucket - minBucket] += task.getQty();
+        }
 
-	 TimeSpanSet reqSchedule = new TimeSpanSet(requisitions);
-	 TimeSpanSet reqARSchedule = new TimeSpanSet(reqARs);
+        for (int i = 0; i < reqARs.size(); i++) {
+            InventoryAR ar = (InventoryAR) reqARs.get(i);
+            if (ar.isSuccess()) {
+                long endTime = ar.getEndTime();
+                int endBucket = (int) computeBucketFromTime(endTime);
+                yvalues[1][endBucket - minBucket] += ar.getQty();
+            }
+        }
 
-	for(int i=minDay; i<=maxDay ; i+=bucketDays) {
-	    long startTime = ((i * MILLIS_IN_DAY) + baseTime);
-	    long endTime = (startTime + (bucketDays * MILLIS_IN_DAY)) - 1;
-	    Collection reqs = reqSchdule.encapsulatedSet(startTime,endTime);
-	    Collection reqARs = reqARSchdule.encapsulatedSet(startTime,endTime);
-	    double totalReqs=0;
-	    double totalARs=0;
-	    Iterator it = reqs.iterator();
-	    while(it.hasNext()) {
-		totalReqs+=(((InventoryTask) it.next()).getQty());
-	    }
-	    it = reqARs.iterator();
-	    while(it.hasNext()) {
-		InventoryAR ar = ((InventoryAR) it.next());
-		if(ar.isSuccess()) {
-		    totalARs+=ar.getQty();
-		}
-	    }
-	    yvalues[0][i-minDay] = totalReqs;
-	    yvalues[1][i-minDay] = totalARs;
-	}
+        //MWD this is more expensive than it needs to be.
+        //Cheaper to go through through all InventoryTasks
+        //take the end time figure which day it goes into
+        //and sum the value in the array bucket - same for
+        //ARs - fix tommorow.  Probably don't even need
+        //schedules for this.
 
-	***/
+        /***
+         ** MWD Remove
+
+         TimeSpanSet reqSchedule = new TimeSpanSet(requisitions);
+         TimeSpanSet reqARSchedule = new TimeSpanSet(reqARs);
+
+         for(int i=minDay; i<=maxDay ; i+=bucketDays) {
+         long startTime = ((i * MILLIS_IN_DAY) + baseTime);
+         long endTime = (startTime + (bucketDays * MILLIS_IN_DAY)) - 1;
+         Collection reqs = reqSchdule.encapsulatedSet(startTime,endTime);
+         Collection reqARs = reqARSchdule.encapsulatedSet(startTime,endTime);
+         double totalReqs=0;
+         double totalARs=0;
+         Iterator it = reqs.iterator();
+         while(it.hasNext()) {
+         totalReqs+=(((InventoryTask) it.next()).getQty());
+         }
+         it = reqARs.iterator();
+         while(it.hasNext()) {
+         InventoryAR ar = ((InventoryAR) it.next());
+         if(ar.isSuccess()) {
+         totalARs+=ar.getQty();
+         }
+         }
+         yvalues[0][i-minDay] = totalReqs;
+         yvalues[1][i-minDay] = totalARs;
+         }
+
+         ***/
     }
 
 }

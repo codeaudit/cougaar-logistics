@@ -21,41 +21,43 @@
  
 package org.cougaar.logistics.ui.inventory;
 
-import java.util.TimeZone;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Calendar;
-import java.util.Locale;
+import java.util.TimeZone;
 
-/** 
+/**
  * <pre>
- * 
+ *
  * The InventoryChartBaseCalendar supports getting the base time
- * from which the axis and other information in the chart 
+ * from which the axis and other information in the chart
  * is oriented to.
- * 
+ *
  * @see InventoryUIFrame
  *
  **/
 
 public class InventoryChartBaseCalendar extends GregorianCalendar {
 
-    final static private int baseYear=2002;
+    final static private int baseYear = 2005;
     final static private TimeZone baseTimeZone = TimeZone.getTimeZone("GMT");
     final static private InventoryChartBaseCalendar baseCal = new InventoryChartBaseCalendar();
 
-    public InventoryChartBaseCalendar () {
-	super(baseYear,0,0);
-	setTimeZone(baseTimeZone);
-	// Weird thing if you reverse the constructor and setter like below doing exact same thing supposedly
-	// you get a different base time!!! and it effects the calendar.
-	//super(TimeZone.getTimeZone("GMT"));
-	//set(baseYear,0,0,0,0,0);
-	//System.out.println("InventoryChartBaseCalendar::My date: " + this.getTime());
+    public InventoryChartBaseCalendar() {
+        super(baseYear, 0, 1, 0, 0);
+        setTimeZone(baseTimeZone);
+        // Weird thing if you reverse the constructor and setter like below doing exact same thing supposedly
+        // you get a different base time!!! and it effects the calendar.
+        //super(TimeZone.getTimeZone("GMT"));
+        //set(baseYear,0,0,0,0,0);
+        //System.out.println("InventoryChartBaseCalendar::My date: " + this.getTime());
     }
 
-    public static long getBaseTime(){ return baseCal.getTime().getTime(); }
-    public static int  getBaseYear(){ return baseYear; }
+    public static long getBaseTime() {
+        return baseCal.getTime().getTime();
+    }
+
+    public static int getBaseYear() {
+        return baseYear;
+    }
 
 }
 

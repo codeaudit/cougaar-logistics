@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
- 
+
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.Date;
@@ -42,17 +42,17 @@ import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
-/** 
+/**
  * <pre>
- * 
+ *
  * The InventoryBarChart class is an abstract class that
- * captures common behavior between the 
+ * captures common behavior between the
  * InventoryDemandChart and the InventoryRefillChart.
- * 
+ *
  * @see InventoryChart
  * @see InventoryDemandChart
  * @see InventoryRefillChart
- * 
+ *
  *
  **/
 
@@ -66,75 +66,77 @@ public abstract class InventoryBarChart extends InventoryChart {
     protected ProjectionsChartDataModel projDM;
     protected ShortfallChartDataModel shortfallDM;
 
-    protected boolean displayShortfall=false;
+    protected boolean displayShortfall = false;
 
     public void setData(InventoryData data) {
-	inventory = data;
-	java.util.List viewList = chart.getDataView();
-	for (int i = 0; i < viewList.size(); i++) {
-	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
-	    InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel)chartDataView.getDataSource();
-	    dataModel.resetInventory(data);
-	}
-	updateShortfall();
-	myYAxisTitle = data.getUnit();
-	chart.reset();
-	resetAxes();
+        inventory = data;
+        if (data.getBucketSize() != currBucketSize) {
+            resetAxes();
+        }
+        java.util.List viewList = chart.getDataView();
+        for (int i = 0; i < viewList.size(); i++) {
+            ChartDataView chartDataView = (ChartDataView) viewList.get(i);
+            InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel) chartDataView.getDataSource();
+            dataModel.resetInventory(data);
+        }
+        updateShortfall();
+        myYAxisTitle = data.getUnit();
+        chart.reset();
+        resetAxes();
+
     }
 
     public void updateShortfall() {
-	if(isShortfall()) {
-	     shortfallChartDataView.setVisible(displayShortfall);
-	}
-	else {
-	     shortfallChartDataView.setVisible(false);
-	}	
+        if (isShortfall()) {
+            shortfallChartDataView.setVisible(displayShortfall);
+        } else {
+            shortfallChartDataView.setVisible(false);
+        }
     }
 
     public void setDisplayShortfall(boolean doDisplayShortfall) {
-	if(doDisplayShortfall != displayShortfall) {
-	    displayShortfall = doDisplayShortfall;
-	    updateShortfall();
-	}
+        if (doDisplayShortfall != displayShortfall) {
+            displayShortfall = doDisplayShortfall;
+            updateShortfall();
+        }
     }
 
 
     protected void setShortfallChartColors() {
-	if(shortfallChartDataView != null) {
-	    for (int j = 0; j < shortfallChartDataView.getNumSeries(); j++) {
-		ChartDataViewSeries series = shortfallChartDataView.getSeries(j);
-		series.getStyle().setLineWidth(2);
-		series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
-		setSeriesColor(series,colorTable.get(series.getLabel()));
-	    }
-	}
+        if (shortfallChartDataView != null) {
+            for (int j = 0; j < shortfallChartDataView.getNumSeries(); j++) {
+                ChartDataViewSeries series = shortfallChartDataView.getSeries(j);
+                series.getStyle().setLineWidth(2);
+                series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
+                setSeriesColor(series, colorTable.get(series.getLabel()));
+            }
+        }
     }
 
     protected void setBarChartColors() {
-	java.util.List viewList = chart.getDataView();
-	for (int i = 0; i < viewList.size(); i++) {
-	    // set line width
-	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
-	    //((JCBarChartFormat)chartDataView .getChartFormat()).setClusterWidth(100);
-	    chartDataView.setOutlineColor(Color.black);
-	    for (int j = 0; j < chartDataView.getNumSeries(); j++) {
-		ChartDataViewSeries series = chartDataView.getSeries(j);
-		setSeriesColor(series,colorTable.get(series.getLabel()));
-		Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
-		if(symbolColor != null) {
-		    series.getStyle().setSymbolColor(symbolColor);
-		}
-	    }
-	}
+        java.util.List viewList = chart.getDataView();
+        for (int i = 0; i < viewList.size(); i++) {
+            // set line width
+            ChartDataView chartDataView = (ChartDataView) viewList.get(i);
+            //((JCBarChartFormat)chartDataView .getChartFormat()).setClusterWidth(100);
+            chartDataView.setOutlineColor(Color.black);
+            for (int j = 0; j < chartDataView.getNumSeries(); j++) {
+                ChartDataViewSeries series = chartDataView.getSeries(j);
+                setSeriesColor(series, colorTable.get(series.getLabel()));
+                Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
+                if (symbolColor != null) {
+                    series.getStyle().setSymbolColor(symbolColor);
+                }
+            }
+        }
     }
 
-    public boolean isShortfall() { 
-	if(shortfallDM == null) {
-	    return false;
-	}
-	else {
-	    return shortfallDM.isShortfall();
-	}
+    public boolean isShortfall() {
+        if (shortfallDM == null) {
+            return false;
+        } else {
+            return shortfallDM.isShortfall();
+        }
     }
- 
+
 }
