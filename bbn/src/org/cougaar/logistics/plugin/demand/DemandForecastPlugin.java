@@ -31,6 +31,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
+//import org.cougaar.logistics.ldm.asset.ConsumerPG;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
@@ -212,15 +213,15 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   protected void execute() {
     if ((supplyClassPG == null) ||
-        (oplanSubscription.getCollection().isEmpty()) ||
-        (orgActivities.getCollection().isEmpty()) ||
-        (detReqSubscription.getCollection().isEmpty())) {
+        (oplanSubscription.isEmpty()) ||
+        (orgActivities.isEmpty()) ||
+        (detReqSubscription.isEmpty())) {
       processedDetReq = false;
       return;
     }
 
-    if (!detReqSubscription.getCollection().isEmpty()) {
-      Iterator detReqIt = detReqSubscription.getCollection().iterator();
+    if (!detReqSubscription.isEmpty()) {
+      Iterator detReqIt = detReqSubscription.iterator();
       Task detReqTask = (Task) detReqIt.next();
       processedDetReq = (!(detReqTask.getPlanElement() == null));
     }
@@ -234,15 +235,15 @@ public class DemandForecastPlugin extends ComponentPlugin
     if (((!orgActivities.getAddedCollection().isEmpty()) &&
         (!processedDetReq)) ||
         (!detReqSubscription.getAddedCollection().isEmpty())) {
-      processDetReq(detReqSubscription.getCollection(),
-                    assetsWithPGSubscription.getCollection());
+      processDetReq(detReqSubscription,
+                    assetsWithPGSubscription);
     }
     //otherwise just issue a new
     else if (!assetsWithPGSubscription.getAddedCollection().isEmpty()) {
-      processDetReq(detReqSubscription.getCollection(),
+      processDetReq(detReqSubscription,
                     assetsWithPGSubscription.getAddedCollection());
     } else if (!assetsWithPGSubscription.getRemovedCollection().isEmpty()) {
-      removeFromDetReq(detReqSubscription.getCollection(),
+      removeFromDetReq(detReqSubscription,
                        assetsWithPGSubscription.getRemovedCollection());
     }
 
@@ -268,6 +269,27 @@ public class DemandForecastPlugin extends ComponentPlugin
         processNewGenProjs(genProjSubscription.getAddedCollection());
       }
     }
+
+    //if an orgActivity changes, is removed, or is added,  replan by calling the BGs
+    //and the generateprojections expander.  Note the added case is only used when
+    // the detreqs task has already been expanded. If the detreqs has not been expanded
+    //and we get an added orgAct we process the detreq above.
+    if ((!orgActivities.getChangedCollection().isEmpty()) ||
+        (!orgActivities.getRemovedCollection().isEmpty()) ||
+        ((!orgActivities.getAddedCollection().isEmpty()) && processedDetReq)) {
+      //processOrgActChanges((Collection)subToPGsHash.get(orgActivities));
+      Collection PGs = (Collection)subToPGsHash.get(orgActivities);
+      if (PGs == null || PGs.isEmpty()) {
+        if (logger.isDebugEnabled()) {
+          logger.debug("ORG ACT change with no PGs to notfiy! subToPGsHash is: " +
+                             subToPGsHash);
+        }
+      } else {
+        System.out.println("ORG ACT got PGs to notfiy! subToPGsHash is: " +
+                           subToPGsHash);
+        processOrgActChanges(PGs);
+      }
+    } 
 
     // get the Logistics OPlan (our homegrown version with specific dates).
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -595,15 +617,55 @@ public class DemandForecastPlugin extends ComponentPlugin
         asset = ((AggregateAsset) asset).getAsset();
       }
       PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
-      Collection pgInputs = getSubscriptions(pg);
-      Oplan oplan = getOplan();
-      //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
-      TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
-                                                     oplan.getEndDay());
-      Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
-      generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject());
+      invokeGenProjectionsExp(pg, genProj);
+      // Collection pgInputs = getSubscriptions(pg);
+//       Oplan oplan = getOplan();
+//       //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
+//       TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
+//                                                      oplan.getEndDay());
+//       Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
+//       generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject());
 
     }
+  }
+
+  //Invoke the BG and the genProjExpander if there are changes
+  //in the OrgActivities or Removals of OrgActivities.
+  private void processOrgActChanges(Collection PGs) {
+    Iterator pgIt = PGs.iterator();
+    while (pgIt.hasNext()) {
+      //ConsumerPG pg = (ConsumerPG) pgIt.next();
+      //Asset asset = pg.getMei();
+      PropertyGroup pg = (PropertyGroup) pgIt.next();
+      Asset asset = getMEI(pg);
+      if (asset instanceof AggregateAsset) {
+        asset = ((AggregateAsset) asset).getAsset();
+      }
+      Iterator gpIt = genProjSubscription.iterator();
+      while (gpIt.hasNext()) {
+        Task gp = (Task) gpIt.next();
+        Asset directObj = gp.getDirectObject();
+        if (directObj instanceof AggregateAsset) {
+          directObj = ((AggregateAsset)directObj).getAsset();
+        }
+        if (directObj.equals(asset)) {
+          System.out.println("******* invoking BG and GPE with changed OrgACT **********");
+          invokeGenProjectionsExp(pg, gp);
+          break;
+        } 
+      }
+    }
+  }
+
+  private void invokeGenProjectionsExp(PropertyGroup pg, Task genProj) {
+    Collection pgInputs = getSubscriptions(pg);
+    Oplan oplan = getOplan();
+    // placeholder for task scheduler
+    //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
+    TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
+                                                   oplan.getEndDay());
+    Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
+    generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject());
   }
 
   private void removeFromDetReq(Collection addedDRs, Collection removedAssets) {
@@ -635,7 +697,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       ArrayList inputPair = new ArrayList();
       IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
       inputPair.add(pred);
-      inputPair.add(sub.getCollection());
+      inputPair.add(sub);
       pgInputs.add(inputPair);
     }
     return pgInputs;
@@ -801,7 +863,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   public Oplan getOplan() {
-    Iterator oplanIt = oplanSubscription.getCollection().iterator();
+    Iterator oplanIt = oplanSubscription.iterator();
     if (oplanIt.hasNext()) {
       return (Oplan) oplanIt.next();
     }
@@ -881,6 +943,31 @@ public class DemandForecastPlugin extends ComponentPlugin
       e.printStackTrace();
     }
     return new ScheduleImpl();
+  }
+
+  //temp method for getting the MEI
+  public Asset getMEI(PropertyGroup pg) {
+    Asset mei = null;
+    Class parameters[] = {};
+    Object arguments[] = {};
+    Method m = null;
+    try {
+      m = supplyClassPG.getMethod("getMei", parameters);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    }
+    try {
+      mei = (Asset) m.invoke(pg, arguments);
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return mei;
   }
 
   /**
