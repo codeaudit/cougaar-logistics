@@ -33,15 +33,18 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.HashMap;
 
-/** The Refill Comparator Module is responsible for deciding whether to
- *  rescind all previous refills and publish all new refills generated
- *  by the total replan refill generator  module or whether to 
- *  compare and merge the 'old' and 'new' refill tasks.  The first
- *  version will simply rescind all old refills and publish all new
- *  refills.
+/** The DiffBasedComparator compares both the set of old refills and new
+ *  refills.  The goal of this module is to reduce the number of changes
+ *  replans make on the blackboard.  It accomplishes this by finding published
+ *  tasks that are identical to just created tasks.  The code will also try 
+ *  and modify an existing task that is similar to the the newly created task 
+ *  as opposed to to rescinding the published task and publishing the new task.
+ *  Of course, if no published task can be found during the appropriate time span
+ *  of the new task, the new task is published.  Any unaccounted for published
+ *  tasks will be rescinded.
+ *
  *  Called by the Refill Generator with the new refills and old refills.
- *  Publishes new Refill tasks and rescinds the old through the InventoryPlugin.
- *  Also applies the new Refill tasks to the Inventory's BG.
+ * 
  **/
 
 public class DiffBasedComparator extends InventoryModule implements ComparatorModule {
@@ -57,9 +60,15 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
   }
 
   /** Compares the old and new Refill tasks.
-   *  Publishes any new Refills and Rescinds any old Refill Tasks.
-   *  For now this implementation rescinds ALL old Refills and publishes ALL
-   *  new Refill tasks.  In the future a smart comparison will be done.
+   *  The previously published refills are bucketized which means they are
+   *  flagged as belonging in a certain bucket.  Each new task is examined to
+   *  determine the bucket in which it would belong.  If a previously published
+   *  task is found to occupy the same bucket as a new task, those tasks are
+   *  then compared.  If the tasks are identical, no blackboard action is taken.
+   *  Otherwise, the published task is changed to take on the characteristics
+   *  of the new task and the new task is discarded.  If no refill occupies the
+   *  same bucket as a new refill task, that task is published.  Any unaccounted
+   *  for published tasks are rescinded.
    *  @param newRefills The collection of newly generated Refills from the
    *    RefillGeneratorModule
    *  @param oldRefills The previously generated Refill Tasks
@@ -141,11 +150,13 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
   }
 
  /** Compares the old and new Refill Projection tasks.
-   *  Publishes any new Refill Projections and Rescinds any old Refill Projection Tasks.
-   *  For now this implementation rescinds ALL old Refill Projections
-   *  and publishes ALL new Refill Projection tasks.  
-   *  In the future a smart comparison will be done.
-   *  Right now this method is almost identical to compareRefills.
+   *  A schedule is created from the previously published projections.  New tasks
+   *  are compared to the schedule in order to identify overlapping tasks.  In 
+   *  cases where overlapping tasks are found, the published task is changed to 
+   *  convey the information of the new task.  If the tasks are identical no changes
+   *  are made to the blackboard.  New tasks which have no overlap with existing
+   *  tasks are published and published refills which have not been accounted for
+   *  are rescinded.
    *  @param newRefillProjs The collection of newly generated Refill Projections
    *    from the RefillProjectionsGenerator Module
    *  @param oldRefillProjs The previously generated Refill Projection Tasks
@@ -164,7 +175,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
     }
     // Check for an empty schedule
     if ((newRefillProjs == null) || newRefillProjs.isEmpty()) {
-      // Rescind any tasks that were not accounted for
+      // Rescind all tasks as there is no longer any demand.
       if (logger.isDebugEnabled()) {
         logger.debug("DiffProj, New Task List empty: "+newRefillProjs);
       }
