@@ -224,7 +224,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   private void printTitles() {
     String title = "Availability  Servlet";
-    out.println("<HEAD><TITLE>" + title + "</TITLE></HEAD>" +
+    out.println("<HTML><HEAD><TITLE>" + title + "</TITLE></HEAD></HTML>" +
                 "<BODY><H1>" + title + "</H1>");
   }
 
