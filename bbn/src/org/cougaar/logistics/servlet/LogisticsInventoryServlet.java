@@ -214,18 +214,13 @@ public class LogisticsInventoryServlet
 	 if (nomenclature != null) {
 	     nomenclature = nomenclature + ":" + typeId;
 	 }
-	 else if(logInvPG.getIsLevel2()) {
-	     SupplyClassPG supplyPG = (SupplyClassPG)logInvPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
-	     if (supplyPG != null) {
-		 nomenclature = typeId + ":" + supplyPG.getSupplyType();
-	     }
-	     else {
-		 nomenclature = typeId;
-	     }
-	 }
 	 else {
 	     nomenclature = typeId;
 	 }
+	 if(logInvPG.getIsLevel2()) {
+	     nomenclature = typeId;
+	 }
+
 	 assetNames.addElement(nomenclature);
 	 }
 
@@ -308,7 +303,7 @@ public class LogisticsInventoryServlet
 
       // get asset and tasks we need to create the inventory
 
-      logger.debug("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
+      //logger.shout("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
 
       InventoryPredicate inventoryPredicate = new InventoryPredicate(desiredAssetName, support.getEncodedAgentName(),logger);
       Collection collection = support.queryBlackboard(inventoryPredicate);
@@ -457,17 +452,11 @@ class InventoryPredicate implements UnaryPredicate {
     String itemId = itemIdPG.getItemIdentification();
     int idx = itemId.indexOf(':');
     itemId = itemId.substring(idx+1);
-    if (nomenclature != null) {
-	nomenclature = nomenclature + ":" + itemId;
+    if(level2) {
+	nomenclature = itemId;
     }
-    else if(level2) {
-	SupplyClassPG supplyPG = (SupplyClassPG)asset.searchForPropertyGroup(SupplyClassPG.class);
-	if (supplyPG != null) {
-	    nomenclature = itemId + ":" + supplyPG.getSupplyType();
-	}
-	else {
-	    nomenclature = itemId;
-	}
+    else if (nomenclature != null) {
+	nomenclature = nomenclature + ":" + itemId;
     }
     else {
 	nomenclature = itemId;
