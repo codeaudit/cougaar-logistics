@@ -111,14 +111,14 @@ extends BaseServletComponent
 
   protected static final String RULE_CONFIG_FILE="ShortfallAlertConfig.txt";
 
-  protected static final double DEFAULT_RED_THRESHOLD = 4;
+  public static final double DEFAULT_RED_THRESHOLD = 4;
 
-  protected static final double DEFAULT_YELLOW_THRESHOLD = 1;
+  public static final double DEFAULT_YELLOW_THRESHOLD = 1;
 
   protected static final int MAX_AGENT_FRAMES = 18;
 
   protected String path;
-  protected ArrayList rulesList=new ArrayList();
+    //protected ArrayList rulesList=new ArrayList();
 
   protected MessageAddress localAgent;
 
@@ -214,7 +214,7 @@ extends BaseServletComponent
 
   protected void getAndParseRules() {
       File ruleFile = ConfigFinder.getInstance().locateFile(RULE_CONFIG_FILE);
-      rulesList.clear();
+      ArrayList rulesList = new ArrayList();
 
       BufferedReader ruleStrings=null;
 
@@ -251,6 +251,8 @@ extends BaseServletComponent
       catch(IOException ex) {
 	  throw new RuntimeException("Error while trying to parse config file for ShortfallAlertServlet!",ex); 
       }
+
+      ShortfallShortData.setRulesList(rulesList);
   }
     
 
@@ -880,6 +882,7 @@ extends BaseServletComponent
     }
 
 
+      /***  Moving to shortfall data
     protected int computeNumShortfallWithRules(ShortfallShortData result) {
 	Collection summaries = result.getShortfallSummaries().values();
 	Iterator summaryIT = summaries.iterator();
@@ -907,7 +910,7 @@ extends BaseServletComponent
 	}
 	return totalInvsWithShortfall;
     }
-
+      ***/
 
     // Output a small page showing summary info for one agent
     private void viewAgentSmall() throws IOException {
@@ -918,14 +921,14 @@ extends BaseServletComponent
       ShortfallShortData result = getShortfallData();
       int numShortfall = result.getNumberOfPermShortfallInventories();
 
-      int numShortfallWRules = computeNumShortfallWithRules(result);
+      int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
 
       String bgcolor, fgcolor, lncolor;
-      if (numShortfallWRules >= redThreshold) {
+      if (numUnexpectedShortfall >= redThreshold) {
         bgcolor = "#aa0000";
         fgcolor = "#ffffff";
         lncolor = "#ffff00";
-      } else if (numShortfallWRules >= yellowThreshold) {
+      } else if (numUnexpectedShortfall >= yellowThreshold) {
         bgcolor = "#ffff00";
         fgcolor = "#000000";
         lncolor = "#0000ff";
@@ -948,7 +951,8 @@ extends BaseServletComponent
 		  "\" target=\"_top\">"+
 		  agent+
 		  "</a>");
-      out.println(formatLabel("Num Inventories with Shortfall:") + " <b>" + numShortfall + "</b>");
+      out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfall + "</b>");
+      out.println(formatLabel("Num Unexpected Shortfall Inventories:") + " <b>" + numUnexpectedShortfall + "</b>");
       out.println(formatLabel("Effected Supply Types:\n") + result.getSupplyTypes());
       out.println("</body>\n</html>");
     }
@@ -1002,12 +1006,11 @@ extends BaseServletComponent
       long nowTime = System.currentTimeMillis();
       ShortfallShortData data;
       if(showTables) {
-	  data = new FullShortfallData(summaries);
+	  data = new FullShortfallData(getEncodedAgentName(),nowTime,summaries);
       }
       else {
-	  data = new ShortfallShortData(summaries);
+	  data = new ShortfallShortData(getEncodedAgentName(),nowTime,summaries);
       }
-      data.setTimeMillis(nowTime);
       return data;
     }
 
@@ -1083,11 +1086,11 @@ extends BaseServletComponent
 
     protected void printCountersAsHTML(ShortfallShortData result) {
       int numShortfall = result.getNumberOfPermShortfallInventories();
-      int numShortfallWRules = computeNumShortfallWithRules(result);
+      int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
       String shortfallColor;
-      if (numShortfallWRules >= redThreshold) {
+      if (numUnexpectedShortfall >= redThreshold) {
         shortfallColor = "red";
-      } else if (numShortfallWRules >= yellowThreshold) {
+      } else if (numUnexpectedShortfall >= yellowThreshold) {
         shortfallColor = "yellow";
       } else {
         shortfallColor = "#00d000";
@@ -1102,9 +1105,13 @@ extends BaseServletComponent
       out.print(timeMillis);
       out.print(" MS)\n"+
           getTitlePrefix()+
-          "Number of total perm shortfall Inventories: <b>"+
+          "Number of Shortfall Inventories: <b>"+
           numShortfall +
           "</b>\n");
+      out.print("Number of Unexpected Shortfall Inventories: <b>"+
+          numUnexpectedShortfall +
+          "</b>\n");
+      out.println(formatLabel("Effected Supply Types:") + ((result.getSupplyTypes()).replaceAll("\n","")) + "\n");
       out.print("</pre>\n");
     }
 

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.cougaar.planning.servlet.data.xml.DeXMLable;
@@ -38,6 +39,7 @@ import org.cougaar.planning.servlet.data.xml.XMLable;
 import org.xml.sax.Attributes;
 
 import org.cougaar.logistics.plugin.inventory.ShortfallSummary;
+import org.cougaar.logistics.plugin.inventory.ShortfallInventory;
 
 
 /**
@@ -52,15 +54,20 @@ public class ShortfallShortData implements XMLable, Serializable{
   ////////////
 
   public static final String NAME_TAG = "Shortfall";
-
-  protected final static String UID_TAG = "UID";
-  protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "Num_Shortfall_Inventories";
-  protected final static String THREADS_TAG = "THREADS";
+  protected static ArrayList rulesList=new ArrayList();
 
 
-  public static final String TIME_MILLIS_ATTR = 
-    "TimeMillis";
+  protected final static String AGENT_NAME_TAG = "AGENT";
+  protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
+  protected final static String NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG = "NUM_UNEXPECTED_SHORTFALL_INVENTORIES";
+  protected final static String EFFECTED_THREADS_TAG = "EFFECTED_SUPPLY_TYPES";
+  protected final static String EFFECTED_THREAD_TAG = "SUPPLY_TYPE";
 
+
+  public static final String TIME_MILLIS_TAG = 
+    "TIME_MILLIS";
+
+  protected String agentName;
 
   protected long timeMillis;
 
@@ -68,12 +75,16 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected int numPermShortfallInventories;
 
+  protected int numUnexpectedShortfallInventories;
+
 
   //Constructors:
   ///////////////
 
 
-  public ShortfallShortData(Collection summaries) {
+  public ShortfallShortData(String agentName, long time, Collection summaries) {
+      this.agentName = agentName;
+      this.timeMillis = time;
       numPermShortfallInventories = 0;
       summaryMap = new HashMap(4);
       Iterator it = summaries.iterator();
@@ -82,6 +93,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 	  summaryMap.put(summary.getSupplyType(),summary);
 	  numPermShortfallInventories+=summary.getShortfallInventories().size();
       }
+      
+      computeNumShortfallWithRules();
   }
 
   //Setters:
@@ -91,10 +104,20 @@ public class ShortfallShortData implements XMLable, Serializable{
     this.timeMillis = timeMillis;
   }
 
+  public void setAgentName(String agentName) {
+    this.agentName = agentName;
+  }
 
+  public static void setRulesList(ArrayList theRulesList) {
+    rulesList = theRulesList;
+  }
 
   public void setNumberOfPermShortfallInventories(int numInventories) {
     this.numPermShortfallInventories = numInventories;
+  }
+
+  public void setNumberOfUnexpectedShortfallInventories(int numInventories) {
+    this.numUnexpectedShortfallInventories = numInventories;
   }
 
   //Getters:
@@ -108,12 +131,20 @@ public class ShortfallShortData implements XMLable, Serializable{
     return NAME_TAG;
   }
 
+  public String getAgentName() {
+    return agentName;
+  }
+
   public HashMap getShortfallSummaries() {
       return summaryMap;
   }
 
   public int getNumberOfPermShortfallInventories() {
     return numPermShortfallInventories;
+  }
+
+  public int getNumberOfUnexpectedShortfallInventories() {
+    return numUnexpectedShortfallInventories;
   }
 
   public String getSupplyTypes() {
@@ -130,8 +161,51 @@ public class ShortfallShortData implements XMLable, Serializable{
       return threadsStr;
   }
 
+
+ 
+
+    protected void computeNumShortfallWithRules() {
+	Collection summaries = getShortfallSummaries().values();
+	Iterator summaryIT = summaries.iterator();
+	int numUnexpectedShortfallInventories=0;
+	while(summaryIT.hasNext()) {
+	    ShortfallSummary summary = (ShortfallSummary) summaryIT.next();
+	    Iterator invIT = summary.getShortfallInventories().iterator();
+	    while(invIT.hasNext()) {
+		boolean ruleMatch=false;
+		ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
+		Iterator rulesIT = rulesList.iterator();
+		while(rulesIT.hasNext()) {
+		    ShortfallInventoryRule rule = (ShortfallInventoryRule) rulesIT.next();
+		    ShortfallInventory newInv = rule.apply(agentName,shortInv);
+		    if(newInv != null) {
+			shortInv=newInv;
+			ruleMatch=true;
+		    }
+		}
+		if(shortInv.getNumPermShortfall() > 0) {
+		    numUnexpectedShortfallInventories++;
+		}
+	    }
+	}
+    }
+
+
   //XMLable members:
   //----------------
+
+ public void supplyTypesToXML(XMLWriter w) throws IOException {
+      Collection threads = summaryMap.keySet();
+      Iterator it=threads.iterator();
+      String threadsStr = "";
+      w.optagln(EFFECTED_THREADS_TAG);
+      while(it.hasNext()) {
+	  String thread = (String) it.next();
+	  w.tagln(EFFECTED_THREAD_TAG,thread);
+      }
+      w.cltagln(EFFECTED_THREADS_TAG);
+  }
+
 
   /**
    * Write this class out to the Writer in XML format
@@ -139,10 +213,14 @@ public class ShortfallShortData implements XMLable, Serializable{
    **/
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(getNameTag());
+    w.tagln(AGENT_NAME_TAG, getAgentName());
+    w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
     w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfPermShortfallInventories());    
-    w.tagln(THREADS_TAG, getSupplyTypes());
+    w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    supplyTypesToXML(w);
     w.cltagln(getNameTag());
   }
+
 
 
   //Inner Classes:

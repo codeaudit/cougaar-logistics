@@ -50,15 +50,16 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   //Variables:
   ////////////
 
-  public final static String THREAD_TAG="Class Of Supply: ";
-  public final static String INVENTORY_TAG="Inventory: ";
+  public final static String THREAD_TAG="CLASS_OF_SUPPLY";
+  public final static String INVENTORIES_TAG="INVENTORIES";
+  public final static String INVENTORY_TAG="INVENTORY";
 
   //Constructors:
   ///////////////
 
 
-  public FullShortfallData(Collection summaries) {
-      super(summaries);
+  public FullShortfallData(String agentName,long time, Collection summaries) {
+      super(agentName,time,summaries);
   }
 
 
@@ -76,16 +77,21 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
    **/
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(getNameTag());
-    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfPermShortfallInventories());
+    w.tagln(AGENT_NAME_TAG, getAgentName());
+    w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
+    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfPermShortfallInventories());    
+    w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    supplyTypesToXML(w);
     Iterator summaries = summaryMap.values().iterator();
     while(summaries.hasNext()) {
 	ShortfallSummary summary = (ShortfallSummary) summaries.next();
-	w.tagln(THREAD_TAG, summary.getSupplyType());
+	w.optagln(INVENTORIES_TAG,THREAD_TAG, summary.getSupplyType());
 	Iterator inventoryItems = summary.getShortfallInventories().iterator();
 	while(inventoryItems.hasNext()) {
 	    ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
 	    w.tagln(INVENTORY_TAG,inv.getInvID());
 	}
+	w.cltagln(INVENTORIES_TAG);
     }
     w.cltagln(getNameTag());
   }
