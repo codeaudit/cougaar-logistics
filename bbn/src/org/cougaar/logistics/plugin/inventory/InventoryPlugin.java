@@ -243,11 +243,11 @@ public class InventoryPlugin extends ComponentPlugin {
 
     if ((detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) &&
 	(logOPlan != null)) {
-//       touchedProjections = 
-// 	supplyExpander.handleRemovedProjections(projectionTaskSubscription.getRemovedCollection());
-//       supplyExpander.handleRemovedRequisitions(supplyTaskSubscription.getRemovedCollection());
+      touchedProjections = 
+	supplyExpander.handleRemovedProjections(projectionTaskSubscription.getRemovedCollection());
+      supplyExpander.handleRemovedRequisitions(supplyTaskSubscription.getRemovedCollection());
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
-      touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+      touchedProjections |= expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
       if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections

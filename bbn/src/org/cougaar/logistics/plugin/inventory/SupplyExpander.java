@@ -240,26 +240,50 @@ public class SupplyExpander extends InventoryModule {
 
   public void handleRemovedRequisitions(Collection tasks) {
     LogisticsInventoryPG thePG;
-    Task aTask;
+    Task parent, aTask;
     Iterator taskIter = tasks.iterator();
+    PlanElement pe;
+    Enumeration enum;
     while (taskIter.hasNext()) {
-      aTask = (Task)taskIter.next();
-      thePG = getLogisticsInventoryPG(aTask);
-      if (thePG != null) {
-	thePG.removeWithdrawRequisition(aTask);
+      parent = (Task)taskIter.next();
+      pe = parent.getPlanElement();
+      if ((pe != null) && (pe instanceof Expansion)) {
+	enum = ((Expansion)pe).getWorkflow().getTasks();
+	while (enum.hasMoreElements()) {
+	  aTask = (Task)enum.nextElement();
+	  if (aTask.getVerb().equals(Constants.Verb.WITHDRAW)) { 
+	    thePG = getLogisticsInventoryPG(aTask);
+	    if (thePG != null) {
+	      thePG.removeWithdrawRequisition(aTask);
+	    }
+	    break;
+	  }
+	}
       }
     }
   }
 
   public void handleRemovedProjections(Collection tasks) {
     LogisticsInventoryPG thePG;
-    Task aTask;
+    Task parent, aTask;
     Iterator taskIter = tasks.iterator();
+    PlanElement pe;
+    Enumeration enum;
     while (taskIter.hasNext()) {
-      aTask = (Task)taskIter.next();
-      thePG = getLogisticsInventoryPG(aTask);
-      if (thePG != null) {
-	thePG.removeWithdrawProjection(aTask);
+      parent = (Task)taskIter.next();
+      pe = parent.getPlanElement();
+      if ((pe != null) && (pe instanceof Expansion)) {
+	enum = ((Expansion)pe).getWorkflow().getTasks();
+	while (enum.hasMoreElements()) {
+	  aTask = (Task)enum.nextElement();
+	  if (aTask.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) { 
+	    thePG = getLogisticsInventoryPG(aTask);
+	    if (thePG != null) {
+	      thePG.removeWithdrawProjection(aTask);
+	    }
+	    break;
+	  }
+	}
       }
     }
   }
