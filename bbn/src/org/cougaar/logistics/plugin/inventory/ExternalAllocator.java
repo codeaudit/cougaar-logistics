@@ -212,9 +212,7 @@ public class ExternalAllocator extends InventoryModule {
         } else {
           logInvPG.updateRefillRequisition(refill);
         }
-      } else {
-        // this is a pass-thru
-      }
+      } // else { this is a pass-thru }
         
       if (PluginHelper.updatePlanElement(alloc)) {
         inventoryPlugin.publishChange(alloc);

@@ -255,88 +255,88 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
    *  @param endOfLevelTwo The end time of the Level 2 VTH window
    *  @param theComparator The Comparator instance to compare old and new level 2 projections
    **/
-  private void calculateLevelTwoProjections(Inventory level2Inv, int daysOnHand, 
-                                            long start, long endOfLevelTwo, 
-                                            RefillComparator theComparator) {
+//   private void calculateLevelTwoProjections(Inventory level2Inv, int daysOnHand, 
+//                                             long start, long endOfLevelTwo, 
+//                                             RefillComparator theComparator) {
 
-    ArrayList newProjections = new ArrayList();
-    ArrayList oldProjections = new ArrayList();
+//     ArrayList newProjections = new ArrayList();
+//     ArrayList oldProjections = new ArrayList();
 
-    LogisticsInventoryPG level2PG = (LogisticsInventoryPG) level2Inv.
-      searchForPropertyGroup(LogisticsInventoryPG.class);
+//     LogisticsInventoryPG level2PG = (LogisticsInventoryPG) level2Inv.
+//       searchForPropertyGroup(LogisticsInventoryPG.class);
 
-    // for now clear all the level 2 projections and only create
-    // new ones for the current level2 window
-    // this will have to change once we have mismatched level 2 windows
-    oldProjections.addAll(level2PG.clearRefillProjectionTasks());
+//     // for now clear all the level 2 projections and only create
+//     // new ones for the current level2 window
+//     // this will have to change once we have mismatched level 2 windows
+//     oldProjections.addAll(level2PG.clearRefillProjectionTasks());
 
-    int startBucket = level2PG.convertTimeToBucket(start, true);
-    // int currentBucket = startBucket;
-//     int customerDemandBucket = level2PG.convertTimeToBucket(getTimeUtils().
-//                                                            addNDays(start, daysOnHand));
-    // We need to time shift refills by days on hand.  So if level 2 demand starts the 
-    // day the level 2 window starts then we actually need to order outside of the level 2
-    // window.  Perhaps this is wrong - and we should order the first 3 days in level 6
-    // but right now we don't have the data to do this.
-    int currentBucket = startBucket - daysOnHand;
-    //reset startBucket
-    startBucket = currentBucket;
-    int customerDemandBucket = startBucket;
+//     int startBucket = level2PG.convertTimeToBucket(start, true);
+//     // int currentBucket = startBucket;
+// //     int customerDemandBucket = level2PG.convertTimeToBucket(getTimeUtils().
+// //                                                            addNDays(start, daysOnHand));
+//     // We need to time shift refills by days on hand.  So if level 2 demand starts the 
+//     // day the level 2 window starts then we actually need to order outside of the level 2
+//     // window.  Perhaps this is wrong - and we should order the first 3 days in level 6
+//     // but right now we don't have the data to do this.
+//     int currentBucket = startBucket - daysOnHand;
+//     //reset startBucket
+//     startBucket = currentBucket;
+//     int customerDemandBucket = startBucket;
 
-    int endOfLevelTwoBucket = level2PG.convertTimeToBucket(endOfLevelTwo, true);
-    // get intital demand level
-    double projDemand = level2PG.getProjectedDemand(customerDemandBucket);
-    double nextProjDemand = 0;
-    // move ahead one day
+//     int endOfLevelTwoBucket = level2PG.convertTimeToBucket(endOfLevelTwo, true);
+//     // get intital demand level
+//     double projDemand = level2PG.getProjectedDemand(customerDemandBucket);
+//     double nextProjDemand = 0;
+//     // move ahead one day
    //  currentBucket = currentBucket + 1;
 //     customerDemandBucket = customerDemandBucket + 1;
 
-    //In the future with varying customer level 2 windows we will have to 
-    //loop through all of our Inventories and sum the tonnage of demand
-    // for a level 2 combined demand per bucket.
+//     //In the future with varying customer level 2 windows we will have to 
+//     //loop through all of our Inventories and sum the tonnage of demand
+//     // for a level 2 combined demand per bucket.
 
-    //loop through the buckets until we reach the end of level two
-    while (currentBucket < endOfLevelTwoBucket) {
-      nextProjDemand = level2PG.getProjectedDemand(customerDemandBucket);
-      //check the results for the Day.
-      if (projDemand != nextProjDemand) {
-        //if there's a change in the demand, create a refill projection 
-        //BUT only if demand is non-zero 
-        if (projDemand > 0.0) {
-          Task newLevel2Refill = 
-            createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
-                                            level2PG.convertBucketToTime(currentBucket),
-                                            level2PG.getStartTime(), projDemand, level2PG,
-                                            level2Inv);
-          newProjections.add(newLevel2Refill);
-        }
-        //then reset the start bucket  and the new demand 
-        startBucket = currentBucket;
-        projDemand = nextProjDemand;
-      }
-      // bump forward a bucket.
-      currentBucket = currentBucket + 1;
-      customerDemandBucket = customerDemandBucket + 1;
-    }
-    // when we get to the end of the level two window create the last
-    // projection task (if there is one)
-    if (startBucket != currentBucket) {
-      if (projDemand > 0.0) {
-        Task lastLevel2Refill = 
-          createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
-                                          level2PG.convertBucketToTime(currentBucket),
-                                          level2PG.getStartTime(), projDemand, level2PG,
-                                          level2Inv);
-        newProjections.add(lastLevel2Refill);
-      }
-    }
-    // send the new projections and the old projections to the Comparator
-    // the comparator will rescind the old and publish the new projections
-    theComparator.compareRefillProjections(newProjections, oldProjections, 
-                                          level2Inv);
-    setTargetForProjectionPeriod(level2PG, 1, level2PG.getInitialLevel());
+//     //loop through the buckets until we reach the end of level two
+//     while (currentBucket < endOfLevelTwoBucket) {
+//       nextProjDemand = level2PG.getProjectedDemand(customerDemandBucket);
+//       //check the results for the Day.
+//       if (projDemand != nextProjDemand) {
+//         //if there's a change in the demand, create a refill projection 
+//         //BUT only if demand is non-zero 
+//         if (projDemand > 0.0) {
+//           Task newLevel2Refill = 
+//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+//                                             level2PG.convertBucketToTime(currentBucket),
+//                                             level2PG.getStartTime(), projDemand, level2PG,
+//                                             level2Inv);
+//           newProjections.add(newLevel2Refill);
+//         }
+//         //then reset the start bucket  and the new demand 
+//         startBucket = currentBucket;
+//         projDemand = nextProjDemand;
+//       }
+//       // bump forward a bucket.
+//       currentBucket = currentBucket + 1;
+//       customerDemandBucket = customerDemandBucket + 1;
+//     }
+//     // when we get to the end of the level two window create the last
+//     // projection task (if there is one)
+//     if (startBucket != currentBucket) {
+//       if (projDemand > 0.0) {
+//         Task lastLevel2Refill = 
+//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+//                                           level2PG.convertBucketToTime(currentBucket),
+//                                           level2PG.getStartTime(), projDemand, level2PG,
+//                                           level2Inv);
+//         newProjections.add(lastLevel2Refill);
+//       }
+//     }
+//     // send the new projections and the old projections to the Comparator
+//     // the comparator will rescind the old and publish the new projections
+//     theComparator.compareRefillProjections(newProjections, oldProjections, 
+//                                           level2Inv);
+//     setTargetForProjectionPeriod(level2PG, 1, level2PG.getInitialLevel());
     
-  }      
+//   }      
  
 
   /** Make a Projection Refill Task and publish it to the InventoryPlugin.

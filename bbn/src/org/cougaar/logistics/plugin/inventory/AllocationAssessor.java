@@ -194,7 +194,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 				 Inventory inv, LogisticsInventoryPG thePG) {
     int currentBucket = todayBucket;
     double qty = 0;
-    double todayLevel, todayRefill, testLevel, testQty;
+    double todayLevel, todayRefill;
     Task withdraw;
 
     // DEBUG
@@ -353,10 +353,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 		//this project withdraw ends during this bucket
 		// it has not previously had a deficit
 		createBestAllocation(task, inv, thePG);
-	    } else {
+	    } //else {
 		//this project withdraw has never had a deficit and does not end during this bucket
 		//  do nothing -- hope for createBestAllocation
-	    }
+	    //}
 	}
     }
 
