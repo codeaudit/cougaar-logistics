@@ -79,7 +79,12 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
 	expectedIDs.add (GLOBAL_AIR_ID);
 
       expectedIDs.add (GLOBAL_SEA_ID);
-      expectedIDs.add (NULL_ASSET_ID);
+      
+      // the NULL asset isn't really important - just if we want to allocate tasks
+      // to it, which in modern societies, we never do - it's just a hack if we
+      // want something bogus to show up on a TPFDD.
+
+      // expectedIDs.add (NULL_ASSET_ID);
     } catch(Exception e) {
       error ("got really unexpected exception " + e);
     } 
@@ -244,18 +249,51 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     }
   }
 
-  /** so we can deal with race condition between tasks showing up and subordinates showing up */
+  /**
+   * Calls processTasks if any delayed tasks left to process.
+   */
+  protected void execute() {
+    super.execute ();
+    
+    // processTasks is ordinarily only called when tasks have accumulated
+    // in the buffer and the buffer dispatch condition has been met.
+    // 
+    // This ensures that if there are delayed tasks, they are re-examined,
+    // whether there's something in the buffer or not.
+    //
+    // Fix for bug #13455
+
+    if (!delayedTasks.isEmpty ()) {
+      processTasks (Collections.EMPTY_LIST);
+    }
+  }
+
+  /** 
+   * If necessary subordinates have not reported yet, accumulates tasks into
+   * a delayedTasks list, and asks to be kicked again in 10 seconds, by which
+   * time hopefully the subordinates have reported.
+   *
+   * Solves the race condition between tasks showing up and subordinates showing up.
+   * @param tasks to process
+   */
   public void processTasks (List tasks) {
     if (!allNecessaryAssetsReported()) { // if need subordinates aren't there yet, way 10 seconds
-      if (logger.isInfoEnabled())
-	logger.info (getName() + " - necessary subords have not reported, so waiting " + waitTime);
-
       delayedTasks.addAll (tasks);
+
+      if (logger.isInfoEnabled()) {
+	logger.info (getName() + " - necessary subords have not reported, so waiting " + waitTime + 
+		     " millis to process " + delayedTasks.size () + 
+		     " tasks.");
+	reportMissingAssets ();
+      }
+
       examineBufferAgainIn (waitTime); // wait 10 seconds and check again
     }
     else { // ok, all subords are here, lets go!
-      if (logger.isInfoEnabled())
-	logger.info (getName() + " - all necessary subords have reported, so processing " + tasks.size() + " tasks.");
+      if (logger.isInfoEnabled()) {
+	logger.info (getName() + " - all necessary subords have reported, so processing " + tasks.size() + 
+		     " tasks.");
+      }
 
       tasks.addAll (delayedTasks);
       delayedTasks.clear();
