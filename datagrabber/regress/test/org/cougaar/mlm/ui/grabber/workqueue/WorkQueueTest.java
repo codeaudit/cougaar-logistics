@@ -64,5 +64,7 @@ public class WorkQueueTest extends TestCase {
             }
         });
         assertTrue(wq.isBusy());
+        assertTrue(wq.getWorkIDToStatusMap().containsKey(new Integer("1")));
+        assertEquals(1, wq.numActiveThreads());
     }
 }
