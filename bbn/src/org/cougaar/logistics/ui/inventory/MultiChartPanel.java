@@ -25,14 +25,20 @@ import java.util.Date;
 import java.util.Calendar;
 
 import java.awt.Event;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Color;
 import java.awt.Insets;
+import java.awt.Font;
+import java.awt.BorderLayout;
 
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
+import javax.swing.JCheckBox;
+import javax.swing.Box;
 
 import com.klg.jclass.chart.JCChartListener;
 import com.klg.jclass.chart.JCChartEvent;
@@ -67,9 +73,11 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  **/
 
 public class MultiChartPanel extends JPanel 
-    implements JCChartListener, JCPickListener{
+    implements JCChartListener, JCPickListener, ItemListener{
 
     public final static String INITIAL_POINT_LABEL="Right click to get quantity at a point.";
+
+    public static final String CDAY_MODE = "Cdays";
 
     protected InventoryLevelChart levelChart;
     protected InventoryRefillChart refillChart;
@@ -78,6 +86,11 @@ public class MultiChartPanel extends JPanel
     protected JLabel pointLabel;
 
     private Logger logger;
+
+    private JCheckBox cdaysModeCheck;
+
+    private boolean displayCDay=false;
+    private long baseCDayTime=InventoryChartBaseCalendar.getBaseTime();
 
     public MultiChartPanel() {
 	super();
@@ -94,8 +107,16 @@ public class MultiChartPanel extends JPanel
 	refillChart = new InventoryRefillChart();
 	demandChart = new InventoryDemandChart();
 
-	pointLabel = new JLabel(INITIAL_POINT_LABEL);
+	pointLabel = new JLabel(INITIAL_POINT_LABEL,JLabel.CENTER);
 	pointLabel.setBackground(Color.magenta);
+
+	cdaysModeCheck = new JCheckBox(CDAY_MODE,false);
+	Font newFont = cdaysModeCheck.getFont();
+	newFont = newFont.deriveFont(newFont.getStyle(), (float) 15);
+	cdaysModeCheck.setFont(newFont);
+	cdaysModeCheck.setActionCommand(CDAY_MODE);
+	cdaysModeCheck.setToolTipText("Display xaxis dates as C-Days");
+	cdaysModeCheck.addItemListener(this);
 
 	addAllChartListeners();
 	addAllPickListeners();
@@ -139,25 +160,51 @@ public class MultiChartPanel extends JPanel
 						GridBagConstraints.BOTH, 
 						blankInsets, 0, 0));
 
+
+	JPanel bottomPanel = new JPanel();
+	bottomPanel.setLayout(new BorderLayout());
+	bottomPanel.add(Box.createHorizontalStrut(20),BorderLayout.WEST);
+	bottomPanel.add(pointLabel,BorderLayout.CENTER);
+	bottomPanel.add(cdaysModeCheck,BorderLayout.EAST);
+
+
 	height = 1;
 	gridy += height;
 
-	add(pointLabel, new GridBagConstraints(gridx,
+	add(bottomPanel, new GridBagConstraints(gridx,
 					       GridBagConstraints.RELATIVE,  
 					       1, height, 1.0, 0.1,
 					       GridBagConstraints.CENTER, 
-					       GridBagConstraints.NONE, 
+					       GridBagConstraints.HORIZONTAL, 
 					       blankInsets, 0, 0));
+
+
     }
    
     public void setData(InventoryData data) {
 	removeAllChartListeners();
+	baseCDayTime = data.getStartCDay();
 	levelChart.setData(data);
 	refillChart.setData(data);
 	demandChart.setData(data);
+	reallignChartsByXAxis(levelChart.getFirstXAxis());
 	pointLabel.setText(INITIAL_POINT_LABEL);
 	addAllChartListeners();
     }
+
+    public void setDisplayCDay(boolean doUseCDay) {
+	if(displayCDay != doUseCDay) {
+	    displayCDay = doUseCDay;
+	    removeAllChartListeners();
+	    levelChart.setDisplayCDay(displayCDay);
+	    refillChart.setDisplayCDay(displayCDay);
+	    demandChart.setDisplayCDay(displayCDay);
+	    reallignChartsByXAxis(levelChart.getFirstXAxis());
+	    pointLabel.setText(INITIAL_POINT_LABEL);
+	    addAllChartListeners();
+	}
+    }
+	    
 
     public void removeAllChartListeners() {
 	levelChart.removeChartListener(this);
@@ -183,20 +230,29 @@ public class MultiChartPanel extends JPanel
 	demandChart.addPickListener(this);
     }
 
+
+    //Make all three charts align along the xAxis
+    //Hand in an xAxis as the reference point
+    //typically this is xAxis being zoomed in upon
+    //but also sometimes the level chart xAxis at the
+    //beginning is the ruler.
+    //This is should only be called after removing
+    //All chart listeners.
+    public void reallignChartsByXAxis(JCAxis xAxis) {
+	    double xStart = xAxis.getMin();
+	    double xEnd = xAxis.getMax();
+	    levelChart.setXZoom(xStart,xEnd);
+	    refillChart.setXZoom(xStart,xEnd);
+	    demandChart.setXZoom(xStart,xEnd);	
+    }
+
     public void changeChart(JCChartEvent jce) {
 	JCChart source = (JCChart)jce.getSource();
 	String headerText =  ((JLabel) source.getHeader()).getText();
 	JCAxis axis = jce.getModifiedAxis();
 	if(!axis.isVertical()) {
-	    double xStart = axis.getMin();
-	    double xEnd = axis.getMax();
-	    if(logger.isDebugEnabled()) {
-		logger.debug("X-Axis of " + headerText + " changed min: " + axis.getMin() + " Max: " + axis.getMax());
-	    }
 	    removeAllChartListeners();
-	    levelChart.setXZoom(xStart,xEnd);
-	    refillChart.setXZoom(xStart,xEnd);
-	    demandChart.setXZoom(xStart,xEnd);
+	    reallignChartsByXAxis(axis);
 	    pointLabel.setText(INITIAL_POINT_LABEL);
 	    addAllChartListeners();
 	}
@@ -205,6 +261,15 @@ public class MultiChartPanel extends JPanel
     public void paintChart(JCChart chart) {
     }
 
+    public void itemStateChanged(ItemEvent e) {
+	if(e.getSource() instanceof JCheckBox) {
+	    JCheckBox source = (JCheckBox) e.getSource();
+	    if(source.getActionCommand().equals(CDAY_MODE)) {
+		setDisplayCDay(e.getStateChange() == e.SELECTED);
+	    }
+	}
+    }
+	    
     public void pick(JCPickEvent e) {
 	JCDataIndex dataIndex = e.getPickResult();
 	// check for all the possible failures
@@ -237,9 +302,6 @@ public class MultiChartPanel extends JPanel
 	double[] y = dataModel.getRealYSeries(seriesIndex);
 
 
-	boolean displayCDay=false;
-	long baseCDayTime = InventoryChartBaseCalendar.getBaseTime();
-
 	int cDay;
 	int dayOfYear;
 	int daysFromBaseToCDay = (int) ((baseCDayTime - InventoryChartBaseCalendar.getBaseTime())
@@ -268,7 +330,7 @@ public class MultiChartPanel extends JPanel
 	String label = "Date: " + month + "/" +
 	    tmpC.get(Calendar.DAY_OF_MONTH) + "/" +
 	    tmpC.get(Calendar.YEAR) + " " +
-	    //    "(C" + cDay + ")" + time +
+	    "(C" + cDay + ")" +
 	    " Quantity: " + JCChartUtil.format(y[pt], 1);
 	
 	    
