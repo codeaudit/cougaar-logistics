@@ -919,16 +919,18 @@ extends BaseServletComponent
       format = FORMAT_HTML;     // Force html format
       String agent = getEncodedAgentName();
       ShortfallShortData result = getShortfallData();
-      int numShortfall = result.getNumberOfPermShortfallInventories();
+      int numShortfall = result.getNumberOfShortfallInventories();
+
+      int numTempShortfall = result.getNumberOfTempShortfallInventories();
 
       int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
 
       String bgcolor, fgcolor, lncolor;
-      if (numUnexpectedShortfall >= redThreshold) {
+      if ((numUnexpectedShortfall - numTempShortfall) >= redThreshold) {
         bgcolor = "#aa0000";
         fgcolor = "#ffffff";
         lncolor = "#ffff00";
-      } else if (numUnexpectedShortfall >= yellowThreshold) {
+      } else if ((numUnexpectedShortfall - numTempShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
         bgcolor = "#ffff00";
         fgcolor = "#000000";
         lncolor = "#0000ff";
@@ -952,6 +954,7 @@ extends BaseServletComponent
 		  agent+
 		  "</a>");
       out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfall + "</b>");
+      out.println(formatLabel("Num Temp Shortfall Inventories:") + " <b>" + numTempShortfall + "</b>");
       out.println(formatLabel("Num Unexpected Shortfall Inventories:") + " <b>" + numUnexpectedShortfall + "</b>");
       out.println(formatLabel("Effected Supply Types:\n") + result.getSupplyTypes());
       out.println("</body>\n</html>");
@@ -1085,12 +1088,13 @@ extends BaseServletComponent
 
 
     protected void printCountersAsHTML(ShortfallShortData result) {
-      int numShortfall = result.getNumberOfPermShortfallInventories();
+      int numShortfall = result.getNumberOfShortfallInventories();
+      int numTempShortfall = result.getNumberOfTempShortfallInventories();
       int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
       String shortfallColor;
-      if (numUnexpectedShortfall >= redThreshold) {
+      if ((numUnexpectedShortfall - numTempShortfall) >= redThreshold) {
         shortfallColor = "red";
-      } else if (numUnexpectedShortfall >= yellowThreshold) {
+      } else if (((numUnexpectedShortfall - numTempShortfall) >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
         shortfallColor = "yellow";
       } else {
         shortfallColor = "#00d000";
@@ -1107,6 +1111,9 @@ extends BaseServletComponent
           getTitlePrefix()+
           "Number of Shortfall Inventories: <b>"+
           numShortfall +
+          "</b>\n");
+      out.print("Number of Temporary Shortfall Inventories: <b>"+
+          numTempShortfall +
           "</b>\n");
       out.print("Number of Unexpected Shortfall Inventories: <b>"+
           numUnexpectedShortfall +
@@ -1142,7 +1149,7 @@ extends BaseServletComponent
             "?showTables=true&viewType=viewAgentBig\" target=\"viewAgentBig\">"+
             "Full Listing of Shortfall Inventory Items (");
         out.print(
-            (result.getNumberOfPermShortfallInventories()));
+            (result.getNumberOfShortfallInventories()));
         out.println(
             " lines)</a><br>");
       }
@@ -1154,7 +1161,7 @@ extends BaseServletComponent
         String title, String subTitle) {
       out.print(
           "<table border=1 cellpadding=3 cellspacing=1 width=\"100%\">\n"+
-          "<tr bgcolor=lightgrey><th align=left colspan=6>");
+          "<tr bgcolor=lightgrey><th align=left colspan=7>");
       out.print(title);
       if (subTitle != null) {
         out.print(
@@ -1170,6 +1177,7 @@ extends BaseServletComponent
           "<th>Demand Shortfall</th>"+
           "<th>Refill Shortfall</th>"+
           "<th>Supply Shortfall</th>"+
+	  "<th>Temp Shortfall</th>"+
           "<th>ProjectSupply Shortfall</th>"+
           "</tr>\n");
     }
@@ -1202,6 +1210,8 @@ extends BaseServletComponent
 	  out.print("<b>" + inv.getNumRefill() + "</b>");
 	  out.print("</td><td>");
 	  out.print("<b>" + inv.getNumActual() + "</b>");
+	  out.print("</td><td>");
+	  out.print("<b>" + inv.getNumTempShortfall() + "</b>");
 	  out.print("</td><td>");
 	  out.print("<b>" + inv.getNumProjection() + "</b>");
 	  out.print("</td></tr>\n");

@@ -89,6 +89,7 @@ public class ShortfallInventoryRule {
 		   ((verbTaskType.equals(ACTUAL)) ||
 		    (verbTaskType.equals(WILD_CARD))))) {
 		  ruleAppliedInv.setNumDemandSupply(si.getNumDemandSupply());
+		  ruleAppliedInv.setNumTempDemandSupply(si.getNumTempDemandSupply());
 	      }
 
 	      if(!(((demandOrResupply.equals(DEMAND))  ||
@@ -110,6 +111,7 @@ public class ShortfallInventoryRule {
 		   ((verbTaskType.equals(ACTUAL)) ||
 		    (verbTaskType.equals(WILD_CARD))))) {
 		  ruleAppliedInv.setNumResupplySupply(si.getNumResupplySupply());
+		  ruleAppliedInv.setNumTempResupplySupply(si.getNumTempResupplySupply());
 	      }
 
 								     

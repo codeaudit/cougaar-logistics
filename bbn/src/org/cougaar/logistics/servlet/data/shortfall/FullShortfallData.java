@@ -79,7 +79,8 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
     w.optagln(getNameTag());
     w.tagln(AGENT_NAME_TAG, getAgentName());
     w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
-    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfPermShortfallInventories());    
+    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+    w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
     w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
     supplyTypesToXML(w);
     Iterator summaries = summaryMap.values().iterator();

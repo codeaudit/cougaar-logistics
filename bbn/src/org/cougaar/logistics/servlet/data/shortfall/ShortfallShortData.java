@@ -59,6 +59,7 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected final static String AGENT_NAME_TAG = "AGENT";
   protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
+protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
   protected final static String NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG = "NUM_UNEXPECTED_SHORTFALL_INVENTORIES";
   protected final static String EFFECTED_THREADS_TAG = "EFFECTED_SUPPLY_TYPES";
   protected final static String EFFECTED_THREAD_TAG = "SUPPLY_TYPE";
@@ -73,7 +74,9 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected HashMap summaryMap;
 
-  protected int numPermShortfallInventories;
+  protected int numShortfallInventories;
+
+  protected int numTempShortfallInventories;
 
   protected int numUnexpectedShortfallInventories;
 
@@ -85,13 +88,13 @@ public class ShortfallShortData implements XMLable, Serializable{
   public ShortfallShortData(String agentName, long time, Collection summaries) {
       this.agentName = agentName;
       this.timeMillis = time;
-      numPermShortfallInventories = 0;
+      numShortfallInventories = 0;
       summaryMap = new HashMap(4);
       Iterator it = summaries.iterator();
       while(it.hasNext()) {
 	  ShortfallSummary summary = (ShortfallSummary) it.next();
 	  summaryMap.put(summary.getSupplyType(),summary);
-	  numPermShortfallInventories+=summary.getShortfallInventories().size();
+	  numShortfallInventories+=summary.getShortfallInventories().size();
       }
       
       computeNumShortfallWithRules();
@@ -112,8 +115,8 @@ public class ShortfallShortData implements XMLable, Serializable{
     rulesList = theRulesList;
   }
 
-  public void setNumberOfPermShortfallInventories(int numInventories) {
-    this.numPermShortfallInventories = numInventories;
+  public void setNumberOfShortfallInventories(int numInventories) {
+    this.numShortfallInventories = numInventories;
   }
 
   public void setNumberOfUnexpectedShortfallInventories(int numInventories) {
@@ -139,8 +142,12 @@ public class ShortfallShortData implements XMLable, Serializable{
       return summaryMap;
   }
 
-  public int getNumberOfPermShortfallInventories() {
-    return numPermShortfallInventories;
+  public int getNumberOfShortfallInventories() {
+    return numShortfallInventories;
+  }
+
+  public int getNumberOfTempShortfallInventories() {
+      return numTempShortfallInventories;
   }
 
   public int getNumberOfUnexpectedShortfallInventories() {
@@ -168,6 +175,7 @@ public class ShortfallShortData implements XMLable, Serializable{
 	Collection summaries = getShortfallSummaries().values();
 	Iterator summaryIT = summaries.iterator();
 	numUnexpectedShortfallInventories=0;
+	numTempShortfallInventories=0;
 	while(summaryIT.hasNext()) {
 	    ShortfallSummary summary = (ShortfallSummary) summaryIT.next();
 	    Iterator invIT = summary.getShortfallInventories().iterator();
@@ -179,12 +187,15 @@ public class ShortfallShortData implements XMLable, Serializable{
 		    ShortfallInventoryRule rule = (ShortfallInventoryRule) rulesIT.next();
 		    ShortfallInventory newInv = rule.apply(agentName,shortInv);
 		    if(newInv != null) {
-			shortInv=newInv;
-			ruleMatch=true;
+		      shortInv=newInv;
+		      ruleMatch=true;
 		    }
 		}
-		if(shortInv.getNumPermShortfall() > 0) {
+		if(shortInv.getNumTotalShortfall() > 0) {
 		    numUnexpectedShortfallInventories++;
+		    if((shortInv.getNumTotalShortfall() - shortInv.getNumTempShortfall()) <= 0){
+		      numTempShortfallInventories++;
+		    }
 		}
 	    }
 	}
@@ -215,7 +226,8 @@ public class ShortfallShortData implements XMLable, Serializable{
     w.optagln(getNameTag());
     w.tagln(AGENT_NAME_TAG, getAgentName());
     w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
-    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfPermShortfallInventories());    
+    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+    w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
     w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
     supplyTypesToXML(w);
     w.cltagln(getNameTag());
