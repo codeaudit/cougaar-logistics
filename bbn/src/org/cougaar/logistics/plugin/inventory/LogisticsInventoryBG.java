@@ -288,17 +288,13 @@ public class LogisticsInventoryBG implements PGDelegate {
     // shifting Refills and Projections in the dueIn list
   }
 
-  public void logAllToCSVFile(long aCycleStamp) {
+  private void logAllToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
-	  logDueOutsToCSVFile(aCycleStamp);
+	  csvWriter.logDemandToExcelOutput(withdrawList,projWithdrawList,aCycleStamp);
+	  csvWriter.logResupplyToExcelOutput(supplyList,projSupplyList,aCycleStamp);
       }
   }
 
-  private void logDueOutsToCSVFile(long aCycleStamp) {
-      if(csvLogger != null) {
-	  csvWriter.logToExcelOutput(dueOutList,aCycleStamp);
-      }
-  }
 
   public long getStartTime() {
     return startTime;

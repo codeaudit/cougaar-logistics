@@ -40,6 +40,7 @@ import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.AspectScorePoint;
 import org.cougaar.planning.ldm.plan.AspectRate;
 import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.measure.*;
 
 import java.text.NumberFormat;
@@ -243,4 +244,14 @@ public class TaskUtils extends PluginHelper {
     return result;
   }	
 
+  public static double getQuantity(AllocationResult ar) {
+    return getARAspectValue(ar, AspectType.QUANTITY);
+  }
+
 }
+
+
+
+
+
+

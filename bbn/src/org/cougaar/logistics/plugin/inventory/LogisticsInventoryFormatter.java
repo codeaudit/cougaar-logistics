@@ -23,14 +23,22 @@ import java.io.Writer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.AspectType;
+
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+
+
 
 /** 
  * <pre>
@@ -62,53 +70,142 @@ public class LogisticsInventoryFormatter {
 	output = writeOutput;
     }
 
-    public void logToExcelOutput(ArrayList dueOuts, long aCycleStamp){
-	excelLogDueOuts(dueOuts,aCycleStamp);
+    protected static String buildTaskPrefixString(Task aTask) {
+	String taskStr = aTask.getParentTaskUID() + ",";
+	taskStr = taskStr + aTask.getUID() + ",";
+	taskStr = taskStr + aTask.getVerb() + ",";
+	PrepositionalPhrase pp_for = aTask.getPrepositionalPhrase(Constants.Preposition.FOR);
+	if (pp_for != null) {
+	    Object org;
+	    org = pp_for.getIndirectObject();
+	    taskStr = taskStr + org + ",";
+	}
+	else {
+	    taskStr = taskStr + ",";
+	}
+	return taskStr;
+    }
+
+    protected void logTasks(ArrayList tasks,long aCycleStamp) {
+	cycleStamp = aCycleStamp;
+	for(int i=0; i < tasks.size(); i++) {
+	    Task aTask = (Task) tasks.get(i);
+	    String taskStr = buildTaskPrefixString(aTask);
+	    taskStr = taskStr + TimeUtils.dateString(taskUtils.getStartTime(aTask)) + ",";
+	    taskStr = taskStr + TimeUtils.dateString(taskUtils.getEndTime(aTask)) + ",";
+	    //This is qty for supply, daily rate for projection
+	    taskStr = taskStr + taskUtils.getDailyQuantity(aTask);
+	    write(taskStr);
+	}
     }
     
-    protected void logDueOuts(ArrayList dueOuts,long aCycleStamp) {
+    protected void logAllocationResults(ArrayList tasks, long aCycleStamp) {
 	cycleStamp = aCycleStamp;
-	for(int i=0; i < dueOuts.size(); i++) {
-	    ArrayList bin = (ArrayList) dueOuts.get(i);
-	    //	    write("Bin #" + i);
-	    for(int j=0; j < bin.size(); j++) {
-		Task aDueOut = (Task) bin.get(j);
-		String dueOutStr = aDueOut.getUID() + ",";
-		dueOutStr = dueOutStr + aDueOut.getVerb() + ",";
-		PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
-		if (pp_for != null) {
-		    Object org;
-		    org = pp_for.getIndirectObject();
-		    dueOutStr = dueOutStr + org + ",";
-		}
-		Date startDate = new Date(taskUtils.getStartTime(aDueOut));  
-		dueOutStr = dueOutStr + startDate.toString() + ",";
-		Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
-		dueOutStr = dueOutStr + endDate.toString() + ",";
-		if(taskUtils.isSupply(aDueOut)) {
-		    dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
-		}
-		//We have to get the Rate if its a projection....MWD
-		write(dueOutStr);
+	for(int i=0; i < tasks.size(); i++) {
+	    Task aTask = (Task) tasks.get(i);
+	    PlanElement pe = aTask.getPlanElement();
+	    String resultType="REPORTED";
+	    AllocationResult ar = pe.getReportedResult();
+	    if(ar == null) {
+		resultType = "ESTIMATED";
+		ar = pe.getEstimatedResult();
 	    }
-	}
-    } 
-
-
-    protected void excelLogDueOuts(ArrayList dueOuts,long aCycleStamp) {
-	write("DUE_OUTS:START");
-	writeNoCtr("CYCLE,UID,VERB,FOR(ORG),START TIME,END TIME,QTY");
-	logDueOuts(dueOuts,aCycleStamp);
-	write("DUE_OUTS:END");
-    } 
-
-
-
-    public void write(String csvString) {
-	writeNoCtr(cycleStamp + "," + csvString);
+	    if(ar != null) {
+		String taskStr = buildTaskPrefixString(aTask);
+		taskStr = taskStr + resultType + ",";
+		if(!ar.isPhased()) {
+		    String outputStr = taskStr + TimeUtils.dateString(Math.round(TaskUtils.getStartTime(ar))) + ",";
+		    outputStr = outputStr + TimeUtils.dateString(Math.round(TaskUtils.getEndTime(ar))) + ",";
+		    outputStr = outputStr + TaskUtils.getQuantity(ar) + ",";
+		    write(outputStr);
+		}
+		else {
+		    int[] ats = ar.getAspectTypes();
+		    int qtyInd = getIndexForType(ats,AspectType.QUANTITY);
+		    int startInd = getIndexForType(ats,AspectType.START_TIME);
+		    int endInd = getIndexForType(ats,AspectType.END_TIME);
+		    Enumeration phasedResults = ar.getPhasedResults();
+		    while(phasedResults.hasMoreElements()) {
+			double[] results = (double[])phasedResults.nextElement();
+			String outputStr = taskStr + TimeUtils.dateString(Math.round(results[startInd])) + ",";
+			outputStr = outputStr + TimeUtils.dateString(Math.round(results[endInd])) + ",";
+			outputStr = outputStr + results[qtyInd] + ",";
+			write(outputStr);
+		    }
+		}
+	    }
+	}    
     }
 
-    public void writeNoCtr(String aString) {
+    
+    protected static int getIndexForType(int[] types, int type) {
+	for (int ii = 0; ii < types.length; ii++) {
+	    if (types[ii] == type) {
+		return ii;
+	    }
+	}
+	return -1;
+    }
+
+    
+    protected void excelLogProjections(ArrayList tasks,long aCycleStamp) {
+	writeNoCycle("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,DAILY RATE");
+	logTasks(tasks,aCycleStamp);
+    } 
+    
+    
+    protected void excelLogNonProjections(ArrayList tasks,long aCycleStamp) {
+	writeNoCycle("CYCLE,PARENT UID,UID,VERB,FOR(ORG),START TIME,END TIME,QTY");
+	logTasks(tasks,aCycleStamp);
+    } 
+    
+    protected ArrayList buildParentTaskArrayList(ArrayList tasks) {
+	ArrayList parentList = new ArrayList(tasks.size());
+	for(int i=0; i < tasks.size() ; i++ ) {
+	    Task parentTask = ((Task)tasks.get(i)).getWorkflow().getParentTask();
+	    if(parentTask != null) {
+		parentList.add(parentTask);
+	    }
+	    else {
+		logger.error("Problem deriving parent task from task");
+	    }	
+	}
+	return parentList;
+    }
+    
+    protected void logDemandToExcelOutput(ArrayList withdrawList,
+					  ArrayList projWithdrawList,
+					  long aCycleStamp) {
+	cycleStamp = aCycleStamp;
+	
+	ArrayList supplyList = buildParentTaskArrayList(withdrawList);
+	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
+
+	write("SUPPLY TASKS:START");
+	excelLogNonProjections(supplyList,aCycleStamp);
+	write("SUPPLY TASKS:END");
+	write("WITHDRAW TASKS:START");
+	excelLogNonProjections(withdrawList,aCycleStamp);
+	write("WITHDRAW TASKS:END");
+	write("PROJECTSUPPLY TASKS:START");
+	excelLogProjections(projSupplyList,aCycleStamp);
+	write("PROJECTSUPPLY TASKS:END");
+	write("PROJECTWITHDRAW TASKS:START");
+	excelLogNonProjections(projWithdrawList,aCycleStamp);
+	write("PROJECTWITHDRAW TASKS:END");
+    }
+
+    protected void logResupplyToExcelOutput(ArrayList resupplyList,
+					    ArrayList projResupplyList,
+					    long aCycleStamp) {
+
+    }
+
+    public void write(String csvString) {
+	writeNoCycle(cycleStamp + "," + csvString);
+    }
+
+    public void writeNoCycle(String aString) {
 	if(output != null) {
 	    try {
 		output.write(aString);
