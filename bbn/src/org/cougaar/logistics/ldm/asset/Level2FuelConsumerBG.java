@@ -34,7 +34,7 @@ import java.util.Vector;
 
 public class Level2FuelConsumerBG extends FuelConsumerBG {
   public final static String LEVEL2BULKPOL = "Level2BulkPOL";
-  private transient LoggingService logger;
+  private transient LoggingService logger = LoggingService.NULL;
   private String orgName = null;
 
   public Level2FuelConsumerBG(FuelConsumerPG pg) {
@@ -48,7 +48,14 @@ public class Level2FuelConsumerBG extends FuelConsumerBG {
 
   public Collection getConsumed() {
     if (orgName == null) {
-      orgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+      if (parentPlugin != null)
+	orgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+      else {
+	if (logger != null)
+	  logger.error("getConsumed - parentPlugin is null!");
+	else
+	  System.err.println("Lvl2FuelConsBG.getConsumed null parent / logger");
+      }
     }
     if (consumptionRates == null) {
       synchronized (cachedDBValues) {
@@ -57,24 +64,33 @@ public class Level2FuelConsumerBG extends FuelConsumerBG {
           asset = ((AggregateAsset) asset).getAsset();
         }
         String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
-        consumptionRates = (HashMap) cachedDBValues.get(typeId);
+        consumptionRates = (HashMap) cachedDBValues.get(orgName + typeId);
         if (consumptionRates == null) {
           Vector result = null;
-          result = parentPlugin.lookupLevel2AssetConsumptionRate(orgName, asset, supplyType);
+	  if (parentPlugin != null)
+	    result = parentPlugin.lookupLevel2AssetConsumptionRate(orgName, asset, supplyType);
+	  else {
+	    if (logger != null)
+	      logger.error("getConsumed - null parentPlugin for " + asset);
+	    else
+	      System.err.println("Lvl2FuelConsBG.getConsumed null parent / logger for " + asset);
+	  }
           if (result == null) {
-            logger.debug("getConsumed(): Database query returned EMPTY result set for " +
+	    if (logger.isDebugEnabled())
+	      logger.debug("getConsumed(): Database query returned EMPTY result set for " +
                          myPG.getMei() + ", " + supplyType + " " + LEVEL2BULKPOL);
           }
           else {
             consumptionRates = parseResults(result);
-            cachedDBValues.put(typeId, consumptionRates);
+            cachedDBValues.put(orgName + typeId, consumptionRates);
           }
         }
       }
     }
     if (consumptionRates == null) {
-      logger.debug("No consumption rates for " + myPG.getMei() + " at " +
-                   parentPlugin.getMyOrg().getTypeIdentificationPG().getTypeIdentification());
+      if (logger.isDebugEnabled())
+	logger.debug("No consumption rates for "+myPG.getMei()+ ((parentPlugin != null) ? (" at " +
+                   parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification()) : ""));
       consumptionRates = new HashMap();
     }
     return consumptionRates.keySet();
@@ -90,7 +106,8 @@ public class Level2FuelConsumerBG extends FuelConsumerBG {
     Object row[];
     while (results.hasMoreElements()) {
       row = (Object[]) results.nextElement();
-      logger.debug("BulkPOL: parsing results for Level2MEI ");
+      if (logger.isDebugEnabled())
+	logger.debug("BulkPOL: parsing results for Level2MEI ");
       newAsset = parentPlugin.getPrototype(LEVEL2BULKPOL);
       if (newAsset != null) {
         optempo = (String) row[0];
@@ -101,7 +118,8 @@ public class Level2FuelConsumerBG extends FuelConsumerBG {
           ratesMap.put(newAsset, map);
         }
         map.put(optempo.toUpperCase(), new Double(dcr));
-        logger.debug("parseResult() for " + newAsset + ", Level2MEI " +
+	if (logger.isDebugEnabled())
+	  logger.debug("parseResult() for " + newAsset + ", Level2MEI " +
                      ", DCR " + dcr + ", Optempo " + optempo);
       }
       else {
