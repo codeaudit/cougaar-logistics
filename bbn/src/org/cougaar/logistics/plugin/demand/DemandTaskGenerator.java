@@ -394,7 +394,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
   protected Preference createTimeScoringFunctionPref
       (long bestTime, int aspectType) {
 
-    long bucketStart = dgPlugin.getStartOfPeriod();
+    long bucketStart = dgPlugin.getStartOfPeriod(dgPlugin.getCurrentTimeMillis());
     long bucketEnd = bucketStart + dgPlugin.getPeriod();
     long earliestTime = dgPlugin.getLogOPlanStartTime();
 // Get the later of now and org report time
