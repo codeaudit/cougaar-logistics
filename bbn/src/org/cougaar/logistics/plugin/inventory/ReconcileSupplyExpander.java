@@ -53,12 +53,12 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     Iterator taskIter = tasks.iterator();
     while (taskIter.hasNext()) {
       aTask = (Task) taskIter.next();
-      if (logger.isDebugEnabled() && debugAgent())
-        logger.debug(inventoryPlugin.getSupplyType() + " - Received task " + aTask.getUID());
+      if (logger.isInfoEnabled() && debugAgent())
+        logger.info(inventoryPlugin.getSupplyType() + " - Received task " + aTask.getUID());
       if (commStatusExists(getCustomerName(aTask))) {  // if any status objects exist
         if (customerCommsUp(getCustomerName(aTask))) {
-          if (logger.isDebugEnabled() && debugAgent())
-            logger.debug(inventoryPlugin.getSupplyType() + " - Comms up on restore task " + printTask(aTask));
+          if (logger.isInfoEnabled() && debugAgent())
+            logger.info(inventoryPlugin.getSupplyType() + " - Comms up on restore task " + printTask(aTask));
           // CUSTOMER COMM IS UP
           if (isPrediction(aTask)) {
             // we ignore committed predictions and rescind uncommitted ones
@@ -73,22 +73,21 @@ public class ReconcileSupplyExpander extends SupplyExpander {
           CustomerState cs = (CustomerState) customerStates.get(getCustomerName(aTask));
           if (isPrediction(aTask)) {
             if (logger.isDebugEnabled() && debugAgent()) {
-              logger.debug(inventoryPlugin.getSupplyType() + " -Comm is down " +
+              logger.info(inventoryPlugin.getSupplyType() + " -Comm is down " +
                            printTheGap(aTask) + " task " + printTask(aTask));
             }
             if (beforeTheGap(aTask, cs.getLatestEndTime())) {
               inventoryPlugin.publishRemove(aTask);
-              if (logger.isDebugEnabled() && debugAgent()) {
-                logger.debug(inventoryPlugin.getSupplyType() + " -Comm is down, removing prediction: " +
+              if (logger.isInfoEnabled() && debugAgent()) {
+                logger.info(inventoryPlugin.getSupplyType() + " -Comm is down, removing prediction: " +
                              printTheGap(aTask) + " task " + printTask(aTask));
               }
-              //removeUncommittedPredictions(aTask);  // otherwise we ignore the task
               continue;
             }
             if (afterTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask)) {
               inventoryPlugin.publishRemove(aTask);  // don't need to check commitment should be beyond
-              if (logger.isDebugEnabled() && debugAgent()) {
-                logger.debug(inventoryPlugin.getSupplyType() + " - Comm is down, removing prediction after the gap "
+              if (logger.isInfoEnabled() && debugAgent()) {
+                logger.info(inventoryPlugin.getSupplyType() + " - Comm is down, removing prediction after the gap "
                              + printTheGap(aTask) + " task : " + printTask(aTask));
               }
               continue;
@@ -97,8 +96,8 @@ public class ReconcileSupplyExpander extends SupplyExpander {
           } else {  // ignore demand tasks in or after the gap while we are waiting for the alarm to expire
             if (inTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask)
                 || afterTheGap(cs.getLatestEndTime(), cs.customerLeadTime, aTask) || isCommitted(aTask)) {
-              if (logger.isDebugEnabled() && debugAgent()) {
-                logger.debug(inventoryPlugin.getSupplyType() +
+              if (logger.isInfoEnabled() && debugAgent()) {
+                logger.info(inventoryPlugin.getSupplyType() +
                              " -Comm is down, ignoring demand task committed || in || after the gap "
                              + printTheGap(aTask) + " task: " + printTask(aTask));
               }
@@ -115,23 +114,14 @@ public class ReconcileSupplyExpander extends SupplyExpander {
           logInvPG.addWithdrawRequisition(wdrawTask);
         }
         ((NewWorkflow) wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
-        if (logger.isDebugEnabled() && debugAgent())
-          logger.debug(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(aTask));
+        if (logger.isInfoEnabled() && debugAgent())
+          logger.info(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(aTask));
       } else {
         if (isPrediction(aTask)) {
           logger.error(" Prediction ");
         }
         logger.error(" task has null commit date: " + commitDate);
         continue;
-      }
-    }
-  }
-
-  private void removeUncommittedPredictions(Task aTask) {
-    if (! isCommitted(aTask)) {
-      inventoryPlugin.publishRemove(aTask);
-      if (logger.isDebugEnabled() && debugAgent()) {
-        logger.debug("Comm is up, removing uncommitted prediction: " + printTheGap(aTask));
       }
     }
   }
@@ -143,14 +133,14 @@ public class ReconcileSupplyExpander extends SupplyExpander {
       Task aTask = aDisp.getTask();
       if (aTask != null) {
         if (hasAuxQuery(aDisp, aTask)) {
-          if (logger.isDebugEnabled()) {
-            logger.debug(" INSIDE remove reqs, task has aux query ");
+          if (logger.isInfoEnabled()) {
+            logger.info(" INSIDE remove reqs, task has aux query ");
           }
           publishRemovePrediction(aDisp, aTask);
         }
       } else {
-        if (logger.isDebugEnabled()) {
-          logger.debug("handleRemovedRealRequisitions... Disposition's task reference is null");
+        if (logger.isInfoEnabled()) {
+          logger.info("handleRemovedRealRequisitions... Disposition's task reference is null");
         }
       }
     }
@@ -207,8 +197,8 @@ public class ReconcileSupplyExpander extends SupplyExpander {
             Alarm alarm = inventoryPlugin.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
                                                                                 COMMS_UP_DELAY);
             state.setCommsUpAlarm(alarm);
-            if (logger.isDebugEnabled()) {
-              logger.debug("Have new supply tasks... setting ReconcileSupplyExpander alarm");
+            if (logger.isInfoEnabled()) {
+              logger.info("Have new supply tasks... setting ReconcileSupplyExpander alarm");
             }
           }
         }
@@ -223,11 +213,11 @@ public class ReconcileSupplyExpander extends SupplyExpander {
       Alarm thisAlarm = state.getCommsUpAlarm();
       if (thisAlarm != null ) {
         if (thisAlarm.hasExpired()) {
-          if (logger.isDebugEnabled() && debugAgent()) {
-            logger.debug(" The expire time is " + new Date(thisAlarm.getExpirationTime()) +
+          if (logger.isInfoEnabled() && debugAgent()) {
+            logger.info(" The expire time is " + new Date(thisAlarm.getExpirationTime()) +
                          "  the current time is " +
                          new Date(inventoryPlugin.getCurrentTimeMillis()));
-            logger.debug("Alarm expired on customer " + entry.getKey());
+            logger.info("Alarm expired on customer " + entry.getKey());
           }
           state.setCommsUpAlarm(null);
           state.setStateExpired(true);
@@ -245,19 +235,59 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     Collection supplyTasks = tasksInTheGap(tasksGapPred);
     Collection predictionTasks = tasksInTheGap(predictionsGapPred);
     if (predictionTasks.isEmpty()) {
-      logger.debug(inventoryPlugin.getSupplyType() + ": There are no predictions in the gap, no need to reconcile."
-                   + " Number of demand tasks: " +
-                   supplyTasks.size());
-      return;
+      logger.info(inventoryPlugin.getSupplyType() + ": There are no predictions in the gap, no need to reconcile."
+                  + " Number of demand tasks: " +
+                  supplyTasks.size());
+      if (! supplyTasks.isEmpty()) {
+        for (Iterator iterator = supplyTasks.iterator(); iterator.hasNext();) {
+          Task task = (Task) iterator.next();
+          if (logger.isErrorEnabled()) {
+            logger.error(" No predictions in the gap, expanding tasks without reconciliation " + printTask(task));
+          }
+          Task wdrawTask = expandDemandTask(task, createWithdrawTask(task));
+          LogisticsInventoryPG logInvPG = getLogisticsInventoryPG(wdrawTask);
+          if (logInvPG != null) {
+            logInvPG.addWithdrawRequisition(wdrawTask);
+          }
+          ((NewWorkflow) wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
+          if (logger.isInfoEnabled() && debugAgent())
+            logger.info(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(task));
+        }
+      }
+      return;  // there is nothing more to do
     }
     // predicted items dictate what we need to reconcile
     List sortedTasks = sortTasksByEndTime(supplyTasks);
+    Collection uniqueSupplyItems = pruneDuplicateItems(supplyTasks);
     List sortedPreds = sortTasksByEndTime(predictionTasks);
     Collection uniquePredItems = pruneDuplicateItems(predictionTasks);
     for (Iterator iterator = uniquePredItems.iterator(); iterator.hasNext();) {
       String item = (String) iterator.next();
       // pass in the complete lists, and then filter as needed for the item
       reconcilePredictions(sortedTasks, sortedPreds, item);
+      if (uniqueSupplyItems.contains(item))
+        uniqueSupplyItems.remove(item);
+    }
+    // if we have missing predicted items, we should go ahead and expand the tasks
+    // and complain
+    for (Iterator iterator = uniqueSupplyItems.iterator(); iterator.hasNext();) {
+      String item = (String) iterator.next();
+      UnaryPredicate itemPred = new ItemPredicate(item);
+      Collection taskItems = filterItems(itemPred, supplyTasks);
+      for (Iterator iter = taskItems.iterator(); iter.hasNext();) {
+        Task task = (Task) iter.next();
+        if (logger.isErrorEnabled()) {
+          logger.error(" No predictions in the gap, expanding tasks without reconciliation " + printTask(task));
+        }
+        Task wdrawTask = expandDemandTask(task, createWithdrawTask(task));
+        LogisticsInventoryPG logInvPG = getLogisticsInventoryPG(wdrawTask);
+        if (logInvPG != null) {
+          logInvPG.addWithdrawRequisition(wdrawTask);
+        }
+        ((NewWorkflow) wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
+        if (logger.isInfoEnabled() && debugAgent())
+          logger.info(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(task));
+      }
     }
   }
 
@@ -289,8 +319,8 @@ public class ReconcileSupplyExpander extends SupplyExpander {
         state.setCustomerLeadTime(customerLeadTime);
         state.setLatestEndTime(latestEndTime);
         state.setCommsUp(false);
-        if (logger.isDebugEnabled() && debugAgent()) {
-          logger.debug("Supply Type is : " + inventoryPlugin.getSupplyType() + "\n  Setting customer state for " +
+        if (logger.isInfoEnabled() && debugAgent()) {
+          logger.info("Supply Type is : " + inventoryPlugin.getSupplyType() + "\n  Setting customer state for " +
                        customerName + " Comm Loss time : " +
                        new Date(cs.getCommLossTime()) + "\t latest end time found " +
                        new Date(latestEndTime) + "\n customer lead time is " + customerLeadTime/86400000) ;
@@ -300,16 +330,16 @@ public class ReconcileSupplyExpander extends SupplyExpander {
           // state is still down
           continue;
         }
-        if (logger.isDebugEnabled() && debugAgent()) {
-          logger.debug("Comms came up for  " + customerName);
+        if (logger.isInfoEnabled() && debugAgent()) {
+          logger.info("Comms came up for  " + customerName);
         }
         // only set the Alarm if comms are up and we have atleast some new supply tasks
         if (newSupplyTasks) {
           Alarm alarm = inventoryPlugin.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
                                                                               COMMS_UP_DELAY);
           state.setCommsUpAlarm(alarm);
-          if (logger.isDebugEnabled()) {
-            logger.debug("Have new supply tasks... setting ReconcileSupplyExpander alarm");
+          if (logger.isInfoEnabled()) {
+            logger.info("Have new supply tasks... setting ReconcileSupplyExpander alarm");
           }
         }
         state.setCommsUp(true);
@@ -327,11 +357,37 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     UnaryPredicate itemPred = new ItemPredicate(item);
     List sortedTasks = filterItems(itemPred, demandTasks);
     List sortedPreds = filterItems(itemPred, committedPreds);
-
+//    if (logger.isInfoEnabled() && debugAgent() &&
+//        inventoryPlugin.getSupplyType().equals("Consumable")) {
+//      for (Iterator iterator = sortedTasks.iterator(); iterator.hasNext();) {
+//        Task task = (Task) iterator.next();
+//        logger.info(" printing tasks filtered by items " +printTask(task));
+//
+//      }
+//    }
+    if (sortedPreds.isEmpty()) {
+      if ( ! sortedTasks.isEmpty()) {
+        for (Iterator iterator = sortedTasks.iterator(); iterator.hasNext();) {
+          Task task = (Task) iterator.next();
+          if (logger.isErrorEnabled()) {
+            logger.error(" Demand task without a matching prediction, will expand" + printTask(task));
+          }
+          Task wdrawTask = expandDemandTask(task, createWithdrawTask(task));
+          LogisticsInventoryPG logInvPG = getLogisticsInventoryPG(wdrawTask);
+          if (logInvPG != null) {
+            logInvPG.addWithdrawRequisition(wdrawTask);
+          }
+          ((NewWorkflow) wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
+          if (logger.isInfoEnabled() && debugAgent())
+            logger.info(inventoryPlugin.getSupplyType() + " - Epanded task :" + printTask(task));
+        }
+      }
+      return;
+    }
 
     if (! sortedPreds.isEmpty()) {
-      if (logger.isDebugEnabled() && debugAgent()) {
-        logger.debug(inventoryPlugin.getSupplyType() + " Item: " +
+      if (logger.isInfoEnabled() && debugAgent()) {
+        logger.info(inventoryPlugin.getSupplyType() + " Item: " +
                      taskUtils.getTaskItemName((Task) sortedPreds.get(0))
                      + ": Number of tasks in the gap -->  Predictions:  "
                      + sortedPreds.size()
@@ -341,92 +397,93 @@ public class ReconcileSupplyExpander extends SupplyExpander {
       if (sortedTasks.isEmpty()) {
         for (Iterator iterator = sortedPreds.iterator(); iterator.hasNext();) {
           Task predTask = (Task) iterator.next();
-          if (logger.isDebugEnabled() && debugAgent()) {
-            logger.debug(inventoryPlugin.getSupplyType() + "Removing prediction for Item: " +
+          if (logger.isInfoEnabled() && debugAgent()) {
+            logger.info(inventoryPlugin.getSupplyType() + "Removing prediction for Item: " +
                          taskUtils.getTaskItemName(predTask) + " end date " + taskUtils.getEndTime(predTask));
           }
           inventoryPlugin.publishRemove(predTask);
         }
+        return;
       }
-    }
 
-    int i = 0;
-    int j = 0;
-    int size = sortedPreds.size();
-    int lastIndex = sortedTasks.size() -1;
-    for(i = 0; i <= lastIndex; i++) {
-      Task task = (Task) sortedTasks.get(i);
-      long endTime = taskUtils.getEndTime(task);
-      double quantity = 0.0;
-      long maxEndTime = endTime;
-      List taskPhasedValues = new ArrayList();
-      // let's try priming the task to except auxiliary queries
-      setAuxiliaryQueryOnTask(task);
-      ArrayList pUids = new ArrayList();
-      while (j < size) {
-        Task pred = (Task) sortedPreds.get(j);
-        long predEndTime = taskUtils.getEndTime(pred);
-        if (predEndTime > endTime && i < lastIndex) {
-          break;
-        }
-        PlanElement pe = pred.getPlanElement();
-        AllocationResult ar = pe.getEstimatedResult();
-        if (! ar.isSuccess()) {
-          // prediction failed no reconcilation needed
-          if (logger.isDebugEnabled()) {
-            logger.debug("Found a failed prediction, no reconcilation");
+      int i = 0;
+      int j = 0;
+      int size = sortedPreds.size();
+      int lastIndex = sortedTasks.size() -1;
+      for(i = 0; i <= lastIndex; i++) {
+        Task task = (Task) sortedTasks.get(i);
+        long endTime = taskUtils.getEndTime(task);
+        double quantity = 0.0;
+        long maxEndTime = endTime;
+        List taskPhasedValues = new ArrayList();
+        // let's try priming the task to except auxiliary queries
+        setAuxiliaryQueryOnTask(task);
+        ArrayList pUids = new ArrayList();
+        while (j < size) {
+          Task pred = (Task) sortedPreds.get(j);
+          long predEndTime = taskUtils.getEndTime(pred);
+          if (predEndTime > endTime && i < lastIndex) {
+            break;
           }
-          j++;
-          continue;
-        }
-        List phasedResults = ar.getPhasedAspectValueResults();
-        taskPhasedValues.addAll(phasedResults);
-        for (Iterator phaseIter = phasedResults.iterator(); phaseIter.hasNext();) {
-          AspectValue[] aspectValues = (AspectValue[]) phaseIter.next();
-          for (int l = 0; l < aspectValues.length; l++) {
-            AspectValue aspectValue = aspectValues[l];
-            switch (aspectValue.getAspectType()) {
-              case AspectType.QUANTITY:
-                quantity += aspectValue.getValue();
-                break;
-              case AspectType.END_TIME:
-                maxEndTime = Math.max(maxEndTime, aspectValue.longValue());
-                break;
-              default: logger.warn("Unexpected aspect type " + aspectValue.getAspectType());
+          PlanElement pe = pred.getPlanElement();
+          AllocationResult ar = pe.getEstimatedResult();
+          if (! ar.isSuccess()) {
+            // prediction failed no reconcilation needed
+            if (logger.isInfoEnabled()) {
+              logger.info("Found a failed prediction, no reconcilation");
+            }
+            j++;
+            continue;
+          }
+          List phasedResults = ar.getPhasedAspectValueResults();
+          taskPhasedValues.addAll(phasedResults);
+          for (Iterator phaseIter = phasedResults.iterator(); phaseIter.hasNext();) {
+            AspectValue[] aspectValues = (AspectValue[]) phaseIter.next();
+            for (int l = 0; l < aspectValues.length; l++) {
+              AspectValue aspectValue = aspectValues[l];
+              switch (aspectValue.getAspectType()) {
+                case AspectType.QUANTITY:
+                  quantity += aspectValue.getValue();
+                  break;
+                case AspectType.END_TIME:
+                  maxEndTime = Math.max(maxEndTime, aspectValue.longValue());
+                  break;
+                default: logger.warn("Unexpected aspect type " + aspectValue.getAspectType());
+              }
             }
           }
+          pUids.add(pred.getUID().toString());
+          j++;
         }
-        pUids.add(pred.getUID().toString());
-        j++;
-      }
 
-      AspectValue[] rollup = { AspectValue.newAspectValue(AspectType.END_TIME, maxEndTime),
-                               AspectValue.newAspectValue(AspectType.QUANTITY, quantity)};
-      AllocationResult ar = new AllocationResult(1.0, true, rollup, taskPhasedValues);
-      // store the uid of the reconciled predictions on the actual task
-      // so that we can remove the predictions later if the actual task gets replanned.
-      for (int p = 0; p < pUids.size(); p++) {
-        String s = (String) pUids.get(p);
-        ar.addAuxiliaryQueryInfo(p, s);
-        if (logger.isDebugEnabled() && debugAgent()) {
-          logger.debug(inventoryPlugin.getSupplyType() + " add a aux query on the AR  " + j + " pred uid " + s +
-                       " task uid is " + task.getUID());
+        AspectValue[] rollup = { AspectValue.newAspectValue(AspectType.END_TIME, maxEndTime),
+                                 AspectValue.newAspectValue(AspectType.QUANTITY, quantity)};
+        AllocationResult ar = new AllocationResult(1.0, true, rollup, taskPhasedValues);
+        // store the uid of the reconciled predictions on the actual task
+        // so that we can remove the predictions later if the actual task gets replanned.
+        for (int p = 0; p < pUids.size(); p++) {
+          String s = (String) pUids.get(p);
+          ar.addAuxiliaryQueryInfo(p, s);
+          if (logger.isInfoEnabled() && debugAgent()) {
+            logger.info(inventoryPlugin.getSupplyType() + " add a aux query on the AR  " + j + " pred uid " + s +
+                         " task uid is " + task.getUID());
+          }
         }
-      }
-      if (logger.isDebugEnabled() && debugAgent()) {
-        logger.debug(inventoryPlugin.getSupplyType() + " - Published new disposition on task " + task.getUID()
-                     + " end Time " + new Date(endTime) + " new quantity " + quantity + "\nOriginal data " +
-                     printTask(task) + " for ITEM "+ item);
+        if (logger.isInfoEnabled() && debugAgent()) {
+          logger.info(inventoryPlugin.getSupplyType() + " - Published new disposition on task " + task.getUID()
+                       + " end Time " + new Date(endTime) + " new quantity " + quantity + "\nOriginal data " +
+                       printTask(task) + " for ITEM "+ item);
 
-      }
-      if (task.getPlanElement() != null) {
-        if (logger.isDebugEnabled() && debugAgent()) {
-          logger.debug(inventoryPlugin.getSupplyType() + " - demand task has a plan element " + printTask(task));
-          inventoryPlugin.publishRemove(task.getPlanElement());
         }
+        if (task.getPlanElement() != null) {
+          if (logger.isInfoEnabled() && debugAgent()) {
+            logger.info(inventoryPlugin.getSupplyType() + " - demand task has a plan element " + printTask(task));
+            inventoryPlugin.publishRemove(task.getPlanElement());
+          }
+        }
+        Disposition disp = inventoryPlugin.getPlanningFactory().createDisposition(task.getPlan(), task, ar);
+        inventoryPlugin.publishAdd(disp);
       }
-      Disposition disp = inventoryPlugin.getPlanningFactory().createDisposition(task.getPlan(), task, ar);
-      inventoryPlugin.publishAdd(disp);
     }
   }
 
@@ -436,9 +493,9 @@ public class ReconcileSupplyExpander extends SupplyExpander {
       types[i] = i;
     }
     ((TaskImpl)t).setAuxiliaryQueryTypes(types);
-    if (logger.isDebugEnabled()) {
-      logger.debug("Setting AuxQueryTypes: " + types+ " on task: " + t.getUID());
-      logger.debug("Task says it has the following AuxQueryTypes: " + t.getAuxiliaryQueryTypes());
+    if (logger.isInfoEnabled()) {
+      logger.info("Setting AuxQueryTypes: " + types+ " on task: " + t.getUID());
+      logger.info("Task says it has the following AuxQueryTypes: " + t.getAuxiliaryQueryTypes());
     }
   }
 
@@ -451,8 +508,8 @@ public class ReconcileSupplyExpander extends SupplyExpander {
   private boolean hasAuxQuery(Disposition pe, Task task) {
     AllocationResult ar = pe.getEstimatedResult();
     if (ar == null) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("In hasAuxQuery:  Task's estimated is null");
+      if (logger.isInfoEnabled()) {
+        logger.info("In hasAuxQuery:  Task's estimated is null");
       }
       return false;
     }
@@ -460,40 +517,30 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     int [] theTypes = task.getAuxiliaryQueryTypes();
     int checktype = theTypes[0];
     //return (checktype > -1);
-    if (logger.isDebugEnabled()) {
-      logger.debug("In hasAuxQuery: checktype is " + checktype);
+    if (logger.isInfoEnabled()) {
+      logger.info("In hasAuxQuery: checktype is " + checktype);
     }
     return (checktype > -1);
   }
 
-  // MORE EPD AUX QUERY CHANGES
-//   public void publishRemovePrediction(Task task) {
-//     PlanElement pe = task.getPlanElement();
-//     if (pe == null) {
-//       return;
-//     }
-//     AllocationResult ar = pe.getReportedResult();
-//     if (ar == null) {
-//       return;
-//     }
   private void publishRemovePrediction(Disposition pe, Task task) {
     AllocationResult ar = pe.getEstimatedResult();
     int [] auxQueryTypes = task.getAuxiliaryQueryTypes();
     for (int i = 0; i < auxQueryTypes.length; i++) {
       String uid = ar.auxiliaryQuery(auxQueryTypes[i]);
-      if (logger.isDebugEnabled()) {
-        logger.debug("AuxQuery from estimated result returned this uid " + uid);
+      if (logger.isInfoEnabled()) {
+        logger.info("AuxQuery from estimated result returned this uid " + uid);
       }
       if (uid != null) {
         BlackboardService bs = inventoryPlugin.getBBService();
         Collection predTasks = bs.query(new TaskUid(uid));
         if (! predTasks.isEmpty()) {
           inventoryPlugin.publishRemove(predTasks.iterator().next());
-          if (logger.isDebugEnabled()) {
-            logger.debug(inventoryPlugin.getSupplyType() + " Reconciled task was removed... Removing matching prediction " + uid);
+          if (logger.isInfoEnabled()) {
+            logger.info(inventoryPlugin.getSupplyType() + " Reconciled task was removed... Removing matching prediction " + uid);
           }
-        } else if (logger.isDebugEnabled()) {
-          logger.debug("Query for matching prediction retruned an empty set for uid: " + uid);
+        } else if (logger.isInfoEnabled()) {
+          logger.info("Query for matching prediction returned an empty set for uid: " + uid);
         }
       }
     }
@@ -511,7 +558,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     long endTime = taskUtils.getEndTime(task);
     boolean retVal = false;
     retVal = endTime < lastEndTime;
-    if (retVal == true && logger.isDebugEnabled() && debugAgent()) {
+    if (retVal == true && logger.isInfoEnabled() && debugAgent()) {
       if (isPrediction(task))
         logger.error(" Prediction ");
       logger.error(inventoryPlugin.getSupplyType() + " - task has end date before the GAP: " + new Date(endTime));
@@ -527,10 +574,10 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     rightEdge = leftEdge + gap * 4;
     long endTime = taskUtils.getEndTime(task);
     retVal = endTime > leftEdge && endTime < rightEdge;
-    if (retVal == true && logger.isDebugEnabled() && debugAgent()) {
+    if (retVal == true && logger.isInfoEnabled() && debugAgent()) {
       if (isPrediction(task))
-        logger.debug(" Prediction ");
-      logger.debug(inventoryPlugin.getSupplyType() + " - task in the GAP:  end time is " + new Date(endTime)
+        logger.info(" Prediction ");
+      logger.info(inventoryPlugin.getSupplyType() + " - task in the GAP:  end time is " + new Date(endTime)
                    + printTheGap(task));
     }
     return  retVal;
@@ -538,10 +585,10 @@ public class ReconcileSupplyExpander extends SupplyExpander {
 
   private boolean inTheOutage(long leftEdge, long rightEdge, Task task) {
     long commitTime = task.getCommitmentDate().getTime();
-    if (logger.isDebugEnabled() && debugAgent()) {
+    if (logger.isInfoEnabled() && debugAgent()) {
       if (isPrediction(task))
-        logger.debug("Prediction ");
-      logger.debug(" task commitment date is: " + task.getCommitmentDate() + " in the outage? " +
+        logger.info("Prediction ");
+      logger.info(" task commitment date is: " + task.getCommitmentDate() + " in the outage? " +
                    new Date(leftEdge) + " - " + new Date(rightEdge));
     }
     return  (commitTime > leftEdge && commitTime < rightEdge);
@@ -555,7 +602,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     long gap = rightEdge - leftEdge;
     rightEdge = leftEdge + gap * 4;
     retVal = endTime > rightEdge;
-    if (retVal == true && logger.isDebugEnabled() && debugAgent()) {
+    if (retVal == true && logger.isInfoEnabled() && debugAgent()) {
       if (isPrediction(task))
         logger.error(" Prediction ");
       logger.error(inventoryPlugin.getSupplyType() + " - task after the GAP, end time is: " + new Date(endTime));
@@ -680,8 +727,8 @@ public class ReconcileSupplyExpander extends SupplyExpander {
     }
 
     public long getMaxEndTime(){
-      if (logger.isDebugEnabled() && debugAgent())
-        logger.debug(" ReconcileExpander " + inventoryPlugin.getSupplyType() + " Last task found " + lastTask);
+      if (logger.isInfoEnabled() && debugAgent())
+        logger.info(" ReconcileExpander " + inventoryPlugin.getSupplyType() + " Last task found " + lastTask);
       return maxEnd;
     }
   }
