@@ -50,6 +50,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
    **/
   public DiffBasedComparator(InventoryPlugin imPlugin) {
     super(imPlugin);
+    logger.debug("DiffBasedComparator LOADED!!!!!");
   }
 
   /** Compares the old and new Refill tasks.
@@ -119,6 +120,9 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
       return;
     }
 
+    LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
+	searchForPropertyGroup(LogisticsInventoryPG.class);
+
     Schedule publishedSchedule = getTaskUtils().newObjectSchedule(oldRefillProjs);
     Schedule newTaskSchedule = getTaskUtils().newObjectSchedule(newRefillProjs);
 
@@ -146,14 +150,21 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         // change the task to look like new task
         ose = (ObjectScheduleElement)c.iterator().next();
         published_task = (Task)ose.getObject();
+        Task saveTask = published_task;
         ((NewSchedule)publishedSchedule).removeScheduleElement(ose);
 
+        thePG.removeWithdrawProjection(published_task);
         logger.debug(" Comparing plublished task  "+getTaskUtils().taskDesc(published_task)+
                      " with \n"+getTaskUtils().taskDesc(new_task));
+        // changeTask returns the changed published task if the 2 tasks are different and 
+        // null if the tasks are identical.
         published_task = getTaskUtils().changeTask(published_task, new_task);
         if (published_task != null) {
           logger.debug("DIFF ********** Replaced task with ---> \n"+ getTaskUtils().taskDesc(published_task));
           inventoryPlugin.publishChange(published_task);
+          thePG.addRefillProjection(published_task);
+        }else{ // published and new task are the same, so add the published task back into the BG
+          thePG.addRefillProjection(saveTask);
         }
       }
       else {
@@ -161,8 +172,6 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         // apply the Task to the LogisticsInventoryBG
         logger.debug("No task exists that covers this timespan, publish task "+
                      getTaskUtils().taskDesc(new_task));
-        LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
-          searchForPropertyGroup(LogisticsInventoryPG.class);
         thePG.addRefillProjection(new_task);
         // hook the task in with the MaintainInventory workflow and publish
         inventoryPlugin.publishRefillTask(new_task, inv);
