@@ -55,6 +55,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	void updateRefillRequisition(Task task); \
 	void updateWithdrawRequisition(Task task); \
 	void updateRefillProjection(Task task); \
+	void updateWithdrawProjection(Task task); \
 	double getProjectedDemand(int bucket); \
 	double getActualDemand(int bucket); \
 	Collection getActualDemandTasks(int bucket); \
