@@ -413,6 +413,7 @@ public class DemandForecastPlugin extends ComponentPlugin
            new TaskSchedulingPolicy.PriorityPhaseMix (1, ts4)}),
        blackboard, logger,"GenProjs for " + getBlackboardClientName());
     } else {
+      logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
      genProjTaskScheduler = new TaskScheduler
       (new GenProjPredicate (supplyType, taskUtils),
        new TaskSchedulingPolicy (
