@@ -568,8 +568,8 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       orgActivity.setOpTempo(modifiedOrgActivity.getOpTempo());
       orgActivity.setTimeSpan(modifiedOrgActivity.getTimeSpan());
 
-      /*
       blackboard.publishChange(orgActivity);
+      /*
       System.out.println("Publish status of " + status + " for " + orgActivity);
       System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
                          orgActivity.getTimeSpan().getStartDate() + " " +
