@@ -163,7 +163,8 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
     ForUnitPG unitPG = getForUnitPG (task.getDirectObject());
 
     try{
-      if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY)) {
+      if (prepHelper.hasPrepNamed (task, GLMTransConst.LOW_FIDELITY) &&
+	  !isSelfPropelled  (task, task.getDirectObject())) {
 	expandLowFi (task, subtasks);
       }
       else if (task.getDirectObject () instanceof AggregateAsset) {
@@ -483,6 +484,26 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 	     " m " + itemProto.getPhysicalPG().getMass   ().getTons() + " tons, " +
 	     " v " + itemProto.getPhysicalPG().getVolume ().getCubicFeet() + " ft^3");
     }
+  }
+
+  protected boolean isSelfPropelled (Task t, Asset directObject) {
+    GLMAsset baseAsset = 
+      (directObject instanceof AggregateAsset) ? 
+      (GLMAsset) ((AggregateAsset)directObject).getAsset() : 
+      (GLMAsset) directObject;
+	
+    MovabilityPG move_prop = baseAsset.getMovabilityPG();
+
+    if (move_prop != null) {
+      String cargocatcode = move_prop.getCargoCategoryCode();
+      if (cargocatcode.charAt(0) == 'R') {
+	if (isDebugEnabled())
+	  debug (getName() + ".isSelfPropelled - found self-propelled vehicle on task " + t.getUID());
+	return true;
+      }
+    }
+
+    return false;
   }
 
   protected Asset getTruckSizedAsset (Asset itemProto, PhysicalPG originalPhysicalPG, String itemID, double contrib) {
