@@ -92,7 +92,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param daysOnHand Number of DaysOnHand from the InventoryPolicy
    *  @param endOfLevelSix The day representing the end of the Level 6 window
    *   from the VariableTimeHorizon OperatingMode (knob)
-   *  @param endOfLelelTwo  The day representing the end of the Level 2 window
+   *  @param endOfLevelTwo  The day representing the end of the Level 2 window
    *   from the VariableTimeHorizon OperatingMode (knob)
    **/
   public void calculateRefillProjections(Collection touchedInventories, int daysOnHand,
@@ -175,6 +175,9 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
+      if(startDay < inventoryPlugin.getRefillStartTime()) {
+        startDay = inventoryPlugin.getRefillStartTime();
+      }
       int startBucket = thePG.convertTimeToBucket(startDay, true);
       int currentBucket = startBucket;
 //       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
@@ -316,10 +319,18 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //         //if there's a change in the demand, create a refill projection 
 //         //BUT only if demand is non-zero 
 //         if (projDemand > 0.0) {
+    //       old
 //           Task newLevel2Refill = 
 //             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                             level2PG.convertBucketToTime(currentBucket),
 //                                             level2PG.getStartTime(), projDemand, level2PG,
+//                                             level2Inv);
+    //       new (can't have earliest arrive before we get to theatre
+//           Task newLevel2Refill = 
+//             createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+//                                             level2PG.convertBucketToTime(currentBucket),
+//                                             inventoryPlugin.getOPlanArrivalInTheaterTime(), projDemand,
+//                                             level2PG,
 //                                             level2Inv);
 //           newProjections.add(newLevel2Refill);
 //         }
@@ -335,10 +346,18 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 //     // projection task (if there is one)
 //     if (startBucket != currentBucket) {
 //       if (projDemand > 0.0) {
+    //     old
 //         Task lastLevel2Refill = 
 //           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
 //                                           level2PG.convertBucketToTime(currentBucket),
 //                                           level2PG.getStartTime(), projDemand, level2PG,
+//                                           level2Inv);
+    //       new (can't have earliest arrive before we get to theatre
+//         Task lastLevel2Refill = 
+//           createAggregateProjectionRefill(level2PG.convertBucketToTime(startBucket), 
+//                                           level2PG.convertBucketToTime(currentBucket),
+//                                           inventoryPlugin.getOPlanArrivalInTheaterTime(),
+//                                           projDemand, level2PG,
 //                                           level2Inv);
 //         newProjections.add(lastLevel2Refill);
 //       }
@@ -368,7 +387,9 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     NewTask newRefill = inventoryPlugin.getPlanningFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(thePG.getResource());
-    newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
+    //    newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
+    //                       demand, thePG);
+    newRefill = fillInTask(newRefill, start, end, inventoryPlugin.getOPlanArrivalInTheaterTime(), 
                            demand, thePG);
     return newRefill;
   }
@@ -382,7 +403,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param level2Inv  The Level 2 Inventory
    *  @return Task The new Level 2 Projection Task
    **/
-  protected Task createAggregateProjectionRefill(long start, long end, 
+  private Task createAggregateProjectionRefill(long start, long end, 
                                                long earliest, double demand, 
                                                LogisticsInventoryPG level2PG,
                                                Inventory level2Inv) {
@@ -403,7 +424,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
    *  @param end End Time for Task
    *  @param qty Quantity Pref for Task
    *  @param thePG The property group attached to the Inventory 
-   *  @param NewTask Return the filled in Task
+   *  @return NewTask the filled in Task
    **/
   protected NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
                              double qty, LogisticsInventoryPG thePG) {
