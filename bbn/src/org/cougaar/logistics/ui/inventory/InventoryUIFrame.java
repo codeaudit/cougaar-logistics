@@ -1,5 +1,5 @@
 /*
- * <copyright>
+ * <Copyright>
  *  
  *  Copyright 1997-2004 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects
@@ -638,6 +638,11 @@ public class InventoryUIFrame extends JFrame
                                   JOptionPane.ERROR_MESSAGE);
   }
 
+  private static void displayWarnString(String title, String reply) {
+    JOptionPane.showMessageDialog(null, reply, title,
+                                  JOptionPane.WARN_MESSAGE);
+  }
+
   public void selectionChanged(InventorySelectionEvent e) {
     Vector assetNames = null;
     if (e.getID() == InventorySelectionEvent.ORG_SELECT) {
@@ -672,9 +677,22 @@ public class InventoryUIFrame extends JFrame
 	}
 	***/
     } else if (e.getID() == InventorySelectionEvent.INVENTORY_SELECT) {
+      if((e.getOrg().trim().equals("")) ||
+	 (e.getOrg().trim().startsWith("."))) {
+	  displayErrorString("Submit","Not a legal org to submit for inventory asset");
+	  return;
+      }
+
+      if((e.getAssetName() == null) ||
+	 (e.getAssetName().trim().equals(""))) {
+	  displayErrorString("Submit","No Asset Picked!");
+	  return;
+      }
+
+
       String invXML = dataSource.getInventoryData(e.getOrg(),
                                                   e.getAssetName());
-      if(invXML != null) {
+      if((invXML != null) && (!(invXML.trim().equals("")))) {
 	  editPane.setText(invXML);
 	  inventory = parser.parseString(invXML);
 	  multiChart.setData(inventory);
