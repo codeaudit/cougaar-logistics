@@ -40,7 +40,7 @@ import org.xml.sax.Attributes;
 
 /**
  * A single instance leaving the Legs PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 1/28/01
  **/
@@ -113,7 +113,7 @@ public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable
   public static int numLongFields  = 2; 
   public static int numIntFields  = 2; 
   public static int numBooleanFields = 1;
-  public static int maxStringLength = 40;
+  public static int maxStringLength = 60;
 
   //Constructors:
   ///////////////

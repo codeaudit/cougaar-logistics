@@ -43,7 +43,7 @@ import org.xml.sax.Attributes;
 
 /**
  * A single instance leaving the Instance PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 1/28/01
  **/
@@ -87,7 +87,7 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
   public static int numLong = 1;
   public static int numBoolean = 1;
   public static int numInt = 1; // all manifest lists are the same length
-  public static int maxStringLength = 40;
+  public static int maxStringLength = 60;
 
   //Constructors:
   ///////////////
