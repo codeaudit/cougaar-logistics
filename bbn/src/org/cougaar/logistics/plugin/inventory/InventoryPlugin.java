@@ -169,6 +169,7 @@ public class InventoryPlugin extends ComponentPlugin {
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+//        testBG();
     }
   }
 
@@ -684,6 +685,18 @@ public class InventoryPlugin extends ComponentPlugin {
 	logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) == null)
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
+  }
+
+  private void testBG() {
+    Iterator inv_it = inventoryHash.values().iterator();
+    Inventory inv;
+    LogisticsInventoryPG logInvPG = null;
+    while (inv_it.hasNext()) {
+      inv = (Inventory)inv_it.next();
+      System.out.println("***"+inv.getItemIdentificationPG().getItemIdentification());
+      logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      logInvPG.getProjectedDemand();
+    }
   }
 }
 
