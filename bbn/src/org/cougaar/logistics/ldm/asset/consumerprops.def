@@ -23,6 +23,7 @@
 package=org.cougaar.logistics.ldm.asset
 
 import=org.cougaar.logistics.ldm.MEIPrototypeProvider, \
+	org.cougaar.logistics.ldm.ClassIConsumerPrototypeProvider, \
 	org.cougaar.util.TimeSpan
 
 [FuelConsumerPG]
@@ -76,6 +77,29 @@ repairPartBG.delegate= void initialize(MEIPrototypeProvider parentPlugin); \
 	Rate getRate(Asset asset, List params); \
 	Collection getConsumed(); \
 	PGDelegate copy(PropertyGroup del);
+
+[SubsistenceConsumerPG]
+slots=Asset mei, \
+      String service, \
+      String theater
+delegates=SubsistenceConsumerBG subsistenceConsumerBG
+
+subsistenceConsumerBG.delegate= void initialize(ClassIConsumerPrototypeProvider parentPlugin); \
+	List getPredicates(); \
+	Schedule getParameterSchedule(Collection col, TimeSpan span); \
+	Rate getRate(Asset asset, List params); \
+	Collection getConsumed(); \
+	PGDelegate copy(PropertyGroup del);
+
+[RationPG]
+doc=Ration properties
+slots=String MealType,\
+        String RationType,\
+        String UnitOfPack,\
+        HashMap MandatorySupplement
+MenuList.doc=List of the NSNs of the other menus for the ration meal type 
+MealType.doc=Returns "BREAKFAST" or "LUNCH/DINNER"
+RationType.doc=Returns the short nomenclature:  "MRE", "UGR-H&S", "UGR-A", "B-RATION" etc
 
 ;;
 ;; examples
