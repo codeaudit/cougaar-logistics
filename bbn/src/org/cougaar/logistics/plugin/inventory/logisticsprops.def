@@ -41,6 +41,7 @@ logInvBG.delegate= void initialize(long today, int critLevel,InventoryPlugin par
 	List clearRefillTasks(Date now); \
 	Schedule computeCriticalLevel(); \
 	void updateRefillAllocation(Task task); \
+	Schedule getProjectedDemand(); \
 	long getStartTime(); \
 	void takeSnapshot();
 
