@@ -30,8 +30,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;

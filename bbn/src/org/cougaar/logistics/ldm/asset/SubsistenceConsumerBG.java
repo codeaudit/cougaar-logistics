@@ -273,36 +273,39 @@ public class SubsistenceConsumerBG extends ConsumerBG {
         }
       }
     } else {
+      // keys from getActionPolicy was null
+      
       // Optempo does not over rule
-      logger.debug( " meal params is " +
-                    params.get(2) + " resource is " + identifier);
       if (params.size() < 3) {
         logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
-      } else if (params.get(2) != null) {
-        if (((HashMap) params.get(2)).containsKey(identifier)) {
-          // Meals
-          resource_count += ((Double) ((HashMap)
-              params.get(2)).get(identifier)).doubleValue();
-          logger.debug(identifier+" rate is "+resource_count);
-        } // if
-        // DEBUG  public static HashMap cachedDBValues = new HashMap();
+      } else {
+	if (params.get(2) != null) {
+	  logger.debug( " meal params is " +
+			params.get(2) + " resource is " + identifier);
+	  if (((HashMap) params.get(2)).containsKey(identifier)) {
+	    // Meals
+	    resource_count += ((Double) ((HashMap)
+					 params.get(2)).get(identifier)).doubleValue();
+	    logger.debug(identifier+" rate is "+resource_count);
+	  } // if
+	  // DEBUG
+	  else {
+	    logger.debug("No meal rates for "+identifier);
+	  }
+	} // if non null params(2)
 
-        else {
-          logger.debug("No meal rates for "+identifier);
-        }
-      } // if
-
-      // Enhancements policy
-      if (params.get(3) != null) {
-        if (((HashMap) params.get(3)).containsKey(identifier)) {
-          // Meals
-          resource_count += ((Double) ((HashMap)
-              params.get(3)).get(identifier)).doubleValue();
-          logger.debug ( " enhance params is " + ((Double)
-              ((HashMap) params.get(3)).get (identifier)).doubleValue());
-        }
-      }
-    }
+	// Enhancements policy
+	if (params.size() >= 4 && params.get(3) != null) {
+	  if (((HashMap) params.get(3)).containsKey(identifier)) {
+	    // Meals
+	    resource_count += ((Double) ((HashMap)
+					 params.get(3)).get(identifier)).doubleValue();
+	    logger.debug ( " enhance params is " + ((Double)
+						    ((HashMap) params.get(3)).get (identifier)).doubleValue());
+	  }
+	}
+      } // if have at least thru params(3)      
+    } // end of case for null keys
 
     // Water
     if (params.size() < 5) {
@@ -387,6 +390,17 @@ public class SubsistenceConsumerBG extends ConsumerBG {
   }
 
   private KeyRuleParameterEntry[] getActionPolicy(String activity, String optempo) {
+    // This appears to happen sporadically.
+    if (feedingPolicy == null) {
+      if (logger.isErrorEnabled()) {
+	String myOrgName = null;
+	if (parentPlugin != null && parentPlugin.getMyOrg() != null && parentPlugin.getMyOrg().getItemIdentificationPG() != null)
+	  myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+	
+	logger.error("Bug 2982: SubsistenceConsumerBG at Org " + myOrgName + " got null feedingPolicy!", new Throwable());
+      }
+      return null;
+    }
 
     RangeRuleParameterEntry[] rules = feedingPolicy.getRules();
     RangeRuleParameter theRule = new RangeRuleParameter();

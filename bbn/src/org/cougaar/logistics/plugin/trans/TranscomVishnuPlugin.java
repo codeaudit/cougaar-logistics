@@ -34,6 +34,7 @@ import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.plan.Relationship;
 import org.cougaar.planning.ldm.plan.RelationshipType;
 import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.TimeSpan;
 
 public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
@@ -56,6 +57,22 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     } catch(Exception e) {
       error ("got really unexpected exception " + e);
     } 
+  }
+
+  /**
+   * Is the task interesting to the plugin?  This is the inner-most part of 
+   * the predicate.                                                         <br>
+   * By default, it ignores tasks produced from this plugin                 <br>                    
+   * If you redefine this, it's good to call this using super.
+   *
+   * @param t - the task begin checked
+   * @see org.cougaar.lib.callback.UTILGenericListener#interestingTask
+   */
+  public boolean interestingTask (Task t) { 
+    if (!super.interestingTask (t))
+      return false;
+    boolean hasTransport = t.getVerb().equals (Constants.Verb.TRANSPORT);
+    return hasTransport;
   }
 
   /**

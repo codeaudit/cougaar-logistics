@@ -51,6 +51,7 @@ import org.cougaar.util.Filters;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.DynamicUnaryPredicate;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.DynamicUnaryPredicate;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -295,7 +296,6 @@ public class DemandForecastPlugin extends ComponentPlugin
 
       genProjTaskScheduler.finishedExecuteCycle();
     }
-
     //if the determine requirements task has already fired we're this far down
     //in the execute we should check the hash table subscriptions and see if
     //we have to regenerate some of the expansions due to subscription changes.
@@ -795,14 +795,12 @@ public class DemandForecastPlugin extends ComponentPlugin
         }
         Collection subPGs = (Collection) subToPGsHash.get(sub);
         if (subPGs == null) {
-          if (subPGs == null) {
-            if ((sub != orgActivities) && (logger.isErrorEnabled())) {
-              String errString = "Subscription fired in the hash table at " + getOrgName() + ", but there are no PGs in the other hash tables that correspond. The Predicate is " + pred.getClass().getName() + ".";
-              logger.error(errString);
-            }
-          } else {
-            PGs.addAll(subPGs);
+          if ((sub != orgActivities) && (logger.isErrorEnabled())){
+            String errString = "Subscription fired in the hash table at " + getOrgName() + ", but there are no PGs in the other hash tables that correspond. The Predicate is " + pred.getClass().getName() + ".";
+            logger.error(errString);
           }
+        } else {
+          PGs.addAll(subPGs);
         }
       }
     }
