@@ -38,6 +38,8 @@ import java.util.LinkedList;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.UIDGenerator;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
@@ -103,7 +105,7 @@ public class AssetInstanceQuery extends SqlQuery {
     if (showSqlTime) {
       Date now = new Date();
       long diff = now.getTime()-then.getTime();
-      System.out.println ("AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
     }
 
     response.addTree (tree);
@@ -133,7 +135,7 @@ public class AssetInstanceQuery extends SqlQuery {
 
     Node tempInstance = null;
 
-    if (debug) System.out.println("AssetInstanceQuery.buildPrototypeTreesFromResult - ");
+    if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.buildPrototypeTreesFromResult - ");
 
     // Note: The workings of the following are very dependent on the sort order created by the SQL query
     try {
@@ -147,7 +149,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	String convoyid = rs.getString(DGPSPConstants.COL_CONVOYID);
 	String convoyName = rs.getString(DGPSPConstants.COL_PRETTYNAME);
 
-	if (debugALot) System.out.println("convID: "+convID+"  legID: "+legID+"  start: "+start+"  end: "+end);
+	if (debugALot) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "convID: "+convID+"  legID: "+legID+"  start: "+start+"  end: "+end);
 
 	// new baseName - create Node in tree / grab LocationNode
 	// remember that response is ordered by baselocid so you will only change baselocid when
@@ -158,7 +160,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	  tree.addNode (tree.getRoot().getUID(), locationNode);
 
 	  if (debug) {
-	    System.out.println ("AssetInstanceQuery.buildPrototypeTreesFromResult - starting subtree with root " +
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.buildPrototypeTreesFromResult - starting subtree with root " +
 				locationNode);
 	  }
 	}
@@ -182,7 +184,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	  convoyToStartEnd.put (convoyid, new Date [] {start, end});
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid +
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery - mapping convoy " + convoyid +
 				" to start, end " + startEnd);
 
 	} else {
@@ -204,7 +206,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	  convoysForCarrier.add (convoyid);
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping convoy " + convoyid +
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery - mapping convoy " + convoyid +
 				" to carrier " + convoysForCarrier);
 
 	  Map uidToNode = (Map) convoyToCarrierMap.get(convoyid);
@@ -213,16 +215,16 @@ public class AssetInstanceQuery extends SqlQuery {
 	  uidToNode.put (convID, instanceNode);
 
 	  if (debug)
-	    System.out.println ("AssetInstanceQuery - mapping carrier " + convID +
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery - mapping carrier " + convID +
 				" to node " + instanceNode);
 	}
       }
     } catch (SQLException e) {
-      System.out.println ("AssetInstanceQuery.getResponse - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.getResponse - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -250,10 +252,10 @@ public class AssetInstanceQuery extends SqlQuery {
 
 	List convoys = (List) carrierToConvoy.get (carrierConvID);
 	if (debug)
-	  System.out.println("AssetInstanceQuery.attachLegs for carrier " + carrierConvID + " convoys " +
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.attachLegs for carrier " + carrierConvID + " convoys " +
 			     convoys);
 	if (debug)
-	  System.out.println("AssetInstanceQuery.attachLegs leg " + legID + " start " + legStart + " end " + legEnd);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.attachLegs leg " + legID + " start " + legStart + " end " + legEnd);
 
 	for (int i = 0; i < convoys.size(); i++) {
 	  String convoyID = (String) convoys.get(i);
@@ -262,7 +264,7 @@ public class AssetInstanceQuery extends SqlQuery {
 
 	    if (lastEnd.getTime() != legStart.getTime()) {
 	      if (debug)
-		System.out.println("AssetInstanceQuery.attachLegs creating mission node b/c lastEnd " + lastEnd +
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.attachLegs creating mission node b/c lastEnd " + lastEnd +
 				   " != legStart " + legStart);
 	      missionNode = createMissionNode(generator,legID,legStart,legEnd, instanceNode.getMode());
 	      carrierTree.addNode(instanceNode.getUID(), missionNode);
@@ -276,7 +278,7 @@ public class AssetInstanceQuery extends SqlQuery {
 	    if (legStart.getTime () >= startEnd[0].getTime () &&
 		legEnd.getTime ()   <= startEnd[1].getTime ()) {
 	      if (debug)
-		System.out.println("AssetInstanceQuery.attachLegs found time match for convoy " + convoyID);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.attachLegs found time match for convoy " + convoyID);
 
 	      Map uidToNode = (Map) convoyToCarrierMap.get (convoyID);
 	      Node instanceNode = (Node) uidToNode.get (carrierConvID);
@@ -296,13 +298,13 @@ public class AssetInstanceQuery extends SqlQuery {
 	}
       }
     } catch (SQLException e) {
-      System.out.println ("AssetInstanceQuery.getResponse - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.getResponse - SQLError : " + e);
     } catch (Exception f) {
       System.err.println ("AssetInstanceQuery.getResponse - Exception : " + f);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -340,7 +342,7 @@ public class AssetInstanceQuery extends SqlQuery {
       "order by " + baseloc + ", " + convoyid + ", "+ convid + ", " + starttime;
 
     if (debug)
-      System.out.println ("AssetInstanceQuery.formSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.formSql - \n" + sqlQuery);
 
     return sqlQuery;
   }
@@ -367,7 +369,7 @@ public class AssetInstanceQuery extends SqlQuery {
       "\norder by " + carrierConvID + ", " + legStartTime;
 
     if (debug)
-      System.out.println ("AssetInstanceQuery.formSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.formSql - \n" + sqlQuery);
 
     return sqlQuery;
   }

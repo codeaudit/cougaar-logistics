@@ -35,6 +35,8 @@ import java.util.List;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.UIDGenerator;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
@@ -88,11 +90,11 @@ public class AssetTPFDDQuery extends SqlQuery {
 	if (showSqlTime) {
 	    Date now = new Date();
 	    long diff = now.getTime()-then.getTime();
-	    System.out.println ("AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
 	}
 	
 	if (debug) {
-	    System.out.println ("AssetTPFDDQuery.getResponse - cargo tree :");
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetTPFDDQuery.getResponse - cargo tree :");
 	    tree.show ();
 	}
 	
@@ -119,13 +121,13 @@ public class AssetTPFDDQuery extends SqlQuery {
 		instanceToNode.put (id, instanceNode);
 	    }
 	    if (debug) 
-		System.out.println ("TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
 	} catch (SQLException e) {
-	    System.out.println ("TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
 	}finally{
 	    if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		    System.out.println ("TPFDDQuery.attachInstancesFromResult - " + 
+		    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - " +
 					"closing result set, got sql error : " + e); 
 		}
 	    }
@@ -153,7 +155,7 @@ public class AssetTPFDDQuery extends SqlQuery {
 	  "order by " + DGPSPConstants.COL_OWNER + ", " + DGPSPConstants.COL_BUMPERNO;
 
 	if (debug) 
-	  System.out.println("AssetTPFDDQuery.formInstanceSql - sql: "+sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetTPFDDQuery.formInstanceSql - sql: "+sqlQuery);
 	return sqlQuery;
     }
   
@@ -182,17 +184,17 @@ public class AssetTPFDDQuery extends SqlQuery {
 				      legtype, nomen, bumperno);
 	Node instanceNode = (Node)instanceToNode.get(convid);
 	if (instanceNode == null)
-	  System.out.println ("UnitQuery.attachLegsFromResult - no instance node for : " + convid);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - no instance node for : " + convid);
 	else {
 	  tree.addNode (instanceNode.getUID(), legNode);
 	}
       }
     } catch (SQLException e) {
-      System.out.println ("UnitQuery.attachLegsFromResult - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("UnitQuery.attachLegsFromResult - " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
@@ -245,7 +247,7 @@ public class AssetTPFDDQuery extends SqlQuery {
       "and " + clLegEndLoc + isEqualTo + l2id + lineend +
       "order by " + clConvID + sep + clStart;
       if (debug) 
-	System.out.println("AssetTPFDDQuery.formInstanceSql - sql: "+sqlQuery);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetTPFDDQuery.formInstanceSql - sql: "+sqlQuery);
       return sqlQuery;
   }
   
@@ -274,7 +276,7 @@ public class AssetTPFDDQuery extends SqlQuery {
 	leg.setCarrierName (bumperNo);
 
 	if (debug)
-	  System.out.println ("UnitQuery.createLeg " + carrierNomen + " " + bumperNo + " leg is " + leg + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.createLeg " + carrierNomen + " " + bumperNo + " leg is " + leg +
 			      " start " + start);	
 	return leg;
   }

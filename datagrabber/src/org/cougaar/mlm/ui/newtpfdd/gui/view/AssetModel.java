@@ -53,6 +53,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.query.FilterClauses;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.model.RowModelListener;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class AssetModel extends TaskModel implements TreeTableModel {
     protected Tree myTree;
@@ -109,7 +111,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	notifyListenersTreeChanged ();
 
 	if (debug)
-	    System.out.println ("AssetModel.doInitialQuery - Run is " + dbState.getRun());
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doInitialQuery - Run is " + dbState.getRun());
     }
 
     protected void notifyListenersTreeChanged () {
@@ -129,7 +131,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
      */
   public void expandNode (final Object parent) {
 	if (debug)
-	  System.out.println ("AssetModel.expandNode - expanding node " + parent);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.expandNode - expanding node " + parent);
 	
 	final Node parentNode = (Node) parent;
 
@@ -138,7 +140,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	  worker = new AssetInstanceQueryWorker(parentNode, myTree);
 	  worker.startWorker ();
 	} else if (debug)
-	  System.out.println ("AssetModel.expandNode - parent node has children already, skipping.");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.expandNode - parent node has children already, skipping.");
   }
     
     public void showTPFDDLines(FilterClauses filterClauses, RowModelListener ganttChart, Container dialog, WorkListener listener) {
@@ -163,15 +165,15 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	    this.parentNode = parentNode;
 	    this.tree = tree;
 	    if (debug)
-		System.out.println ("AssetModel.AssetInstanceQueryWorker - ctor.");
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.AssetInstanceQueryWorker - ctor.");
 	}
 	
 	public void construct(){
 	    /* Create children for the expanded node. */
 	    if (debug) {
-		System.out.println("AssetModel.AssetInstanceQueryWorker - this is " + this);
-		System.out.println("AssetModel.doAssetInstanceQuery - parentNode " + parentNode);
-		System.out.println("AssetModel.doAssetInstanceQuery - forest " + forest);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.AssetInstanceQueryWorker - this is " + this);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doAssetInstanceQuery - parentNode " + parentNode);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doAssetInstanceQuery - forest " + forest);
 	    }
 		doAssetInstanceQuery(parentNode, forest);
 	}
@@ -199,15 +201,15 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	    unitParent.setWasQueried (true);
 	    parentNode.setWasQueried (true);
 	    if (debug) {
-		System.out.println ("AssetModel.SwingWorker - parent <" + parentNode +
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.SwingWorker - parent <" + parentNode +
 				    "> now has " + parentNode.getChildCount () +
 				    " children");
-		System.out.println ("TaskMode.SwingWorker - tree below parent " + parentNode + " : ");
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskMode.SwingWorker - tree below parent " + parentNode + " : ");
 		// tree.showNode (parentNode, "");
 	    }
 	    nodeStructureChanged(parentNode);
 	    if (debug)
-		System.out.println("Expanded "+parentNode);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Expanded "+parentNode);
 	}
     };
     
@@ -218,7 +220,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
 	public void construct(){
 	  /* Create children for the expanded node. */
-	  if (debug) System.out.println("AssetModel.startWorker - doing CarrierQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.startWorker - doing CarrierQuery.");
 	  panel.setCursor (waitCursor);
 	  doCarrierQuery (parentNode, forest);
 	}
@@ -238,7 +240,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
 	public void construct(){
 	  /* Create children for the expanded node. */
-	  if (debug) System.out.println("AssetModel.TPFDDQueryWorker - doing TPFDDQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.TPFDDQueryWorker - doing TPFDDQuery.");
 	  panel.setCursor (waitCursor);
 	  doAssetTPFDDQuery (filterClauses, forest);
 	}
@@ -263,7 +265,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	}
 	public void construct(){
 	  // Create children for the expanded node.
-	  if (debug) System.out.println("AssetModel.FilterQueryWorker - doing FilterQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.FilterQueryWorker - doing FilterQuery.");
 	  panel.setCursor (waitCursor);
 	  doFilterQuery (filterClauses, forest);
 	}
@@ -273,7 +275,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
   public void stopWorker() {
 	if (debug)
-	  System.out.println("AssetModel.stopWorker - Stopping worker...");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.stopWorker - Stopping worker...");
 	if (worker != null) {
 	  worker.interrupt();
 	  // worker set to null in finished
@@ -282,13 +284,13 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
   protected void doUnitQuery (Node parentNode, Set forest) {
 	if (debug)
-	  System.out.println("AssetModel.doUnitQuery - parentNode " + parentNode);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doUnitQuery - parentNode " + parentNode);
 	if (debug)
-	  System.out.println("AssetModel.doUnitQuery - forest " + forest);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doUnitQuery - forest " + forest);
 	String DBUID = myTree.getDBUID (parentNode.getUID());
 	
 	if (debug)
-	  System.out.println("AssetModel.doUnitQuery - unit is " + DBUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doUnitQuery - unit is " + DBUID);
 	
 	FilterClauses filterClauses = new FilterClauses ();
 	filterClauses.addUnitDBUID (DBUID);
@@ -301,7 +303,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	String DBUID = myTree.getDBUID (myTree.getNode(parentNode.getUID()).getParentUID());
 	
 	if (debug)
-	  System.out.println("AssetModel.doCarrierQuery - unit is " + DBUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doCarrierQuery - unit is " + DBUID);
 	FilterClauses filterClauses = new FilterClauses ();
 	filterClauses.addUnitDBUID (DBUID);
 	Query carrierQuery = queryHandler.createCarrierQuery (dbState, filterClauses);
@@ -311,7 +313,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
   protected void doAssetTPFDDQuery (FilterClauses filterClauses, Set forest) {
 	if (debug)
-	  System.out.println("AssetModel.doTPFDDQuery - TPFDD query is " + filterClauses + " this " + this + ", dbState " + dbState.getRun());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doTPFDDQuery - TPFDD query is " + filterClauses + " this " + this + ", dbState " + dbState.getRun());
 
 	Query tpfddQuery = queryHandler.createAssetTPFDDQuery (dbState, filterClauses);
 
@@ -320,7 +322,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
   protected void doFilterQuery (FilterClauses filterClauses, Set forest) {
 	if (debug)
-	  System.out.println("AssetModel.doFilterQuery - filter query is " + filterClauses + " dbState " + dbState.getRun());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doFilterQuery - filter query is " + filterClauses + " dbState " + dbState.getRun());
 
 	Query tpfddQuery = queryHandler.createFilterQuery (dbState, filterClauses);
 
@@ -329,13 +331,13 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 
   protected void doAssetInstanceQuery (Node parentNode, Set forest) {
 	if (debug)
-	  System.out.println("AssetModel.doAssetInstanceQuery - parentNode " + parentNode);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doAssetInstanceQuery - parentNode " + parentNode);
 	if (debug)
-	  System.out.println("AssetModel.doAssetInstanceQuery - forest " + forest);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doAssetInstanceQuery - forest " + forest);
 	String DBUID = myTree.getDBUID (parentNode.getUID());
 	
 	if (debug)
-	  System.out.println("AssetModel.doUnitQuery - unit is " + DBUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetModel.doUnitQuery - unit is " + DBUID);
 	
 	FilterClauses filterClauses = new FilterClauses ();
 	filterClauses.addCarrierType (((AssetPrototypeNode)parentNode).getAssetPrototypeName());
@@ -386,7 +388,7 @@ public class AssetModel extends TaskModel implements TreeTableModel {
 	// starting from the root and working back to the original node.
 
 
-		//	  System.out.println ("getPathToNode (2) - " + aNode + " depth " + depth);
+		//	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "getPathToNode (2) - " + aNode + " depth " + depth);
         /* Check for null, in case someone passed in a null node, or
            they passed in an element that isn't rooted at root. */
         if ( aNode == null ) {

@@ -73,6 +73,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetDetailRequest;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.LegAssetDetailRequest;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetAssetDetailRequest;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.CarrierDetailRequest;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 /**
  * This example shows how to create a simple JTreeTable component, 
@@ -220,10 +222,7 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
 		      unitDBID=taskModel.getDBUID(unitNode);
 		    }
 
-		    //getTPFDDItem().setName("" + taskModel.getDBUID(unitNode));
-		    //if (debug) System.out.println ("NewJTreeTable - UnitNode is " + unitNode);
-
-		    getPopup(node, 
+		    getPopup(node,
 			     unitName,
 			     unitDBID).show(e.getComponent(), e.getX(), e.getY());
 		  }
@@ -477,7 +476,7 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
     }
 
     if (debug)
-      System.out.println ("NewJTreeTable.actionPerformed - source is " + source + 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewJTreeTable.actionPerformed - source is " + source +
 						  "\n\tcommand " + ae.getActionCommand());
 
     if (ae.getActionCommand ().equals ("showFilterDialog")) {
@@ -558,7 +557,7 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
 	}
       }
     }else{
-      System.out.println ("NewJTreeTable.actionPerformed - unknown command");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewJTreeTable.actionPerformed - unknown command");
     }
   }
 
@@ -577,7 +576,7 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
 	if (filterDialog != null)
 	  filterDialog.setVisible(false);
 	if (debug)
-	  System.out.println ("NewJTreeTable.resetFilterDialog - run is " + dbState.getRun ());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewJTreeTable.resetFilterDialog - run is " + dbState.getRun ());
 	
 	filterDialog = new FilterDialog (shell, getFont());
   }

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.4 2002-08-13 14:22:30 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.5 2002-08-16 14:30:06 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -32,6 +32,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.component.TPFDDColor;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 {
@@ -167,7 +169,7 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	    // Debug.out("SCR:paint using start " + start + " end " + end);
 	  
 	  if (debug) 
-		System.out.println ("SchedulerCellRenderer.paint using start " + start + " end " + end);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SchedulerCellRenderer.paint using start " + start + " end " + end);
 
 	    dataFound = true;
 	    //	    if ( end - start < (3600 * 1000 * 48) ) {
@@ -206,9 +208,9 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 		}
 
 		if (debug) {
-		  System.out.println ("SchedulerCellRenderer.paint width "+ (endLoc-startLoc) + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SchedulerCellRenderer.paint width "+ (endLoc-startLoc) +
 							  " start loc " + startLoc + " end " + endLoc);
-		  System.out.println ("SchedulerCellRenderer.paint height " + (cellDim.height - 5));
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SchedulerCellRenderer.paint height " + (cellDim.height - 5));
 		}
 		
 	    g.fillRect(startLoc, 2, endLoc - startLoc, cellDim.height - 5);
@@ -244,7 +246,7 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	  g.drawString(startDateString, startLoc - width - 2, cellDim.height / 2
 				   + (fontHeight / 2 - fontDescent));
 	} else if (debug) {
-	  System.out.println ("SchedulerCellRenderer.paint not drawing startDate " + startDateString);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SchedulerCellRenderer.paint not drawing startDate " + startDateString);
     }
 	
 	// put end date if it fits
@@ -253,7 +255,7 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	  g.drawString(endDateString, endLoc + 2, cellDim.height / 2
 				   + (fontHeight / 2 - fontDescent));
 	}else if (debug){
-	  System.out.println ("SchedulerCellRenderer.paint not drawing endDate " + endDateString);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SchedulerCellRenderer.paint not drawing endDate " + endDateString);
     }
 
 	if ( minStart != 0 ) {

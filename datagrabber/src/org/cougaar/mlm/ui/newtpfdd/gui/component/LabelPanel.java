@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.3 2002-08-07 21:17:32 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.4 2002-08-16 14:30:05 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -21,6 +21,8 @@ import java.util.ListIterator;
 
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 
 public class LabelPanel extends Container
@@ -182,7 +184,7 @@ public class LabelPanel extends Container
     }  
     public String getRowText(int row) {
 	String ss = "LabelPanel.getRowText is obsolete -- don't use it!";
-	System.out.println(ss);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, ss);
 	return ss;
 	/***********
 		    try {
@@ -319,7 +321,7 @@ public class LabelPanel extends Container
     }  
     // This is a dangerous method, heldover only for backward compatibility...FIXME
     public void setRowText(int row, String s) {
-	System.out.println("LabelPanel.setRowText is obsolete -- don't use it!");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "LabelPanel.setRowText is obsolete -- don't use it!");
 	/***************
 			if (s.length() > maxLength) {
 			maxLength = s.length();

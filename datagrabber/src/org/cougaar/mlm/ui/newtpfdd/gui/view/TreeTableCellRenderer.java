@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableCellRenderer.java,v 1.2 2002-08-08 19:23:14 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableCellRenderer.java,v 1.3 2002-08-16 14:30:06 tom Exp $ */
 
 /*
    Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -66,8 +66,6 @@ public class TreeTableCellRenderer extends JTree implements TableCellRenderer
 		TreePath p = new TreePath(e.getPath());
 		int val = getRowForPath(p);
 		setVisibleRowCount(val);
-		//		System.out.println ("TreeTableCellRenderer.treeStructureChanged called");
-		
 	    }
 	});
 	*/

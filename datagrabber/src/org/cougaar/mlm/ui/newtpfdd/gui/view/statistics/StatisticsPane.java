@@ -52,7 +52,7 @@ import java.io.*;
 
 /**
  * Displays statistics information based on grabber Validation tests
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 5/3/01
  **/
@@ -102,13 +102,8 @@ public class StatisticsPane extends JPanel implements ActionListener{
 	  int intTestID = testID.intValue();
 	  if (addTest (getValidator().getTest(intTestID))) {
 		choices.addItem(getValidator().getDescription(intTestID));
-		//		System.out.println ("StatisticsPane.setupGUI - adding test " + testID + 
-		//							" " + getValidator().getDescription(intTestID));
 		choiceToTestID.put (new Integer (choicesAdded++), testID);
 	  }
-	  //	  else
-	  //		System.out.println ("StatisticsPane.setupGUI - skipping test " + testID + 
-	  //							" " + getValidator().getDescription(intTestID));
     }
     choices.setActionCommand("displayPage");
     choices.addActionListener(this);

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.3 2002-08-08 16:40:31 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.4 2002-08-16 14:30:05 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -78,6 +78,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.query.Query;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.ListQueryResponse;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.QueryHandler;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class FilterDialog extends JDialog implements ActionListener, TreeSelectionListener
 {
@@ -147,7 +149,7 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
     {
 	super();
 	//	if (debug)
-	//	  System.out.println ("FilterDialog ctor, run " + run);
+	//	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterDialog ctor, run " + run);
 
 	//	this.taskModel = new TaskModel (dbConfig);
 	this.dbState = shell;
@@ -1204,7 +1206,7 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 	boolean carrierIncluded = getincludeCarrierCheckBox().isSelected();
 	boolean sortByName = getSortByNameCheckBox().isSelected();
 	if (debug)
-	  System.out.println ("FilterDialog - sort By name " + sortByName);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterDialog - sort By name " + sortByName);
 	  
 	clauses.setSortByName (sortByName);
 	
@@ -1226,7 +1228,7 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 
 	// Debug.out("CQ:gQFU Set up query: " + query);
 	if (debug)
-	  System.out.println ("FilterDialog - clauses " + clauses);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterDialog - clauses " + clauses);
   
 	return clauses;
   }
@@ -1258,14 +1260,14 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 	if (worker != null) {
 	  worker.interrupt ();
 	  if (debug)
-		System.out.println ("interrupting thread.");
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "interrupting thread.");
 	}
 	*/
 	
 	worker = new ListQueryWorker (filterClauses, carrierType, carrierInstance, cargoType, cargoInstance, this);
 	worker.startWorker();
 	if (debug)
-	  System.out.println ("FilterDialog.setFilterLists - made worker " + worker);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterDialog.setFilterLists - made worker " + worker);
   }
 
   private static Cursor waitCursor = new Cursor(Cursor.WAIT_CURSOR);
@@ -1300,7 +1302,7 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 	  dialog.setCursor (waitCursor);
 	  doListQuery(filterClauses, forest);
 	  if (debug)
-		System.out.println ("setting cursor to " + waitCursor + " at " + new Date ());
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "setting cursor to " + waitCursor + " at " + new Date ());
 	}
 
 	public void finished() {
@@ -1311,7 +1313,7 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 	  }
 	  handleResults ();
 	  if (debug)
-		System.out.println ("setting cursor to " + defaultCursor + " at " + new Date ());
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "setting cursor to " + defaultCursor + " at " + new Date ());
 	  
 	  dialog.setCursor (defaultCursor);
 	}
@@ -1332,14 +1334,14 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 		populateListModel (lqr.getCargoTypeTree(), cargoType);
 		populateListModel (lqr.getCargoInstanceTree(), cargoInstance);
 		if (debug)
-		  System.out.println("FilteDialog lists updated.");
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilteDialog lists updated.");
 	  }
 	}
   };
 
   protected void doListQuery (FilterClauses filterClauses, Set forest) {
 	if (debug)
-	  System.out.println("FilterDialog.doListQuery - list query is " + filterClauses);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterDialog.doListQuery - list query is " + filterClauses);
 	QueryHandler queryHandler = new QueryHandler ();
 	
 	Query listQuery = queryHandler.createListQuery (dbState, filterClauses);

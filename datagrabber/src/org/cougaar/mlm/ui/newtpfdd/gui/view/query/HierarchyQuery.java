@@ -45,6 +45,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.derived.PrepareDerivedTables;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class HierarchyQuery extends SqlQuery {
   int whichSociety = HierarchyConstants.SOC_DEMAND;
@@ -122,7 +124,7 @@ public class HierarchyQuery extends SqlQuery {
 	ResultSet rs = getResultSet(connection, formSql(idAndName[0], recentRun));
 	buildTreeFromResult (rs, generator, tree, nameToNode);
 	if(showSqlTime){
-	  System.out.println((false?"Fast ":"")+"Hierarchy query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (false?"Fast ":"")+"Hierarchy query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 	
@@ -130,7 +132,7 @@ public class HierarchyQuery extends SqlQuery {
 	  time=System.currentTimeMillis();
 	  doRollup (connection, tree, nameToNode, idAndName[0]/* root name e.g. HigherAuthority*/, recentRun);
 	  if(showSqlTime){
-	    System.out.println((run.hasRollupTable()?"Fast ":"")+"Rollup query took: "+
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasRollupTable()?"Fast ":"")+"Rollup query took: "+
 			       (System.currentTimeMillis()-time));
 	  }
 	}
@@ -148,7 +150,7 @@ public class HierarchyQuery extends SqlQuery {
 		String prettyName = rs.getString (HierarchyConstants.COL_PRETTY_NAME);
 		
 		if (debug) 
-		  System.out.println ("HierarchyQuery.getResponse - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - " +
 							  cluster + "\tsuperior is " + superior + 
 							  " pretty " + prettyName);
 
@@ -158,13 +160,13 @@ public class HierarchyQuery extends SqlQuery {
 		if ((clusterNode = (Node) nameToNode.get (cluster)) == null) {
 		  clusterNode = createNode (generator, cluster, prettyName, nameToNode);
 		  if (debug) 
-			System.out.println ("HierarchyQuery.getResponse - created child node " + clusterNode);
+			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - created child node " + clusterNode);
 		  equipmentNode = createUnmappedNode (generator, cluster, "Equipment");
 		}
 
 		superiorNode = (Node) nameToNode.get (superior);
 		if (superiorNode == null)
-		  System.out.println ("HierarchyQuery.getResponse - huh? no superior for " + superior);
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - huh? no superior for " + superior);
 		  
 		tree.addNode (superiorNode.getUID(), clusterNode);
 		if (equipmentNode != null)
@@ -172,9 +174,9 @@ public class HierarchyQuery extends SqlQuery {
 		superiorNode.setMode (Node.MODE_AGGREGATE);
 		  
 		if (debug) {
-		  System.out.println ("HierarchyQuery.getResponse - child " + clusterNode + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - child " + clusterNode +
 							  "'s parent is " + superiorNode);
-		  System.out.println ("HierarchyQuery.getResponse - superior " + superiorNode + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - superior " + superiorNode +
 							  " has child " + clusterNode);
 		}
 		
@@ -183,11 +185,11 @@ public class HierarchyQuery extends SqlQuery {
 	  if (debug)
 		tree.show ();
 	} catch (SQLException e) {
-	  System.out.println ("HierarchyQuery.getResponse - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 		}
 	  }
 	}
@@ -212,21 +214,21 @@ public class HierarchyQuery extends SqlQuery {
 		    unitNode.setActualStart (startTime);
 		    unitNode.setActualEnd   (endTime);
 		    if (debug) {
-			System.out.println ("HierarchyQuery.doRollup - unitNode " + unitNode + " start " + 
+			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.doRollup - unitNode " + unitNode + " start " +
 					    unitNode.getActualStart() + " end " + unitNode.getActualEnd());
 		    }
 		} catch (NullPointerException npe) {
-		  System.out.println ("HierarchyQuery.doRollup - ERROR, org table(s) are corrupt. unitNode for cluster " + cluster + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.doRollup - ERROR, org table(s) are corrupt. unitNode for cluster " + cluster +
 				      " is " + unitNode + 
 				      " start " + startTime + " end " + endTime);
 		}
 	  }
 	} catch (SQLException e) {
-		System.out.println ("HierarchyQuery.doRollup - SQLError : " + e);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.doRollup - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("HierarchyQuery.getResponse - closing result set, got sql error : " + e); 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.getResponse - closing result set, got sql error : " + e);
 		}
 	  }
 	}
@@ -254,7 +256,7 @@ public class HierarchyQuery extends SqlQuery {
 	//"\norder by " + orgTableOrg + ", " + orgTableRel;
 
 	if (debug) 
-	  System.out.println ("HierarchyQuery.formSql - " + sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.formSql - " + sqlQuery);
 	
 	return sqlQuery;
   }
@@ -272,7 +274,7 @@ public class HierarchyQuery extends SqlQuery {
       " from "  + derivedTable;
 
     if (debug) 
-      System.out.println ("HierarchyQuery.formFastRollupSql - " + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.formFastRollupSql - " + sqlQuery);
 	
     return sqlQuery;
   }
@@ -303,7 +305,7 @@ public class HierarchyQuery extends SqlQuery {
 	  " group by " + orgTableRel;
 
 	if (debug) 
-	  System.out.println ("HierarchyQuery.formRollupSql - " + sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "HierarchyQuery.formRollupSql - " + sqlQuery);
 	
 	return sqlQuery;
   }

@@ -51,6 +51,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.query.FilterClauses;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.model.RowModelListener;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class TaskModel extends AbstractTreeTableModel implements TreeTableModel {
   protected Tree myTree;
@@ -81,12 +83,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	Org orgNode = (Org) getRoot ();
 
 	if (debug)
-	  System.out.println ("TaskModel.TaskModel - root is " + orgNode);
-	//	else {
-	//	  System.out.println ("\n\n\nTaskModel.TaskModel - debug is " + debug + "\n");
-	//	  System.out.println ("debug was " + System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.TaskModel.debug"));
-	//	}
-
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.TaskModel - root is " + orgNode);
 	myTree.setRoot (orgNode);
   }
 
@@ -113,7 +110,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
   //  public void setRun (DatabaseRun run) {
   //	if (debug)
-  //	  System.out.println ("TaskModel.setRun - this " + this + ", Run is " + run);
+  //	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.setRun - this " + this + ", Run is " + run);
   //	this.run = run;
   //  }
   
@@ -131,12 +128,12 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
 	setRoot (myTree.getRoot ());
 
-	//	System.out.println ("\n\nTaskModel.doInitialQuery - Root is " + myTree.getRoot () + "\n\n");
+	//	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "\n\nTaskModel.doInitialQuery - Root is " + myTree.getRoot () + "\n\n");
 	
 	notifyListenersTreeChanged ();
 
 	if (debug)
-	  System.out.println ("TaskModel.doInitialQuery - Run is " + dbState.getRun());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doInitialQuery - Run is " + dbState.getRun());
 	
 	//	setRun (run);
 	
@@ -162,7 +159,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
    */
   public void expandNode(final Object parent, Container panel) {
 	if (debug)
-	  System.out.println ("TaskModel.expandNode - expanding node " + parent);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.expandNode - expanding node " + parent);
 	
 	final Node parentNode = (Node) parent;
 	if (!(parentNode instanceof DBUIDNode) && !(parentNode instanceof ByCarrier))
@@ -209,7 +206,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	  this.panel = panel;
 
 	  if (debug)
-	      System.out.println ("TaskModel.UnitQueryWorker - ctor, parent " + parentNode);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.UnitQueryWorker - ctor, parent " + parentNode);
 
 	  //	  startWorker();
 	}
@@ -217,9 +214,9 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	public void construct(){
 	  /* Create children for the expanded node. */
 	    if (debug) {
-	      System.out.println("TaskModel.UnitQueryWorker - this is " + this);
-	      System.out.println("TaskModel.doUnitQuery - parentNode " + parentNode);
-	      System.out.println("TaskModel.doUnitQuery - forest " + forest);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.UnitQueryWorker - this is " + this);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doUnitQuery - parentNode " + parentNode);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doUnitQuery - forest " + forest);
 	    }
 	  panel.setCursor (waitCursor);
 	  doUnitQuery(parentNode, forest);
@@ -248,15 +245,15 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	  unitParent.setWasQueried (true);
 	  parentNode.setWasQueried (true);
 	  if (debug) {
-		System.out.println ("TaskModel.SwingWorker - parent <" + parentNode +
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.SwingWorker - parent <" + parentNode +
 							"> now has " + parentNode.getChildCount () +
 							" children");
-		System.out.println ("TaskMode.SwingWorker - tree below parent " + parentNode + " : ");
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskMode.SwingWorker - tree below parent " + parentNode + " : ");
 		// tree.showNode (parentNode, "");
 	  }
 	  nodeStructureChanged(parentNode);
 	  if (debug)
-		System.out.println("Expanded "+parentNode);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Expanded "+parentNode);
 	}
   };
 
@@ -267,7 +264,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
 	public void construct(){
 	  /* Create children for the expanded node. */
-	  if (debug) System.out.println("TaskModel.startWorker - doing CarrierQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.startWorker - doing CarrierQuery.");
 	  panel.setCursor (waitCursor);
 	  doCarrierQuery (parentNode, forest);
 	}
@@ -291,7 +288,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
 	public void construct(){
 	  /* Create children for the expanded node. */
-	  if (debug) System.out.println("TaskModel.TPFDDQueryWorker - doing TPFDDQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.TPFDDQueryWorker - doing TPFDDQuery.");
 	  panel.setCursor (waitCursor);
 	  doTPFDDQuery (filterClauses, forest);
 	}
@@ -321,7 +318,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	}
 	public void construct(){
 	  // Create children for the expanded node.
-	  if (debug) System.out.println("TaskModel.FilterQueryWorker - doing FilterQuery.");
+	  if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.FilterQueryWorker - doing FilterQuery.");
 	  panel.setCursor (waitCursor);
 	  doFilterQuery (filterClauses, forest);
 	}
@@ -331,7 +328,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
   public void stopWorker() {
 	if (debug)
-	  System.out.println("TaskModel.stopWorker - Stopping worker...");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.stopWorker - Stopping worker...");
 	if (worker != null) {
 	  worker.interrupt();
 	  // worker set to null in finished
@@ -340,13 +337,13 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
   protected void doUnitQuery (Node parentNode, Set forest) {
 	if (debug)
-	  System.out.println("TaskModel.doUnitQuery - parentNode " + parentNode);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doUnitQuery - parentNode " + parentNode);
 	if (debug)
-	  System.out.println("TaskModel.doUnitQuery - forest " + forest);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doUnitQuery - forest " + forest);
 	String DBUID = myTree.getDBUID (parentNode.getUID());
 	
 	if (debug)
-	  System.out.println("TaskModel.doUnitQuery - unit is " + DBUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doUnitQuery - unit is " + DBUID);
 	
 	FilterClauses filterClauses = new FilterClauses ();
 	filterClauses.addUnitDBUID (DBUID);
@@ -359,7 +356,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	String DBUID = myTree.getDBUID (myTree.getNode(parentNode.getUID()).getParentUID());
 	
 	if (debug)
-	  System.out.println("TaskModel.doCarrierQuery - unit is " + DBUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doCarrierQuery - unit is " + DBUID);
 	FilterClauses filterClauses = new FilterClauses ();
 	filterClauses.addUnitDBUID (DBUID);
 	Query carrierQuery = queryHandler.createCarrierQuery (dbState, filterClauses);
@@ -369,7 +366,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
   protected void doTPFDDQuery (FilterClauses filterClauses, Set forest) {
 	if (debug)
-	  System.out.println("TaskModel.doTPFDDQuery - TPFDD query is " + filterClauses + " this " + this + ", dbState " + dbState.getRun());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doTPFDDQuery - TPFDD query is " + filterClauses + " this " + this + ", dbState " + dbState.getRun());
 
 	Query tpfddQuery = queryHandler.createTPFDDQuery (dbState, filterClauses);
 
@@ -378,7 +375,7 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 
   protected void doFilterQuery (FilterClauses filterClauses, Set forest) {
 	if (debug)
-	  System.out.println("TaskModel.doFilterQuery - filter query is " + filterClauses + " dbState " + dbState.getRun());
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doFilterQuery - filter query is " + filterClauses + " dbState " + dbState.getRun());
 
 	Query tpfddQuery = queryHandler.createFilterQuery (dbState, filterClauses);
 
@@ -427,7 +424,6 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	// starting from the root and working back to the original node.
 
 
-		//	  System.out.println ("getPathToNode (2) - " + aNode + " depth " + depth);
         /* Check for null, in case someone passed in a null node, or
            they passed in an element that isn't rooted at root. */
         if ( aNode == null ) {

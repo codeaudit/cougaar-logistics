@@ -26,6 +26,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Org;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.DBUIDNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.Query;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import java.util.Set;
 
@@ -53,11 +55,11 @@ public class UnitTreeModel extends TaskModel {
 		  if (child.getType () == UIDGenerator.ORGANIZATION) { 
 			total++;
 		  } else if (debug) {
-			System.out.println ("UnitTreeModel.getChildCount - found equipment node " + child);
+			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitTreeModel.getChildCount - found equipment node " + child);
 		  }
 		}
 		if (debug)
-		  System.out.println ("UnitTreeModel.getChildCount - " + parent + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitTreeModel.getChildCount - " + parent +
 							  " has " + total + " children");
 		
 		return total;
@@ -115,7 +117,7 @@ public class UnitTreeModel extends TaskModel {
     notifyListenersTreeChanged ();
     
     if (debug)
-      System.out.println ("TaskModel.doInitialQuery - Run is " + dbState.getRun());	
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskModel.doInitialQuery - Run is " + dbState.getRun());
   }
 }
 

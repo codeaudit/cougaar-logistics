@@ -30,6 +30,8 @@ import org.cougaar.mlm.ui.newtpfdd.TPFDDConstants;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseState;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class QueryHandler {
   boolean debug = 
@@ -42,8 +44,8 @@ public class QueryHandler {
   public Set performQuery(DatabaseConfig dbConfig, Query query) {
 
 	if(debug) {
-	  System.out.println ("dbConfig " + dbConfig);
-	  System.out.println ("query    " + query);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "dbConfig " + dbConfig);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "query    " + query);
 	}
 	
 	QueryResponse response = query.getResponse(dbConfig.getConnection());

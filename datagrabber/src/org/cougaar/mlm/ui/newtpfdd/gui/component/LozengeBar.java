@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeBar.java,v 1.2 2002-08-09 16:46:10 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeBar.java,v 1.3 2002-08-16 14:30:05 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -20,6 +20,8 @@ import java.util.ListIterator;
 
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 
 public class LozengeBar extends LayeredComponent implements VirtualX
@@ -206,7 +208,7 @@ public class LozengeBar extends LayeredComponent implements VirtualX
 	  g2.setPaint( loz.getTextForeground() );
 	  g2.drawString( text, labelleft+xMargin, labeltop+yMargin+textheight );
 	  if (debug)
-		System.out.println ("LozengeBar.paint - Drawing " + text + " at x " + labelleft+xMargin + " y " + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "LozengeBar.paint - Drawing " + text + " at x " + labelleft+xMargin + " y " +
 							labeltop+yMargin+textheight);
 	}
   }

@@ -22,6 +22,8 @@ package org.cougaar.mlm.ui.newtpfdd.gui.view.details;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.controller.Controller;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -62,7 +64,7 @@ public abstract class AssetDetailRequest{
   public List getAssetDetails(DatabaseConfig dbConfig, int runID){
     List ret=new ArrayList();
     if (debug) 
-      System.out.println ("AssetDetailRequest.getAssetDetails called.");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetDetailRequest.getAssetDetails called.");
 
     String sql = getSql(dbConfig,runID);
     try{

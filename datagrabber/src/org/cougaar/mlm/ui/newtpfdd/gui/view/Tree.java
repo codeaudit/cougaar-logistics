@@ -38,6 +38,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Org;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.DBUIDNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CargoInstance;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 /** Holds all nodes */
 
@@ -109,7 +111,7 @@ public class Tree {
 
 	Node parent = getNode (parentUID);
 	if (parent == null) {
-	  System.out.println ("Tree.addNode -- ERROR, no parent for " + parentUID);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.addNode -- ERROR, no parent for " + parentUID);
 	} else {
 	  parent.addChild (child.getUID());
     }
@@ -127,11 +129,11 @@ public class Tree {
 	Set forest = new HashSet ();
 	
 	if (debug)
-	  System.out.println ("Tree.getTreesFromChildren - parent " + parentNode);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.getTreesFromChildren - parent " + parentNode);
 	for (int i = 0; i < parentNode.getChildCount (); i++) {
 	  Node child = getChild (parentNode, i);
 	  if (debug)
-		System.out.println ("Tree.getTreesFromChildren - child " + child);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.getTreesFromChildren - child " + child);
 	  Tree childTree = new Tree(child);
 	  childTree.reconstruct (child, this);
 	  forest.add (childTree);
@@ -153,7 +155,7 @@ public class Tree {
 	  Node child = (Node) iter.next();
 
 	  if (parent == child) {
-		System.out.println ("Tree.reconstruct - circular graph? parent " + parent + " = " +
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.reconstruct - circular graph? parent " + parent + " = " +
 							child + "???");
 		continue;
 	  }
@@ -201,13 +203,13 @@ public class Tree {
   }
 
   public void show () {
-	//	System.out.println (header + this + " children : " + children);
-	System.out.println ("Tree is :");
+	//	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, header + this + " children : " + children);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree is :");
 	showNode (getRoot (), "");
   }
 
   public void showNode (Node node, String indent) {
-	System.out.println (indent + "" + node + " (" + node.getChildCount()+ ")");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, indent + "" + node + " (" + node.getChildCount()+ ")");
 	for (int i = 0; i < node.getChildCount(); i++)
 	  showNode (getNode(node.getChildUID(i)), indent + " ");
   }
@@ -226,7 +228,7 @@ public class Tree {
 	  toSet.add(to);
 	
 	if (debug)
-	  System.out.println ("Tree.doRollup - before " + node + " s " + nodeStart + " e " + nodeEnd);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - before " + node + " s " + nodeStart + " e " + nodeEnd);
 	
 	for (int i = 0; i < node.getChildCount (); i++) {
 	  Node childNode = getNode (node.getChildUID (i));
@@ -256,7 +258,7 @@ public class Tree {
 	  mode = getMode (mode, childMode);
 	}
 	if (debug)
-	  System.out.println ("Tree.doRollup - after " + node + " s " + nodeStart + " e " + nodeEnd);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - after " + node + " s " + nodeStart + " e " + nodeEnd);
 
 	node.setActualStart (nodeStart);
 	node.setActualEnd   (nodeEnd);

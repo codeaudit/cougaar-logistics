@@ -22,6 +22,8 @@ package org.cougaar.mlm.ui.newtpfdd.gui.view.route;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import com.bbn.openmap.omGraphics.OMArrowHead;
 
@@ -37,7 +39,7 @@ import java.util.Date;
 
 /**
  * A request for an CarrierInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2//01
  **/
@@ -136,9 +138,7 @@ public class CarrierInstanceRequest extends RouteViewRequest{
 	seg.setCarrierType(carrierType);
 	seg.setCarrierName(carrierName);
 	rd.addSegment(s,e,seg);
-	//	System.out.println("Adding seg ("+sLocID+","+eLocID+")");
       }else{
-	//	System.out.println("Adding segInfo ("+sLocID+","+eLocID+")");
 	cis.addLegInfo(legID,getSegType(legType),sLocID,start,eLocID,end);
       }
     }
@@ -256,7 +256,7 @@ public class CarrierInstanceRequest extends RouteViewRequest{
     }
 
     if (debug)
-      System.out.println ("CarrierInstanceRequest - sql\n" + sql);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "CarrierInstanceRequest - sql\n" + sql);
 	
     return sql;
   }
@@ -348,7 +348,7 @@ public class CarrierInstanceRequest extends RouteViewRequest{
     }
 
     if (debug)
-      System.out.println ("CarrierInstanceRequest.getLegWithRouteSQL - sql\n" + sql);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "CarrierInstanceRequest.getLegWithRouteSQL - sql\n" + sql);
 
     return sql;
   }

@@ -44,6 +44,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class AssetCategoryQuery extends SqlQuery {
     
@@ -136,7 +138,7 @@ public class AssetCategoryQuery extends SqlQuery {
 	"order by " + protoTable+"."+protoID;
       
       if (debug) 
-	System.out.println ("AssetCategoryQuery.formSql - " + sqlQuery);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.formSql - " + sqlQuery);
       
       return sqlQuery;
     }
@@ -156,7 +158,7 @@ public class AssetCategoryQuery extends SqlQuery {
       "and " + protoTable+"."+protoID + " not in " + excludedPrototypes + "\n" +
       "order by " + protoTable+"."+protoID + ", " + instTable+"."+convID;
     if (debug) 
-      System.out.println ("AssetCategoryQuery.formSql - " + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.formSql - " + sqlQuery);
     
     return sqlQuery;
   }
@@ -181,7 +183,7 @@ public class AssetCategoryQuery extends SqlQuery {
 	    count = 1;
 	    
 	    if (debug) 
-	      System.out.println ("AssetCategoryQuery.getResponse - " + 
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.getResponse - " +
 				  prototypeName + "\tof type " +conveyanceType);
 	    
 	    Node prototypeNode = (Node)nameToNode.get(prototypeName);
@@ -208,7 +210,7 @@ public class AssetCategoryQuery extends SqlQuery {
 	      break;
 	    default:
 	      if (debug)
-		System.out.println("AssetCategoryQuery.buildTreeFromResult - " + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.buildTreeFromResult - " +
 				   prototypeName + " has bad conveyance type " + DGPSPConstants.CONVEYANCE_TYPES[conveyanceType]);
 	      categoryNode = miscNode;
 	      break;
@@ -217,7 +219,7 @@ public class AssetCategoryQuery extends SqlQuery {
 	    tree.addNode(categoryNode.getUID(), prototypeNode);
 	    
 	    if (debug) {
-	      System.out.println ("AssetCategoryQuery.buildTreeFromResult - child " + prototypeNode + 
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.buildTreeFromResult - child " + prototypeNode +
 				  "'s parent is " + categoryNode);
 	    }
 	  }
@@ -230,11 +232,11 @@ public class AssetCategoryQuery extends SqlQuery {
 	if (debug)
 	  tree.show ();
       } catch (SQLException e) {
-	System.out.println ("AssetCategoryQuery.getResponse - SQLError : " + e);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.getResponse - SQLError : " + e);
       }finally{
 	if(rs!=null) {
 	  try { rs.close(); } catch (SQLException e){
-	    System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	  }
 	}
       }
@@ -281,11 +283,11 @@ public class AssetCategoryQuery extends SqlQuery {
 	oldNode.setUsedAssets(count);
       }
     } catch (SQLException e) {
-      System.out.println ("AssetCategoryQuery.getResponse - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetCategoryQuery.getResponse - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     } 

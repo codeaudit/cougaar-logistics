@@ -9,6 +9,8 @@ import java.util.ListIterator;
 
 import org.cougaar.mlm.ui.newtpfdd.util.OutputHandler;
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 
 public class Lozenge extends Component
@@ -232,18 +234,18 @@ public class Lozenge extends Component
     public void mouseEntered(MouseEvent me)
     {
 	  if (debug) {
-		System.out.println("mouseEntered: "+getLozengeDescription());
-		System.out.println("            : "+
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "mouseEntered: "+getLozengeDescription());
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "            : "+
 						   lozBar.getDetectionPolygon().xpoints[0]+" "+
 						   lozBar.getDetectionPolygon().xpoints[1]+" "+
 						   lozBar.getDetectionPolygon().xpoints[2]+" "+
 						   lozBar.getDetectionPolygon().xpoints[3]);
-		System.out.println("            : "+
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "            : "+
 						   lozBar.getDetectionPolygon().ypoints[0]+" "+
 						   lozBar.getDetectionPolygon().ypoints[1]+" "+
 						   lozBar.getDetectionPolygon().ypoints[2]+" "+
 						   lozBar.getDetectionPolygon().ypoints[3]);
-		System.out.println("            : "+me.getX()+" / "+me.getY());
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "            : "+me.getX()+" / "+me.getY());
 	  }
 	  
 	if (lozBar.getDetectionPolygon().contains(me.getX(), me.getY()))
@@ -307,7 +309,7 @@ public class Lozenge extends Component
     }  
     private void sendMessage( String msg ) {
 	  if (debug) {
-		System.out.println("sendMessage: "+msg);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "sendMessage: "+msg);
 	  }
 	  
 	if( getParent() instanceof MessageListener )

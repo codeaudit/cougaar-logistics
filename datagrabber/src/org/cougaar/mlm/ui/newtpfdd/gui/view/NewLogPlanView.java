@@ -78,9 +78,6 @@ public class NewLogPlanView extends JPanel
     }
 
   public void doInitialQuery () {
-	//	if (debug)
-	//	  System.out.println ("NewLogPlanView.doInitialQuery - run " + run);
-	
 	treeTable.resetFilterDialog();
 	model.doInitialQuery ();
   }

@@ -66,6 +66,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.details.CarrierDetailView;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.statistics.StatisticsPane;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.statistics.GraphPane;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class NewTPFDDShell extends JApplet implements ActionListener,
 						      TPFDDConstants, DatabaseState, PopupDialogSupport
@@ -870,7 +872,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
 
     List databases = queryHandler.getDatabases (dbConfig);
     if (debug)
-      System.out.println ("NewTPFDDShell.createRunMenu - found " + databases.size() + " databases : " + databases);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewTPFDDShell.createRunMenu - found " + databases.size() + " databases : " + databases);
 
     JMenu runMenu = new JMenu();
     runMenu.setName("runMenu");
@@ -889,7 +891,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
       }
 
       if (debug)
-	System.out.println ("NewTPFDDShell.createRunMenu - Database #" + i + " : " + db + " has " + runs.size() + " runs : ");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewTPFDDShell.createRunMenu - Database #" + i + " : " + db + " has " + runs.size() + " runs : ");
 	  
       for (int j = 0; j<runs.size(); j++) {
 	DatabaseRun run = (DatabaseRun) runs.get(j);
@@ -902,7 +904,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
 	}
 
 	if (debug)
-	  System.out.println ("\t" + runs.get(j));
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "\t" + runs.get(j));
       }
     }
 	
@@ -918,7 +920,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     setCursor (waitCursor);
     if (run == null) {
       machineText.setText (getclusterCache().getHost() + " - no datagrabber runs in database.");
-      System.out.println ("Note : no runs found in default database. " + 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Note : no runs found in default database. " +
 			  "Either no datagrabber runs have been done or all have been deleted.");
     } else {
       dbConfig.setDatabase (run.getDatabase());
@@ -1028,7 +1030,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     DatabaseRun run = queryHandler.getRecentRun (dbConfig);
     setRun (run);
     if (debug)
-      System.out.println ("NewTPFDDShell.start - initial run is " + run);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewTPFDDShell.start - initial run is " + run);
 	  
     performInitialQuery ();
   }
@@ -1060,7 +1062,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     if (command.equals ("Exit")) {
       System.exit (0);
     } else { 
-      System.out.println ("Command " + command);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Command " + command);
     }
 	
 	
@@ -1121,106 +1123,6 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
       OutputHandler.out("TS:aP Error: unknown bean source: " + source);
   }
 
-  /*
-    Vector newViews = new Vector();
-
-    public void newView(boolean showTPFDD, boolean showLogPlan, QueryData query, ClusterCache clusterCache,
-    boolean newWindow)
-    {
-    String myUnitNameString, myCarrierString, myCargoString;
-    String[] unitNames = query.getUnitNames();
-	
-    if ( unitNames != null ) {
-    myUnitNameString = unitNames[0];
-    for ( int i = 1; i < unitNames.length; i++ )
-    if ( i > 0 )
-    myUnitNameString += ", " + unitNames[i];
-    }
-    else
-    myUnitNameString = "All units";
-			    
-    String[] carrierNames = query.getCarrierNames();
-    String[] carrierTypes = query.getCarrierTypes();
-    if ( carrierNames != null ) {
-    myCarrierString = carrierNames[0];
-    for ( int i = 1; i < carrierNames.length; i++ )
-    if ( i > 0 )
-    myCarrierString += ", " + carrierNames[i];
-    }
-    else if ( carrierTypes != null ) {
-    myCarrierString = carrierTypes[0];
-    for ( int i = 1; i < carrierTypes.length; i++ )
-    if ( i > 0 )
-    myCarrierString += ", " + carrierTypes[i];
-    }
-    else
-    myCarrierString = "All carriers";
-	
-    String[] cargoNames = query.getCargoNames();
-    String[] cargoTypes = query.getCargoTypes();
-    if ( cargoNames != null ) {
-    myCargoString = cargoNames[0];
-    for ( int i = 1; i < cargoNames.length; i++ )
-    if ( i > 0 )
-    myCargoString += ", " + cargoNames[i];
-    }
-    else if ( cargoTypes != null ) {
-    myCargoString = cargoTypes[0];
-    for ( int i = 1; i < cargoTypes.length; i++ )
-    if ( i > 0 )
-    myCargoString += ", " + cargoTypes[i];
-    }
-    else
-    myCargoString = "All cargo";
-
-    ClientPlanElementProvider childProvider = new ClientPlanElementProvider(clusterCache, false);
-
-    SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yy HH:mm:ss");
-    String date = formatter.format(new Date());
-    if ( showLogPlan ) {
-    LogPlanView logPlanView = new LogPlanView(childProvider, clusterCache, this, fontSize);
-    JPanel logPlanPanel = new JPanel();
-    logPlanPanel.setLayout(new BorderLayout());
-    logPlanPanel.add(logPlanView, BorderLayout.CENTER);
-    if ( newWindow ) {
-    JFrame logPlanFrame = new JFrame();
-    logPlanFrame.getContentPane().add(logPlanPanel, BorderLayout.CENTER);
-    logPlanFrame.setTitle(date + " " + myUnitNameString + "/" + myCarrierString + "/" + myCargoString);
-    logPlanFrame.setSize(640, 480);
-    logPlanFrame.setVisible(true);
-    }
-    else
-    newViews.add(logPlanPanel);
-    childProvider.addItemPoolConsumer(logPlanView);
-    }
-
-    if ( showTPFDD ) {
-    GanttChartView ganttChartView = new GanttChartView(childProvider, startDateString);
-    JPanel ganttChartPanel = new JPanel();
-    ganttChartPanel.setLayout(new BorderLayout());
-    ganttChartPanel.add(ganttChartView, BorderLayout.CENTER);
-    if ( newWindow ) {
-    JFrame ganttChartFrame = new JFrame();
-    ganttChartFrame.getContentPane().add(ganttChartPanel, BorderLayout.CENTER);
-    ganttChartFrame.setTitle(date + " " + myUnitNameString + "/" + myCarrierString + "/"
-    + myCargoString);
-    ganttChartFrame.setSize(640, 480);
-    ganttChartFrame.setVisible(true);
-    }
-    else
-    newViews.add(ganttChartPanel);
-    childProvider.addRowConsumer(ganttChartView.getWidget());
-    }
-	
-    if ( !newWindow )
-    resetView();
-
-
-    System.out.println("query is "+ query);
-    childProvider.request("Aggregation", PSPClientConfig.UIDataPSP_id, query);
-
-    }
-  */
 
   public void showTPFDDView (FilterClauses filterClauses, boolean useFilterQuery, boolean assetBased) {
     TaskModel model = new TaskModel(this);
@@ -1237,12 +1139,12 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     ganttChartFrame.setJMenuBar (ganttChartView.getMenuBar ());
     if (useFilterQuery) {
       if (debug)
-	System.out.println ("NewTPFDDShell.showTPFDDView - showing TPFDD Filter Lines");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewTPFDDShell.showTPFDDView - showing TPFDD Filter Lines");
       ganttChartView.showTPFDDFilterLines (filterClauses);
     }
     else {
       if (debug)
-	System.out.println ("NewTPFDDShell.showTPFDDView - showing TPFDD Lines");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "NewTPFDDShell.showTPFDDView - showing TPFDD Lines");
       filterClauses.setSortByName (true);
       ganttChartView.showTPFDDLines (filterClauses);
     }
@@ -1286,7 +1188,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     }
     catch (Exception exception) {
       System.err.println("Exception occurred in main() of TPFDDShell");
-      exception.printStackTrace(System.out);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "", exception);
     }
   }
 }

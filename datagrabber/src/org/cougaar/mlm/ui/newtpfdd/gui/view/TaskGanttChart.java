@@ -31,6 +31,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetAssetDetailRequest;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.CarrierDetailRequest;
 
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class TaskGanttChart extends GanttChart
 {
@@ -105,10 +107,10 @@ public class TaskGanttChart extends GanttChart
     if (endLozengeSize == 0) {
       long span = taskModel.getMaxTaskEnd() - taskModel.getMinTaskStart();
       if(debug)
-	System.out.println("SPAN: "+span);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SPAN: "+span);
       endLozengeSize = (long)(span * screenPercent);
       if(debug)
-	System.out.println("Size: "+endLozengeSize);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Size: "+endLozengeSize);
     }
     if (endLozengeSize > DAYLEN) endLozengeSize = DAYLEN;
     return endLozengeSize;
@@ -167,7 +169,7 @@ public class TaskGanttChart extends GanttChart
     // Debug.out("TaskGanttChart:rI enter " + row);
     Node assetInstance = (Node)taskModel.getChild(taskModel.getRoot(), row);
     if (debug)
-      System.out.println ("TaskGanttChart.readItem - row " + row + " is " + assetInstance);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.readItem - row " + row + " is " + assetInstance);
 	
     return assetInstance;
   }
@@ -184,13 +186,13 @@ public class TaskGanttChart extends GanttChart
     Node leg = null;
 	
     if (debug) 
-      System.out.println ("TaskGanttChart.makeLozengeRow - node " + assetInstanceNode + " has " +
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeLozengeRow - node " + assetInstanceNode + " has " +
 			  taskModel.getChildCount(assetInstanceNode) + " children ");
 
     for ( int i = 0; i < taskModel.getChildCount(assetInstanceNode); i++ ) {
       leg = (Node) taskModel.getChild (assetInstanceNode,i);
       if (debug) 
-	System.out.println ("TaskGanttChart.makeLozengeRow - making transport leg " + leg);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeLozengeRow - making transport leg " + leg);
 
       Lozenge loz = createTransportLozenge (leg);
       addLegDecorator (leg, loz);
@@ -235,7 +237,7 @@ public class TaskGanttChart extends GanttChart
     }
 	
     if (debug) 
-      System.out.println ("createTransportLozenge s " + getStartValue(leg) +
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "createTransportLozenge s " + getStartValue(leg) +
 			  " xsize " + (getEndValue(leg) - getStartValue(leg)) + " s " + 
 			  lStr + " e " + rStr);
 
@@ -285,7 +287,7 @@ public class TaskGanttChart extends GanttChart
     }
 
     if (debug)
-      System.out.println ("Setting leg label " + longName);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Setting leg label " + longName);
 	  
     loz.addLozengeLabel(new LozengeLabel(longName, shortName, LozengeLabel.CENTER));
   }
@@ -321,7 +323,7 @@ public class TaskGanttChart extends GanttChart
   protected Vector makeWayStations (Vector taskleaves) {
     Vector waystations = new Vector ();
     if (debug) 
-      System.out.println ("TaskGanttChart.makeLozengeRow - making way stations.");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeLozengeRow - making way stations.");
 
     Node lastLeg = (Node) taskleaves.get(taskleaves.size()-1);
 	
@@ -341,7 +343,7 @@ public class TaskGanttChart extends GanttChart
       // Skip ill-formed waypoints
       if ( getStartValue(nextLeg) < getEndValue(prevLeg) ) {
 	if (debug)
-	  System.out.println ("TaskGanttChart.makeWayStations - WARNING - skipping ill-formed leg, next leg " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeWayStations - WARNING - skipping ill-formed leg, next leg " +
 			      nextLeg + " overlaps prev leg " + prevLeg);
 	continue;
       }
@@ -367,9 +369,9 @@ public class TaskGanttChart extends GanttChart
       loz.setLozengeVirtualXLocation(readyAt);
       loz.setLozengeVirtualXSize(getStartValue(leg) - readyAt);
       if (debug) {
-	System.out.println ("makeOrigin - xloc " + readyAt + " xsize " + (getStartValue(leg) - readyAt));
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "makeOrigin - xloc " + readyAt + " xsize " + (getStartValue(leg) - readyAt));
 	if (readyAt == getStartValue(leg)) 
-	  System.out.println ("TaskGanttChart.makeOrigin - NOTE - readyAt same as start for " + leg);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeOrigin - NOTE - readyAt same as start for " + leg);
       }
 
       if (loz.getLozengeVirtualXSize () == 0)
@@ -379,7 +381,7 @@ public class TaskGanttChart extends GanttChart
       loz.setLozengeVirtualXLocation(getStartValue(leg) - getEndLozengeSize());
       loz.setLozengeVirtualXSize(getEndLozengeSize());
       if (debug) 
-	System.out.println ("makeOrigin - xloc " + (getStartValue(leg)-getEndLozengeSize()) + " xsize " + getEndLozengeSize());
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "makeOrigin - xloc " + (getStartValue(leg)-getEndLozengeSize()) + " xsize " + getEndLozengeSize());
 
     }
 	
@@ -473,7 +475,7 @@ public class TaskGanttChart extends GanttChart
     String s = prefix + node.getDisplayName();
 
     if (debug) 
-      System.out.println ("TaskGanttChart.makeLabelRow - label " + s + " for node " + node);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TaskGanttChart.makeLabelRow - label " + s + " for node " + node);
 	
     myLabelPanel.setVirtualXLocation(0);
     myLabelPanel.setVirtualXSize(2 * getEndLozengeSize());

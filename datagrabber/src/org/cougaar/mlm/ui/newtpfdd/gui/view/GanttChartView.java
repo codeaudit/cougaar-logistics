@@ -45,6 +45,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CargoInstance;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.DimensionNode;
 import org.cougaar.mlm.ui.grabber.validator.CargoDimensionTest;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class GanttChartView extends JPanel implements ActionListener, WorkListener {
   private static double CUBIC_METERS_TO_CUBIC_FEET = 35.314667d;
@@ -99,14 +101,14 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 
   public void showTPFDDLines (FilterClauses filterClauses) {
     if (debug)
-      System.out.println ("GanttChartView.showTPFDDLines - " + filterClauses);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GanttChartView.showTPFDDLines - " + filterClauses);
 
     taskModel.showTPFDDLines (filterClauses, gc, this, this);
   }
 
   public void showTPFDDFilterLines (FilterClauses filterClauses) {
     if (debug)
-      System.out.println ("GanttChartView.showTPFDDFilterLines - " + filterClauses);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GanttChartView.showTPFDDFilterLines - " + filterClauses);
 	
     taskModel.showFilterTPFDDLines (filterClauses, gc, this, this);
   }
@@ -226,11 +228,11 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
     if(returnVal == JFileChooser.APPROVE_OPTION) {
       File realFile = chooser.getSelectedFile();
       if (realFile == null) {
-	System.out.println("No file selected.");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "No file selected.");
 	return;
       }
 	
-      System.out.println("You chose to save to this file: " + realFile);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "You chose to save to this file: " + realFile);
       String fileName = realFile.getName();
       if (!fileName.endsWith (".csv")) 
 	fileName += ".csv";

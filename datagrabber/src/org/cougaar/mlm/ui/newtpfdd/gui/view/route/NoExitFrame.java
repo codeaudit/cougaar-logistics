@@ -56,19 +56,4 @@ public class NoExitFrame extends OpenMapFrame {
       addComponentListener((ComponentListener)id);
     }
   }
-
-  /*
-  protected void findAndInit(Iterator it) {
-	super.findAndInit (it);
-
-	JMenuBar menuBar = getRootPane().getJMenuBar ();
-	if (menuBar == null) {
-	  System.out.println ("Could not get menu bar");
-	}
-	else {
-	  JMenu menu = menuBar.getMenu (1);
-	  menu.remove (2);
-	}
-  }
-  */
 }

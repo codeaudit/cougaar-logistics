@@ -22,6 +22,8 @@ package org.cougaar.mlm.ui.newtpfdd.gui.view.route;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import java.sql.Statement;
 import java.sql.Connection;
@@ -32,7 +34,7 @@ import java.util.Date;
 
 /**
  * A request for an AssetInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/20/01
  **/
@@ -221,7 +223,7 @@ public class AssetInstanceRequest extends RouteViewRequest{
       clRouteID+" is null";
 
     if (debug)
-      System.out.println ("AssetInstanceRequest - sql\n" + sql);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceRequest - sql\n" + sql);
 	
     return sql;
   }
@@ -308,7 +310,7 @@ public class AssetInstanceRequest extends RouteViewRequest{
       reELocID+"="+eLocID;
 
     if (debug)
-      System.out.println ("AssetInstanceRequest.getLegWithRouteSQL - sql\n" + sql);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceRequest.getLegWithRouteSQL - sql\n" + sql);
 
     return sql;
   }

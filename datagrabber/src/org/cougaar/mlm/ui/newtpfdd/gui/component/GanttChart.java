@@ -12,6 +12,8 @@ import org.cougaar.mlm.ui.newtpfdd.util.SwingQueue;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.model.RowModelListener;
 import org.cougaar.mlm.ui.newtpfdd.gui.model.ProxyRowModelListener;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 
 public class GanttChart extends Container 
@@ -208,12 +210,9 @@ public class GanttChart extends Container
     /*
       if (oldWidth != 0) {
       double widthDecreaseRatio = (double)oldWidth/(double)getSize().width;
-      System.out.println ("new pixel width is " + getSize().width);
-      System.out.println ("width was " + getVirtualXSize() + " now " + getVirtualXSize ()*widthDecreaseRatio);
       setVirtualXSize((long)(getVirtualXSize ()*widthDecreaseRatio));
       } 
       oldWidth = getSize().width;
-      System.out.println ("old pixel width was " + oldWidth);
     */
 
     if (false){
@@ -221,10 +220,10 @@ public class GanttChart extends Container
       if (currentFont != null) {
 	Font smallerFont = new Font (currentFont.getName(), currentFont.getStyle (), currentFont.getSize ()-1);
 	myStatusLine.setFont (smallerFont);
-	System.out.println ("GanttChart.doLayout - setting smaller font " + smallerFont);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GanttChart.doLayout - setting smaller font " + smallerFont);
       }
       else
-	System.out.println ("GanttChart.doLayout - no font set");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GanttChart.doLayout - no font set");
     }
 	
   }  
@@ -240,7 +239,7 @@ public class GanttChart extends Container
 	row.dump();
       }
     } catch (Exception e) {
-      System.out.println("GanttChart.dump() " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GanttChart.dump() " + e);
     }
   }  
 

@@ -28,6 +28,7 @@ import org.cougaar.mlm.ui.grabber.validator.Test;
 import org.cougaar.mlm.ui.grabber.validator.HTMLizer;
 import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.logger.StdLogger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -168,7 +169,7 @@ public class GraphPane extends StatisticsPane {
 			  rows++;
 			}
 			if (debug)
-			  System.out.println ("displayResult.worker.construct - JDBC 1.0 - rows: "+rows);
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - JDBC 1.0 - rows: "+rows);
 
 			if (rows == 0) // nothing to show
 			  return new MyChart();
@@ -199,24 +200,24 @@ public class GraphPane extends StatisticsPane {
 			valueMatrix = valueMatrix2;
 			
 			if (debug)
-			  System.out.println ("displayResult.worker.construct - total rows: "+rows);
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - total rows: "+rows);
 
 			stringLabels = (String []) labels.toArray(new String []{});
 
 			if (debug) {
-			  System.out.println ("displayResult.worker.construct - legends :");
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - legends :");
 			  for (int i = 0; i < legends.length; i++)
-				System.out.println (i + " " + legends[i]);
-			  System.out.println ("displayResult.worker.construct - labels :");
+				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, i + " " + legends[i]);
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - labels :");
 			  for (int i = 0; i < stringLabels.length; i++)
-				System.out.println (i + " " + stringLabels[i]);
-			  System.out.println ("displayResult.worker.construct - values :");
+				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, i + " " + stringLabels[i]);
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - values :");
 			  for (int i = 0; i < numThirdDim; i++) {
-				System.out.print ("[");
+				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC,"[");
 				
 				for (int j = 0; j < valueMatrix[i].length; j++)
 				  System.out.print ("" + valueMatrix[i][j] + ((j == valueMatrix[i].length-1) ? "" : ","));
-				System.out.println ("]");
+				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "]");
 			  }
 			}
 		  } catch(SQLException e){
@@ -259,12 +260,12 @@ public class GraphPane extends StatisticsPane {
 				legendList.indexOf(rs.getString(zCol)) : 0;
 			  
 			  if (zAxisIndex == -1)
-				System.out.println ("GraphPane.construct - huh? " + 
+				TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GraphPane.construct - huh? " +
 									"zAxisIndex is undefined. legend List " + legendList + 
 									" does not contain z col " + rs.getString(zCol));
 			  // Y axis values
 			  // if (debug)
-			  //System.out.println ("[" + zAxisIndex + "]["+currentColumn+"] = " + rs.getInt(yCol));
+			  //TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "[" + zAxisIndex + "]["+currentColumn+"] = " + rs.getInt(yCol));
 			  
 			  valueMatrix[zAxisIndex][currentColumn] = getDoubleValue(rs, yCol);
 			}
@@ -306,7 +307,7 @@ public class GraphPane extends StatisticsPane {
 
 		  if (legends.length > 1) {
 			if (debug)
-			  System.out.println ("GraphPane.finished - num legends " + legends.length);
+			  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "GraphPane.finished - num legends " + legends.length);
 			
 			Color [] colorTable = new Color [legends.length];
 			
@@ -335,7 +336,7 @@ public class GraphPane extends StatisticsPane {
 		  scrollPane.repaint();
 			
 		  if (debug)
-			System.out.println ("displayResult.worker.construct - bounds " + //before:\n"+bounds + 
+			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "displayResult.worker.construct - bounds " + //before:\n"+bounds +
 								" after\n" + ucChart.getBounds());
 			
 		  ucChart.setValues (valueMatrix);
@@ -386,7 +387,7 @@ public class GraphPane extends StatisticsPane {
 	
 	public Dimension getPreferredSize () 
 	{
-	  //		System.out.println ("super.getPreferredSize " + super.getPreferredSize () + 
+	  //		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "super.getPreferredSize " + super.getPreferredSize () +
 	  //							" min " + getMinimumSize() +
 	  //							" max " + getMaximumSize());
 	  return d;

@@ -30,7 +30,6 @@ public class ByCarrier extends Node {
   }
 
   public boolean isLeaf () {
-	//	System.out.println ("ByCarrier.isLeaf - asking if leaf - no I'm not!");
 	return false;
   }
 }

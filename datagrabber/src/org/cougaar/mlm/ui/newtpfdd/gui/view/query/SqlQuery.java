@@ -40,6 +40,8 @@ import org.cougaar.mlm.ui.grabber.controller.Controller;
 import org.cougaar.mlm.ui.grabber.controller.Run;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.derived.PrepareDerivedTables;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class SqlQuery implements Query {
   private static final String VISHNU = "vishnu";
@@ -69,12 +71,12 @@ public class SqlQuery implements Query {
       handleResult (rs, response);
     }finally{
       if(rs!=null) {
-	if (debug) System.out.println ("SqlQuery.getResponse closing result set.");
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse closing result set.");
 	try { 
 	  rs.close();
 	  rs.getStatement().close();
 	} catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : (" + e.getErrorCode() + ") " +
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : (" + e.getErrorCode() + ") " +
 			      e); 
 	}
       }
@@ -90,7 +92,7 @@ public class SqlQuery implements Query {
     try{
       s=connection.createStatement();
     }catch(SQLException e){
-      System.out.println ("SqlQuery.getResultSet - got sql error : (" + e.getErrorCode() + ") " + 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - got sql error : (" + e.getErrorCode() + ") " +
 			  e +"\n" +
 			  "sql was : \n" + sqlQuery); 
 
@@ -99,11 +101,11 @@ public class SqlQuery implements Query {
       catch (Exception f) {e.printStackTrace();}
 	  
       if (e.getErrorCode () == NO_DISK_SPACE)
-	System.out.println ("SqlQuery.getResultSet - mysqld at " + hostURL + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - mysqld at " + hostURL +
 			    " is out of disk space!  Check with : df / ");
     }
     if(s==null) {
-      System.out.println ("SqlQuery.getResultSet - ERROR, statement null."); 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - ERROR, statement null.");
       return null;
     }
 
@@ -118,7 +120,7 @@ public class SqlQuery implements Query {
     try{
       rs = s.executeQuery(sqlQuery);
     }catch(SQLException e){
-      System.out.println ("SqlQuery.getResultSet - got sql error : (" + e.getErrorCode() + ") " + 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - got sql error : (" + e.getErrorCode() + ") " +
 			  e +"\n" +
 			  "sql was : \n" + sqlQuery); 
 
@@ -127,14 +129,14 @@ public class SqlQuery implements Query {
       catch (Exception f) {f.printStackTrace();}
 	  
       if (e.getErrorCode () == NO_DISK_SPACE)
-	System.out.println ("SqlQuery.getResultSet - mysqld at " + hostURL + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - mysqld at " + hostURL +
 			    " is out of disk space!  Check with : df / ");
     }
 
     if (showSqlTime) {
       Date now = new Date();
       long diff = now.getTime()-then.getTime();
-      System.out.println ("SqlQuery.getResultSet - query took " + diff+" msecs.");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResultSet - query took " + diff+" msecs.");
     }
 	
     return rs;
@@ -176,7 +178,7 @@ public class SqlQuery implements Query {
       String sqlQuery = getRunSql ();
 	  
       if (debug)
-	System.out.println ("SqlQuery.getRecentRun - sql is\n" + sqlQuery);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRecentRun - sql is\n" + sqlQuery);
 	  
       rs = getResultSet(connection, sqlQuery);
       while(rs.next()){
@@ -184,18 +186,18 @@ public class SqlQuery implements Query {
 	if (runid > runToUse)
 	  runToUse = runid;
 		
-	if (debug) System.out.println ("SqlQuery.getRecentRun - Run id " + rs.getInt ("runid"));
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRecentRun - Run id " + rs.getInt ("runid"));
       }
     } catch (SQLException e) {
-      System.out.println ("SqlQuery.getRecentRun - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRecentRun - SQLError : " + e);
     }finally{
       if(rs!=null) {
-	if (debug) System.out.println ("SqlQuery.getRecentRun closing result set.");
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRecentRun closing result set.");
 	try { 
 	  rs.close(); 
 	  rs.getStatement().close();
 	} catch (SQLException e){
-	  System.out.println ("SqlQuery.getRecentRun - closing result set, got sql error : " + e); 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRecentRun - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -231,15 +233,15 @@ public class SqlQuery implements Query {
       String sqlQuery = getRunSql ();
 	  
       if (debug)
-	System.out.println ("SqlQuery.getRuns - sql is\n" + sqlQuery);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns - sql is\n" + sqlQuery);
 	  
       rs = getResultSet(connection, sqlQuery);
 
-      if (debug) System.out.println ("SqlQuery.getRuns - got results set.");
+      if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns - got results set.");
 
       while (rs != null && rs.next()) {
 	int runid = rs.getInt (Controller.COL_RUNID); 
-	if (debug) System.out.println ("SqlQuery.getRuns - got run #" + runid + " from row " + rs.getRow());
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns - got run #" + runid + " from row " + rs.getRow());
 	int condition = rs.getInt (Controller.COL_CONDITION);
 	Date timestamp = rs.getTimestamp (Controller.COL_ENDTIME);
 	DatabaseRun dr=new DatabaseRun (database, runid, condition, timestamp);
@@ -267,16 +269,16 @@ public class SqlQuery implements Query {
       }
     }
     catch (SQLException e) {
-      System.out.println ("SqlQuery.getRuns - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns - SQLError : " + e);
       e.printStackTrace ();
     }finally{
       if(rs!=null) {
-	if (debug) System.out.println ("SqlQuery.getRuns closing result set.");
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns closing result set.");
 	try { 
 	  rs.close();
 	  rs.getStatement().close();
 	} catch (SQLException e){
-	  System.out.println ("SqlQuery.getRuns - closing result set, got sql error : " + e); 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRuns - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -292,7 +294,7 @@ public class SqlQuery implements Query {
       String sqlQuery = "show databases";
 	  
       if (debug)
-	System.out.println ("SqlQuery.getRunDescrip - sql is\n" + sqlQuery);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getRunDescrip - sql is\n" + sqlQuery);
 
       Connection newConnection = dbConfig.createDBConnection (dbConfig.getHost(), "");
 	  
@@ -307,18 +309,18 @@ public class SqlQuery implements Query {
       }
 		
       if (debug) 
-	System.out.println ("SqlQuery.getDatabases - " + databases);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getDatabases - " + databases);
     }
     catch (SQLException e) {
-      System.out.println ("SqlQuery.getDatabases - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getDatabases - SQLError : " + e);
     }finally{
       if(rs!=null) {
-	if (debug) System.out.println ("SqlQuery.getDatabases closing result set.");
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getDatabases closing result set.");
 	try { 
 	  rs.close(); 		  
 	  rs.getStatement().close();
 	} catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -357,7 +359,7 @@ public class SqlQuery implements Query {
 	"select " + orgRootsIDCol + 
 	" from " + orgRootsTable + 
 	" where " + orgRootsSocietyCol + " = " + societyCode;
-      if (debug) System.out.println ("sql query (1) " + sqlQuery);
+      if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "sql query (1) " + sqlQuery);
 	  
       rs = getResultSet(connection, sqlQuery);
       while(rs.next()){
@@ -370,25 +372,25 @@ public class SqlQuery implements Query {
 	" from " + orgNamesTable +
 	" where " + orgNamesTable + "." + HierarchyConstants.COL_ORGID + " = '" + rootOrgName + "'";
 
-      if (debug) System.out.println ("sql query (2) " + sqlQuery);
+      if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "sql query (2) " + sqlQuery);
 
       rs = getResultSet(connection, sqlQuery);
       while(rs.next()){
 	// should only be one
 	prettyName = rs.getString (HierarchyConstants.COL_PRETTY_NAME);
       }
-      if (debug) System.out.println ("SqlQuery - root org " + rootOrgName + " pretty " + prettyName);
+      if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery - root org " + rootOrgName + " pretty " + prettyName);
 
     } catch (SQLException e) {
-      System.out.println ("SqlQuery.getOrgRoot - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getOrgRoot - SQLError : " + e);
     }finally{
       if(rs!=null) {
-	if (debug) System.out.println ("SqlQuery.getOrgRoot closing result set.");
+	if (debug) TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getOrgRoot closing result set.");
 	try { 
 	  rs.close();
 	  rs.getStatement().close();
 	} catch (SQLException e){
-	  System.out.println ("SqlQuery.getResponse - closing result set, got sql error : " + e); 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery.getResponse - closing result set, got sql error : " + e);
 	}
       }
     }
@@ -423,16 +425,16 @@ public class SqlQuery implements Query {
     DatabaseConfig dbConfig = new DatabaseConfig ("blubin");
 	
     List databases = sqlQuery.getDatabases (dbConfig);
-    System.out.println ("SqlQuery - databases " + databases);
+    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "SqlQuery - databases " + databases);
   
     for (int i = 0; i < databases.size (); i++) {
       String db = (String) databases.get (i);
       Connection conn = dbConfig.createDBConnection (dbConfig.getHost(), db);
-      System.out.println ("Database " + db + " has runs : ");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Database " + db + " has runs : ");
       List runs = sqlQuery.getRuns (db, conn);
 	  
       for (int j = 0; j<runs.size(); j++)
-	System.out.println ("\t" + runs.get(j));
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "\t" + runs.get(j));
     }
   }
 }

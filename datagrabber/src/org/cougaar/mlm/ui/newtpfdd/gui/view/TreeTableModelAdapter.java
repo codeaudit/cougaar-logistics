@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModelAdapter.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/TreeTableModelAdapter.java,v 1.2 2002-08-16 14:30:06 tom Exp $ */
 
 /*
  * %W% %E%
@@ -105,10 +105,7 @@ public class TreeTableModelAdapter extends AbstractTableModel
 
     protected Object nodeForRow(int row) {
 	TreePath treePath = tree.getPathForRow(row);
-	Node node = (Node) treePath.getLastPathComponent();         
-	//	System.out.println ("nodeForRow - row " + row + " -> node " + node);
-	
-	return node;
+	return (Node) treePath.getLastPathComponent();
     }
 
     public Object getValueAt(int row, int column) {

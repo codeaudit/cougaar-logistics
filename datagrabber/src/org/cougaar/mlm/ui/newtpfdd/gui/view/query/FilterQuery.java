@@ -38,6 +38,8 @@ import java.util.Collections;
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.derived.PrepareDerivedTables;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.UIDGenerator;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
@@ -93,7 +95,7 @@ public class FilterQuery extends TPFDDQuery {
 	// buildCargoProtoTree (instanceToNode, protoToName, cargoTree, generator);
       }
       if(showSqlTime){
-	System.out.println((run.hasCargoTypeTable()?"Fast ":"")+"FilterCargoType query took: "+
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoTypeTable()?"Fast ":"")+"FilterCargoType query took: "+
 			   (System.currentTimeMillis()-time));
       }
     }
@@ -108,7 +110,7 @@ public class FilterQuery extends TPFDDQuery {
       attachManifestInstancesFromResult (rs, cargoTree.getGenerator(), cargoTree, instanceToNode);
 
       if(showSqlTime){
-	System.out.println((false?"Fast ":"")+"FilterCargoInstance query took: "+
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (false?"Fast ":"")+"FilterCargoInstance query took: "+
 			   (System.currentTimeMillis()-time));
       }
     }
@@ -154,7 +156,7 @@ public class FilterQuery extends TPFDDQuery {
     }
     }
     if(showSqlTime){
-      System.out.println((run.hasCargoLegTable()?"Fast ":"")+"FilterCargoLeg query took: "+
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoLegTable()?"Fast ":"")+"FilterCargoLeg query took: "+
 			 (System.currentTimeMillis()-time));
     }
   }
@@ -197,17 +199,17 @@ public class FilterQuery extends TPFDDQuery {
 	  protoToName.put (key, nameKey);
 	  
 	  if (debug)
-	    System.out.println ("FilterQuery.buildRollupCargoProtos - mapping key " + key + " to " + aggTypeNode);
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.buildRollupCargoProtos - mapping key " + key + " to " + aggTypeNode);
 	}else{
 	  aggTypeNode.incrementTotalAggNumber(aggNumber);
 	}
       }
     } catch (SQLException e) {
-      System.out.println ("FilterQuery.buildRollupCargoProtos - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.buildRollupCargoProtos - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("FilterQuery.buildRollupCargoProtos - " +
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.buildRollupCargoProtos - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
@@ -259,7 +261,7 @@ public class FilterQuery extends TPFDDQuery {
 	// What is the purpose of prevReadyAt, anyway?  I wish I could remember... (Gordon 08-17-01)
 	else if (!firstResult && readyAt.equals (start) && (prevReadyAt != null)) {
 	    if (debug) {
-		System.out.println ("FilterQuery.attachRollupLegsFromResult - setting ready At = prevReadyAt = " + prevReadyAt +
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - setting ready At = prevReadyAt = " + prevReadyAt +
 				    " first result " + firstResult + " and ready at " + readyAt + " = " +  start);
 	    }
 	  readyAt = prevReadyAt;
@@ -312,11 +314,11 @@ public class FilterQuery extends TPFDDQuery {
 	prevPathsForProto.add (currentPath);
   
     } catch (SQLException e) {
-      System.out.println ("FilterQuery.attachRollupLegsFromResult - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - SQLError : " + e);
     } finally {
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("FilterQuery.attachRollupLegsFromResult - " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
@@ -355,7 +357,7 @@ public class FilterQuery extends TPFDDQuery {
 	  //Currently the Leg query ignores Carrier aspects of FilterClauses (so we get complete tpfdd lines
 	  //even when filtering for specific critereon.  This means that when filtering for Carriers, there may NOT 
 	  //be instances for some of the legs, hence this is an expected, if ugly condition.	  
-	  System.out.println ("FilterQuery.attachRollupLegsFromResult - no prototype node for : " + proto);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - no prototype node for : " + proto);
 	}
       }else {
 	List paths = (List) protoToFewPath.get(proto);
@@ -367,8 +369,8 @@ public class FilterQuery extends TPFDDQuery {
 	}
 	else {
 	  if (debug) {
-	    System.out.println ("FilterQuery.attachRollupLegsFromResult - adding path to : " + proto);
-	    System.out.println ("FilterQuery.attachRollupLegsFromResult - pathlist: " + paths.size());
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - adding path to : " + proto);
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.attachRollupLegsFromResult - pathlist: " + paths.size());
 	  }
 
 	  // For each path, create a clone of the aggTypeNode with that path
@@ -390,7 +392,7 @@ public class FilterQuery extends TPFDDQuery {
 	    cargoTree.addNode(cargoTree.getRoot().getUID(), branchingNode);
 	
 	    if (debug) 
-	      System.out.println("Adding legs to tree");
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Adding legs to tree");
 	    path.addLegsToNode (branchingNode, cargoTree);  
 	  }
 	}
@@ -408,7 +410,7 @@ public class FilterQuery extends TPFDDQuery {
 	}
       }
       else if (debug) 
-	System.out.println ("FilterQuery.couldCombine - path " + path + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.couldCombine - path " + path +
 			    " does not start with " + newPath);
     }
 
@@ -430,11 +432,11 @@ public class FilterQuery extends TPFDDQuery {
       List newPaths = new LinkedList();
 
       if (debug)
-	System.out.println ("combinePaths - prototype " + proto + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - prototype " + proto +
 			    " has " + pathsForProto.size () + " paths");
 
       if (pathsForProto.isEmpty ())
-	System.out.println ("FilterQuery.combinePaths - ERROR - no paths for " + proto);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.combinePaths - ERROR - no paths for " + proto);
 	  
       Path thisPath = null;
       for (int j = 0; j < pathsForProto.size(); j++) {
@@ -444,7 +446,7 @@ public class FilterQuery extends TPFDDQuery {
 	    Path other = (Path) pathsForProto.get (i);
 	    if (other != null) {
 	      if (debug)
-		System.out.println ("combinePaths - combining " + thisPath + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - combining " + thisPath +
 				    " with " + other);
 	      if (thisPath.startsWith (other)) {
 		if (thisPath.canCombine (other)) {
@@ -460,7 +462,7 @@ public class FilterQuery extends TPFDDQuery {
       newProtoToPath.put (proto, newPaths);
 
       if (debug)
-	System.out.println ("combinePaths - prototype " +
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - prototype " +
 			    proto + " path is " + thisPath);
     }
 
@@ -476,25 +478,25 @@ public class FilterQuery extends TPFDDQuery {
       List pathsForProto = (List) protoToPaths.get(proto);
 
       if (debug)
-	System.out.println ("combinePaths - prototype " + proto + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - prototype " + proto +
 			    " has " + pathsForProto.size () + " paths");
 
       if (pathsForProto.isEmpty ())
-	System.out.println ("FilterQuery.combinePaths - ERROR - no paths for " + proto);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.combinePaths - ERROR - no paths for " + proto);
 	  
       Path firstPath = (Path) pathsForProto.get(0);
 
       for (int i = 1; i < pathsForProto.size(); i++) {
 	Path other = (Path) pathsForProto.get (i);
 	if (debug)
-	  System.out.println ("combinePaths - combining " + firstPath + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - combining " + firstPath +
 			      " with " + other);
 
 	firstPath.combineWithPath (other);
       }
       newProtoToPath.put (proto, firstPath);
       if (debug)
-	System.out.println ("combinePaths - prototype " +
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "combinePaths - prototype " +
 			    proto + " path is " + firstPath);
     }
 
@@ -505,13 +507,13 @@ public class FilterQuery extends TPFDDQuery {
     List pathsForProto = (List) protoToPaths.get(prototype);
     if (pathsForProto == null) {
       if (debug)
-	System.out.println ("addLegToPath - creating new paths for proto " + prototype);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "addLegToPath - creating new paths for proto " + prototype);
       pathsForProto = new ArrayList ();
       protoToPaths.put (prototype, pathsForProto);
     }
     else {
       if (debug)
-	System.out.println ("addLegToPath - got paths for proto " + prototype + " - " + pathsForProto);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "addLegToPath - got paths for proto " + prototype + " - " + pathsForProto);
     }
 	
     // look to add leg to an existing path
@@ -521,7 +523,7 @@ public class FilterQuery extends TPFDDQuery {
       Path path = (Path) pathsForProto.get (i);
       if (path.hasLeg (leg) || path.couldAppend(leg)) {
 	if (debug)
-	  System.out.println ("Found existing path to add leg " + leg + " to.");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Found existing path to add leg " + leg + " to.");
 		
 	path.addLeg (leg);
 	match=true;
@@ -534,7 +536,7 @@ public class FilterQuery extends TPFDDQuery {
       pathsForProto.add (newPath);
 
       if (debug)
-	System.out.println ("Creating new path with leg " + leg + "");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Creating new path with leg " + leg + "");
     }
   }
   
@@ -565,12 +567,12 @@ public class FilterQuery extends TPFDDQuery {
 	(LegNode) fromToPairToLeg.get (leg.getFromCode()+leg.getToCode());
       if (currentLeg == null) {
 	//		if (debug)
-	//		  System.out.println ("addLeg - appending " + leg + 
+	//		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "addLeg - appending " + leg +
 	//							  " to " + legs + " at " + legs.size ());
 	legs.add (legs.size(), leg); // append
 	fromToPairToLeg.put (leg.getFromCode()+leg.getToCode(), leg);
 	//		if (debug)
-	//		  System.out.println ("addLeg - fromToPairToLeg now " + fromToPairToLeg);
+	//		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "addLeg - fromToPairToLeg now " + fromToPairToLeg);
 		  
       } else {
 	mergeLeg (currentLeg, leg);
@@ -595,7 +597,7 @@ public class FilterQuery extends TPFDDQuery {
       String key = leg.getFromCode()+leg.getToCode();
       boolean retval = (fromToPairToLeg.get (key) != null);
       if (!retval && debug)
-	System.out.println ("hasLeg - fromToPairToLeg " + fromToPairToLeg + 
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "hasLeg - fromToPairToLeg " + fromToPairToLeg +
 			    " does not include " + key);
 			  
 
@@ -649,7 +651,7 @@ public class FilterQuery extends TPFDDQuery {
     void combineWithPath (Path other) {
       //	  if (!matchPathEnds) {
       if (legs.size () != other.legs.size ()) {
-	System.out.println ("Unequal number of legs in paths - " + legs + " vs " + other.legs);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Unequal number of legs in paths - " + legs + " vs " + other.legs);
 	return;
       }
       //	  }
@@ -717,7 +719,7 @@ public class FilterQuery extends TPFDDQuery {
 						String unit,
 						double weight, double width, double height, double depth, double area, double volume) {
     if (debug)
-      System.out.println("FilterQuery.createCargoType() - proto=" + proto + 
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.createCargoType() - proto=" + proto +
 			 " type=" + type + 
 			 " nomen=" + nomen + 
 			 " aggNumber=" + aggNumber + 
@@ -746,7 +748,7 @@ public class FilterQuery extends TPFDDQuery {
     cargoType.setLongName (longName);
 	  
     if (debug)
-      System.out.println("FilterQuery.createCargoType() - created aggregate cargo " + cargoType);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.createCargoType() - created aggregate cargo " + cargoType);
 
     return cargoType;
   }
@@ -809,7 +811,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("FilterQuery.formCargoInstanceSql - sort by name " + sortByName + "\n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formCargoInstanceSql - sort by name " + sortByName + "\n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -853,7 +855,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + assetInstanceID + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("FilterQuery.formFastCargoLegSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formFastCargoLegSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -925,7 +927,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + assetInstanceID + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("FilterQuery.formCargoLegSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formCargoLegSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -959,7 +961,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + instanceOwner + "," + nomen;
 
     if (debug) 
-      System.out.println ("FilterQuery.formFastCargoTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formFastCargoTypeSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -997,7 +999,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + instanceOwner + "," + self2Nomen;
 
     if (debug) 
-      System.out.println ("FilterQuery.formFirstCargoTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formFirstCargoTypeSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -1034,7 +1036,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + instanceOwner + "," + self1Nomen;
 
     if (debug) 
-      System.out.println ("FilterQuery.formSecondCargoTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formSecondCargoTypeSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -1067,7 +1069,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by d." + instanceOwner + ", m." + nomen;
     
     if (debug) 
-      System.out.println ("FilterQuery.formManifestTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formManifestTypeSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -1120,7 +1122,7 @@ public class FilterQuery extends TPFDDQuery {
       ((!sortByName) ? ", " + manifestName : "");
 
     if (debug) 
-      System.out.println ("FilterQuery.formManifestInstanceSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formManifestInstanceSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -1152,13 +1154,13 @@ public class FilterQuery extends TPFDDQuery {
 	instanceToNode.put (id, instanceNode);
       }
       if (debug) 
-	System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - total rows for instances " + rows);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachManifestInstancesFromResult - total rows for instances " + rows);
     } catch (SQLException e) {
-      System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachManifestInstancesFromResult - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("TPFDDQuery.attachManifestInstancesFromResult - " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachManifestInstancesFromResult - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
@@ -1208,7 +1210,7 @@ public class FilterQuery extends TPFDDQuery {
       "\norder by " + "d2." + assetInstanceID + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("FilterQuery.formManifestLegSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "FilterQuery.formManifestLegSql - \n" + sqlQuery);
     
     return sqlQuery;
   }

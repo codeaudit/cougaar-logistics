@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/UnitPanel.java,v 1.2 2002-08-07 21:17:32 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/UnitPanel.java,v 1.3 2002-08-16 14:30:06 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -43,6 +43,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.FilterClauses;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.TPFDDTreeCellRenderer;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.query.DatabaseRun;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreeModel;
@@ -104,23 +106,23 @@ public class UnitPanel extends JPanel
   protected void expandAll (JTree tree) {
 	boolean allExpanded = false;
 	if (debug)
-	  System.out.println ("UnitPanel - doing expand all - ");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel - doing expand all - ");
 	
 	while (!allExpanded) {
 	  int rowsDisplayedBefore = tree.getRowCount ();
 	  if (debug)
-		System.out.println ("UnitPanel - rows before " + rowsDisplayedBefore);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel - rows before " + rowsDisplayedBefore);
 	  for (int i = 0; i < tree.getRowCount (); i++) {
 		try {
 		  tree.expandRow(i);
 		} catch (Exception e) {
-		  System.out.println ("UnitPanel.expandAll - got exception " + e);
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel.expandAll - got exception " + e);
 		}
 	  }
 	  
 	  int rowsDisplayedAfter = tree.getRowCount ();
 	  if (debug)
-		System.out.println ("UnitPanel - rows after " + rowsDisplayedAfter);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel - rows after " + rowsDisplayedAfter);
 	  if (rowsDisplayedBefore == rowsDisplayedAfter)
 		allExpanded = true;
 	}
@@ -166,13 +168,13 @@ public class UnitPanel extends JPanel
     public UnitPanel(DatabaseState dbState, TreeSelectionListener parent, Font myFont)
     {
 	super();
-	if (debug)	System.out.println ("UnitPanel ctor -------------- ");
+	if (debug)	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel ctor -------------- ");
 	this.parent = parent;
 	this.unitTreeModel = new UnitTreeModel (dbState);
-	if (debug)	System.out.println ("UnitPanel ctor - doing initial query ");
+	if (debug)	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel ctor - doing initial query ");
 	((UnitTreeModel)unitTreeModel).doInitialQuery ();
 	if (debug) {
-	  System.out.println ("UnitPanel ctor - unitTreeModel tree : ");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel ctor - unitTreeModel tree : ");
 	  ((UnitTreeModel)unitTreeModel).getTree().show();
 	}
 
@@ -191,7 +193,7 @@ public class UnitPanel extends JPanel
 		  expandAll (tree);
 		  gettree().setVisibleRowCount (gettree().getRowCount ());
 		  if (debug)
-			System.out.println ("UnitPanel.refreshing " + gettree().getRowCount() + " rows");			
+			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel.refreshing " + gettree().getRowCount() + " rows");
 		  gettree().invalidate();
 		  gettree().repaint();
 		  getscroll().invalidate();
@@ -301,7 +303,7 @@ public class UnitPanel extends JPanel
 	int nodeType = UIDGenerator.ORGANIZATION;
 	Object child = /*unitNode;*/((UnitTreeModel)unitTreeModel).getTree().getNodeDBUID (nodeType, nodeDBUID);
 	if (child == null)
-	  System.out.println ("UnitPanel.getPathToNode - null node for " + nodeDBUID + "?");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitPanel.getPathToNode - null node for " + nodeDBUID + "?");
 	
 	Vector chain = new Vector();
 	Object chainWalk = child;

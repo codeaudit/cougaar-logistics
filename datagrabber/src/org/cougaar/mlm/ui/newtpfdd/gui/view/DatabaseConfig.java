@@ -25,6 +25,8 @@ import java.sql.Connection;
 
 import org.cougaar.mlm.ui.newtpfdd.TPFDDConstants;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 /** now mainly uses DBConfig to hold database config information */
 public class DatabaseConfig {
@@ -39,7 +41,7 @@ public class DatabaseConfig {
   
   public DatabaseConfig(String host) {
 	if (debug)
-	  System.out.println ("DatabaseConfig - ctor, host " + host);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "DatabaseConfig - ctor, host " + host);
 
 	this.host = host;
 
@@ -125,7 +127,7 @@ public class DatabaseConfig {
 	  dbURL += database;
 
 	if (debug) 
-	  System.out.println ("DatabaseConfig.createdDBConnection - connecting to \n\tdatabase at\t<" + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "DatabaseConfig.createdDBConnection - connecting to \n\tdatabase at\t<" +
 						  dbURL + ">\n\tuser\t<" + dbConfig.getUser() + ">\n\tpassword\t<" + dbConfig.getPassword() + ">.");
 	
 	try {

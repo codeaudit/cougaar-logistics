@@ -378,7 +378,7 @@ public class RouteLayer extends Layer implements MapMouseListener {
     public boolean mouseMoved(MouseEvent e) {
       OMGraphic line = segments.findClosest(e.getX(), e.getY(), PIXEL_DISTANCE);
       if (line != null) {
-	//		System.out.println ("RouteLayer.mousePressed - found " + line);
+	//		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "RouteLayer.mousePressed - found " + line);
 	// setup the info event
 	if (line instanceof RouteSegment) {
 	  String infoLine = ((RouteSegment)line).getInfo();
@@ -386,10 +386,6 @@ public class RouteLayer extends Layer implements MapMouseListener {
 	  // ask the infoDelegator to display the info
 	  infoDelegator.requestInfoLine(info);
 	}
-      }
-      else {
-	//		System.out.println ("RouteLayer.mousePressed - did not find a line within " + PIXEL_DISTANCE +
-	//							" pixels.");
       }
       return false;
     }

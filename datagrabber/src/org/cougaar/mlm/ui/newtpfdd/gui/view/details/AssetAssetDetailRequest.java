@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.ArrayList;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.DatabaseConfig;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -92,7 +94,7 @@ public class AssetAssetDetailRequest extends AssetDetailRequest{
       "order by " + aiOwner +"," +apType+","+apNomen+","+aiName;
 
     if (debug) 
-      System.out.println ("AssetAssetDetailRequest.getSql - sql is\n" + sql);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetAssetDetailRequest.getSql - sql is\n" + sql);
 
       return sql;
   }

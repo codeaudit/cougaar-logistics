@@ -50,6 +50,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CarrierType;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CarrierInstance;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 import org.cougaar.mlm.ui.grabber.derived.PrepareDerivedTables;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 public class UnitQuery extends SqlQuery {
     public static final int DEPTH_BY = 1;
@@ -85,9 +87,6 @@ public class UnitQuery extends SqlQuery {
 	QueryResponse response = new QueryResponse ();
 	
 	// first figure out which run to use
-	//	Date then = new Date();
-
-	//	int recentRun = getRecentRun (connection);
 	int recentRun = run.getRunID ();
 	String unitID = (String) filterClauses.getUnitDBUIDs().iterator ().next();
 
@@ -98,21 +97,11 @@ public class UnitQuery extends SqlQuery {
 
 	// cargo tree-------------------------------
 	Tree cargoTree = buildByCargoTree (connection, filterClauses, unitID, recentRun);
-
-	/*
-	if (showSqlTime) {
-	  Date now = new Date();
-	  long diff = now.getTime()-then.getTime();
-	  long secdiff = diff/1000l;
-	  System.out.println ("UnitQuery.getResponse - built tree in " + diff+" msecs.");
-	}
-	*/
-
 	response.addTree (cargoTree);
 	response.addTree (carrierTree); // just the ByCarrier node, expanded in CarrierQuery
 
 	if (debug) {
-	  System.out.println ("cargo tree");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "cargo tree");
 	  //	  cargoTree.show ();
 	}
 	
@@ -151,7 +140,7 @@ public class UnitQuery extends SqlQuery {
 	buildCargoProtoTree (protoToCargoType, protoToName, cargoTree, generator);
 
 	if(showSqlTime){
-	  System.out.println((run.hasCargoTypeTable()?"Fast ":"")+"CargoType query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoTypeTable()?"Fast ":"")+"CargoType query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
@@ -171,7 +160,7 @@ public class UnitQuery extends SqlQuery {
 	}
 	attachInstancesFromResult (rs, generator, protoToCargoType, cargoTree, instanceToNode);
 	if(showSqlTime){
-	  System.out.println((run.hasCargoInstanceTable()?"Fast ":"")+"CargoInstance query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoInstanceTable()?"Fast ":"")+"CargoInstance query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
@@ -184,13 +173,13 @@ public class UnitQuery extends SqlQuery {
 	  rs = getResultSet(connection, formCargoLegSql(filterClauses, recentRun));
 	}
 	if(showSqlTime){
-	  System.out.println((run.hasCargoLegTable()?"Fast ":"")+"CargoLeg query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoLegTable()?"Fast ":"")+"CargoLeg query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 	time=System.currentTimeMillis();
 	attachLegsFromResult (rs, generator, instanceToNode, cargoTree);
 	if(showSqlTime){
-	  System.out.println("Attaching cargo legs took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Attaching cargo legs took: "+
 			     (System.currentTimeMillis()-time));
 	}
 	
@@ -201,7 +190,7 @@ public class UnitQuery extends SqlQuery {
 	private Map m;
 	NodeComparator(Map protoToName) {
 	    if (protoToName == null) 
-		System.out.println("Got null hashmap in Comparator constructor.");
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Got null hashmap in Comparator constructor.");
 	    this.m = protoToName;
 	}
 	public int compare(Object o1, Object o2) {
@@ -223,8 +212,8 @@ public class UnitQuery extends SqlQuery {
 	for (Iterator iter = al.iterator (); iter.hasNext(); ) {
 	  Node node = (Node) protoToNode.get(iter.next());
 	  if (debug) {
-	      System.out.println ("buildCargoProtoTree - adding " + node);
-	      System.out.println("Called addNode in buildCargoProtoTree");
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "buildCargoProtoTree - adding " + node);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Called addNode in buildCargoProtoTree");
 	  }
 
 	  tree.addNode (tree.getRoot().getUID(), node);
@@ -253,19 +242,19 @@ public class UnitQuery extends SqlQuery {
 		protoToName.put (proto, nomen);
 		//		protoToNode.put (parentProto, typeNode);
 		//		if (debug)
-		//		  System.out.println ("UnitQuery.buildCargoProtosFromResult - mapping proto " + proto + "->" + 
+		//		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildCargoProtosFromResult - mapping proto " + proto + "->" +
 		//							  typeNode);
 		total++;
 	  }
 	  if (debug)
-		System.out.println ("UnitQuery.buildCargoProtosFromResult - got " + total + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildCargoProtosFromResult - got " + total +
 							" cargo types");
 	} catch (SQLException e) {
-	  System.out.println ("UnitQuery.buildCargoProtosFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildCargoProtosFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("UnitQuery.buildCargoProtosFromResult - " +
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildCargoProtosFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -293,10 +282,10 @@ public class UnitQuery extends SqlQuery {
 		Node protoNode = (Node)protoToNode.get(proto);
 
 		if (protoNode == null)
-		  System.out.println ("UnitQuery.attachInstancesFromResult - no proto node for : " + proto);
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - no proto node for : " + proto);
 		else {
 		  //		  if (debug)
-		  //			System.out.println ("UnitQuery.attachInstancesFromResult - parent proto " + protoNode);
+		  //			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - parent proto " + protoNode);
 		  cargoTree.addNode (protoNode.getUID(), instanceNode);
 		}
 		instanceToNode.put (id, instanceNode);
@@ -304,14 +293,14 @@ public class UnitQuery extends SqlQuery {
 		total++;
 	  }
 	  if (debug)
-		System.out.println ("UnitQuery.attachInstancesFromResult - got " + total + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - got " + total +
 							" cargo instances.");
 	} catch (SQLException e) {
-	  System.out.println ("UnitQuery.attachInstancesFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("UnitQuery.attachInstancesFromResult - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -345,7 +334,7 @@ public class UnitQuery extends SqlQuery {
 	boolean isLowFi   = rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY).equals("true");
 
 	if(debug){
-	  System.out.println ("UnitQuery.attachLegsFromResult - isLowFi was " + isLowFi + "/" + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - isLowFi was " + isLowFi + "/" +
 			      rs.getString (DGPSPConstants.COL_IS_LOW_FIDELITY));
 	}
 
@@ -361,11 +350,11 @@ public class UnitQuery extends SqlQuery {
 	      //Currently the Leg query ignores Carrier aspects of FilterClauses (so we get complete tpfdd lines
 	      //even when filtering for specific critereon.  This means that when filtering for Carriers, there may NOT 
 	      //be instances for some of the legs, hence this is an expected, if ugly condition.
-	      System.out.println ("UnitQuery.attachLegsFromResult - no instance node for : " + assetid);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - no instance node for : " + assetid);
 	    }
 	  }else {
 	    if (debug && false)
-	      System.out.println ("UnitQuery.attachInstancesFromResult - parent instance " + instanceNode);
+	      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - parent instance " + instanceNode);
 
 	    if (isLowFi) {
 	      LegNode currentLegNode = findLegNode(assetToLeg, assetid, startLoc, endLoc);
@@ -385,14 +374,14 @@ public class UnitQuery extends SqlQuery {
 	}
       }
       if (debug) 
-	System.out.println ("UnitQuery.attachLegsFromResult - total rows for legs " + total);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - total rows for legs " + total);
 	  
     } catch (SQLException e) {
-      System.out.println ("UnitQuery.attachLegsFromResult - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("UnitQuery.attachLegsFromResult - " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachLegsFromResult - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
@@ -417,27 +406,27 @@ public class UnitQuery extends SqlQuery {
     }
 
     if (debug)
-      System.out.println ("UnitQuery.registerLegNode - register " + assetid + " at " + startLoc + " with leg " + currentLegNode);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.registerLegNode - register " + assetid + " at " + startLoc + " with leg " + currentLegNode);
 
     startToLegNode.put (startLoc, currentLegNode);
 
     if (debug)
-      System.out.println ("UnitQuery.registerLegNode - maps now : assetToLeg - " + assetToLeg);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.registerLegNode - maps now : assetToLeg - " + assetToLeg);
   }
 
   protected LegNode findLegNode (Map assetToLeg, String assetid, String startLoc, String endLoc) {
     Map startToLegNode = (Map) assetToLeg.get (assetid);
     if (startToLegNode == null) {
       if (debug)
-	System.out.println ("UnitQuery.findLegNode - for " + assetid + " no entry found.");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.findLegNode - for " + assetid + " no entry found.");
       return null;
     }
 
     LegNode found = (LegNode) startToLegNode.get (startLoc);
     if (debug) {
-      System.out.println ("UnitQuery.findLegNode - for " + assetid + " at " + startLoc + " got leg " + found);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.findLegNode - for " + assetid + " at " + startLoc + " got leg " + found);
       if (found == null)
-	System.out.println ("UnitQuery.findLegNode - maps now : assetToLeg - " + assetToLeg);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.findLegNode - maps now : assetToLeg - " + assetToLeg);
     }
     
     return found;
@@ -445,7 +434,7 @@ public class UnitQuery extends SqlQuery {
 
   protected void rollUpLegNode (LegNode newLeg, LegNode currentLegNode) {
     if (debug)
-      System.out.println ("UnitQuery.rollUpLegNode - current " + currentLegNode + " new " + newLeg);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.rollUpLegNode - current " + currentLegNode + " new " + newLeg);
 
     if (newLeg.getActualStart().getTime() < currentLegNode.getActualStart().getTime())
       currentLegNode.setActualStart(newLeg.getActualStart());
@@ -483,24 +472,24 @@ public class UnitQuery extends SqlQuery {
 		Node instanceNode = createCarrierInstance (generator, id, name);
 		Node protoNode = (Node)protoToNode.get(proto);
 		if (protoNode == null)
-		  System.out.println ("UnitQuery.attachConveyancesFromResult - no proto node for : " + proto);
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachConveyancesFromResult - no proto node for : " + proto);
 		else {
 		  //		  if (debug)
-		  //			System.out.println ("UnitQuery.attachConveyancesFromResult - parent proto " + protoNode);
+		  //			TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachConveyancesFromResult - parent proto " + protoNode);
 		  tree.addNode (protoNode.getUID(), instanceNode);
 		}
 		total++;
 	  }
 	  if (debug) 
-		System.out.println ("UnitQuery.attachConveyancesFromResult - " + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachConveyancesFromResult - " +
 							total + " conveyances");
 	  
 	} catch (SQLException e) {
-	  System.out.println ("UnitQuery.attachInstancesFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("UnitQuery.attachInstancesFromResult - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -520,21 +509,21 @@ public class UnitQuery extends SqlQuery {
 		tree.addNode (tree.getRoot().getUID(), typeNode);
 		typeToNode.put (proto, typeNode);
 		//		if (debug)
-		//		  System.out.println ("UnitQuery.buildTypeTreeFromResult - " + proto + "->" + typeNode);
+		//		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildTypeTreeFromResult - " + proto + "->" + typeNode);
 		total++;
 	  }
 
 	  //	  if (debug)
 	  //		tree.show ();
 	  if (debug) 
-		System.out.println ("UnitQuery.buildTypeTreeFromResult - " + 
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildTypeTreeFromResult - " +
 							total + " conveyance types.");
 	} catch (SQLException e) {
-	  System.out.println ("UnitQuery.buildTypeTreeFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildTypeTreeFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("UnitQuery.buildTypeTreeFromResult - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.buildTypeTreeFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -634,7 +623,7 @@ public class UnitQuery extends SqlQuery {
 	leg.setCarrierName (bumperNo);
 
 	if (detaildebug)
-	  System.out.println ("UnitQuery.createLeg " + carrierNomen + " " + bumperNo + " leg is " + leg + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.createLeg " + carrierNomen + " " + bumperNo + " leg is " + leg +
 						  " ready " + readyAt + " start " + start);
 	
 	return leg;
@@ -657,7 +646,7 @@ public class UnitQuery extends SqlQuery {
       "\norder by " + nomen;
     
     if (debug) 
-      System.out.println ("UnitQuery.formFastCargoTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formFastCargoTypeSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -684,7 +673,7 @@ public class UnitQuery extends SqlQuery {
 	  "\norder by " + self2Nomen;
 
 	if (debug) 
-	  System.out.println ("UnitQuery.formFirstCargoTypeSql - \n" + sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formFirstCargoTypeSql - \n" + sqlQuery);
 	
 	return sqlQuery;
   }
@@ -710,7 +699,7 @@ public class UnitQuery extends SqlQuery {
 	  "\norder by " + self1Nomen;
 
 	if (debug) 
-	  System.out.println ("UnitQuery.formSecondCargoTypeSql - \n" + sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formSecondCargoTypeSql - \n" + sqlQuery);
 	
 	return sqlQuery;
   }
@@ -744,7 +733,7 @@ public class UnitQuery extends SqlQuery {
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
     
     if (debug) 
-      System.out.println("UnitQuery.formFastCargoInstanceSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formFastCargoInstanceSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -805,7 +794,7 @@ public class UnitQuery extends SqlQuery {
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("UnitQuery.formFirstCargoInstanceSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formFirstCargoInstanceSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -866,7 +855,7 @@ public class UnitQuery extends SqlQuery {
       "\norder by " + orgNamesName + ", " + ((sortByName) ? instanceName + ", " : "") + prototypeNomen + ", " + cLegStart;
 
     if (debug) 
-      System.out.println ("UnitQuery.formSecondCargoInstanceSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formSecondCargoInstanceSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }
@@ -902,7 +891,7 @@ public class UnitQuery extends SqlQuery {
       "\norder by " + assetInstanceID + ", " + cLegStart;
     
     if (debug) 
-      System.out.println ("UnitQuery.formFastCargoLegSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formFastCargoLegSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -971,7 +960,7 @@ public class UnitQuery extends SqlQuery {
 	  "\norder by " + assetInstanceID + ", " + cLegStart;
 
 	if (debug) 
-	  System.out.println ("UnitQuery.formCargoLegSql - \n" + sqlQuery);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.formCargoLegSql - \n" + sqlQuery);
 	
 	return sqlQuery;
   }

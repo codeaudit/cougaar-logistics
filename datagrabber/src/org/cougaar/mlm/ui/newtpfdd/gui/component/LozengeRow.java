@@ -6,6 +6,8 @@ import java.util.ListIterator;
 
 import org.cougaar.mlm.ui.newtpfdd.util.Debug;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.*;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
 
 public class LozengeRow extends Container
     implements VirtualX, MessageListener
@@ -62,7 +64,7 @@ public class LozengeRow extends Container
 	try {
 	    throw new Exception("Lozenge.add(Object): You can add only Lozenge and its derivatives to LozengeRow");
 	} catch (Exception e) {
-	    System.out.println(e);
+	    TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "", e);
 	}
     }
     public void addLozenge(Lozenge l) {

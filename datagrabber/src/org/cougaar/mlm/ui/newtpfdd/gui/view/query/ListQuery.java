@@ -37,6 +37,8 @@ import java.util.HashSet;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.UIDGenerator;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
@@ -101,7 +103,7 @@ public class ListQuery extends CarrierQuery {
 	buildTypeTreeFromResult (rs, generator, carrierTree, protoToCarrierType);
 	response.setCarrierTypeTree (carrierTree);
 	if(showSqlTime){
-	  System.out.println((run.hasCarrierTypeTable()?"Fast ":"")+"CarrierType query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCarrierTypeTable()?"Fast ":"")+"CarrierType query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
@@ -121,7 +123,7 @@ public class ListQuery extends CarrierQuery {
 	getConveyancesFromResult (rs, generator, carrierInstance);
 	response.setCarrierInstanceTree (carrierInstance);
 	if(showSqlTime){
-	  System.out.println((run.hasCarrierInstanceTable()?"Fast ":"")+"CarrierInstance query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCarrierInstanceTable()?"Fast ":"")+"CarrierInstance query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
@@ -158,7 +160,7 @@ public class ListQuery extends CarrierQuery {
 	}
 	response.setCargoTypeTree (cargoTypes);
 	if(showSqlTime){
-	  System.out.println((run.hasCargoTypeTable()?"Fast ":"")+"CargoType query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoTypeTable()?"Fast ":"")+"CargoType query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
@@ -180,17 +182,17 @@ public class ListQuery extends CarrierQuery {
 	getInstancesFromResult (rs, generator, cargoInstances);
 	response.setCargoInstanceTree (cargoInstances);
 	if(showSqlTime){
-	  System.out.println((false?"Fast ":"")+"CargoInstance query took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (false?"Fast ":"")+"CargoInstance query took: "+
 			     (System.currentTimeMillis()-time));
 	}
 
 	if(showSqlTime){
-	  System.out.println("Total ListQuery took: "+
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Total ListQuery took: "+
 			     (System.currentTimeMillis()-totalTime));
 	}
 
 	if (debug) {
-	  System.out.println ("ListQuery.getResponse - cargo tree :");
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.getResponse - cargo tree :");
 	  //	  cargoTree.show ();
 	}
 	
@@ -200,7 +202,7 @@ public class ListQuery extends CarrierQuery {
   protected void showTime (Date then, String label) {
 	Date now = new Date();
 	long diff = now.getTime()-then.getTime();
-	System.out.println ("ListQuery.getResponse - " + label + " in " + diff+" msecs.");
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.getResponse - " + label + " in " + diff+" msecs.");
   }
 
   protected void getConveyancesFromResult (ResultSet rs, UIDGenerator generator, Tree tree) {
@@ -214,11 +216,11 @@ public class ListQuery extends CarrierQuery {
 		tree.addNode (tree.getRoot().getUID(), instanceNode);
 	  }
 	} catch (SQLException e) {
-	  System.out.println ("CarrierQuery.attachInstancesFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "CarrierQuery.attachInstancesFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("CarrierQuery.attachInstancesFromResult - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "CarrierQuery.attachInstancesFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -239,20 +241,20 @@ public class ListQuery extends CarrierQuery {
 		tree.addNode (tree.getRoot().getUID(), typeNode);
 		typeToNode.put (proto, typeNode);
 		//		if (debug)
-		//		  System.out.println ("ListQuery.buildTypeTreeFromResult - " + proto + "->" + typeNode);
+		//		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.buildTypeTreeFromResult - " + proto + "->" + typeNode);
 		rows++;
 	  }
 	  if (debug)
-		System.out.println ("ListQuery.buildTypeTreeFromResult - rows " + rows);
+		TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.buildTypeTreeFromResult - rows " + rows);
 
 	  //	  if (debug)
 	  //		tree.show ();
 	} catch (SQLException e) {
-	  System.out.println ("ListQuery.getResponse - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.getResponse - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("ListQuery.getResponse - closing result set, got sql error : " + e); 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.getResponse - closing result set, got sql error : " + e);
 		}
 	  }
 	}
@@ -295,11 +297,11 @@ public class ListQuery extends CarrierQuery {
 		cargoTree.addNode (cargoTree.getRoot().getUID(), instanceNode);
 	  }
 	} catch (SQLException e) {
-	  System.out.println ("UnitQuery.attachInstancesFromResult - SQLError : " + e);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - SQLError : " + e);
 	}finally{
 	  if(rs!=null) {
 		try { rs.close(); } catch (SQLException e){
-		  System.out.println ("UnitQuery.attachInstancesFromResult - " + 
+		  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "UnitQuery.attachInstancesFromResult - " +
 							  "closing result set, got sql error : " + e); 
 		}
 	  }
@@ -334,7 +336,7 @@ public class ListQuery extends CarrierQuery {
       "\norder by " + typeID;
     
     if (debug) 
-      System.out.println ("ListQuery.formManifestTypeSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.formManifestTypeSql - \n" + sqlQuery);
     
     return sqlQuery;
   }
@@ -367,7 +369,7 @@ public class ListQuery extends CarrierQuery {
       "\norder by " + orgNamesName + ((sortByName) ? ", " + nomen + ", " : "");
 
     if (debug) 
-      System.out.println ("ListQuery.formManifestInstanceSql - \n" + sqlQuery);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "ListQuery.formManifestInstanceSql - \n" + sqlQuery);
 	
     return sqlQuery;
   }

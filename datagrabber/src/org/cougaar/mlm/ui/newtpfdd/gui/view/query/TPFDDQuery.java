@@ -34,6 +34,8 @@ import java.util.TreeMap;
 
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
+import org.cougaar.mlm.ui.grabber.logger.Logger;
+import org.cougaar.mlm.ui.grabber.logger.TPFDDLoggerFactory;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.UIDGenerator;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.Tree;
@@ -82,12 +84,12 @@ public class TPFDDQuery extends UnitQuery {
     attachLegs      (connection, filterClauses, recentRun, cargoTree, instanceToNode);
 	
     if (showSqlTime)
-      System.out.println("TPFDDQuery.getResponse total millis:" + (System.currentTimeMillis()-totalTime));
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.getResponse total millis:" + (System.currentTimeMillis()-totalTime));
 
     response.addTree (cargoTree);
 
     if (debug) {
-      System.out.println ("TPFDDQuery.getResponse - cargo tree :");
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.getResponse - cargo tree :");
       cargoTree.show ();
     }
 	
@@ -115,7 +117,7 @@ public class TPFDDQuery extends UnitQuery {
     }
 
     if(showSqlTime){
-      System.out.println((run.hasCargoInstanceTable()?"Fast ":"")+"TPFDDQuery.CargoInstance query took: "+
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoInstanceTable()?"Fast ":"")+"TPFDDQuery.CargoInstance query took: "+
 			 (System.currentTimeMillis()-time));
     }
   }
@@ -133,7 +135,7 @@ public class TPFDDQuery extends UnitQuery {
     attachLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
 
     if(showSqlTime){
-      System.out.println((run.hasCargoLegTable()?"Fast ":"")+"TPFDDQuery.CargoLeg query took: "+
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, (run.hasCargoLegTable()?"Fast ":"")+"TPFDDQuery.CargoLeg query took: "+
 			 (System.currentTimeMillis()-time));
     }
   }
@@ -165,13 +167,13 @@ public class TPFDDQuery extends UnitQuery {
 	instanceToNode.put (id, instanceNode);
       }
       if (debug) 
-	System.out.println ("TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
+	TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - total rows for instances " + rows);
     } catch (SQLException e) {
-      System.out.println ("TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
+      TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - SQLError : " + e);
     }finally{
       if(rs!=null) {
 	try { rs.close(); } catch (SQLException e){
-	  System.out.println ("TPFDDQuery.attachInstancesFromResult - " + 
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "TPFDDQuery.attachInstancesFromResult - " +
 			      "closing result set, got sql error : " + e); 
 	}
       }
