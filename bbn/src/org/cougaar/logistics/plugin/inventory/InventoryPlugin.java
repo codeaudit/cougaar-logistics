@@ -35,6 +35,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.logging.LoggingServiceWithPrefix;
+import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.*;
@@ -73,7 +74,9 @@ public class InventoryPlugin extends ComponentPlugin
   private boolean initialized = false;
 //  private boolean firstTimeThrough = true;
   private DomainService domainService;
+  private NodeIdentificationService nodeIdService;
   private LoggingService logger;
+  private UIDService uidService = null;
   private TaskUtils taskUtils;
   private TimeUtils timeUtils;
   private AssetUtils AssetUtils;
@@ -172,6 +175,20 @@ public class InventoryPlugin extends ComponentPlugin
                                             domainService = null;
                                         }
                                       });
+
+    nodeIdService = (NodeIdentificationService)
+       getServiceBroker().getService( this,
+                                    NodeIdentificationService.class,
+                                    null);
+    if (nodeIdService == null) {
+      throw new RuntimeException("Unable to obtain node-id service.");
+    }
+
+    if (uidService == null) {
+      uidService = (UIDService) 
+        getServiceBroker().getService(this, UIDService.class, null);
+    }
+
     //   System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
 //  		       "in org: " + getAgentIdentifier().toString() +
 //    		       " this plugin is: " + this);
@@ -181,6 +198,9 @@ public class InventoryPlugin extends ComponentPlugin
     super.unload();
     if (domainService != null) {
       getServiceBroker().releaseService(this, DomainService.class, domainService);
+    }
+    if (nodeIdService != null) {
+      getServiceBroker().releaseService( this, NodeIdentificationService.class, nodeIdService);
     }
   }
 
@@ -227,6 +247,14 @@ public class InventoryPlugin extends ComponentPlugin
 
   public BlackboardService getBBService() {
     return getBlackboardService();
+  }
+
+  public NodeIdentificationService getNodeIdService() {
+    return nodeIdService;
+  }
+
+  public UIDService getUIDService() {
+    return uidService;
   }
 
   public void publishAddExpansion(Expansion expansion) {
