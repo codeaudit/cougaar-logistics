@@ -507,6 +507,7 @@
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
 		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
+		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<zip zipfile="Logistics_bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
