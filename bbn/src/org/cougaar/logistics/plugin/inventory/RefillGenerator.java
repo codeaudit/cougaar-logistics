@@ -129,12 +129,27 @@ public class RefillGenerator extends InventoryLevelGenerator {
         while (refillBucket <= maxLeadBucket) {
           double invLevel = thePG.getLevel(startBucket) - 
             thePG.getActualDemand(refillBucket);
+	  if (logger.isDebugEnabled()) { 
+	      logger.debug("\n Item "+thePG.getResource()+" Inv Level for startBucket:"+startBucket+" is: "+
+			   thePG.getLevel(startBucket) + " - the actual demand for refillbucket:"+
+			   refillBucket + " is: " + thePG.getActualDemand(refillBucket) + 
+			   ".... The Critical Level for the refill bucket is: " +
+			   thePG.getCriticalLevel(refillBucket));
+	  }
           if (thePG.getCriticalLevel(refillBucket) < invLevel) {
             thePG.setLevel(refillBucket, invLevel);
+	    if (logger.isDebugEnabled()) { 
+		logger.debug("\nSetting the Inv Level for refillbucket: " + refillBucket +
+			     " to level: " + invLevel);
+	    }
 	  } else {
             int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
             double refillQty = generateRefill(invLevel, refillBucket, 
 					      reorderPeriodEndBucket, thePG);
+	    if (logger.isDebugEnabled()) { 
+  		logger.debug("\n Creating Refill for bucket: " + refillBucket +
+			     " of quantity: " + refillQty);
+	    }
             // make a task for this refill and publish it to glue plugin
             // and apply it to the LogisticsInventoryBG
 	    Task theRefill = createRefillTask(refillQty, 
@@ -146,6 +161,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
             //set the target level to invlevel + refillQty (if we get the refill we
             //ask for we hit the target - otherwise we don't)
             thePG.setTarget(refillBucket, (invLevel + refillQty));
+	    if (logger.isDebugEnabled()) { 
+		double printsum = invLevel + refillQty;
+  		logger.debug("\nSetting the InventoryLevel and the TargetLevel to: " + printsum);
+	    }
 	  }
 	  //reset the buckets
 	  startBucket = refillBucket;
@@ -197,7 +216,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
   private double calculateDemandForPeriod(LogisticsInventoryPG thePG, 
                                           int refillBucket, int endOfPeriodBucket) {
     double totalDemand = 0.0;
-    int currentBucket = refillBucket;
+    int currentBucket = refillBucket + 1;
     while (currentBucket <= endOfPeriodBucket) {
       double demand = thePG.getActualDemand(currentBucket);
       totalDemand = totalDemand + demand;
@@ -379,6 +398,11 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @return void  The target level is set in thePG with this method
    **/
   private void setTargetForProjectionPeriod(LogisticsInventoryPG thePG, int startBucket){
+      if (logger.isDebugEnabled()) { 
+	  logger.debug("For item: "+thePG.getResource() + 
+		       " set Projection inventory and target levels starting with bucket: "+
+		       startBucket);
+      }
     int currentBucket = startBucket;
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int reorderPeriodEndBucket = startBucket + reorderPeriod;
