@@ -158,7 +158,7 @@ public class InventorySelectionPanel extends JPanel
 	GridBagConstraints constraints;
 
 	this.setBorder(new LineBorder(Color.blue));
-	assetNamesBox.setPreferredSize(new Dimension(450,25));
+	assetNamesBox.setMinimumSize(new Dimension(450,25));
 	orgsBox.setMinimumSize(new Dimension(100,25));
 	//supplyTypesBox.setPreferredSize(new Dimension(100,25));
         this.setLayout(new GridBagLayout());
