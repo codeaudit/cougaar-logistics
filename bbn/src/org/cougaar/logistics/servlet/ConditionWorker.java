@@ -120,9 +120,13 @@ public class ConditionWorker
 	HttpURLConnection myConnection = (HttpURLConnection) myURL.openConnection();
 	try {
 	  if (myConnection.getResponseCode () != HttpURLConnection.HTTP_OK) {
-	    support.getLog().error (support.getAgentIdentifier()+ 
-				    " - got error reading from URL " + myURL + " code was " + 
-				    myConnection.getResponseCode());
+	    if (myConnection.getResponseCode () == HttpURLConnection.HTTP_NOT_FOUND)
+	      support.getLog().info (support.getAgentIdentifier()+ 
+				     " - servlet not at agent.  Got NOT FOUND code reading from URL " + myURL);
+	    else
+	      support.getLog().error (support.getAgentIdentifier()+ 
+				      " - got error reading from URL " + myURL + " code was " + 
+				      myConnection.getResponseCode());
 	  }
 	  else {
 	    // throws an FileNotFoundExcep if no servlet at that agent
@@ -212,12 +216,6 @@ public class ConditionWorker
 
   protected boolean setDoubleCondition(double value) {
     boolean successful = false;
-    if (support.getConditionService () == null) {
-      support.getLog().warn(support.getAgentIdentifier() + " - Could not set condition <" + support.getConditionName() +
-			    "> because no condition service available.");
-      return false;
-    }
-
     ConditionServlet.DoubleCondition doubleCondition = support.getCondition ();
 
     if (doubleCondition != null) {
