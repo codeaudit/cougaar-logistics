@@ -509,7 +509,6 @@ ARCHIVE_TIME=${build.time}
 		<antcall target="dist-module"/>
 		<antcall target="zip-prep"/>
 		<antcall target="zip-copy-bin"/>
-		<antcall target="zip-copy-data"/>
 		<antcall target="zip-copy-configs"/>
     <mkdir dir="configs_staging/configs/"/>
     <copy todir="configs_staging/configs/">
@@ -520,16 +519,15 @@ ARCHIVE_TIME=${build.time}
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
-		<copy todir="${zipbase}/${module}/csmart">
-			<fileset dir="data/csmart"/>
-		</copy>
 		<delete dir="${zipbase}/${module}/data/csmart/data/database/csv/"/>
 		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
       <move todir="${zipbase}/${module}/Manifest"> 
         <fileset dir="Manifest"/>
       </move>
 		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-		<zip zipfile="AL_bbn.zip" basedir="${zipbase}/${module}"/>
+    <exec dir="bin/" executable="./overlayhelper.sh" os="Linux">
+      <arg line=" AL_bbn.zip ${zipbase} ${module} "/>
+    </exec>
 		<delete dir="${zipbase}"/>
 	</target>
 
