@@ -44,6 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -470,7 +471,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // Check for an empty schedule
     if (newtask_schedule.isEmpty()) {
       logger.error("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
-      return null;
+      return Collections.EMPTY_LIST;
     }
 
     List add_tasks = new ArrayList();
@@ -547,7 +548,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       }
       else {
         logger.error("publishChangeProjection(), Bad Schedule: "+newtask_schedule);
-        return null;
+        return Collections.EMPTY_LIST;
       }
       // Get overlapping schedule elements from start to end of new task
       c = published_schedule.getScheduleElementsWithTime(start);
@@ -557,11 +558,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
-//         logger.debug("replace "+dfPlugin.getTaskUtils().taskDesc(published_task)+
-//                      " with "+dfPlugin.getTaskUtils().taskDesc(new_task));
+        logger.debug("Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+                     " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
         published_task = changeTask(published_task, new_task);
         if (published_task != null) {
-          logger.debug(printProjection("replace with", published_task));
+          logger.debug(printProjection("Replaced task with ---> :", published_task));
           dfPlugin.publishChange(published_task);
         }
       }
