@@ -1,16 +1,3 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/GanttChartView.java,v 1.2 2002-06-27 22:38:06 gvidaver Exp $ */
-
-/*
-  Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
-  Reserved.
-  
-  This material has been developed pursuant to the BBN/RTI "ALPINE"
-  Joint Venture contract number MDA972-97-C-0800, by Ascent Technology,
-  Inc. 64 Sidney Street, Suite 380, Cambridge, MA 02139.
-
-  @author Jason Leatherman, Daniel Bromberg
-*/
-
 /**
    Simple wrapper to set up a Task-based GanttChart view.
 */
@@ -71,79 +58,74 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
   protected TaskModel taskModel;
 
   boolean debug = 
-	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.GanttChartView.debug", 
-									   "false"));
+    "true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.GanttChartView.debug", 
+				       "false"));
 
   public GanttChartView(TaskModel taskModel, String startDate)
-    {
-	  this.taskModel = taskModel;
+  {
+    this.taskModel = taskModel;
 	  
-	gc = new TaskGanttChart(taskModel);
+    gc = new TaskGanttChart(taskModel);
       
-	gc.setVirtualXLocation(0L);
-	gc.setVirtualXSize(20 * DAYLEN);
-	gc.setTicInterval(DAYLEN);
-	gc.setTicLabelInterval(DAYLEN);
-	SimpleDateFormat dFormat = new SimpleDateFormat("MM/dd/yy");
-	Date CDayZeroDate = new Date();
-	try {
-	    CDayZeroDate = dFormat.parse(startDate);
-	}
-	catch ( ParseException e ) {
-	    OutputHandler.out("GCV:GCV Bad date string: " + startDate + ": " + e);
-	}
-	Date now = new Date();
-	Debug.out("GCV:GCV startDate: " + startDate + " time: " + CDayZeroDate.getTime() + " now: " + now.getTime());
-	gc.setCDayZeroTime(CDayZeroDate.getTime());
-	gc.setVisibleAmount(15);
-	gc.setLabelUnitsMode(LongXRuler.PLAINDAYS_UNITS);
-	
-	cb = new ControlBar(gc, taskModel);
-	
-	setBackground(Color.black);
-	setLayout(new BorderLayout());
-	
-	add(gc, BorderLayout.CENTER);
-	add(cb, BorderLayout.NORTH);
-	
-	setVisible(true);
-	UpdateThread updateThread = new UpdateThread();
-	updateThread.start();
+    gc.setVirtualXLocation(0L);
+    gc.setVirtualXSize(20 * DAYLEN);
+    gc.setTicInterval(DAYLEN);
+    gc.setTicLabelInterval(DAYLEN);
+    SimpleDateFormat dFormat = new SimpleDateFormat("MM/dd/yy");
+    Date CDayZeroDate = new Date();
+    try {
+      CDayZeroDate = dFormat.parse(startDate);
     }
+    catch ( ParseException e ) {
+      OutputHandler.out("GCV:GCV Bad date string: " + startDate + ": " + e);
+    }
+    Date now = new Date();
+    Debug.out("GCV:GCV startDate: " + startDate + " time: " + CDayZeroDate.getTime() + " now: " + now.getTime());
+    gc.setCDayZeroTime(CDayZeroDate.getTime());
+    gc.setVisibleAmount(15);
+    gc.setLabelUnitsMode(LongXRuler.PLAINDAYS_UNITS);
+	
+    cb = new ControlBar(gc, taskModel);
+	
+    setBackground(Color.black);
+    setLayout(new BorderLayout());
+	
+    add(gc, BorderLayout.CENTER);
+    add(cb, BorderLayout.NORTH);
+	
+    setVisible(true);
+    UpdateThread updateThread = new UpdateThread();
+    updateThread.start();
+  }
 
   public void showTPFDDLines (FilterClauses filterClauses) {
-	if (debug)
-	  System.out.println ("GanttChartView.showTPFDDLines - " + filterClauses);
+    if (debug)
+      System.out.println ("GanttChartView.showTPFDDLines - " + filterClauses);
 
-	taskModel.showTPFDDLines (filterClauses, gc, this, this);
+    taskModel.showTPFDDLines (filterClauses, gc, this, this);
   }
 
   public void showTPFDDFilterLines (FilterClauses filterClauses) {
-	if (debug)
-	  System.out.println ("GanttChartView.showTPFDDFilterLines - " + filterClauses);
+    if (debug)
+      System.out.println ("GanttChartView.showTPFDDFilterLines - " + filterClauses);
 	
-	taskModel.showFilterTPFDDLines (filterClauses, gc, this, this);
+    taskModel.showFilterTPFDDLines (filterClauses, gc, this, this);
   }
 
-   protected long duration = 0l;
-   protected boolean workIsDone = false;
+  protected long duration = 0l;
+  protected boolean workIsDone = false;
  
-   public void workTook (long duration) {
-     this.duration = duration;
-     workIsDone = true;
-   }
+  public void workTook (long duration) {
+    this.duration = duration;
+    workIsDone = true;
+  }
 
-    public GanttChart getWidget()
-    {
-	return gc;
-    }
+  public GanttChart getWidget()
+  {
+    return gc;
+  }
 
   private class UpdateThread extends Thread {
-    private Runnable updateCountRunnable = new Runnable() {
-	public void run() {
-	  cb.getcountLabel().setText(String.valueOf(gc.getNumRows()) + " items");
-	}
-      };
     private Runnable calculateTonsRunnable = new Runnable() {
 	public void run() {
 	  double [] results = getTotalWeightAndVolume (taskModel.getTree());
@@ -187,7 +169,6 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 	  }
 	} catch ( Exception e ) {}
 
-	SwingQueue.invokeLater(updateCountRunnable);
 	SwingQueue.invokeLater(calculateTonsRunnable);
       }
     }
@@ -231,14 +212,6 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
     return new double [] { weight, volume, area, pax };
   }
 
-  public void paint(Graphics g)
-  {
-    int numRows = gc.getNumRows();
-    if ( numRows % 10 == 0 )
-      cb.getcountLabel().setText(String.valueOf(numRows) + " items");
-    super.paint(g);
-  }
-
   public void actionPerformed(ActionEvent event) {
     String command = event.getActionCommand();
     Object source = event.getSource();
@@ -280,8 +253,8 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 	JOptionPane.showMessageDialog(null, "Couldn't write to " + fileWithExtension, 
 				      "File IO Error", JOptionPane.ERROR_MESSAGE); 
       }
-     }
-   }
+    }
+  }
 
   private class CSVFilter extends FileFilter {
     // Accept all directories and all csv files.
@@ -306,14 +279,14 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
      * Get the extension of a file.
      */  
     public String getExtension(File f) {
-        String ext = null;
-        String s = f.getName();
-        int i = s.lastIndexOf('.');
+      String ext = null;
+      String s = f.getName();
+      int i = s.lastIndexOf('.');
 
-        if (i > 0 &&  i < s.length() - 1) {
-            ext = s.substring(i+1).toLowerCase();
-        }
-        return ext;
+      if (i > 0 &&  i < s.length() - 1) {
+	ext = s.substring(i+1).toLowerCase();
+      }
+      return ext;
     }
 
     public final static String CSV = "csv";
