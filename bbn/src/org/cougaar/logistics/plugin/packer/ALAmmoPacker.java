@@ -38,7 +38,7 @@ import java.util.Enumeration;
  * ALAmmoPacker - handles packing ammo supply requests
  *
  */
-public class ALAmmoPacker extends Packer {
+public class ALAmmoPacker extends ALPacker {
 
   /**
    * ALAmmoPacker - constructor
