@@ -21,6 +21,8 @@ import java.util.*;
 
 import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
+import org.cougaar.planning.ldm.measure.Duration;
+import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -46,6 +48,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   // Bucket will be a knob, this implementation temporary
   private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY;
+  private Duration durationArray[];
   protected LogisticsInventoryPG myPG;
   protected long startTime;
   protected int timeZero;
@@ -58,16 +61,24 @@ public class LogisticsInventoryBG implements PGDelegate {
   private long earliestDemand;
   private TaskUtils taskUtils;
 
-
-  protected ArrayList DueIn;
-  protected ArrayList DueOut;
+  protected ArrayList dueInList;
+  protected ArrayList dueOutList;
+  // projectedDemandList mirrors dueOutList, each element
+  // contains the sum of all Projected Demand for corresponding
+  // bucket in dueOutList
+  protected ArrayList projectedDemandList;
 
   public LogisticsInventoryBG(LogisticsInventoryPG pg) {
     myPG = pg;
     initialized = false;
     customerHash = new HashMap();
-    DueOut = new ArrayList();
-    DueIn = new ArrayList();
+    dueOutList = new ArrayList();
+    dueInList = new ArrayList();
+    projectedDemandList = new ArrayList();
+    durationArray = new Duration[15];
+    for (int i=0; i <= 14; i++) {
+      durationArray[i] = Duration.newDays(0.0+i);
+    }
   }
 
   public void initialize(long today, InventoryPlugin parentPlugin) {
@@ -106,7 +117,11 @@ public class LogisticsInventoryBG implements PGDelegate {
       }
     }
     int bucket = convertTimeToBucket(endTime);
-    addDueOut(task, bucket);
+    while (bucket >= dueOutList.size()) {
+      dueOutList.add(new ArrayList());
+    }
+    ArrayList list = (ArrayList)dueOutList.get(bucket);
+    list.add(task);
   }
 
   private void addDueOutProjection(Task task) {
@@ -114,18 +129,35 @@ public class LogisticsInventoryBG implements PGDelegate {
     long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
-    // There are more efficient ways of doing this but this is easy and clear
+    logger.debug("\n"+taskUtils.taskDesc(task));
+    logger.debug("start: "+TimeUtils.dateString(start));
+    logger.debug("end  : "+TimeUtils.dateString(end));
+    while (bucket_end >= dueOutList.size()) {
+      dueOutList.add(new ArrayList());
+      projectedDemandList.add(new Double(0.0));
+    }
     for (int i=bucket_start; i < bucket_end; i++) {
-      addDueOut(task, i);
+      ArrayList list = (ArrayList)dueOutList.get(i);
+      list.add(task);
+      updateProjectedDemandList(task, i, start, end);
     }
   }
 
-  private void addDueOut(Task task, int bucket) {
-    while (bucket >= DueOut.size()) {
-      DueOut.add(new ArrayList());
-    }
-    ArrayList list = (ArrayList)DueOut.get(bucket);
-    list.add(task);
+  private void updateProjectedDemandList(Task task, int bucket,
+				      long start, long end) {
+    long bucket_start = convertBucketToTime(bucket);
+    long bucket_end = convertBucketToTime(bucket+1);
+    long interval_start = Math.max(start, bucket_start);
+    long interval_end = Math.min(end, bucket_end);
+    int days_spanned = (int)((interval_end - interval_start)/TimeUtils.MSEC_PER_DAY);
+    Rate rate = taskUtils.getRate(task);
+    Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
+    double demand = taskUtils.getDouble(scalar);
+    Double prev_demand = (Double)projectedDemandList.get(bucket);
+    projectedDemandList.add(bucket, new Double(prev_demand.doubleValue()+demand));
+    logger.debug("Bucket "+bucket+": previous demand is "+prev_demand
+		 +", new demand "+demand+", total is "+
+		 (Double)projectedDemandList.get(bucket));
   }
 
   public void removeWithdrawTask(Task task) {
@@ -164,7 +196,37 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public void logAllToCSVFile() {
       if(csvLogger != null) {
-	  csvLogger.logToCSVFile(DueOut);
+	  logDueOutsToCSVFile();
+	  csvLogger.incrementCycleCtr();
+      }
+  }
+
+  private void logDueOutsToCSVFile() {
+      if(csvLogger != null) {
+	  csvLogger.write("DUE_OUTS:START");
+	  csvLogger.writeNoCtr("CYCLE,END TIME,VERB,FOR,QTY");
+	  for(int i=0; i < dueOutList.size(); i++) {
+	      ArrayList bin = (ArrayList) dueOutList.get(i);
+	      csvLogger.write("Bin #" + i);
+	      for(int j=0; j < bin.size(); j++) {
+		  Task aDueOut = (Task) bin.get(j);
+		  Date endDate = new Date(taskUtils.getEndTime(aDueOut));  
+         	  String dueOutStr = endDate.toString() + "," + aDueOut.getVerb() + ",";
+		  PrepositionalPhrase pp_for = aDueOut.getPrepositionalPhrase(Constants.Preposition.FOR);
+		  Object org;
+		  if (pp_for != null) {
+		      org = pp_for.getIndirectObject();
+		      dueOutStr = dueOutStr + org + ",";
+		  }
+		  if(taskUtils.isSupply(aDueOut)) {
+		      dueOutStr = dueOutStr + taskUtils.getQuantity(aDueOut);
+		  }
+		  //We have to get the Rate if its a projection....MWD
+
+		  csvLogger.write(dueOutStr);
+	      }
+	  }
+	  csvLogger.write("DUE_OUTS:END");
       }
   }
 
@@ -176,9 +238,18 @@ public class LogisticsInventoryBG implements PGDelegate {
    * Convert a time (long) into a bucket of this inventory that can be
    * used to index duein/out vectors, levels, etc.
    **/
-  public int convertTimeToBucket(long time) {
+  private int convertTimeToBucket(long time) {
     int thisDay = (int) (time / MSEC_PER_BUCKET);
     return thisDay - timeZero;
+  }
+
+  /**
+   * Convert a bucket (int) into the start time of the bucket.
+   * The end time of the bucket must be inferred from the 
+   * next sequential bucket's start time.
+   **/
+  private long convertBucketToTime(int bucket) {
+    return (bucket + timeZero) * MSEC_PER_BUCKET;
   }
 
   // Ask Beth about persistance.  Would like to make sure structures
