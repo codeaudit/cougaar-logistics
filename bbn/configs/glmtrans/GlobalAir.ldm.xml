@@ -216,6 +216,14 @@
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
 
+  <instance prototype="MARNEULI_AIRPORT" id="MARNEULI_AIRPORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="VAZIANI_AIRPORT" id="VAZIANI_AIRPORT">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
   <!-- European Airports-->
   <instance prototype="SIGONELLA_AIRPORT" id="SIGONELLA_AIRPORT">
     <schedule end="12/31/06" start="01/01/00"/>

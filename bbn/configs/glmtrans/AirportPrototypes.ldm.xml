@@ -6624,3 +6624,755 @@
 
     </object>
   </prototype>
+
+<!-- 
+::::::::::::::::::: New Airports for Georgia/Azerbaijan Scenario
+
+alploc_id	       latitude	  longitude	  installation_type_code
+
+MARNEULI-AFLD	   41.453	  44.809	  APT
+VAZIANI-AFLD	   41.614	  45.048	  APT
+TANRYKULULAR-AFLD  40.735	  46.859	  APT
+DOLLYAR-AFLD	   40.885	  45.95		  APT
+GYANDZHA-AFLD	   40.734	  46.319	  APT
+NAETALAN-AFLD	   40.508	  46.834	  APT
+YEVLAKH-AFLD	   40.628	  47.141	  APT
+
+:::::::::::::::::::
+-->
+
+<!-- :::::::::::::::::::: MARNEULI_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="MARNEULI_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> MARNEULI_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> MARNEULI-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> MARNEULI, GEORGIA  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 44.809 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 41.453 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: VAZIANI_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="VAZIANI_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> VAZIANI_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> VAZIANI-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> VAZIANI, GEORGIA  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 45.048 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 41.614 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: TANRYKULULAR_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="TANRYKULULAR_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> TANRYKULULAR_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> TANRYKULULAR-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> TANRYKULULAR, AZERBAIJAN  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 46.859 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 40.735 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: DOLLYAR_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="DOLLYAR_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> DOLLYAR_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> DOLLYAR-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> DOLLYAR, AZERBAIJAN  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 45.950 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 40.885 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: GYANDZHA_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="GYANDZHA_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> GYANDZHA_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> GYANDZHA-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> GYANDZHA, AZERBAIJAN  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 46.319 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 40.734 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: NAETALAN_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="NAETALAN_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> NAETALAN_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> NAETALAN-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> NAETALAN, AZERBAIJAN  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 46.834 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 40.508 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
+<!-- :::::::::::::::::::: YEVLAKH_AIRPORT ::::::::::::::::::::::::: -->
+  <prototype name="YEVLAKH_AIRPORT">
+    <object class="org.cougaar.glm.ldm.asset.TransportationNode">
+
+      <field name="TypeIdentificationPG" type="object">
+        <value>
+          <object class="org.cougaar.planning.ldm.asset.TypeIdentificationPG">
+            <field name="TypeIdentification" type="String">
+              <value> PODAirport </value>
+            </field>
+            <field name="Nomenclature" type="String">
+              <value> YEVLAKH_AIRPORT </value>
+            </field>
+          </object>
+        </value>
+      </field>
+
+      <field name="AirportPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.AirportPG">
+
+	    <field name="MaximumRunwayLength" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Distance">
+		  <field name="Meters" type="double">
+		    <value> 10000.0 </value> 
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="RunwayType" type="String">
+	      <value> ABCDEFGL8 </value>  
+            </field>
+
+	    <field name="MaximumOnGround" type="long">
+	      <value> 9999 </value>  <!-- made up --> 
+            </field>
+
+	    <field name="RampSpace" type="object">
+	      <value>
+	        <object class="org.cougaar.planning.ldm.measure.Area">
+		  <field name="SquareMeters" type="double">
+		    <value> 0.0 </value>
+		  </field>
+		</object>
+	      </value>
+            </field>
+
+	    <field name="MaximumFlightRate" type="double">
+	      <value> 7.0 </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+      <field name="PositionPG" type="object">
+        <value>
+	  <object class="org.cougaar.glm.ldm.asset.PositionPG">
+
+	    <field name="Position" type="object">
+	      <value>
+	        <object class="org.cougaar.glm.ldm.plan.NewGeolocLocation">
+
+		  <field name="GeolocCode" type="String">
+		    <value> YEVLAKH-AFLD </value>
+		  </field>
+
+		  <field name="Name" type="String">
+		    <value> YEVLAKH, AZERBAIJAN  </value>
+		  </field>
+
+		  <field name="Longitude" type="object">
+		    <value>
+     	              <object class="org.cougaar.planning.ldm.measure.Longitude">
+			<field name = "Degrees" type="double">
+			  <value> 47.141 </value>
+			</field>
+     	              </object>
+		    </value>
+		  </field>
+
+		  <field name="Latitude" type="object">
+		    <value>
+				   <object class="org.cougaar.planning.ldm.measure.Latitude">
+			<field name = "Degrees" type="double">
+			  <value> 40.628 </value>
+			</field>
+			</object>
+		    </value>
+		  </field>
+
+		</object>
+	      </value>
+            </field>
+
+	  </object>
+	</value>
+      </field>	  
+
+    </object>
+  </prototype>
+
+
