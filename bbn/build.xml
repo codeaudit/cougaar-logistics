@@ -167,16 +167,16 @@
     
     <!-- jarfiles required by this module, relative to various other paths -->
     <!-- WARNING: Only relative paths work here. -->
-    <property name="compile.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/util.jar,${target.lib}/toolkit.jar,${target.lib}/glm.jar,${target.lib}/vishnu.jar,${target.lib}/servicediscovery.jar,${target.sys}/xerces.jar,${target.sys}/openmap.jar,${target.sys}/fesi-111.jar,${target.sys}/jcchart.jar,${target.sys}/servlet.jar,${target.sys}/vishnuServer.jar"/>
+    <property name="compile.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/util.jar,${target.lib}/toolkit.jar,${target.lib}/glm.jar,${target.lib}/vishnu.jar,${target.lib}/servicediscovery.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/openmap.jar,${target.sys}/fesi-111.jar,${target.sys}/jcchart.jar,${target.sys}/servlet.jar,${target.sys}/vishnuServer.jar"/>
     <!-- Put absolute paths on this list, in the form of a path. -->
     <property name="compile.abs.jarlist" value=""/>
 
     <!-- javadoc package spec for building javadocs -->
-    <property name="javadoc.packages" value="org.cougaar.logistics.ldm,org.cougaar.logistics.ldm.asset,org.cougaar.logistics.ldm.policy,org.cougaar.logistics.plugin.demand,org.cougaar.logistics.plugin.inventory,org.cougaar.logistics.plugin.manager,org.cougaar.logistics.plugin.packer,org.cougaar.logistics.plugin.policy,org.cougaar.logistics.plugin.seanet,org.cougaar.logistics.plugin.servicediscovery,org.cougaar.logistics.plugin.strattrans,org.cougaar.logistics.plugin.trans,org.cougaar.logistics.plugin.trans.base,org.cougaar.logistics.plugin.trans.tools,org.cougaar.logistics.plugin.utils,org.cougaar.logistics.servlet,org.cougaar.logistics.ui.inventory,org.cougaar.logistics.ui.inventory.data"/>
+    <property name="javadoc.packages" value="org.cougaar.logistics.ldm,org.cougaar.logistics.ldm.asset,org.cougaar.logistics.ldm.policy,org.cougaar.logistics.plugin.demand,org.cougaar.logistics.plugin.inventory,org.cougaar.logistics.plugin.manager,org.cougaar.logistics.plugin.packer,org.cougaar.logistics.plugin.policy,org.cougaar.logistics.plugin.seanet,org.cougaar.logistics.plugin.servicediscovery,org.cougaar.logistics.plugin.strattrans,org.cougaar.logistics.plugin.trans,org.cougaar.logistics.plugin.trans.base,org.cougaar.logistics.plugin.trans.tools,org.cougaar.logistics.plugin.utils,org.cougaar.logistics.servlet,org.cougaar.logistics.ui.inventory,org.cougaar.logistics.ui.inventory.data,org.cougaar.logistics.ui.inventory.dialog"/>
 
     <!-- Extra jars needed at run / unit-test time. -->
     <!-- WARNING: Only relative paths work here. -->
-    <property name="run.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/util.jar,${target.lib}/toolkit.jar,${target.lib}/glm.jar,${target.lib}/vishnu.jar,${target.lib}/servicediscovery.jar,${target.sys}/xerces.jar,${target.sys}/openmap.jar,${target.sys}/fesi-111.jar,${target.sys}/jcchart.jar,${target.sys}/servlet.jar,${target.sys}/vishnuServer.jar"/>
+    <property name="run.jarlist" value="${target.lib}/core.jar,${target.lib}/planning.jar,${target.lib}/util.jar,${target.lib}/toolkit.jar,${target.lib}/glm.jar,${target.lib}/vishnu.jar,${target.lib}/servicediscovery.jar,${target.sys}/xercesImpl.jar,${target.sys}/xml-apis.jar,${target.sys}/openmap.jar,${target.sys}/fesi-111.jar,${target.sys}/jcchart.jar,${target.sys}/servlet.jar,${target.sys}/vishnuServer.jar"/>
     <!-- Put absolute paths on this list, in the form of a path. -->
     <property name="run.abs.jarlist" value=""/>
     
