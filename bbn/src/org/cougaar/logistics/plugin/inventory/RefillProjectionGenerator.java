@@ -81,7 +81,7 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param endOfLelelTwo  The day representing the end of the Level 2 window
    *   from the VariableTimeHorizon OperatingMode (knob)
    **/
-  public void calculateRefillProjections(ArrayList touchedInventories, int daysOnHand,
+  public void calculateRefillProjections(Collection touchedInventories, int daysOnHand,
                                          long endOfLevelSix, long endOfLevelTwo, 
 					 RefillComparator theComparator) {
     // get the demand projections for each customer from bg
@@ -113,7 +113,7 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param daysOnHand DaysOnHand policy.
    *  @param endOfLevelSix The date representing the end of the Level 6 VTH window.
    **/
-  private void calculateLevelSixProjections(ArrayList touchedInventories, 
+  private void calculateLevelSixProjections(Collection touchedInventories, 
                                             int daysOnHand, long endOfLevelSix, 
 					    RefillComparator myComparator) {
 

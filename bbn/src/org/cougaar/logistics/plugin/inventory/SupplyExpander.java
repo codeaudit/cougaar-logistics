@@ -88,7 +88,8 @@ public class SupplyExpander extends InventoryModule {
     clusterId = myOrg.getClusterPG().getClusterIdentifier();
   }
 
-    public void expandAndDistributeProjections(Collection tasks) {
+    public boolean expandAndDistributeProjections(Collection tasks) {
+	boolean newProjections = false;
 	LogisticsInventoryPG logInvPG;
 	Task aTask, wdrawTask;
 	Iterator tasksIter = tasks.iterator();
@@ -98,8 +99,11 @@ public class SupplyExpander extends InventoryModule {
 	    logInvPG = getLogisticsInventoryPG(wdrawTask);
 	    if (logInvPG != null) {
 	      logInvPG.addWithdrawProjection(wdrawTask);
+	      // if we have atleast one new projection - set this to true.
+	      newProjections = true;
 	    }
 	}
+	return newProjections;
     }
 
   public void expandAndDistributeRequisitions(Collection tasks) {

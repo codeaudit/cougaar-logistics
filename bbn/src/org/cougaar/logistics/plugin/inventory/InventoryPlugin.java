@@ -70,6 +70,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private HashMap inventoryHash;
   private HashMap inventoryInitHash;
   private ArrayList touchedInventories;
+    private boolean touchedProjections;
   private String supplyType;
   private String inventoryFile;
   private UnaryPredicate dueOutPredicate;
@@ -83,6 +84,9 @@ public class InventoryPlugin extends ComponentPlugin {
   private String myOrgName;
   private SupplyExpander supplyExpander;
   private ExternalAllocator externalAllocator;
+  private RefillGenerator refillGenerator;
+  private RefillProjectionGenerator refillProjGenerator;
+  private RefillComparator refillComparator;
   private long startTime;
   private long cycleStamp;
   private boolean logToCSV=false;
@@ -91,11 +95,15 @@ public class InventoryPlugin extends ComponentPlugin {
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   public final String ENABLE_CSV_LOGGING = "ENABLE_CSV_LOGGING";
   // Policy variables
+  private InventoryPolicy inventoryPolicy = null;
   private int criticalLevel = 3;
   private int reorderPeriod = 3;
   private int handlingTime = 0;
   private int transportTime = 1;
   private int bucketSize = 1;
+  //TODO replace these with real VTH Knob values
+  private long endOfLevelSix;
+  private long endOfLevelTwo;
 
   public void load() {
     super.load();
@@ -108,11 +116,18 @@ public class InventoryPlugin extends ComponentPlugin {
     pluginParams = readParameters();
     supplyExpander = new SupplyExpander(this);
     externalAllocator = new ExternalAllocator(this,getRole(supplyType));
+    refillGenerator = new RefillGenerator(this);
+    refillProjGenerator = new RefillProjectionGenerator(this);
+    refillComparator = new RefillComparator(this);
     inventoryHash = new HashMap();
     inventoryInitHash = new HashMap();
     touchedInventories = new ArrayList();
+    touchedProjections = false;
     getInventoryData();
     startTime = currentTimeMillis();
+    // TODO replace with real VTH Knob
+    endOfLevelSix = timeUtils.addNDays(startTime, 40);
+    endOfLevelTwo = timeUtils.addNDays(startTime, 80);
     domainService = (DomainService) 
 	getServiceBroker().getService(this,
 				      DomainService.class,
@@ -176,11 +191,26 @@ public class InventoryPlugin extends ComponentPlugin {
     }
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
-      expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+      touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
+      // call the Refill Generators if we have new demand
+      if (! getTouchedInventories().isEmpty()) {
+	  //check to see if we have new projections
+	  if (touchedProjections) {
+	      refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
+							     criticalLevel, 
+							     endOfLevelSix, 
+							     endOfLevelTwo, 
+							     refillComparator);
+	  }
+	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
+					   refillComparator);
+      }
+						       
       takeInventorySnapshot(getTouchedInventories());
 
       // touchedInventories should not be cleared until the end of transaction
       touchedInventories.clear();
+      touchedProjections = false;
 //    testBG();
     }
   }
@@ -455,9 +485,9 @@ public class InventoryPlugin extends ComponentPlugin {
     supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
   }
 
-  private void expandIncomingProjections(Collection tasks) {
+  private boolean expandIncomingProjections(Collection tasks) {
     Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
-    supplyExpander.expandAndDistributeProjections(tasksToExpand);
+    return supplyExpander.expandAndDistributeProjections(tasksToExpand);
   }
     
   /**
@@ -712,6 +742,7 @@ public class InventoryPlugin extends ComponentPlugin {
     Iterator policy_iterator = policies.iterator();
     while (policy_iterator.hasNext()) {
       pol = (InventoryPolicy)policy_iterator.next();
+      inventoryPolicy = pol;
       int cl = pol.getCriticalLevel();
       if ((cl >= 0) && (cl != criticalLevel)) {
 	criticalLevel = cl;

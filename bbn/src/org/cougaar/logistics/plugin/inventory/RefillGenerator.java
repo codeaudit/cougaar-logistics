@@ -41,6 +41,7 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.TimeAspectValue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -81,7 +82,7 @@ public class RefillGenerator extends InventoryModule {
    *  @param touchedInventories  The collection of changed Inventories.
    *  @param policy The InventoryPolicy
    **/
-  public void calculateRefills(ArrayList touchedInventories, InventoryPolicy policy, 
+  public void calculateRefills(Collection touchedInventories, InventoryPolicy policy, 
 			       RefillComparator myComparator) {
     ArrayList newRefills = new ArrayList();
     ArrayList oldRefills = new ArrayList();
