@@ -35,7 +35,6 @@ import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.glm.ldm.Constants;
 
 
-
 /**
  * <pre>
  * The default RequirementsExpander for the DemandForecastPlugin.
@@ -56,37 +55,35 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   /**
    * Expand DetermineRequirements tasks into GenerateProjections tasks.
    **/
-  public void expandDetermineRequirements(Task detReqTask, Collection assets)    {
-    if((assets == null) || (assets.isEmpty())) {
+  public void expandDetermineRequirements(Task detReqTask, Collection assets) {
+    if ((assets == null) || (assets.isEmpty())) {
       disposeOfTask(detReqTask);
       return;
     }
     ArrayList gpTasks = new ArrayList();
     Iterator assetIT = assets.iterator();
-    while(assetIT.hasNext()) {
+    while (assetIT.hasNext()) {
       Asset consumer = (Asset) assetIT.next();
       NewTask gpTask = createGPTask(detReqTask, consumer);
       gpTasks.add(gpTask);
     }
-    if(gpTasks.isEmpty()) {
+    if (gpTasks.isEmpty()) {
       logger.warn("Cannot expand - no subtasks for determine requirements task "
                   + getTaskUtils().taskDesc(detReqTask));
-    }
-    else {
+    } else {
       PlanElement pe = detReqTask.getPlanElement();
-      if((pe!=null) && (pe instanceof Disposition)) {
+      if ((pe != null) && (pe instanceof Disposition)) {
         dfPlugin.publishRemove(pe);
         pe = null;
       }
       // First time through build a fresh expansion
-      if(pe == null) {
+      if (pe == null) {
         createAndPublishExpansion(detReqTask, gpTasks);
       }
       // There are new assets to add to the expansion
-      else if(pe instanceof Expansion){
-        addToAndPublishExpansion(detReqTask,gpTasks);
-      }
-      else {
+      else if (pe instanceof Expansion) {
+        addToAndPublishExpansion(detReqTask, gpTasks);
+      } else {
         logger.error("Unhandled plan element type on DetermineRequirementsTask :" + pe.getClass().getName());
       }
     }
@@ -98,10 +95,10 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     HashSet remTaskHash = new HashSet(removedAssets);
     Enumeration subtasks = wf.getTasks();
-    while(subtasks.hasMoreElements()) {
+    while (subtasks.hasMoreElements()) {
       Task task = (Task) subtasks.nextElement();
       Asset consumer = task.getDirectObject();
-      if(remTaskHash.contains(consumer)) {
+      if (remTaskHash.contains(consumer)) {
         wf.removeTask(task);
         dfPlugin.publishRemove(task);
       }
@@ -111,7 +108,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 
   protected void createAndPublishExpansion(Task parent, Collection subtasks) {
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       dfPlugin.publishAdd(subtasksIT.next());
     }
     Workflow wf = buildWorkflow(parent, subtasks);
@@ -123,7 +120,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
       dfPlugin.publishAdd(task);
       wf.addTask(task);
@@ -132,11 +129,10 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   }
 
 
-
   protected NewTask createGPTask(Task parentTask, Asset consumer) {
     Vector prefs = new Vector();
 
-    PrepositionalPhrase prepPhrase = newPrepositionalPhrase (Constants.Preposition.OFTYPE, dfPlugin.getSupplyType());
+    PrepositionalPhrase prepPhrase = newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType());
 
     prefs.addElement(createStartTimePref(parentTask));
 
@@ -144,12 +140,17 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
-    newTask.setPrepositionalPhrases(parentTask.getPrepositionalPhrases());
+
+    //MWD Remove
+    //newTask.setPrepositionalPhrases(parentTask.getPrepositionalPhrases());
+    //newTask = addPrepositionalPhrase(newTask, prepPhrase);
+
+    newTask.setPrepositionalPhrases(prepPhrase);
 
     newTask.setDirectObject(consumer);
     newTask.setVerb(Verb.getVerb(Constants.Verb.GENERATEPROJECTIONS));
 
-    newTask = addPrepositionalPhrase(newTask, prepPhrase);
+
     newTask.setPreferences(prefs.elements());
 
     return newTask;
@@ -167,7 +168,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     wf.setIsPropagatingToSubtasks(true);
     NewTask t;
     Iterator subtasksIT = subtasks.iterator();
-    while(subtasksIT.hasNext()) {
+    while (subtasksIT.hasNext()) {
       t = (NewTask) subtasksIT.next();
       t.setWorkflow(wf);
       wf.addTask(t);
@@ -180,13 +181,13 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     AspectValue avs[] = new AspectValue[1];
     avs[0] = AspectValue.newAspectValue(15, 0.0);
     AllocationResult dispAR =
-        getPlanningFactory().newAllocationResult (1.0, true, avs);
+        getPlanningFactory().newAllocationResult(1.0, true, avs);
     Disposition disposition =
-        getPlanningFactory().createDisposition (task.getPlan(), task, dispAR);
+        getPlanningFactory().createDisposition(task.getPlan(), task, dispAR);
     dfPlugin.publishAdd(disposition);
   }
 
-  protected long getStartTimePref (Task task) {
+  protected long getStartTimePref(Task task) {
     synchronized (task) {
       Enumeration taskPrefs = task.getPreferences();
       while (taskPrefs.hasMoreElements()) {
@@ -201,7 +202,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   }
 
   protected Preference createStartTimePref(Task parentTask) {
-    long startTime = getStartTimePref (parentTask);
+    long startTime = getStartTimePref(parentTask);
     AspectValue av = AspectValue.newAspectValue(AspectType.START_TIME, startTime);
     ScoringFunction score = ScoringFunction.createNearOrAbove(av, 0);
     return getPlanningFactory().newPreference(AspectType.START_TIME, score);
@@ -216,16 +217,22 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
   }
 
 
-  public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp) {
-    Enumeration enum = task.getPrepositionalPhrases();
-    Vector phrases = new Vector();
-    while (enum.hasMoreElements()) {
-      phrases.addElement(enum.nextElement());
-    }
-    phrases.addElement(pp);
-    task.setPrepositionalPhrases(phrases.elements());
-    return task;
-  }
+  /**
+   *
+   * MWD remove
+   *
+   public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp) {
+   Enumeration enum = task.getPrepositionalPhrases();
+   Vector phrases = new Vector();
+   while (enum.hasMoreElements()) {
+   phrases.addElement(enum.nextElement());
+   }
+   phrases.addElement(pp);
+   task.setPrepositionalPhrases(phrases.elements());
+   return task;
+   }
+
+   **/
 }
 
 
