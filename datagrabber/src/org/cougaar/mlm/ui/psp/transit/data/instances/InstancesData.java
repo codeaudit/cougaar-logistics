@@ -45,6 +45,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
 import org.xml.sax.Attributes;
 
 /**
@@ -67,13 +70,18 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
   //Variables:
   ////////////
 
+  boolean debug = false;
   protected Map instances;
+  boolean useCompression = true;
 
   //Constructors:
   ///////////////
 
   public InstancesData(){
     instances = new HashMap(89);
+    if ("false".equals(System.getProperty ("org.cougaar.mlm.ui.psp.transit.data.legs.LegsData.useCompression"))) {
+      useCompression = false;
+    }
   }
 
   //Members:
@@ -221,34 +229,55 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
     index = 0;
     iter = getInstancesIterator();
     int i = 0;
+
+    if (debug)
+      System.out.println ("InstancesData.writeExternal - total manifest items " + totalManifestItems);
+
     while(iter.hasNext()){
       Instance instance = (Instance)iter.next();
 
-      //      System.out.println ("total manifest items " + totalManifestItems);
-
-      if (instance.hasManifest)
+      if (instance.hasManifest) {
 	index = instance.writeToManifestBuffers (index, 
 						 nomenStringBuffer, 
 						 typeIDStringBuffer, 
 						 receiversStringBuffer,
 						 weightDoubleBuffer);
-      //      System.out.println ("Intance #" + i++ + " is\n" + instance);
+	if (debug)
+	  System.out.println ("Instance #" + i++ + " is\n" + instance);
+      }
     }
 
-    //    System.out.println ("AgentNames is " + agentNames);
-    //    System.out.println ("instance string is " + new String (instanceStringBuffer));
-    //    System.out.println ("nomen string is " + new String (nomenStringBuffer));
+    if (debug) {
+      System.out.println ("InstancesData.writeExternal - AgentNames is " + agentNames);
+      // System.out.println ("InstancesData.writeExternal - instance string is " + new String (instanceStringBuffer));
+      // System.out.println ("InstancesData.writeExternal - nomen string is " + new String (nomenStringBuffer));
+    }
 
     out.writeObject(agentNames);
     out.writeObject(uidAgentIndex);
     out.writeObject(uidLong);
-    out.writeObject(instanceStringBuffer);
+
+    if (useCompression) {
+      compressCharArray (instanceStringBuffer, out);
+    } 
+    else {
+      out.writeObject(instanceStringBuffer);
+    }
+
     out.writeObject(instanceLongBuffer);
     out.writeObject(instanceIntBuffer);
     out.writeObject(instanceBooleanBuffer);
-    out.writeObject(nomenStringBuffer);
-    out.writeObject(typeIDStringBuffer);
-    out.writeObject(receiversStringBuffer);
+
+    if (useCompression) {
+      compressCharArray (nomenStringBuffer, out);
+      compressCharArray (typeIDStringBuffer, out);
+      compressCharArray (receiversStringBuffer, out);
+    }
+    else {
+      out.writeObject(nomenStringBuffer);
+      out.writeObject(typeIDStringBuffer);
+      out.writeObject(receiversStringBuffer);
+    }
     out.writeObject(weightDoubleBuffer);
     } catch (Exception e) { e.printStackTrace (); }
   }
@@ -271,20 +300,25 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
     int  [] uidAgentIndex = (int  []) in.readObject ();
     long [] uidLong       = (long []) in.readObject ();
 
-    char [] instanceStringBuffer   = (char [])    in.readObject();
+    // char [] instanceStringBuffer   = (char [])    in.readObject();
+    CharBuffer charBuffer = getCharBuffer (in);
     long [] instanceLongBuffer     = (long [])    in.readObject();
     int  [] instanceIntBuffer      = (int  [])    in.readObject();
     boolean [] instanceBooleanBuffer  = (boolean []) in.readObject();
 
-    char   [] nomenStringBuffer  = (char [])    in.readObject();
-    char   [] typeIDStringBuffer = (char [])    in.readObject();
-    char   [] receiverStringBuffer = (char [])  in.readObject();
+    //    char   [] nomenStringBuffer  = (char [])    in.readObject();
+    //    char   [] typeIDStringBuffer = (char [])    in.readObject();
+    //    char   [] receiverStringBuffer = (char [])  in.readObject();
+    CharBuffer nomenBuffer = getCharBuffer (in);
+    CharBuffer typeIDBuffer = getCharBuffer (in);
+    CharBuffer receiverBuffer = getCharBuffer (in);
 
     double [] weightDoubleBuffer = (double [])  in.readObject();
 
-    CharBuffer charBuffer = CharBuffer.allocate (instanceStringBuffer.length);
-    String temp = new String(instanceStringBuffer);
-    charBuffer.put (temp);
+    /*
+    CharBuffer charBuffer = CharBuffer.allocate (instanceStringBufferLength);
+    //  String temp = new String(instanceStringBuffer);
+    charBuffer.put (instanceStringBufferString);
     charBuffer.rewind();
 
     CharBuffer nomenBuffer = CharBuffer.allocate (nomenStringBuffer.length);
@@ -301,6 +335,7 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
     temp = new String(receiverStringBuffer);
     receiverBuffer.put (temp);
     receiverBuffer.rewind();
+    */
 
     int manifestsSoFar = 0;
     for (int i = 0; i < numInstances; i++) {
@@ -319,6 +354,86 @@ public class InstancesData implements XMLable, DeXMLable, /* Serializable */ Ext
 						weightDoubleBuffer);
       addInstance (instance);
       //      System.out.println ("Intance #" + i + " is\n" + instance);
+    }
+  }
+
+  protected CharBuffer getCharBuffer (ObjectInput in) throws ClassNotFoundException, IOException {
+    int bufferLength = 0;
+    String bufferString = null;
+
+    if (useCompression) {
+      bufferString = inflateCharArrayToString (in);
+      bufferLength = bufferString.length();
+    }
+    else {
+      char [] bufferArray = null;
+      bufferArray = (char []) in.readObject();
+      bufferLength = bufferArray.length;
+      bufferString = new String(bufferArray);
+    }
+
+    CharBuffer buffer = CharBuffer.allocate (bufferLength);
+    buffer.put (bufferString);
+    buffer.rewind();
+
+    return buffer;
+  }
+
+  protected byte [] compressCharArray (char [] chars, ObjectOutput objectOutput) {
+    // Encode a String into bytes
+    String inputString = new String (chars);
+    try {
+      byte[] input = inputString.getBytes("UTF-8");
+
+      // Compress the bytes
+      byte[] output = new byte[2*chars.length+256];
+      Deflater compresser = new Deflater();
+      compresser.setInput(input);
+      compresser.finish();
+      int compressedDataLength = compresser.deflate(output);
+
+      System.out.println ("orig length " + chars.length + " vs compressed " + compressedDataLength);
+
+      objectOutput.writeInt (compressedDataLength); // write compressed length
+      objectOutput.writeInt (chars.length);         // write uncompressed length
+      objectOutput.write    (output, 0, compressedDataLength);
+
+      return output;
+    }
+    catch (Exception e) {
+      System.err.println ("Got exception serializing " + chars);
+      System.err.println ("It was " + e);
+      e.printStackTrace();
+      return new byte[0];
+    }
+  }
+
+  protected String inflateCharArrayToString (ObjectInput input) {
+    try {
+      int compressedDataLength   = input.readInt (); // read length
+      int uncompressedDataLength = input.readInt (); // uncompressed length
+
+      System.err.println ("inflateCharArray - inflating " + 
+			  compressedDataLength + " bytes, uncompressed " + 
+			  uncompressedDataLength);
+
+      byte [] output = new byte [compressedDataLength];
+      input.readFully (output, 0, compressedDataLength);
+     
+      Inflater decompresser = new Inflater();
+      decompresser.setInput(output, 0, compressedDataLength);
+
+      byte[] result = new byte[uncompressedDataLength];
+      int resultLength = decompresser.inflate(result);
+      decompresser.end();
+
+      // Decode the bytes into a String
+      String outputString = new String(result);
+      return outputString;
+    } catch (Exception e) {
+      System.err.println ("Got exception inflating from stream, it was " + e);
+      e.printStackTrace();
+      return "";
     }
   }
 

@@ -55,6 +55,7 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
 
   //Constants:
   ////////////
+  boolean debug = false;
 
   //Tags:
   public static final String NAME_TAG = "Instance";
@@ -346,6 +347,9 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
     Iterator iter3 = weights.iterator();
     Iterator iter4 = receivers.iterator();
 
+    if (debug)
+      System.out.println ("Writing " + nomenclatures.size () + " items.");
+
     for (Iterator iter = nomenclatures.iterator(); iter.hasNext(); ) {
       String nomen  = (String) iter.next();
       if (nomen == null) nomen = "no_nomen";
@@ -373,8 +377,11 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
 			receiverStringBuffer, (index)*maxStringLength, 
 			receiverLen);
 
-      if (weight != null)
+      if (weight != null) {
 	  weightDoubleBuffer[index] = weight.getKilograms ();
+	  if (debug)
+	    System.out.println ("Writing nomen " + nomen + " weight " + weight.getKilograms ());
+      }
       else
 	  weightDoubleBuffer[index] = 0.0d;
       index++;
