@@ -77,46 +77,46 @@ import java.awt.Color;
  **/
 
 public class InventorySelectionPanel extends JPanel 
-    implements ActionListener,ItemListener {
+  implements ActionListener,ItemListener {
+  
+  protected final static Insets BLANK_INSETS = new Insets(0, 0, 0, 0);
+  
+  public static final String SUBMIT = "Submit";
+  public static final String ORGS = "Org";
+  public static final String SUPPLY_TYPES = "Class";
+  public static final String ITEMS = "Items";
+  
+  public static final String ORGS_ALL = InventorySelectionEvent.ORGS_ALL;
+  public static final String ORGS_NAV = InventorySelectionEvent.ORGS_NAV;
+  public static final String ORGS_HIST = InventorySelectionEvent.ORGS_HIST;
+  
+  public static final String SUBMIT_TOOL_TIP = "Retrieves graph data for given organization/item";
+  public static final String ORG_TOOL_TIP = "Select Organization";
+  public static final String POP_TOOL_TIP = "Select Org Combo box population method";
+  public static final String SUPPLY_TOOL_TIP = "Select Class of Supply to filter items";
+  public static final String ASSET_TOOL_TIP = "Select Graph data inventory item";
 
-    protected final static Insets BLANK_INSETS = new Insets(0, 0, 0, 0);
-
-    public static final String SUBMIT = "Submit";
-    public static final String ORGS = "Org";
-    public static final String SUPPLY_TYPES = "Class";
-    public static final String ITEMS = "Items";
-
-    public static final String ORGS_ALL = InventorySelectionEvent.ORGS_ALL;
-    public static final String ORGS_NAV = InventorySelectionEvent.ORGS_NAV;
-    public static final String ORGS_HIST = InventorySelectionEvent.ORGS_HIST;
-
-    public static final String SUBMIT_TOOL_TIP = "Retrieves graph data for given organization/item";
-    public static final String ORG_TOOL_TIP = "Select Organization";
-    public static final String POP_TOOL_TIP = "Select Org Combo box population method";
-    public static final String SUPPLY_TOOL_TIP = "Select Class of Supply to filter items";
-    public static final String ASSET_TOOL_TIP = "Select Graph data inventory item";
-
-    public static final String[] ORG_POP_OPTIONS = {ORGS_NAV, ORGS_HIST, ORGS_ALL};
+  public static final String[] ORG_POP_OPTIONS = {ORGS_NAV, ORGS_HIST, ORGS_ALL};
 
   protected ArrayList invListeners;
 
-    JComboBox orgsBox;
-    JComboBox supplyTypesBox;
-    JComboBox assetNamesBox;
-
-    JComboBox orgsPopulationBox;
-
-    JButton   submitButton;
+  JComboBox orgsBox;
+  JComboBox supplyTypesBox;
+  JComboBox assetNamesBox;
+  
+  JComboBox orgsPopulationBox;
+  
+  JButton   submitButton;
     
-    protected String currOrg;
+  protected String currOrg;
   protected String currSupplyType;
   protected String currAssetName;
     
-    JLabel supplyTypesLabel;
-
-    Component parent;
-    boolean supplyTypesActive;
-    boolean supplyTypesVisible;
+  JLabel supplyTypesLabel;
+  
+  Component parent;
+  boolean supplyTypesActive;
+  boolean supplyTypesVisible;
 
     public InventorySelectionPanel(Component aParent) {
 	orgsBox = new JComboBox();
@@ -316,7 +316,7 @@ public class InventorySelectionPanel extends JPanel
 	orgsBox.setSelectedItem(origOrg);
 	currOrg = (String) orgsBox.getSelectedItem();
 	if(!(currOrg.equals(origOrg))) {
-	    System.out.println("InventorySelectionPanel>>reinitializeOrgBox - So |" + currOrg + "| is different from |" + origOrg);
+          //System.out.println("InventorySelectionPanel>>reinitializeOrgBox - So |" + currOrg + "| is different from |" + origOrg);
 	    fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	}
 	orgsBox.addActionListener(this);
@@ -446,9 +446,13 @@ public class InventorySelectionPanel extends JPanel
 	    fireInventorySelectionEvent(InventorySelectionEvent.INVENTORY_SELECT);
 	}
 	else if(e.getSource() == orgsBox) {
-	    //System.out.println("Orgs box action is: " + e);
+          //System.out.println("InventorySelectionPanel: Orgs box action is: " + e);
 	    currOrg = (String) orgsBox.getSelectedItem();
-	    //System.out.println("Selected org " + currOrg);
+          //This is fine if there is already an org selected from previous navigation but
+          // if you haven't then you'll get an NPE
+            if (currOrg == null) {
+              currOrg = ".";
+            }
 	    fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	}
     }
