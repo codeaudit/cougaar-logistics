@@ -13,6 +13,7 @@ password=${org.cougaar.oplan.password}
 activity = ACTIVITY_TYPE
 opTempo = OPTEMPO
 location = LOCATION
+opCon = OPCON
 
 # The following defs allow us to find the relevant query handler when
 # individual queries are to be performed
@@ -71,7 +72,7 @@ select DISTINCT ATTRIBUTE_NAME, \
   AND ATTR.OPLAN_ID = ':oplanid:' \
   AND OP.OPLAN_ID = ':oplanid:' \
   AND ATTR.STAGE_NUM = :oplanStage: \
-  AND ATTRIBUTE_NAME IN ('ACTIVITY_TYPE','OPTEMPO','LOCATION')
+  AND ATTRIBUTE_NAME IN ('ACTIVITY_TYPE','OPTEMPO','LOCATION','OPCON')
 
 # Query to determine the active oplan stages of an organization
 
