@@ -169,17 +169,27 @@ public class ShortfallShortData implements XMLable, Serializable{
   }
 
   public String getSupplyTypes() {
-      Collection threads = summaryMap.keySet();
-      Iterator it=threads.iterator();
-      String threadsStr = "";
-      if(it.hasNext()) {
-	  threadsStr = (String) it.next();
-      }
-      while(it.hasNext()) {
-	  String thread = (String) it.next();
-	  threadsStr = threadsStr + ",\n " + thread;
-      }
-      return threadsStr;
+    Iterator summaries = summaryMap.values().iterator();
+    String threadsStr = "";
+    while(summaries.hasNext()) {
+      ShortfallSummary summary = (ShortfallSummary) summaries.next();
+      Iterator invIT = summary.getShortfallInventories().iterator();
+    invLoop: while(invIT.hasNext()) {
+        ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
+	if(((userMode) && 
+	    (!shortInv.getShortfallPeriods().isEmpty()) && 
+	    (shortInv.getUnexpected())) || (!userMode)) {
+	  if(threadsStr.equals("")) {
+	    threadsStr = summary.getSupplyType();
+	  }
+	  else {
+	    threadsStr = threadsStr + ",\n" + summary.getSupplyType();
+	  }
+	  break invLoop;
+	}
+    }
+    }
+    return threadsStr;
   }
 
 
@@ -195,10 +205,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 	Iterator invIT = summary.getShortfallInventories().iterator();
 	while(invIT.hasNext()) {
 	  ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
+	  ShortfallInventory origInv = shortInv;
 
-	  if(!shortInv.getShortfallPeriods().isEmpty()) {
-	      numShortfallPeriodInventories++;
-	  }
 	    
 	  Iterator rulesIT = rulesList.iterator();
 	  while(rulesIT.hasNext()) {
@@ -210,20 +218,37 @@ public class ShortfallShortData implements XMLable, Serializable{
 	  }
 	  if(shortInv.getNumTotalShortfall() > 0) {
 	    numUnexpectedShortfallInventories++;
+	    origInv.setUnexpected(true);
 	    if((shortInv.getNumTotalShortfall() - shortInv.getNumTempShortfall()) <= 0){
 	      numTempShortfallInventories++;
 	    }
+	    if(!shortInv.getShortfallPeriods().isEmpty()) {
+		numShortfallPeriodInventories++;
+	    }
+	  }
+	  else {
+	    origInv.setUnexpected(false);
 	  }
 	}
       }
     }
 
+  public boolean hasPercentShortfallAbove(int thresholdPercent) {
+    Iterator summariesIt = summaryMap.values().iterator();
+    while(summariesIt.hasNext()) {
+      ShortfallSummary summary = (ShortfallSummary) summariesIt.next();
+      if(summary.hasPercentShortfallAbove(thresholdPercent)) {
+	  return true;
+      }
+    }
+    return false;
+  }
 
   //XMLable members:
   //----------------
 
  public void supplyTypesToXML(XMLWriter w) throws IOException {
-      Collection threads = summaryMap.keySet();
+      Collection threads  = summaryMap.keySet();
       Iterator it=threads.iterator();
       String threadsStr = "";
       w.optagln(EFFECTED_THREADS_TAG);
