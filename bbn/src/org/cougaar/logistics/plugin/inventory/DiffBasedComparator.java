@@ -95,7 +95,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
     Task oldRefill=null;
     Iterator oldIter = oldRefills.iterator();
     while (oldIter.hasNext()) {
-      oldRefill = (Task)oldIter.next();
+      oldRefill = (Task )oldIter.next();
       if (oldRefill != null) {
         int bucket = thePG.convertTimeToBucket(getTaskUtils().getEndTime(oldRefill), false);
         publishedTaskMap.put(new Integer(bucket), oldRefill);
@@ -238,9 +238,11 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         Task saveTask = published_task;
         ((NewSchedule)publishedSchedule).removeScheduleElement(ose);
 
-//         logger.debug(" Comparing plublished task  "+getTaskUtils().taskDesc(published_task)+
-//                      " with \n"+getTaskUtils().taskDesc(new_task));
-        // changeTask returns the changed published task if the 2 tasks are different and 
+        if (logger.isDebugEnabled()) {
+         logger.debug(" Comparing published task  "+getTaskUtils().taskDesc(published_task)+
+                     " with \n"+getTaskUtils().taskDesc(new_task));
+        }
+        // changeTask returns the changed published task if the 2 tasks are different and
         // null if the tasks are identical.
         published_task = getTaskUtils().changeTask(published_task, new_task);
         if (published_task != null) {
@@ -252,7 +254,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         }else{ // published and new task are the same, so add the published task back into the BG
           thePG.addRefillProjection(saveTask);
           if (logger.isDebugEnabled()) {
-            logger.debug("DiffProj published task identical to new task");
+            logger.debug("DiffProj published task identical to new task"+ getTaskUtils().taskDesc(saveTask));
           }
         }
       }
