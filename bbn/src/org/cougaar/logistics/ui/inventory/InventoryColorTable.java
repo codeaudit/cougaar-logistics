@@ -54,8 +54,9 @@ public class InventoryColorTable {
        RequisitionsChartDataModel.REQUISITION_ALLOCATION_SERIES_LABEL,
        ProjectionsChartDataModel.PROJECTION_SERIES_LABEL,
        ProjectionsChartDataModel.PROJECTION_ALLOCATION_SERIES_LABEL,
-       ShortfallChartDataModel.SHORTFALL_SERIES_LABEL,
-       BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL
+       ShortfallChartDataModel.SHORTFALL_SERIES_LABEL
+       //TODO: Remove all references to BelowZeroHighlightChartDataModel
+       //       BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL
       };
 
   // TODO: this should create all of the color schemes that we define
@@ -110,8 +111,10 @@ public class InventoryColorTable {
                    new Color(0, 0, 255));  //blue
     colorTable.put(ProjectionsChartDataModel.PROJECTION_ALLOCATION_SERIES_LABEL,
                    new Color(170, 170, 255));  //light blue?
-    colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
-                   new Color(255, 255, 240)); // light yellow
+    /** TODO remove BelowZeroHighlightChartDataModel refs
+     colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
+     new Color(255, 255, 240)); // light yellow
+     */
 
     colorTable.put(TargetReorderLevelChartDataModel.TARGET_LEVEL_SERIES_LABEL + SYMBOL,
                    new Integer(JCSymbolStyle.VERT_LINE));
@@ -153,8 +156,10 @@ public class InventoryColorTable {
                    Color.cyan);  //blue
     colorTable.put(ProjectionsChartDataModel.PROJECTION_ALLOCATION_SERIES_LABEL,
                    Color.orange);  //light blue?
-    colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
-                   Color.green); // light yellow
+    /** TODO remove BelowZeroHighlightChartDataModel refs
+     colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
+     Color.green); // light yellow
+     */
 
     colorTable.put(TargetReorderLevelChartDataModel.TARGET_LEVEL_SERIES_LABEL + SYMBOL,
                    new Integer(JCSymbolStyle.DOT));
@@ -197,8 +202,10 @@ public class InventoryColorTable {
     colorTable.put(OrgActivityChartDataModel.DEFENSIVE_SERIES_LABEL,
                    Color.lightGray);
 
-    colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
-                   new Color(255, 255, 240)); // light yellow
+    /** TODO remove BelowZeroHighlightChartDataModel refs
+     colorTable.put(BelowZeroHighlightChartDataModel.BELOW_ZERO_SERIES_LABEL,
+     new Color(255, 255, 240)); // light yellow
+     */
 
     // these are represented as bar charts
     colorTable.put(RequisitionsChartDataModel.REQUISITION_SERIES_LABEL,
