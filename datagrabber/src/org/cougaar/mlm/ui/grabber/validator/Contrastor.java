@@ -29,6 +29,12 @@ import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 import org.cougaar.mlm.ui.grabber.controller.Controller;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
+
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+import org.cougaar.mlm.ui.grabber.workqueue.ResultHandler;
+import org.cougaar.mlm.ui.grabber.workqueue.Work;
+import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 
 import java.sql.Statement;
 import java.sql.SQLException;
@@ -36,6 +42,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.sql.DatabaseMetaData;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,7 +136,139 @@ public class Contrastor extends Validator{
 		     "Problem running comparison for "+getTest(idx).getDescription());
       }
     }
+
     h.p("<BR><B>Finished Comparison</B>");
+  }
+
+  /** test has a ONE based index, 0 is reserved for 'all tests'**/
+  public void runTest(HTMLizer h, 
+		      DBConnectionProvider connectionProvider,
+		      int compone, int comptwo, int test){
+    // keep track of whether this category has been run
+    Statement s1 = null;
+    try {
+      s1 = connectionProvider.getDBConnection ().createStatement();
+      if (isTestCategory(test))
+	ResultTable.updateStatus(h,s1,this,compone,comptwo,test);
+
+      runTestsOnQueue (h, connectionProvider, compone, comptwo, test);
+
+    } catch (SQLException sqle) {
+      h.logMessage (Logger.WARNING, Logger.GENERIC, "Got SQL error : " + sqle);
+      sqle.printStackTrace();
+    } finally {
+      if (s1 != null) 
+	try { s1.close(); } catch (Exception e) {
+	  if (h.isNormalEnabled ()) {
+	    h.logMessage (Logger.NORMAL, Logger.GENERIC, "Got SQL error : " + e);
+	    e.printStackTrace ();
+	  }
+	}
+    }
+
+    h.p("<BR><B>Finished Comparison</B>");
+  }
+
+  /**
+   * Blocks until all tests are complete
+   */
+  protected void runTestsOnQueue (HTMLizer h, DBConnectionProvider connectionProvider, 
+				  int compone, int comptwo, 
+				  int test) {
+    ValidatorResultHandler resultHandler = new ValidatorResultHandler (h);
+    workQ = new WorkQueue (h, resultHandler);
+    resultHandler.setWorkQ (workQ);
+
+    List l = getTestIndicesForTestType(test);
+    for(int i=0;i<l.size();i++){
+      int idx=((Integer)l.get(i)).intValue();
+      Work work = getTestWork (i, connectionProvider, idx, h, compone, comptwo);
+
+      if (h.isMinorEnabled()) {
+	h.logMessage(Logger.MINOR,Logger.GENERIC, "Queueing work (" + work + ")");
+      }
+      workQ.enque (work);
+    }
+
+    while (workQ.isBusy ()) {
+      synchronized (this) {
+	try {wait(5000);} catch (Exception e) {e.printStackTrace();}
+      }
+    }
+  }
+
+  protected Work getTestWork (int i, DBConnectionProvider connectionProvider, int idx, HTMLizer h, 
+			      int compone, int comptwo) {
+    return new ContrastWork (i, connectionProvider, idx, getDescription(idx), h, compone, comptwo, this);
+  }
+
+  public class ContrastWork extends TestWork {
+    int compone;
+    int comptwo;
+
+    public ContrastWork (int id, DBConnectionProvider connectionProvider, 
+			 int testIndex, String testName, 
+			 HTMLizer htmlizer, 
+			 int compone, int comptwo,
+			 Validator validator) {
+      super (id, connectionProvider, testIndex, testName, htmlizer, compone, validator);
+      this.compone = compone;
+      this.comptwo = comptwo;
+    }
+
+    protected boolean doTest () {
+      Statement s1 = null, s2 = null, s3 = null;
+      boolean retval = true;
+      try {
+	s1 = connectionProvider.createStatement();
+	s2 = connectionProvider.createStatement();
+	s3 = connectionProvider.createStatement();
+	if (!halt) {
+	  prepare (s1, s2, s3);
+	}
+      } catch (Exception e) {
+	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
+			    "Problem running test - could not prepare test "+testName +
+			    ". Exception was " + e);
+	e.printStackTrace();
+	retval = false;
+      }
+
+      try {
+	if (!halt && retval) {
+	  update (s1);
+	}
+      } catch (RuntimeException e) {
+	htmlizer.logMessage(Logger.WARNING, Logger.GENERIC,
+			    "Problem running test - could not update status for test "+testName);
+	retval = false;
+      } finally {
+	if (s1 != null) {
+	  try { s1.close(); } catch (Exception e) {}
+	}
+	if (s2 != null) {
+	  try { s2.close(); } catch (Exception e) {}
+	}
+	if (s3 != null) {
+	  try { s3.close(); } catch (Exception e) {}
+	}
+      }
+
+      return retval;
+    }
+
+    protected void prepare (Statement s1, Statement s2, Statement s3) {
+      runSingleTest(htmlizer,s1,s2,s3,compone,comptwo,testIndex);
+    }
+
+    protected void update (Statement s1) {
+      ResultTable.updateStatus(htmlizer,s1,validator,compone,comptwo,testIndex);
+    }
+
+    public String toString () { return 
+				  "Comparison of run " + compone + 
+				  " and run " + comptwo + 
+				  " for test \"" + testName + "\"";  }
   }
     
   /** test has a ONE based index, 0 is reserved for 'all tests'**/
