@@ -347,10 +347,11 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	thePG.removeWithdrawProjection(aTask);
         if (!aTask.isDeleted()) {
           removedProjections = true;
-        } else {
-          Inventory inventory = inventoryPlugin.findOrMakeInventory(thePG.getResource());
-          inventoryPlugin.touchInventoryWithDeletions(inventory);
-        }
+        } 
+//         else {
+//           Inventory inventory = inventoryPlugin.findOrMakeInventory(thePG.getResource());
+//           inventoryPlugin.touchInventoryWithDeletions(inventory);
+//         }
       }
     }
     return removedProjections;
