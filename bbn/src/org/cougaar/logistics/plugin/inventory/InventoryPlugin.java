@@ -992,14 +992,17 @@ public class InventoryPlugin extends ComponentPlugin {
     levels = (double[])inventoryInitHash.get(item);
     if (levels != null) {
       inventory=(Inventory)getRootFactory().createAsset("Inventory");
-      ((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
       NewLogisticsInventoryPG logInvPG = 
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       inventory.addOtherPropertyGroup(logInvPG);
       if (resource.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
-        logInvPG.setIsLevel2(true);
+        logInvPG.setIsLevel2(true); // will need to key off asset to identify level2 item
+	// Need to distinguish Level2Package aggregates of different supply types otherwise
+	// they are determined to be the same asset and are removed from the blackboard
+	((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item+":"+supplyType);
       } else {
-        logInvPG.setIsLevel2(false); // will need to key off asset to identify level2 item
+        logInvPG.setIsLevel2(false); 
+	((NewItemIdentificationPG)inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
       }
       logInvPG.setCapacity(levels[0]);
       logInvPG.setInitialLevel(levels[1]);
