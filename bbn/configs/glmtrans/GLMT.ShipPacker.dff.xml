@@ -16,6 +16,8 @@
 <FIELDFORMAT name="quantity" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="isContainer" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="isAmmo" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="isVehicle" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="distance" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 </OBJECTFORMAT>
 <OBJECTFORMAT name="Asset" is_task="false" is_resource="true" >
 <FIELDFORMAT name="id" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="true" />
