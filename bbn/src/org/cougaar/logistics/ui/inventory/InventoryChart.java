@@ -140,7 +140,7 @@ public abstract class InventoryChart extends JPanel {
 
 	// set legend invisible, because we create our own??
 	chart.getLegend().setVisible(true);
-	chart.getLegend().setPreferredSize(new Dimension(141,110)); //95
+	chart.getLegend().setPreferredSize(new Dimension(148,110)); //95
 
     }
 
