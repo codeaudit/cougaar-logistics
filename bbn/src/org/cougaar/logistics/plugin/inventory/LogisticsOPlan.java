@@ -25,18 +25,21 @@ import org.cougaar.glm.plugins.ClusterOPlan;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.util.UID;
+import org.cougaar.core.util.UniqueObject;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
 import java.io.Serializable;
 import java.util.*;
 
-public class LogisticsOPlan extends ClusterOPlan implements Serializable {
+public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
 
   long arrivalInTheater;
+  UID theUID;
 
   public LogisticsOPlan(ClusterIdentifier id, Oplan op) {
     super(id, op);
+    setUID(UID.toUID(id.toString()+":"+op.getOplanId()+"/1"));
     arrivalInTheater = getStartTime();
   }
   public boolean updateOrgActivities(IncrementalSubscription orgActivitySubscription) {
@@ -65,6 +68,14 @@ public class LogisticsOPlan extends ClusterOPlan implements Serializable {
 
   public long getArrivalTime() {
     return arrivalInTheater;
+  }
+
+  public UID getUID() {
+    return theUID;
+  }
+
+  public void setUID(UID theUID) {
+    this.theUID = theUID;
   }
 
   public String toString() {
