@@ -28,6 +28,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.QuiescenceReportService;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
@@ -385,6 +386,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   private void setupTaskScheduler() {
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
     boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
+    QuiescenceReportService q = (QuiescenceReportService)
+      getServiceBroker().getService(this, QuiescenceReportService.class, null);
     if (!turnOffTaskSched) {
       java.io.InputStream is = null;
       try {
@@ -395,14 +398,14 @@ public class DemandForecastPlugin extends ComponentPlugin
       genProjTaskScheduler = new TaskScheduler
         (new GenProjPredicate (supplyType, taskUtils),
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, logger,"GenProjs for " + getBlackboardClientName());
+         blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
     } else {
       logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
      genProjTaskScheduler = new TaskScheduler
       (new GenProjPredicate (supplyType, taskUtils),
        new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
                                      {TaskSchedulingPolicy.PASSALL}),
-       blackboard, logger,"GenProjs for " + getBlackboardClientName());
+       blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
     }
   }
 

@@ -52,6 +52,7 @@ import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
 import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.QuiescenceReportService;
 import org.cougaar.core.logging.LoggingServiceWithPrefix;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.planning.service.LDMService;
@@ -610,6 +611,8 @@ public class InventoryPlugin extends ComponentPlugin
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
+    QuiescenceReportService q = (QuiescenceReportService)
+      getServiceBroker().getService(this, QuiescenceReportService.class, null);
     String id = getAgentIdentifier().toString();
     java.io.InputStream is = null;
     try {
@@ -618,9 +621,9 @@ public class InventoryPlugin extends ComponentPlugin
       logger.error ("Could not find file supplyTaskPolicy.xml");
     }
     supplyTaskScheduler = new TaskScheduler
-        (new SupplyTaskPredicate(supplyType, id, taskUtils),
-         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, logger, "supplyTasks for " + getBlackboardClientName());
+       (new SupplyTaskPredicate(supplyType, id, taskUtils),
+        TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+        blackboard, q, logger, "supplyTasks for " + getBlackboardClientName());
     try {
       is = getConfigFinder().open ("projectionTaskPolicy.xml");
     } catch (Exception e) {
@@ -629,7 +632,7 @@ public class InventoryPlugin extends ComponentPlugin
     projectionTaskScheduler = new TaskScheduler
         (new ProjectionTaskPredicate(supplyType, id, taskUtils),
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
-         blackboard, logger, "projTasks for " + getBlackboardClientName());
+         blackboard, q, logger, "projTasks for " + getBlackboardClientName());
 
 //    supplyTaskSubscription = (IncrementalSubscription) blackboard.
 //        subscribe(new SupplyTaskPredicate(supplyType, id, taskUtils));
