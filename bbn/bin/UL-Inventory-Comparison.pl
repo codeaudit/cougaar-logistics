@@ -533,10 +533,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Inventory_Level_has_no_data == 1) || ($Current_Inventory_Level_has_no_data == 1)) {
 			if ($Baseline_Inventory_Level_has_no_data == 1) {
-				print ($Baseline_file_name, " No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Inventory Level Data available for comparison\n");
 			}
 			if ($Current_Inventory_Level_has_no_data == 1) {
-				print ($Current_file_name, " No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Inventory Level Data available for comparison\n\n");
 			}
 	}
 
@@ -601,10 +603,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Demand_Projection_has_no_data == 1) || ($Current_Demand_Projection_has_no_data == 1)) {
 			if ($Baseline_Demand_Projection_has_no_data == 1) {
-				print ("No ", $Baseline_file_name, " data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Demand Projection Data available for comparison\n");
 			}
 			if ($Current_Demand_Projection_has_no_data == 1) {
-				print ("No ", $Current_file_name, " data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Demand Projection Data available for comparison\n\n");
 			}
 	}
 
@@ -667,10 +671,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Demand_Projection_Response_has_no_data == 1) || ($Current_Demand_Projection_Response_has_no_data == 1)) {
 			if ($Baseline_Demand_Projection_Response_has_no_data == 1) {
-				print ("No ", $Baseline_file_name, " data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Demand Projection Response Data available for comparison\n");
 			}
 			if ($Current_Demand_Projection_Response_has_no_data == 1) {
-				print ("No ", $Current_file_name, " data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Demand Projection Response Data available for comparison\n\n");
 			}
 	}
 
@@ -732,10 +738,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Demand_Requisition_has_no_data == 1) || ($Current_Demand_Requisition_has_no_data == 1)) {
 			if ($Baseline_Demand_Requisition_has_no_data == 1) {
-				print ("No ", $Baseline_file_name, " data available for comparison\n");
+			    print ($Baseline_file_name, 
+				   "\nNo BASELINE Demand Requisition Data available for comparison\n");
 			}
 			if ($Current_Demand_Requisition_has_no_data == 1) {
-				print ("No ", $Current_file_name, " data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Demand Requisition Data available for comparison\n\n");
 			}
 	}
 
@@ -798,10 +806,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Demand_Requisition_Response_has_no_data == 1) || ($Current_Demand_Requisition_Response_has_no_data == 1)) {
 			if ($Baseline_Demand_Requisition_Response_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Demand Requisition Response Data available for comparison\n");
 			}
 			if ($Current_Demand_Requisition_Response_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Demand Requisition Response Data available for comparison\n\n");
 			}
 	}
 
@@ -863,10 +873,12 @@ $FILE_type = "Current";
 	
 	} elsif (($Baseline_Refill_Projection_has_no_data == 1) || ($Current_Refill_Projection_has_no_data == 1)) {
 			if ($Baseline_Refill_Projection_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Refill Projection Data available for comparison\n");
 			}
 			if ($Current_Refill_Projection_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Refill Projection Data available for comparison\n\n");
 			}
 	}
 
@@ -929,10 +941,12 @@ $FILE_type = "Current";
 	
 	} elsif (($Baseline_Refill_Projection_Response_has_no_data == 1) || ($Current_Refill_Projection_Response_has_no_data == 1)) {
 			if ($Baseline_Refill_Projection_Response_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Refill Projection Response Data available for comparison\n");
 			}
 			if ($Current_Refill_Projection_Response_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Refill Projection Response Data available for comparison\n\n");
 			}
 	}	
 
@@ -993,10 +1007,12 @@ $FILE_type = "Current";
 
 	} elsif (($Baseline_Refill_Requisition_has_no_data == 1) || ($Current_Refill_Requisition_has_no_data == 1)) {
 			if ($Baseline_Refill_Requisition_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Refill Requisition Data available for comparison\n");
 			}
 			if ($Current_Refill_Requisition_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Refill Requisition Data available for comparison\n\n");
 			}
 	}
 
@@ -1059,10 +1075,12 @@ $FILE_type = "Current";
 	
 	} elsif (($Baseline_Refill_Requisition_Response_has_no_data == 1) || ($Current_Refill_Requisition_Response_has_no_data == 1)) {
 			if ($Baseline_Refill_Requisition_Response_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, 
+				       "\nNo BASELINE Refill Requisition Response Data available for comparison\n");
 			}
 			if ($Current_Refill_Requisition_Response_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, 
+				       "\nNo CURRENT Refill Requisition Response Data available for comparison\n\n");
 			}
 	}
 
@@ -1136,3 +1154,4 @@ sub Gather_Data {
 
 	return (@New_List);
 }
+
