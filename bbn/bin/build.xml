@@ -518,7 +518,7 @@ ARCHIVE_TIME=${build.time}
     </copy>
 		<mkdir dir="${zipbase}/${module}/lib"/>
 		<jar jarfile="${zipbase}/${module}/lib/albbn_config.jar" basedir="configs_staging/"/>
-		<signjar jar="${zipbase}/${module}/lib/albbn_config.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+		<signjar jar="${zipbase}/${module}/lib/albbn_config.jar" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<antcall target="zip-copy-doc"/>
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
@@ -531,7 +531,7 @@ ARCHIVE_TIME=${build.time}
       <move todir="${zipbase}/${module}/Manifest"> 
         <fileset dir="Manifest"/>
       </move>
-		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+		<signjar jar="${zipbase}/${module}/lib/albbn.jar" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<zip zipfile="AL_bbn.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
