@@ -85,6 +85,17 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     
   Map childToParentUID = new HashMap();
   Map taskToSSE = new HashMap();       
+  boolean tryToReplanOverlaps = false;
+
+  public void localSetup() {     
+    super.localSetup();
+
+    try {
+      if (getMyParams().hasParam ("tryToReplanOverlaps")) {
+	tryToReplanOverlaps = getMyParams().getBooleanParam("tryToReplanOverlaps");
+      }
+    } catch (Exception e) { warn ("got really unexpected exception " + e); }
+  }
 
   // Plug in creates both Expansions and Allocations so it listens for both
   public void setupFilters() {
@@ -582,15 +593,17 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	}
 
 	// did the reported time get earlier?
-	if (returnedStart < sse.getStartDate ().getTime ()) {
-	  if (isInfoEnabled()) {
-	    info(getName () + ".handleSuccessfulAlloc - resetting start and end times of the element " + sse + 
-		 " b/c alloc results changed for task " + uid);
-	  }
-	  sse.finishPlan(alloc, this);
+	if (tryToReplanOverlaps) {
+	  if (returnedStart < sse.getStartDate ().getTime ()) {
+	    if (isInfoEnabled()) {
+	      info(getName () + ".handleSuccessfulAlloc - resetting start and end times of the element " + sse + 
+		   " b/c alloc results changed for task " + uid);
+	    }
+	    sse.finishPlan(alloc, this);
 
-	  // find tasks that depended on this one and replan them
-	  replanDependingTasks (parenttask, returnedStart);
+	    // find tasks that depended on this one and replan them
+	    replanDependingTasks (parenttask, returnedStart);
+	  }
 	}
       }
     }
