@@ -1249,7 +1249,6 @@ public class InventoryPlugin extends ComponentPlugin
         logInvPG.setStartCDay(logOPlan.getOplanCday());
         publishChange(inv);
 	touchInventory(inv);
-	touchedChangedProjections = true;
       }
     }
   }
