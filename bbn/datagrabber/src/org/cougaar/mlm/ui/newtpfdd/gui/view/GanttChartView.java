@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/bbn/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/Attic/GanttChartView.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/bbn/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/Attic/GanttChartView.java,v 1.2 2002-06-27 22:38:06 gvidaver Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -60,11 +60,16 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.node.DimensionNode;
 import org.cougaar.mlm.ui.grabber.validator.CargoDimensionTest;
 
 public class GanttChartView extends JPanel implements ActionListener, WorkListener {
-    private static final int DAYLEN = 1000*3600*24;
-    private TaskGanttChart gc;
-    private ControlBar cb;
-    private long last;
+  private static double CUBIC_METERS_TO_CUBIC_FEET = 35.314667d;
+  private static double SQUARE_METERS_TO_SQUARE_FEET = 10.763867d;
+
+  private static final int DAYLEN = 1000*3600*24;
+
+  private TaskGanttChart gc;
+  private ControlBar cb;
+  private long last;
   protected TaskModel taskModel;
+
   boolean debug = 
 	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.view.GanttChartView.debug", 
 									   "false"));
@@ -144,13 +149,18 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 	  double [] results = getTotalWeightAndVolume (taskModel.getTree());
 	  double tons   = results [0];
 	  double volume = results [1];
+	  double area   = results [2];
+	  double pax    = results [3];
 	  DecimalFormat form = new DecimalFormat ("#.#");
 	  String tonsString = form.format (tons);
 	  String volumeString = form.format (volume);
+	  String areaString = form.format (area);
+	  String paxString = ", " + ((int) pax)+ " pax";
 	  String durString = form.format(((double)duration)/1000.0d);
 	  cb.getcountLabel().setText(String.valueOf(gc.getNumRows()) + " items (" +
 				     tonsString + " tons, " + 
-				     volumeString + " m^3). Created in " + 
+				     areaString + " ft^2, " + 
+				     volumeString + " ft^3" + ((pax > 0.0d) ? paxString : "") + "). Created in " + 
  				     durString + " seconds.");
 	}
       };
@@ -190,16 +200,23 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
   public double [] getTotalWeightAndVolume (Node node, Tree tree) {
     double weight = 0;
     double volume = 0;
-    
+    double area   = 0;
+    double pax    = 0;
+
     if (node instanceof DimensionNode) {
       DimensionNode dimNode = (DimensionNode) node;
       // weight is in grams, we want short tons = 2000 pounds
       weight = dimNode.getQuantity()*(dimNode.getWeight ()/1000000.0)*CargoDimensionTest.METRIC_TO_SHORT_TON;
-      volume = dimNode.getQuantity()*dimNode.getVolume ();
-      if (weight < 0.000001)
- 	System.err.println ("TotalWeightAndVolume - Weight was zero for Node " + node);
-      if (volume < 0.000001)
- 	System.err.println ("TotalWeightAndVolume - Volume was zero for Node " + node);
+      volume = dimNode.getQuantity()*dimNode.getVolume ()*CUBIC_METERS_TO_CUBIC_FEET;
+      area   = dimNode.getQuantity()*dimNode.getArea   ()*SQUARE_METERS_TO_SQUARE_FEET;
+      if (weight == 0.0 && volume == 0.0 && area == 0.0)
+	pax = (double)dimNode.getQuantity();
+      else {
+	if (weight < 0.000001)
+	  System.err.println ("TotalWeightAndVolume - Weight was zero for Node " + node);
+	if (volume < 0.000001)
+	  System.err.println ("TotalWeightAndVolume - Volume was zero for Node " + node);
+      }
     }
 
     for (int i = 0; i < node.getChildCount (); i++) {
@@ -207,9 +224,11 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
       double [] results = getTotalWeightAndVolume (childNode, tree);
       weight += results[0];
       volume += results[1];
+      area   += results[2];
+      pax    += results[3];
     }
 
-    return new double [] { weight, volume };
+    return new double [] { weight, volume, area, pax };
   }
 
   public void paint(Graphics g)
@@ -315,7 +334,7 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
     out.print ("Nomenclature,");
     out.print ("Quantity,");
     out.print ("Tons,");
-    out.print ("Volume (m^3),");
+    out.print ("Volume (ft^3),");
     out.print ("From Geoloc,");
     out.print ("From Name,");
     out.print ("To Geoloc,");
@@ -338,7 +357,7 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 	out.print ("\"" + instance.getNomen() +"\",");
 	out.print (instance.getQuantity() +",");
 	out.print (((instance.getWeight()/1000000.0)*CargoDimensionTest.METRIC_TO_SHORT_TON) +",");
-	out.print (instance.getVolume() +",");
+	out.print (instance.getVolume()*CUBIC_METERS_TO_CUBIC_FEET +",");
 	out.print (leg.getFromCode () +",");
 	out.print ("\"" + leg.getFrom () + "\",");
 	out.print (leg.getToCode () +",");
