@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/bbn/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/Attic/TPFDDTreeCellRenderer.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/bbn/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/Attic/TPFDDTreeCellRenderer.java,v 1.2 2002-06-03 20:16:06 gvidaver Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -28,6 +28,7 @@ import java.awt.Graphics;
 import org.cougaar.mlm.ui.newtpfdd.gui.component.TPFDDColor;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CarrierType;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.node.CargoType;
 
 public class TPFDDTreeCellRenderer extends JLabel implements TreeCellRenderer
 {
@@ -65,6 +66,9 @@ public class TPFDDTreeCellRenderer extends JLabel implements TreeCellRenderer
 	    setForeground(Color.cyan);
 	else if ((value instanceof CarrierType) && ((CarrierType)value).isSelfPropelled ()) {
 	  setForeground(TPFDDColor.TPFDDDullerYellow);
+	}
+	else if ((value instanceof CargoType) && ((CargoType)value).isLowFi ()) {
+	  setForeground(Color.black);
 	}
 	else
 	  setForeground(Color.white);
