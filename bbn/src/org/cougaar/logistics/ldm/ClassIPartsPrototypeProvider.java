@@ -178,8 +178,7 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
   /**
    * Gets a list of supplement NSNs for a specific meal_type and specific alternate_name
    * @param meal_type type of meals: BREAKFAST, LUNCH/DINNER
-   * @param nomenclature name of the food item e.g MEAL READY TO EAT
-   * @return HashMap of NSNs and their rates 
+   * @return HashMap of NSNs and their rates
    **/
   protected HashMap getSupplementalList (String meal_type, String alternate_name) {
     QueryHashKey key = new QueryHashKey(meal_type, alternate_name);
@@ -431,8 +430,7 @@ public class ClassIPartsPrototypeProvider extends QueryLDMPlugin {
   /**
    * Replaces the ":nsn" in the query with the actual NSN.
    * @param q query string
-   * @param nsn actual NSN
-   * @param nomenclature 
+   * @param nomenclature
    * @return new query
    **/
   public String substituteList (String q, String meal_type, String nomenclature) {    

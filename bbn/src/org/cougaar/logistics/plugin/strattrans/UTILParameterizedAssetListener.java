@@ -35,7 +35,7 @@ public interface UTILParameterizedAssetListener extends UTILFilterCallbackListen
 
   /** 
    * Defines assets you find interesting, based upon given key.
-   * @param an Asset to check for interest
+   * @param a An Asset to check for interest
    * @param a String to identify key of asset of interest
    * @return boolean true if asset is interesting
    */
@@ -43,13 +43,13 @@ public interface UTILParameterizedAssetListener extends UTILFilterCallbackListen
 
   /**
    * Place to handle updated assets, based upon given key.
-   * @param Enumeration e new assets found in the container
+   * @param e An Enumeration of new assets found in the container
    */
   void handleNewParameterizedAssets     (Enumeration e, String key);
 
   /**
    * Place to handle changed assets, based upon given key.
-   * @param Enumeration e changed assets found in the container
+   * @param e An Enumeration of changed assets found in the container
    */
   void handleChangedParameterizedAssets (Enumeration e, String key);
 }

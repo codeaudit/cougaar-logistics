@@ -242,7 +242,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
    * gets the contribution each individual item makes to consuming
    * the capacity of the transport vehicle
    * Sub classes may want to override this
-   * @param GLMAsset -- the asset of the direct object of the task
+   * @param itemAsset -- the asset of the direct object of the task
    * @return double of the contribution in TONS
    */
   public double getItemContribution( GLMAsset itemAsset)
@@ -275,7 +275,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
   /**
    * gets the quantity of items in this task
    * Sub classes may want to override this
-   * @param AggregateAsset asset that has quantity
+   * @param aggAsset asset that has quantity
    * @return quantity in int
    */
   public int getAssetQuantity( AggregateAsset aggAsset) 

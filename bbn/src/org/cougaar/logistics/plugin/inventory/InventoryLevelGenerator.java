@@ -154,7 +154,6 @@ public class InventoryLevelGenerator extends InventoryModule {
    *  the middle of the reorder period.
    *  @param thePG The LogisticsInventoryPG for current inventory
    *  @param startBucket The bucket that starts the Projection period.
-   *  @return void  The target level is set in thePG with this method
    **/
   protected void setTargetForProjectionPeriod(LogisticsInventoryPG thePG, 
 					      int startBucket, double prevTarget){
@@ -215,7 +214,6 @@ public class InventoryLevelGenerator extends InventoryModule {
   /** Utility method to generate the Refill Amount
    *  This method starts the following calculation
    *  RF(k+1)=(C(k+RP+1)-IL(k+1)) + (D(K+2)+...+(k+RP+1))
-   *  @param invLevel  The current inventory level for the refill bucket
    *  @param refillBucket  The bucket we are generating a refill for.  This is
    *   the bucket at k+1
    *  @param reorderPeriodEndBucket  The end point for which we want demand for.
@@ -251,7 +249,6 @@ public class InventoryLevelGenerator extends InventoryModule {
    *  @param thePG The LogisticsInventoryPG of the Inventory we are Refilling.
    *  @param refillBucket  The bucket we are generating a refill for.  This is
    *   the bucket at k+1
-   *  @param reorderPeriodEndBucket  The end point for which we want demand for.
    *   This is the bucket at k+RP+1.
    *  @return double  The sum of Demand for the Reorder Period.
    **/

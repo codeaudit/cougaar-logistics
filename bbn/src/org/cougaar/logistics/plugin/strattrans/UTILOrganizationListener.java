@@ -35,20 +35,20 @@ public interface UTILOrganizationListener extends UTILFilterCallbackListener {
 
   /** 
    * Defines organizations you find interesting. 
-   * @param an Organization to check for interest
+   * @param a An Organization to check for interest
    * @return boolean true if organizations is interesting
    */
   public boolean interestingOrganization (Organization a);
 
   /**
    * Place to handle updated organizations.
-   * @param Enumeration e: new organizations found in the container
+   * @param e an Enumeration of new organizations found in the container
    */
   public void handleNewOrganizations     (Enumeration e);
 
   /**
    * Place to handle changed organizations.
-   * @param Enumeration e: changed organizations found in the container
+   * @param e An Enumeration of changed organizations found in the container
    */
   public void handleChangedOrganizations (Enumeration e);
 }

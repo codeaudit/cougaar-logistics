@@ -20,94 +20,60 @@
  */
 package org.cougaar.logistics.plugin.trans.base;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Vector;
-
-import org.cougaar.core.thread.Schedulable;
-import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.adaptivity.OMCRange;
+import org.cougaar.core.adaptivity.OMCRangeList;
+import org.cougaar.core.adaptivity.OperatingMode;
+import org.cougaar.core.adaptivity.OperatingModeImpl;
 import org.cougaar.core.agent.service.alarm.Alarm;
-
-import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.ThreadService;
-
-import org.cougaar.logistics.ldm.Constants;
-
-import org.cougaar.glm.ldm.asset.Container;
-import org.cougaar.glm.ldm.asset.ForUnitPG;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.MovabilityPG;
-import org.cougaar.glm.ldm.asset.NewMovabilityPG;
-import org.cougaar.glm.ldm.asset.NewForUnitPG;
-import org.cougaar.glm.ldm.asset.NewPhysicalPG;
-import org.cougaar.glm.ldm.asset.PhysicalPG;
-import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
-
-import org.cougaar.glm.ldm.asset.ClassISubsistence;
-import org.cougaar.glm.ldm.asset.ClassIIClothingAndEquipment;
-import org.cougaar.glm.ldm.asset.ClassIIIPOL;
-import org.cougaar.glm.ldm.asset.ClassIVConstructionMaterial;
-import org.cougaar.glm.ldm.asset.ClassVAmmunition;
-import org.cougaar.glm.ldm.asset.ClassVIPersonalDemandItem;
-import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
-import org.cougaar.glm.ldm.asset.ClassVIIIMedical;
-import org.cougaar.glm.ldm.asset.ClassIXRepairPart;
-import org.cougaar.glm.ldm.asset.ClassXNonMilitaryItem;
-import org.cougaar.glm.ldm.asset.Person;
-
+import org.cougaar.core.thread.Schedulable;
+import org.cougaar.glm.ldm.asset.*;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
-
 import org.cougaar.glm.util.AssetUtil;
-import org.cougaar.glm.util.GLMPrepPhrase;
 import org.cougaar.glm.util.GLMPreference;
-
+import org.cougaar.glm.util.GLMPrepPhrase;
+import org.cougaar.lib.callback.UTILFilterCallback;
+import org.cougaar.lib.callback.UTILFilterCallbackAdapter;
+import org.cougaar.lib.callback.UTILFilterCallbackListener;
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
-import org.cougaar.lib.callback.*;
-
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
+import org.cougaar.logistics.plugin.trans.NewCargoCatCodeDimensionPG;
+import org.cougaar.logistics.plugin.trans.NewLowFidelityAssetPG;
+import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
+import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
 import org.cougaar.planning.ldm.PlanningFactory;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Preposition;
-import org.cougaar.planning.ldm.plan.Priority;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.Verb;
-
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AssetGroup;
-import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
-
-import org.cougaar.planning.ldm.measure.Latitude;
-import org.cougaar.planning.ldm.measure.Longitude;
+import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Area;
 import org.cougaar.planning.ldm.measure.Distance;
+import org.cougaar.planning.ldm.measure.Latitude;
+import org.cougaar.planning.ldm.measure.Longitude;
 import org.cougaar.planning.ldm.measure.Mass;
 import org.cougaar.planning.ldm.measure.Volume;
-import org.cougaar.logistics.plugin.trans.NewLowFidelityAssetPG;
-import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
-
-import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
-import org.cougaar.logistics.plugin.trans.NewCargoCatCodeDimensionPG;
-
-import org.cougaar.logistics.plugin.trans.tools.BlackboardPlugin;
-import org.cougaar.logistics.plugin.trans.tools.PortLocatorImpl;
-
-import org.cougaar.glm.ldm.asset.TransportationRoute;
+import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.log.Logger;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * getSubtasks is filled in.  It justs blows up composite
@@ -292,7 +258,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    * Checks FROM and TO prepositions to see they're all there.
    *
    * </pre>
-   * @param t Task to check for consistency
+   * @param taskToCheck Task to check for consistency
    * @return true if task is OK
    */
   public boolean isTaskWellFormed(Task taskToCheck) {

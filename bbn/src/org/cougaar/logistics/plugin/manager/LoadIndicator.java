@@ -135,7 +135,7 @@ public class LoadIndicator extends RelayAdapter {
    * Sets the reported load status for the agent. Should be one of the
    * defined statics.
    *
-   * @param String Reported load status for the agent.
+   * @param loadStatus Reported load status for the agent.
    */
   public void setLoadStatus(String loadStatus) {
     if (!validLoadStatus(loadStatus)) {

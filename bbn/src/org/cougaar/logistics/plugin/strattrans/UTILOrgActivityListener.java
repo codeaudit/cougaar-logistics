@@ -35,20 +35,20 @@ public interface UTILOrgActivityListener extends UTILFilterCallbackListener {
 
   /** 
    * Defines org activities you find interesting. 
-   * @param an OrgActivity to check for interest
+   * @param a OrgActivity to check for interest
    * @return boolean true if activities is interesting
    */
   boolean interestingOrgActivity (OrgActivity a);
 
   /**
    * Place to handle updated activities.
-   * @param newActivities new activities found in the container
+   * @param e Enumeration of new activities found in the container
    */
   void handleNewOrgActivities (Enumeration e);
 
   /**
    * Place to handle changed activities.
-   * @param newActivities changed activities found in the container
+   * @param e Enumeration of changed activities found in the container
    */
   void handleChangedOrgActivities (Enumeration e);
 }

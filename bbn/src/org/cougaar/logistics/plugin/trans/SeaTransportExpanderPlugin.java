@@ -293,7 +293,7 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
    * gets the contribution each individual item makes to consuming
    * the capacity of the transport vehicle
    * Sub classes may want to override this
-   * @param GLMAsset -- the asset of the direct object of the task
+   * @param itemAsset -- the asset of the direct object of the task
    * @return double of the contribution in TONS
    */
   public double getItemVolumeContribution( GLMAsset itemAsset)
@@ -318,7 +318,7 @@ public class SeaTransportExpanderPlugin extends TransportExpanderPlugin {
    * gets the contribution each individual item makes to consuming
    * the capacity of the transport vehicle
    * Sub classes may want to override this
-   * @param GLMAsset -- the asset of the direct object of the task
+   * @param itemAsset GLMAsset -- the asset of the direct object of the task
    * @return double of the contribution in TONS
    */
   public double getItemAreaContribution( GLMAsset itemAsset)
