@@ -591,7 +591,14 @@ public class InventoryPlugin extends ComponentPlugin {
       if (inventory != null) {
 	expandList.add(t);
       } else {  // allocate tasks to supplier?
-	passThruList.add(t);
+	// BUG!!! These shouldn't already have a PE
+	if (t.getPlanElement() == null) {
+	  passThruList.add(t);
+	} else {
+	  if (logger.isDebugEnabled()) {
+	    logger.debug("\n New Supply and Project Supply tasks already have a PE!");
+	  }
+	}
       }
     }
     externalAllocator.forwardSupplyTasks(passThruList, myOrganization);
