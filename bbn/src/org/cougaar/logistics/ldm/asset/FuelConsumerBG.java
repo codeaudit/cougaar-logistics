@@ -25,6 +25,7 @@ import org.cougaar.planning.ldm.asset.PGDelegate;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.glm.ldm.plan.Service;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -37,9 +38,13 @@ public abstract class FuelConsumerBG extends ConsumerBG {
   Schedule consumerSchedule = null, 
     orgActivitySchedule = null,
     mergedSchedule = null;
+  Service service;
+  String theater;
 
-  public FuelConsumerBG(String typeId) {
+  public FuelConsumerBG(String typeId, Service service, String theater) {
     this.typeId = typeId;
+    this.service = service;
+    this.theater = theater;
   }
 
   public List getPredicates() {
