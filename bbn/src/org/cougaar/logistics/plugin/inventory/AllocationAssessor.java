@@ -242,7 +242,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	withdraw = (Task)wdIter.next();
 	qty = taskQtyInBucket(withdraw, currentBucket, thePG);
 	// check the level
-	if ((todayLevel - qty)>-.00000000005) {
+	if ((todayLevel - qty)>-.00000005) {
 	  // enough inventory to fill task completely
 
 	  //  NOTE: we have had a case where todayLevel= 12.999999999999995
