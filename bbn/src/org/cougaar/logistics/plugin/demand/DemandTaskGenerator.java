@@ -203,10 +203,10 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
 
-    //MWD Remove
+    //TODO: MWD Remove
     //newTask.setPrepositionalPhrases(parentTask.getPrepositionalPhrases());
     //newTask = addPrepositionalPhrase(newTask, prepPhrase);
-    //MWD Remove - also remove createDemandPrepPhrases
+    //TODO: MWD Remove - also remove createDemandPrepPhrases
     //Vector preps = createDemandPrepPhrases(parentTask, consumed, end);
     //newTask.setPrepositionalPhrases(preps.elements());
 
@@ -236,7 +236,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
    **/
 
   /***
-   * MWD Remove
+   * TODO: MWD Remove
    *
 
    protected Vector createDemandPrepPhrases
@@ -314,7 +314,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
 
   /**
    *  @return   Geographic location of this organization at specifed time.
-   * MWD Remove
+   * TODO: MWD Remove
    **
    public GeolocLocation getGeolocLocation(long time, Organization myOrg) {
    Enumeration geolocs =

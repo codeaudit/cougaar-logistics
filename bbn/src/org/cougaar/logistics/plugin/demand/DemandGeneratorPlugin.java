@@ -70,7 +70,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   private Organization myOrganization;
   private String myOrgName;
 
-  //MWD Remove
+  //TODO: MWD Remove
   //private long orgStartTime=-1;
   //private long orgEndTime=-1;
 
@@ -124,7 +124,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   private IncrementalSubscription projectionTaskSubscription;
 
-  /*** MWD Remove
+  /*** TODO: MWD Remove
    private IncrementalSubscription orgActivities;
    private IncrementalSubscription oplanSubscription;
    **/
@@ -135,7 +135,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
-    //MWD Remove
+    //TODO: MWD Remove
     //UnaryPredicate orgActivityPred = new OrgActivityPred();
     //orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
     //oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
@@ -144,7 +144,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     resetTimer();
   }
 
-  /** MWD Remove
+  /** TODO: MWD Remove
    private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
    public boolean execute(Object o) {
    return (o instanceof Oplan);
@@ -198,7 +198,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   };
 
 
-  /** MWD Remove
+  /** TODO: MWD Remove
    *  Find the earliest and latest times of all the org activites.
    *
    private void computeOrgTimes(Enumeration orgActs) {
@@ -324,7 +324,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
     }
 
-    /** MWD Remove
+    /** TODO: MWD Remove
      if(orgActivities.getCollection().isEmpty()) {
      return;
      }
@@ -364,11 +364,12 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
                                                          planTime,
                                                          planTime + frequency);
+      //TODO: MWD Remove debug statements:
       if ((getOrgName() != null) &&
           (getOrgName().trim().equals("1-35-ARBN"))) {
-        System.out.println("I'm waking up - new period from " + new Date(planTime) + " to " + new Date(planTime + frequency));
-        System.out.println("Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
+        System.out.println("I'm waking up - new period starts " + new Date(planTime) + " and Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
       }
+
       relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
       demandGenerator.generateDemandTasks(planTime, frequency, relevantProjs);
       resetTimer();
@@ -574,10 +575,15 @@ public class DemandGeneratorPlugin extends ComponentPlugin
             " is available");
       }
 
+      /**
+       * TODO: MWD Remove
+       *
       if ((getOrgName() != null) &&
           (getOrgName().trim().equals("1-35-ARBN"))) {
         System.out.println("Setting new timer to go at: " + new Date(expiration));
       }
+       */
+
       timer = new CougTimeAlarm(expiration);
       getAlarmService().addRealTimeAlarm(timer);
     }
