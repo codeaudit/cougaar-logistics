@@ -301,10 +301,12 @@ public class SupplyExpander extends InventoryModule {
 	    thePG.removeWithdrawProjection(task);
 	    inventoryPlugin.publishRemove(task.getPlanElement());
 	    ((NewTask)task).setPreferences(projSupply.getPreferences());
-	    inventoryPlugin.publishChange(task);
-	    ((NewWorkflow)wf).addTask(task);
+            inventoryPlugin.publishChange(task);
+            //BD Why is this here?  We never removed the task from the wf???
+            // commenting this code out
+            //((NewWorkflow)wf).addTask(task);
 	    thePG.addWithdrawProjection(task);
-	    inventoryPlugin.publishChange(wf);
+	    //inventoryPlugin.publishChange(wf);
 	  }
 	} else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
 	  ((NewTask)task).setPrepositionalPhrases(projSupply.getPrepositionalPhrases());
