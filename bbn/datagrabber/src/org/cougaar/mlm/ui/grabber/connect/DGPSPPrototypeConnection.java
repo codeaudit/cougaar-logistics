@@ -78,7 +78,8 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
 
   protected boolean updateAssetPrototype(Statement s, Prototype p){
     boolean ret=false;
-	StringBuffer sb=new StringBuffer();
+    StringBuffer sb=new StringBuffer();
+      logMessage(Logger.WARNING,Logger.DB_WRITE, "Calling updateAssetPrototype.");
     try{
       sb.append("INSERT INTO ");
       sb.append(getTableName(ASSET_PROTOTYPE_TABLE));
@@ -92,7 +93,8 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       sb.append(COL_HEIGHT);sb.append(",");
       sb.append(COL_DEPTH);sb.append(",");
       sb.append(COL_ALP_TYPEID);sb.append(",");
-      sb.append(COL_ALP_NOMENCLATURE);
+      sb.append(COL_ALP_NOMENCLATURE);sb.append(",");
+      sb.append(COL_IS_LOW_FIDELITY);
       sb.append(") VALUES('");
       sb.append(p.UID);sb.append("',");
       sb.append(((p.parentUID==null||p.parentUID.equals(""))?
@@ -107,7 +109,8 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       sb.append(dbConfig.getDBDouble(p.height));sb.append(",");
       sb.append(dbConfig.getDBDouble(p.depth));sb.append(",'");
       sb.append(p.alpTypeID);sb.append("','");
-      sb.append(p.nomenclature.replace('\'','_'));sb.append("')");
+      sb.append(p.nomenclature.replace('\'','_'));sb.append("','");
+      sb.append((p.isLowFidelity ? "true" : "false"));sb.append("')");
       ret=(s.executeUpdate(sb.toString())==1);
     }catch(SQLException e){
 	  String message1 = "Could not update table("+getTableName(ASSET_PROTOTYPE_TABLE)+")"+ 
@@ -146,6 +149,7 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
       num++;
       setStatus("Updating prototype "+num);
       Prototype part=(Prototype)iter.next();
+      logMessage (Logger.MINOR,Logger.DB_WRITE, "adding prototype " + part.UID);
       if(!updateAssetPrototype(s,part))
 	unsuccessful++;
       if(halt)return;

@@ -130,6 +130,7 @@ public interface DGPSPConstants{
   public static final String COL_DEPTH="depth";   // meters
   public static final String COL_ALP_TYPEID="alptypeid";
   public static final String COL_ALP_NOMENCLATURE="alpnomenclature";
+  public static final String COL_IS_LOW_FIDELITY="isLowFidelity";
 
   //Asset classes:
   public static final int ASSET_CLASS_UNKNOWN = Prototype.ASSET_CLASS_UNKNOWN;

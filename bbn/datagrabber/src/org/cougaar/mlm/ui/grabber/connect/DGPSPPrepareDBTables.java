@@ -159,7 +159,8 @@ public class DGPSPPrepareDBTables extends PrepareDBTables
 		   COL_HEIGHT+" DOUBLE NOT NULL,"+
 		   COL_DEPTH+" DOUBLE NOT NULL,"+
 		   COL_ALP_TYPEID+" VARCHAR(255) NOT NULL,"+
-		   COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL"+
+		   COL_ALP_NOMENCLATURE+" VARCHAR(255) NOT NULL,"+
+		   COL_IS_LOW_FIDELITY+" VARCHAR(5) NOT NULL"+
 		   ")");
     if(makeConveyanceInstance)
       prepareTable(s,getTableName(CONV_INSTANCE_TABLE),

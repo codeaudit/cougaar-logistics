@@ -53,6 +53,7 @@ import java.sql.*;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 
 /**
  * Basic infrastructure to talk to a PSP that uses the 
@@ -375,20 +376,24 @@ public abstract class PSPConnection extends PSPWork{
   }
 
   protected NumberFormat format = new DecimalFormat("##");
+  public static SimpleDateFormat sqlDate=
+    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   /** records time stamp info on epoch transitions */
   protected void setEpoch(int e){
     super.setEpoch (e);
     
-    logMessage(Logger.MINOR,Logger.NET_IO, "set Epoch to be " + e);
+    logMessage(Logger.TRIVIAL,Logger.NET_IO, "set Epoch to be " + e);
 
     if (e == CONNECTING) {
       startURLReadTime = System.currentTimeMillis ();
-      logMessage(Logger.MINOR,Logger.NET_IO, " starting POST_QUERY at " + new Date(startURLReadTime));
+      logMessage(Logger.MINOR,Logger.NET_IO, " starting POST_QUERY at " + 
+		 sqlDate.format(new Date(startURLReadTime)));
     }
     else if (e == UPDATINGDB) {
       endURLReadTime = System.currentTimeMillis ();
-      logMessage(Logger.MINOR,Logger.NET_IO, " starting UPDATINGDB at " + new Date(endURLReadTime));
+      logMessage(Logger.MINOR,Logger.NET_IO, " starting UPDATINGDB at " + 
+		 sqlDate.format(new Date(endURLReadTime)));
     }
   }
 
