@@ -60,14 +60,14 @@ public class ALProviderPlugin extends SDProviderPlugin {
   protected void handleAddedServiceContractRelay(ServiceContractRelay relay){
     if(sayYes) {
       if (myLoggingService.isDebugEnabled()) {
-        myLoggingService.debug("ALProviderPlugin pass handleAddedServiceContractRelay to super");
+        myLoggingService.debug("ALProviderPlugin pass handleAddedServiceContractRelay says yes, go to super");
       }
       super.handleAddedServiceContractRelay(relay);
     }
     //say no by making the end time preference  == the start time preferend
     else {
       if (myLoggingService.isDebugEnabled()) {
-        myLoggingService.debug("ALProviderPlugin handleAddedServiceContractRelay");
+        myLoggingService.debug("ALProviderPlugin handleAddedServiceContractRelay says no");
       }
       ServiceRequest serviceRequest = relay.getServiceRequest();
 
@@ -98,6 +98,12 @@ public class ALProviderPlugin extends SDProviderPlugin {
             startPref.getWeight());
         contractPreferences.add(contractPreference);
       }
+      ServiceContract serviceContract =
+        mySDFactory.newServiceContract(getSelfOrg(),
+                                       serviceRequest.getServiceRole(),
+                                       contractPreferences);
+      relay.setServiceContract(serviceContract);
+      publishChange(relay);
     }
   }
 
