@@ -125,7 +125,7 @@ public class GroundVishnuPlugin extends GenericVishnuPlugin {
 
     if (move_prop != null) {
       String cargocatcode = move_prop.getCargoCategoryCode();
-      if (cargocatcode.charAt(0) == 'R') {
+      if ((cargocatcode != null) && (cargocatcode.charAt(0) == 'R')) {
 	if (isDebugEnabled())
 	  debug (getName() + ".isSelfPropelled - found self-propelled vehicle on task " + t.getUID());
 	return true;
