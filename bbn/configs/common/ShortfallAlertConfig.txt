@@ -7,9 +7,14 @@
 .*1-UA.*,*,ProjectSupply,*,DISCOUNT
 158-AVN-CO-C.*,*,ProjectSupply,*,DISCOUNT
 159-AVN-CO-C.*,*,ProjectSupply,*,DISCOUNT
-.*2-BDE.*,.*Level2.*,*,*,DISCOUNT
 .*1-BDE.*,.*Level2.*,*,*,DISCOUNT
+.*2-BDE.*,.*Level2.*,*,*,DISCOUNT
+.*3-BDE.*,.*Level2.*,*,*,DISCOUNT
 .*AVNBDE.*,.*Level2.*,*,*,DISCOUNT
 47-FSB.*,.*Level2.*,*,*,DISCOUNT
 1-AD.ARMY.MIL,.*Level2.*,*,*,DISCOUNT
 .*DISCOM.*,.*Level2.*,*,*,DISCOUNT
+69-CHEMCO.*,.*Level2.*,*,*,DISCOUNT
+501-MIBN-CEWI.*,.*Level2.*,*,*,DISCOUNT
+1-4-ADABN.*,.*Level2.*,*,*,DISCOUNT
+1-94-FABN.*,.*Level2.*,*,*,DISCOUNT
