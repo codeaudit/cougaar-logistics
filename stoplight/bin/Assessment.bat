@@ -42,7 +42,6 @@ set CP=%CP%;%LIB_PATH%\glm.jar
 set CP=%CP%;%LIB_PATH%\aggagent.jar
 set CP=%CP%;%LIB_PATH%\uiframework.jar
 set CP=%CP%;%LIB_PATH%\stoplight.jar
-set CP=%CP%;D:\UltraLog\logistics\stoplight\classes
 
 set DEFAULTORG="1-35-ARBN"
 set NAMESERVER="http://localhost:8800"
