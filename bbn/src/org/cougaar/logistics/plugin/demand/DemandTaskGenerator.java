@@ -340,7 +340,11 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     //task doesn't have a start time.   Didn't want to include it so that
     //in the future someone may rely upon it.   If this Changes you have
     //to tell PSU
-    //prefs.addElement(createTimeScoringFunctionPref(start, AspectType.START_TIME));
+
+    //Whoops PSU currently rely's on the start time.   Which is a problem
+    //For the time being reintroduce it.  Talked To Ray
+
+    prefs.addElement(createTimeScoringFunctionPref(start, AspectType.START_TIME));
     prefs.addElement(createTimeScoringFunctionPref(end, AspectType.END_TIME));
 
     AspectValue av = AspectValue.newAspectValue(AspectType.QUANTITY, qty);
