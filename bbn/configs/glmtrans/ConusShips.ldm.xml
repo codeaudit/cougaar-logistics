@@ -51,6 +51,11 @@
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
 
+  <!-- Watson-class ships -->
+  <instance prototype="Watson_Prototype" id="Dahl">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
   <instance prototype="Watson_Prototype" id="Watson">
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
