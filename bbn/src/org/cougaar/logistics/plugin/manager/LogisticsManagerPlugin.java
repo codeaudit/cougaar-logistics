@@ -31,7 +31,6 @@ import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
-import org.cougaar.core.service.community.CommunityRequest;
 import org.cougaar.core.util.UID;
 
 import org.cougaar.multicast.AttributeBasedAddress;
