@@ -124,7 +124,7 @@ public class Level2Disposer extends Level2TranslatorModule {
 
   protected void disposeOfTask(Task task) {
     AllocationResultHelper helper = new AllocationResultHelper(task, null);
-    AllocationResult dispAR = helper.getAllocationResult(1.0, true);
+    AllocationResult dispAR = helper.getAllocationResult(Constants.Confidence.OBSERVED, true);
     Disposition disposition =
         getPlanningFactory().createDisposition(task.getPlan(), task, dispAR);
     translatorPlugin.publishAdd(disposition);
