@@ -25,6 +25,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.blackboard.Subscription;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.LatePropertyProvider;
 import org.cougaar.util.UnaryPredicate;
@@ -45,8 +46,10 @@ import org.cougaar.glm.ldm.asset.MilitaryPerson;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
 
 import org.cougaar.logistics.ldm.asset.SubsistenceConsumerBG;
@@ -72,6 +75,7 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
   private AssetUtils assetUtils;
   private ScheduleUtils scheduleUtils;
   private Organization myOrg;
+  private BlackboardQueryService queryService;
 
   private static UnaryPredicate orgsPredicate= new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -110,6 +114,12 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 						    null);
   }
 
+  public BlackboardQueryService getBlackboardQueryService(Object requestor) {
+    return (BlackboardQueryService)serviceBroker.getService(requestor,
+                                                            BlackboardQueryService.class,
+                                                            null);
+  }
+
   public void load() {
     super.load();
     serviceBroker = getBindingSite().getServiceBroker();
@@ -119,6 +129,10 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
       assetUtils = new AssetUtils(this);
       taskUtils = new TaskUtils(this);
       scheduleUtils = new ScheduleUtils(this);
+      queryService = getBlackboardQueryService(this);
+      if (queryService == null) {
+        logger.error("Unable to get query service");
+      }
     }
   }
 
@@ -160,7 +174,6 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 	  if (tip!= null) {
 	    String type_id = tip.getTypeIdentification();
 	    if (type_id != null) {
-	      fillProperties(proto);
 	      getLDM().cachePrototype(type_id, proto);
 	      good_prototypes.add(proto);
 	      logger.debug ("Rehydrated asset "+asset+" w/ proto "+proto);
@@ -172,6 +185,7 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
 	  }
 	}
       } // end while loop
+      addConsumerPGs(consumerSubscription);
     }
   }
 
@@ -179,12 +193,17 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
     if (!configured) {
       configure();
     }
+
+    if (!consumerSubscription.isEmpty()) {
+//       System.out.println("Calling addConsumerPGs() for "+getAgentIdentifier());
+      addConsumerPGs(consumerSubscription);
+    }
   }
   
   protected void configure() {
-    Enumeration new_orgs = myOrganizations.elements();
-    if (new_orgs.hasMoreElements()) {
-      myOrg = (Organization) new_orgs.nextElement();
+    Iterator new_orgs = queryService.query(orgsPredicate).iterator();
+    if (new_orgs.hasNext()) { 
+      myOrg = (Organization) new_orgs.next();
       Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service = srvc.toString();
@@ -239,18 +258,34 @@ public class ClassIConsumerPrototypeProvider extends QueryLDMPlugin implements U
     return list;
   }
 
+  protected void addConsumerPGs(Collection consumers) {
+    Iterator people = consumers.iterator();
+    Asset a, anAsset;
+    while (people.hasNext()) {
+      a = (Asset)people.next();
+      if (a instanceof AggregateAsset) {
+        anAsset = ((AggregateAsset)a).getAsset();
+      } else {
+        anAsset = a;
+      }
+      if (anAsset instanceof MilitaryPerson) {
+        if (anAsset.searchForPropertyGroup(SubsistenceConsumerPG.class) == null) {
+          NewSubsistenceConsumerPG foodpg = 
+            (NewSubsistenceConsumerPG)getLDM().getFactory().createPropertyGroup(SubsistenceConsumerPG.class);
+          foodpg.setMei(a);
+          foodpg.setService(service);
+          foodpg.setTheater(THEATER);
+          foodpg.setSubsistenceConsumerBG(new SubsistenceConsumerBG(foodpg));
+          foodpg.initialize(this);
+          anAsset.setPropertyGroup(foodpg);
+          publishChange(a);
+        }
+      }
+    }
+  }
+
   // Associating a property group to the person asset
   public void fillProperties(Asset anAsset) {
-    if (anAsset instanceof MilitaryPerson) {
-      NewSubsistenceConsumerPG foodpg = 
-	(NewSubsistenceConsumerPG)getLDM().getFactory().createPropertyGroup(SubsistenceConsumerPG.class);
-      foodpg.setMei(anAsset);
-      foodpg.setService(service);
-      foodpg.setTheater(THEATER);
-      foodpg.setSubsistenceConsumerBG(new SubsistenceConsumerBG(foodpg));
-      foodpg.initialize(this);
-      anAsset.setPropertyGroup(foodpg);
-    }
   }
   
 }
