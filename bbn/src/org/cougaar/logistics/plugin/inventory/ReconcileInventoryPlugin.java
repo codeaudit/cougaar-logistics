@@ -283,12 +283,13 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
+      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
       if (! commStatusSub.isEmpty()) {
         ReconcileSupplyExpander expander = getSupplyExpander();
-        if (expander != null) expander.determineCommStatus(commStatusSub);
+        if (expander != null) expander.determineCommStatus(commStatusSub, addedSupply);
       }
 
-      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
+      //      Collection addedSupply = supplyTaskScheduler.getAddedCollection();
       if (!addedSupply.isEmpty()) {
         expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
       }
