@@ -174,21 +174,13 @@ public abstract class Test{
   }
 
   public void prepare(Logger logger, Statement s, int run){
-	System.out.println ("Test.prepare --- entered.");
-	
     boolean tableAvailable = tableAvailable(logger, s,run);
-	System.out.println ("Test.prepare --- tableAvailable : " + tableAvailable);
-    
-    //    if(tableAvailable)
-    //      dropTable (logger, s, run);
     
     if(!tableAvailable){
       try{
-	System.out.println ("Test.prepare --- before Construct table.");
 	logger.logMessage(Logger.NORMAL, Logger.DB_WRITE,
 			  "Performing test - " + getDescription ());
 	constructTable(logger,s,run);
-	System.out.println ("Test.prepare --- after Construct table.");
       }catch(SQLException e){
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
 			  "Could not construct validation table.",
