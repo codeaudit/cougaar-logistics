@@ -115,10 +115,12 @@ public abstract class AssetDetailRequest{
       transport = "Unknown";
     }
 
-    if (transport.charAt(0) == 'U')
-      transport = "Roadable";
-    else if (ccc.charAt(0) == 'R')
-      transport += "_Roadable"; 
+    if (ccc.charAt(0) == 'R') {
+      if (transport.charAt(0) == 'U')
+	transport = "Roadable";
+      else if (ccc.charAt(0) == 'R')
+	transport += "_Roadable"; 
+    }
 
     ad.setValueAt(transport,AssetDetails.TRANSPORT);
 
