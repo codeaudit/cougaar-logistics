@@ -178,7 +178,8 @@ public class LogisticsInventoryBG implements PGDelegate {
         targetLevelsList.clear();
         long start = taskUtils.getStartTime(task);
         long end = taskUtils.getEndTime(task);
-        int bucket_start = convertTimeToBucket(start, true);
+        // THIS ONE
+        int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
         if (bucket_end >= projectedDemandArray.length) {
             projectedDemandArray = expandArray(projectedDemandArray);
@@ -823,7 +824,7 @@ public class LogisticsInventoryBG implements PGDelegate {
      **/
     public int convertTimeToBucket(long time, boolean partialBuckets) {
         int thisBucket = (int) (time / MSEC_PER_BUCKET);
-	if (partialBuckets) {
+ 	if (partialBuckets) {
 	  // FCS - HOURLY : Added this code from Bug #2413
 	  if ((time % MSEC_PER_BUCKET) > 0.0) {
  	    thisBucket += 1;
