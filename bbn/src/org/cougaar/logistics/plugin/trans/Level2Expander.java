@@ -92,10 +92,10 @@ public class Level2Expander extends Level2TranslatorModule {
     Task doneLevel2Task = null;
     long endTime = getTaskUtils().getEndTime(level2Task);
     long startTime = getTaskUtils().getStartTime(level2Task);
-    long lastActualSeen = startTime;
+    long earliestLegalStart = startTime;
     Long custLastActual = (Long) endTimeMap.get(getTaskUtils().getCustomer(level2Task));
     if (custLastActual != null) {
-      lastActualSeen = custLastActual.longValue();
+      earliestLegalStart = custLastActual.longValue() + getTimeUtils().MSEC_PER_DAY;
     }
     boolean alreadyDisposed = false;
 
@@ -114,10 +114,10 @@ public class Level2Expander extends Level2TranslatorModule {
       }
     }
 
-    if (lastActualSeen >= endTime) {
+    if (earliestLegalStart >= endTime) {
       doneLevel2Task = level2Task;
     } else {
-      long countedStartTime = Math.max(startTime, lastActualSeen);
+      long countedStartTime = Math.max(startTime, earliestLegalStart);
       double totalL6BaseQty = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
       Rate origL2Rate = getTaskUtils().getRate(level2Task);
       double origL2BaseQty = deriveTotalQty(countedStartTime, endTime, level2Task);
@@ -143,12 +143,12 @@ public class Level2Expander extends Level2TranslatorModule {
             logger.debug("Level2Expander:Original Rate per day:" + (origL2BaseRate * TimeUtils.SEC_PER_DAY) +
                          ".  Changing expanded rate from " + (expL2BaseRate * TimeUtils.SEC_PER_DAY) +
                          " to " + (newL2BaseRate * TimeUtils.SEC_PER_DAY));
-            logger.debug("     and L2 Start time is " + new Date(startTime) + " and end time is " + new Date(endTime) + ", but last actual seen is " + new Date(lastActualSeen));
+            logger.debug("     and L2 Start time is " + new Date(startTime) + " and end time is " + new Date(endTime) + ", earlies legal (lastActual + 1 day) is " + new Date(earliestLegalStart));
             logger.debug("  and also origL2BaseQty:" + origL2BaseQty + " totalL6BaseQty:" + totalL6BaseQty);
           }
 
           Rate newL2Rate = newRateFromUnitPerSecond(origL2Rate, newL2BaseRate);
-          expandLevel2Task(level2Task, newL2Rate, lastActualSeen);
+          expandLevel2Task(level2Task, newL2Rate, earliestLegalStart);
         }
       }
     }
@@ -209,9 +209,7 @@ public class Level2Expander extends Level2TranslatorModule {
             }
             **/
           } else {
-	      if(logger.isErrorEnabled()) {
-		  logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
-	      }
+            logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
           }
         }
       }
@@ -284,21 +282,19 @@ public class Level2Expander extends Level2TranslatorModule {
 
   private void expandLevel2Task(Task parent,
                                 Rate newRate,
-                                long lastSupplyTaskTime) {
+                                long firstLegalStartTime) {
 
 
     NewTask childTask = createNewLevel2Task(parent,
                                             newRate,
-                                            lastSupplyTaskTime);
+                                            firstLegalStartTime);
     PlanElement pe = parent.getPlanElement();
     if (pe == null) {
       createAndPublishExpansion(parent, childTask);
     } else if (pe instanceof Expansion) {
       republishExpansionWithTask(parent, childTask);
     } else if (pe instanceof Disposition) {
-      if(logger.isWarnEnabled()) {
-	logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
-      }
+      logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
       removeDisposition(parent);
       createAndPublishExpansion(parent, childTask);
     } else if (logger.isErrorEnabled()) {
@@ -382,7 +378,7 @@ public class Level2Expander extends Level2TranslatorModule {
 
   private NewTask createNewLevel2Task(Task parentTask,
                                       Rate newRate,
-                                      long lastSupplyEndTime) {
+                                      long firstLegalStartTime) {
 
     Vector newPrefs = new Vector();
     Enumeration oldPrefs = parentTask.getPreferences();
@@ -394,9 +390,9 @@ public class Level2Expander extends Level2TranslatorModule {
       if (pref.getAspectType() == AlpineAspectType.DEMANDRATE) {
         pref = getTaskUtils().createDemandRatePreference(getPlanningFactory(), newRate);
       }
-      if ((lastSupplyEndTime > startTime) &&
+      if ((firstLegalStartTime > startTime) &&
           (pref.getAspectType() == AspectType.START_TIME)) {
-        pref = createNewTimePreference(lastSupplyEndTime, pref);
+        pref = createNewTimePreference(firstLegalStartTime, pref);
       }
       newPrefs.add(pref);
     }
