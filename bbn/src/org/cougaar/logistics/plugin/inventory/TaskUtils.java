@@ -98,8 +98,9 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       SupplyClassPG pg = (SupplyClassPG)asset.searchForPropertyGroup(SupplyClassPG.class);
       if (pg != null) {
 	result = type.equals(pg.getSupplyType());
-	if((result == false) && (type.equals("PackagedPOL") || type.equals("BulkPOL"))) {
-	  logger.debug("\n Mismatch direct object type... type for plugin is: " +
+	if((result == true) && (type.equals("PackagedPOL")) && 
+	  asset.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
+	  logger.debug("\n direct object type... type for plugin is: " +
 		       type + "]" + " type for DO is: [" + pg.getSupplyType() + "]");
 	}
 	  

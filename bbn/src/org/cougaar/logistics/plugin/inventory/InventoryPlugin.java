@@ -365,7 +365,7 @@ public class InventoryPlugin extends ComponentPlugin {
 			if (!taskUtils.isMyInventoryProjection(task, orgName)) {
 			    return true;
 			}
-		    }
+		    } 
 		}	
 	    }
 	    return false;
@@ -677,7 +677,7 @@ public class InventoryPlugin extends ComponentPlugin {
       NewLogisticsInventoryPG logInvPG = 
 	(NewLogisticsInventoryPG)PropertyGroupFactory.newLogisticsInventoryPG();
       inventory.addOtherPropertyGroup(logInvPG);
-      if (resource.getTypeIdentificationPG().getTypeIdentification().equals("Aggregate")) {
+      if (resource.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
         logInvPG.setIsLevel2(true);
       } else {
         logInvPG.setIsLevel2(false); // will need to key off asset to identify level2 item
