@@ -446,9 +446,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     
     // get the first target before we loop so we have 2 points for the
     // inventory level calculations.
-    double invLevel = thePG.getLevel(startBucket - 1) - 
-      thePG.getActualDemand(startBucket);
-    int reorderPeriodEndBucket = startBucket + (int)thePG.getReorderPeriod();
+    int reorderPeriodEndBucket = startBucket + reorderPeriod;
     double target = getTargetLevel(startBucket,reorderPeriodEndBucket, thePG);
     thePG.setTarget(startBucket, target);
     lastTarget = target;
@@ -460,9 +458,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     for (int targetLevelBucket = startBucket + reorderPeriod; 
          targetLevelBucket <= lastDemandBucket; 
          targetLevelBucket = targetLevelBucket + reorderPeriod ) {
-      invLevel = thePG.getLevel(targetLevelBucket - 1) - 
-        thePG.getActualDemand(targetLevelBucket);
-      reorderPeriodEndBucket = targetLevelBucket + (int)thePG.getReorderPeriod();
+      reorderPeriodEndBucket = targetLevelBucket + reorderPeriod;
       target = getTargetLevel(targetLevelBucket,reorderPeriodEndBucket, thePG);
       thePG.setTarget(targetLevelBucket, target);
 
@@ -478,6 +474,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
         double level = (thePG.getCriticalLevel(inventoryBucket + i) + calcTarget) / 2;
         thePG.setLevel(inventoryBucket + i, level);
       }
+      lastTarget = target;
     }
   }
 

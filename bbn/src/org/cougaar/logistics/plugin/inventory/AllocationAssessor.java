@@ -240,9 +240,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	      PlanElement pe = withdraw.getPlanElement();
 	      if (pe != null) inventoryPlugin.publishRemove(pe);	  
 	      TaskDeficit td = getTaskDeficit(withdraw,currentBucket,thePG);
-              logger.debug("AA Failing task: " + getTaskUtils().taskDesc(withdraw) + " on day " + 
-                                 new Date (thePG.convertBucketToTime(currentBucket)) + 
-                                 " today level is " + todayLevel + " quantity is " + qty);
+              // logger.debug("AA Failing task: " + getTaskUtils().taskDesc(withdraw) + " on day " + 
+//                                  new Date (thePG.convertBucketToTime(currentBucket)) + 
+//                                  " today level is " + todayLevel + " quantity is " + qty);
 	      td.addPhase(todayLevel, currentBucket);
 	      trailingPointers.add(td);
 	      // this task depletes the inventory level
