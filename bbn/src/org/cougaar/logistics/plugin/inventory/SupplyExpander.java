@@ -23,9 +23,12 @@ package org.cougaar.logistics.plugin.inventory;
 
 import java.util.*;
 
+import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.TaskScoreTable;
 import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.planning.ldm.plan.NewTask;
 import org.cougaar.planning.ldm.plan.NewWorkflow;
@@ -33,7 +36,6 @@ import org.cougaar.planning.ldm.plan.AspectRate;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.AllocationResultAggregator;
 import org.cougaar.planning.ldm.plan.AllocationResult;
@@ -41,6 +43,7 @@ import org.cougaar.planning.ldm.plan.Expansion;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Preference;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.Workflow;
 
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
@@ -62,6 +65,117 @@ import org.cougaar.core.component.ServiceBroker;
 
 public class SupplyExpander extends InventoryModule {
 
+    /**
+     * Define an ARA that can deal with the expansion of a
+     * ProjectSupply task. Mostly, we just clone the result of the
+     * ProjectWithdraw task.
+     **/
+    private static class ProjectionARA implements AllocationResultAggregator {
+        public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
+            if (tst.size() != 1)
+                throw new IllegalArgumentException("projectionARA: multiple subtasks");
+            AllocationResult ar = (AllocationResult) tst.getAllocationResult(0);
+            if (ar == null) return null;
+            if (ar.isEqual(currentar)) return currentar;
+            return (AllocationResult) ar.clone();
+        }
+    }
+
+    private static class SupplyARA implements AllocationResultAggregator {
+        public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
+            AspectValue[] merged = new AspectValue[AlpineAspectType.LAST_ALPINE_ASPECT + 1];
+            long startTime = Long.MAX_VALUE;
+            long endTime = Long.MIN_VALUE;
+            boolean success = true;
+            float rating = 0.0f;
+            int tstSize = tst.size();
+            AllocationResult withdrawAR = null; // Remember this when we see it
+            long time;
+            Task parentTask = wf.getParentTask();
+            PlanElement pe = parentTask.getPlanElement();
+            AllocationResultHelper helper = new AllocationResultHelper(parentTask, null);
+            AllocationResult bestAR = helper.getAllocationResult();
+            AspectValue[] curr = bestAR.getAspectValueResults();
+
+            for (int i = 0; i < curr.length; i++) {
+                AspectValue av = curr[i];
+                int type = av.getAspectType();
+                merged[type] = av;
+                switch (type) {
+                case START_TIME:
+                    startTime = (long) av.getValue();
+                    break;
+                case END_TIME:
+                    endTime = (long) av.getValue();
+                    break;
+                }
+            }
+            for (int i = 0; i < tstSize; i++) {
+                AllocationResult ar = tst.getAllocationResult(i);
+                if (ar == null) return null; // bail if undefined
+                Task t = tst.getTask(i);
+                Verb verb = t.getVerb();
+                boolean isWithdraw =
+                    verb.equals(Constants.Verb.Withdraw)
+                    || verb.equals(Constants.Verb.ProjectWithdraw);
+                if (isWithdraw) {
+                    if (ar == null) return null;
+                    withdrawAR = ar;
+                }
+                AspectValue[] avs = ar.getAspectValueResults();
+                success = success && ar.isSuccess();
+                rating += ar.getConfidenceRating();
+                for (int j = 0; j < avs.length; j++) {
+                    int type = avs[j].getAspectType();
+                    switch (type) {
+                    case AspectType.START_TIME:
+                        break;
+                    case AspectType.END_TIME:
+                        break;
+                    case AspectType.QUANTITY:
+                        if (isWithdraw) merged[AspectType.QUANTITY] = avs[j];
+                        break;
+                    default:
+                        if (!isWithdraw) merged[type] = avs[j];
+                    }
+                }
+            }
+            List mergedPhasedResults = new ArrayList();
+            List withdrawPhasedResults = withdrawAR.getPhasedAspectValueResults();
+            for (int i = 0, n = withdrawPhasedResults.size(); i < n; i++) {
+                AspectValue[] oneResult = (AspectValue[]) withdrawPhasedResults.get(i);
+                mergedPhasedResults.add(merge(merged, oneResult));
+            }
+            return new AllocationResult(rating / tstSize, success,
+                                        merge(merged, null), mergedPhasedResults);
+        }
+
+        /**
+         * Merges an array of AspectValue indexed by AspectType and an
+         * unindexed array of AspectValues into an unindexed array of
+         * AspectValues.
+         **/
+        private AspectValue[] merge(AspectValue[] rollup, AspectValue[] phased) {
+            if (phased != null) {
+                rollup = (AspectValue[]) rollup.clone(); // Don't clobber the original
+                for (int i = 0; i < phased.length; i++) {
+                    AspectValue av = phased[i];
+                    if (av != null) rollup[av.getAspectType()] = av;
+                }
+            }
+            int nAspects = 0;
+            for (int i = 0; i < rollup.length; i++) {
+                if (rollup[i] != null) nAspects++;
+            }
+            AspectValue[] result = new AspectValue[nAspects];
+            int aspect = 0;
+            for (int i = 0; i < rollup.length; i++) {
+                if (rollup[i] != null) result[aspect++] = rollup[i];
+            }
+            return result;
+        }
+    }
+
     protected static final long MSEC_PER_MIN =  60 * 1000;
     protected static final long MSEC_PER_HOUR = MSEC_PER_MIN *60;
     public static final long  DEFAULT_ORDER_AND_SHIPTIME = 24 * MSEC_PER_HOUR; // second day
@@ -73,6 +187,8 @@ public class SupplyExpander extends InventoryModule {
     private Organization myOrg;
     protected boolean addTransport; // Add load tasks when expanding supply tasks
     private long ost;
+    private static AllocationResultAggregator projectionARA = new ProjectionARA();
+    private static AllocationResultAggregator supplyARA = new SupplyARA();
 
     private ClusterIdentifier clusterId;
 
@@ -102,6 +218,7 @@ public class SupplyExpander extends InventoryModule {
 	      // if we have atleast one new projection - set this to true.
 	      newProjections = true;
 	    }
+	    ((NewWorkflow)wdrawTask.getWorkflow()).setAllocationResultAggregator(projectionARA);
 	}
 	return newProjections;
     }
@@ -117,6 +234,7 @@ public class SupplyExpander extends InventoryModule {
 	    if (logInvPG != null) {
 	      logInvPG.addWithdrawRequisition(wdrawTask);
 	    }
+	    ((NewWorkflow)wdrawTask.getWorkflow()).setAllocationResultAggregator(supplyARA);
 	}
     }
 
@@ -272,6 +390,10 @@ public class SupplyExpander extends InventoryModule {
  	task.addPreference(p_start);
     }
 
+  public void updateAllocationResult(IncrementalSubscription sub) {
+    PluginHelper.updateAllocationResult(sub);
+  }
+  
 }
     
   
