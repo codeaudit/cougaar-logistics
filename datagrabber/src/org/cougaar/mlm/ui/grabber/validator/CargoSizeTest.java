@@ -81,7 +81,7 @@ public class CargoSizeTest extends CargoDimensionTest {
   //////////
 
   public int failureLevel(){
-    return RESULT_WARNING;
+    return (biggerThanAC5) ? RESULT_WARNING : RESULT_INFO;
   }
 
   /**for gui**/
