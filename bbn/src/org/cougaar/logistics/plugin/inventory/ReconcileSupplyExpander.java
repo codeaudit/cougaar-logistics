@@ -632,7 +632,8 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     Collection supplyTasks = tasksInTheGap(tasksGapPred);
     Collection predictionTasks = tasksInTheGap(predictionsGapPred);
     if (predictionTasks.isEmpty()) {
-      logger.error(inventoryPlugin.getSupplyType() + ": There are no predictions in the gap, no need to reconcile." + " Number of demand tasks: " +
+      logger.debug(inventoryPlugin.getSupplyType() + ": There are no predictions in the gap, no need to reconcile."
+                   + " Number of demand tasks: " +
                    supplyTasks.size());
       return;
     }
