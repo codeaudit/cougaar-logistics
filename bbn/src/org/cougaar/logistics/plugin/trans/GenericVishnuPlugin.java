@@ -32,8 +32,9 @@ import org.cougaar.lib.vishnu.client.XMLizer;
 import org.cougaar.lib.vishnu.client.custom.CustomVishnuAggregatorPlugin;
 
 import org.cougaar.planning.ldm.asset.AbstractAsset;
-import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.AssetGroup;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.glm.ldm.Constants;
 
@@ -108,10 +109,15 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
       }
 
       Asset directObject = task.getDirectObject();
-      GLMAsset baseAsset;
+      GLMAsset baseAsset = null;
 
       if (directObject instanceof AggregateAsset) {
 	baseAsset = (GLMAsset) ((AggregateAsset)directObject).getAsset ();
+      } 
+      else if (directObject instanceof AssetGroup) {
+	error (getName () + ".handleImpossibleTasks - something is really wrong - " + 
+	       " input task had a d.o. that was an asset group, task was " + task.getUID());
+	return;
       } 
       else {
 	baseAsset = (GLMAsset)directObject;
