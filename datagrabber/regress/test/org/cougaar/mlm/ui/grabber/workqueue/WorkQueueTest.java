@@ -6,11 +6,13 @@
 package test.org.cougaar.mlm.ui.grabber.workqueue;
 
 import junit.framework.TestCase;
+/*
 import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
 import org.cougaar.mlm.ui.grabber.workqueue.Work;
 import org.cougaar.mlm.ui.grabber.workqueue.Result;
 import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.logger.StdLogger;
+*/
 
 public class WorkQueueTest extends TestCase {
 
