@@ -291,12 +291,20 @@ public class InventoryPlugin extends ComponentPlugin {
         if (!addedSupply.isEmpty()){
           expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
         }
+	Collection changedSupply = supplyTaskSubscription.getChangedCollection();
+	if (!changedSupply.isEmpty()){
+	    supplyExpander.updateChangedRequisitions(changedSupply);
+	}
 
         Collection addedProjections = projectionTaskSubscription.getAddedCollection();
         if (!addedProjections.isEmpty()) {
            // getTasksWithoutPEs is fix for bug #1695
           touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections));
         }
+	Collection changedProjections = projectionTaskSubscription.getChangedCollection();
+	if (!changedProjections.isEmpty()) {
+	    supplyExpander.updateChangedProjections(changedProjections);
+	}
 
         // call the Refill Generators if we have new demand
         if (! getTouchedInventories().isEmpty()) {

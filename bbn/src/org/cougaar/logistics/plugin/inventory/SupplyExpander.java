@@ -290,30 +290,32 @@ public class SupplyExpander extends InventoryModule {
     Iterator taskIter = tasks.iterator();
     while (taskIter.hasNext()) {
       projSupply = (Task)taskIter.next();
-      exp = (Expansion)projSupply.getPlanElement();
-      Workflow wf = exp.getWorkflow();
-      Enumeration subTasks = wf.getTasks();
-      while (subTasks.hasMoreElements()) {
-	task = (Task)subTasks.nextElement();
-	if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
-	  thePG = getLogisticsInventoryPG(projSupply);
-	  if (thePG != null) {
-	    thePG.removeWithdrawProjection(task);
-	    inventoryPlugin.publishRemove(task.getPlanElement());
-	    synchronized (projSupply) {
-	      ((NewTask)task).setPreferences(projSupply.getPreferences());
-	    }
-            inventoryPlugin.publishChange(task);
-            //BD Why is this here?  We never removed the task from the wf???
-            // commenting this code out
-            //((NewWorkflow)wf).addTask(task);
-	    thePG.addWithdrawProjection(task);
-	    //inventoryPlugin.publishChange(wf);
+      if (projSupply.getPlanElement() instanceof Expansion) {
+	  exp = (Expansion)projSupply.getPlanElement();
+	  Workflow wf = exp.getWorkflow();
+	  Enumeration subTasks = wf.getTasks();
+	  while (subTasks.hasMoreElements()) {
+	      task = (Task)subTasks.nextElement();
+	      if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+		  thePG = getLogisticsInventoryPG(projSupply);
+		  if (thePG != null) {
+		      thePG.removeWithdrawProjection(task);
+		      inventoryPlugin.publishRemove(task.getPlanElement());
+		      synchronized (projSupply) {
+			  ((NewTask)task).setPreferences(projSupply.getPreferences());
+		      }
+		      inventoryPlugin.publishChange(task);
+		      //BD Why is this here?  We never removed the task from the wf???
+		      // commenting this code out
+		      //((NewWorkflow)wf).addTask(task);
+		      thePG.addWithdrawProjection(task);
+		      //inventoryPlugin.publishChange(wf);
+		  }
+	      } else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
+		  ((NewTask)task).setPrepositionalPhrases(projSupply.getPrepositionalPhrases());
+		  inventoryPlugin.publishChange(task);
+	      }
 	  }
-	} else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
-	  ((NewTask)task).setPrepositionalPhrases(projSupply.getPrepositionalPhrases());
-	  inventoryPlugin.publishChange(task);
-	}
       }
     }
   }
