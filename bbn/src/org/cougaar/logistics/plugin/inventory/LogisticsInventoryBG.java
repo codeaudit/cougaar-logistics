@@ -182,7 +182,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
         if (bucket_end >= projectedDemandArray.length) {
-            projectedDemandArray = expandArray(projectedDemandArray);
+            projectedDemandArray = expandArray(projectedDemandArray, bucket_end);
         }
         while (bucket_end >= dueOutList.size()) {
             dueOutList.add(new ArrayList());
@@ -245,11 +245,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     // AHF 7/31/02 - The bug actually is in the adding of the projection for multiple day buckets
     //  see bug #1823
     private void updateProjectedDemandList(Task task, int bucket, long start, long end, boolean add) {
+      if (bucket < 0) {
+	logger.error("updateProjectedDemandList got bucket " + bucket + " for task " + task, new Throwable());
+	bucket = 0;
+      }
 
         double demand = getProjectionTaskDemand(task, bucket, start, end);
         if (add) {
             if (bucket >= projectedDemandArray.length) {
-                projectedDemandArray = expandArray(projectedDemandArray);
+                projectedDemandArray = expandArray(projectedDemandArray, bucket);
             }
             projectedDemandArray[bucket] += demand;
         } else {
@@ -477,6 +481,10 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
     public double getLevel(int bucket) {
+      if (bucket < 0) {
+	logger.error("getLevel asked for level at bucket " + bucket + " when inventoryLevelsArray has length " + inventoryLevelsArray.length, new Throwable());
+	return inventoryLevelsArray[0];
+      }
         if (bucket >= inventoryLevelsArray.length) {
             return inventoryLevelsArray[inventoryLevelsArray.length - 1];
         }
@@ -485,12 +493,16 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     public void setLevel(int bucket, double value) {
         if (bucket >= inventoryLevelsArray.length) {
-            inventoryLevelsArray = expandArray(inventoryLevelsArray);
+            inventoryLevelsArray = expandArray(inventoryLevelsArray, bucket);
         }
         inventoryLevelsArray[bucket] = value;
     }
 
     public void setTarget(int bucket, double value) {
+      if (bucket < 0) {
+	logger.error("setTarget called with bucket " + bucket + " and value " + value, new Throwable());
+	bucket = 0;
+      }
         // The intention of the List is to hold values for the buckets
         // that have target levels and hold nulls for those buckets that
         // do not have a target level
@@ -505,6 +517,10 @@ public class LogisticsInventoryBG implements PGDelegate {
 
 
     public void clearTargetLevels(int startBucket) {
+      if (startBucket < 0) {
+	logger.error("clearTargetLevels called with startBucket " + startBucket, new Throwable());
+	startBucket = 0;
+      }
         // Clear target levels from the given bucket to end of array
         int len = targetLevelsList.size();
         for (int i = startBucket; i < len; i++) {
@@ -823,6 +839,10 @@ public class LogisticsInventoryBG implements PGDelegate {
      * used to index duein/out vectors, levels, etc.
      **/
     public int convertTimeToBucket(long time, boolean partialBuckets) {
+      if (time < 0) {
+	logger.error("convertTimeToBucket: Got negative time " + time, new Throwable());
+	return 0;
+      }
         int thisBucket = (int) (time / MSEC_PER_BUCKET);
  	if (partialBuckets) {
 	  // FCS - HOURLY : Added this code from Bug #2413
@@ -830,6 +850,10 @@ public class LogisticsInventoryBG implements PGDelegate {
  	    thisBucket += 1;
 	  }
 	  // FCS - HOURLY : End added code
+	}
+	if (thisBucket < timeZero) {
+	  logger.error("convertTimeToBucket: thisBucket(" + thisBucket + ") - timeZero(" + timeZero +") is < 0! (" + (thisBucket - timeZero) + ") when started with time " + time + "!", new Throwable());
+	  return 0;
 	}
 	return thisBucket - timeZero;
     }
@@ -881,8 +905,13 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
     }
 
-    private double[] expandArray(double[] doubleArray) {
-        double biggerArray[] = new double[(int) (doubleArray.length * 1.5)];
+  // Grow the array by 50% at a time, but at least enough to cover
+  // the incoming request
+    private double[] expandArray(double[] doubleArray, int newMinLength) {
+      if (newMinLength < doubleArray.length)
+	return doubleArray;
+
+        double biggerArray[] = new double[Math.max(newMinLength, (int) (doubleArray.length * 1.5))];
         for (int i = 0; i < doubleArray.length; i++) {
             biggerArray[i] = doubleArray[i];
         }
