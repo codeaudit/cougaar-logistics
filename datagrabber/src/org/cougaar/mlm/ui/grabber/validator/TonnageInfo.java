@@ -351,12 +351,13 @@ public class TonnageInfo extends Test implements Graphable {
     int tonnageColumn = types.length-1;
 
     if (logger.isMinorEnabled()) {
-      if (types[tonnageColumn] == TYPE_TONNAGE)
+      if (types[tonnageColumn] == TYPE_TONNAGE) {
 	logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
 			  "TonnageInfo.linesEqual on column for tonnage");
-      else
+      } else {
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
 			  "TonnageInfo.linesEqual on column of type " + types[tonnageColumn] + "?");
+      }
     }
       
     return columnCompare(logger, rs1, rs2, tonnageColumn+1);

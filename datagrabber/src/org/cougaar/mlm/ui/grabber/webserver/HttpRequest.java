@@ -30,7 +30,7 @@ import java.util.StringTokenizer;
 
 /**
  * The data pertaining to a single HTTP request
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2//01
  **/
@@ -75,12 +75,13 @@ public class HttpRequest implements HttpConstants{
   //Init functions:
 
   private void setCommand(String s) throws Exception{
-    if(s.equals("GET"))
+    if(s.equals("GET")) {
       command=GET;
-    else if(s.equals("HEAD"))
+    } else if(s.equals("HEAD")) {
       command=HEAD;
-    else
+    } else {
       throw new Exception("Unsupported command: "+s);
+    }
   }
 
   /**Don't use buffered reader, as we don't want to have unused chars in
@@ -109,17 +110,17 @@ public class HttpRequest implements HttpConstants{
       //now read values
       while(true){
 	line=readLine();
-	if(line==null)
+	if(line==null) {
 	  throw new Exception("Unexpected null line");
-	else if(line.equals("")){
+    } else if(line.equals("")) {
 	  break;
 	}else{	  
 	  // Search for separating character
 	  int slice = line.indexOf(':');
 	  // Error if no separating character
-	  if ( slice == -1 )
+	  if ( slice == -1 ) {
 	    throw new Exception("Invalid HTTP header: " + line);
-	  else{
+	  } else{
 	    // Separate at the slice character into name, value
 	    String name = line.substring(0,slice).trim();
 	    String value = line.substring(slice + 1).trim();

@@ -125,10 +125,11 @@ public class FilterQuery extends TPFDDQuery {
 
     if(run.hasCargoLegTable()){
       ResultSet rs = getResultSet(connection, formFastCargoLegSql(myFC, recentRun));
-      if (myFC.getRollup ())
+      if (myFC.getRollup ()) {
 	attachRollupLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
-      else
+      } else {
 	attachLegsFromResult (rs, cargoTree.getGenerator(), instanceToNode, cargoTree);
+    }
 
       rs = getResultSet(connection, formManifestLegSql(myFC, recentRun));
       if (myFC.getRollup ())

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeLabel.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeLabel.java,v 1.2 2002-08-08 16:40:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -52,12 +52,13 @@ public class LozengeLabel
   public void setShortText( String text ) { shortText = text; }
 
   public String bestFit( int width, FontMetrics fm) {
-    if ( longText != null && fm.stringWidth(longText) <= width )
+    if ( longText != null && fm.stringWidth(longText) <= width ) {
       return longText;
-    else if ( shortText != null && fm.stringWidth(shortText) <= width )
+    } else if ( shortText != null && fm.stringWidth(shortText) <= width ) {
       return shortText;
-    else
+    } else {
       return null;
+    }
   }
 
     public String toString()

@@ -45,7 +45,7 @@ import java.text.SimpleDateFormat;
 
 /**
  * Handles requests for commands to the contrastor
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/8/01
  **/
@@ -433,19 +433,21 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
 	  StringBuffer strb=new StringBuffer();
 	  strb.append("[");
-	  if (testStatusCore.contains(new Integer(r)))
+	  if (testStatusCore.contains(new Integer(r))) {
 	    strb.append(h.aStr(getURLRunDiff(COM_DISPLAY_DIFF,x,y,Validator.CORE_TESTS),
 			       "<B>Display Core Diffs</B>"));
-	  else
+	  } else {
 	    strb.append(h.aStr(getURLRunDiff(COM_RUN_DIFF,x,y,Validator.CORE_TESTS)+"&main=1",
 			       "<B>Run Core Diffs</B>"));
+      }
 	  strb.append("][");
-	  if (testStatusAll.contains(new Integer(r)))
+	  if (testStatusAll.contains(new Integer(r))) {
 	    strb.append(h.aStr(getURLRunDiff(COM_DISPLAY_DIFF,x,y,Validator.ALL_TESTS),
 			       "<B>Display All Diffs</B>"));
-	  else
+	  } else {
 	    strb.append(h.aStr(getURLRunDiff(COM_RUN_DIFF,x,y,Validator.ALL_TESTS)+"&main=1",
 			       "<B>Run All Diffs</B>"));
+      }
 	  strb.append("]");
 	  h.tData(strb.toString());
 

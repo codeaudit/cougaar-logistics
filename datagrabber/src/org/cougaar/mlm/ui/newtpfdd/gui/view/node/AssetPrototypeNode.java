@@ -54,8 +54,11 @@ public class AssetPrototypeNode extends DBUIDNode {
   public int getUsedAssets() { return usedAssets; }
 
     public boolean isLeaf() {
-      if (getUsedAssets() == 0) return true;
-      else return false;
+      if (getUsedAssets() == 0) {
+          return true;
+      } else {
+          return false;
+      }
     }
 
 }

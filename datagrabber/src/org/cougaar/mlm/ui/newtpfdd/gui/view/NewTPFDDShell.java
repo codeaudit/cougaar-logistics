@@ -1058,10 +1058,11 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
     Object source = event.getSource();
     DatabaseRun run = null;
 
-    if (command.equals ("Exit"))
+    if (command.equals ("Exit")) {
       System.exit (0);
-    else 
+    } else { 
       System.out.println ("Command " + command);
+    }
 	
 	
     Debug.out("TS:aP command " + command);

@@ -267,10 +267,11 @@ public class NewJTreeTable extends JTable implements ActionListener, SwingUpdate
     String text="New TPFDD";
     if(unitName != null)
       text+=" for "+unitName;
-    if(unitName !=null && desc != null)
+    if(unitName !=null && desc != null) {
       text+=": ";
-    else
+    } else{
       text+=" ";
+    }
     if(desc !=null)
       text+=desc;
     TPFDDItem.setText(text);

@@ -44,7 +44,7 @@ import java.text.SimpleDateFormat;
 
 /**
  * Handles requests for commands to the validator
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/8/01
  **/
@@ -236,19 +236,22 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
 
       StringBuffer sb=new StringBuffer();
       sb.append("[");
-      if (testStatusCore.contains(new Integer(r)))
+      if (testStatusCore.contains(new Integer(r))) {
 	sb.append(h.aStr(getURLRunTest(COM_DISPLAY_TEST,r,Validator.CORE_TESTS),
 			 "<B>Display Core Tests</B>"));
-      else
+      } else {
 	sb.append(h.aStr(getURLRunTest(COM_RUN_TEST,r,Validator.CORE_TESTS)+"?main=1",
 			 "<B>Run Core Tests</B>"));
+      }
       sb.append("][");
-      if (testStatusAll.contains(new Integer(r)))
+      
+      if (testStatusAll.contains(new Integer(r))) {
 	sb.append(h.aStr(getURLRunTest(COM_DISPLAY_TEST,r,Validator.ALL_TESTS),
 			 "<B>Display All Tests</B>"));
-      else
+      } else {
 	sb.append(h.aStr(getURLRunTest(COM_RUN_TEST,r,Validator.ALL_TESTS)+"?main=1",
 			 "<B>Run All Tests</B>"));
+      }
       sb.append("]");
       h.tData(sb.toString());
       

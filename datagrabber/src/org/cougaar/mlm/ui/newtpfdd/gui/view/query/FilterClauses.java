@@ -139,10 +139,11 @@ public class FilterClauses {
 	  justDidClause=true;
 	}
 
-	if(justDidClause)
+	if(justDidClause) {
 	  return sb.toString();
-	else
+	} else {
 	  return "";
+    }
   }
   
   public String getAssetTables(int recentRun) {

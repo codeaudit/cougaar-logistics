@@ -33,7 +33,7 @@ import java.sql.SQLException;
 
 /**
  * Gets data about asset details
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/27/01
  **/
@@ -116,10 +116,11 @@ public abstract class AssetDetailRequest{
     }
 
     if (ccc.charAt(0) == 'R') {
-      if (transport.charAt(0) == 'U')
+      if (transport.charAt(0) == 'U') {
 	transport = "Roadable";
-      else if (ccc.charAt(0) == 'R')
+    }  else if (ccc.charAt(0) == 'R') {
 	transport += "_Roadable"; 
+    }
     }
 
     ad.setValueAt(transport,AssetDetails.TRANSPORT);

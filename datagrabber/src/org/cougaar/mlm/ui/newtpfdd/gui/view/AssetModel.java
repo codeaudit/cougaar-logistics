@@ -390,10 +390,11 @@ public class AssetModel extends TaskModel implements TreeTableModel {
         /* Check for null, in case someone passed in a null node, or
            they passed in an element that isn't rooted at root. */
         if ( aNode == null ) {
-            if ( depth == 0 )
+            if ( depth == 0 ) {
                 return null;
-            else
+            } else{
                 retNodes = new Object[depth];
+            }
         }
         else {
             depth++;

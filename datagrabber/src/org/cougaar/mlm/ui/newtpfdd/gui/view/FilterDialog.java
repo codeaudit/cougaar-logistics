@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.2 2002-08-07 21:17:32 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/FilterDialog.java,v 1.3 2002-08-08 16:40:31 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -1209,17 +1209,19 @@ public class FilterDialog extends JDialog implements ActionListener, TreeSelecti
 	clauses.setSortByName (sortByName);
 	
 	if (cargoIncluded) {
-	  if ( getcargoByNameRadio().isSelected() )
+	  if ( getcargoByNameRadio().isSelected() ) {
 		clauses.setCargoInstances (getNodeDBUIDs (getcargoNameList().getSelectedValues()));
-	  else
+	  } else {
 		clauses.setCargoTypes     (getNodeDBUIDs (getcargoTypeList().getSelectedValues()));
+      }
 	}
 
 	if (carrierIncluded) {
-	  if ( getcarrierByNameRadio().isSelected() )
+	  if ( getcarrierByNameRadio().isSelected() ) {
 		clauses.setCarrierInstances (getNodeDBUIDs (getcarrierNameList().getSelectedValues()));
-	  else
+	  } else {
 		clauses.setCarrierTypes (getNodeDBUIDs (getcarrierTypeList().getSelectedValues()));
+      }
 	}
 
 	// Debug.out("CQ:gQFU Set up query: " + query);

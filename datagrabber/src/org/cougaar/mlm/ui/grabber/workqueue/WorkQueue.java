@@ -339,9 +339,11 @@ public class WorkQueue{
 
     /** Get current status **/
     public String getWorkStatus(){
-      if(work==null)
+      if(work==null) {
 	return "";
-      else return work.getStatus();
+    } else {
+        return work.getStatus();
+    }
     } 
 
     public Work getCurrentWork(){

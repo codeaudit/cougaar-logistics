@@ -33,7 +33,7 @@ import java.sql.Connection;
 /**
  * Returns the appropriate type of request handler for the given
  * request
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/8/01
  **/
@@ -63,9 +63,9 @@ public class RequestHandlerFactory implements HttpConstants{
 					  HttpRequest request){
     //were not handling anything but HEAD & GET right now...
     int command = request.getCommand();
-    if(command==HEAD)
+    if(command==HEAD) {
       return new RequestHandler(config,request);
-    else if(command==GET){
+    } else if(command==GET) {
       String file = request.getTarget();
       
       //if it starts with "/commands" we know it is a special command:

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/model/SimpleProducer.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/model/SimpleProducer.java,v 1.2 2002-08-08 16:40:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -120,19 +120,21 @@ public class SimpleProducer implements Producer
     public synchronized void addConsumer(Consumer consumer)
     {
 	// Debug.out("SAP:aC " + consumer);
-	if ( consumers.contains(consumer) )
+	if ( consumers.contains(consumer) ) {
 	    Debug.out("SAP:aC Note: attempt to doubly add consumer " + consumer);
-	else
+	} else {
 	    consumers.add(0, consumer);
+    }
     }
 
     public synchronized void deleteConsumer(Consumer consumer)
     {
       //Debug.out("SAP:dC " + consumer);
-	if ( consumers.contains(consumer) )
+	if ( consumers.contains(consumer) ) {
 	    consumers.remove(consumer);
-	else
+	} else {
 	    OutputHandler.out("SAP:dC Error: attempt to remove non-existent consumer " + consumer);
+    }
     }
 
     public String toString()

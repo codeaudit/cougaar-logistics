@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeDecorator.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengeDecorator.java,v 1.2 2002-08-08 16:40:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -84,10 +84,11 @@ class LozengeDecorator extends LayeredComponent implements VirtualX
 
 	Shape s = GanttChart.decShapes[decoratorType];
 
-	if ( warning )
+	if ( warning ) {
 	    g2.setColor(Color.red);
-	else
+	} else {
 	    g2.setColor(Color.cyan);
+    }
 	g2.translate(cx1, cy);
 	g2.fill(s);
 	g2.setColor(loz.getOutlineColor());

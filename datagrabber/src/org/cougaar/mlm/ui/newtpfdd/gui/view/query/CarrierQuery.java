@@ -278,11 +278,11 @@ public class CarrierQuery extends UnitQuery {
 	  String carrierInstanceDBUID = (String) assetNodeToCarrierInstance.get (node);
 	  Node carrierInstance = (Node) carrierToNode.get (carrierInstanceDBUID);
 	  
-	  if (carrierInstance == null)
-		System.out.println ("CarrierQuery.buildCargoProtoTree - ERROR - no carrier instance for : " + 
-							carrierInstanceDBUID);
-	  else
+	  if (carrierInstance == null) {
+		System.out.println ("CarrierQuery.buildCargoProtoTree - ERROR - no carrier instance for : " + carrierInstanceDBUID);
+	  } else {
 		tree.addNode (carrierInstance, node);
+      }
 	}
 
 	//	if (debug)
