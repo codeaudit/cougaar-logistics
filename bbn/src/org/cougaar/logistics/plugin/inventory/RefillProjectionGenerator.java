@@ -197,10 +197,14 @@ public class RefillProjectionGenerator extends InventoryModule {
       // when we get to the end of the level six window create the last
       // projection task (if there is one)
       if (startBucket != currentBucket) {
-        Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
-                                                 thePG.convertBucketToTime(currentBucket),
-                                                 projDemand, anInventory, thePG);
-        refillProjections.add(lastRefill);
+	// HERE LIES A BUG.  We should never generate zero demand projection tasks
+	// and never generate projection tasks that go beyond the end of the war
+	if (projDemand > 0.0) {
+	  Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
+						   thePG.convertBucketToTime(currentBucket),
+						   projDemand, anInventory, thePG);
+	  refillProjections.add(lastRefill);
+	}
       }
       // send the new projections and the old projections to the Comparator
       // the comparator will rescind the old and publish the new projections

@@ -18,12 +18,12 @@
   <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
 
   <!-- HET flatbed --> 
-  <instance prototype="HET" id="het" quantity="40">
+  <instance prototype="HET" id="het" quantity="60">
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
 
   <!-- 34 ton flatbed --> 
-  <instance prototype="NSN-2330010398095" id="flt" quantity="40">
+  <instance prototype="NSN-2330010398095" id="flt" quantity="60">
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
 

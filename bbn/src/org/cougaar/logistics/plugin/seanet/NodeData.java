@@ -1011,6 +1011,12 @@ public class NodeData {
     node("60N 10W", 60.0, -10.0);
     node("70N  0E", 67.0, 0.0);
 
+    makeLinks ();
+
+    return nodes;
+  }
+
+  protected void makeLinks () {
     link("CANAL11", 3, 1, 2);
     link("CANAL33", 3, 4, 3);
     link("CANAL01", 36, 5, 1);
@@ -3125,6 +3131,5 @@ public class NodeData {
     link("REDSUN", 2824, 907, 119);
     link("REDLEE", 1656, 583, 634);
     link("REDLEE", 2866, 634, 36);
-    return nodes;
   }
 }

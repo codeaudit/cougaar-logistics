@@ -138,7 +138,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     int now_bucket = convertTimeToBucket(now);
     //Initialize with initial level since the refill generator won't start setting inv levels
     //until the first day it processes which is today + OST - so depending on OST it could be a while.
-    Arrays.fill(inventoryLevelsArray, 0, 180, myPG.getInitialLevel());
+    inventoryLevelsArray[0] = myPG.getInitialLevel();
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),parentPlugin);

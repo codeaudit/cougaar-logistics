@@ -486,7 +486,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 	logger.debug (".TheaterPortion.planMe - created leg FROM " + PODLocation + 
 		      " TO " + glmPrepHelper.getToLocation(new_task));
 
-      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE_DISTANCE);
             
       PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
 							      myPlugin.publicGetFactory(), 
@@ -680,7 +681,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 				    (double) plugin.getPrefHelper().getReadyAt(new_task).getTime ()));
       aspects.add (new AspectValue (AspectType.END_TIME,   
 				    (double) best.getTime ()));
-      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+
+      plugin.removePrepsFromMiddleStep (new_task);
 
       PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
 							      myPlugin.publicGetFactory(), 
@@ -696,6 +698,11 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     }
         
   }
+
+  protected void removePrepsFromMiddleStep (Task new_task) {
+    glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE);
+    glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE_DISTANCE);
+  } 
 
   protected static class ConusPortion extends ElementBase {
     public ConusPortion(Task parent) {
@@ -750,7 +757,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 	return null;
       }
 
-      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.MODE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE);
+      glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE_DISTANCE);
 
       PlanElement pe = plugin.getAllocHelper().makeAllocation(myPlugin,
 							      myPlugin.publicGetFactory(), 

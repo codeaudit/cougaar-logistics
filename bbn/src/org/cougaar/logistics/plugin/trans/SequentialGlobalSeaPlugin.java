@@ -122,6 +122,11 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
     return ((PortLocatorImpl)locator).getPortNearestToFromLoc (parentTask);
   }
 
+  /** don't remove SEAROUTE prep -- need it for datagrabber output! */
+  protected void removePrepsFromMiddleStep (Task new_task) {
+    glmPrepHelper.removePrepNamed(new_task, GLMTransConst.SEAROUTE_DISTANCE);
+  } 
+
   /** Instantiate the Locator, which adds a LocationCallback */
   protected void makeLocator () {
     locator = new PortLocatorImpl(this, logger);

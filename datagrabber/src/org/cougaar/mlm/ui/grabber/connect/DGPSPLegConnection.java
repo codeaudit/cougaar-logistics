@@ -40,7 +40,7 @@ import java.util.Iterator;
 
 /**
  * Handles getting leg data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: mthome $
  *
  * @since 2/19/01
  **/
@@ -97,6 +97,8 @@ public class DGPSPLegConnection extends DGPSPConnection
     try{
       legPS = getLegPreparedStatement (c);
       itineraryPS = getItineraryPreparedStatement (c);
+      logMessage(Logger.MINOR,Logger.DB_WRITE,
+		 getClusterName()+" created prepared statements.");
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not create Statement",e);
       return;
@@ -117,9 +119,24 @@ public class DGPSPLegConnection extends DGPSPConnection
 	if(halt)return;
 	if(!ok)
 	  unsuccessful++;
+
+	if ((num+1) % 1000 == 0) {
+	  try{
+	    logMessage(Logger.MINOR,Logger.DB_WRITE,
+		       getClusterName()+" executing a prepared batch of a thousand legs, " + num + " so far ");
+	    itineraryPS.executeBatch();
+	    legPS.executeBatch();
+	  }catch(SQLException e){
+	    logMessage(Logger.WARNING,Logger.DB_WRITE,"While executing batch, got SQL Error - " + e);
+	    e.printStackTrace ();
+	  }
+	}
       }
     }
+
     try{
+      logMessage(Logger.MINOR,Logger.DB_WRITE,
+		 getClusterName()+" executing the last prepared batch, " + num + " total legs done.");
       itineraryPS.executeBatch();
       legPS.executeBatch();
     }catch(SQLException e){
@@ -127,17 +144,28 @@ public class DGPSPLegConnection extends DGPSPConnection
       e.printStackTrace ();
     }
 
-    logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
-	       getClusterName()+" added "+num+" leg(s)");
     if(unsuccessful>0)
       logMessage(Logger.WARNING,Logger.DB_WRITE,
 		 getClusterName()+" could not add "+unsuccessful+
 		 " leg(s)");
 
-    if(legPS!=null)
-      try{ legPS.close(); }catch(Exception e){}
-    if(itineraryPS!=null)
-      try{ itineraryPS.close(); }catch(Exception e){}
+    try { 
+      legPS.close(); 
+    } catch(Exception e){
+      logMessage(Logger.WARNING,Logger.DB_WRITE,
+		 getClusterName()+" got exception closing prepared leg statement " + legPS + 
+		 " - exception was : " + e);
+      e.printStackTrace ();
+    }
+
+    try { 
+      itineraryPS.close(); 
+    } catch(Exception e){ 
+      logMessage(Logger.WARNING,Logger.DB_WRITE,
+		 getClusterName()+" got exception closing prepared itinerary statement " + itineraryPS + 
+		 " - exception was : " + e);
+      e.printStackTrace ();
+    }
 
     setStatus("Done");
   }

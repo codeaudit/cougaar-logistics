@@ -65,7 +65,6 @@ import org.cougaar.glm.util.GLMPreference;
 import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
 
 import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.Preposition;
 import org.cougaar.planning.ldm.plan.Priority;
@@ -81,14 +80,13 @@ import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 
 import org.cougaar.planning.ldm.measure.Latitude;
 import org.cougaar.planning.ldm.measure.Longitude;
+import org.cougaar.planning.ldm.measure.Area;
+import org.cougaar.planning.ldm.measure.Distance;
+import org.cougaar.planning.ldm.measure.Mass;
+import org.cougaar.planning.ldm.measure.Volume;
 import org.cougaar.logistics.plugin.trans.NewLowFidelityAssetPG;
 import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
 
-import org.cougaar.glm.util.AssetUtil;
-import org.cougaar.glm.util.GLMPrepPhrase;
-import org.cougaar.glm.util.GLMPreference;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
 import org.cougaar.logistics.plugin.trans.CargoCatCodeDimensionPG;
 import org.cougaar.logistics.plugin.trans.NewCargoCatCodeDimensionPG;
 

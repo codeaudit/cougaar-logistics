@@ -148,7 +148,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param today_bucket  Representation of today.
    *  @param thePG The PG for the Inventory Asset we are working with.
    **/
-  private void reconcileThePast(int today_bucket, LogisticsInventoryPG thePG) {
+  public void reconcileThePast(int today_bucket, LogisticsInventoryPG thePG) {
     calculateInventoryLevels(0, today_bucket, thePG);
   }
 
@@ -290,6 +290,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         // If the bucket is more than one day we only want to promise that
         // it will be delivered sometime during the bucket!
 	if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	  if (task.getPlanElement() != null) {
+	    inventoryPlugin.publishRemove(task.getPlanElement());
+	  }
 	  createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
                                thePG.convertBucketToTime(currentBucket+1), 
                                inv, thePG);
@@ -302,6 +305,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  taskdeficit.addBucket(qty, 0);
 	}
         filled = filled + qty;
+      } else if (level > 0.) {
+	// For now, only handle projections
+	TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(task);
+	taskdeficit.addBucket(level, (qty-level));	
+	filled = filled + level;
       } else {
 	// For now, only handle projections
 	TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(task);
@@ -377,31 +385,15 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  if (testLevel >= 0.0) {
 	    // if its ok give it a pe and update the quantity  
 	    runningQty = runningQty + qty;
-	    if (projWdraw.getPlanElement() == null) {
-	      TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
-	      if (taskdeficit == null) {
-		allocatedProjections.add(projWdraw);
-//  		if(logger.isWarnEnabled()) {
-//  		  logger.warn("AA.determineProjectionAllocations Adding to allocated projections "+
-//  			      getTaskUtils().taskDesc(projWdraw));
-//  		}
-	      } else {
-		taskdeficit.addBucket(qty, 0);
-	      }
+	    TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
+	    if (taskdeficit == null) {
+	      allocatedProjections.add(projWdraw);
+	      
+	    } else {
+	      taskdeficit.addBucket(qty, 0);
 	    }
 	  } else {
-	//      System.out.println("&&&&&&&&&&Failed projectWithdraw, todayRefill ="+
-//  			       todayRefill+" "+			       
-//    			       getTaskUtils().taskDesc(projWdraw));
-//  	    int cb=1;
-//  	    while (cb <= currentBucket+2) {
-//  	      System.out.println("bucket: "+cb+" "+
-//  				 TimeUtils.dateString(thePG.convertBucketToTime(cb))+
-//  				 " level="+
-//  				 thePG.getLevel(cb));
-//  	      cb=cb+1;
-//  	    }
-
+	    logger.debug("FAIL  Test level is "+testLevel+" for "+getTaskUtils().taskDesc(projWdraw));
 	    failedProjection=projWdraw;
 	    allocatedProjections.remove(projWdraw);
 	    TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
@@ -492,7 +484,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	if (thePG.convertTimeToBucket(end) <= endOfLevelSixBucket) {
 	  helper = new LogisticsAllocationResultHelper(task, null);
 	  helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
-	  ar = helper.getAllocationResult(0.9);
+	  ar = helper.getAllocationResult(0.9, true);
 	  alloc = inventoryPlugin.getRootFactory().
 	    createAllocation(task.getPlan(), task, inv, ar, myRole);
 	  inventoryPlugin.publishAdd(alloc);
@@ -508,6 +500,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     Iterator tpIter = trailingPointersHash.keySet().iterator();
     while (tpIter.hasNext()) {
       Task task = (Task) tpIter.next();
+      if (task.getPlanElement() != null) {
+	inventoryPlugin.publishRemove(task.getPlanElement());
+      }
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
 	createFailedAllocation(task, inventory);
       } else {
@@ -534,7 +529,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     } else {
       helper.setFailed(AlpineAspectType.DEMANDRATE, start, end);
     }
-    AllocationResult ar = helper.getAllocationResult(0.9);
+    AllocationResult ar = helper.getAllocationResult(0.9, false);
     Allocation alloc = inventoryPlugin.getRootFactory().
       createAllocation(task.getPlan(), task, inventory, ar, myRole);
     inventoryPlugin.publishAdd(alloc);
@@ -560,7 +555,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 			deficit.getAllocated(i));
       current_start +=msecperbucket;
     }
-    AllocationResult ar = helper.getAllocationResult(0.9);
+    AllocationResult ar = helper.getAllocationResult(0.9, true);
     Allocation alloc = inventoryPlugin.getRootFactory().
       createAllocation(task.getPlan(), task, inventory, ar, myRole);
     inventoryPlugin.publishAdd(alloc); 

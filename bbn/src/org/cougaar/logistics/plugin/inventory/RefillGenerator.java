@@ -130,12 +130,15 @@ public class RefillGenerator extends InventoryLevelGenerator {
 
 	double prevTarget = 0;
 
-        //calculate inventory levels for today through start (today + OST)
-	calculateInventoryLevels(inventoryBucket, startBucket, thePG);
+        //calculate inventory levels for time ZERO through start (today + OST)
+	//Time period which refillGenerator should not touch
+	calculateInventoryLevels(0, startBucket, thePG);
 
 // 	System.out.println("##############  ITEM "+debugItem);
 
         //  create the refills
+	// RJB
+	int lastRefillBucket=refillBucket;
         while (refillBucket <= maxLeadBucket) {
           double invLevel = thePG.getLevel(startBucket) - 
             thePG.getActualDemand(refillBucket);
@@ -156,29 +159,31 @@ public class RefillGenerator extends InventoryLevelGenerator {
 //             int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
 //             double refillQty = generateRefill(invLevel, refillBucket, 
 // 					      reorderPeriodEndBucket, thePG);
-            double refillQty = calculateRefillQty(thePG, refillBucket, invLevel);
+	    int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
+	    double targetLevel = getTargetLevel(refillBucket,reorderPeriodEndBucket, thePG);
+            double refillQty = targetLevel-invLevel;
 	    if(refillQty > 0.0) {
-
-		if (logger.isDebugEnabled()) { 
-		    logger.debug("\n Creating Refill for bucket: " + refillBucket +
-				 " of quantity: " + refillQty);
-		}
-		// make a task for this refill and publish it to glue plugin
-		// and apply it to the LogisticsInventoryBG
-		Task theRefill = createRefillTask(refillQty, 
-						  thePG.convertBucketToTime(refillBucket), 
-						  anInventory, thePG, 
-						  today, orderShipTime);
-		newRefills.add(theRefill);
+	      lastRefillBucket=refillBucket;
+	      if (logger.isDebugEnabled()) { 
+		logger.debug("\n Creating Refill for bucket: " + refillBucket +
+			     " of quantity: " + refillQty);
+	      }
+	      // make a task for this refill and publish it to glue plugin
+	      // and apply it to the LogisticsInventoryBG
+	      Task theRefill = createRefillTask(refillQty, 
+						thePG.convertBucketToTime(refillBucket), 
+						anInventory, thePG, 
+						today, orderShipTime);
+	      newRefills.add(theRefill);
 	    }
 	    else if (logger.isDebugEnabled()) {
 		logger.debug("Not placing a refill order of qty: " + refillQty) ;
 	    }
 
-	    thePG.setLevel(refillBucket, (invLevel + refillQty));
+	    thePG.setLevel(refillBucket, targetLevel);
             //set the target level to invlevel + refillQty (if we get the refill we
             //ask for we hit the target - otherwise we don't)
-            thePG.setTarget(refillBucket, (invLevel + refillQty));
+            thePG.setTarget(refillBucket, targetLevel);
 
 // 	    if ((debugItem.indexOf("9140002865294") > 0) && (getOrgName().indexOf("FSB") > 0)) {
 // 	      System.out.println("     bucket: "+refillBucket+", endbucket: "+reorderPeriodEndBucket+
@@ -186,10 +191,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
 // 				 ", Target: "+(invLevel+refillQty));
 // 	    }
 	    if (logger.isDebugEnabled()) { 
-		double printsum = invLevel + refillQty;
+		double printsum = targetLevel;
   		logger.debug("\nSetting the InventoryLevel and the TargetLevel to: " + printsum);
 	    }
-	    prevTarget = (invLevel + refillQty);
+	    prevTarget = targetLevel;
 	  }
 	  //reset the buckets
 	  startBucket = refillBucket;
@@ -197,7 +202,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
 	}
 	// Set the target levels for projection period here since very similar 
 	// calculations are done for both projection and refill period.
-	setTargetForProjectionPeriod(thePG, maxLeadBucket+1, prevTarget);
+	//setTargetForProjectionPeriod(thePG, maxLeadBucket+1, prevTarget);
+	// RJB
+	setTargetForProjectionPeriod(thePG, lastRefillBucket+1, prevTarget);
 	// call the Comparator for this Inventory which will compare the old and
 	// new Refills and then publish the new Refills and Rescind the old Refills.
 	myComparator.compareRefills(newRefills, oldRefills, anInventory);
@@ -216,17 +223,17 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param thePG  The LogisticsInventoryPG of the Inventory we are Refilling.
    *  @return double The Refill Amount. This is RF(k+1)
    **/
-  private double generateRefill(double invLevel, int refillBucket, 
+  private double getTargetLevel(int refillBucket, 
                                 int reorderPeriodEndBucket, 
                                 LogisticsInventoryPG thePG) {
-    double refillQty = 0;
-    double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
+    double targetLevel = 0;
+    double criticalAtEndOfPeriod = Math.max(.9, thePG.getCriticalLevel(reorderPeriodEndBucket));
     double demandForPeriod = calculateDemandForPeriod(thePG, 
                                                       refillBucket, 
                                                       reorderPeriodEndBucket);
-    refillQty = (criticalAtEndOfPeriod - invLevel) + demandForPeriod;
+    targetLevel = criticalAtEndOfPeriod + demandForPeriod;
 
-    return refillQty;
+    return targetLevel;
   }
 
   /** Utility method to calculate the demand for the Reorder Period
@@ -440,19 +447,22 @@ public class RefillGenerator extends InventoryLevelGenerator {
     // inventory level calculations.
     double invLevel = thePG.getLevel(startBucket - 1) - 
       thePG.getActualDemand(startBucket);
-    double refillQty = calculateRefillQty(thePG, startBucket, invLevel);
-    double target = invLevel + refillQty;
+    int reorderPeriodEndBucket = startBucket + (int)thePG.getReorderPeriod();
+    double target = getTargetLevel(startBucket,reorderPeriodEndBucket, thePG);
     thePG.setTarget(startBucket, target);
     lastTarget = target;
-
+    
+//     System.out.println("Last demand bucket for "+inventoryPlugin.getResourceName(thePG.getResource())+
+// 		       "-"+getAssetUtils().getPartNomenclature(thePG.getResource())+" is "+
+// 		       lastDemandBucket+" at "+getOrgName());
     // Start the loop after the first reorderperiod
     for (int targetLevelBucket = startBucket + reorderPeriod; 
          targetLevelBucket <= lastDemandBucket; 
          targetLevelBucket = targetLevelBucket + reorderPeriod ) {
       invLevel = thePG.getLevel(targetLevelBucket - 1) - 
         thePG.getActualDemand(targetLevelBucket);
-      refillQty = calculateRefillQty(thePG, targetLevelBucket, invLevel);
-      target = invLevel + refillQty;
+      reorderPeriodEndBucket = targetLevelBucket + (int)thePG.getReorderPeriod();
+      target = getTargetLevel(targetLevelBucket,reorderPeriodEndBucket, thePG);
       thePG.setTarget(targetLevelBucket, target);
 
       // set the start point for the inventory calcualtions to the 
@@ -468,13 +478,6 @@ public class RefillGenerator extends InventoryLevelGenerator {
         thePG.setLevel(inventoryBucket + i, level);
       }
     }
-  }
-
-
-  private double calculateRefillQty(LogisticsInventoryPG thePG, int refillBucket, double invLevel) {
-    int reorderPeriodEndBucket = refillBucket + (int)thePG.getReorderPeriod();
-    return generateRefill(invLevel, refillBucket, 
-                          reorderPeriodEndBucket, thePG);
   }
 
 }

@@ -31,7 +31,6 @@ import java.util.Date;
 import java.io.Serializable;
 
 import org.cougaar.glm.util.GLMPrepPhrase;
-import org.cougaar.util.log.Logger;
 
 import org.cougaar.core.domain.RootFactory;
 import org.cougaar.planning.ldm.plan.Plan;
@@ -71,7 +70,6 @@ import org.cougaar.lib.util.UTILExpand;
 import org.cougaar.lib.util.UTILPluginException;
 import org.cougaar.lib.util.UTILAllocationResultAggregator;
 import org.cougaar.lib.util.UTILAllocate;
-
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
 

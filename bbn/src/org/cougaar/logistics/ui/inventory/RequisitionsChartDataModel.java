@@ -44,7 +44,6 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 
 import org.cougaar.util.TimeSpanSet;
 
-
 /** 
  * <pre>
  * 

@@ -116,7 +116,7 @@ public class ExternalAllocator extends InventoryModule {
     private AllocationResult createPredictedAllocationResult(Task task, Organization provider) {
 	//MWD in the future this will have to generate the expected result
 	//from the predictor.
-	return new AllocationResultHelper(task, null).getAllocationResult(0.25);
+	return new AllocationResultHelper(task, null).getAllocationResult(0.25, true);
     }
 
     /** Figure out which organization supplying item is best for us. */
