@@ -21,15 +21,13 @@
 
 package org.cougaar.logistics.ldm.asset;
 
-import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
 import org.cougaar.glm.ldm.asset.ScheduledContentPG;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
+import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.TimeSpan;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -40,77 +38,13 @@ public abstract class ConsumerBG implements PGDelegate {
 
   public abstract List getPredicates();
 
-  public abstract Schedule getParameterSchedule(Collection col);
+  public abstract Schedule getParameterSchedule(Collection col, TimeSpan span);
 
   public abstract Rate getRate(Asset asset, List params);
 
   public abstract Collection getConsumed();
 
-  public abstract PGDelegate copy(PGDelegate del);
-
-  /**
-   *  Org Activities Predicate
-   **/
-  static class OrgActivityPred implements UnaryPredicate {
-    public boolean execute (Object o) {
-      if (o instanceof OrgActivity) {
-	return true;
-      }
-      return false;
-    }
-
-    public boolean equals(Object o) {
-      if (o instanceof OrgActivityPred) {
-	return true;
-      }
-      return false;
-    }
-  } 
-
-  /** 
-   * Consumer Predicate 
-   **/
-  public class ConsumerPredicate implements UnaryPredicate {
-    String itemName;
-    public ConsumerPredicate(String itemName) {
-      this.itemName = itemName;
-    }
-
-    public boolean execute(Object o) {
-      if (o instanceof ClassVIIMajorEndItem) {
-	 if (itemName.equals(getTypeID((Asset)o))) {
-	   return true;
-	 }
-      }
-      if (o instanceof AggregateAsset) {
-	if (((AggregateAsset)o).getAsset() instanceof ClassVIIMajorEndItem) {
-	  if (itemName.equals(getTypeID(((AggregateAsset)o).getAsset()))) {
-	    return true;
-	  }
-	}
-      }
-      return false;
-    }
-
-    public String getItemName() {
-      return itemName;
-    }
-
-    private String getTypeID(Asset asset) {
-      String item = asset.getTypeIdentificationPG().getTypeIdentification();
-      return item;
-    }
-
-    public boolean equals(Object o) {
-      if (o instanceof ConsumerPredicate) {
-	String tmp = ((ConsumerPredicate)o).getItemName();
-	if (tmp.equals(itemName)) {
-	  return true;
-	}
-      }
-      return false;
-    }
-  }
+  public abstract PGDelegate copy(PropertyGroup pg);
 
 }
 
