@@ -119,7 +119,7 @@ public class LogisticsInventoryFormatter {
 
     protected Date startCDay;
 
-    LogisticsInventoryPG logInvPG;
+    protected LogisticsInventoryPG logInvPG;
 
     public LogisticsInventoryFormatter(Writer writeOutput, Date startingCDay, InventoryPlugin invPlugin){
 	logger = invPlugin.getLoggingService(this);
