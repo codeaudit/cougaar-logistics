@@ -269,6 +269,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
     return true;
   }
 
+  int i = 0;
+
   /**
    * <pre>
    * Implemented for UTILExpanderPlugin interface
@@ -293,6 +295,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
    */
   public Vector getSubtasks(Task parentTask) {
     Vector childTasks = new Vector ();
+
+    if (isInfoEnabled())
+      info (".getSubtasks - received task " + (i++) + " total.");
 
     if (isDebugEnabled()) {
       int mode = getMode (parentTask);
@@ -360,6 +365,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       return LEVEL_6_MODE;
     }
     else if (bestTime < currentTime + level2Day*MILLIS_PER_DAY) {
+      if (isInfoEnabled())
+	info (getName() + ".getMode - got level 2 task (" + parentTask.getUID () + 
+	      ")\nsince best " + new java.util.Date(bestTime) +
+	      " is after current " + new java.util.Date (currentTime) + 
+	      " + level6 days " + level6Day);
       return LEVEL_2_MODE;
     }
     // DONT_PROCESS_MODE is not currently supported
