@@ -73,6 +73,12 @@ public class RefillGenerator extends InventoryModule {
     super(imPlugin);
   }
 
+  /** Called by the Inventory Plugin to re-calculate refills when an demand has changed
+   *  for an inventory.  This method creates Refill Tasks and publishes them through the
+   *  Inventory Plugin.
+   *  @param touchedInventories  The collection of changed Inventories.
+   *  @param policy The InventoryPolicy
+   **/
   public void calculateRefills(ArrayList touchedInventories, InventoryPolicy policy) {
     int orderShipTime = policy.getOrderShipTime();
     int maxLeadTime = policy.getSupplierAdvanceNoticeTime() + orderShipTime;
@@ -123,6 +129,17 @@ public class RefillGenerator extends InventoryModule {
     } // done going through inventories
   }
 
+  /** Utility method to generate the Refill Amount
+   *  This method starts the following calculation
+   *  RF(k+1)=(C(k+RP+1)-IL(k+1)) + (D(K+2)+...+(k+RP+1))
+   *  @param invLevel  The current inventory level for the refill bucket
+   *  @param refillBucket  The bucket we are generating a refill for.  This is
+   *   the bucket at k+1
+   *  @param reorderPeriodEndBucket  The end point for which we want demand for.
+   *   This is the bucket at k+RP+1.
+   *  @param thePG  The LogisticsInventoryPG of the Inventory we are Refilling.
+   *  @return double The Refill Amount. This is RF(k+1)
+   **/
   private double generateRefill(double invLevel, int refillBucket, 
                                 int reorderPeriodEndBucket, 
                                 LogisticsInventoryPG thePG) {
@@ -135,6 +152,16 @@ public class RefillGenerator extends InventoryModule {
     return refillQty;
   }
 
+  /** Utility method to calculate the demand for the Reorder Period
+   *  This method does the calculation for:
+   *  (D(K+2)+...+(k+RP+1))
+   *  @param thePG The LogisticsInventoryPG of the Inventory we are Refilling.
+   *  @param refillBucket  The bucket we are generating a refill for.  This is
+   *   the bucket at k+1
+   *  @param reorderPeriodEndBucket  The end point for which we want demand for.
+   *   This is the bucket at k+RP+1.
+   *  @return double  The sum of Demand for the Reorder Period.
+   **/
   private double calculateDemandForPeriod(LogisticsInventoryPG thePG, 
                                           int refillBucket, int endOfPeriodBucket) {
     double totalDemand = 0.0;
@@ -150,6 +177,11 @@ public class RefillGenerator extends InventoryModule {
   /** Make a Refill Task and publish it to the InventoryPlugin 
    *  The InventoryPlugin will hook it up with the MaintainInventory task
    *  and it's workflow as well as publishing it to the Blackboard.
+   *  @param quantity The quantity of the Refill Task
+   *  @param endDay  The desired delivery date of the Refill Task
+   *  @param inv  The Inventory this Refill Task is resupplying
+   *  @param thePG  The LogisticsInventoryPG for the Inventory.
+   *  @param today  Time representing now to use as the earliest possible delivery
    **/
   private void createRefillTask(double quantity, long endDay, 
                                 Asset inv, LogisticsInventoryPG thePG, 
@@ -220,6 +252,11 @@ public class RefillGenerator extends InventoryModule {
       newPreference(AspectType.END_TIME, endTimeSF);
   }
 
+  /** Utility method to create a Refill Quantity  preference
+   *  We use a V scoring function for this preference.
+   *  @param refill_qty  The quantity we want for this Refill Task
+   *  @return Preference  The new quantity preference for the Refill Task
+   **/
   private Preference createRefillQuantityPreference(double refill_qty) {
     AspectValue lowAV = new AspectValue(AspectType.QUANTITY, 0.01);
     AspectValue bestAV = new AspectValue(AspectType.QUANTITY, refill_qty);
@@ -230,6 +267,11 @@ public class RefillGenerator extends InventoryModule {
       newPreference(AspectType.QUANTITY, qtySF);
   }
 
+ /** Utility method to create a Refill Task Prepositional Phrase
+   *  @param prep  The preposition
+   *  @param io  The indirect object
+   *  @return PrepositionalPhrase  A new prep phrase for the task
+   **/
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
     NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().
       newPrepositionalPhrase();
@@ -238,7 +280,7 @@ public class RefillGenerator extends InventoryModule {
     return newpp;
   }
 
-  //Get and Keep organization info from the InventoryPlugin.
+  /** Utility method to get and keep organization info from the InventoryPlugin. **/
   private Organization getMyOrganization() {
     if (myOrg == null) {
       myOrg = inventoryPlugin.getMyOrganization();
@@ -251,7 +293,7 @@ public class RefillGenerator extends InventoryModule {
     return myOrg;
   }
 
-  //Get the Org Name from my organization and keep it around.
+  /** Utility method to get the Org Name from my organization and keep it around. **/
   private String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
@@ -259,7 +301,7 @@ public class RefillGenerator extends InventoryModule {
     return myOrgName;
   }
 
-  // Get the default (home) location of the Org
+  /** Utility method to get the default (home) location of the Org **/
   private GeolocLocation getHomeLocation() {
     if (homeGeoloc == null ) {
       Organization org = getMyOrganization();
