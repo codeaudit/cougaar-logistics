@@ -114,16 +114,37 @@ public class InventoryXMLParser
       String[] words = header.split("\\s");
       String org=null;
       String asset=null;
-      if(words[1].startsWith("org=")){
-	org=words[1].substring("org=".length());
+      String unit=null;
+      long cDay=0L;
+      int i=1;
+
+      if(words[i].startsWith("org=")){
+	org=words[i].substring("org=".length());
       }
-      if(words[2].startsWith("item=")){
-	asset=words[2].substring("item=".length());
+      i++;
+      if(words[i].startsWith("item=")){
+	asset=words[i].substring("item=".length());
       }
-      inventory = new InventoryData(org,asset);
+      i++;
+      if(words[i].startsWith("unit=")){
+	unit=words[i].substring("unit=".length());
+      }
+      i++;
+      while(!(words[i].startsWith("cDay"))) {
+	  unit=unit + " " + words[i];
+	  i++;
+      }
+      if(words[i].startsWith("cDay=")){
+	String cDayString=words[i].substring("cDay=".length());
+	cDay = (new Long(cDayString)).longValue();
+      }      
+
+      inventory = new InventoryData(org,asset,unit,cDay);
       if(logger.isDebugEnabled()) {
 	  logger.debug("Parsed header w/org=|" + org +
-		       "| item=|" + asset + "|");
+		       "| item=|" + asset + 
+		       "| unit=|" + unit +
+		       "| cDay=|" + cDay + "|");
       }
       ctr++;
     }
