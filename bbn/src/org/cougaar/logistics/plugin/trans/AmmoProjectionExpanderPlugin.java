@@ -54,11 +54,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public static final double PACKING_LIMIT = 13.9; /* short tons */
   public static final long TASK_TRANSMISSION_DELAY = 1000*60*60;
   private static Asset MILVAN_PROTOTYPE = null;
-  //private static final String UNKNOWN = "unknown";
   public static String START = "Start";
 
   public TaskUtils taskUtils;
-
 
   /** 
    * rely upon load-time introspection to set these services - 
@@ -750,7 +748,16 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     for (Iterator iter = reservedToActual.keySet().iterator(); iter.hasNext(); ) {
       Task reserved = (Task)iter.next ();
       Task actual   = (Task) reservedToActual.get(reserved);
-      dealWithReservedTask (actual, reserved);
+      synchronized (reserved.getWorkflow ()) {
+	if (ownWorkflow (reserved)) {
+	  dealWithReservedTask (actual, reserved);
+	}
+	else if (isInfoEnabled()) {
+	  info ("reserved task " + reserved.getUID () + 
+		" not a member of it's own workflow " + reserved.getWorkflow () + 
+		"\nworkflow task uids : " + uidsWorkflow(reserved) + " - assuming it will be removed.");
+	}
+      }
     }
   }
 
@@ -999,12 +1006,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return true;
   }
 
+  /*
   protected String reportTransportDate (Task reserved){
     Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
     Date reservedBest  = prefHelper.getBestDate  (reserved);
 
     return " ready "+reservedReady+ " -> " + reservedBest;
   }
+  */
 
   protected void updateMap (Map reservedToActual, Task actual, Task reserved) {
     Task foundActual;
@@ -1029,6 +1038,29 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     }
   }
 
+  /** 
+   * <pre>
+   * Called from processTasks. 
+   *
+   * Compares transport reservation and overlapping actual transport task.
+   *
+   * Creates a replacement for existing reserved task, if there is any time
+   * span left where it doesn't overlap the actual task.  If the actual completely 
+   * overlaps the reservation, creates a successful disposition for the task.
+   *
+   * If there is partial overlap, adjusts the earliest arrival date on the reserved task
+   * to be equal to the best date of the actual and updates the contents pg of the direct
+   * object to indicate a smaller weight.
+   *
+   * As a convenience, adds the START prep to the reserved task, indicating the start
+   * of the period of the reservation.  This is used in transportDateWithinReservedWindow to
+   * determine if an actual falls in the span of a reservation and to indicate whether
+   * a transport task is indeed a reservation.
+   *
+   * </pre>
+   * @param task actual transport task
+   * @param reserverTask reserved transport task to be replaced
+   */
   protected void dealWithReservedTask (Task task, Task reservedTask) {
     // preconditions
     if (isReservedTask (task))
@@ -1037,6 +1069,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (!isReservedTask (reservedTask))
       error ("arg - task "  + reservedTask.getUID () + " is not a reserved task.");
 
+    /** this is unnecessary now, since check done in processTasks */
+    /*
     if (!ownWorkflow (reservedTask)) {
       error ("huh? reserved task " + reservedTask.getUID () + " not a member of it's own workflow " + reservedTask.getWorkflow () + 
 	     "\nuids " + uidsWorkflow(reservedTask)); 
@@ -1044,6 +1078,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       return;
     }
+    */
     NewWorkflow tasksWorkflow = (NewWorkflow) reservedTask.getWorkflow ();
 
     if (tasksWorkflow == null) {
@@ -1138,7 +1173,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	if (isInfoEnabled ()) {
 	  info ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
 	}
-      Collection parents = blackboard.query (new UnaryPredicate () { 
+	Collection parents = blackboard.query (new UnaryPredicate () { 
 	  public boolean execute (Object obj) { 
 	    if (obj instanceof Task) {
 	      return (((Task) obj).getUID().equals (reservedCopy.getParentTaskUID()));
@@ -1161,7 +1196,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	  if (isInfoEnabled ()) {
 	    info ("removing expansion of task " + exp.getTask().getUID());
 	  }
-	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
+	  //	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
+	  AllocationResult ar = makeSuccessfulDisposition(parent);
 	  Disposition disposition =
 	    ldmf.createDisposition(parent.getPlan(), parent, ar);
 	  publishAdd (disposition);
@@ -1216,6 +1252,31 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return num;
   }
 
+  /** 
+   * Makes allocation result with aspect values that echo the task preferences
+   *
+   * @param task to dispose
+   * @return successful allocation result with aspect values taken from task prefs
+   */
+  protected AllocationResult makeSuccessfulDisposition(Task task) {
+    Enumeration prefEnum;
+    synchronized(task) { prefEnum = task.getPreferences(); } // bug #2125
+    List aspectValues = new ArrayList ();
+    while (prefEnum.hasMoreElements()) {
+      Preference pref = (Preference)prefEnum.nextElement();
+      ScoringFunction sfunc = pref.getScoringFunction();
+      aspectValues.add (sfunc.getBest().getAspectValue());
+    }
+
+    AspectValue [] aspectValueArray = 
+      (AspectValue []) aspectValues.toArray(new AspectValue [aspectValues.size()]);
+
+    AllocationResult successfulAR = ldmf.newAVAllocationResult(1.0, 
+							       true, 
+							       aspectValueArray);
+    return successfulAR;
+  }
+
   protected Collection findForPreps (final Task task) {
     List units = new ArrayList();
     if (task instanceof MPTask) {
@@ -1243,49 +1304,61 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return units;
   }    
 
-    protected Asset getTrimmedDirectObject (Asset directObject, double factor) {
-	if (directObject instanceof AssetGroup) {
-	    double total = 0.0;
-	    Container last = null;
+  /**
+   * Assumes the direct object is either an asset group or a container (milvan).
+   * If it's a container, updates the contentsPG to reflect a new weight that is the
+   * old multiplied by factor (0.0 < factor < 1.0).
+   *
+   * Called from dealWithReservedTask.
+   *
+   * @param directObject old container or asset group
+   * @param factor to reduce container weight by
+   * @return new or old milvan with updated contentsPG
+   * @see #dealWithReservedTask
+   */
+  protected Asset getTrimmedDirectObject (Asset directObject, double factor) {
+    if (directObject instanceof AssetGroup) {
+      double total = 0.0;
+      Container last = null;
 
-	    for (Iterator iter = 
-		     ((AssetGroup) directObject).getAssets().iterator();
-		 iter.hasNext();) {
-		last = (Container) iter.next();
-		total += getContainerTons (last);
-	    }
+      for (Iterator iter = 
+	     ((AssetGroup) directObject).getAssets().iterator();
+	   iter.hasNext();) {
+	last = (Container) iter.next();
+	total += getContainerTons (last);
+      }
 
-	    if (last == null) {
-		error ("Nothing in the asset group of milvans?");
-	    }
+      if (last == null) {
+	error ("Nothing in the asset group of milvans?");
+      }
 
-	    ContentsPG contents = last.getContentsPG ();
+      ContentsPG contents = last.getContentsPG ();
 
-	    String nomen = 
-		(String) contents.getNomenclatures().iterator().next();
-	    String type  = 
-		(String) contents.getTypeIdentifications().iterator().next();
-	    String unit = 
-		(String) contents.getReceivers().iterator().next();
+      String nomen = 
+	(String) contents.getNomenclatures().iterator().next();
+      String type  = 
+	(String) contents.getTypeIdentifications().iterator().next();
+      String unit = 
+	(String) contents.getReceivers().iterator().next();
 
-	    return getMilvanDirectObject (nomen, type, unit, total*factor);
-	}
-	else {
-	    Container reserved = (Container)directObject;
-	    ContentsPG contents = reserved.getContentsPG();
-	    Collection weights = contents.getWeights();
-	    Mass weight = (Mass) weights.iterator().next();
-	    weights.remove (weight);
-	    weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
-	    return reserved;
-	}
+      return getMilvanDirectObject (nomen, type, unit, total*factor);
     }
+    else {
+      Container reserved = (Container)directObject;
+      ContentsPG contents = reserved.getContentsPG();
+      Collection weights = contents.getWeights();
+      Mass weight = (Mass) weights.iterator().next();
+      weights.remove (weight);
+      weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
+      return reserved;
+    }
+  }
     
-    /** assumes only one type of ammo in container -- true for reservations */
-    protected double getContainerTons (Container container) {
-	ContentsPG contents = container.getContentsPG();
-	Collection weights  = contents.getWeights();
-	Mass weight = (Mass) weights.iterator().next();
-	return weight.getShortTons();
-    }
+  /** assumes only one type of ammo in container -- true for reservations */
+  protected double getContainerTons (Container container) {
+    ContentsPG contents = container.getContentsPG();
+    Collection weights  = contents.getWeights();
+    Mass weight = (Mass) weights.iterator().next();
+    return weight.getShortTons();
+  }
 }
