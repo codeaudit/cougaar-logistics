@@ -110,7 +110,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	int numResupplyProjFailures(); \
 	int numDemandSupplyFailures(); \
 	int numDemandProjFailures(); \
-        String getItemName();
+	String getItemName();
 
 ;;
 ;; examples

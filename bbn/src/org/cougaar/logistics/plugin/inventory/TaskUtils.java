@@ -27,6 +27,7 @@
 package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
@@ -40,6 +41,7 @@ import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.MoreMath;
+import org.cougaar.util.TimeSpan;
 import org.cougaar.util.log.Logger;
 
 import java.io.Serializable;
@@ -497,49 +499,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     // Time Preference Utils
 
-  /** Create a Time Preference for the Refill Task
-   *  Use a Piecewise Linear Scoring Function.
-   *  For details see the IM SDD.
-   *  @param bestDay The time you want this preference to represent
-   *  @param start The earliest time this preference can have
-   *  @param end The last time this preference can have (such as Oplan end time)
-   *  @param aspectType The AspectType of the preference- should be start_time or end_time
-   *  @param planningFactory The planning factory from the plugin
-   *  @return Preference The new Time Preference
-   **/
-    public Preference createRefillTimePreference(long bestDay, long start, long end,
-                                                int aspectType, LogisticsInventoryPG thePG,
-						PlanningFactory planningFactory) {
-    //TODO - really need last day in theatre from an OrgActivity -
-    double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
-    //Use .0033 as a slope for now
-    double late_score = .0033 * daysBetween;
-    // define alpha .25
-    double alpha = .25;
-    Vector points = new Vector();
-
-    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
-    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
-//                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType,
-                                                                                  bestDay + thePG.getBucketMillis()),
-                                                       alpha);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end),
-                                                   (alpha + late_score));
-
-    points.addElement(earliest);
-    points.addElement(best);
-    points.addElement(first_late);
-    points.addElement(latest);
-    ScoringFunction timeSF = ScoringFunction.
-      createPiecewiseLinearScoringFunction(points.elements());
-    return planningFactory.newPreference(aspectType, timeSF);
-  }
-
-
-
-  /** Create a Time Preference for the Refill Task
+  /** Create a Time Preference for a Refill Task or a Demand Task
    *  Use a Piecewise Linear Scoring Function.
    *  For details see the IM SDD.
    *  @param bestDay The time you want this preference to represent
@@ -548,11 +508,21 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @param clusterId Agent cluster ID
    *  @param planningFactory Planning factory from plugin
+   *  @param thePG InventoryPG for the item maintained by a refill task
    *  @return Preference The new Time Preference
    **/
-  public Preference createTimePreference(long bestDay, long early, long end, int aspectType, MessageAddress clusterId, PlanningFactory planningFactory) {
-    long late = getTimeUtils().addNDays(bestDay, 1);
-    double daysBetween = ((end - bestDay) / 86400000);
+  public Preference createTimePreference(long bestDay, long early, long end, int aspectType,
+                                         MessageAddress clusterId, PlanningFactory planningFactory,
+                                         LogisticsInventoryPG thePG) {
+    double daysBetween;
+    long late;
+    if (thePG !=null) {
+      daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
+      late = bestDay +  thePG.getBucketMillis();
+    } else {
+      late = getTimeUtils().addNDays(bestDay, 1);
+      daysBetween = ((end - bestDay) / 86400000);
+    }
 
     // Negative value here is bad. Note that end==bestDay is OK. This case
     // is handled below, where we skip adding the end AspectScorePoint
@@ -603,15 +573,121 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
     return planningFactory.newPreference(aspectType, timeSF);
+  }
 
-    // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
-    //return prefs;
+    /** copies a Supply task from another to split it**/
+    public NewTask copySupplyTask(Task origTask, long start, long end,
+                                  LogisticsInventoryPG invPG,
+                                  InventoryPlugin inventoryPlugin) {
+
+      NewTask task = inventoryPlugin.getPlanningFactory().newTask();
+      task.setVerb( origTask.getVerb());
+      task.setDirectObject( origTask.getDirectObject());
+      task.setParentTaskUID( origTask.getParentTaskUID() );
+      task.setContext( origTask.getContext() );
+      task.setPlan( origTask.getPlan() );
+      Enumeration pp = origTask.getPrepositionalPhrases();
+      Vector ppv = new Vector();
+      while(pp.hasMoreElements()) {
+        ppv.addElement(pp.nextElement());
+  }
+      NewPrepositionalPhrase newPP = inventoryPlugin.getPlanningFactory().newPrepositionalPhrase();
+      newPP.setPreposition("SplitTask");
+      ppv.add(newPP);
+      task.setPrepositionalPhrases(ppv.elements());
+      task.setPriority(origTask.getPriority());
+      task.setSource(inventoryPlugin.getClusterId() );
+      changeDatePrefs(task, start, end, inventoryPlugin, invPG);
+      // TODO: is this ok to to just add these prefs to the a vector?
+      // TODO: the changeDatePrefs clones the scoring function
+      Enumeration origPrefs = task.getPreferences();
+      Rate rate = getRate(origTask);
+      Vector newPrefs = new Vector();
+      Preference currentPref;
+      while (origPrefs.hasMoreElements()) {
+        currentPref = (Preference) origPrefs.nextElement();
+        newPrefs.add(currentPref);
+      }
+      newPrefs.addElement(createDemandRatePreference(inventoryPlugin.getPlanningFactory(), rate));
+      // start and end from schedule element
+
+      task.setPreferences(newPrefs.elements());
+      return task;
+}
+
+  public void changeDatePrefs(NewTask task, long start, long end,
+                              InventoryPlugin inventoryPlugin, LogisticsInventoryPG invPG) {
+    Preference startPref = createTimePreference(start, inventoryPlugin.getOPlanArrivalInTheaterTime(),
+                                                inventoryPlugin.getOPlanEndTime(),
+                                                AspectType.START_TIME, inventoryPlugin.getClusterId(),
+                                                inventoryPlugin.getPlanningFactory(), invPG);
+    Preference endPref = createTimePreference(end, inventoryPlugin.getOPlanArrivalInTheaterTime(),
+                                              inventoryPlugin.getOPlanEndTime(),
+                                              AspectType.END_TIME, inventoryPlugin.getClusterId(),
+                                              inventoryPlugin.getPlanningFactory(), invPG);
+
+    Enumeration origPrefs = task.getPreferences();
+    Preference currentPref, copiedPref;
+    Vector newPrefs = new Vector();
+    while (origPrefs.hasMoreElements()) {
+      currentPref = (Preference) origPrefs.nextElement();
+      if (! (currentPref.getAspectType() == AspectType.START_TIME ||
+          currentPref.getAspectType() == AspectType.END_TIME)) {
+        copiedPref = inventoryPlugin.getPlanningFactory().
+            newPreference(currentPref.getAspectType(),
+                          (ScoringFunction)currentPref.getScoringFunction().clone());
+        newPrefs.add(copiedPref);
+      }
+    }
+    newPrefs.add(startPref);
+    newPrefs.add(endPref);
+    synchronized (task) {
+      task.setPreferences(newPrefs.elements());
+    }
+  }
+
+   protected Collection splitProjection(Task task, List howToSplit,
+                                       InventoryPlugin invPlugin) {
+     ArrayList newSplitTasks = new ArrayList();
+     Asset asset = task.getDirectObject();
+     Inventory inventory = invPlugin.findOrMakeInventory(asset);
+     LogisticsInventoryPG invPG = (LogisticsInventoryPG)
+         inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+     //remove the orig task from the BG - we'll re-add after the split
+     invPG.removeRefillProjection(task);
+     Iterator tsIt = howToSplit.iterator();
+     TimeSpan first = (TimeSpan) tsIt.next();
+     //first element from howToSplit is the one to reuse the allocation
+     long startOfSplit = first.getStartTime();
+     long endOfSplit = first.getEndTime();
+     TimeSpan second = (TimeSpan) tsIt.next();
+     long startOfSecondSplit = second.getStartTime();
+     long endOfSecondSplit = second.getEndTime();
+     if (task.getPlanElement() != null) {
+       changeDatePrefs((NewTask)task, startOfSplit, endOfSplit, invPlugin, invPG);
+       invPG.addRefillProjection(task);
+       invPlugin.publishChange(task);
+       //add the changed list to newSplitTasks to be sent to the ExtAlloc so it can update its estimated result
+       newSplitTasks.add(task);
+       newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
+     } else {
+       newSplitTasks.add(makeNewSplit(task, startOfSplit, endOfSplit, invPG, invPlugin, inventory));
+       newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
+     }
+     return newSplitTasks;
+   }
+
+  private Task makeNewSplit(Task task, long startOfSplit, long endOfSplit, LogisticsInventoryPG invPG,
+                            InventoryPlugin invPlugin, Inventory inventory) {
+    Task newSplitTask = copySupplyTask(task, startOfSplit, endOfSplit, invPG, invPlugin);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Made a new split task with dates of: "+ new Date(startOfSplit) + "..." + new Date(endOfSplit));
+    }
+    invPG.addRefillProjection(newSplitTask);
+    //hookup newSplitTask
+    invPlugin.publishRefillTask(newSplitTask, inventory);
+    return newSplitTask;
   }
 
 }
-
-
-
-
-
 

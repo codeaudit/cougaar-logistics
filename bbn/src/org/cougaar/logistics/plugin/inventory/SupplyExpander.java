@@ -26,45 +26,17 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
-import java.util.*;
-
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.blackboard.Transaction;
-import org.cougaar.core.component.Component;
-import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.util.UID;
-//import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
-import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
-import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.plan.Allocation;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.AllocationResultAggregator;
-import org.cougaar.planning.ldm.plan.AspectRate;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.NewPlanElement;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.NewWorkflow;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.ScoringFunction;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.TaskScoreTable;
-import org.cougaar.planning.ldm.plan.Verb;
-import org.cougaar.planning.ldm.plan.Workflow;
+import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.AllocationResultHelper;
 import org.cougaar.planning.plugin.util.PluginHelper;
-import org.cougaar.util.UnaryPredicate;
+
+import java.util.*;
 
 public class SupplyExpander extends InventoryModule implements ExpanderModule {
 
@@ -475,6 +447,12 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     Iterator subIt = sub.iterator();
     while (subIt.hasNext()) {
       PlanElement pe = (PlanElement) subIt.next();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" +
+                     inventoryPlugin.getSupplyType()+"]" +
+                     "checking AR change: " + pe.getUID()+
+                     " parent task is: " + pe.getTask().getUID());
+      }
       if (PluginHelper.updatePlanElement(pe)) {
         boolean didPubChg = inventoryPlugin.publishChange(pe);
         if (logger.isDebugEnabled()) {

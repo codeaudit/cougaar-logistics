@@ -35,12 +35,12 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.logging.LoggingServiceWithPrefix;
-import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.*;
 import org.cougaar.glm.ldm.asset.*;
-import org.cougaar.glm.plugins.FileUtils;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
@@ -55,9 +55,7 @@ import org.cougaar.planning.ldm.asset.NewTypeIdentificationPG;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.AllocationResultHelper;
 import org.cougaar.planning.plugin.util.PluginHelper;
-import org.cougaar.util.TimeSpan;
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.util.*;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -176,7 +174,6 @@ public class InventoryPlugin extends ComponentPlugin
                                             domainService = null;
                                         }
                                       });
-
 
     nodeIdService = (NodeIdentificationService)
        getServiceBroker().getService( this,
@@ -475,29 +472,12 @@ public class InventoryPlugin extends ComponentPlugin
         // Handle unprovided tasks
         HashMap providerStartDates = new HashMap();
 	HashMap providerEndDates = new HashMap();
-        getProviderDates(providerStartDates, providerEndDates);
-        Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
-                                                        Constants.Verb.Supply,
-                                                        providerStartDates,
-							providerEndDates);
-        if (!unprovidedTasks.isEmpty()){
-	  if (logger.isWarnEnabled()) {
-            logger.warn("Trying to rescind and reallocate unprovided supply refill tasks...");
-	  }
-          externalAllocator.rescindTaskAllocations(unprovidedTasks);
-          externalAllocator.allocateRefillTasks(unprovidedTasks);
-        }
-        unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
-                                             Constants.Verb.ProjectSupply,
-					     providerStartDates,
-					     providerEndDates);
-        if (!unprovidedTasks.isEmpty()){
-	  if (logger.isWarnEnabled()) {
-            logger.warn("Trying to rescind and reallocate unprovided projection refill tasks...");
-	  }
-          externalAllocator.rescindTaskAllocations(unprovidedTasks);
-          externalAllocator.allocateRefillTasks(unprovidedTasks);
-        }
+        HashMap providerAvailSchedule = relationshipScheduleMap();
+        Collection unprovidedTasks;
+        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.Supply,
+                                              providerAvailSchedule);
+        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.ProjectSupply,
+                                              providerAvailSchedule);
 
         // Handle unallocated tasks
         Collection unalloc = null;
@@ -664,6 +644,268 @@ public class InventoryPlugin extends ComponentPlugin
         }
       }
     }
+  }
+
+  protected HashMap relationshipScheduleMap() {
+    HashMap providerAvailSched = new HashMap();
+    RelationshipSchedule relSched = myOrganization.getRelationshipSchedule();
+    Role myRole = getRole(supplyType);
+    Collection relationships = relSched.getMatchingRelationships(myRole, new TimeSpan.Span(TimeSpan.MIN_VALUE,
+                                                                 TimeSpan.MAX_VALUE));
+    Iterator rit = relationships.iterator();
+    Schedule sched = null;
+
+    while (rit.hasNext()) {
+      Relationship r = (Relationship) rit.next();
+      HasRelationships hr = relSched.getOther(r);
+      //String provider;
+      if (hr instanceof Organization) {
+        if (! providerAvailSched.containsKey(hr)) {
+          sched = new ScheduleImpl();
+          sched.add(r);
+          providerAvailSched.put(hr, sched);
+          if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
+            logger.debug(" adding a provider to the map " + hr);
+          }
+        }
+        else {
+          sched = (Schedule) providerAvailSched.get(hr);
+          if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
+            logger.debug(" adding a relationship to the provider map " + hr);
+          }
+          sched.add(r);
+        }
+        if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
+          logger.debug("Time spans are " + r.getStartDate() + " - " + r.getEndDate() + hr);
+        }
+      }
+    }
+    return providerAvailSched;
+  }
+  // TODO:  may not need this
+  protected Set uniqueProviders() {
+    RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
+    Role myRole = getRole(supplyType);
+    Collection relationships = myOrgRelSched.getMatchingRelationships(myRole, new TimeSpan.Span(TimeSpan.MIN_VALUE,
+                                                                                                TimeSpan.MAX_VALUE));
+    Iterator rit = relationships.iterator();
+    Set uniqueProviders = new HashSet();
+    while (rit.hasNext()) {
+      Relationship r = (Relationship) rit.next();
+      HasRelationships hr = myOrgRelSched.getOther(r);
+      if (hr instanceof Organization) {
+        uniqueProviders.add(hr);
+      }
+    }
+    return uniqueProviders;
+  }
+
+
+  private class EnclosedPredicate implements UnaryPredicate {
+    private RelationshipSchedule schedule;
+    private Role role;
+    HasRelationships other;
+    long start, end;
+
+    public EnclosedPredicate(RelationshipSchedule schedule, Role role, HasRelationships other, long start, long end) {
+      this.schedule = schedule;
+      this.role = role;
+      this.other = other;
+      this.start = start;
+      this.end = end;
+    }
+
+
+    public boolean execute(Object obj) {
+      Relationship relationship = (Relationship)obj;
+      return ((schedule.getOtherRole(relationship).equals(role)) &&
+          (schedule.getOther(relationship).equals(other)) &&
+          ((relationship.getStartTime() <= start) &&
+          (relationship.getEndTime() >= end)));
+    }
+  }
+
+  protected Collection getUncoveredTasks(Collection tasks) {
+    ArrayList uncoveredTasks = new ArrayList();
+    HashMap providersSched = relationshipScheduleMap();
+    boolean overlap;
+
+    for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
+      Task task = (Task) iterator.next();
+      overlap = false;
+      Iterator it = providersSched.values().iterator();
+      while (it.hasNext()) {
+        Schedule sched =  (Schedule) it.next();
+        if (task.getVerb().equals(Constants.Verb.ProjectSupply)) {
+          long start = TaskUtils.getStartTime(task);
+          long end = TaskUtils.getEndTime(task);
+          if (sched.getEncapsulatedScheduleElements(start, end).size() > 0 ||
+              sched.getOverlappingScheduleElements(start,end).size() > 0) {
+            overlap = true;
+          }
+        } else { // It is a Supply Task
+          if (sched.getScheduleElementsWithTime(TaskUtils.getEndTime(task)).size() > 0) {
+            overlap = true;
+          }
+        }
+        if (! overlap) {
+          uncoveredTasks.add(task);
+        }
+      }
+    }
+    return uncoveredTasks;
+  }
+
+  protected void getOverlappingTasks(Collection refill_allocations, Verb verb, HashMap providersSched) {
+     RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
+    Iterator raIt = refill_allocations.iterator();
+    ArrayList unprovidedTasks = new ArrayList();
+    ArrayList partial = new ArrayList();
+    Role myRole = getRole(supplyType);
+    while (raIt.hasNext()) {
+      Allocation alloc = (Allocation)raIt.next();
+      Task task = alloc.getTask();
+      if ((alloc != null) && (task.getVerb().equals(verb))){
+        long taskEnd = TaskUtils.getEndTime(task);
+        //if the task is totally in the past, don't touch it!
+        if (currentTimeMillis() > taskEnd) {
+          continue;
+        }
+        Organization provider  = (Organization)alloc.getAsset();
+        if (alloc.getRole() != getRole(supplyType)) {
+          if (logger.isWarnEnabled())
+            logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
+        }
+        Schedule availSched = (Schedule) providersSched.get(provider);
+
+        Date start = null;         // just a place holder
+        Collection enclosed;
+        if (availSched != null) {
+          if (verb.equals(Constants.Verb.ProjectSupply)) {
+            // only need provider from start to end - bucketSize
+            long taskStart = TaskUtils.getStartTime(task);
+            start = new Date(taskStart);
+
+            EnclosedPredicate enclosedPred = new EnclosedPredicate(myOrgRelSched, myRole, provider, taskStart, taskEnd);
+            int size = myOrgRelSched.getMatchingRelationships(enclosedPred).size();
+            //System.out.println("Task times " + new Date(taskStart) + " " + start + " size of enclosed" + size);
+            if (size == 0) {
+              //if (availSched.getEncapsulatedScheduleElements(taskStart, taskEnd - bucketSize).size() == 0) {
+              if (availSched.getOverlappingScheduleElements(taskStart, taskEnd - bucketSize).size() > 0) {
+                partial.add(task);
+              } else {
+                unprovidedTasks.add(task);
+              }
+            }
+          } else { // it is Supply Task
+            enclosed = availSched.getScheduleElementsWithTime(taskEnd);
+            if (enclosed.size() == 0) {
+              if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
+                logger.debug("Adding task to list  " + start + "  " + new Date(taskEnd) +
+                                   unprovidedTasks.size());
+              }
+              unprovidedTasks.add(task);
+            }
+          }
+        }
+      }
+    }
+    if (myOrgName.indexOf("1-35-ARBN") >= 0 && supplyType.equals("BulkPOL") && logger.isDebugEnabled()) {
+      logger.debug("number of unprovided tasks is " + unprovidedTasks.size());
+    }
+    if (!unprovidedTasks.isEmpty()){
+      if (logger.isWarnEnabled()) {
+        logger.warn("Trying to rescind and reallocate unprovided supply refill tasks...");
+      }
+      externalAllocator.rescindTaskAllocations(unprovidedTasks);
+      externalAllocator.allocateRefillTasks(unprovidedTasks);
+    }
+    if (!partial.isEmpty()) {
+      ArrayList partialsToAlloc = new ArrayList();
+      Iterator partIt = partial.iterator();
+      while (partIt.hasNext()) {
+        Task taskToSplit = (Task) partIt.next();
+        List splitTimes = getSplitTimes(taskToSplit, providersSched);
+        Collection newPartialTasks = getTaskUtils().splitProjection(taskToSplit, splitTimes, this);
+        partialsToAlloc.addAll(newPartialTasks);
+      }
+      externalAllocator.allocateRefillTasks(partialsToAlloc);
+    }
+    //return unprovidedTasks;
+  }
+
+  private List getSplitTimes(Task task, HashMap providerSched) {
+    ArrayList splits = new ArrayList();
+    long start = TaskUtils.getStartTime(task);
+    long end = TaskUtils.getEndTime(task);
+    PlanElement pe = task.getPlanElement();
+    Organization provider = null;
+    if (pe != null && pe instanceof Allocation) {
+      provider = (Organization) ((Allocation)pe).getAsset();
+    }
+    Schedule sched = (Schedule)providerSched.get(provider);
+    Collection overlaps = sched.getOverlappingScheduleElements(start, end);
+    if (overlaps.isEmpty()) {
+      logger.error("InvPlugin got no overlapping elements for task start " +
+                   new Date(start) + " end " + new Date(end) +
+                   " provider is: " + provider);
+      return splits;
+    }
+    ScheduleElement firstlap = (ScheduleElement) overlaps.iterator().next();
+    TimeSpan first = new MutableTimeSpan();
+    TimeSpan second = new MutableTimeSpan();
+    if (start >= firstlap.getStartTime()) {
+      if (logger.isDebugEnabled()) {
+        logger.debug("GetSplitTimes... task is: " + new Date (start) + " ... " +
+                     new Date(end) + "  overlapping relationship is: " +
+                     new Date(firstlap.getStartTime()) + " ... " +
+                     new Date(firstlap.getEndTime()));
+      }
+      ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
+      ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
+    } else {
+      if (logger.isDebugEnabled()) {
+        logger.debug("GetSplitTimes... task is: " + new Date (start) + " ... " +
+                     new Date(end) + "  overlapping relationship is: " +
+                     new Date(firstlap.getStartTime()) + " ... " +
+                     new Date(firstlap.getEndTime()));
+      }
+      ((NewTimeSpan)first).setTimeSpan(firstlap.getStartTime(), end);
+      ((NewTimeSpan)second).setTimeSpan(start, firstlap.getStartTime());
+    }
+    splits.add(first);
+    splits.add(second);
+    return splits;
+  }
+
+  protected List getNewTaskSplitTimes(Task task, HashMap provHashMap) {
+    ArrayList splits = new ArrayList();
+    long start = TaskUtils.getStartTime(task);
+    long end = TaskUtils.getEndTime(task);
+    Collection values = provHashMap.values();
+    Schedule tmp = new ScheduleImpl();
+    Iterator valIt = values.iterator();
+    while (valIt.hasNext()) {
+      Schedule sched = (Schedule) valIt.next();
+      tmp.addAll(sched);
+    }
+    Collection overlaps = tmp.getOverlappingScheduleElements(start, end);
+    if (overlaps.isEmpty()) {
+      return splits;
+    }
+    ScheduleElement firstlap = (ScheduleElement) overlaps.iterator().next();
+    TimeSpan first = new MutableTimeSpan();
+    TimeSpan second = new MutableTimeSpan();
+    if (start >= firstlap.getStartTime()) {
+      ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
+      ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
+    } else {
+      ((NewTimeSpan)first).setTimeSpan(firstlap.getStartTime(), end);
+      ((NewTimeSpan)second).setTimeSpan(start, firstlap.getStartTime());
+    }
+    splits.add(first);
+    splits.add(second);
+    return splits;
   }
 
   protected Collection getUnprovidedTasks(Collection refill_allocations, Verb verb,
@@ -842,7 +1084,6 @@ public class InventoryPlugin extends ComponentPlugin
 
     shortfallSummary = (IncrementalSubscription) blackboard.
 	subscribe(new ShortfallSumPredicate(getSupplyType()));
-
 
 
     //LogOPlan replacment
@@ -2258,6 +2499,36 @@ public class InventoryPlugin extends ComponentPlugin
 	      logOPlan.updateOrgActivities(orgActSubscription);
 	  }
       }
+  }
+
+  public long getNextLegalRefillTime(long today) {
+    TimeSpanSet orderedOrgActs = new TimeSpanSet(orgActSubscription);
+    Iterator orgActIt = orderedOrgActs.iterator();
+    boolean findNext=false;
+    while(orgActIt.hasNext()) {
+      OrgActivity orgAct = (OrgActivity) orgActIt.next();
+      boolean legalOrg = ((!(orgAct.getActivityType().equals(orgAct.DEPLOYMENT))) &&
+          (!(orgAct.getActivityType().equals("Transit"))));
+      if((orgAct.getStartTime() <= today) &&
+          (orgAct.getEndTime() >= today)) {
+        if(legalOrg) {
+          return today;
+        }
+        else {
+          findNext=true;
+        }
+      }
+      if(findNext && legalOrg) {
+        return orgAct.getStartTime();
+      }
+    }
+
+    if(!findNext) {
+      return today;
+    }
+    else {
+      return logOPlan.getEndTime();
+    }
   }
 
   /**

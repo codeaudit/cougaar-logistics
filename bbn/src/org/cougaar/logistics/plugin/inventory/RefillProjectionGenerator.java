@@ -26,43 +26,19 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
-import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+import org.cougaar.planning.ldm.measure.*;
+import org.cougaar.planning.ldm.plan.*;
 
-import org.cougaar.planning.ldm.measure.Count;
-import org.cougaar.planning.ldm.measure.CountRate;
-import org.cougaar.planning.ldm.measure.Duration;
-import org.cougaar.planning.ldm.measure.FlowRate;
-import org.cougaar.planning.ldm.measure.Volume;
-
-import org.cougaar.planning.ldm.plan.AspectRate;
-import org.cougaar.planning.ldm.plan.AspectScorePoint;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.ScoringFunction;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.TimeAspectValue;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
 
-/** The Refill Projection Generator Module is responsible for generating 
+/** The Refill Projection Generator Module is responsible for generating
  *  projection refill tasks.  These projections will be calculated by
  *  time shifting the projections from each customer and summing the
  *  results.
@@ -209,11 +185,11 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       while(toCut.hasNext()) {
 	  Task taskToCut = (Task) toCut.next();
 	  if (taskToCut != null) {
-	      Preference new_end = getTaskUtils().createRefillTimePreference(cutoffTime, 
+	      Preference new_end = getTaskUtils().createTimePreference(cutoffTime,
 							      inventoryPlugin.getOPlanArrivalInTheaterTime(),
 							      inventoryPlugin.getOPlanEndTime(),
-							      AspectType.END_TIME, thePG, 
-							      inventoryPlugin.getPlanningFactory());
+							      AspectType.END_TIME, inventoryPlugin.getClusterId(),
+							      inventoryPlugin.getPlanningFactory(), thePG);
 	      ((NewTask)taskToCut).setPreference(new_end);
 	      inventoryPlugin.publishChange(taskToCut);
 	      thePG.updateRefillProjection(taskToCut);
@@ -477,8 +453,12 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
-    p_start = getTaskUtils().createRefillTimePreference(start, earliest, inventoryPlugin.getOPlanEndTime(), AspectType.START_TIME, thePG, inventoryPlugin.getPlanningFactory());
-    p_end = getTaskUtils().createRefillTimePreference(end, earliest, inventoryPlugin.getOPlanEndTime(), AspectType.END_TIME, thePG, inventoryPlugin.getPlanningFactory());
+    p_start = getTaskUtils().createTimePreference(start, earliest, inventoryPlugin.getOPlanEndTime(),
+                                                  AspectType.START_TIME, inventoryPlugin.getClusterId(),
+                                                  inventoryPlugin.getPlanningFactory(), thePG);
+    p_end = getTaskUtils().createTimePreference(end, earliest, inventoryPlugin.getOPlanEndTime(),
+                                                AspectType.END_TIME, inventoryPlugin.getClusterId(),
+                                                inventoryPlugin.getPlanningFactory(), thePG);
     p_qty = createRefillRatePreference(qty, thePG.getBucketMillis());
     prefs.add(p_start);
     prefs.add(p_end);
@@ -587,7 +567,6 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     }
     return homeGeoloc;
   }
-
 
 }
     

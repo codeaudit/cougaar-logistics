@@ -30,19 +30,9 @@ import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
-import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.measure.Count;
-import org.cougaar.planning.ldm.measure.Duration;
-import org.cougaar.planning.ldm.measure.Mass;
-import org.cougaar.planning.ldm.measure.Rate;
-import org.cougaar.planning.ldm.measure.Scalar;
-import org.cougaar.planning.ldm.measure.Volume;
+import org.cougaar.planning.ldm.asset.*;
+import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
@@ -305,8 +295,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Vector prefs = new Vector();
     prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
-    prefs.addElement(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
-    prefs.addElement(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
+    prefs.addElement(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
+    prefs.addElement(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
 
     newTask.setPreferences(prefs.elements());
     Vector childPhrases = createPrepPhrases(consumer, parentTask, end);
@@ -652,11 +642,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   protected void setStartTimePreference(NewTask task, long start) {
-    task.setPreference(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
+    task.setPreference(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
   }
 
   protected void setEndTimePreference(NewTask task, long end) {
-    task.setPreference(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
+    task.setPreference(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
   }
 
   private String printProjection(String msg, Task task) {

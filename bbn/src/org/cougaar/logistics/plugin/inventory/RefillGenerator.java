@@ -136,7 +136,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
         int startBucket = thePG.convertTimeToBucket(start, false);
         // refill time is start + 1 bucket (k+1)
-        int refillBucket = startBucket + 1;
+        int refillBucket =  nextLegalRefillBucket(thePG, startBucket);
         // max lead day is today + maxLeadTime
         //int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
         //addNDays(today, maxLeadTime), false);
@@ -303,7 +303,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
           }
           //reset the buckets
           startBucket = refillBucket;
-          refillBucket = startBucket + 1;
+          refillBucket = nextLegalRefillBucket(thePG, startBucket);
         }
         // Set the target levels for projection period here since very similar
         // calculations are done for both projection and refill period.
@@ -316,6 +316,29 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         inventoryPlugin.disposeOfUnusedMILTask(anInventory, newRefills.isEmpty());
       } // end of if not level 2 inventory
     } // done going through inventories
+  }
+
+  public int nextLegalRefillBucket(LogisticsInventoryPG thePG,
+                                   int startBucket) {
+    int refillBucket = startBucket + 1;
+
+    long refillTime = thePG.convertBucketToTime(refillBucket);
+    long nextLegalRefill = inventoryPlugin.getNextLegalRefillTime(refillTime);
+    if(refillTime < nextLegalRefill) {
+      int nextLegalRefillBucket = thePG.convertTimeToBucket(nextLegalRefill,false);
+      if(logger.isDebugEnabled()) {
+        logger.debug("Refill Time is " + new Date(refillTime) + "==bucket(" + refillBucket + ") and next legal refill time is " + new Date(nextLegalRefill) + "==bucket(" + nextLegalRefillBucket + ")");
+      }
+
+      /****
+       if((getOrgName().startsWith("159-")) ||
+       (getOrgName().startsWith("158-"))) {
+       logger.warn("Refill Time is " + new Date(refillTime) + "==bucket(" + refillBucket + ") and next legal refill time is " + new Date(nextLegalRefill) + "==bucket(" + nextLegalRefillBucket + ")");
+       }
+       **/
+      refillBucket = nextLegalRefillBucket;
+    }
+    return refillBucket;
   }
 
   /** Make a Refill Task
@@ -339,7 +362,9 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     // create preferences
     Vector prefs = new Vector();
     Preference p_end,p_qty;
-    p_end = createRefillTimePreference(endDay, today, thePG);
+    p_end = getTaskUtils().createTimePreference(endDay, today, inventoryPlugin.getOPlanEndTime(),
+                                                AspectType.END_TIME, inventoryPlugin.getClusterId(),
+                                                inventoryPlugin.getPlanningFactory(), thePG);
     p_qty = createRefillQuantityPreference(quantity);
     prefs.add(p_end);
     prefs.add(p_qty);
@@ -379,45 +404,6 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     }
 
     return newRefill;
-  }
-
-  /** Utility method to create the Refill tasks time preference
-   *  Use a Piecewise Linear scoring function - see the IM desing doc
-   *  for details.
-   *  @param bestDay The time representation of the desired result
-   *  @param today The time representation of today or now
-   *  @return Preference  The new time preference
-   **/
-  protected Preference createRefillTimePreference(long bestDay, long today, LogisticsInventoryPG thePG) {
-    //TODO - really need last day in theatre from an OrgActivity -
-    long end = inventoryPlugin.getOPlanEndTime();
-    double bucketsBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
-    //Use .0033 as a slope for now
-    double late_score = .0033 * bucketsBetween;
-    // define alpha .25
-    double alpha = .25;
-    Vector points = new Vector();
-
-    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME, today), alpha);
-    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
-//                                                        alpha, AspectType.END_TIME);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME,
-                                                                                  bestDay+thePG.getBucketMillis()),
-                                                       alpha);
-    end = getTimeUtils().addNDays(bestDay, 20);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(AspectType.END_TIME, end),
-                                                   (alpha + late_score));
-
-    points.addElement(earliest);
-    points.addElement(best);
-    points.addElement(first_late);
-    points.addElement(latest);
-    ScoringFunction endTimeSF = ScoringFunction.
-            createPiecewiseLinearScoringFunction(points.elements());
-    return inventoryPlugin.getPlanningFactory().
-            newPreference(AspectType.END_TIME, endTimeSF);
-
   }
 
   /** Utility method to create a Refill Quantity  preference
