@@ -360,6 +360,28 @@ public class InventoryPlugin extends ComponentPlugin
 // System.out.println("Touched changed projections in " + getAgentIdentifier() +
 //                                " type is" + getSupplyType());
         }
+        // Allocate any refill tasks from previous executions that were not allocated to providers
+        // but only if we are not about to rip out previous work we have done
+        if (didOrgRelationshipsChange()) {
+//           logger.warn("ORG RELATIONSHIPS CHANGED");
+          Collection unallocRefill = null;
+          if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
+            unallocRefill = getTaskUtils().getUnallocatedTasks(refillSubscription, 
+                                                               Constants.Verb.Supply);
+            if (!unallocRefill.isEmpty()){
+              logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
+              externalAllocator.allocateRefillTasks(unallocRefill);
+            }
+          }
+          if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
+            unallocRefill = getTaskUtils().getUnallocatedTasks(refillSubscription,
+                                                               Constants.Verb.ProjectSupply);
+            if (!unallocRefill.isEmpty()) {
+              logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
+              externalAllocator.allocateRefillTasks(unallocRefill);
+            }
+          }
+        }
       }
 
       // call the Refill Generators if we have new demand
@@ -1509,6 +1531,22 @@ public class InventoryPlugin extends ComponentPlugin
           inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       thePG.rebuildCustomerHash();
     }
+  }
+
+  private boolean didOrgRelationshipsChange() {
+    boolean relSchedChange=false;
+    if (selfOrganizations.hasChanged())  {
+      Set changeReports = selfOrganizations.getChangeReports(getMyOrganization());
+      
+      Iterator crits = changeReports.iterator();
+      while(crits.hasNext()) {
+        if(crits.next() instanceof RelationshipSchedule.RelationshipScheduleChangeReport){
+          relSchedChange=true;
+          break;
+        }
+      }
+    }
+    return relSchedChange;
   }
 
   protected ExpanderModule getExpanderModule() {
