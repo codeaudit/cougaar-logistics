@@ -72,88 +72,93 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
     Iterator predList = col.iterator();
     UnaryPredicate predicate;
     // DEBUG
-    String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getParamSched() Asset is "+
-			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
-    }
+//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getParamSched() Asset is "+
+// 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
+//     }
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof ConsumerPredicate) {
 	Schedule consumerSched = 
 	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
-	}
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
+// 	}
  	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
       } else if (predicate instanceof OrgActivityPred) {
 	Schedule orgActSched = 
 	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
  	params.add(orgActSched);
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("getParamSched() OrgActSched "+orgActSched);
-	}
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("getParamSched() OrgActSched "+orgActSched);
+// 	}
       } else {
  	logger.error("getParameterSchedule: unknown predicate");
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getParamSched() MERGED "+paramSchedule);
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getParamSched() MERGED "+paramSchedule);
+//     }
     return paramSchedule;
   }
 
   public Rate getRate(Asset asset, List params) {
     Rate r = null;
     // DEBUG
-    String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
     if (params == null) {
-      logger.error("getRate() params null");
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate() params null for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+      logger.error("getRate() params null for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	   System.out.println("getRate() params null for "+
+// 			      asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
     Double qty = (Double)params.get(0);
     OrgActivity orgAct = (OrgActivity)params.get(1);
     if (orgAct == null) {
-      logger.error("getRate() orgAct null");
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate() orgAct null for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+      logger.debug("getRate() orgAct null for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	   System.out.println("getRate() orgAct null for "+
+// 			      asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
     HashMap map = (HashMap) consumptionRates.get(asset);
     if (map == null) {
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate()  no bulkpol consumption for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+      logger.error("getRate()  no packagedpol consumption for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	System.out.println("getRate()  no packagedpol consumption for "+
+// 			   asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getRate() orgAct name "+
-			 orgAct.getOpTempo()+", "+orgAct);
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getRate() orgAct name "+
+// 			 orgAct.getOpTempo()+", "+orgAct);
+//     }
     Double d = (Double) map.get(orgAct.getOpTempo().toUpperCase());
     if (d == null) {
-      logger.error("getRate() consumption rate null");
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate() consumption rate null for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-	System.out.println(" OrgACt "+orgAct);
-      }
+      logger.error("getRate() consumption rate null for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	   System.out.println("getRate() consumption rate null for "+
+// 			      asset.getTypeIdentificationPG().getNomenclature());
+// 	   System.out.println(" OrgACt "+orgAct);
+//       }
       return r;
     }
     r = CountRate.newEachesPerDay (d.doubleValue()*qty.doubleValue());
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println("getRate() Rate is  "+ r +", for "+
-			 asset.getTypeIdentificationPG().getNomenclature());
-    }
+//     if (myOrgName.indexOf("35-ARBN") >= 0) {
+//       System.out.println("getRate() Rate is  "+ r +", for "+
+// 			 asset.getTypeIdentificationPG().getNomenclature());
+//     }
     return r;
   }
 
@@ -205,11 +210,11 @@ public class PackagedPOLConsumerBG extends ConsumerBG {
 	logger.debug("parseResult() for "+newAsset+", MEI "+mei_nsn+
 		     ", DCR "+dcr+", Optempo "+optempo);
 	//DEBUG
-	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-	if (myOrgName.indexOf("35-ARBN") >= 0) {
-	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
-			     ", DCR "+dcr+", Optempo "+optempo);
-	}
+// 	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
+// 			     ", DCR "+dcr+", Optempo "+optempo);
+// 	}
       }
     }
   } // parseResults

@@ -84,7 +84,7 @@ public class RepairPartConsumerBG extends ConsumerBG {
     Iterator predList = col.iterator();
     UnaryPredicate predicate;
     // DEBUG
-    String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
 //     if (myOrgName.indexOf("35-ARBN") >= 0) {
 //       System.out.println("getParamSched() Asset is "+
 // 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
@@ -121,13 +121,13 @@ public class RepairPartConsumerBG extends ConsumerBG {
   public Rate getRate(Asset asset, List params) {
     Rate r = null;
     // DEBUG
-    String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
     if (params == null) {
       logger.error("getRate() params null");
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate() params null for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	System.out.println("getRate() params null for "+
+// 			   asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
     Double qty = (Double)params.get(0);
@@ -136,7 +136,7 @@ public class RepairPartConsumerBG extends ConsumerBG {
       logger.debug("getRate() orgAct null for "+
 		   asset.getTypeIdentificationPG().getNomenclature());
 //       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	System.out.println("getRate() orgAct null for "+
+// 	   System.out.println("getRate() orgAct null for "+
 // 			   asset.getTypeIdentificationPG().getNomenclature());
 //       }
       return r;
@@ -144,10 +144,12 @@ public class RepairPartConsumerBG extends ConsumerBG {
     int idx = parts.indexOf(asset);
     Double d = (Double)consumptionRates.get(idx);
     if (d == null) {
-      if (myOrgName.indexOf("35-ARBN") >= 0) {
-	System.out.println("getRate()  no repair part consumption for "+
-			   asset.getTypeIdentificationPG().getNomenclature());
-      }
+      logger.error("getRate() consumption rate null for "+
+		   asset.getTypeIdentificationPG().getNomenclature());
+//       if (myOrgName.indexOf("35-ARBN") >= 0) {
+// 	   System.out.println("getRate()  no repair part consumption for "+
+// 			   asset.getTypeIdentificationPG().getNomenclature());
+//       }
       return r;
     }
 
@@ -215,7 +217,7 @@ public class RepairPartConsumerBG extends ConsumerBG {
 	logger.debug("parseResult() for part "+i+" "+newAsset+", MEI "+mei_nsn+
 		     ", DCR "+dcr+", Optempo "+optempo);
 	//DEBUG
-	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
+// 	String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
 // 	if (myOrgName.indexOf("35-ARBN") >= 0) {
 // 	  System.out.println("parseResult() for "+newAsset+", MEI "+mei_nsn+
 // 			     ", DCR "+dcr+", Optempo "+optempo);
