@@ -276,7 +276,7 @@ public class InventoryUIFrame extends JFrame
       logger.error("Error creating default directory " + defaultSaveCSVPath, ex);
     }
     if (inventory != null) {
-      String fileID = defaultSaveCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/", "-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
+      String fileID = defaultSaveCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/", "-")).replaceAll(":","-") + "-" + formatTimeStamp(new Date(), false) + ".csv";
       System.out.println("Save to file: " + fileID);
       fileChooser.setSelectedFile(new File(fileID));
     }
