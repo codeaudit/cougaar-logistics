@@ -29,6 +29,7 @@ import=org.cougaar.logistics.plugin.inventory.InventoryPlugin,\
 [LogisticsInventoryPG]
 slots=Asset resource, \
       double capacity, \
+      boolean fillToCapacity, \
       double initialLevel, \
       boolean isLevel2, \
       Organization org
