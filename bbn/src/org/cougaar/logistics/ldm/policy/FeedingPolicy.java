@@ -43,28 +43,36 @@ public class FeedingPolicy extends Policy {
   public RangeRuleParameterEntry[] getARationPolicyRanges() {
     RangeRuleParameterEntry[] entry = EMPTY_RANGE_ENTRY;
     RangeRuleParameter param = (RangeRuleParameter) Lookup(A_RATION_POLICY);
-    param.getRanges();
+    if (param != null) {
+    entry = param.getRanges();
+    }
     return entry;
   }
 
   public RangeRuleParameterEntry[] getEnhancementsPolicyRanges() {
     RangeRuleParameterEntry[] entry = EMPTY_RANGE_ENTRY;
     RangeRuleParameter param = (RangeRuleParameter) Lookup(ENHANCEMENTS_POLICY);
+    if (param != null) {
     entry = param.getRanges();
+    }
     return entry;
   }
 
   public RangeRuleParameterEntry[] getMealPolicyRanges() {
     RangeRuleParameterEntry[] entry = EMPTY_RANGE_ENTRY;
     RangeRuleParameter param = (RangeRuleParameter) Lookup(MEAL_POLICY);
+    if (param != null) {
     entry = param.getRanges();
+    }
     return entry;
   }
 
   public RangeRuleParameterEntry[] getWaterPolicyRanges() {
     RangeRuleParameterEntry[] entry = EMPTY_RANGE_ENTRY;
     RangeRuleParameter param = (RangeRuleParameter) Lookup(BOTTLEDWATER_POLICY);
+    if (param != null) {
     entry = param.getRanges();
+    }
     return entry;
   }
 
@@ -145,7 +153,9 @@ public class FeedingPolicy extends Policy {
   public RangeRuleParameterEntry[] getRules() {
     RangeRuleParameterEntry[] entry = EMPTY_RANGE_ENTRY;
     RangeRuleParameter param = (RangeRuleParameter) Lookup(RULES);
+    if (param != null) {
     entry = param.getRanges();
+    }
     return entry;
   }
 
