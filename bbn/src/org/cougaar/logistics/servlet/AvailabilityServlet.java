@@ -208,7 +208,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
   }
 
   private List getProviderRoles() {
-    Collection capabilites = getMyCapabilities();
+    Collection capabilites = getProviderCapabilities();
     List roles = new ArrayList();
     for (Iterator iterator = capabilites.iterator(); iterator.hasNext();) {
       ProviderCapability pc = (ProviderCapability) iterator.next();
@@ -368,7 +368,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     }
   };
 
-  public Collection getMyCapabilities() {
+  public Collection getProviderCapabilities() {
     blackboard.openTransaction();
     Collection capCollect = blackboard.query(capabilitiesPred);
     blackboard.closeTransaction();
