@@ -420,6 +420,10 @@ public class Controller extends Thread implements ResultHandler{
   protected synchronized int getLargestRunNumber(){
     int ret=0;
     try{
+      if (dbConnection.isClosed()) {
+	dbConnection=getNewDBConnection(dgConfig.getDBConfig());
+      }
+
       Statement s=dbConnection.createStatement();
       if(s==null){
 	logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
@@ -439,7 +443,8 @@ public class Controller extends Thread implements ResultHandler{
       logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
 			"Could not obtain largest run number",e);
       logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
-			"Connection was " + dbConnection);
+			"Connection was " + dbConnection + 
+			" is closed " + dbConnection.isClosed());
       e.printStackTrace();
     }
     return ret;
