@@ -75,6 +75,9 @@ public class InventoryDemandChart extends InventoryBarChart {
     public final static String DEMAND_PROJ_ARS =
     	LogisticsInventoryFormatter.COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG;
 
+    public InventoryDemandChart() {
+	initialize("Demand",false);
+    }
 
     public InventoryDemandChart(boolean initialDisplayCDay) {
 	initialize("Demand",initialDisplayCDay);
