@@ -160,7 +160,7 @@ public class LogisticsInventoryFormatter {
 	    taskStr = taskStr + taskUtils.getDailyQuantity(aTask);
 	}
 	catch(ClassCastException e) {
-	    System.out.println("Formatter:Problem task and the print out is :\n" + taskUtils.taskDesc(aTask));
+	    logger.error("Formatter:Problem task and the print out is :\n" + taskUtils.taskDesc(aTask));
 	    throw e;
 	}
 	writeln(taskStr);
@@ -474,44 +474,44 @@ public class LogisticsInventoryFormatter {
 	ArrayList projSupplyList = buildParentTaskArrayList(projWithdrawList);
 
 	writeNoCycleLn("SUPPLY TASKS:START");
-	System.out.println("SUPPLY TASKS:START");
+	logger.debug("SUPPLY TASKS:START");
 	excelLogNonProjections(supplyList,aCycleStamp);
 	writeNoCycleLn("SUPPLY TASKS:END");
 	writeNoCycleLn("WITHDRAW TASKS:START");
-	System.out.println("WITHDRAW TASKS:START");
+	logger.debug("WITHDRAW TASKS:START");
 	excelLogNonProjections(withdrawList,aCycleStamp);
 	writeNoCycleLn("WITHDRAW TASKS:END");
 	writeNoCycleLn("PROJECTSUPPLY TASKS:START");
-	System.out.println("PROJECTSUPPLY TASKS:START");
+	logger.debug("PROJECTSUPPLY TASKS:START");
 	excelLogProjections(projSupplyList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTSUPPLY TASKS:END");
 	writeNoCycleLn("PROJECTWITHDRAW TASKS:START");
-	System.out.println("PROJECTWITHDRAW TASKS:START");
+	logger.debug("PROJECTWITHDRAW TASKS:START");
 	excelLogProjections(projWithdrawList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTWITHDRAW TASKS:END");
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASKS:START");
-	System.out.println("COUNTED PROJECTWITHDRAW TASKS:START");
+	logger.debug("COUNTED PROJECTWITHDRAW TASKS:START");
 	excelLogProjections(countedProjWithdrawList,true,aCycleStamp);
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASKS:END");
 
 	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS :START");
-	System.out.println("SUPPLY TASK ALLOCATION RESULTS :START");
+	logger.debug("SUPPLY TASK ALLOCATION RESULTS :START");
 	excelLogARs(supplyList,false,aCycleStamp);
 	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("WITHDRAW TASK ALLOCATION RESULTS :START");
-	System.out.println("WITHDRAW TASK ALLOCATION RESULTS :START");
+	logger.debug("WITHDRAW TASK ALLOCATION RESULTS :START");
 	excelLogARs(withdrawList,false,aCycleStamp);
 	writeNoCycleLn("WITHDRAW TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("PROJECTSUPPLY TASK ALLOCATION RESULTS :START");
-	System.out.println("PROJECTSUPPLY TASK ALLOCATION RESULTS :START");
+	logger.debug("PROJECTSUPPLY TASK ALLOCATION RESULTS :START");
 	excelLogARs(projSupplyList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTSUPPLY TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
-	System.out.println("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
+	logger.debug("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
 	excelLogARs(projWithdrawList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
-	System.out.println("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
+	logger.debug("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
 	excelLogARs(countedProjWithdrawList,true,aCycleStamp);
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
 
