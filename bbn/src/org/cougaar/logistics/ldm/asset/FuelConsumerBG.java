@@ -162,7 +162,8 @@ public class FuelConsumerBG extends ConsumerBG {
       Vector result = parentPlugin.lookupAssetConsumptionRate(myPG.getMei(), supplyType, 
 							      myPG.getService(), myPG.getTheater());
       if (result == null) {
-	logger.error("getConsumed(): Database query returned EMPTY result set");
+	logger.debug("getConsumed(): Database query returned EMPTY result set for "+
+		     myPG.getMei()+", "+supplyType););
       } else {
 	parseResults(result);
       }
