@@ -81,10 +81,10 @@ public class RefillGenerator extends InventoryModule {
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       Inventory anInventory = (Inventory) tiIter.next();
-      //LogisticsInventoryBG theBG = (LogisticsInventoryBG)anInventory.getLogisticsInventoryPG().
-      //  getLogisticsInventoryBG();
+      LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
+        searchForPropertyGroup(LogisticsInventoryPG.class);
       //clear the refills
-      //theBG.clearRefillTasks(new Date(now));
+      thePG.clearRefillTasks(new Date(today));
 
       //ask the bg (or another module) what the reorder level is
       //int reorderLevel = theBG.getReorderLevel();
@@ -92,15 +92,22 @@ public class RefillGenerator extends InventoryModule {
       //pick a starting day - today + advanceOrderTime + 1
       long refillDay = getTimeUtils().addNDays(today, advanceOrderTime + 1);
       
-      //ask the bg for the inventory level for that day.
+      //ask the bg for the inventory level for that day or get a schedule for it
       //int invLevel = theBG.getInventoryLevel(refillDay);
-
+      // or...
+      //Schedule invLevelSched = thePG.getInventoryLevelsSchedule();
+      //Collection invLevels = invLevelSched.getScheduleElementsWithTime(refillDay);
+      //if (! invLevels.isEmpty()) {
+      //  //assume there is only one match for now
+      //  double invLevel = ((QuantityScheduleElement)invLevel.iterator().
+      //                       next()).getQuantity();
+      
       //if the inv level is below the reorder level create a refill.
       //if (invLevel < reorderLevel) {
       //  create the refills
       while (refillDay < maxLeadDay) {
         double aRefill = generateRefill(refillDay, orderFrequency);
-        //  add refill to local inventory count
+        //  TODO...add refill to local inventory count
         // make a task for this refill and publish it to glue plugin
         createRefillTask(aRefill, refillDay, anInventory, today);
         refillDay = getTimeUtils().addNDays(refillDay, orderFrequency);
