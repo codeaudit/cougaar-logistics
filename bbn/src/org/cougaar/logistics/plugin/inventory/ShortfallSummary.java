@@ -140,6 +140,30 @@ public class ShortfallSummary implements UniqueObject, java.io.Serializable, Pub
       return removedSomething;
   }
 
+  public boolean hasPercentShortfallAbove(int thresholdPercent) {
+    Iterator invIt = getShortfallInventories().iterator();
+    while(invIt.hasNext()) {
+      ShortfallInventory shortInv = (ShortfallInventory) invIt.next();
+      if((shortInv.getUnexpected() &&
+	 (shortInv.getMaxPercentShortfall() > thresholdPercent))) {
+	  return true;
+      }
+    }
+    return false;
+  }
+
+  public int getNumShortfallPeriodInvs() {
+    int ctr=0;
+    Iterator invIt = getShortfallInventories().iterator();
+    while(invIt.hasNext()) {
+      ShortfallInventory shortInv = (ShortfallInventory) invIt.next();
+      if((shortInv.getUnexpected()) &&  (shortInv.getShortfallPeriods().size() > 0)) {
+	  ctr++;
+      }
+    }
+    return ctr;
+  }
+
   public Collection getShortfallInventories() {
       return shortfallInventories.values();
   }
