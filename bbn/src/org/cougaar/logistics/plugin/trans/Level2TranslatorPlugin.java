@@ -62,7 +62,7 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
 
   private String supplyType;
-  private boolean doTranslate = false;
+  private boolean doTranslate = true;
 
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
