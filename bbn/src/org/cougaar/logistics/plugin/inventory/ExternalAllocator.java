@@ -132,10 +132,11 @@ public class ExternalAllocator extends InventoryModule {
 	else {
 	    String itemId = task.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
 	    if (getTaskUtils().isProjection(task)) {
-		logger.error("No "+providerRole+", during "+getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
-			   getTimeUtils().dateString(TaskUtils.getEndTime(task)));
+		logger.error("No "+providerRole+" for task " + task.getUID() + ", during ["+getTimeUtils().dateString(getTaskUtils().getStartTime(task))+
+			     "-" +
+			   getTimeUtils().dateString(TaskUtils.getEndTime(task)) +"]");
 	    } else {
-		logger.error("No "+providerRole+", during "+getTimeUtils().dateString(getTaskUtils().getEndTime(task)));
+		logger.error("No "+providerRole+" for task " + task.getUID() + ", during "+getTimeUtils().dateString(getTaskUtils().getEndTime(task)));
 	    }
 	    // prevents same error message from being printed many times.
 	    if (!noResupply.contains(itemId)) {
