@@ -35,11 +35,13 @@ import org.cougaar.util.log.Logger;
 
 import javax.swing.*;
 
-/**
+// This utility class could theoretically go in the util module.
+// Note that this class is used in the datagrabber module,
+// in the SD UI: RelationshipUILauncherFrame.java
 
+/**
  * Creates connection between client and XML Plan Server.
  */
-
 public class ConnectionHelper {
   private URL url;
   private URLConnection connection;
