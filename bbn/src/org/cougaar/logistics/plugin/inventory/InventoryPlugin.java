@@ -78,13 +78,9 @@ public class InventoryPlugin extends ComponentPlugin {
   private boolean touchedProjections;
   private String supplyType;
   private String inventoryFile;
-  private UnaryPredicate dueOutPredicate;
-  private ProjectionWeight projectionWeight;
-  private boolean fillToCapacity;
-  private boolean maintainAtCapacity;
-  private LDMService ldmService = null;
+//   private boolean fillToCapacity; Will be added bug #1482
+//   private boolean maintainAtCapacity; Will be added bug #1482
   private DetReqAggHandler detReqHandler;
-  private boolean configured = false;
   private Organization myOrganization;
   private String myOrgName;
   private SupplyExpander supplyExpander;
@@ -119,8 +115,6 @@ public class InventoryPlugin extends ComponentPlugin {
   private InventoryPolicy inventoryPolicy = null;
   private int criticalLevel = 3;
   private int reorderPeriod = 3;
-  private int handlingTime = 0;
-  private int transportTime = 1;
   private int bucketSize = 1;
 
   public void load() {
@@ -689,9 +683,12 @@ public class InventoryPlugin extends ComponentPlugin {
 					aggMILSubscription);
       }
     }
-    if (inventory == null) logger.debug("Inventory is null for "+item);
-    else logger.debug("findOrMakeInventory(), CREATED inventory bin for: "+
-		      AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
+    if (inventory == null) {
+      logger.debug("Inventory is null for "+item);
+    } else {
+      logger.debug("findOrMakeInventory(), CREATED inventory bin for: "+
+		   AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
+    }
     return inventory;
   }
   
@@ -1022,9 +1019,9 @@ public class InventoryPlugin extends ComponentPlugin {
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
     if (logOPlan == null)
       logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
-    System.out.println("Critical Level is "+criticalLevel);
-    System.out.println("Reorder Period is "+reorderPeriod);
-    System.out.println("Days per bucket is "+bucketSize);
+    logger.error("Critical Level is "+criticalLevel);
+    logger.error("Reorder Period is "+reorderPeriod);
+    logger.error("Days per bucket is "+bucketSize);
   }
 
   private void testBG() {
@@ -1034,7 +1031,7 @@ public class InventoryPlugin extends ComponentPlugin {
     cycleStamp = (new Date()).getTime();
     while (inv_it.hasNext()) {
       inv = (Inventory)inv_it.next();
-      System.out.println("***"+inv.getItemIdentificationPG().getItemIdentification());
+      logger.error("***"+inv.getItemIdentificationPG().getItemIdentification());
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       logInvPG.takeSnapshot(inv);
       if(logToCSV) {
