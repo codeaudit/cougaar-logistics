@@ -41,8 +41,13 @@ public class InventoryLevelGenerator extends InventoryModule {
   protected void calculateInventoryLevels(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
     //calculate inventory levels for today through start (today + OST)
     while (startBucket <= endBucket) {
-      double level = thePG.getLevel(startBucket) -
-	thePG.getActualDemand(startBucket + 1);
+      double level;
+      if (startBucket == 0) {
+        level = thePG.getLevel(0);
+      } else {
+        level = thePG.getLevel(startBucket - 1) -
+          thePG.getActualDemand(startBucket);
+      }
       double committedRefill = findCommittedRefill(startBucket, thePG);
       thePG.setLevel(startBucket, (level + committedRefill) );
       startBucket = startBucket + 1;
