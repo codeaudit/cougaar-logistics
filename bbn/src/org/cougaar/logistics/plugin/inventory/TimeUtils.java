@@ -64,6 +64,10 @@ public class TimeUtils {
 	return (long)((int)(time/MSEC_PER_DAY)+n_days)*MSEC_PER_DAY;
     }
 
+  public static long subtractNDays(long time, int n_days) {
+    return (long)((int)(time/MSEC_PER_DAY)-n_days)*MSEC_PER_DAY;
+  }
+
     public static String dateString () {
 	return dateString(new Date());
     }

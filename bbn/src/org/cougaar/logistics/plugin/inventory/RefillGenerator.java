@@ -75,8 +75,9 @@ public class RefillGenerator extends InventoryModule {
 
   public void calculateRefills(ArrayList touchedInventories, int advanceOrderTime,
                                     int orderFrequency, int maxLeadTime) {
-    //should we push now to the end of today?
-    long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
+    //Should we push now to the end of today? For now we WILL NOT.
+    //long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getCurrentTimeMillis());
+    long today = inventoryPlugin.getCurrentTimeMillis();
     long maxLeadDay = getTimeUtils().addNDays(today, maxLeadTime);
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
