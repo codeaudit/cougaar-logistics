@@ -41,6 +41,7 @@ import java.sql.ResultSet;
 import java.sql.DatabaseMetaData;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
@@ -85,13 +86,14 @@ public class Validator{
     t.add(new MissingPeopleTest(dbConfig));
     t.add(new MissingCargoTest(dbConfig));
     t.add(new TotalPeopleTest(dbConfig,true));
+    t.add(new ManifestInfo(dbConfig));
     t.add(new UnitCargoAmountTest(dbConfig,true));
     t.add(new TotalPeopleTest(dbConfig,false));
     t.add(new UnitCargoAmountTest(dbConfig,false));
     t.add(new UnitCargoByClassTest(dbConfig,false, false));
     t.add(new UnitCargoByClassTest(dbConfig,false, true));
-    t.add(new UnitCargoByClassTest(dbConfig,true,  false));
-    t.add(new UnitCargoByClassTest(dbConfig,true,  true));
+    //    t.add(new UnitCargoByClassTest(dbConfig,true,  false));
+    //    t.add(new UnitCargoByClassTest(dbConfig,true,  true));
     t.add(new CargoDimensionTest(dbConfig));
     t.add(new CargoDensityTest(dbConfig));
     t.add(new CargoSizeTest(dbConfig, CargoSizeTest.BIGGER_THAN_MILVAN));
@@ -106,14 +108,13 @@ public class Validator{
     t.add(new AssetOriginationTest(dbConfig,false));
     t.add(new RouteEndpointTest(dbConfig));
     t.add(new RepeatNomenclatureTest(dbConfig));
-    t.add(new TonnageInfo(dbConfig,false,false,false,false));
+    // t.add(new TonnageInfo(dbConfig,false,false,false,false));
     t.add(new TonnageInfo(dbConfig,false,true,false,false));
     t.add(new TonnageInfo(dbConfig,false,true,true,false));
-    //    t.add(new TonnageInfo(dbConfig,false,true,true,true));
-    t.add(new TonnageInfo(dbConfig,true,false,false,false));
+    // t.add(new TonnageInfo(dbConfig,false,true,true,true));
+    // t.add(new TonnageInfo(dbConfig,true,false,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,true,false));
-    t.add(new ManifestInfo(dbConfig));
     //    t.add(new TonnageInfo(dbConfig,true,true,true,true));
     //    t.add(new TonnageInfo(dbConfig,false,false,false,true));
     //    t.add(new TonnageInfo(dbConfig,false,true,false,true));
@@ -130,8 +131,8 @@ public class Validator{
     t.add(new AvgTonnageInfo(dbConfig,false,false,false,true));
     t.add(new AvgTonnageInfo(dbConfig,false,true,false,true));
     */
-    t.add(new PeopleInfo(dbConfig,true));
-    t.add(new MissionInfo(dbConfig,true));
+    //  t.add(new PeopleInfo(dbConfig,true));
+    //  t.add(new MissionInfo(dbConfig,true));
     /*Test Missing references:*/
     /*
       MissingReferenceTest(DBConfig dbConfig,
@@ -295,7 +296,7 @@ public class Validator{
 
     t.add(new MissingReferenceTest(dbConfig,
 				   "m_homeconv",
-				   Test.RESULT_WARNING,
+				   Test.RESULT_INFO,
 				   "conveyanceinstance",
 				   "baselocid",
 				   "locations",
@@ -360,6 +361,7 @@ public class Validator{
     t.add(new OverlappingLegsTest(dbConfig));
     // t.add(new MissingLegTest(dbConfig,MissingLegTest.BY_CARRIER));
     t.add(new MissingLegTest(dbConfig,MissingLegTest.BY_ASSET));
+    Collections.sort (t);
     tests=(Test[])t.toArray(new Test[0]);
   }
 
