@@ -1,14 +1,14 @@
 /*
 * <copyright>
-*  
+*
 *  Copyright 1997-2004 BBNT Solutions, LLC
 *  under sponsorship of the Defense Advanced Research Projects
 *  Agency (DARPA).
-* 
+*
 *  You can redistribute this software and/or modify it under the
 *  terms of the Cougaar Open Source License as published on the
 *  Cougaar Open Source Website (www.cougaar.org).
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -20,7 +20,7 @@
 *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*  
+*
 * </copyright>
 */
 
@@ -416,11 +416,13 @@ public class DemandForecastPlugin extends ComponentPlugin
     turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
-    AgentIdentificationService ais = (AgentIdentificationService) 
+    AgentIdentificationService ais = (AgentIdentificationService)
       getServiceBroker().getService(this, AgentIdentificationService.class, null);
     qrs.setAgentIdentificationService(ais);
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     if (!turnOffTaskSched) {
+      if (logger.isInfoEnabled())
+        logger.info("DemandForecastor TASK SCHEDULER ON "+ ais.getMessageAddress().toString() + getSupplyType());
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open ("demandSchedPolicy.xml");
@@ -432,7 +434,8 @@ public class DemandForecastPlugin extends ComponentPlugin
          TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
          blackboard, q, logger,"GenProjs for " + getBlackboardClientName());
     } else {
-      logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
+      if (logger.isInfoEnabled())
+        logger.info("DemandForecastor TASK SCHEDULER OFF "+ ais.getMessageAddress().toString() + getSupplyType());
      genProjTaskScheduler = new TaskScheduler
       (new GenProjPredicate (supplyType, taskUtils),
        new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
@@ -979,11 +982,11 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void rehydrateHashMaps() {
-    // Took this out because getAllTasks() is the union of all added, changed, 
-    // and removed tasks of which there are none after rehydration - 
-    // getAllTasksCollection is currently everything on the subscription. 
+    // Took this out because getAllTasks() is the union of all added, changed,
+    // and removed tasks of which there are none after rehydration -
+    // getAllTasksCollection is currently everything on the subscription.
     //    Iterator gpIt = genProjTaskScheduler.getAllTasks();
-    Collection gpTasks = genProjTaskScheduler.getAllTasksCollection(); 
+    Collection gpTasks = genProjTaskScheduler.getAllTasksCollection();
     Iterator gpIt = gpTasks.iterator();
     while (gpIt.hasNext()) {
       Task gpTask = (Task) gpIt.next();
@@ -1257,7 +1260,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
   }
 
-public class OrgActivityPredicate implements UnaryPredicate { 
+public class OrgActivityPredicate implements UnaryPredicate {
   private static final String predString = "OrgActivityPredicate";
   public boolean execute (Object o) {
     if (o instanceof OrgActivity) {
@@ -1265,7 +1268,7 @@ public class OrgActivityPredicate implements UnaryPredicate {
     }
     return false;
   }
-} 
+}
 
 
   /**
