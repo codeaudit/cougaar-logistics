@@ -49,6 +49,13 @@ import org.cougaar.core.plugin.LDMService;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
 
+/** The InventoryPlugin is the Glue of inventory management.
+ *  It handles all blackboard services for its modules, 
+ *  facilitates inter-module communication and manages the
+ *  subscriptions.  The InventoryPlugin also creates inventories.
+ *  All modules are called from the InventoryPlugin.
+ **/
+
 public class InventoryPlugin extends ComponentPlugin {
 
   private DomainService domainService;
