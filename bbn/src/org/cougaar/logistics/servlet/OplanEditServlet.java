@@ -36,12 +36,12 @@ import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.util.UID;
-import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.glm.ldm.oplan.OplanCoupon;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.oplan.TimeSpan;
 
 public class OplanEditServlet extends BaseServletComponent implements BlackboardClient {
   private static Comparator orgActivityComparator;
@@ -54,9 +54,9 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
 
   private Oplan oplan = null;
 
-  private Collection orgActivities = new ArrayList();
+  private ArrayList orgActivities = new ArrayList();
   
-  private HashSet modifiedOrgActivities = new HashSet();
+  private HashMap modifiedOrgActivities = new HashMap();
   private HashSet changedOplans = new HashSet();
 
 
@@ -163,6 +163,32 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     String startOffset;
     String endOffset;
     String select = " ";
+    OrgActivity origOrgActivity = orgActivity;
+    ChangeInfo changeInfo = (ChangeInfo) modifiedOrgActivities.get(orgActivity.getUID());
+
+    // Make sure we change the  copy so we can refresh if required.
+    // Don't want our changes on the blackboard until we publish
+    if (changeInfo == null) {
+      // Keep orig and current set of changes for publish 
+      changeInfo = new ChangeInfo(orgActivity);
+      modifiedOrgActivities.put(orgActivity.getUID(), changeInfo);
+
+      // replace entry in orgActivities so we display the changes
+      // assumes that modifications do not change the sort order 
+      OrgActivity copyOrgActivity = (OrgActivity) orgActivity.clone();
+      int index = orgActivities.indexOf(orgActivity);
+      if (index >= 0) {
+        orgActivities.set(index, copyOrgActivity);
+      } else {
+        throw new IllegalArgumentException("OrgActivity - " + 
+                                           orgActivity + 
+                                           " - not found in current set of OrgActivities.");
+      }
+
+      // Work with copy from now on
+      System.out.println("Made copy : " + copyOrgActivity + " of " + orgActivity);
+      orgActivity = copyOrgActivity;
+    } 
 
     select = request.getParameter(OPTEMPO);
     startOffset = request.getParameter(START_OFFSET);
@@ -194,7 +220,12 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     orgActivity.getTimeSpan().setStartDate(startDate);
     orgActivity.getTimeSpan().setEndDate(endDate);
 
-    modifiedOrgActivities.add(orgActivity);
+    // Save changes to changeInfo if we need to publish later on
+    changeInfo.setTimeSpan(orgActivity.getTimeSpan());
+    changeInfo.setOpTempo(orgActivity.getOpTempo());
+
+    System.out.println("Orig: " + origOrgActivity.getOpTempo() + " " + origOrgActivity.getTimeSpan());
+    System.out.println("Modified: " + orgActivity.getOpTempo() + " " + orgActivity.getTimeSpan());
     return true;
   }
 
@@ -244,11 +275,12 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       PrintWriter out, boolean refresh) {
     try {
       if ((orgActivities.size() == 0) || (refresh == true)) {
+        System.out.println("Refreshing org activities");
         blackboard.openTransaction();
-        orgActivities = blackboard.query(orgActivitiesForOplanPred(oplan));
+        orgActivities = new ArrayList(blackboard.query(orgActivitiesForOplanPred(oplan)));
         blackboard.closeTransaction();
 
-        Collections.sort((List) orgActivities, orgActivityComparator);
+        Collections.sort(orgActivities, orgActivityComparator);
       }
 
       printHtmlBegin(out);
@@ -463,10 +495,6 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     out.println("<form method=\"get\" action=\"/$" + getAgentID() + getPath() + "\">");
     out.println("<tr>");
     out.println("<td colspan=\"4\">");
-    /*
-    out.println("<input type=\"hidden\" name=\"" + ACTION_PARAM +
-                "\" value=\"" + PUBLISH + "\">\n");
-    */
     out.println("<div align=\"center\">");
     out.println("<input type=\"submit\" name=\"" + ACTION_PARAM +
                 "\" value=\"" + PUBLISH + "\">\n");
@@ -504,11 +532,23 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
   protected void publish(PrintWriter out) {
     blackboard.openTransaction();
     
-    
-    for (Iterator iterator = modifiedOrgActivities.iterator();
+    Collection changes = modifiedOrgActivities.values();
+
+    for (Iterator iterator = changes.iterator();
          iterator.hasNext();) {
-      OrgActivity orgActivity = (OrgActivity) iterator.next();
-      blackboard.publishChange(orgActivity);
+      ChangeInfo changeInfo = (ChangeInfo) iterator.next();
+      OrgActivity orgActivity = changeInfo.getOrgActivity();
+      
+      // Apply changes
+      orgActivity.setOpTempo(changeInfo.getOpTempo());
+      orgActivity.getTimeSpan().setStartDate(changeInfo.getTimeSpan().getStartDate());
+      orgActivity.getTimeSpan().setEndDate(changeInfo.getTimeSpan().getEndDate());
+
+      boolean status = blackboard.publishChange(orgActivity);
+      System.out.println("Publish status of " + status + " for " + orgActivity);
+      System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
+                         orgActivity.getTimeSpan().getStartDate() + " " +
+                         orgActivity.getTimeSpan().getEndDate());
     }
     /*
      * KLUDGE - Don't publish the coupon because the GLSInitServlet will
@@ -524,8 +564,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     
     displayPostSuccess(out);
     
-    blackboard.closeTransactionDontReset()
-      ;
+    blackboard.closeTransactionDontReset();
     modifiedOrgActivities.clear();
     orgActivities.clear();
     
@@ -605,8 +644,8 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
         return 0;
       }
 
-      TimeSpan timeSpan1 = (org.cougaar.util.TimeSpan) o1;
-      TimeSpan timeSpan2 = (org.cougaar.util.TimeSpan) o2;
+      TimeSpan timeSpan1 = ((OrgActivity) o1).getTimeSpan();
+      TimeSpan timeSpan2 = ((OrgActivity) o2).getTimeSpan();
       
       long diff = timeSpan1.getStartTime() - timeSpan2.getStartTime();
 
@@ -788,6 +827,44 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     }
   }
 
+  private static class ChangeInfo {
+    private OrgActivity myOrgActivity;
+    private String myOpTempo;
+    private TimeSpan myTimeSpan;
+
+    public ChangeInfo(OrgActivity orgActivity, String opTempo, 
+                      TimeSpan timeSpan) {
+      myOrgActivity = orgActivity;
+      myOpTempo = opTempo;
+      myTimeSpan = timeSpan;
+    }
+
+    public ChangeInfo(OrgActivity orgActivity) {
+      myOrgActivity = orgActivity;
+    }
+
+    public String getOpTempo() {
+      return myOpTempo;
+    }
+
+    public void setOpTempo(String opTempo) {
+      myOpTempo = opTempo;
+    }
+
+    public TimeSpan getTimeSpan() {
+      return myTimeSpan;
+    }
+    
+    public void setTimeSpan(TimeSpan timeSpan) {
+      myTimeSpan = timeSpan;
+    }
+
+    public OrgActivity getOrgActivity() {
+      return myOrgActivity;
+    }
+  }
+
+    
 } // end of class
 
 
