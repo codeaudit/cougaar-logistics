@@ -3,6 +3,7 @@
 <DATAFORMAT>
 <OBJECTFORMAT name="Transport" is_task="true" is_resource="false" >
 <FIELDFORMAT name="id" datatype="string" is_subobject="false" is_globalptr="false" is_list="false" is_key="true" />
+<FIELDFORMAT name="earliestArrival" datatype="datetime" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="arrival" datatype="datetime" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="departure" datatype="datetime" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="from" datatype="geoloc" is_subobject="true" is_globalptr="false" is_list="false" is_key="false" />
