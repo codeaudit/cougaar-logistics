@@ -370,11 +370,11 @@ public class WorkQueue{
 	  work=dequeWork();
 	workExists = (work!=null);
       }
-      synchronized (this) {
-	if(workExists) {
-	  moveThreadToActive(this);
-	}
+      // synchronized (this) { // second attempt to fix deadlock issues
+      if(workExists) {
+	moveThreadToActive(this);
       }
+      // }
     }
 
     protected void workDone(Result r){
