@@ -36,6 +36,7 @@ import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
+import org.cougaar.logistics.plugin.utils.LogisticsOPlanPredicate;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.utils.ConsumerPredicate;
@@ -523,13 +524,6 @@ public class DemandForecastPlugin extends ComponentPlugin
       return false;
     } // execute
   } // DetReqPredicate
-
-  /** Selects the LogisticsOPlan objects **/
-  private static class LogisticsOPlanPredicate implements UnaryPredicate {
-    public boolean execute(Object o) {
-      return o instanceof LogisticsOPlan;
-    }
-  }
 
   /**
    * Filters out tasks that already have PEs -- fix for bug #1695
