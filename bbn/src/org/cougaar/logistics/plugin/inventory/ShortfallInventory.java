@@ -42,12 +42,19 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 
 
   private String invID;
+  private String unitOfIssue;
   private int numDemandSupply=0;
   private int numResupplySupply=0;
   private int numDemandProj=0;
   private int numResupplyProj=0;
   private int numTempResupplySupply=0;
   private int numTempDemandSupply=0;
+  private int numTempResupplyProj=0;
+  private int numTempDemandProj=0;
+
+
+
+  private boolean unexpected = true;
 
   private ArrayList shortfallPeriods;
 
@@ -58,12 +65,15 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
    */
 
 
-  public ShortfallInventory (String anInvID) {
+  public ShortfallInventory (String anInvID,
+			     String uoi) {
       invID = anInvID;
+      unitOfIssue = uoi;
       shortfallPeriods = new ArrayList();
   }
   
   public String getInvID() { return invID; }
+  public String getUnitOfIssue() { return unitOfIssue; }
 
   public int getNumDemandSupply() { return numDemandSupply; }
   public int getNumResupplySupply() { return numResupplySupply; }
@@ -75,15 +85,23 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   public int getNumActual() { return numDemandSupply + numResupplySupply; }
   public int getNumTempResupplySupply() { return numTempResupplySupply; }
   public int getNumTempDemandSupply() { return numTempDemandSupply; }
+  public int getNumTempResupplyProj() { return numTempResupplyProj; }
+  public int getNumTempDemandProj() { return numTempDemandProj; }
 
   public int getNumPermShortfall() { return (getNumTotalShortfall() -
-					     getNumPermShortfall()); }
+					     getNumTempShortfall()); }
   public int getNumTempShortfall() {return (getNumTempResupplySupply() +
-					    getNumTempDemandSupply()); }
+					    getNumTempDemandSupply() +
+					    getNumTempResupplyProj() +
+					    getNumTempDemandProj()); }
   public int getNumTotalShortfall() { return ((getNumDemandSupply() +
 					       getNumResupplySupply() +
 					       getNumDemandProj() +
 					       getNumResupplyProj()));}
+  public boolean getUnexpected() { return unexpected; }
+
+  public void setUnexpected(boolean isUnexpected) { unexpected = isUnexpected; }
+
   public void setNumDemandSupply(int numDemandSupply) {
       this.numDemandSupply = numDemandSupply;
   }
@@ -102,6 +120,12 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   public void setNumTempResupplySupply(int numResupplyTemp) {
       this.numTempResupplySupply = numResupplyTemp;
   }
+  public void setNumTempDemandProj(int numDemandTemp) {
+      this.numTempDemandProj = numDemandTemp;
+  }
+  public void setNumTempResupplyProj(int numResupplyTemp) {
+      this.numTempResupplyProj = numResupplyTemp;
+  }
 
   public void addShortfallPeriod(ShortfallPeriod aPeriod) {
       this.shortfallPeriods.add(aPeriod);
@@ -109,14 +133,28 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 
   public ArrayList getShortfallPeriods() { return shortfallPeriods; }
 
+  public int getMaxPercentShortfall() {
+      int maxShortfall=0;
+      Iterator periodsIt = shortfallPeriods.iterator();
+      while(periodsIt.hasNext()) {
+	  ShortfallPeriod period = (ShortfallPeriod) periodsIt.next();
+	  maxShortfall = Math.max(maxShortfall,
+				  ((int)period.getPercentShortfall()));
+      }
+      return maxShortfall;
+  }
+
   public String toString() {
     StringBuffer sb = new StringBuffer(getInvID());
+    sb.append("\nUnitOfIssue=" + getUnitOfIssue());
     sb.append("\nNumDemand=" + getNumDemand());
     sb.append(",NumResupplySupply=" + getNumResupplySupply());
     sb.append("\nNumDemandProj=" + getNumDemandProj());
     sb.append(",NumResupplyProj=" + getNumResupplyProj());
     sb.append(",NumTempDemandSupply=" + getNumTempDemandSupply());
     sb.append(",NumTempResupplySupply=" + getNumTempResupplySupply());
+    sb.append(",NumTempDemandProj=" + getNumTempDemandProj());
+    sb.append(",NumTempResupplyProj=" + getNumTempResupplyProj());
     sb.append("\nNumPerm=" + getNumPermShortfall());
     return sb.toString();
   }
@@ -128,7 +166,9 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 	      (this.getNumDemandProj() == si.getNumDemandProj()) &&
 	      (this.getNumResupplyProj() == si.getNumResupplyProj()) &&
 	      (this.getNumTempDemandSupply() == si.getNumTempDemandSupply()) &&
-	      (this.getNumTempResupplySupply() == si.getNumTempResupplySupply()) &&
+	      (this.getNumTempResupplySupply() == si.getNumTempResupplySupply()) &&	     
+	      (this.getNumTempDemandProj() == si.getNumTempDemandProj()) &&
+	      (this.getNumTempResupplyProj() == si.getNumTempResupplyProj()) &&
 	      (hasEqualShortfallPeriods(si.getShortfallPeriods())));
   }
 
