@@ -93,6 +93,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   private GenProjExpanderIfc generateProjectionsExpander;
   //  private SchedulerModule planningScheduler;
 
+  private boolean turnOffTaskSched=false;
+
   private boolean processedDetReq = false;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
@@ -294,7 +296,15 @@ public class DemandForecastPlugin extends ComponentPlugin
     if (! genProjTaskScheduler.isEmpty()) {
       Collection removed = genProjTaskScheduler.getRemovedCollection();
       Collection added = genProjTaskScheduler.getAddedCollection();
-      TimeSpan timeSpan = genProjTaskScheduler.getCurrentTimeSpan();
+      TimeSpan timeSpan = null;
+      if(turnOffTaskSched) {
+	  //  timeSpan = new ScheduleElementImpl(oplan.getCday(),oplan.getEndDay());
+	  timeSpan = new ScheduleElementImpl(getLogOPlanStartTime(),
+					     getLogOPlanEndTime());
+      }
+      else {
+	  timeSpan = genProjTaskScheduler.getCurrentTimeSpan();
+      }
       if (! removed.isEmpty())
         processRemovedGenProjs (removed, timeSpan);
       if (! added.isEmpty())
@@ -387,7 +397,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   private void setupTaskScheduler() {
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
-    boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
+    turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService) 
