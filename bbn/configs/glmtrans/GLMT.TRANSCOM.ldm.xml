@@ -2,7 +2,7 @@
 
 <!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [ 
 <!ENTITY tankprototypes SYSTEM "TankPrototypes.ldm.xml">
-<!ENTITY ammoprototype SYSTEM "Ammo_Prototype.ldm.xml">
+<!-- <!ENTITY ammoprototype SYSTEM "Ammo_Prototype.ldm.xml"> -->
 <!ENTITY DummyPrototypes SYSTEM "DummyPrototypes.ldm.xml">
 <!ENTITY SeaportPrototypes SYSTEM "SeaportPrototypes.ldm.xml">
 <!ENTITY NetworkPrototypes SYSTEM "TransportationNetworkPrototypes.ldm.xml">
@@ -11,7 +11,9 @@
 <AssetList>
   &DummyPrototypes;
   &tankprototypes;
+<!--
   &ammoprototype;
+-->
 
   &AirportPrototypes;
   &SeaportPrototypes;

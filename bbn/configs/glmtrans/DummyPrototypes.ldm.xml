@@ -337,6 +337,7 @@
 
   <!-- ::::::::::::::::::::::::::Dummy:::::::::::::::::::::::::::: -->
 
+<!--
   <prototype name="Ammo_Prototype">
     <object class="org.cougaar.glm.ldm.asset.PhysicalAsset">
 
@@ -443,6 +444,7 @@
 
     </object>
   </prototype>
+-->
 
 <!-- useful to test moving aggregates of small items -->
 <!-- Currently any aggregate w/ an asset smaller than 1 sq/cubic foot will not get
