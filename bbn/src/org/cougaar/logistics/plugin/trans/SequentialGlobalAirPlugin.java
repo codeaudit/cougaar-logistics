@@ -642,8 +642,9 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       } else {
 	SequentialScheduleElement sse = (SequentialScheduleElement)getDependencies().elementAt(0);
 	end = sse.getStartDate();
-	early = plugin.getPrefHelper().getReadyAt(new_task);
+	//	early = plugin.getPrefHelper().getReadyAt(new_task);
 	best  = new Date(end.getTime() - plugin.bestDateBackoff);
+	early = plugin.getEarlyArrivalMiddleStep (new_task, best);
 	if (best.getTime () < early.getTime())
 	  best = early;
 			  
@@ -697,6 +698,10 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       return new_task;
     }
         
+  }
+
+  protected Date getEarlyArrivalMiddleStep (Task task, Date best) {
+    return prefHelper.getReadyAt(task);
   }
 
   protected void removePrepsFromMiddleStep (Task new_task) {

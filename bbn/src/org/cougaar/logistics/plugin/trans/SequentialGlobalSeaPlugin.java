@@ -32,6 +32,7 @@ import org.cougaar.planning.ldm.plan.Location;
 import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
 
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -130,5 +131,25 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
   /** Instantiate the Locator, which adds a LocationCallback */
   protected void makeLocator () {
     locator = new PortLocatorImpl(this, logger);
+  }
+
+     private static final double MAX_SHIP_SPEED_KNOTS = 20.0;
+     private static final long MILLIS_PER_HOUR = 60*60*1000;
+     private static final long CONUS_PLANNING_FACTOR = 12*MILLIS_PER_HOUR;
+
+  protected Date getEarlyArrivalMiddleStep (Task task, Date best) {
+    Date mostEarly = prefHelper.getReadyAt(task);
+    Distance distance = (Distance) glmPrepHelper.getIndirectObject(task, GLMTransConst.SEAROUTE_DISTANCE);
+    long approxSeaDur = (long) (distance.getNauticalMiles()/MAX_SHIP_SPEED_KNOTS); // in hours
+    long possibleEarly = best.getTime()- approxSeaDur*MILLIS_PER_HOUR;
+    
+    // if the travel time is already probably too little to do the job,
+    // just try for the original early date
+    if (possibleEarly < mostEarly.getTime())
+      possibleEarly = mostEarly.getTime();
+    else // otherwise, let's give CONUS a couple of days to do it
+      possibleEarly = mostEarly.getTime() + CONUS_PLANNING_FACTOR;
+    
+    return new Date(possibleEarly);
   }
 }
