@@ -96,6 +96,7 @@ public class InventoryPlugin extends ComponentPlugin {
   private long cycleStamp;
   private boolean logToCSV=false;
   private transient ArrayList newRefills = new ArrayList();
+  private boolean rehydrateInvs = false;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
@@ -257,7 +258,10 @@ public class InventoryPlugin extends ComponentPlugin {
 
     if ((detReqHandler.getDetermineRequirementsTask(aggMILSubscription) != null) &&
 	(logOPlan != null)) {
-      addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
+      if (rehydrateInvs) {
+        addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
+        rehydrateInvs = false;
+      }
       boolean touchedRemovedProjections = 
 	supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
@@ -398,6 +402,9 @@ public class InventoryPlugin extends ComponentPlugin {
     if (! getBlackboardService().didRehydrate()) {
       setupOperatingModes();
     } else {
+      // if we did rehydrate set a flag to rehydrate the inventories 
+      //when we are ready in the execute block
+      rehydrateInvs = true;
       Collection level2OMs = getBlackboardService().
         query(new OperatingModePredicate(supplyType, LEVEL_2_TIME_HORIZON));
       //there should only be one.
@@ -1401,6 +1408,8 @@ public class InventoryPlugin extends ComponentPlugin {
         logger.error("Missing DetermineRequirements for MaintainInventory task.");
       if (logOPlan == null)
         logger.error("Missing LogisticsOPlan object. Is the LogisticsOPlanPlugin loaded?");
+      if (myOrganization == null)
+        logger.error("Missing myorganization");
       logger.error("Critical Level is "+criticalLevel);
       logger.error("Reorder Period is "+reorderPeriod);
       logger.error("Days per bucket is "+bucketSize);
