@@ -111,9 +111,9 @@ extends BaseServletComponent
 
   protected static final String RULE_CONFIG_FILE="ShortfallAlertConfig.txt";
 
-  protected static final double DEFAULT_RED_THRESHOLD = 5;
+  protected static final double DEFAULT_RED_THRESHOLD = 4;
 
-  protected static final double DEFAULT_YELLOW_THRESHOLD = 2;
+  protected static final double DEFAULT_YELLOW_THRESHOLD = 1;
 
   protected static final int MAX_AGENT_FRAMES = 18;
 
