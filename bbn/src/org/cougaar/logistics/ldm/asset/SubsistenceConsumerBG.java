@@ -62,7 +62,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
   String supplyType = "Subsistence";
   private transient LoggingService logger;
   private LogisticsOPlan logOPlan = null;
-  private List consumedItems = null;
+  private Collection consumedItems = null;
   private FeedingPolicy feedingPolicy = null;
   private final static String BOTTLED_WATER = "NSN/8960013687383";  
   private final static String FRESH_FRUITS = "NSN/891501F768439";
@@ -357,11 +357,10 @@ public class SubsistenceConsumerBG extends ConsumerBG {
           asset = ((AggregateAsset)asset).getAsset();
         }
         String typeId = asset.getTypeIdentificationPG().getTypeIdentification();
-        consumedItems = (List) cachedDBValues.get(typeId);
+        consumedItems = (Collection) cachedDBValues.get(typeId);
         if (consumedItems == null){
-          Collection result = parentPlugin.generateRationList();
-          
-          if (result.isEmpty()) {
+          consumedItems = parentPlugin.generateRationList();
+          if (consumedItems.isEmpty()) {
             logger.debug("getConsumed(): Database query returned EMPTY result set for "+
                          myPG.getMei()+", "+supplyType);
           } else {
