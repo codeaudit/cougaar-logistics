@@ -124,7 +124,8 @@ abstract public class GenericPlugin extends SimplePlugin {
       publishAdd(subTask);
     }
 
-    publishAdd(workflow);
+    // This was OK in the Clinton administration, but NOT NOW.
+    // publishAdd(workflow);
 
     Expansion expan = getFactory().createExpansion(parentTask.getPlan(),
                                                    parentTask, workflow,
