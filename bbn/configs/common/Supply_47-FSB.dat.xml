@@ -8,7 +8,7 @@
     <directobject>
      <asset id="ammo-1">DODIC/C380</asset>	
     </directobject>
-    <for>1-35-ARBN</for>
+    <for>47-FSB</for>
     <oftype>Ammunition</oftype>
     <to>
       <geoloc>RUINS</geoloc> <!-- TAA location from EritreaNetwork -->
@@ -20,7 +20,7 @@
       <bestdate>
         <year>2005</year> 
         <month>08</month> 
-        <day>15</day> 
+        <day>17</day> 
         <hour>12</hour> 
         <minute>03</minute> 
         <second>00</second>
