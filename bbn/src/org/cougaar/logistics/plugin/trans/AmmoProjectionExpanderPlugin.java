@@ -559,7 +559,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     
     // Unique Item Identification
     NewItemIdentificationPG itemIdentificationPG = 
-      (NewItemIdentificationPG)milvan.getItemIdentificationPG();
+      //      (NewItemIdentificationPG)milvan.getItemIdentificationPG();
+      PropertyGroupFactory.newItemIdentificationPG ();
+
     //    String itemID = makeMilvanID();
     itemIdentificationPG.setItemIdentification(itemID); // redundant?
     itemIdentificationPG.setNomenclature("Milvan");
@@ -571,7 +573,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   
   protected String makeMilvanID() {
     return new String(((PluginBindingSite)getBindingSite()).getAgentIdentifier() +
-                      ":Reserved_Milvan" + getCounter());
+                      ":Reserved_" + getCounter());
   }
   
   private static int COUNTER = 0;
