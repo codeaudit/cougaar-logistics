@@ -184,7 +184,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param the PG This is the PG for the Inventory we are processing
    **/
   private void createAllocations(int todayBucket, int endBucket, 
-                                        Inventory inv, LogisticsInventoryPG thePG) {
+				 Inventory inv, LogisticsInventoryPG thePG) {
     int currentBucket = todayBucket;
     double qty = 0;
     double runningQty = 0;
@@ -192,11 +192,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     AllocationResult result = null;
     Task withdraw;
 
+    // DEBUG
+//     String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+//     String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
+
+
     // loop through the buckets in the inventory
     while (currentBucket <= endBucket) {
 
       todayRefill = findCommittedRefill(currentBucket, thePG);
       todayLevel = thePG.getLevel(currentBucket - 1) + todayRefill;
+      
 
       // First try to fill any previous deficits
       Iterator tpIt = trailingPointers.iterator();
@@ -206,17 +212,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         qty = td.getRemainingQty();
         // check the level
         if (todayLevel >= qty) {
-	    // Can completely fill known deficit
-	    fillDeficit(td,currentBucket,inv,thePG);
-	    todayLevel = todayLevel - qty;
+	  // Can completely fill known deficit
+	  fillDeficit(td,currentBucket,inv,thePG);
+	  todayLevel = todayLevel - qty;
         } else if (todayLevel==0.0){
-	    break;
+	  break;
 	} else {
-	    //this withdraw has previously had a deficit we cannot fill the deficit entirely during this bucket`
-	    //  leave the TaskDeficit in the same place on the queue -- it still needs to be filled with its old priority
-	    td.addPhase(todayLevel, currentBucket);
-	    todayLevel = 0.0;
-	    break; // nothing more to allocate
+	  //this withdraw has previously had a deficit we cannot fill the deficit entirely during this bucket`
+	  //  leave the TaskDeficit in the same place on the queue -- it still needs to be filled with its old priority
+	  td.addPhase(todayLevel, currentBucket);
+	  todayLevel = 0.0;
+	  break; // nothing more to allocate
         }
       }
       // remove any trailing pointers we filled
@@ -227,33 +233,45 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       Collection wdTasks = thePG.getActualDemandTasks(currentBucket);
       Iterator wdIter = wdTasks.iterator();
       while(wdIter.hasNext()) {
-	  withdraw = (Task)wdIter.next();
-	  qty = taskQtyInBucket(withdraw, currentBucket, thePG);
-	  // check the level
-	  if (todayLevel >= qty) {
-	      // enough inventory to fill task completely
-	      fulfillTask(withdraw,currentBucket,inv,thePG); 
-	      todayLevel = todayLevel - qty;
-	  } else {
-	      // can't fill this task totally -- create deficit on this task
-	      // if it already has a pe - rescind it 
-	      PlanElement pe = withdraw.getPlanElement();
-	      if (pe != null) inventoryPlugin.publishRemove(pe);	  
-	      TaskDeficit td = getTaskDeficit(withdraw,currentBucket,thePG);
-              // logger.debug("AA Failing task: " + getTaskUtils().taskDesc(withdraw) + " on day " + 
-//                                  new Date (thePG.convertBucketToTime(currentBucket)) + 
-//                                  " today level is " + todayLevel + " quantity is " + qty);
-	      td.addPhase(todayLevel, currentBucket);
-	      trailingPointers.add(td);
-	      // this task depletes the inventory level
-	      todayLevel = 0.0;
-	  }        
+	withdraw = (Task)wdIter.next();
+	qty = taskQtyInBucket(withdraw, currentBucket, thePG);
+	// check the level
+	if ((todayLevel - qty)>-.00000000005) {
+	  // enough inventory to fill task completely
+
+	  //  NOTE: we have had a case where todayLevel= 12.999999999999995
+	  //   and quantity = 12.999999999999998
+
+	  fulfillTask(withdraw,currentBucket,inv,thePG); 
+	  todayLevel = Math.max(0.0, todayLevel - qty);
+	} else {
+	  // can't fill this task totally -- create deficit on this task
+	  // if it already has a pe - rescind it 
+	  PlanElement pe = withdraw.getPlanElement();
+	  if (pe != null) inventoryPlugin.publishRemove(pe);	  
+	  TaskDeficit td = getTaskDeficit(withdraw,currentBucket,thePG);
+	  td.addPhase(todayLevel, currentBucket);
+	  trailingPointers.add(td);
+	  // this task depletes the inventory level
+	  todayLevel = 0.0;
+	}        
       }
       
       //when we are done going through all the tasks for the day set the level
       thePG.setLevel(currentBucket, todayLevel);
       currentBucket = currentBucket + 1;
     }
+
+    // DEBUG inventory levels
+//     if ((myOrgName.indexOf("MSB") > 0) && (myItemId.indexOf("768439") > 0)) {
+//       for(currentBucket = 1; currentBucket<180; currentBucket++){
+// 	if (thePG.convertBucketToTime(currentBucket) >= 1128643200000L) {
+// 	  System.out.println("### createAlloc Inventory Level = "+
+// 			     thePG.getLevel(currentBucket)+ " on "+
+// 			     getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket)));
+// 	}
+//       }
+//     }
 
     //when we are finished, if we have things left in trailingPointers, fail them
     Iterator tpIt = trailingPointers.iterator();
@@ -358,7 +376,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       ArrayList phases = (ArrayList)td.getAllocationPhases();
       if (phases.isEmpty()) {
         //if we totally fail
-        //System.out.println("Failing Task " + getTaskUtils().taskDesc(task));
         createFailedAllocation(task, inv);
         return;
       }
