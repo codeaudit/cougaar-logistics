@@ -67,29 +67,6 @@ public class CargoDensityTest extends CargoDimensionTest {
     return RESULT_WARNING;
   }
 
-  /**
-   * Get the result based on the table.
-   * If all the rows are the info rows (start with the bold tag)
-   * then it's not a warning.
-   **/
-  protected int determineResult(Statement s, int run) throws SQLException {
-    String sql = "SELECT COUNT(*) FROM "+getTableName(run);
-    ResultSet rs=null;
-    
-    sql = getQuery(run);
-    rs=s.executeQuery(sql);
-
-    boolean allInfoRows = true;
-    while(rs.next() && allInfoRows){
-      String nomenclature = rs.getString(1);
-      allInfoRows = !nomenclature.startsWith ("<b>");
-    }
-    if (!allInfoRows)
-      return failureLevel();
-
-    return RESULT_OK;
-  }
-
   /**for gui**/
   public String getDescription(){
     return "Cargo Density Test (cargo denser than lead)";
