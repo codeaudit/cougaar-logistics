@@ -87,7 +87,7 @@ public class InventoryDemandChart extends InventoryBarChart {
 					   DEMAND_ARS);
 
 	projDM = 
-	    new ProjectionsChartDataModel("Demand",
+	    new ProjectionsChartDataModel("Demand From Customers",
 					  DEMAND_PROJ_TASKS,
 					  DEMAND_PROJ_ARS,
 					  DEMAND_TASKS,
