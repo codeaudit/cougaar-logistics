@@ -74,7 +74,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 	assetUtils = new AssetUtils(aLogger);
     }
 
-  /** @param task
+  /** @param t the task
    *  @param type type identification string
    *  @return true if the task's OFTYPE preposition's indirect object is 
    *  an asset with nomeclature equal to 'type'.*/
@@ -90,7 +90,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return false;
   }
 
- /** @param task
+ /** @param t the task
    *  @param type type identification string
    *  @return true if the task's OFTYPE preposition's indirect object is 
    *  an string with nomeclature equal to 'type'.*/
@@ -203,6 +203,25 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
     return false;
   }
+
+
+  public boolean isMyDemandForecastProjection(Task task,String orgName) {
+    PrepositionalPhrase pp = task.getPrepositionalPhrase(Constants.Preposition.FOR);
+    if (pp == null) {
+      return false;
+    }
+    Object io = pp.getIndirectObject();
+    if (io instanceof Asset) {
+        String taskOrg = ((Asset) io).getItemIdentificationPG().getItemIdentification();
+        if(taskOrg.equals(orgName)) {
+	        pp = task.getPrepositionalPhrase(Constants.Preposition.REFILL);
+	        return (pp == null);
+        }
+      }
+    return false;
+  }
+
+
 
   /** return the preference of the given aspect type.  Returns null if
    *  the task does not have the given aspect. */
