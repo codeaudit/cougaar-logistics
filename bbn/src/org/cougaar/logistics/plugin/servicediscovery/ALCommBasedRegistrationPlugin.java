@@ -22,28 +22,15 @@
 
 package org.cougaar.logistics.plugin.servicediscovery;
 
+import org.cougaar.servicediscovery.description.AvailabilityChangeMessage;
 import org.cougaar.servicediscovery.plugin.SDCommunityBasedRegistrationPlugin;
-import org.cougaar.servicediscovery.description.StatusChangeMessage;
-import org.cougaar.logistics.plugin.utils.ALStatusChangeMessage;
+
 import java.util.Collection;
 import java.util.Iterator;
 
 public class ALCommBasedRegistrationPlugin extends SDCommunityBasedRegistrationPlugin {
 
-  protected void handleStatusChange() {
-    Collection adds = statusChangeSubscription.getAddedCollection();
-    for (Iterator iterator = adds.iterator(); iterator.hasNext();) {
-      final StatusChangeMessage statusChange = (StatusChangeMessage) iterator.next();
-
-      synchronized (statusChange) {
-	if(statusChange instanceof ALStatusChangeMessage) {
-	  statusChange.setStatus(StatusChangeMessage.COMPLETED);
-	  statusChange.setRegistryUpdated(true);
-	  getBlackboardService().publishChange(statusChange);
-	} else {
-	  super.handleStatusChange();
-	}
-      } // end of synchronized
-    } // end of for loop
+  protected void handleAvailabilityChange(AvailabilityChangeMessage availabilityChange) {
+    super.handleAvailabilityChange(availabilityChange);
   }
 }
