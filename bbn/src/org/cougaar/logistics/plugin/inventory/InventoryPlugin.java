@@ -296,8 +296,7 @@ public class InventoryPlugin extends ComponentPlugin {
                                                            getEndOfLevelTwo(), 
                                                            refillComparator);
 	  }
-	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
-					   refillComparator);
+	  refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
         } 
 	//        externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
@@ -309,9 +308,10 @@ public class InventoryPlugin extends ComponentPlugin {
         // compares previous results to new ones and leaves the old ones if they are equal.
         // note that the updates only occur if the reported result is not equal to the estimated
         // so we will not be waking up the whole chain by checking these more than once.
+	HashSet backwardFlowTouched = null;
         if (getTouchedInventories().isEmpty()) {
           supplyExpander.updateAllocationResult(expansionSubscription);
-	  HashSet backwardFlowTouched = 
+	  backwardFlowTouched = 
 	      externalAllocator.updateAllocationResult(refillAllocationSubscription); 
 	  allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
         }
@@ -320,7 +320,10 @@ public class InventoryPlugin extends ComponentPlugin {
         PluginHelper.updateAllocationResult(MITopExpansionSubscription);
         PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
 	  
-        takeInventorySnapshot(getTouchedInventories());
+	if (backwardFlowTouched != null) {
+	  takeInventorySnapshot(backwardFlowTouched);
+	}
+	takeInventorySnapshot(getTouchedInventories());
         
         // touchedInventories should not be cleared until the end of transaction
         touchedInventories.clear();
@@ -1171,6 +1174,14 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
     return changed;
+  }
+
+  public int getOrderShipTime() {
+    return inventoryPolicy.getOrderShipTime();
+  }
+
+  public int getMaxLeadTime() {
+    return inventoryPolicy.getSupplierAdvanceNoticeTime() + getOrderShipTime();
   }
 
   /** VTH operating modes */
