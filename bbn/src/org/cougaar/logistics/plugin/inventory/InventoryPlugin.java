@@ -269,8 +269,12 @@ public class InventoryPlugin extends ComponentPlugin {
 	externalAllocator.updateAllocationResult(refillAllocationSubscription);
         allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
 	supplyExpander.updateAllocationResult(expansionSubscription);
+        // update the Maintain Inventory Expansion results
+        PluginHelper.updateAllocationResult(MIExpansionSubscription);
+        PluginHelper.updateAllocationResult(MITopExpansionSubscription);
+        PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
       }
-						       
+
       takeInventorySnapshot(getTouchedInventories());
 
       // touchedInventories should not be cleared until the end of transaction
@@ -319,6 +323,15 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for ProjectWithdraw tasks created by this plugin **/
   private IncrementalSubscription projectWithdrawTaskSubscription;
 
+  /** Subscription for MaintainInventory Expansion PlanElements created by this plugin**/
+  private IncrementalSubscription MIExpansionSubscription;
+
+  /** Subscription for MaintainInventory Expansion for Top level MI task (Aggregate task) **/
+  private IncrementalSubscription MITopExpansionSubscription;
+
+  /** Subscription for DetermineRequirements of type MaintainInventory Expansion **/
+  private IncrementalSubscription DetReqInvExpansionSubscription;
+
   protected void setupSubscriptions() {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
@@ -338,6 +351,9 @@ public class InventoryPlugin extends ComponentPlugin {
     refillAllocationSubscription = (IncrementalSubscription) blackboard.subscribe(new RefillAllocPredicate(supplyType, myOrgName, taskUtils));
     expansionSubscription = (IncrementalSubscription)blackboard.subscribe(new ExpansionPredicate(supplyType, myOrgName, taskUtils));
     refillSubscription = (IncrementalSubscription)blackboard.subscribe(new RefillPredicate(supplyType, myOrgName, taskUtils));
+    MIExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new MIExpansionPredicate(supplyType, taskUtils));
+    MITopExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new MITopExpansionPredicate());
+    DetReqInvExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -427,6 +443,23 @@ public class InventoryPlugin extends ComponentPlugin {
       return false;
     }
   }
+
+  /** Grab the Expansion of DetReq MaintainInventory and update ARs **/
+  private static class DetReqInvExpansionPredicate implements UnaryPredicate {
+      private TaskUtils taskUtils;
+      public DetReqInvExpansionPredicate(TaskUtils aTaskUtils) {
+	  taskUtils = aTaskUtils;
+      }
+    public boolean execute(Object o) {
+      if (o instanceof Expansion) {
+        Task parent = ((Expansion)o).getTask();
+	if (parent.getVerb().equals(Constants.Verb.DETERMINEREQUIREMENTS)) {
+	  return taskUtils.isTaskOfType(parent, "MaintainInventory");
+	}
+      }
+      return false;
+    }
+  }
   
   /**
      Selects the per-inventory MaintainInventory tasks.
@@ -437,6 +470,25 @@ public class InventoryPlugin extends ComponentPlugin {
 	Task t = (Task) o;
 	if (t.getVerb().equals(Constants.Verb.MAINTAININVENTORY)) {
 	  return t.getDirectObject() != null; // true if this is the agg task
+	}
+      }
+      return false;
+    }
+  }
+
+  /** get the Expansion for the TOP MI task
+   * note that this means each instance for each class of supply will 
+   * be looking for the same task - but since the results are checked and only
+   * changed if there's a difference it shouldn't be too bad.
+   **/
+  private static class MITopExpansionPredicate implements UnaryPredicate {
+    public boolean execute(Object o) {
+      if (o instanceof Expansion) {
+        Task parent = ((Expansion)o).getTask();
+	if (parent.getVerb().equals(Constants.Verb.MAINTAININVENTORY)) {
+	  if ( parent.getDirectObject() == null ) {
+            return true;
+          }
 	}
       }
       return false;
@@ -453,6 +505,37 @@ public class InventoryPlugin extends ComponentPlugin {
 	if (t.getVerb().equals(Constants.Verb.MAINTAININVENTORY)) {
 	  return t.getDirectObject() == null; // true if this is not the agg task
 	}
+      }
+      return false;
+    }
+  }
+
+  /** Selects the MaintainInventory Expansions we create **/
+  private static class MIExpansionPredicate implements UnaryPredicate {
+    String supplyType;
+    TaskUtils taskUtils;
+    public MIExpansionPredicate(String type, TaskUtils utils){ 
+      supplyType = type;
+      taskUtils = utils;
+    }
+    public boolean execute(Object o) {
+      if (o instanceof Expansion) {
+        Task parent = ((Expansion)o).getTask();
+        if (parent.getVerb().equals(Constants.Verb.MAINTAININVENTORY)) {
+          Asset directObject = parent.getDirectObject();
+          if (directObject != null && directObject instanceof Inventory) {
+            LogisticsInventoryPG thePG = (LogisticsInventoryPG) ((Inventory)directObject).
+              searchForPropertyGroup(LogisticsInventoryPG.class);
+            Asset resource = thePG.getResource();
+            SupplyClassPG pg = (SupplyClassPG)resource.searchForPropertyGroup(SupplyClassPG.class);
+            if (pg != null) {
+              if (supplyType.equals(pg.getSupplyType())) {
+                //            if (taskUtils.isDirectObjectOfType(parent, supplyType)) {
+                return true;
+              }
+            }
+          }
+        }
       }
       return false;
     }
