@@ -235,9 +235,11 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	
     Expansion exp = (Expansion)spe.getParentTask().getPlanElement();
     if (exp == null) {
-      warn ("attachSubtask - task " + spe.getParentTask().getUID() + 
-	    "'s plan element is missing, so skipping trying to process subtask " + 
-	    subtask.getUID() + " must be in process of rescinds?");
+      if (isInfoEnabled ()) {
+	info ("attachSubtask - task " + spe.getParentTask().getUID() + 
+	      "'s plan element is missing, so skipping trying to process subtask " + 
+	      subtask.getUID() + " must be in process of rescinds?");
+      }
       return;
     }
     NewWorkflow wf = (NewWorkflow)exp.getWorkflow();
@@ -437,6 +439,26 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	    alloc.getTask ().getUID () + " w/ d.o. " +
 	    alloc.getTask ().getDirectObject () + " from " + unit);
     }
+    
+    if (isInfoEnabled()) {
+      info ("got remove alloc for task " + alloc.getTask().getUID() + 
+	    " verb " + alloc.getTask().getVerb());
+    }
+
+    String key = alloc.getTask ().getUID().toString();
+    Object something = childToParentUID.remove(key);
+    if (something == null) {
+      if (isInfoEnabled()) {
+	info (getName() + " - no task with uid " + alloc.getTask ().getUID() + " in child->parent map?");
+      }
+    }
+
+    something = taskToSSE.remove(key);
+    if (something == null) {
+      if (isInfoEnabled()) {
+	info (getName() + " - no task with uid " + alloc.getTask ().getUID() + " in task->schedule element map?");
+      }
+    }
   }
     
   public void publishRemovalOfAllocation(Allocation alloc) {
@@ -474,6 +496,15 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	     " failed, not continuing to next leg.");
       return;
     }
+    double conf = 0;
+    if (alloc.getReportedResult() != null)
+      conf = alloc.getReportedResult().getConfidenceRating();
+    
+    if (isInfoEnabled ()) {
+      info ("successful alloc " + alloc.getUID() + " task " + alloc.getTask().getUID () + 
+	    " verb " + alloc.getTask().getVerb() +
+	    " conf " + conf);
+    }
 		
     if ((alloc.getReportedResult() != null && alloc.getReportedResult().getConfidenceRating() >= UTILAllocate.HIGHEST_CONFIDENCE) ||
 	alloc.getAsset() instanceof PhysicalAsset || alloc.getAsset() instanceof Deck) {
@@ -488,8 +519,8 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
       SequentialScheduleElement sse = null;
       Task parenttask = getParentTask(t, uid);
       if (parenttask == null) {
-	if (isWarnEnabled()) {
-	  warn(getName () + ".handleSuccessfulAlloc - no parent of task " + uid + 
+	if (isInfoEnabled()) {
+	  info(getName () + ".handleSuccessfulAlloc - no parent of task " + uid + 
 	       " - must be during rescinds.  Skipping seq. planning."); 
 	}
       }
@@ -523,10 +554,74 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 	  turnCrank(parenttask); 
 	}
       }
+      else {
+
+	long returnedStart = (long) AR.getValue(AspectType.START_TIME);
+
+	if (isInfoEnabled ()) {
+	  info ("planned alloc " + alloc.getUID() + " task " + alloc.getTask().getUID () + " compare sse start " +
+		sse.getStartDate() + " vs AR start " + new Date (returnedStart));
+	}
+
+	// did the reported time get earlier?
+	if (returnedStart < sse.getStartDate ().getTime ()) {
+	  // find tasks that depended on this one and replan them
+	  replanEarlierTasks (parenttask, returnedStart);
+	}
+      }
     }
 
     if (isDebugEnabled()) {
       debug(getName () + "---handleSuccessfulAlloc: E of processing for " + alloc.getAsset().getUID()); 		
+    }
+  }
+
+  /**
+   * re-examine the workflow to see if the any tasks overlap the time
+   * of the recently changed allocation, if they do, replan tasks
+   * that depend on it.
+   */
+  protected void replanEarlierTasks (Task parentTask, long beforeTime) {
+    PrepositionalPhrase prep = prepHelper.getPrepNamed(parentTask, GLMTransConst.SequentialSchedule);
+    Schedule sched = (Schedule) prep.getIndirectObject();
+    Enumeration enum = sched.getAllScheduleElements();
+    boolean overlap = false;
+    while (enum.hasMoreElements()) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+      String uid = "<NO TASK>";
+      if (spe.getTask () != null)
+	uid = spe.getTask ().getUID ().toString();
+
+      if (isInfoEnabled ()) {
+	info ("for task " + parentTask.getUID() + 
+	      " spe task " + uid +
+	      " spe planned " + spe.isPlanned () +
+	      " spe end date " + spe.getEndDate () + 
+	      " before time " + new Date(beforeTime));
+      }
+
+      if (spe.isPlanned () && (beforeTime < spe.getEndDate().getTime())) {
+	if (isInfoEnabled ()) {
+	  info ("for task " + parentTask.getUID() + " replanning spe at " + spe.getEndDate ());
+	}
+
+	spe.unplan ();
+	Expansion exp = (Expansion) parentTask.getPlanElement();
+	((NewWorkflow)exp.getWorkflow ()).removeTask (spe.getTask());
+	handleRemovedAlloc ((Allocation) spe.getTask().getPlanElement());
+	publishRemove (spe.getTask());
+	publishChange (exp);
+	spe.setTask (null);
+	overlap = true;
+      }
+    }
+
+    // let's replan!
+    if (overlap) {
+      if (isInfoEnabled ()) {
+	info ("got overlap of " + parentTask.getUID());
+      }
+      turnCrank (parentTask);
     }
   }
 
@@ -585,8 +680,8 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
       return sse;
     }
     else {
-      if (isWarnEnabled()) {
-	warn (getName() + ".getElement - no schedule element for " + uid + 
+      if (isInfoEnabled()) {
+	info (getName() + ".getElement - no schedule element for " + uid + 
 	      " in hash with " + taskToSSE.size() + " elements.");
       }
     }
