@@ -349,8 +349,8 @@ public class LogisticsInventoryServlet
 	     StringWriter strWriter = new StringWriter();
 	     BufferedWriter buffWriter = new BufferedWriter(strWriter);
 	     LogisticsInventoryFormatter formatter = null;
-	     formatter = new LogisticsInventoryFormatter(buffWriter,logger);
-	     formatter.logToXMLOutput(inv,startDay.getTime());
+	     formatter = new LogisticsInventoryFormatter(buffWriter,logger,startDay);
+	     formatter.logToXMLOutput(inv,alarmService.currentTimeMillis());
 	     try {
 		 buffWriter.flush();
 		 strWriter.flush();
