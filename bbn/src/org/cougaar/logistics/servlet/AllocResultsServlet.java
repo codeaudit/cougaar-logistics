@@ -308,7 +308,7 @@ public class AllocResultsServlet extends BaseServletComponent implements Blackbo
       public boolean execute(Object o) {
         if (o instanceof Task) {
           Task task = (Task) o;
-          if (task.getVerb().equals(Verb.getVerb(vString))) {
+          if (task.getVerb().equals(Verb.get(vString))) {
             return true;
           }
         } 

@@ -166,7 +166,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     newTask.setPrepositionalPhrases(prepPhrase);
 
     newTask.setDirectObject(consumer);
-    newTask.setVerb(Verb.getVerb(Constants.Verb.GENERATEPROJECTIONS));
+    newTask.setVerb(Verb.get(Constants.Verb.GENERATEPROJECTIONS));
 
 
     newTask.setPreferences(prefs.elements());
