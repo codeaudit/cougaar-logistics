@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE tasklist SYSTEM "ClusterInput.dat.dtd" []>
+
+<tasklist>
+  <task id="compromise_task">
+    <verb>Supply</verb>
+    <directobject>
+     <asset id="bulkPOL-1">NSN/9130010315816</asset>	
+    </directobject>
+    <for>FCS-C2V-0.MCG1.1-UA.ARMY.MIL-FCS-C2V-1</for>
+    <oftype>BulkPOL</oftype>
+    <to>
+      <geoloc>KIROVABAD-ALFA</geoloc> 
+      <latitude>40.713</latitude>    
+      <longitude>46.252</longitude>
+      <name>KIROVABAD-ALFA</name>
+    </to>
+    <maintaining>
+      <itemID>FCS-C2V-0.MCG1.1-UA.ARMY.MIL-FCS-C2V-1</itemID>
+      <type>Asset</type>
+      <nomen>Command and Control Vehicle</nomen>
+      <typeID>NSN/FCS-C2V</typeID>
+    </maintaining>
+     <enddate>  
+      <bestdate>
+        <year>2005</year> 
+        <month>09</month> 
+        <day>04</day> 
+        <hour>8</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+    </enddate>   
+    <quantity>150</quantity> <!-- quantity preference -->
+  </task>
+</tasklist>
+
+
+
