@@ -21,14 +21,28 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.glm.ldm.asset.Inventory;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.plan.GeolocLocation;
 
+import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.Preference;
+import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.ScoringFunction;
+import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.TimeAspectValue;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Vector;
 
 
 /** The Refill Generator Module is responsible for generating new
@@ -48,6 +62,10 @@ import java.util.Iterator;
 
 public class RefillGenerator extends InventoryModule {
 
+  private Organization myOrg = null;
+  private String myOrgName = null;
+  private GeolocLocation homeGeoloc = null;
+
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
    **/
@@ -55,16 +73,15 @@ public class RefillGenerator extends InventoryModule {
     super(imPlugin);
   }
 
-  public ArrayList calculateRefills(ArrayList touchedInventories, int advanceOrderTime,
-                                    int orderFrequency, int maxLeadTime, long now) {
+  public void calculateRefills(ArrayList touchedInventories, int advanceOrderTime,
+                                    int orderFrequency, int maxLeadTime) {
     //should we push now to the end of today?
-    long today = getTimeUtils().pushToEndOfDay(now);
+    long today = getTimeUtils().pushToEndOfDay(inventoryPlugin.getcurrentTimeMillis());
     long maxLeadDay = getTimeUtils().addNDays(today, maxLeadTime);
-    ArrayList newRefills = new ArrayList();
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       Inventory anInventory = (Inventory) tiIter.next();
-      //LogisticsInventoryBG theBG = (LogisticsInventoryBG) anInventory.getLogisticsInventoryPG().
+      //LogisticsInventoryBG theBG = (LogisticsInventoryBG)anInventory.getLogisticsInventoryPG().
       //  getLogisticsInventoryBG();
       //clear the refills
       //theBG.clearRefillTasks(new Date(now));
@@ -83,18 +100,15 @@ public class RefillGenerator extends InventoryModule {
       //  create the refills
       while (refillDay < maxLeadDay) {
         double aRefill = generateRefill(refillDay, orderFrequency);
-        //  add refills to newRefills
         //  add refill to local inventory count
-        // make a task for this refill
-        Task newRefillTask = createRefillTask(aRefill, refillDay);
-        newRefills.add(newRefillTask);
+        // make a task for this refill and publish it to glue plugin
+        createRefillTask(aRefill, refillDay, anInventory, today);
         refillDay = getTimeUtils().addNDays(refillDay, orderFrequency);
       }
       
       //}
     
     } // done going through inventories
-    return newRefills;
   }
 
   private double generateRefill(long day, int orderFrequency) {
@@ -117,21 +131,126 @@ public class RefillGenerator extends InventoryModule {
     return totalDemand;
   }
 
-  private Task createRefillTask(double quantity, long day) {
+  /** Make a Refill Task and publish it to the InventoryPlugin 
+   *  The InventoryPlugin will hook it up with the MaintainInventory task
+   *  and it's workflow as well as publishing it to the Blackboard.
+   **/
+  private void createRefillTask(double quantity, long endDay, Asset inv, long today) {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
-    // who sets the parent??
+    // who sets the parent?? - THE GLUE PLUGIN
     //newRefill.setParentTask(theParent);
-    // prep phrases?
-    //newRefill.setVerb(Constants.Verb.SUPPLY);
-    //setDirectObject
-    //plan
-    //preferences
-    return newRefill;
+    newRefill.setVerb(Constants.Verb.Supply);
+    newRefill.setDirectObject(inv);
+    //plan??
+    // create preferences
+    Vector prefs = new Vector();
+    Preference p_end,p_qty;
+    p_end = createRefillTimePreference(endDay, today);
+    p_qty = createRefillQuantityPreference(quantity);
+    prefs.addElement(p_end);
+    prefs.addElement(p_qty);
+    newRefill.setPreferences(prefs.elements());
+
+    //create Prepositional Phrases
+    Vector pp_vector = new Vector();
+    pp_vector.addElement(createPrepPhrase(Constants.Preposition.FOR, getOrgName()));
+    pp_vector.add(createPrepPhrase(Constants.Preposition.OFTYPE, 
+					 inventoryPlugin.getSupplyType()));
+
+    Object io;
+    Enumeration geolocs = getAssetUtils().getGeolocLocationAtTime(getMyOrganization(), endDay);
+    if (geolocs.hasMoreElements()) {
+      io = (GeolocLocation)geolocs.nextElement();
+    } else {
+	io = getHomeLocation();
+    }
+    pp_vector.addElement(createPrepPhrase(Constants.Preposition.TO, io));
+    //TODO - get the LogInvPG accessor settled
+    // Asset resource = inv.getLogisticsInventoryPG().getResource();
+//     TypeIdentificationPG tip = ((Asset)resource).getTypeIdentificationPG();
+//     MaintainedItem itemID = MaintainedItem.findOrMakeMaintainedItem(
+// 								    "Inventory", 
+// 								    tip.getTypeIdentification(),
+// 								    null,
+// 								    tip.getNomenclature());
+//     pp_vector.addElement(createPrepPhrase(Constants.Preposition.MAINTAINING, itemID));
+    pp_vector.addElement(createPrepPhrase(Constants.Preposition.REFILL, null));
+
+    newRefill.setPrepositionalPhrases(pp_vector.elements());
+
+    inventoryPlugin.publishRefillTask(newRefill);
   }
+
+    //USE V Scoring Function for now - check with Rusty about a better one.
+    private Preference createRefillTimePreference(long bestDay, long today) {
+      AspectValue beforeAV = new TimeAspectValue(AspectType.END_TIME, today);
+      AspectValue bestAV = new TimeAspectValue(AspectType.END_TIME, bestDay);
+      //TODO - really need end of deployment from an OrgActivity -
+      // As a hack for now just add 180 days from today - note that this
+      // will push the possible end date out too far...
+      //AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME, 
+      //				    inventoryPlugin.getEndOfDeplyment()); 
+      AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME,
+						getTimeUtils().addNDays(today, 180));
+      ScoringFunction endTimeSF = ScoringFunction.createVScoringFunction(beforeAV, 
+									bestAV, afterAV);
+      return inventoryPlugin.getRootFactory().newPreference(AspectType.END_TIME, endTimeSF);
+    }
+
+  private Preference createRefillQuantityPreference(double refill_qty) {
+    AspectValue lowAV = new AspectValue(AspectType.QUANTITY, 0.01);
+    AspectValue bestAV = new AspectValue(AspectType.QUANTITY, refill_qty);
+    AspectValue highAV = new AspectValue(AspectType.QUANTITY, refill_qty+1.0);
+    ScoringFunction qtySF = ScoringFunction.createVScoringFunction(lowAV, bestAV, highAV);
+    return  inventoryPlugin.getRootFactory().newPreference(AspectType.QUANTITY, qtySF);
+  }
+
+  private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
+    NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().newPrepositionalPhrase();
+    newpp.setPreposition(prep);
+    newpp.setIndirectObject(io);
+    return newpp;
+  }
+  //Get and Keep organization info from the InventoryPlugin.
+  private Organization getMyOrganization() {
+    if (myOrg == null) {
+       myOrg = inventoryPlugin.getMyOrganization();
+       // if we still don't have it after we ask the inventory plugin, throw an error!
+       if (myOrg == null) {
+	 logger.error("RefillGenerator can not got MyOrganization from the InventoryPlugin");
+       }
+    } else {
+      return myOrg;
+    }
+  }
+
+  //Get the Org Name from my organization and keep it around.
+  private String getOrgName() {
+    if (myOrgName == null) {
+      myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    } else {
+       return myOrgName;
+    }
+  }
+
+  // Get the default (home) location of the Org
+    private GeolocLocation getHomeLocation() {
+      if (homeGeoloc == null ) {
+	Organization org = getMyOrganization();
+	if (org.getMilitaryOrgPG() != null) {
+	  GeolocLocation geoloc = (GeolocLocation)org.getMilitaryOrgPG().getHomeLocation();
+	  if (geoloc != null) {
+	    homeGeoloc = geoloc;
+	  } else {
+	    //if we can't find the home loc either print an error
+	    logger.error("RefillGenerator can not generate a Home Geoloc for org: " + org);
+	  }  
+	}
+      }
+      return homeGeoloc;
+    }
 
 
 }
     
-  
-  

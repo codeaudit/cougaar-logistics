@@ -118,5 +118,23 @@ public class AssetUtils {
 	return support_orgs.elements();
     }
 
+   public static Enumeration getGeolocLocationAtTime(Organization org, long time) {
+     LocationSchedulePG lspg = org.getLocationSchedulePG();
+     Vector geolocs = new Vector();
+     try {
+       Schedule ls = lspg.getSchedule();
+       Iterator i  = ls.getScheduleElementsWithTime(time).iterator();
+       while (i.hasNext()) {
+	 LocationScheduleElement lse = (LocationScheduleElement)i.next(); 
+	 geolocs.add((GeolocLocation)lse.getLocation());
+       }
+     } catch (NullPointerException npe) {
+     // Not all organizations have LocationSchedulePG's
+     //logger.("AssetUtils AssetGeolocLocationAtTime(), LocationSchedulePG NOT found on "+org);
+     }
+     return geolocs.elements();
+   }
+
+
 }
 
