@@ -49,7 +49,9 @@ public class HTMLizer implements Logger{
   protected NumberFormat noExponentDoubleFormat;
   protected NumberFormat noExponentNoFractionDoubleFormat;
   protected NumberFormat noExponentThreeDigits;
-   
+
+  protected StringBuffer buffer;
+
   //Constructors:
   ///////////////
 
@@ -83,6 +85,13 @@ public class HTMLizer implements Logger{
   public void print(String s){
     ps.print(s);
   }
+
+  public void openBuffer  () { buffer = new StringBuffer(); }
+
+  public void closeBuffer () { 
+    ps.print (buffer);  // only one call to java.net.SocketOutputStream.socketWrite - much faster
+    buffer = null;      // gc - reclaim please
+  } 
 
   public void p(String text){
     indent();
@@ -230,10 +239,23 @@ public class HTMLizer implements Logger{
     ps.print("<TR>\n");
     indent++;
   }
+
+  public void sRowBuffer(){
+    indentBuffer();
+    buffer.append("<TR>\n");
+    indent++;
+  }
+
   public void eRow(){
     indent--;
     indent();
     ps.print("</TR>\n");
+  }
+
+  public void eRowBuffer(){
+    indent--;
+    indentBuffer();
+    buffer.append("</TR>\n");
   }
 
   public void tHead(String head){
@@ -255,6 +277,13 @@ public class HTMLizer implements Logger{
     ps.print("<TD>");
     ps.print(data);
     ps.print("</TD>\n");
+  }
+  
+  public void tDataBuffer(String data){
+    indentBuffer();
+    buffer.append("<TD>");
+    buffer.append(data);
+    buffer.append("</TD>\n");
   }
   
   public void tDataRightJustify(String data){
@@ -310,6 +339,13 @@ public class HTMLizer implements Logger{
     for (int i = 0; i < indent; i++)
       spaces[i] = ' ';
     ps.print(spaces);
+  }
+
+  private void indentBuffer(){
+    char spaces [] = new char [indent];
+    for (int i = 0; i < indent; i++)
+      spaces[i] = ' ';
+    buffer.append(spaces);
   }
 
   //Logger:
