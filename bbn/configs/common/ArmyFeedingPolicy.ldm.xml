@@ -1,0 +1,241 @@
+<?xml version="1.0"  encoding="US-ASCII"?>
+
+<!DOCTYPE Policy SYSTEM "Policy.ldm.dtd" []>
+
+<Policies>
+ <Policy name="ArmyFeedingPolicy" type="org.cougaar.logistics.plugin.policy.LogClassIPolicy">
+    <RuleParam name="MealPolicy">
+      <RangeSet value="">
+        <RangeValue min="0"  max="20">
+	  <RuleParam name="Meals">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/8970001491094" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/8970001491094" />
+    	    </KeySet>
+  	  </RuleParam>
+	</RangeValue>
+        <RangeValue min="21"  max="60">
+	  <RuleParam name="Meals">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/897UGRHSBRKXX" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/8970001491094" />
+    	    </KeySet>
+  	  </RuleParam>
+	</RangeValue>
+        <RangeValue min="61"  max="225">
+	  <RuleParam name="Meals">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/897UGRABRKXXX" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/897UGRHSLDXXX" />
+    	    </KeySet>
+  	  </RuleParam>
+	</RangeValue>
+      </RangeSet>
+    </RuleParam>
+    <RuleParam name="EnhancementsPolicy">
+      <RangeSet value ="">
+	<RangeValue min="0" max="225">
+	  <RuleParam name="Enhancements">
+      	    <KeySet value="">
+      	    	<KeyValue key="Fresh Fruits" value=".35" />
+		<KeyValue key="Fresh Vegetables" value=".11" />
+    	    </KeySet>
+    	  </RuleParam>  
+	</RangeValue>
+      </RangeSet>
+    </RuleParam>
+    <RuleParam name="A-RationPolicy">
+      <RangeSet value="">
+	<RangeValue min="0" max="23">
+	  <RuleParam name="A-RationCapability">
+      	    <KeySet value="">
+      	    	<KeyValue key="Capability" value="false" />
+    	    </KeySet>
+    	  </RuleParam>  
+	</RangeValue>
+	<RangeValue min="24" max="225">
+	  <RuleParam name="A-RationCapability">
+      	    <KeySet value="">
+      	    	<KeyValue key="Capability" value="true" />
+    	    </KeySet>
+    	  </RuleParam>  
+	</RangeValue>
+      </RangeSet>
+    </RuleParam>
+    <RuleParam name="BottledWaterPolicy">
+      <RangeSet value="">
+        <RangeValue min="0"  max="225">
+  	  <RuleParam name="BottledWater">
+      	    <KeySet value="">
+      	    	<KeyValue key="BottledWater" value="3.0" />
+    	    </KeySet>
+    	  </RuleParam>  
+	</RangeValue>
+      </RangeSet>
+    </RuleParam>
+
+   <RuleParam name="Rules">
+	<RangeSet value="">
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule1">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Employment_CSS"/>
+	      <KeyValue key="OPTEMPO" value="HIGH"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/8970001491094" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/8970001491094" />
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule2">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Defensive"/>
+	      <KeyValue key="OPTEMPO" value="HIGH"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/8970001491094" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/8970001491094" />
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule3">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Employment-Offensive"/>
+	      <KeyValue key="OPTEMPO" value="HIGH"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+	      <KeyValue key="Breakfast" value="NSN/8970001491094" />
+	      <KeyValue key="Lunch" value="NSN/8970001491094" />
+	      <KeyValue key="Dinner" value="NSN/8970001491094" />
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule4">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Deployment"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule5">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Redeployment"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule6">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Home"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	  <RangeValue min="-1" max="-1">
+	   <RuleParam name="Rule7">
+		<RangeSet value="">
+		<RangeValue min="-1" max="-1">
+			 <RuleParam name="Condition">
+          <KeySet value="">
+	      <KeyValue key="OrgActivity" value="Deployment_prepo"/>
+    	    </KeySet>
+  	 </RuleParam>
+</RangeValue>
+<RangeValue min="-1" max="-1">
+ <RuleParam name="Action">
+          <KeySet value="">
+    	    </KeySet>
+  	 </RuleParam>
+			</RangeValue>
+		</RangeSet>
+    </RuleParam>
+	   </RangeValue>
+	 </RangeSet>
+	</RuleParam>
+
+</Policy>
+</Policies>
+
+
+
+
+
+
+
+
+
+
