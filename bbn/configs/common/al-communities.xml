@@ -13,12 +13,16 @@
 ]>
 
 <Communities>
-  <Community Name="AdaptiveLogistics-Supply" >
+  <Community Name="ALSUPPLY-COMM" >
     <Attribute ID="CommunityType" Value="AdaptiveLogistics" />
-    <Attribute ID="CommunityManager" Value="5-CORPS" />
-    <Entity Name="5-CORPS" >
+    <Attribute ID="CommunityManager" Value="TRANSCOM" />
+    <Entity Name="TRANSCOM" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="AdaptiveLogisticsManager" />
+    </Entity>
+    <Entity Name="5-CORPS" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member"/>
     </Entity>
     <Entity Name="1-AD" >
       <Attribute ID="EntityType" Value="Agent" />
@@ -172,7 +176,6 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
-
     <Entity Name="102-POL-SUPPLYCO" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
@@ -523,9 +526,13 @@
     </Entity>
   </Community>
 
-  <Community Name="AdaptiveLogistics-Transport" >
+  <Community Name="ALTRANSPORT-COMM" >
     <Attribute ID="CommunityType" Value="AdaptiveLogistics" />
-    <Attribute ID="CommunityManager" Value="TRANSCOM" />
+    <Attribute ID="CommunityManager" Value="5-CORPS" />
+    <Entity Name="5-CORPS" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="AdaptiveLogisticsManager" />
+    </Entity>
     <Entity Name="CONUSGround" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
@@ -549,7 +556,6 @@
     <Entity Name="TRANSCOM" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
-      <Attribute ID="Role" Value="AdaptiveLogisticsManager" />
     </Entity>
     <Entity Name="TheaterGround" >
       <Attribute ID="EntityType" Value="Agent" />
