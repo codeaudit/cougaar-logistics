@@ -30,6 +30,8 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 
+import org.cougaar.glm.packer.GenericPlugin;
+
 /**
  * ALAmmoPacker - handles packing ammo supply requests
  * 
@@ -42,6 +44,29 @@ public class ALAmmoPacker extends Packer {
   public ALAmmoPacker() {
     super();
   }
+
+  protected void execute() {
+      super.execute();
+      
+      Collection unplannedInternal = getBlackboardService().query (new UnaryPredicate () {
+	    public boolean execute (Object obj) {
+		if (obj instanceof Task) {
+		    Task task = (Task) obj;
+		    return ((task.getPrepositionalPhrase(GenericPlugin.INTERNAL) !=null) &&
+			    task.getPlanElement () == null);
+		}
+		return false;
+	    }
+	}
+								 );
+      if (!unplannedInternal.isEmpty()) {
+	  if (getLoggingService().isInfoEnabled()) {
+	      getLoggingService().info ("found " + unplannedInternal.size () + " unplanned internal tasks.");
+	  }
+	  handleUnplanned (unplannedInternal);
+      }
+  }
+
 
   /**
    * getTaskPredicate - returns predicate which screens for ammo supply tasks
