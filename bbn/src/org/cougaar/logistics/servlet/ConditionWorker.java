@@ -117,30 +117,41 @@ public class ConditionWorker
 	}
 
 	URL myURL = new URL(url);
-	URLConnection myConnection = myURL.openConnection();
+	HttpURLConnection myConnection = (HttpURLConnection) myURL.openConnection();
 	try {
-	  // throws an FileNotFoundExcep if no servlet at that agent
-	  InputStream is = myConnection.getInputStream(); 
+	  if (myConnection.getResponseCode () != HttpURLConnection.HTTP_OK) {
+	    support.getLog().error (support.getAgentIdentifier()+ 
+				    " - got error reading from URL " + myURL + " code was " + 
+				    myConnection.getResponseCode());
+	  }
+	  else {
+	    // throws an FileNotFoundExcep if no servlet at that agent
+	    InputStream is = myConnection.getInputStream(); 
 
-	  ObjectInputStream ois = new ObjectInputStream(is); 
+	    ObjectInputStream ois = new ObjectInputStream(is); 
 
-	  try {
-	    ConditionData settingData = (ConditionData)ois.readObject();
-	    if (settingData.wasSet())
-	      validAgents.add (agentName);
-	    else
-	      support.getLog().info (support.getAgentIdentifier()+ 
-				     " - Could not set " + 
-				     conditionSupport.getConditionName() + " on agent " + agentName);
-	  } catch (Exception e) { 
-	    support.getLog().error ("Got exception " + e, e);
+	    try {
+	      ConditionData settingData = (ConditionData)ois.readObject();
+	      if (settingData.wasSet())
+		validAgents.add (agentName);
+	      else
+		support.getLog().info (support.getAgentIdentifier()+ 
+				       " - Could not set " + 
+				       conditionSupport.getConditionName() + " on agent " + agentName);
+	    } catch (Exception e) { 
+	      support.getLog().error ("Got exception " + e, e);
+	    } finally {
+	      ois.close();
+	    }
 	  }
 	} catch (FileNotFoundException fnf) {
 	  if (support.getLog().isInfoEnabled())
 	    support.getLog().info ("Skipping agent " + agentName + " that has no Condition servlet.");
 	} catch (Exception other) {
 	  if (support.getLog().isWarnEnabled())
-	    support.getLog().warn ("Skipping agent " + agentName + " that has returned an EOF.");
+	    support.getLog().warn ("Skipping agent " + agentName + " that has returned an exception.", other);
+	} finally {
+	  myConnection.disconnect();
 	}
       }
 
