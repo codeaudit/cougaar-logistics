@@ -47,6 +47,7 @@ import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.Filters;
 import org.cougaar.util.TimeSpan;
+import org.cougaar.util.DynamicUnaryPredicate;
 import org.cougaar.util.UnaryPredicate;
 
 import java.lang.reflect.Constructor;
@@ -215,8 +216,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       processedDetReq = (!(detReqTask.getPlanElement() == null));
 
 
-
-
+      
 
       //There should be both a determineRequirements task
       //and an oplan before kicking off the expander for the first time.
@@ -496,7 +496,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   } // end SupplyTaskPredicate
 
 
-  private static class AssetOfTypePredicate implements UnaryPredicate {
+  private class AssetOfTypePredicate implements DynamicUnaryPredicate {
     private Class supplyPGClass;
 
     public AssetOfTypePredicate(Class pgClass) {
