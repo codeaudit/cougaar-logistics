@@ -24,6 +24,7 @@ package org.cougaar.logistics.plugin.inventory;
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.service.BlackboardService;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.logistics.ldm.Constants;
@@ -172,7 +173,7 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
   private long ost;
   private static AllocationResultAggregator projectionARA = new ProjectionARA();
   private static AllocationResultAggregator supplyARA = new SupplyARA();
-  private static final long COMMS_UP_DELAY = 180000L; // 3 minutes
+  private static final long COMMS_UP_DELAY = 240000L; // 4 minutes
   private MessageAddress clusterId;
   private TaskUtils taskUtils = getTaskUtils();
 
@@ -302,8 +303,15 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     }
   }
 
-  // Review:  Target for deletion
   public void handleRemovedRealRequisitions(Collection tasks) {
+    Iterator taskIter = tasks.iterator();
+    while (taskIter.hasNext()) {
+      Task aTask = (Task)taskIter.next();
+      System.out.println(" INSIDE remove reqs, task has aux query " + hasAuxQuery(aTask));
+      if (hasAuxQuery(aTask)) {
+        publishRemovePrediction(aTask);
+      }
+    }
   }
 
   public boolean handleRemovedProjections(Collection tasks) {
@@ -650,14 +658,28 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
     List sortedTasks = filterItems(itemPred, demandTasks);
     List sortedPreds = filterItems(itemPred, committedPreds);
 
-    if (logger.isDebugEnabled() && debugAgent()) {
-      if (!sortedPreds.isEmpty())
+
+    if (! sortedPreds.isEmpty()) {
+      if (logger.isDebugEnabled() && debugAgent()) {
         logger.debug(inventoryPlugin.getSupplyType() + " Item: " +
                      taskUtils.getTaskItemName((Task) sortedPreds.get(0))
                      + ": Number of tasks in the gap -->  Predictions:  "
                      + sortedPreds.size()
                      + " \t DemandTasks: " + sortedTasks.size());
+      }
+      // if there are no demand tasks, then remove the predictions cause we have nothing to reconcile against.
+      if (sortedTasks.isEmpty()) {
+        for (Iterator iterator = sortedPreds.iterator(); iterator.hasNext();) {
+          Task predTask = (Task) iterator.next();
+          if (logger.isDebugEnabled() && debugAgent()) {
+            logger.debug(inventoryPlugin.getSupplyType() + "Removing prediction for Item: " +
+                         taskUtils.getTaskItemName(predTask) + " end date " + taskUtils.getEndTime(predTask));
+          }
+          inventoryPlugin.publishRemove(predTask);
+        }
+      }
     }
+
     int i = 0;
     int j = 0;
     int size = sortedPreds.size();
@@ -668,6 +690,9 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       double quantity = 0.0;
       long maxEndTime = endTime;
       List taskPhasedValues = new ArrayList();
+      // let's try priming the task to except auxiliary queries
+      setAuxiliaryQueryOnTask(task);
+      ArrayList pUids = new ArrayList();
       while (j < size) {
         Task pred = (Task) sortedPreds.get(j);
         long predEndTime = taskUtils.getEndTime(pred);
@@ -701,12 +726,21 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
             }
           }
         }
+        pUids.add(pred.getUID().toString());
         j++;
       }
 
       AspectValue[] rollup = { AspectValue.newAspectValue(AspectType.END_TIME, maxEndTime),
                                AspectValue.newAspectValue(AspectType.QUANTITY, quantity)};
       AllocationResult ar = new AllocationResult(1.0, true, rollup, taskPhasedValues);
+      // store the uid of the reconciled predictions on the actual task
+      // so that we can remove the predictions later if the actual task gets replanned.
+      for (int p = 0; p < pUids.size(); p++) {
+        String s = (String) pUids.get(p);
+        ar.addAuxiliaryQueryInfo(p, s);
+        System.out.println(" add a aux query on the AR  " + j + " pred uid " + s +
+                           " task uid is " + task.getUID());
+      }
       if (logger.isDebugEnabled() && debugAgent()) {
         logger.debug(inventoryPlugin.getSupplyType() + " - Published new disposition on task " + task.getUID()
                      + " end Time " + new Date(endTime) + " new quantity " + quantity + "\nOriginal data " +
@@ -721,6 +755,54 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
       }
       Disposition disp = inventoryPlugin.getPlanningFactory().createDisposition(task.getPlan(), task, ar);
       inventoryPlugin.publishAdd(disp);
+    }
+  }
+
+  private void setAuxiliaryQueryOnTask(Task t) {
+    int[] types = new int[AuxiliaryQueryType.AQTYPE_COUNT];
+    for(int i=0; i<types.length; i++) {
+      types[i] = i;
+    }
+    ((TaskImpl)t).setAuxiliaryQueryTypes(types);
+  }
+
+  private boolean hasAuxQuery(Task task) {
+    PlanElement pe = task.getPlanElement();
+    if (pe == null) {
+      return false;
+    }
+    AllocationResult ar = pe.getEstimatedResult();
+    if (ar == null) {
+      System.out.println(" Task's estimated is null");
+      return false;
+    }
+    //ar = pe.getEstimatedResult();
+    int [] theTypes = task.getAuxiliaryQueryTypes();
+    int checktype = theTypes[0];
+    //return (checktype > -1);
+    return (checktype > -1);
+  }
+
+  public void publishRemovePrediction(Task task) {
+    PlanElement pe = task.getPlanElement();
+    if (pe == null) {
+      return;
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      return;
+    }
+    ar = pe.getEstimatedResult();
+    int [] auxQueryTypes = task.getAuxiliaryQueryTypes();
+    for (int i = 0; i < auxQueryTypes.length; i++) {
+      String uid = ar.auxiliaryQuery(auxQueryTypes[i]);
+      if (uid != null) {
+        BlackboardService bs = ((ReconcileInventoryPlugin) inventoryPlugin).getBBService();
+        Collection predTasks = bs.query(new TaskUid(uid));
+        if (! predTasks.isEmpty()) {
+          inventoryPlugin.publishRemove(predTasks.iterator().next());
+        }
+      }
     }
   }
 
@@ -985,6 +1067,20 @@ public class ReconcileSupplyExpander extends InventoryModule implements Expander
         Task task = (Task) o;
         return (getCustomerName(task).equals(customerName) && isPrediction(task)
             && isCommitted(task) && inTheGap(commLossTime, commRestoreTime, task));
+      }
+      return false;
+    }
+  }
+
+  private class TaskUid implements UnaryPredicate {
+    String uid;
+    public TaskUid(String uid) {
+      this.uid = uid;
+    }
+    public boolean execute(Object o) {
+      if (o instanceof Task) {
+        Task t = (Task) o;
+        return (t.getUID().toString().equals(uid));
       }
       return false;
     }
