@@ -44,6 +44,7 @@ import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.Disposition;
 import org.cougaar.planning.ldm.plan.Workflow;
+import org.cougaar.planning.ldm.asset.AssetGroup;
 
 import org.cougaar.core.plugin.PluginBindingSite;
 
@@ -176,7 +177,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Asset supplyAsset = parentTask.getDirectObject();
 
     Preference pref = prefHelper.getPrefWithAspectType (parentTask, AlpineAspectType.DEMANDRATE);
-    double ratePerSec = prefHelper.getPreferenceBestValue (pref); // base number is in quantity per second!
+    double ratePerSec = prefHelper.getPreferenceBestValue (pref); // base number is in tons per second!
     double ratePerDay = ratePerSec*SECS_PER_DAY; 
 
     Date readyAt = prefHelper.getReadyAt   (parentTask);
@@ -231,7 +232,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       daysSoFar += daysToChunk;
       window    -= ((long)daysToChunk)*MILLIS_PER_DAY;
-      int quantity = (int) (daysToChunk * ratePerDay);
+      double quantity = daysToChunk * ratePerDay;
       if (onLastTask && ((totalQuantity + quantity) != targetQuantity)) {
 	if (isInfoEnabled ())
 	  info (" task " + parentTask.getUID () + 
@@ -243,13 +244,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       else if (isInfoEnabled ())
 	info (".getSubtasks - task " + parentTask.getUID () + " quantity is " + quantity + 
 	      " chunk days " + daysToChunk+ " rate " + ratePerDay);
-      if (quantity < 1) {
+      if (quantity < 0.00001) {
 	error (".getSubtasks - task " + parentTask.getUID () + 
 	       " gets a quantity of zero, ratePerDay was " + ratePerDay + 
 	       " chunk days " +daysToChunk);
       }
       
-      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
+      //      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
+      double massInSTons = quantity;
       totalQuantity += quantity;
 
       //  CHANGE to JUST Grab the d.o.?
@@ -270,10 +272,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	itemNomen = typeID.getNomenclature();
       }
 
-      GLMAsset milvan = makeMilvan ();
-      addContentsInfo (milvan, itemNomen, itemID, unit, massInKGs);
+      Asset directObject = 
+	  getMilvanDirectObject (itemNomen, itemID, unit, massInSTons);
 
-      Task subTask = makeTask (parentTask, milvan);//deliveredAsset);
+      Task subTask = makeTask (parentTask, directObject);//deliveredAsset);
       long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
       if (bestTime > best.getTime()) {
 	if (isInfoEnabled())
@@ -301,7 +303,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       if (isInfoEnabled())
 	info (getName () + " publishing reservation " + subTask.getUID() + 
 	      " for " + itemNomen + 
-	      " from " + lastBestDate + " to " + new Date(bestTime) + " weight " + massInKGs + " kgs.");
+	      " from " + lastBestDate + " to " + new Date(bestTime) + " weight " +
+	      //massInKGs + " kgs.");
+	      massInSTons + " short tons.");
 
       lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
@@ -321,6 +325,35 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     return childTasks;
   }
+
+    private static final double MAX_IN_MILVAN = 13.9;
+
+    protected Asset getMilvanDirectObject (String itemNomen, String itemID, 
+					   String unit, double massInSTons) {
+      int numMilvans = (int) Math.ceil(massInSTons/MAX_IN_MILVAN);
+      double tonsLeft = massInSTons;
+      
+      if (numMilvans == 1) {
+	  GLMAsset milvan = makeMilvan ();
+	  addContentsInfo (milvan, itemNomen, itemID, unit, massInSTons);
+	  return milvan;
+      }
+      else {
+	  Vector milvans = new Vector();
+	  for (int i = 0; i < numMilvans; i++) {
+	      GLMAsset milvan = makeMilvan ();
+	      double amount = Math.min (tonsLeft, MAX_IN_MILVAN);
+	      addContentsInfo (milvan, itemNomen, itemID, unit, amount);
+	      tonsLeft -= amount;
+	      milvans.add (milvan);
+	  }
+	  if ((tonsLeft > 0.0000001) || (tonsLeft < -0.0000001)) {
+	      error ("Tons left is not zero = " + tonsLeft);
+	  }
+	  return assetHelper.makeAssetGroup(getLDMService().getLDM().getFactory(), 
+					    milvans);
+      }
+    }
 
   public Date getEarlyDate(Task t) {
     Preference endDatePref = prefHelper.getPrefWithAspectType(t, AspectType.END_TIME);
@@ -660,7 +693,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return COUNTER++;
   }
 
-  protected void addContentsInfo(GLMAsset container, String nomen, String typeID, String unit, double massInKGs) {
+  protected void addContentsInfo(GLMAsset container, String nomen, String typeID, String unit, double massInSTons) {
     List typeIDs = new ArrayList();
     List nomenclatures = new ArrayList();
     List weights = new ArrayList();
@@ -669,7 +702,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     typeIDs.add(typeID);
     nomenclatures.add(nomen);
       
-    Mass mass = Mass.newMass(massInKGs, Mass.KILOGRAMS); 
+    Mass mass = Mass.newMass(massInSTons, Mass.SHORT_TONS); 
     weights.add(mass);
       
     receivers.add(unit);
@@ -861,8 +894,25 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   protected boolean contentTypesOverlap (Task task, Task examinedTask){
-    Container taskDO = (Container)task.getDirectObject ();
-    Container examinedDO = (Container)examinedTask.getDirectObject ();
+      Container taskDO;
+    if (task.getDirectObject() instanceof AssetGroup) {
+	taskDO=
+	    (Container) ((AssetGroup) 
+			 task.getDirectObject()).getAssets().iterator().next();
+    }
+    else {
+	taskDO = (Container)task.getDirectObject ();
+    }
+
+    Container examinedDO;
+    if (examinedTask.getDirectObject() instanceof AssetGroup) {
+	examinedDO=
+	    (Container) ((AssetGroup) 
+			 examinedTask.getDirectObject()).getAssets().iterator().next();
+    }
+    else {
+	examinedDO = (Container)examinedTask.getDirectObject ();
+    }
 
     ContentsPG contents = taskDO.getContentsPG ();
     Collection typeIDs  = contents.getTypeIdentifications ();
@@ -886,7 +936,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   protected String reportContentTypes (Task task, Task examinedTask){
     Container taskDO = (Container)task.getDirectObject ();
-    Container examinedDO = (Container)examinedTask.getDirectObject ();
+    Container examinedDO;
+    if (examinedTask.getDirectObject() instanceof AssetGroup) {
+	examinedDO=
+	    (Container) ((AssetGroup) 
+			 examinedTask.getDirectObject()).getAssets().iterator().next();
+    }
+    else {
+	examinedDO = (Container)examinedTask.getDirectObject ();
+    }
 
     ContentsPG contents = taskDO.getContentsPG ();
     Collection typeIDs  = contents.getTypeIdentifications ();
@@ -999,14 +1057,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     double factor = (double)daysLeft/(double)currentDays;
     if (factor > 0) {
-      Container reservedDO = (Container)reservedTask.getDirectObject();
-      ContentsPG contents = reservedDO.getContentsPG();
-      Collection weights = contents.getWeights();
-      Mass weight = (Mass) weights.iterator().next();
-      weights.remove (weight);
-      weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
-
-      Asset deliveredAsset = reservedDO;
+      Asset deliveredAsset = 
+	  getTrimmedDirectObject (reservedTask.getDirectObject(), factor);
 
       NewTask replacement = 
 	(NewTask) expandHelper.makeSubTask (ldmf,
@@ -1023,8 +1075,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	info ("Reserved task " + reservedTask.getUID () + 
 	      " current days " + currentDays + 
 	      " daysLeft " + daysLeft + 
-	      " replacing asset weight " +weight.getKilograms() +
-	      " with " + weight.getKilograms()*factor);
+	      " replacing asset weights.");
 
       if (isInfoEnabled ())
 	info ("on task " + replacement.getUID() + " replacing start prep date " + reservedReady + 
@@ -1042,15 +1093,18 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       replacement.setWorkflow(tasksWorkflow);
       tasksWorkflow.addTask (replacement);
       publishAdd (replacement);
-      if (isInfoEnabled ())
+      if (isInfoEnabled ()) {
 	info ("Publishing replacement " + replacement.getUID() + " in workflow "+ tasksWorkflow.getUID() + 
-	      " start " + best + " best " + reservedBest + " dodic " + reservedDO.getContentsPG().getTypeIdentifications());
+	      " start " + best + " best " + reservedBest);
+      }
 
-      if (best.getTime () != ((Date)prepHelper.getIndirectObject(replacement, START)).getTime())
+      if (best.getTime () != ((Date)prepHelper.getIndirectObject(replacement, START)).getTime()) {
 	error ("replacement start " + prepHelper.getIndirectObject(replacement, START) + " != " + best);
+      }
 
-      if (!taskInWorkflow(replacement, tasksWorkflow))
+      if (!taskInWorkflow(replacement, tasksWorkflow)) {
 	error ("huh? after adding to workflow, replacement " + replacement.getUID () + " is not in workflow " + tasksWorkflow + "?"); 
+      }
     }
     else {
       if (isInfoEnabled ())
@@ -1175,4 +1229,50 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     
     return units;
   }    
+
+    protected Asset getTrimmedDirectObject (Asset directObject, double factor) {
+	if (directObject instanceof AssetGroup) {
+	    double total = 0.0;
+	    Container last = null;
+
+	    for (Iterator iter = 
+		     ((AssetGroup) directObject).getAssets().iterator();
+		 iter.hasNext();) {
+		last = (Container) iter.next();
+		total += getContainerTons (last);
+	    }
+
+	    if (last == null) {
+		error ("Nothing in the asset group of milvans?");
+	    }
+
+	    ContentsPG contents = last.getContentsPG ();
+
+	    String nomen = 
+		(String) contents.getNomenclatures().iterator().next();
+	    String type  = 
+		(String) contents.getTypeIdentifications().iterator().next();
+	    String unit = 
+		(String) contents.getReceivers().iterator().next();
+
+	    return getMilvanDirectObject (nomen, type, unit, total*factor);
+	}
+	else {
+	    Container reserved = (Container)directObject;
+	    ContentsPG contents = reserved.getContentsPG();
+	    Collection weights = contents.getWeights();
+	    Mass weight = (Mass) weights.iterator().next();
+	    weights.remove (weight);
+	    weights.add (new Mass (weight.getKilograms()*factor, Mass.KILOGRAMS));
+	    return reserved;
+	}
+    }
+    
+    /** assumes only one type of ammo in container -- true for reservations */
+    protected double getContainerTons (Container container) {
+	ContentsPG contents = container.getContentsPG();
+	Collection weights  = contents.getWeights();
+	Mass weight = (Mass) weights.iterator().next();
+	return weight.getShortTons();
+    }
 }
