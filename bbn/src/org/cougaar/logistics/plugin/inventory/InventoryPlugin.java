@@ -145,7 +145,7 @@ public class InventoryPlugin extends ComponentPlugin {
     touchedProjections = false;
     startTime = currentTimeMillis();
 
-    setupOperatingModes();
+    
     domainService = (DomainService) 
 	getServiceBroker().getService(this,
 				      DomainService.class,
@@ -394,6 +394,32 @@ public class InventoryPlugin extends ComponentPlugin {
   private IncrementalSubscription DetReqInvExpansionSubscription;
 
   protected void setupSubscriptions() {
+    if (! getBlackboardService().didRehydrate()) {
+      setupOperatingModes();
+    } else {
+      Collection level2OMs = getBlackboardService().
+        query(new OperatingModePredicate(supplyType, LEVEL_2_TIME_HORIZON));
+      //there should only be one.
+      Iterator level2it = level2OMs.iterator();
+      if (level2it.hasNext()) {
+        level2Horizon = (OperatingMode) level2it.next();
+      }
+      Collection level6OMs = getBlackboardService().
+        query(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
+      //there should only be one.
+      Iterator level6it = level6OMs.iterator();
+      if (level6it.hasNext()) {
+        level6Horizon = (OperatingMode) level6it.next();
+      }
+      if (level2Horizon == null || level6Horizon == null) {
+        if (logger.isErrorEnabled()) {
+          logger.error("InventoryPlugin in agent: " + getAgentIdentifier() +
+                       " of supply type: " + supplyType + 
+                       " is missing operating modes upon rehydration... level2 OM is: " +
+                       level2Horizon + " level 6 OM is: " + level6Horizon);
+        }
+      }
+    }
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
@@ -832,6 +858,26 @@ public class InventoryPlugin extends ComponentPlugin {
     }
   }
 
+  private class OperatingModePredicate implements UnaryPredicate {
+    String supplyType;
+    String level;
+    
+    public OperatingModePredicate(String type, String level) {
+      supplyType = type;
+      this.level = level;
+    }
+    
+    public boolean execute(Object o) {
+      if (o instanceof OperatingMode) {
+        OperatingMode om = (OperatingMode)o;
+        if (om.getName().equals(level+"_"+supplyType)) {
+          return true;
+        }	
+      }
+      return false;
+    }
+  }
+
   // Determines which tasks should be expanded and which should be
   // re-allocated to a supplier
   private Collection sortIncomingSupplyTasks(Collection tasks) {
@@ -1212,12 +1258,12 @@ public class InventoryPlugin extends ComponentPlugin {
   }
 
   /** VTH operating modes */
-  protected transient OperatingMode level2Horizon, level6Horizon;
+  protected OperatingMode level2Horizon, level6Horizon;
 
   /** create and publish VTH Operating Modes */
   protected void setupOperatingModes () {
     try {
-      getBlackboardService().openTransaction();
+      //getBlackboardService().openTransaction();
       OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
       OMCRangeList rangeList = new OMCRangeList (level2Range);
       publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON+"_"+supplyType, rangeList, 
@@ -1231,8 +1277,8 @@ public class InventoryPlugin extends ComponentPlugin {
       if (logger.isErrorEnabled()) {
         logger.error ("" + getMyOrganization() + " got exception creating operating modes.", e); 
       }
-    } finally {
-      getBlackboardService().closeTransaction();
+      //} finally {
+      //getBlackboardService().closeTransaction();
     }
 
     if(logger.isInfoEnabled()) {
