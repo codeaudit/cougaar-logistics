@@ -308,7 +308,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	start = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.START_TIME);
 	end = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.END_TIME);
 	if(logger.isWarnEnabled() && projWdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
-	  logger.debug("\n AA.determineProjectionAllocations got a WITHDRAW task... start is: " +
+	  logger.warn("\n AA.determineProjectionAllocations got a WITHDRAW task... start is: " +
 		       start + " end is: " + end + " current bucket time is: " +
 		       thePG.convertBucketToTime(currentBucket) + " method start bucket: " +
 		       thePG.convertBucketToTime(startBucket));
