@@ -441,6 +441,11 @@ public class LogisticsInventoryBG implements PGDelegate {
     inventoryLevelsArray[bucket] = value;
   }
 
+  public void setTarget(int bucket, double value) {
+    // AF fill this in, not sure what kind of collection you want to
+    // use.  Remember that some buckets should have no value.
+  }
+
   public void updateRefillRequisition(Task task) {
     removeRefillRequisition(task);
     addRefillRequisition(task);

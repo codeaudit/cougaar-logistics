@@ -142,6 +142,9 @@ public class RefillGenerator extends InventoryLevelGenerator {
 					      today, orderShipTime);
 	    newRefills.add(theRefill);
 	    thePG.setLevel(refillBucket, (invLevel + refillQty));
+            //set the target level to invlevel + refillQty (if we get the refill we
+            //ask for we hit the target - otherwise we don't)
+            thePG.setTarget(refillBucket, (invLevel + refillQty));
 	  }
 	  //reset the buckets
 	  startBucket = refillBucket;

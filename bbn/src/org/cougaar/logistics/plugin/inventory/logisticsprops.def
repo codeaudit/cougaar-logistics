@@ -56,6 +56,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	double getCriticalLevel(int bucket); \
 	double getLevel(int bucket); \
 	void setLevel(int bucket, double value); \
+	void setTarget(int bucket, double value); \
 	void updateRefillRequisition(Task task); \
 	void updateWithdrawRequisition(Task task); \
 	void updateRefillProjection(Task task); \
