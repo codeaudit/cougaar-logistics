@@ -124,9 +124,9 @@ public class InventoryPlugin extends ComponentPlugin {
   public void load() {
     super.load();
     logger = getLoggingService(this);
-    taskUtils = new TaskUtils(this);
     timeUtils = new TimeUtils(this);
     AssetUtils = new AssetUtils(this);
+    taskUtils = new TaskUtils(this);
     detReqHandler = new DetReqAggHandler(this);
     // readParameters() initializes supplyType and inventoryFile
     pluginParams = readParameters();
