@@ -436,6 +436,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (isInfoEnabled ())
       info (getName () + ".getSubtasks - making task " + subTask.getUID() +
 	    " with best arrival " + new Date(bestTime) + " and start " + startDate);
+    
+    // prevent earliest arrival being before start date
+    if (early.getTime() < startDate.getTime()) {
+      early = startDate;
+    }    
+    
     prefHelper.replacePreference((NewTask)subTask,
 				 prefHelper.makeEndDatePreference (ldmf,
 								   early,
