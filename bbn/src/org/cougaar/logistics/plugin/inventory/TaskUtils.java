@@ -27,21 +27,15 @@ import org.cougaar.core.logging.NullLoggingServiceImpl;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.MoreMath;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.planning.ldm.plan.AspectScorePoint;
-import org.cougaar.planning.ldm.plan.AspectRate;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.ldm.measure.*;
+import org.cougaar.planning.ldm.PlanningFactory;
 
 import java.text.NumberFormat;
 import java.util.Date;
@@ -255,6 +249,35 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   public static double getQuantity(Task task) {
     return getPreferenceBestValue(task, AspectType.QUANTITY);
+  }
+
+  public static Preference createDemandRatePreference(PlanningFactory rf, Rate rate) {
+    ScoringFunction sf = ScoringFunction
+      .createStrictlyAtValue(AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+                                                        rate));
+    return rf.newPreference(AlpineAspectType.DEMANDRATE, sf);
+  }
+
+    /**
+   * Compare the preferences of two tasks return true if the tasks
+   * have preferences for the same aspect types and if all
+   * corresponding AspectValues are nearly equal.
+   * This needs to be fixed to be more efficient.
+   **/
+  public static boolean comparePreferences(Task a, Task b) {
+    return comparePreferencesInner(a, b) && comparePreferencesInner(b, a);
+  }
+
+  private static boolean comparePreferencesInner(Task a, Task b) {
+    Enumeration ae = a.getPreferences();
+    while (ae.hasMoreElements()) {
+      Preference p = (Preference) ae.nextElement();
+      int at = p.getAspectType();
+      double av = p.getScoringFunction().getBest().getValue();
+      double bv = getPreferenceBestValue(b, at);
+      if (!MoreMath.nearlyEquals(av, bv, 0.0001)) return false;
+    }
+    return true;
   }
 
   /** @param task
