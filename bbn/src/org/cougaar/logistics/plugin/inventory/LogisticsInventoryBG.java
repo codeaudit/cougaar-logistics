@@ -274,7 +274,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     return taskList;
   }
 
-  public Schedule getReorderLevel() {
+  public Schedule getCriticalLevel() {
+    
     return null;
   }
 
