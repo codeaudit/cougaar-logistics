@@ -456,7 +456,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     // Review: not sure if this is the right place to make this call
     ReconcileSupplyExpander expander = getSupplyExpander();
     if (expander != null) {
-      if (logger.isDebugEnabled() && expander.debugAgent()) {
+      if (logger.isDebugEnabled()) {
         logger.debug("InventoryPlugin checking the comm status alarms for supply type " + supplyType + " time: "
                      + new Date(currentTimeMillis()));
       }
@@ -1547,7 +1547,7 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
     Collection removedDispositions = recDispositions.getRemovedCollection();
     if (! removedDispositions.isEmpty()) {
-      supplyExpander.handleRemovedRealRequisitions(removedDispositions);
+      supplyExpander.handleRemovedDispositions(removedDispositions);
     }
     handleRemovedRefills(refillSubscription.getRemovedCollection());
     return touchedRemovedProjections;
