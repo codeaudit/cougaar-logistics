@@ -19,7 +19,7 @@
  * </copyright>
  */
 
-package org.cougaar.logistics.plugin.demand.projection;
+package org.cougaar.logistics.ldm;
 
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.LoggingService;
