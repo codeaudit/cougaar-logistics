@@ -393,8 +393,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
       for (long time = planTime; time<planTime+period; time += stepPeriod) {
 
+	  //filter and create task from time to time plus step period inclusive
+	  //(stepPeriod -1)
         Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
-                                                         time, time + stepPeriod);
+                                                         time, time + (stepPeriod - 1));
         //TODO: MWD Remove debug statements:
         if ((getOrgName() != null) &&
             (getOrgName().trim().equals("1-35-ARBN")) &&
@@ -407,7 +409,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
         }
 
         relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
-        List demandTasks = demandGenerator.generateDemandTasks(time, stepPeriod, relevantProjs);
+	//filter and create task from time to time plus step period inclusive
+	  //(stepPeriod -1)
+        List demandTasks = demandGenerator.generateDemandTasks(time, (stepPeriod - 1), relevantProjs);
 
         if (demandOutputModule != null) {
           demandOutputModule.writeDemandOutputToFile(demandTasks);
