@@ -658,6 +658,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
 
   private void createFailedAllocation(Task task, Inventory inventory, LogisticsInventoryPG thePG) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("Failing task: " + getTaskUtils().taskDesc(task) + " at agent: " 
+                   + inventoryPlugin.getClusterId().toString() +
+                   " Inventory initial level is: " + thePG.getLevel(0));
+    } 
     // make the failed time the day after the end of the oplan
     long failed_time = inventoryPlugin.getOPlanEndTime() + TimeUtils.MSEC_PER_DAY;
     AspectValue avs[];
@@ -670,10 +675,22 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     } else {
       // projection... set start and end to failed_time and set the rate to the pref over 1 bucket
       avs = new AspectValue[3];
-      avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, failed_time);
+      long failed_start = PluginHelper.getStartTime(task);
+      AspectValue failedAV;
+      Duration dur = new Duration(failed_time - failed_start, Duration.MILLISECONDS);
+      if (getTaskUtils().getRate(task) instanceof FlowRate) {
+        Volume vol = new Volume(0.0, Volume.GALLONS);
+        failedAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+                                              new FlowRate(vol,dur));
+      } else {
+        Count cnt = new Count(0.0, Count.EACHES);
+        failedAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+                                              new CountRate(cnt, dur));
+      }
+                                              
+      avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, failed_start);
       avs[1] = AspectValue.newAspectValue(AspectType.END_TIME, failed_time);
-      avs[2] = getDemandRateAV(PluginHelper.getPreferenceBestValue(task, AlpineAspectType.DEMANDRATE),
-                               thePG.getBucketMillis());
+      avs[2] = failedAV;
     }
     AllocationResult failed =
             inventoryPlugin.getPlanningFactory().newAllocationResult(0.9, false, avs);

@@ -1291,6 +1291,8 @@ public class LogisticsInventoryBG implements PGDelegate {
         AllocationResult ar = pe.getReportedResult();
         if (ar == null) {
           ar = pe.getEstimatedResult();
+        } else if (!ar.isSuccess()) {
+          return PluginHelper.getStartTime(task);
         }
         return (long) PluginHelper.getStartTime(ar);
     }
@@ -1307,6 +1309,9 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         // make sure that we got atleast a valid reported OR estimated allocation result
         if (ar != null) {
+          if (!ar.isSuccess()) {
+            PluginHelper.getEndTime(task);
+          }
             double resultTime;
             // make sure END_TIME is specified - otherwise use START_TIME
             // UniversalAllocator plugin only gives start times
