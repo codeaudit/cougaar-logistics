@@ -231,6 +231,8 @@ public class WorkQueue{
     return activeThreads.size()+inactiveThreads.size();
   }
 
+  public synchronized int getNumWorkWaitingOnQueue () { return workQ.size(); }
+
   //Internal
 
   protected synchronized boolean isWork(){
