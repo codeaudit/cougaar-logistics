@@ -79,15 +79,16 @@ public class GenericVishnuPlugin extends CustomVishnuAggregatorPlugin {
 	      }
 	  }
 	  else {
-	      if (seen.contains(task.getUID())) {
+	      /*	      if (seen.contains(task.getUID())) {
 		  if (isInfoEnabled()) {
 		      info ("ignoring already processed " + task.getUID());
 		  }
 	      }
 	      else {
+	      */
 		  seen.add (task.getUID());
 		  prunedTasks.add (task);
-	      }
+		  //	      }
 	  }
       }
       super.processTasks (prunedTasks);
