@@ -114,6 +114,10 @@ public class ALAmmoPacker extends Packer {
     while (changedPEs.hasMoreElements()) {
       PlanElement pe = (PlanElement)changedPEs.nextElement();
       
+      if (!PluginHelper.checkChangeReports (planElements.getChangeReports(pe), 
+					    PlanElement.ReportedResultChangeReport.class))
+	  continue;
+
       if (PluginHelper.updatePlanElement(pe)) {
         boolean needToCorrectQuantity = false;
         
