@@ -88,7 +88,8 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	Schedule  getBufferedInvLevels(); \
 	Schedule getBufferedTargetLevels(); \
 	ArrayList getActualDemandTasksList(); \
-	long getEffectiveProjectionStart(Task task, long start);
+	long getEffectiveProjectionStart(Task task, long start); \
+	void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin); 
 
 ;;
 ;; examples

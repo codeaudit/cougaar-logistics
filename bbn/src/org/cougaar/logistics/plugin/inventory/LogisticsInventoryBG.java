@@ -137,15 +137,19 @@ public class LogisticsInventoryBG implements PGDelegate {
     // set by the behavior group of the inventory.
     timeZero = (int)((startTime/MSEC_PER_BUCKET) - 1);
     int now_bucket = convertTimeToBucket(now);
+    
+
     //Initialize with initial level since the refill generator won't start setting inv levels
     //until the first day it processes which is today + OST - so depending on OST it could be a while.
     inventoryLevelsArray[0] = myPG.getInitialLevel();
+
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
-	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),parentPlugin);
+	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),false,parentPlugin);
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
+
     logger.debug("Start day: "+TimeUtils.dateString(startTime)+", time zero "+TimeUtils.dateString(timeZero));
     this.criticalLevel = criticalLevel;
     this.reorderPeriod = reorderPeriod;
@@ -158,6 +162,19 @@ public class LogisticsInventoryBG implements PGDelegate {
     bufferedInventoryLevels =
       ScheduleUtils.buildSimpleQuantitySchedule(myPG.getInitialLevel(), 
 						startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
+  }
+
+    //Call reinitialize which does the default that has to be done
+    //on set up after rehydration.   It does the minimum initialization
+    //that has to be done, even upon rehydration.  
+    //which does the initial set up when the inventory is created.
+  public void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin) {
+    logger = parentPlugin.getLoggingService(this);
+    if(logToCSV) {
+	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),true,parentPlugin);
+	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
+    }
+    taskUtils = parentPlugin.getTaskUtils();
   }
 
   public void addWithdrawProjectionAllocation(Task task) {

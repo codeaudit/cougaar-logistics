@@ -69,6 +69,7 @@ public class LogisticsInventoryLogger extends FileWriter{
     public static LogisticsInventoryLogger 
 	createInventoryLogger(Asset invAsset, 
 			      Organization anOrg,
+			      boolean doAppend,
 			      InventoryPlugin invPlugin){
 	LogisticsInventoryLogger newLogger=null;
 	LoggingService classLogger = invPlugin.getLoggingService(LogisticsInventoryLogger.class);
@@ -85,7 +86,7 @@ public class LogisticsInventoryLogger extends FileWriter{
 	try {
 	    pathDirs.mkdirs();
 	    csvFile.createNewFile();
-	    newLogger = new LogisticsInventoryLogger(csvFile,false,invPlugin);
+	    newLogger = new LogisticsInventoryLogger(csvFile,doAppend,invPlugin);
 	}
 	catch(Exception e) {
 	    classLogger.error("Error creating csv file " + fileId, e);

@@ -380,7 +380,7 @@ public class InventoryPlugin extends ComponentPlugin {
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
-    addInventories(blackboard.query(new InventoryPredicate(supplyType)));
+    addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
     inventoryPolicySubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPolicyPredicate(supplyType));
@@ -848,9 +848,12 @@ public class InventoryPlugin extends ComponentPlugin {
      Add some inventories to the inventoryHash.
      Method called during rehydration to populate inventory hash
   **/
-  private void addInventories(Collection inventories) {
+  private void addRehydratedInventories(Collection inventories) {
       for (Iterator i = inventories.iterator(); i.hasNext(); ) {
-	  addInventory((Inventory) i.next());
+	  Inventory inv = (Inventory) i.next();
+	  LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+	  logInvPG.reinitialize(logToCSV,this);
+	  addInventory(inv);
     }
   }
   
