@@ -49,7 +49,7 @@ import org.cougaar.planning.ldm.measure.Mass;
 
 /**
  * Handles getting instance data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/19/01
  **/
@@ -278,6 +278,10 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     setStatus("Done");
     logMessage(Logger.MINOR,Logger.RESULT,"Produced Result");
     return irr;
+  }
+
+  public String getName(){
+    return super.getName () + " for " + getClusterName();
   }
 
   //Static functions:
