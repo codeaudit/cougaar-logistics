@@ -123,7 +123,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     avs[0] = AspectValue.newAspectValue(AspectType.START_TIME,
                                         getTaskUtils().getPreference(gpTask, AspectType.START_TIME));
     AllocationResult dispAR =
-        getPlanningFactory().newAllocationResult(1.0, true, avs);
+        getPlanningFactory().newAllocationResult(Constants.Confidence.OBSERVED, true, avs);
     Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
     dfPlugin.publishAdd(disp);
   }

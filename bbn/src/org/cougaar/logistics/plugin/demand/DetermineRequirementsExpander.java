@@ -212,7 +212,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     AspectValue avs[] = new AspectValue[1];
     avs[0] = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE, CountRate.newEachesPerDay(0.0));
     AllocationResult dispAR =
-        getPlanningFactory().newAllocationResult(1.0, true, avs);
+        getPlanningFactory().newAllocationResult(Constants.Confidence.OBSERVED, true, avs);
     Disposition disposition =
         getPlanningFactory().createDisposition(task.getPlan(), task, dispAR);
     dfPlugin.publishAdd(disposition);
