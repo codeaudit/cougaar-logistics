@@ -417,17 +417,19 @@ public class InventoryPlugin extends ComponentPlugin
 							    Constants.Verb.Supply,
 							    providers);
 	  if (!unprovidedTasks.isEmpty()){
+	    if (logger.isWarnEnabled())
 	      logger.warn("Trying to rescind unprovided supply refill tasks...");
-	      rescindTaskAllocations(unprovidedTasks);
-	      externalAllocator.allocateRefillTasks(unprovidedTasks);
+	    rescindTaskAllocations(unprovidedTasks);
+	    externalAllocator.allocateRefillTasks(unprovidedTasks);
 	  }
 	  unprovidedTasks = getUnprovidedTasks(refillSubscription, 
 						 Constants.Verb.ProjectSupply,
 						 providers);
 	  if (!unprovidedTasks.isEmpty()){
+	    if (logger.isWarnEnabled())
 	      logger.warn("Trying to rescind unprovided projection refill tasks...");
-	      rescindTaskAllocations(unprovidedTasks);
-	      externalAllocator.allocateRefillTasks(unprovidedTasks);
+	    rescindTaskAllocations(unprovidedTasks);
+	    externalAllocator.allocateRefillTasks(unprovidedTasks);
 	  }
 
           Collection unallocRefill = null;
@@ -435,7 +437,8 @@ public class InventoryPlugin extends ComponentPlugin
             unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription, 
 										       Constants.Verb.Supply));
             if (!unallocRefill.isEmpty()){
-              logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
+	      if (logger.isWarnEnabled())
+		logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
               externalAllocator.allocateRefillTasks(unallocRefill);
             }
           }
@@ -443,7 +446,8 @@ public class InventoryPlugin extends ComponentPlugin
             unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription,
 										       Constants.Verb.ProjectSupply));
             if (!unallocRefill.isEmpty()) {
-              logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
+	      if (logger.isWarnEnabled())
+		logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
               externalAllocator.allocateRefillTasks(unallocRefill);
             }
           }
@@ -577,6 +581,7 @@ public class InventoryPlugin extends ComponentPlugin
 	      taskEnd = TaskUtils.getEndTime(task);
 	      provider = (Organization)alloc.getAsset();
 	      if (alloc.getRole() != getRole(supplyType)) {
+		if (logger.isWarnEnabled())
 		  logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");	
 	      }
 	      providerEndDate = (Date) providers.get(provider);
@@ -727,7 +732,8 @@ public class InventoryPlugin extends ComponentPlugin
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     String id = getAgentIdentifier().toString();
     if (turnOnTaskSched) {
-      logger.debug("TASK SCHEDULER ON for "+id);
+      if (logger.isDebugEnabled())
+	logger.debug("TASK SCHEDULER ON for "+id);
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open ("supplyTaskPolicy.xml");
@@ -1221,6 +1227,7 @@ public class InventoryPlugin extends ComponentPlugin
     for (Iterator i = inventories.iterator(); i.hasNext();) {
       Inventory inv = (Inventory) i.next();
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      logInvPG.setStartCDay(logOPlan.getOplanCday());
       logInvPG.reinitialize(logToCSV, this);
       addInventory(inv);
     }
@@ -1369,6 +1376,9 @@ public class InventoryPlugin extends ComponentPlugin
       if (logToCSV) {
         logInvPG.logAllToCSVFile(cycleStamp);
       }
+      
+      // Force incremental persistence snapshots to include changes to these
+      publishChange(inv);
     }
   }
 
@@ -1812,7 +1822,8 @@ public class InventoryPlugin extends ComponentPlugin
         Class cls = Class.forName(comparatorClass);
         Constructor constructor = cls.getConstructor(paramTypes);
         ComparatorModule comparator = (ComparatorModule) constructor.newInstance(initArgs);
-        logger.info("Using comparator " + comparatorClass);
+	if (logger.isInfoEnabled())
+	  logger.info("Using comparator " + comparatorClass);
         return comparator;
       } catch (Exception e) {
         logger.error(e + " Unable to create Expander instance of " + comparatorClass + ". " +
