@@ -142,20 +142,6 @@ public abstract class InventoryChart extends JPanel {
 	chart.getLegend().setVisible(true);
 	chart.getLegend().setPreferredSize(new Dimension(141,95));
 
-
-
-	// provide for point labels displayed beneath chart
-         // to leave space in layout
-	/***
-	pointLabel = new JLabel("Right click to get quantity at a point.");
-
-	pointLabel.setBackground(Color.magenta);
-	add(pointLabel, new GridBagConstraints(gridx, gridy, 1, 1, 1.0, 0.0,
-					       GridBagConstraints.CENTER, 
-					       GridBagConstraints.NONE, 
-					       blankInsets, 0, 0));
-
-	***/
     }
 
     public void addChartListener(JCChartListener listener) {
@@ -174,9 +160,21 @@ public abstract class InventoryChart extends JPanel {
 	chart.removePickListener(listener);
     }
 
+    public JCAxis getFirstXAxis() {
+	java.util.List viewList = chart.getDataView();
+	if(viewList.size() > 0) {
+	    ChartDataView chartDataView = (ChartDataView) viewList.get(0);
+	    return chartDataView.getXAxis();
+	}
+	return null;
+    }
+
     private void resetAxes() {
 
-
+	long baseCDayTime = 0L;
+	if(inventory != null) {
+	    baseCDayTime = inventory.getStartCDay();
+	}
 	java.util.List viewList = chart.getDataView();
 	for (int i = 0; i < viewList.size(); i++) {
 	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
@@ -246,9 +244,24 @@ public abstract class InventoryChart extends JPanel {
 	    InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel)chartDataView.getDataSource();
 	    dataModel.resetInventory(data);
 	}
+	myYAxisTitle = data.getUnit();
 	chart.reset();
 	resetAxes();
     }
+
+    public void setDisplayCDay(boolean doUseCDay) {
+	displayCDay = doUseCDay;
+	java.util.List viewList = chart.getDataView();
+	for (int i = viewList.size()-1; i >= 0; i--) {
+	    ChartDataView chartDataView = (ChartDataView)viewList.get(i);
+	    InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel)chartDataView.getDataSource();
+	    dataModel.setDisplayCDay(displayCDay);
+	}
+	chart.reset();
+	resetAxes();
+    }
+	    
+
 
     protected ChartDataView addView(int chartType, 
 				  InventoryBaseChartDataModel dm) {
