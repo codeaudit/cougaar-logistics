@@ -21,39 +21,31 @@
 
 package org.cougaar.logistics.ldm;
 
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.blackboard.Subscription;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.planning.ldm.PlanningFactory;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.LatePropertyProvider;
-import org.cougaar.util.MutableTimeSpan;
-import org.cougaar.util.UnaryPredicate;
-
-import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.glm.ldm.QueryLDMPlugin;
 import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.Service;
-import org.cougaar.glm.ldm.QueryLDMPlugin;
-
-import java.math.BigDecimal;
-import java.sql.*;
-import java.text.StringCharacterIterator;
-import java.util.*;
-
 import org.cougaar.logistics.ldm.asset.*;
-import org.cougaar.logistics.plugin.inventory.UtilsProvider;
+import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
-import org.cougaar.logistics.plugin.inventory.AssetUtils;
+import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+import org.cougaar.util.UnaryPredicate;
+
+import java.text.StringCharacterIterator;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
 public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvider {
 
@@ -66,12 +58,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // Subscription to policies
   private IncrementalSubscription meiSubscription;
 
-    // MEI Consumption
-    public static final int AMMO  = 0;
-    public static final int FUEL  = 1;
-    public static final int PKG_POL  = 2;
-    public static final int SPARES  = 3;
-	
+  // MEI Consumption
+  public static final int AMMO  = 0;
+  public static final int FUEL  = 1;
+  public static final int PKG_POL  = 2;
+  public static final int SPARES  = 3;
+
 //   private IncrementalSubscription myOrganizations;
   protected Organization myOrg;
 
@@ -86,24 +78,24 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
     public boolean execute (Object o) {
       if (o instanceof Organization) {
-	return ((Organization)o).isSelf();
+        return ((Organization)o).isSelf();
       } 
       return false;
     }
   };
-	
+
   private static class ClassVIIPredicate implements UnaryPredicate {
     // Predicate defining MEIs, in theory all of the MEIs we created
     // prototypes for
     public boolean execute (Object o) {
       if (o instanceof ClassVIIMajorEndItem) {
-	return true;
+        return true;
       }
-		
+
       if (o instanceof AggregateAsset) {
-	if (((AggregateAsset)o).getAsset() instanceof ClassVIIMajorEndItem) {
-	  return true;
-	}
+        if (((AggregateAsset)o).getAsset() instanceof ClassVIIMajorEndItem) {
+          return true;
+        }
       }
       return false;
     } 
@@ -116,8 +108,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
   public LoggingService getLoggingService(Object requestor) {
     return (LoggingService)serviceBroker.getService(requestor,
-						    LoggingService.class,
-						    null);
+                                                    LoggingService.class,
+                                                    null);
   }
 
   public BlackboardQueryService getBlackboardQueryService(Object requestor) {
@@ -142,10 +134,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     }
   }
 
-  protected void setupSubscriptions() { 
+  protected void setupSubscriptions() {
     super.setupSubscriptions();
     meiSubscription =
-      (IncrementalSubscription) subscribe (new ClassVIIPredicate());
+        (IncrementalSubscription) subscribe (new ClassVIIPredicate());
     if (didRehydrate()) {
       rehydrate();
     }
@@ -160,33 +152,33 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       Asset asset, proto;
       Vector good_prototypes = new Vector();
       while (meis.hasMoreElements()) {
-	asset = (Asset)meis.nextElement();
-	if (asset instanceof AggregateAsset) {
-	  proto = ((AggregateAsset)asset).getAsset();
-	} else {
-	  proto = asset.getPrototype();
-	} // if
-	if (proto == null) {
-	  logger.error("no prototype for "+asset);
-	} // if
-	if ((proto != null) && (!good_prototypes.contains(proto))) {
-	  TypeIdentificationPG tip = asset.getTypeIdentificationPG();
-	  if (tip!= null) {
-	    String type_id = tip.getTypeIdentification();
-	    if (type_id != null) {
-	      getLDM().cachePrototype(type_id, proto);
-	      good_prototypes.add(proto);
-	    } else {
-	      logger.error("cannot rehydrate "+proto+" no typeId");
-	    }
-	  } else {
-	    logger.error("cannot rehydrate "+proto+" no typeIdPG");
-	  }
-	}
+        asset = (Asset)meis.nextElement();
+        if (asset instanceof AggregateAsset) {
+          proto = ((AggregateAsset)asset).getAsset();
+        } else {
+          proto = asset.getPrototype();
+        } // if
+        if (proto == null) {
+          logger.error("no prototype for "+asset);
+        } // if
+        if ((proto != null) && (!good_prototypes.contains(proto))) {
+          TypeIdentificationPG tip = asset.getTypeIdentificationPG();
+          if (tip!= null) {
+            String type_id = tip.getTypeIdentification();
+            if (type_id != null) {
+              getLDM().cachePrototype(type_id, proto);
+              good_prototypes.add(proto);
+            } else {
+              logger.error("cannot rehydrate "+proto+" no typeId");
+            }
+          } else {
+            logger.error("cannot rehydrate "+proto+" no typeIdPG");
+          }
+        }
       }
       addConsumerPGs(meiSubscription);
     }
-  } 
+  }
 
   public void execute() {
 //     System.out.println("Execute called for "+getAgentIdentifier());
@@ -206,7 +198,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       myOrg = (Organization) new_orgs.next();
       Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
-	service= srvc.toString();
+        service= srvc.toString();
 //         System.out.println("MEIPrototypeProvider configured for "+getAgentIdentifier());
         configured = true;
       } else {
@@ -218,60 +210,60 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
 
     protected  boolean[] checkMeiConsumption(Asset asset) {
-	String type_id = asset.getTypeIdentificationPG().getTypeIdentification();
-	String query = (String) fileParameters_.get ("MeiConsumption");
-	String consumer_id = type_id.substring(type_id.indexOf("/")+1);
-	query = substituteNSN (query, consumer_id); 
+      String type_id = asset.getTypeIdentificationPG().getTypeIdentification();
+      String query = (String) fileParameters_.get ("MeiConsumption");
+      String consumer_id = type_id.substring(type_id.indexOf("/")+1);
+      query = substituteNSN (query, consumer_id);
 
-	Vector qresult;
-	// The default is that the MEI consumes all 4 classes.
-	// This prevents problems if the table hasn't been updated for
-	// a new MEI.
-	boolean result[] = {true, true, true, true };
-	try {
-	    qresult = executeQuery (query);
- 	    logger.debug ("in checkMeiConsumption() query complete for asset "+
-			  asset.getTypeIdentificationPG().getNomenclature()+
-			  "\nquery= "+query);
-	    if (qresult.isEmpty()) {
- 		logger.debug ("no result for asset " +
-			      asset.getTypeIdentificationPG().getNomenclature());
-	    } else {
-		Object row[] = (Object[])qresult.firstElement();
-		result[AMMO]=convertConsumptionElement(row[AMMO]);
-		result[PKG_POL]=convertConsumptionElement(row[PKG_POL]);
-		result[SPARES]=convertConsumptionElement(row[SPARES]);
-		result[FUEL]=convertConsumptionElement(row[FUEL]);
-	    } // if else
-	} catch (Exception ee) {
-	    logger.error ( "in checkMeiConsumption(), DB query failed.Query= "+query);
+      Vector qresult;
+      // The default is that the MEI consumes all 4 classes.
+      // This prevents problems if the table hasn't been updated for
+      // a new MEI.
+      boolean result[] = {true, true, true, true };
+      try {
+        qresult = executeQuery (query);
+        logger.debug ("in checkMeiConsumption() query complete for asset "+
+                      asset.getTypeIdentificationPG().getNomenclature()+
+                      "\nquery= "+query);
+        if (qresult.isEmpty()) {
+          logger.debug ("no result for asset " +
+                        asset.getTypeIdentificationPG().getNomenclature());
+        } else {
+          Object row[] = (Object[])qresult.firstElement();
+          result[AMMO]=convertConsumptionElement(row[AMMO]);
+          result[PKG_POL]=convertConsumptionElement(row[PKG_POL]);
+          result[SPARES]=convertConsumptionElement(row[SPARES]);
+          result[FUEL]=convertConsumptionElement(row[FUEL]);
+        } // if else
+      } catch (Exception ee) {
+        logger.error ( "in checkMeiConsumption(), DB query failed.Query= "+query);
 
-	} // try
+      } // try
 
-	return result;
+      return result;
     }
 
-    private boolean convertConsumptionElement(Object ele) {
-	boolean res = true;
-	try {
-	    if (ele.toString().equals("0")) {
-		res = false;
-	    }
-	} catch (Exception e) {
-	    logger.error ( "in convertConsumptionElement(), convert failed; ele= "+ele);
-	}
-	return res;
+  private boolean convertConsumptionElement(Object ele) {
+    boolean res = true;
+    try {
+      if (ele.toString().equals("0")) {
+        res = false;
+      }
+    } catch (Exception e) {
+      logger.error ( "in convertConsumptionElement(), convert failed; ele= "+ele);
     }
+    return res;
+  }
 
-    private boolean consumes(boolean[] consumed, int type) {
-	boolean res = true;
-	try {
-	    res = consumed[type];
-	} catch (Exception e) {
-	    logger.error ( "in consumes(), array access failed");
-	}
-	return res;
+  private boolean consumes(boolean[] consumed, int type) {
+    boolean res = true;
+    try {
+      res = consumed[type];
+    } catch (Exception e) {
+      logger.error ( "in consumes(), array access failed");
     }
+    return res;
+  }
 
   protected void addConsumerPGs(Collection meiConsumers) {
     Iterator meis = meiConsumers.iterator();
@@ -285,13 +277,13 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         anAsset = a;
       }
       if (anAsset instanceof ClassVIIMajorEndItem) {
-	boolean[] consumed = checkMeiConsumption(anAsset);
+        boolean[] consumed = checkMeiConsumption(anAsset);
         if (consumes(consumed, FUEL) && anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
           logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
-                     getAgentIdentifier());
+                       getAgentIdentifier());
 
-          NewFuelConsumerPG fuelpg = 
-            (NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
+          NewFuelConsumerPG fuelpg =
+              (NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
           fuelpg.setMei(a);
           fuelpg.setService(service);
           fuelpg.setTheater(THEATER);
@@ -302,10 +294,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
         if (consumes(consumed, AMMO) && anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {        
           logger.debug("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
-                     getAgentIdentifier());
+                       getAgentIdentifier());
 
-          NewAmmoConsumerPG ammopg = 
-            (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
+          NewAmmoConsumerPG ammopg =
+              (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
           ammopg.setMei(a);
           ammopg.setService(service);
           ammopg.setTheater(THEATER);
@@ -316,10 +308,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
         if (consumes(consumed, PKG_POL) && anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class) == null) {
           logger.debug("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
-                     getAgentIdentifier());
+                       getAgentIdentifier());
 
-          NewPackagedPOLConsumerPG packagedpg = 
-            (NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
+          NewPackagedPOLConsumerPG packagedpg =
+              (NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
           packagedpg.setMei(a);
           packagedpg.setService(service);
           packagedpg.setTheater(THEATER);
@@ -330,10 +322,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         }
         if (consumes(consumed, SPARES) && anAsset.searchForPropertyGroup(RepairPartConsumerPG.class) == null) {
           logger.debug("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
-                     getAgentIdentifier());
+                       getAgentIdentifier());
 
-          NewRepairPartConsumerPG partpg = 
-            (NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
+          NewRepairPartConsumerPG partpg =
+              (NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
           partpg.setMei(a);
           partpg.setService(service);
           partpg.setTheater(THEATER);
@@ -362,18 +354,18 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     logger.debug("canHandle (typeid:"+typeid+")");
     if ((protoProvider == null) || (protoProvider.booleanValue())) {
       if ((class_hint == null) ||  class_hint.getName().equals(MEI_STRING)){
-	String [] handlesList = {"NSN/", "MDS/", "TAMCN/", "MEI/", "DODIC/"};
-	for (int i=0; i<handlesList.length; i++) {
-	  if ( typeid.startsWith (handlesList[i]) ) {
-	    return true;
-	  } 
-	} 
+        String [] handlesList = {"NSN/", "MDS/", "TAMCN/", "MEI/", "DODIC/"};
+        for (int i=0; i<handlesList.length; i++) {
+          if ( typeid.startsWith (handlesList[i]) ) {
+            return true;
+          }
+        }
       }
     }
     logger.debug("canHandle(), Unable to provider Prototype."+
-		 " ProtoProvider = "+protoProvider+", typeid= "+typeid);
+                 " ProtoProvider = "+protoProvider+", typeid= "+typeid);
     return false;
-  } 
+  }
 
 
   public Asset makePrototype (String type_name, Class class_hint) {
@@ -409,7 +401,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // Normalizes the wide range of Airforce MDSs inorder to find the MDS in the
   // database.
   private String getNormalizedName (String name) {
-	
+
     StringBuffer mission = new StringBuffer();
     StringBuffer design = new StringBuffer();
     StringBuffer series = new StringBuffer();
@@ -419,48 +411,48 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     //0 = mission
     //1 = design
     //2 = series
-	
+
     //Character Ch;
     char ch;
     while ((ch = sci.current()) != StringCharacterIterator.DONE) {
-		
+
       if (!Character.isLetterOrDigit(ch)) {
-	sci.next();
-	continue;
+        sci.next();
+        continue;
       } // if
       ch = Character.toUpperCase(ch);
-		
+
       if (state == 0) {
-				//looking for mission
-	if (Character.isLetter(ch)) {
-	  mission.append(ch);
-	  sci.next();
-	} else {
-	  state = 1;
-	} // if
+        //looking for mission
+        if (Character.isLetter(ch)) {
+          mission.append(ch);
+          sci.next();
+        } else {
+          state = 1;
+        } // if
       } else if (state == 1) { //looking for design
-	if (Character.isDigit(ch)) {
-	  design.append(ch);
-	  sci.next();
-	} else {
-	  state = 2;
-	} // if
+        if (Character.isDigit(ch)) {
+          design.append(ch);
+          sci.next();
+        } else {
+          state = 2;
+        } // if
 
       } else { //looking for series
-	series.append(ch);
-	sci.next();
+        series.append(ch);
+        sci.next();
       }
     } // while
-	
+
     //Converting design to Integer
-	
+
     while (design.length() < 3) {
       design.insert(0, (int)0);
     } // while
     while (series.length() > 1) {
       series.deleteCharAt(series.length()-1);
     } // while
-	
+
     return (mission.toString()+design.toString()+series.toString());
   } // getNormalizedName
 
@@ -479,18 +471,18 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       String q2 = query.substring(i+4, query.indexOf(":service")) + "'"+service+"'";
       query = q1 + q2;
       try {
-	result = executeQuery (query);
-	if (result.isEmpty()) {
-	  // this is fine - means the type_id is not an MEI
-	  return null;
-	} else {
-	  Object row[] = (Object[])result.firstElement();
-	  nomen = (String) row[0];
-	}
+        result = executeQuery (query);
+        if (result.isEmpty()) {
+          // this is fine - means the type_id is not an MEI
+          return null;
+        } else {
+          Object row[] = (Object[])result.firstElement();
+          nomen = (String) row[0];
+        }
       } catch (Exception ee) {
-	logger.error("retrieveFromDB(), DB query failed. query= "+query+
-		    "\n ERROR "+ee);
-	return null;
+        logger.error("retrieveFromDB(), DB query failed. query= "+query+
+                     "\n ERROR "+ee);
+        return null;
       } 
     } 
     return nomen;
@@ -498,7 +490,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
 
   public void fillProperties (Asset anAsset) {
-  } 
+  }
 
   public Asset getPrototype(String typeid) {
     return getLDM().getFactory().getPrototype(typeid);
@@ -507,28 +499,28 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // Queries the DB to retrieve the parts for an MEI and the consumption rates for each
   // part in order to create and AssetConsumptionRate object.
   // public AssetConsumptionRate lookupAssetConsumptionRate
-  public Vector lookupAssetConsumptionRate(Asset asset, String asset_type, 
-					   String service, String theater) {
+  public Vector lookupAssetConsumptionRate(Asset asset, String asset_type,
+                                           String service, String theater) {
     logger.debug ("lookupAssetConsumptionRate()");
 
     String query = createACRQuery (asset, asset_type, service, theater);
     if (query == null) {
       logger.error("lookupAssetConsumptionRate() Invalid ACR query for "+
-		  asset_type+service);
+                   asset_type+service);
       return null;
     } // if
     logger.debug("lookupAssetConsumptionRate() ACR query for "+
-		asset_type+service+" = "+query);
+                 asset_type+service+" = "+query);
     Vector result;
     try {
       result = executeQuery (query);
       logger.debug ("in lookupAssetConsumptionRate() query complete for asset "+
-		   asset.getTypeIdentificationPG().getNomenclature()+
-		   "\nquery= "+query);
+                    asset.getTypeIdentificationPG().getNomenclature()+
+                    "\nquery= "+query);
       if (result.isEmpty()) {
-	logger.debug ("no result for asset " +
-		     asset.getTypeIdentificationPG().getNomenclature());
-	return null;
+        logger.debug ("no result for asset " +
+                      asset.getTypeIdentificationPG().getNomenclature());
+        return null;
       } // if
     } catch (Exception ee) {
       logger.error ( "in lookupAssetConsumptionRate(), DB query failed.Query= "+query);
@@ -546,10 +538,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     String division = typeID.substring(0, indx);
     return asset_type+service.getName()+division;
   } // generateMEIQueryParameter
-	
 
-  public String createACRQuery (Asset asset, String asset_type, 
-				String service,  String theater) {
+
+  public String createACRQuery (Asset asset, String asset_type,
+                                String service,  String theater) {
     String typeID = asset.getTypeIdentificationPG().getTypeIdentification();
     int indx = typeID.indexOf ('/');
     String division;
@@ -562,12 +554,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     }
     String query = (String) fileParameters_.get (asset_type+service+division);
     String consumer_id = typeID.substring (indx+1);
-    logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+ 
-		", consumer_Id:"+consumer_id);
+    logger.debug("createACRQuery(), typeID:" +typeID+", query:"+query+
+                 ", consumer_Id:"+consumer_id);
     return substituteNSN (query, consumer_id);
   } // createACRQuery
 
-  /** Replaces the ":nsn" in the query with the actual NSN. 
+  /** Replaces the ":nsn" in the query with the actual NSN.
    * @param q query string
    * @param nsn actual NSN
    * @return new query
@@ -577,10 +569,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (q != null) {
       int indx = q.indexOf(":nsn");
       if (indx != -1) {
-	query = q.substring(0,indx) + "'"+nsn+"'";
-	if (q.length() > indx+4) {
-	  query +=q.substring(indx+4);
-	} // if
+        query = q.substring(0,indx) + "'"+nsn+"'";
+        if (q.length() > indx+4) {
+          query +=q.substring(indx+4);
+        } // if
       } // if
     } // if
     //System.JTEST.out.println ("The string AFTER the substitution was " + query);  		
@@ -593,10 +585,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if (q != null) {
       int indx = q.indexOf(":type");
       if (indx != -1) {
-	query = q.substring(0,indx) + "'"+supplyType+"'";
-	if (q.length() > indx+4) {
-	  query += q.substring(indx+4);
-	} // if
+        query = q.substring(0,indx) + "'"+supplyType+"'";
+        if (q.length() > indx+4) {
+          query += q.substring(indx+4);
+        } // if
       } // if
     } // if
     return query;
@@ -614,20 +606,20 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     if ((q != null) && !list.isEmpty()) {
       int indx=q.indexOf(":nsns");
       if (indx != -1) {
-	boolean comma = false;
-	query.append(q.substring(0, indx));
-	Iterator i = list.iterator();
-	while (i.hasNext()) {
-	  if (comma) {
-	    query.append(',');
-	  } // if
-	  query.append("'"+(String)i.next()+"'");
-	  comma=true;
-	} // while
-	if (q.length() > indx+5) {
-	  query.append(q.substring(indx+5));
-	} // if
-	return query.toString();
+        boolean comma = false;
+        query.append(q.substring(0, indx));
+        Iterator i = list.iterator();
+        while (i.hasNext()) {
+          if (comma) {
+            query.append(',');
+          } // if
+          query.append("'"+(String)i.next()+"'");
+          comma=true;
+        } // while
+        if (q.length() > indx+5) {
+          query.append(q.substring(indx+5));
+        } // if
+        return query.toString();
       } // if
     } // if
     return null;
