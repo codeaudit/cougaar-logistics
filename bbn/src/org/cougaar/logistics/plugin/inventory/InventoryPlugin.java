@@ -156,9 +156,9 @@ public class InventoryPlugin extends ComponentPlugin {
 	      domainService  = null;
 	  }
       });
-    // System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
-// 		       "in org: " + getBindingSite().getAgentIdentifier().toString() +
-//   		       " this plugin is: " + this);
+  //   System.out.println("\n LOADING InventoryPlugin of type: " + supplyType +
+//  		       "in org: " + getBindingSite().getAgentIdentifier().toString() +
+//    		       " this plugin is: " + this);
   }
 
     public void unload() {
@@ -214,7 +214,9 @@ public class InventoryPlugin extends ComponentPlugin {
   protected void execute() {
     //clear our new refill list
     newRefills.clear();
-    updateInventoryPolicy(inventoryPolicySubscription.getAddedCollection());
+    if (inventoryPolicy == null) {
+      updateInventoryPolicy(inventoryPolicySubscription);
+    }
     updateInventoryPolicy(inventoryPolicySubscription.getChangedCollection());
     processDetReq(detReqSubscription.getAddedCollection());
     cycleStamp = (new Date()).getTime();
