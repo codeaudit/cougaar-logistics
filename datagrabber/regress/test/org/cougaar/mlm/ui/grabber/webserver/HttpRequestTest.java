@@ -65,8 +65,20 @@ public class HttpRequestTest  extends TestCase {
         assertEquals("/foo?baz=bif", h.getTarget());
     }
 
+    public void testParam()  throws Throwable {
+        // params are passed via HTTP headers
+        HttpRequest h = new HttpRequest(1, createSocketWith("GET /foo HTTP/1.0" + getCRLF() + "baz:1"+ getCRLF() + "bif:2"));
+        h.readHeader(new StdLogger());
+        assertEquals("1", h.getParameter("baz"));
+        assertEquals("2", h.getParameter("bif"));
+    }
+
     private MySocket createSocketWith(String data) {
-        return new MySocket(new ByteArrayInputStream((data + System.getProperty("line.separator")+ System.getProperty("line.separator")).getBytes()));
+        return new MySocket(new ByteArrayInputStream((data + getCRLF()+ getCRLF()).getBytes()));
+    }
+
+    private String getCRLF() {
+        return System.getProperty("line.separator");
     }
 
 }
