@@ -1,0 +1,86 @@
+####################################################
+# Rule to Replace a plugin is a specific Agent
+#
+# This a a special hack for Lora because she doesn't
+# mind breaking the rules.  I take no credit for creating
+# this rule, she blackmailed me into writing it.
+#
+
+# Insert the orig plugin here
+orig_plugin = "org.cougaar.logistics.plugin.inventory.InventoryPlugin"
+
+# Insert the new component here.
+replace_plugin = "org.cougaar.logistics.plugin.inventory.ReconcileInventoryPlugin"
+
+# Add all the agents you want to replace the component in this array.
+agents = ['123-MSB']
+
+society.each_agent do |agent|
+  if agents.include?(agent.name)
+    roles = []
+    role_mechanisms = []
+    role_and_mechanisms = []
+    agent.each_facet(:role) do |facet|
+      roles << facet[:role]
+      role_mechanisms << facet[:mechanism]
+      role_and_mechanisms << facet[:role].to_s + "." + facet[:mechanism].to_s   
+    end
+    has_equipment = agent.get_facet(:has_equipment_assets)
+    has_personnel = agent.get_facet(:has_personnel_assets)
+    is_ua = agent.get_facet(:is_ua)
+
+    if agent.has_component? { |c| c.classname == orig_plugin }
+      agent.remove_component(orig_plugin)
+    end
+
+    unless is_ua
+      if roles.include?("AmmunitionProvider") || has_equipment 
+	unless (role_and_mechanisms.include?("AmmunitionProvider.TerminalAmmunitionPacker") ||     # OSC
+		role_and_mechanisms.include?("AmmunitionProvider.TerminalInventoryManager"))       # AWR-2
+	  agent.add_component do |c|
+	    c.classname = replace_plugin
+	    c.add_argument('SUPPLY_TYPE=Ammunition')
+	  end
+	end
+      end
+    end
+    if roles.include?("FuelSupplyProvider") || has_equipment
+      unless role_and_mechanisms.include?("FuelSupplyProvider.TerminalInventoryManager")
+	agent.add_component do |c|
+	  c.classname = replace_plugin
+	  c.add_argument('SUPPLY_TYPE=BulkPOL')
+	end
+      end
+    end
+    unless is_ua
+      if roles.include?("PackagedPOLSupplyProvider") || has_equipment
+	unless role_and_mechanisms.include?("PackagedPOLSupplyProvider.TerminalInventoryManager")
+	  agent.add_component do |c|
+	    c.classname = replace_plugin
+	    c.add_argument('SUPPLY_TYPE=PackagedPOL')
+	  end
+	end
+      end
+    end
+    unless is_ua
+      if roles.include?("SparePartsProvider") || has_equipment
+	unless role_and_mechanisms.include?("SparePartsProvider.TerminalInventoryManager")
+	  agent.add_component do |c|
+	    c.classname = replace_plugin
+	    c.add_argument('SUPPLY_TYPE=Consumable')
+	  end
+	end
+      end
+    end
+    unless is_ua
+      if roles.include?("SubsistenceSupplyProvider") || has_personnel
+	unless role_and_mechanisms.include?("SubsistenceSupplyProvider.TerminalInventoryManager")
+	  agent.add_component do |c|
+	    c.classname = replace_plugin
+	    c.add_argument('SUPPLY_TYPE=Subsistence')
+	  end
+	end
+      end
+    end
+  end
+end
