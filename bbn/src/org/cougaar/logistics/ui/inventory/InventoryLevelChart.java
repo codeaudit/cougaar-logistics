@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -18,7 +18,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
- 
+
 package org.cougaar.logistics.ui.inventory;
 
 import java.util.Date;
@@ -33,57 +33,82 @@ import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 
-import com.klg.jclass.chart.JCChart;
-import com.klg.jclass.chart.JCPickListener;
 import com.klg.jclass.chart.data.JCDefaultDataSource;
 import com.klg.jclass.util.swing.JCExitFrame;
-import com.klg.jclass.chart.JCSymbolStyle;
 
-import com.klg.jclass.chart.ChartDataView;
-import com.klg.jclass.chart.ChartDataViewSeries;
-import com.klg.jclass.chart.ChartDataModel;
-import com.klg.jclass.chart.ChartDataEvent;
+import com.klg.jclass.chart.*;
 
 
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
-/** 
+/**
  * <pre>
- * 
+ *
  * The InventoryChart class is the base class for all Inventory
  * charts displayed in the GUI.   It contains all the shared
  * behavior of all charts in the GUI.
- * 
- * 
+ *
+ *
  *
  **/
 
-public class InventoryLevelChart extends InventoryChart{
+public class InventoryLevelChart extends InventoryChart {
 
-    public InventoryLevelChart() {
-	initialize("Inventory");
+  protected ChartDataView invChartDataView;
+  protected ChartDataView orgChartDataView;
+
+  public InventoryLevelChart() {
+    initialize("Inventory");
+  }
+
+  public ChartDataView getInvChartDataView() { return invChartDataView; }
+  public ChartDataView getOrgChartDataView() { return orgChartDataView; }
+
+
+
+  public void initializeChart() {
+
+    InventoryLevelChartDataModel idm = new InventoryLevelChartDataModel();
+    invChartDataView = addChartView(JCChart.PLOT, idm);
+
+    OrgActivityChartDataModel oadm = new OrgActivityChartDataModel();
+    orgChartDataView = addChartView(JCChart.BAR, oadm);
+
+    JCBarChartFormat format = (JCBarChartFormat)orgChartDataView.getChartFormat();
+    format.setClusterWidth(100);
+    format.setClusterOverlap(100);
+
+    orgChartDataView.setOutlineColor(Color.gray);
+
+    //chartDataView.setOutlineColor(Color.black);
+    for (int j = 0; j < orgChartDataView.getNumSeries(); j++) {
+      ChartDataViewSeries series = orgChartDataView.getSeries(j);
+      setSeriesColor(series, colorTable.get(series.getLabel()));
+      Color symbolColor = colorTable.get(series.getLabel() + "_SYMBOL");
+      if (symbolColor != null) {
+        series.getStyle().setSymbolColor(symbolColor);
+      }
+
     }
 
-    public void initializeChart() {
-	InventoryLevelChartDataModel dm = new InventoryLevelChartDataModel();
-	ChartDataView chartDataView = addChartView(JCChart.PLOT, dm);
 
-	// set line width
-	for (int j = 0; j < chartDataView.getNumSeries(); j++) {
-	    ChartDataViewSeries series = chartDataView.getSeries(j);
-	    series.getStyle().setLineWidth(2);
-	    series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
-	    setSeriesColor(series,colorTable.get(series.getLabel()));
-	    if(series.getLabel().equals(dm.TARGET_LEVEL_SERIES_LABEL)){
-		setSeriesColor(series,Color.yellow);
-		series.getStyle().setSymbolShape(JCSymbolStyle.VERT_LINE);
-		series.getStyle().setSymbolColor(colorTable.get(series.getLabel() + "_SYMBOL"));
-	    }
-	    
-	}
-		    
+
+// set line width
+    for (int j = 0; j < invChartDataView.getNumSeries(); j++) {
+      ChartDataViewSeries series = invChartDataView.getSeries(j);
+      series.getStyle().setLineWidth(2);
+      series.getStyle().setSymbolShape(JCSymbolStyle.NONE);
+      setSeriesColor(series, colorTable.get(series.getLabel()));
+      if (series.getLabel().equals(idm.TARGET_LEVEL_SERIES_LABEL)) {
+        setSeriesColor(series, Color.yellow);
+        series.getStyle().setSymbolShape(JCSymbolStyle.VERT_LINE);
+        series.getStyle().setSymbolColor(colorTable.get(series.getLabel() + "_SYMBOL"));
+      }
+
     }
- 
+
+  }
+
 }

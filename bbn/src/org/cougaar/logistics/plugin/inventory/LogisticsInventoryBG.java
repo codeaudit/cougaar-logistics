@@ -914,7 +914,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	}
 	projWithdrawList =tmpProjWdraw;
 	withdrawList = tmpWdraw;
-    
+
 	Iterator projResupplyIt = refillProjections.iterator();
 	while(projResupplyIt.hasNext()) {
 	    Task task = (Task) projResupplyIt.next();
@@ -925,6 +925,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	
 	projSupplyList = tmpProjResupply;
 	supplyList = (ArrayList)refillRequisitions.clone();
+
 	// MWD took this out when converted list to a schedule.
 	//    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
 	
@@ -936,7 +937,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 	
 	Vector list = new Vector();
 	long start = convertBucketToTime(0);
-	for (int i=0; i < criticalLevelsArray.length; i++) {
+        int length = getMeaningfulLength(criticalLevelsArray);
+	for (int i=0; i < length; i++) {
 	    if(criticalLevelsArray[i] >= 0.0) {
 	        list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
 								    start, start+MSEC_PER_BUCKET));
@@ -956,11 +958,12 @@ public class LogisticsInventoryBG implements PGDelegate {
 	}
 	bufferedTargetLevels = GLMFactory.newQuantitySchedule(list.elements(),
 							      PlanScheduleType.OTHER);
-	
+
 	
 	start = convertBucketToTime(0);
 	list.clear();
-	for (int i=0; i < inventoryLevelsArray.length; i++) {
+        length = getMeaningfulLength(inventoryLevelsArray);
+	for (int i=0; i < length; i++) {
 	    list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
 								start, start+MSEC_PER_BUCKET));
 	    start += MSEC_PER_BUCKET;
@@ -1038,5 +1041,20 @@ public class LogisticsInventoryBG implements PGDelegate {
             printQuantityScheduleTimes(bufferedInventoryLevels);
         }
     }
+
+  private int getMeaningfulLength(double[] list) {
+    if (list.length < 5) {
+      return list.length;
+    }
+    int lastMeaningfulPosition = list.length-1;
+    for(int i = list.length-1; i > 0; i--) {
+      if (list[i] == list[i-1]) {
+        lastMeaningfulPosition = i;
+      } else {
+        break;
+      }
+    }
+    return lastMeaningfulPosition+1;
+  }
 
 }

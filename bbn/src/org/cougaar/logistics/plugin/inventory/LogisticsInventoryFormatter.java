@@ -16,8 +16,8 @@
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
- * </copyright>*/
-
+ * </copyright>
+*/
 package org.cougaar.logistics.plugin.inventory;
 
 import java.io.Writer;
@@ -36,6 +36,7 @@ import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 
 import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
@@ -45,7 +46,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
-
+import org.cougaar.util.TimeSpanSet;
 /**
  * <pre>
  *
@@ -325,6 +326,7 @@ public class LogisticsInventoryFormatter {
   protected void logLevels(Schedule reorderLevels,
                            Schedule inventoryLevels,
                            Schedule targetLevels,
+                           TimeSpanSet orgActivities,
                            long aCycleStamp,
                            boolean expandTimestamp) {
     cycleStamp = aCycleStamp;
@@ -335,13 +337,16 @@ public class LogisticsInventoryFormatter {
           inventoryLevels.getEncapsulatedScheduleElements(qse.getStartTime(), qse.getEndTime());
       Collection targetLevelsInRange =
           targetLevels.getEncapsulatedScheduleElements(qse.getStartTime(), qse.getEndTime());
-      logLevels(qse, invLevelsInRange, targetLevelsInRange, expandTimestamp);
+      Collection orgActsInRange =
+          orgActivities.intersectingSet(qse.getStartTime(), qse.getEndTime());
+      logLevels(qse, invLevelsInRange, targetLevelsInRange, orgActsInRange, expandTimestamp);
     }
   }
 
   protected void logLevels(QuantityScheduleElement reorderLevel,
                            Collection invLevelsInRange,
                            Collection targetLevelsInRange,
+                           Collection orgActsInRange,
                            boolean expandTimestamp) {
 
     String outputStr = getDateString(reorderLevel.getStartTime(), expandTimestamp) + ",";
@@ -383,6 +388,22 @@ public class LogisticsInventoryFormatter {
           moreThanOne = true;
         }
       }
+      if (!orgActsInRange.isEmpty()) {
+        moreThanOne = false;
+        alreadyLogged = false;
+        it = orgActsInRange.iterator();
+        while (it.hasNext()) {
+          OrgActivity orgAct = (OrgActivity) it.next();
+          outputStr += "," + orgAct.getActivityType() + "," + orgAct.getOpTempo();
+          if (moreThanOne && !alreadyLogged) {
+            if (logger.isWarnEnabled()) {
+              logger.warn("logLevel:More than one org Activity in range " + outputStr);
+            }
+            alreadyLogged = true;
+          }
+          moreThanOne = true;
+        }
+      }
       writeln(outputStr);
     }
   }
@@ -413,7 +434,7 @@ public class LogisticsInventoryFormatter {
                                 Schedule targetLevels,
                                 long aCycleStamp) {
     writeNoCycleLn("CYCLE,START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL");
-    logLevels(reorderLevels, inventoryLevels, targetLevels, aCycleStamp, true);
+    logLevels(reorderLevels, inventoryLevels, targetLevels, new TimeSpanSet(), aCycleStamp, true);
   }
 
 
@@ -438,12 +459,13 @@ public class LogisticsInventoryFormatter {
   protected void xmlLogLevels(Schedule reorderLevels,
                               Schedule inventoryLevels,
                               Schedule targetLevels,
+                              TimeSpanSet orgActivities,
                               boolean humanReadable,
                               long aCycleStamp) {
     if (humanReadable) {
-      writeNoCycleLn("<START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL, TARGET LEVEL>");
+      writeNoCycleLn("<START TIME,END TIME,REORDER LEVEL,INVENTORY LEVEL,TARGET LEVEL,ACTIVITY TYPE, OPTEMPO>");
     }
-    logLevels(reorderLevels, inventoryLevels, targetLevels, aCycleStamp, humanReadable);
+    logLevels(reorderLevels, inventoryLevels, targetLevels, orgActivities, aCycleStamp, humanReadable);
   }
 
 
@@ -703,6 +725,7 @@ public class LogisticsInventoryFormatter {
   }
 
   protected void logToXMLOutput(Inventory invAsset,
+                                TimeSpanSet orgActivities,
                                 Organization anOrg,
                                 ArrayList withdrawList,
                                 ArrayList projWithdrawList,
@@ -722,12 +745,13 @@ public class LogisticsInventoryFormatter {
     ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);
     logDemandToXMLOutput(withdrawList, projWithdrawList, countedProjWithdrawList, humanReadable, aCycleStamp);
     logResupplyToXMLOutput(resupplyList, projResupplyList, humanReadable, aCycleStamp);
-    logLevelsToXMLOutput(reorderLevels, inventoryLevels, targetLevels, humanReadable, aCycleStamp);
+    logLevelsToXMLOutput(reorderLevels, inventoryLevels, targetLevels, orgActivities, humanReadable, aCycleStamp);
     logHeaderEndToXMLOutput(humanReadable);
   }
 
 
   protected void logToXMLOutput(Inventory invAsset,
+                                TimeSpanSet orgActivities,
                                 Organization anOrg,
                                 ArrayList withdrawList,
                                 ArrayList projWithdrawList,
@@ -741,12 +765,12 @@ public class LogisticsInventoryFormatter {
                                 long aCycleStamp) {
     cycleStamp = aCycleStamp;
     writeNoCycleLn("<" + INVENTORY_DUMP_TAG + ">");
-    logToXMLOutput(invAsset, anOrg, withdrawList,
+    logToXMLOutput(invAsset, orgActivities, anOrg, withdrawList,
                    projWithdrawList, countedDemandList,
                    resupplyList, projResupplyList,
                    reorderLevels, inventoryLevels, targetLevels,
                    level2Inv, true, aCycleStamp);
-    logToXMLOutput(invAsset, anOrg, withdrawList,
+    logToXMLOutput(invAsset, orgActivities, anOrg, withdrawList,
                    projWithdrawList, countedDemandList,
                    resupplyList, projResupplyList,
                    reorderLevels, inventoryLevels, targetLevels,
@@ -760,12 +784,14 @@ public class LogisticsInventoryFormatter {
   }
 
   public void logToXMLOutput(Inventory inv,
+                             TimeSpanSet orgActivities,
                              long aCycleStamp) {
 
     logInvPG = null;
     logInvPG = (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
     if (logInvPG != null) {
       logToXMLOutput(inv,
+                     orgActivities,
                      logInvPG.getOrg(),
                      logInvPG.getWithdrawList(),
                      logInvPG.getProjWithdrawList(),
@@ -848,10 +874,11 @@ public class LogisticsInventoryFormatter {
   protected void logLevelsToXMLOutput(Schedule reorderLevels,
                                       Schedule inventoryLevels,
                                       Schedule targetLevels,
+                                      TimeSpanSet orgActivities,
                                       boolean humanReadable,
                                       long aCycleStamp) {
     writeNoCycleLn("<" + INVENTORY_LEVELS_TAG + " type=LEVELS>");
-    xmlLogLevels(reorderLevels, inventoryLevels, targetLevels, humanReadable, aCycleStamp);
+    xmlLogLevels(reorderLevels, inventoryLevels, targetLevels, orgActivities, humanReadable, aCycleStamp);
     writeNoCycleLn("</" + INVENTORY_LEVELS_TAG + ">");
   }
 

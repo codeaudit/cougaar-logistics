@@ -22,11 +22,7 @@
 package org.cougaar.logistics.ui.inventory;
 
 
-import java.util.Vector;
-import java.util.Date;
-import java.util.Calendar;
-import java.util.TimeZone;
-import java.util.GregorianCalendar;
+import java.util.*;
 
 
 import javax.swing.JFrame;
@@ -96,6 +92,8 @@ public class InventoryUIFrame extends JFrame
   static final Cursor defaultCursor =
       Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
+  public static final String SHOW_INIT_SHORTFALL = "SHOW_INIT_SHORTFALL";
+
   protected InventoryDataSource dataSource;
   private Container contentPane;
 
@@ -116,16 +114,36 @@ public class InventoryUIFrame extends JFrame
   protected InventorySelectionPanel selector;
   protected InventoryXMLParser parser;
 
+  protected boolean showInitialShortfall=true;
+
+  public InventoryUIFrame(HashMap params) {
+    super("Inventory GUI");
+    initializeUIFrame(params);
+  }
+
   public InventoryUIFrame() {
     super("Inventory GUI");
+    initializeUIFrame(new HashMap());
+  }
+
+    public InventoryUIFrame(String[] args) {
+    super("Inventory GUI");
+    initializeUIFrame(readParameters(args));
+  }
+
+
+  protected void initializeUIFrame(HashMap params) {
     addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
         System.exit(0);
       }
     });
 
-    parser = new InventoryXMLParser();
     logger = Logging.getLogger(this);
+    parser = new InventoryXMLParser();
+
+    readParameters(params);
+
     contentPane = getRootPane().getContentPane();
 
     cip = System.getProperty("org.cougaar.install.path");
@@ -198,7 +216,7 @@ public class InventoryUIFrame extends JFrame
     editPanel.add(buttonPanel, BorderLayout.NORTH);
     editPanel.add(areaScrollPane, BorderLayout.CENTER);
 
-    multiChart = new MultiChartPanel();
+    multiChart = new MultiChartPanel(showInitialShortfall);
     multiChart.setPreferredSize(new Dimension(700, 250));
 
     tabs.add("InventoryChart", multiChart);
@@ -381,6 +399,24 @@ public class InventoryUIFrame extends JFrame
     timeConsumingTaskEnd(this);
   }
 
+  protected void readParameters(HashMap map){
+        String showShortfall = (String) map.get(SHOW_INIT_SHORTFALL);
+        if((showShortfall != null) &&
+            (!showShortfall.trim().equals(""))) {
+            showInitialShortfall = (!(showShortfall.trim().toLowerCase().equals("false")));
+        }
+  }
+
+  public static HashMap readParameters(String[] args){
+    HashMap params = new HashMap();
+    for(int i=0; i < args.length; i++){
+      String[] keyAndValue = args[i].split("[=]");
+      String key = keyAndValue[0];
+      String value = keyAndValue[1];
+      params.put(key,value);
+    }
+    return params;
+  }
 
   public static void timeConsumingTaskStart(Component c) {
     JFrame frame = null;
@@ -570,7 +606,7 @@ public class InventoryUIFrame extends JFrame
   }
 
   public static void main(String[] args) {
-    InventoryUIFrame frame = new InventoryUIFrame();
+    InventoryUIFrame frame = new InventoryUIFrame(args);
   }
 }
 

@@ -29,22 +29,29 @@ import org.cougaar.core.util.UniqueObject;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import java.io.Serializable;
 import java.util.*;
 
 public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
 
   long arrivalInTheater;
+  Schedule defensiveSchedule;
   UID theUID;
 
   public LogisticsOPlan(MessageAddress id, Oplan op) {
     super(id, op);
     setUID(UID.toUID(id.toString()+":"+op.getOplanId()+"/1"));
     arrivalInTheater = getStartTime();
+    defensiveSchedule = ScheduleUtils.newObjectSchedule((new Vector()).elements());
   }
   public boolean updateOrgActivities(IncrementalSubscription orgActivitySubscription) {
     boolean update = super.updateOrgActivities(orgActivitySubscription);
     updateArrivalInTheater(orgActivitySubscription);
+    updateDefensiveSchedule(orgActivitySubscription);
+//     System.out.println("DEFENSIVE SCHEDULE : "+defensiveSchedule);
     return update;
   }
 
@@ -68,6 +75,32 @@ public class LogisticsOPlan extends ClusterOPlan implements UniqueObject {
 
   public long getArrivalTime() {
     return arrivalInTheater;
+  }
+
+  public void updateDefensiveSchedule(IncrementalSubscription orgActivitySubscription) {
+    OrgActivity activity;
+    Enumeration activities = orgActivitySubscription.elements();
+    Vector defensiveList = new Vector();
+    ObjectScheduleElement element = null;
+    
+    // search for Deployment orgActivity
+    while (activities.hasMoreElements()) {
+      activity = (OrgActivity)activities.nextElement();
+      if (activity.getActivityType().equals("Defensive")) {
+        element = new ObjectScheduleElement(activity.getStartTime(), activity.getEndTime(),
+                                            new Boolean(true));
+      } else {
+        element = new ObjectScheduleElement(activity.getStartTime(), activity.getEndTime(),
+                                            new Boolean(false));
+      }
+      defensiveList.add(element);
+    }
+    Schedule tmpSched = ScheduleUtils.newObjectSchedule(defensiveList.elements());
+    defensiveSchedule = ScheduleUtils.simplifyObjectSchedule(tmpSched);
+  }    
+
+  public Schedule getDefensiveSchedule() {
+    return defensiveSchedule;
   }
 
   public UID getUID() {

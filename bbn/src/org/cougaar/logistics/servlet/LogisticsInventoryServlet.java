@@ -42,6 +42,7 @@ import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.TimeSpanSet;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -54,6 +55,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.cougaar.glm.ldm.oplan.Oplan;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 
 import org.cougaar.core.servlet.SimpleServletSupport;
@@ -303,7 +305,7 @@ public class LogisticsInventoryServlet
 
       // get asset and tasks we need to create the inventory
 
-      //logger.shout("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
+      logger.debug("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
 
       InventoryPredicate inventoryPredicate = new InventoryPredicate(desiredAssetName, support.getEncodedAgentName(),logger);
       Collection collection = support.queryBlackboard(inventoryPredicate);
@@ -358,7 +360,7 @@ public class LogisticsInventoryServlet
 	     BufferedWriter buffWriter = new BufferedWriter(strWriter);
 	     LogisticsInventoryFormatter formatter = null;
 	     formatter = new LogisticsInventoryFormatter(buffWriter,logger,startDay);
-	     formatter.logToXMLOutput(inv,alarmService.currentTimeMillis());
+	     formatter.logToXMLOutput(inv,getOrgActivities(),alarmService.currentTimeMillis());
 	     try {
 		 buffWriter.flush();
 		 strWriter.flush();
@@ -389,13 +391,29 @@ public class LogisticsInventoryServlet
       return startingCDay;
     }
 
+    protected TimeSpanSet getOrgActivities() {
+      Collection orgActCollect = support.queryBlackboard(orgActivityPred());
+      TimeSpanSet orgActivities = new TimeSpanSet(orgActCollect);
+      return orgActivities;
+    }
+
 
     private static UnaryPredicate oplanPredicate() {
       return new UnaryPredicate() {
 	  public boolean execute(Object o) {
 	    return (o instanceof Oplan);
 	  }
+      };
+    }
+
+
+    private static UnaryPredicate orgActivityPred() {
+      return new UnaryPredicate() {
+	  public boolean execute(Object o) {
+	    return (o instanceof OrgActivity);
+	  }
 	};
+
     }
   }
 }

@@ -56,9 +56,9 @@ public class DemandTaskGenerator extends DemandGeneratorModule
     implements DemandTaskGeneratorIfc {
 
 
-  HashMap projHash;
+  protected HashMap projHash;
 
-  Random poissonGen;
+  protected Random poissonGen;
 
   public DemandTaskGenerator(DemandGeneratorPlugin demandGeneratorPlugin) {
     super(demandGeneratorPlugin);
@@ -105,14 +105,11 @@ public class DemandTaskGenerator extends DemandGeneratorModule
 
       }
       if(!supplyTasks.isEmpty()){
-        addToAndPublishExpansion(gpTask,supplyTasks);
+        addToAndPublishExpansion(gpTask,supplyTasks);       
       }
     }
 
   }
-
-
-
 
   protected void regenerateProjectionHash(Collection tasks) {
     projHash.clear();

@@ -375,7 +375,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
           (getOrgName().trim().equals("1-35-ARBN"))) {
         System.out.println("I'm waking up - new period starts " + new Date(planTime) + " and Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
       }
-
+      
       relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
       demandGenerator.generateDemandTasks(planTime, period, relevantProjs);
       resetTimer();
@@ -415,7 +415,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
    * org.cougaar.logistics.plugin.demand.DemandTaskGenerator
    * @return {@link DemandTaskGeneratorIfc}
    **/
-  private DemandTaskGeneratorIfc getDemandTaskGeneratorModule() {
+  protected DemandTaskGeneratorIfc getDemandTaskGeneratorModule() {
     String demGenClass = (String) pluginParams.get(DEMAND_GENERATOR);
     if (demGenClass != null) {
       try {
@@ -431,6 +431,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
                      "Loading default org.cougaar.logistics.plugin.demand.DemandTaskGenerator");
       }
     }
+    
     return new DemandTaskGenerator(this);
   }
 

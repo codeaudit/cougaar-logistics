@@ -23,10 +23,10 @@ package org.cougaar.logistics.ui.inventory;
 
 import java.util.Date;
 import java.util.Calendar;
+import java.util.Iterator;
 
 import java.awt.Event;
-import java.awt.event.ItemListener;
-import java.awt.event.ItemEvent;
+import java.awt.event.*;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Color;
@@ -34,11 +34,7 @@ import java.awt.Insets;
 import java.awt.Font;
 import java.awt.BorderLayout;
 
-import javax.swing.JPanel;
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JCheckBox;
-import javax.swing.Box;
+import javax.swing.*;
 
 import com.klg.jclass.chart.JCChartListener;
 import com.klg.jclass.chart.JCChartEvent;
@@ -73,7 +69,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
  **/
 
 public class MultiChartPanel extends JPanel
-        implements JCChartListener, JCPickListener, ItemListener {
+        implements JCChartListener, JCPickListener,  ItemListener {
 
     private final static long MILLIS_IN_DAY = TimeUtils.MSEC_PER_DAY;
 
@@ -86,6 +82,12 @@ public class MultiChartPanel extends JPanel
     protected InventoryLevelChart levelChart;
     protected InventoryRefillChart refillChart;
     protected InventoryDemandChart demandChart;
+
+    protected MouseAdapter mouseAdapter = new MouseAdapter() {
+           public void mousePressed(MouseEvent e) {
+                  levelChartMousePick(e);
+           }
+    };
 
     protected JLabel pointLabel;
 
@@ -101,15 +103,25 @@ public class MultiChartPanel extends JPanel
 
     private boolean displayShortfall = false;
 
+    private boolean showInitialShortfall = true;
+
     public MultiChartPanel() {
         super();
-        logger = Logging.getLogger(this);
+        initializeMultiChart();
+    }
+
+    public MultiChartPanel(boolean showInitShortfall) {
+        super();
+        showInitialShortfall = showInitShortfall;
         initializeMultiChart();
     }
 
     public void initializeMultiChart() {
         int gridx = 0;
         int gridy = 0;
+
+        logger = Logging.getLogger(this);
+
 
         InventoryColorTable colorTable = new InventoryColorTable();
 
@@ -221,7 +233,8 @@ public class MultiChartPanel extends JPanel
         firstXAxis.recalc();
         reallignChartsByXAxis(firstXAxis);
         pointLabel.setText(INITIAL_POINT_LABEL);
-        if (updateShortfallCheckBox()) {
+        if ((updateShortfallCheckBox()) &&
+            (showInitialShortfall)) {
             setDisplayShortfall(true);
             shortfallModeCheck.setSelected(true);
         } else {
@@ -278,13 +291,17 @@ public class MultiChartPanel extends JPanel
     }
 
     public void removeAllPickListeners() {
-        levelChart.removePickListener(this);
+        levelChart.getChart().removeMouseListener(mouseAdapter);
         refillChart.removePickListener(this);
         demandChart.removePickListener(this);
     }
 
+
+
     public void addAllPickListeners() {
-        levelChart.addPickListener(this);
+
+        //levelChart.addPickListener(this);
+        levelChart.getChart().addMouseListener(mouseAdapter);
         refillChart.addPickListener(this);
         demandChart.addPickListener(this);
     }
@@ -331,6 +348,18 @@ public class MultiChartPanel extends JPanel
         }
     }
 
+    public void levelChartMousePick(MouseEvent e) {
+      if(SwingUtilities.isRightMouseButton(e)) {
+          JCChart innerChart = (JCChart)e.getSource();
+          ChartDataView invChartDataView = levelChart.getInvChartDataView();
+
+          JCDataIndex dataIndex = innerChart.pick(e.getPoint(),invChartDataView);
+          if(!(dataIndex.getPoint() < 0) && !(dataIndex.getSeriesIndex() < 0)){
+            pick(innerChart,dataIndex);
+          }
+      }
+    }
+
     public void pick(JCPickEvent e) {
         JCDataIndex dataIndex = e.getPickResult();
         // check for all the possible failures
@@ -338,6 +367,11 @@ public class MultiChartPanel extends JPanel
             logger.warn("WARNING: dataIndex is null");
             return;
         }
+        pick((JCChart) e.getSource(), dataIndex);
+    }
+
+    public void pick(JCChart chart, JCDataIndex dataIndex) {
+
         ChartDataView chartDataView = dataIndex.getDataView();
         if (chartDataView == null) {
             logger.warn("WARNING: chartDataView is null");
@@ -358,10 +392,16 @@ public class MultiChartPanel extends JPanel
         }
 
 
+        //The OrgActivityChart seems to be stealing picks
+        //from the InventoryLevelChart data.  Turn about is fair play.
+        if(dataModel instanceof OrgActivityChartDataModel){
+            logger.warn("Still getting events from OrgActivityChartDataModel!");
+        }
+
+
         // user has picked a valid point
         double[] x = dataModel.getXSeries(seriesIndex);
         double[] y = dataModel.getRealYSeries(seriesIndex);
-
 
         int cDay;
         int dayOfYear;
@@ -407,6 +447,7 @@ public class MultiChartPanel extends JPanel
         int month = tmpC.get(Calendar.MONTH) + 1;
 
         String label;
+        String valueLabel = "Quantity: " + JCChartUtil.format(y[pt], 1);
 
         if (displayHourly) {
             label = "Date: " + month + "/" +
@@ -414,14 +455,14 @@ public class MultiChartPanel extends JPanel
                     tmpC.get(Calendar.YEAR) + " " +
                     "(C" + cDay + ") " +
                     tmpC.get(Calendar.HOUR_OF_DAY) + ":00 " +
-                    "Quantity: " + JCChartUtil.format(y[pt], 1);
+                    valueLabel;
 
         } else {
             label = "Date: " + month + "/" +
                     tmpC.get(Calendar.DAY_OF_MONTH) + "/" +
                     tmpC.get(Calendar.YEAR) + " " +
                     "(C" + cDay + ")" +
-                    " Quantity: " + JCChartUtil.format(y[pt], 1);
+                    valueLabel;
         }
 
 

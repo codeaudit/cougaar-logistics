@@ -400,4 +400,41 @@ public class ScheduleUtils {
     return newObjectSchedule(resultElements.elements());
   }
   
+  // Only works on contiguous object schedules
+  public static Schedule simplifyObjectSchedule(Schedule sched) {
+    if (sched == null) {
+      return null;
+    }
+    if (sched.isEmpty()) {
+      return sched;
+    }
+    Vector newElements = new Vector();
+    ObjectScheduleElement element = null;
+    long start = sched.getStartTime();
+    long elementStart=Long.MIN_VALUE, elementEnd=Long.MAX_VALUE;
+    Object o = null, test = null;
+    while ((element = (ObjectScheduleElement)getElementWithTime(sched, start)) != null) {
+      if (o == null) {
+        o = element.getObject();
+        elementStart = element.getStartTime();
+        elementEnd = element.getEndTime();
+        start = elementEnd;
+      } else {
+        test = element.getObject();
+        if (test.equals(o)) {
+          elementEnd = element.getEndTime();
+        } else {
+          newElements.add(new ObjectScheduleElement(elementStart, elementEnd, o));
+          elementStart = element.getStartTime();
+          elementEnd = element.getEndTime();
+          o = test;
+        }
+        start = element.getEndTime();
+      }
+    }
+    if (o != null) {
+      newElements.add(new ObjectScheduleElement(elementStart, elementEnd, o));
+    }
+    return newObjectSchedule(newElements.elements());
+  }
 }

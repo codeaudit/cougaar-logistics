@@ -44,57 +44,51 @@ import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
 /**
  * <pre>
  *
- * The InventoryLevelChartDataModel is the ChartDataModel for the
- * InventoryLevelChart.    It calculates the inventory, reorder,
- * and target levels for puts them in x and y coordinates.
+ * The OrgActivityChartDataModel is the 2nd ChartDataModel for the
+ * InventoryLevelChart.    It shows the defensive and offensive,
+ * org activities as background to the inventory levels.
  *
  *
  * @see InventoryBaseChartDataModel
  *
  **/
 
-public class InventoryLevelChartDataModel
+public class OrgActivityChartDataModel
         extends InventoryBaseChartDataModel {
 
 
-    /**TODO: MWD Remove
     private double offensiveQty=0.0;
     private double defensiveQty=0.0;
-    public static final int ORG_ACTIVITY_SERIES_INDEX = 3;
-    **/
-    public static final String INVENTORY_LEVEL_SERIES_LABEL = "Inventory Level";
-    public static final String REORDER_LEVEL_SERIES_LABEL = "Reorder Level";
-    public static final String TARGET_LEVEL_SERIES_LABEL = "Target Level";
-    public static final String ORG_ACTIVITY_SERIES_LABEL = "Activity Level";
 
-    public static final String INVENTORY_LEVEL_LEGEND = "Inventory Key Levels";
+    public static final int OFFENSIVE_SERIES_INDEX = 0;
+    public static final int DEFENSIVE_SERIES_INDEX = 1;
 
-    public InventoryLevelChartDataModel() {
-        this(null, INVENTORY_LEVEL_LEGEND);
+    public static final String OFFENSIVE_SERIES_LABEL = "Offensive";
+    public static final String DEFENSIVE_SERIES_LABEL = "Defensive";
+
+    public static final String ORG_ACTIVITY_LEGEND = "";
+
+    public OrgActivityChartDataModel() {
+        this(null, ORG_ACTIVITY_LEGEND);
     }
 
-    public InventoryLevelChartDataModel(String legendTitle) {
+    public OrgActivityChartDataModel(String legendTitle) {
         this(null, legendTitle);
     }
 
-
-    public InventoryLevelChartDataModel(InventoryData data,
-                                        String theLegendTitle) {
+    public OrgActivityChartDataModel(InventoryData data,
+                                     String theLegendTitle) {
         inventory = data;
         legendTitle = theLegendTitle;
-        nSeries = 3;
+        nSeries = 2;
         seriesLabels = new String[nSeries];
-        seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
-        seriesLabels[1] = REORDER_LEVEL_SERIES_LABEL;
-        seriesLabels[2] = TARGET_LEVEL_SERIES_LABEL;
-        //TODO: MWD Remove
-        //seriesLabels[ORG_ACTIVITY_SERIES_INDEX] = ORG_ACTIVITY_SERIES_LABEL;
+        seriesLabels[OFFENSIVE_SERIES_INDEX] = OFFENSIVE_SERIES_LABEL;
+        seriesLabels[DEFENSIVE_SERIES_INDEX] = DEFENSIVE_SERIES_LABEL;
         logger = Logging.getLogger(this);
         initValues();
     }
 
 
-    /**TODO: MWD Remove
     public String getActivityFromLevel(double value){
       if(value == defensiveQty){
         return "Defensive";
@@ -103,7 +97,16 @@ public class InventoryLevelChartDataModel
         return "Offensive";
       }
     }
-    **/
+
+
+    public double getLevelFromActivity(String value){
+      if(value.trim().toLowerCase().equals("defensive")){
+        return defensiveQty;
+      }
+      else {
+        return offensiveQty;
+      }
+    }
 
     public void setValues() {
         if (valuesSet) return;
@@ -128,7 +131,7 @@ public class InventoryLevelChartDataModel
         xvalues = new double[nSeries][];
         yvalues = new double[nSeries][];
         //initZeroYVal(nValues);
-        for (int i = 0; i < (nSeries - 1); i++) {
+        for (int i = 0; i < (nSeries); i++) {
             xvalues[i] = new double[nValues];
             yvalues[i] = new double[nValues];
             for (int j = 0; j < nValues; j++) {
@@ -137,11 +140,9 @@ public class InventoryLevelChartDataModel
             }
         }
 
-        ArrayList targetLevels = new ArrayList();
-        ArrayList orgActLevels = new ArrayList();
+        ArrayList orgActs = new ArrayList();
 
-        //TODO: MWD Remove
-        //double maxQty = 0;
+        double maxQty = 0;
 
         //Need to add target level which is a little more complicated
         //than you think.  We don't know how many values there are
@@ -150,70 +151,39 @@ public class InventoryLevelChartDataModel
         //vector and put them into there. mildly tricky business.
         for (int i = 0; i < levels.size(); i++) {
             InventoryLevel level = (InventoryLevel) levels.get(i);
-            long startTime = level.getStartTime();
-            long endTime = level.getEndTime();
-            int startBucket = (int) computeBucketFromTime(startTime);
-            int endBucket = (int) computeBucketFromTime(endTime);
             double invQty = level.getInventoryLevel();
+            maxQty = Math.max(maxQty,invQty);
             double reorderQty = level.getReorderLevel();
-            //TODO: Remove
-            //maxQty = Math.max(maxQty,invQty);
-            //maxQty = Math.max(maxQty,reorderQty);
-            for (int j = startBucket; j <= endBucket; j += bucketDays) {
-                yvalues[0][(j - minBucket) / bucketDays] = invQty;
-                yvalues[1][(j - minBucket) / bucketDays] = reorderQty;
-            }
+            maxQty = Math.max(maxQty,reorderQty);
             if (level.getTargetLevel() != null) {
-                targetLevels.add(level);
+                maxQty = Math.max(maxQty,level.getTargetLevel().doubleValue());
             }
             if (level.getActivityType() != null){
-                orgActLevels.add(level);
+                orgActs.add(level);
             }
         }
-
-        xvalues[2] = new double[targetLevels.size()];
-        yvalues[2] = new double[targetLevels.size()];
-
-        for (int i = 0; i < targetLevels.size(); i++) {
-            InventoryLevel level = (InventoryLevel) targetLevels.get(i);
-            long startTime = level.getStartTime();
-            int startDay = (int) computeBucketFromTime(startTime);
-            double targetLevel = level.getTargetLevel().doubleValue();
-           //TODO: Remove
-          //maxQty = Math.max(maxQty,targetLevel);
-            xvalues[2][i] = startDay;
-            yvalues[2][i] = targetLevel;
-        }
-
-
-        /**
-
-        xvalues[ORG_ACTIVITY_SERIES_INDEX] = new double[orgActLevels.size()];
-        yvalues[ORG_ACTIVITY_SERIES_INDEX] = new double[orgActLevels.size()];
 
         offensiveQty = maxQty + 5;
         defensiveQty = offensiveQty * .25;
+        offensiveQty = defensiveQty;
 
-
-        for (int i = 0; i < orgActLevels.size(); i++) {
-            InventoryLevel level = (InventoryLevel) orgActLevels.get(i);
+        for (int i = 0; i < orgActs.size(); i++) {
+            InventoryLevel level = (InventoryLevel) orgActs.get(i);
             long startTime = level.getStartTime();
+            long endTime = level.getEndTime();
             int startDay = (int) computeBucketFromTime(startTime);
-            double orgActQty = offensiveQty;
-            if(level.getActivityType().trim().toLowerCase().equals("defensive")){
-                  orgActQty = defensiveQty;
+            int endDay = (int) computeBucketFromTime(endTime);
+            String actType = level.getActivityType();
+            //xvalues[OFFENSIVE_SERIES_INDEX][i] = startDay;
+            for (int j = startDay; j < endDay; j += bucketDays) {
+                if(actType.trim().toLowerCase().equals("defensive")){
+                  yvalues[DEFENSIVE_SERIES_INDEX][(j-minBucket) / bucketDays] = defensiveQty;
+                }
+                else {
+                  yvalues[OFFENSIVE_SERIES_INDEX][(j-minBucket) / bucketDays] = offensiveQty;
+                }
             }
-            xvalues[ORG_ACTIVITY_SERIES_INDEX][i] = startDay;
-            yvalues[ORG_ACTIVITY_SERIES_INDEX][i] = orgActQty;
         }
-
-        **/
-
-
     }
-
-
-
-
 }
 

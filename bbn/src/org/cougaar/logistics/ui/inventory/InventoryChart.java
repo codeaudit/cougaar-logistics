@@ -150,6 +150,8 @@ public abstract class InventoryChart extends JPanel {
 
     }
 
+    public JCChart getChart() { return chart; }
+
     public void addChartListener(JCChartListener listener) {
         chart.addChartListener(listener);
     }

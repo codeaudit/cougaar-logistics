@@ -37,10 +37,20 @@ public class InventoryColorTable {
 	   Color.black);
 
     twoPut(InventoryLevelChartDataModel.TARGET_LEVEL_SERIES_LABEL,
-	   new Color(255, 255, 204)); // light yellow
+      new Color(255, 255, 204)); // light yellow
 
     twoPut(InventoryLevelChartDataModel.TARGET_LEVEL_SERIES_LABEL + "_SYMBOL",
 	   Color.blue);
+
+    twoPut(InventoryLevelChartDataModel.ORG_ACTIVITY_SERIES_LABEL,
+      Color.white);
+
+    twoPut(OrgActivityChartDataModel.OFFENSIVE_SERIES_LABEL,
+      Color.white);
+
+    twoPut(OrgActivityChartDataModel.DEFENSIVE_SERIES_LABEL,
+      Color.lightGray);
+
 
     twoPut(ShortfallChartDataModel.SHORTFALL_SERIES_LABEL,
 	   new Color(255,0,0));  //red?
