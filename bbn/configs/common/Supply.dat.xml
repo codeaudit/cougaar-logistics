@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE tasklist SYSTEM "ClusterInput.dat.dtd" []>
+
+<tasklist>
+  <task id="test_task">
+    <verb>Supply</verb>
+    <directobject>
+     <asset id="ammo-1">NSN-2350010871095</asset>
+    </directobject>
+    <for>1-35-ARBN</for>
+    <oftype>Ammunition</oftype>
+    <to>
+      <geoloc>RUINS</geoloc> <!-- TAA location from EritreaNetwork -->
+      <latitude>39.9167</latitude>    
+      <longitude>37.1167</longitude>
+      <name>RUINS</name>
+    </to>
+    <refill/>
+    <enddate>    
+      <bestdate>
+        <year>2005</year> 
+        <month>06</month> 
+        <day>15</day> 
+        <hour>12</hour> 
+        <minute>00</minute> 
+        <second>00</second>
+      </bestdate>
+    </enddate>   
+    <quantity>1</quantity> <!-- quantity preference -->
+  </task>
+</tasklist>
+
+
+
