@@ -995,7 +995,7 @@ public class NewTPFDDShell extends JApplet implements ActionListener,
       doStupidLinuxAppletviewerBug =
 	System.getProperty("stupidLinuxAppletviewerBug");
     }
-    catch ( AccessControlException e ) {
+    catch ( AccessControlException e ) {e.printStackTrace();
     }
     if ( doStupidLinuxAppletviewerBug != null &&
 	 doStupidLinuxAppletviewerBug.equalsIgnoreCase("true") )

@@ -90,7 +90,7 @@ public class LineQuery extends SqlQuery {
 	while(rs.next()){
 	  //        process a row as you see fit.  use rs.getXXXX()
 	}
-	} catch (SQLException e) {
+	} catch (SQLException e) {e.printStackTrace();
 	}
   }
 }

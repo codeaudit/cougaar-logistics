@@ -167,7 +167,7 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 	  synchronized (this) {
 	    this.wait(500);
 	  }
-	} catch ( Exception e ) {}
+	} catch ( Exception e ) {e.printStackTrace();}
 
 	SwingQueue.invokeLater(calculateTonsRunnable);
       }

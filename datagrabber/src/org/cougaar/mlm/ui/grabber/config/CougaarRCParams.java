@@ -5,8 +5,8 @@ import java.net.*;
 import java.util.*;
 import org.cougaar.util.ConfigFinder;
 
-/** 
- * Largely stolen from Parameters -- why not just use it?  
+/**
+ * Largely stolen from Parameters -- why not just use it?
  *
  * Statics are bad, and I don't need all the other stuff in that class
  * And I have the fantasy of not being dependent on the core jar.
@@ -18,10 +18,10 @@ public class CougaarRCParams {
   public CougaarRCParams () {
     findFile ();
   }
-	
+
   public void findFile () {
     // initialize parameter map from various places
-    
+
     String home = System.getProperty("user.home");
     boolean found = false;
 
@@ -44,7 +44,7 @@ public class CougaarRCParams {
         found=true;
       }
     } catch (IOException e) {
-      //e.printStackTrace();
+      e.printStackTrace();
     }
     if (!found && !warnedBefore) {
       System.out.println("Note: Could not find cougaar.rc style parameters, no .cougaarrc or ConfigPath/cougaar.rc");
@@ -53,7 +53,7 @@ public class CougaarRCParams {
     }
 	if (debug)
       System.out.println("CougaarRCParams - params now " + parameterMap);
-	
+
   }
 
   protected void parseParameterStream(String sname, InputStream in) throws IOException {

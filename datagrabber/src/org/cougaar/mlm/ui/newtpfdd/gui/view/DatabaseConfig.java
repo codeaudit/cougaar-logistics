@@ -46,13 +46,13 @@ public class DatabaseConfig {
 	// set the user -- explicit system property masks out cougaar.rc parameter, sets it in DBConfig object
 	String user  = System.getProperty("org.cougaar.mlm.ui.newtpfdd.producer.DataGrabberProducer.dbUser");
 	if (user != null && user.length () > 0)
-	  try { dbConfig.openTag (DBConfig.USER_TAG, null, user); } catch (Exception e) {}
+	  try { dbConfig.openTag (DBConfig.USER_TAG, null, user); } catch (Exception e) {e.printStackTrace();}
 	
 	// set the password
 	String password = 
 	  System.getProperty("org.cougaar.mlm.ui.newtpfdd.producer.DataGrabberProducer.dbPassword");
 	if (password != null)
-	  try { dbConfig.openTag (DBConfig.PASS_TAG, null, password); } catch (Exception e) {}
+	  try { dbConfig.openTag (DBConfig.PASS_TAG, null, password); } catch (Exception e) {e.printStackTrace();}
 
 	// confirm driver is correct
 	try {
@@ -73,7 +73,7 @@ public class DatabaseConfig {
 	  System.getProperty("org.cougaar.mlm.ui.newtpfdd.producer.DataGrabberProducer.dbDriverType");
 	if (connectionTypeName != null && connectionTypeName.length () > 0){
 	  // set connection type
-	  try { dbConfig.openTag (DBConfig.SYNTAX_TAG, null, connectionTypeName); } catch (Exception e) {}
+	  try { dbConfig.openTag (DBConfig.SYNTAX_TAG, null, connectionTypeName); } catch (Exception e) {e.printStackTrace();}
 	}
 	
 	String database = System.getProperty("org.cougaar.mlm.ui.newtpfdd.producer.DataGrabberProducer.database");
@@ -82,7 +82,7 @@ public class DatabaseConfig {
 	  try { 
 		dbConfig.openTag (DBConfig.URL_TAG, null, "jdbc:mysql://" + host + "/" + database); 
 		setDatabase (database);
-	  } catch (Exception e) {}
+	  } catch (Exception e) {e.printStackTrace();}
 	} else {
 	  // set initial database to be one from cougaar.rc file
 	  setDatabase (dbConfig.getDatabaseName());

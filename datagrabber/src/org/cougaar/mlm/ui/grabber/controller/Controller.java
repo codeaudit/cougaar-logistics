@@ -278,7 +278,7 @@ public class Controller extends Thread implements ResultHandler{
 	  haltRun(id);
 	}
 	checkedAll=true;
-      }catch(ConcurrentModificationException cme){}
+      }catch(ConcurrentModificationException cme){cme.printStackTrace();}
     }
     halt=true;
     interrupt();
@@ -321,12 +321,12 @@ public class Controller extends Thread implements ResultHandler{
 	      }
 	    }
 	    checkedAll=true;
-	  }catch(ConcurrentModificationException cme){
+	  }catch(ConcurrentModificationException cme){cme.printStackTrace();
 	  }
 	}
 	try{
 	  wait();
-	}catch(InterruptedException e){
+	}catch(InterruptedException e){e.printStackTrace();
 	}
       }
     }

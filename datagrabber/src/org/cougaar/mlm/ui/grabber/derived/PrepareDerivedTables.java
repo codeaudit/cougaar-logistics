@@ -43,7 +43,7 @@ import java.sql.*;
  * Users of the DB should check for their presence before using, and should
  * NOT REQUIRE their presence.
  *
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 4/06/01
  **/
@@ -289,7 +289,7 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
 
     while (workQ.isBusy ()) {
       synchronized (this) {
-	try {wait(5000); if (halt) return; } catch (Exception e) {}
+	try {wait(5000); if (halt) return; } catch (Exception e) {e.printStackTrace();}
       }
     }
 

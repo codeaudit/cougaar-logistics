@@ -42,7 +42,7 @@ import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 
 /**
  * Handles getting prototype data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/19/01
  **/
@@ -164,7 +164,7 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
     if(s!=null){
       try{
 	s.close();
-      }catch(Exception e){
+      }catch(Exception e){e.printStackTrace();
       }
     }
   }
@@ -195,7 +195,7 @@ public class DGPSPPrototypeConnection extends DGPSPConnection
     if(s!=null){
       try{
 	s.close();
-      }catch(Exception e){
+      }catch(Exception e){e.printStackTrace();
       }
     }
   }

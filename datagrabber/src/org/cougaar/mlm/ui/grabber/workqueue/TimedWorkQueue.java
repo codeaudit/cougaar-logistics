@@ -37,7 +37,7 @@ import java.util.HashMap;
  * and takes it off the list of available threads.
  *
  * </pre>
- * @author Gordon Vidaver; last modified by: $Author: gvidaver $
+ * @author Gordon Vidaver; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -132,7 +132,7 @@ public class TimedWorkQueue extends WorkQueue{
 	}
 	if (VERBOSE)
 	  System.out.println (this + " - " + Thread.currentThread () + " will die now.");
-      } catch (Exception e) {};
+      } catch (Exception e) {e.printStackTrace();};
     }
   };
 }

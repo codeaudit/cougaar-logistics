@@ -508,7 +508,7 @@ public abstract class DataComputer {
           return true;
         }
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // invalid itinerary element?
     }
     // remove any partial results
@@ -603,7 +603,7 @@ public abstract class DataComputer {
         return
           (GeolocLocation)prepFrom.getIndirectObject();
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // error?
     }
     return null;
@@ -622,7 +622,7 @@ public abstract class DataComputer {
         return
           (GeolocLocation)prepFrom.getIndirectObject();
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // error?
     }
     return null;
@@ -652,7 +652,7 @@ public abstract class DataComputer {
           }
         }
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // error?
     }
     return false;
@@ -679,7 +679,7 @@ public abstract class DataComputer {
         }
         return true;
       } 
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // error?
     }
     return false;
@@ -710,7 +710,7 @@ public abstract class DataComputer {
         toLeg.latestEndTime = (long)endP.getValue();
         return true;
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
       // error?
     }
     return false;
@@ -750,7 +750,7 @@ public abstract class DataComputer {
           return (TransportationRoute)viaIndObj;
         }
       }
-    } catch (Exception e) {
+    } catch (Exception e) {e.printStackTrace();
     }
     return null;
   }

@@ -42,7 +42,7 @@ import java.text.SimpleDateFormat;
 /**
  * Abstract base class for Handlers for requests for commands 
  * to dynamic pages
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 3/3/01
  **/
@@ -320,6 +320,7 @@ public abstract class DynamicRequestHandler extends RequestHandler{
 	  runToAssets.put (runID, new Integer(assets));
 	}
       } catch (Exception e) {
+          e.printStackTrace();
 	//System.out.println ("got exception on query\n" + perRunSQL + "\nexception was:\n" + e);
       }
     }

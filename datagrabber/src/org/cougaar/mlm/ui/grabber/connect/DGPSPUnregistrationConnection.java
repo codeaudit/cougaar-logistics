@@ -37,7 +37,7 @@ import java.sql.Connection;
 
 /**
  * Handles registering for data with DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/17/01
  **/
@@ -100,7 +100,7 @@ public class DGPSPUnregistrationConnection extends DGPSPConnection {
 	try{
 	  if(inStr!=null)
 	    inStr.close();
-	}catch(IOException e){}
+	}catch(IOException e){e.printStackTrace();}
 	success=true;
 	if(backoff>0){
 	  logMessage(Logger.WARNING,Logger.NET_IO,
@@ -117,7 +117,7 @@ public class DGPSPUnregistrationConnection extends DGPSPConnection {
 		       e.getNestedException());
 	    setStatus(message);
 	    Thread.sleep(BACKOFF_TIMES[backoff]);
-	  }catch(InterruptedException ie){}
+	  }catch(InterruptedException ie){ie.printStackTrace();}
 	  backoff++;
 	}else{
 	  haltForError(Logger.NET_IO, "Giving up after "+

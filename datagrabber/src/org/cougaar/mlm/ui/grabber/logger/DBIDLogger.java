@@ -27,7 +27,7 @@ import java.util.Date;
 
 /**
  * Logs to a database table.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -119,7 +119,7 @@ public class DBIDLogger implements IDLogger{
   public void stop(){
     try{
       statement.close();
-    }catch(SQLException e){
+    }catch(SQLException e){e.printStackTrace();
     }
   }
 

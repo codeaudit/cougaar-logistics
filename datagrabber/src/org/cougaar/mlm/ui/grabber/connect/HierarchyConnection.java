@@ -52,7 +52,7 @@ import org.cougaar.mlm.ui.grabber.workqueue.TimedResult;
  *
  * Times out after a fixed duration, defaults to two minutes, but
  * can be set by xml tag.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -215,7 +215,7 @@ public class HierarchyConnection extends PSPConnection
       if(s!=null)
 	try{
 	  s.close();
-	}catch(Exception e){
+	}catch(Exception e){e.printStackTrace();
 	}
     }
   }

@@ -59,7 +59,7 @@ import java.text.SimpleDateFormat;
  * Basic infrastructure to talk to a PSP that uses the 
  * XMLable/serializable interfaces
  * 
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -221,15 +221,15 @@ public abstract class PSPConnection extends PSPWork{
 	  int size =pd.read(buf);
 	  outStream.write(buf,0,size);
 	}
-      }catch(EOFException e){
+      }catch(EOFException e){e.printStackTrace();
 	//Expected.
-      }catch(IOException e){
+      }catch(IOException e){e.printStackTrace();
 	throw new UnableToConnectException("Unable to post data to URL",e);
       }finally{
 	if(outStream!=null)
 	  try{
 	    outStream.close();
-	  }catch(IOException e){}
+	  }catch(IOException e){e.printStackTrace();}
       }
     }
     try{
@@ -298,7 +298,7 @@ public abstract class PSPConnection extends PSPWork{
 	  if(inStr!=null)
 	    try{
 	      inStr.close();
-	    }catch(IOException e){}
+	    }catch(IOException e){e.printStackTrace();}
 	  return null;
 	}    
 	setEpoch(STREAMING);
@@ -306,7 +306,7 @@ public abstract class PSPConnection extends PSPWork{
 	if(inStr!=null)
 	  try{
 	    inStr.close();
-	  }catch(IOException e){}
+	  }catch(IOException e){e.printStackTrace();}
 	success=true;
 	if(backoff>0){
 	  logMessage(Logger.WARNING,Logger.NET_IO,
@@ -323,7 +323,7 @@ public abstract class PSPConnection extends PSPWork{
 		       e.getNestedException());
 	    setStatus(message);
 	    Thread.sleep(BACKOFF_TIMES[backoff]);
-	  }catch(InterruptedException ie){}
+	  }catch(InterruptedException ie){ie.printStackTrace();}
 	  backoff++;
 	}else{
 	  haltForError(Logger.NET_IO, "Giving up after "+

@@ -31,7 +31,7 @@ import java.util.HashMap;
 /**
  * Defines a queue of work to do, and manages threads to get it
  * done
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -171,7 +171,7 @@ public class WorkQueue{
 			    " - WorkQueue.createWorkThread - create new thread " +
 			    wt);
 		
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {e.printStackTrace();}
     }
 
     return wt;

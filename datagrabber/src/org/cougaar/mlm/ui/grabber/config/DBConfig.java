@@ -98,7 +98,7 @@ public class DBConfig implements XMLable, DeXMLable{
 	  XMLWriter w=new XMLWriter(new OutputStreamWriter(System.out));
 	  toXML(w);
 	  w.flush();
-	}catch(Exception e){}
+	}catch(Exception e){e.printStackTrace();}
       }
   }
 

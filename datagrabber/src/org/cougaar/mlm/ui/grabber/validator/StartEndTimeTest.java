@@ -29,7 +29,7 @@ import java.sql.SQLException;
 
 /**
  * Validates start/end times.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -109,7 +109,7 @@ public class StartEndTimeTest extends Test{
     case TYPE_ENUM_1:
       try{
 	return DGPSPConstants.LEG_TYPES[enum];
-      }catch(Exception e){}
+      }catch(Exception e){e.printStackTrace();}
     }
     return Integer.toString(enum);
   }

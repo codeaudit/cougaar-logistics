@@ -97,7 +97,7 @@ public class SqlQuery implements Query {
 
       String hostURL = "<could not get database URL>";
       try { hostURL = connection.getMetaData().getURL(); }
-      catch (Exception f) {}
+      catch (Exception f) {e.printStackTrace();}
 	  
       if (e.getErrorCode () == NO_DISK_SPACE)
 	System.out.println ("SqlQuery.getResultSet - mysqld at " + hostURL + 
@@ -125,7 +125,7 @@ public class SqlQuery implements Query {
 
       String hostURL = "<could not get database URL>";
       try { hostURL = connection.getMetaData().getURL(); }
-      catch (Exception f) {}
+      catch (Exception f) {f.printStackTrace();}
 	  
       if (e.getErrorCode () == NO_DISK_SPACE)
 	System.out.println ("SqlQuery.getResultSet - mysqld at " + hostURL + 

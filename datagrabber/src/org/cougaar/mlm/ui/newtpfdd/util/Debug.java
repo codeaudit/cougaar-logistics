@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.1 2002-05-14 20:41:08 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/util/Debug.java,v 1.2 2002-08-07 19:58:02 tom Exp $ */
 
  /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -30,7 +30,7 @@ public class Debug extends OutputHandler
 	try {
 	    doDebug = System.getProperty("debug");
 	}
-	catch ( AccessControlException e ) {
+	catch ( AccessControlException e ) {e.printStackTrace();
 	}
 	if ( doDebug != null && doDebug.equalsIgnoreCase("true") ) {
 	    System.out.println("Debugging is on.");
