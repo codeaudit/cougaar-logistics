@@ -25,22 +25,14 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.logistics.ldm.MEIPrototypeProvider;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.PGDelegate;
-import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.measure.CountRate;
-import org.cougaar.planning.ldm.measure.Rate;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.List;
-import java.math.BigDecimal;
 
 public class Level2AmmoConsumerBG extends AmmoConsumerBG {
-
-  public static HashMap cachedDBValues = new HashMap();
   String supplyType = "Ammunition";
   public final static String LEVEL2AMMUNITION = "Level2Ammunition";
   private transient LoggingService logger;
@@ -51,55 +43,8 @@ public class Level2AmmoConsumerBG extends AmmoConsumerBG {
   }
 
   public void initialize(MEIPrototypeProvider plugin) {
-    parentPlugin = plugin;
+    super.initialize(plugin);
     logger = parentPlugin.getLoggingService(this);
-  }
-
-  public Rate getRate(Asset asset, List params) {
-    if (orgName == null) {
-      orgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-    }
-    Rate r = null;
-    // DEBUG
-//     String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
-    if (consumptionRates == null) {
-      return r;
-    }
-    if (params == null) {
-      logger.error("getRate() params null for " +
-                   asset.getTypeIdentificationPG().getNomenclature());
-//       if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	System.out.println("getRate() params null for "+
-// 			   asset.getTypeIdentificationPG().getNomenclature());
-//       }
-      return r;
-    }
-    Double qty = (Double) params.get(0);
-    OrgActivity orgAct = (OrgActivity) params.get(1);
-    if (orgAct == null) {
-      logger.debug("getRate() orgAct null for " +
-                   asset.getTypeIdentificationPG().getNomenclature());
-
-      return r;
-    }
-    HashMap map = (HashMap) consumptionRates.get(asset);
-    if (map == null) {
-      logger.error("getRate()  no Ammo consumption for " +
-                   asset.getTypeIdentificationPG().getNomenclature());
-
-      return r;
-    }
-
-    Double d = (Double) map.get(orgAct.getOpTempo().toUpperCase());
-    if (d == null) {
-      logger.error("getRate() consumption rate null for " +
-                   asset.getTypeIdentificationPG().getNomenclature());
-
-      return r;
-    }
-    r = CountRate.newEachesPerDay(d.doubleValue() * qty.doubleValue());
-
-    return r;
   }
 
   public Collection getConsumed() {
@@ -141,9 +86,7 @@ public class Level2AmmoConsumerBG extends AmmoConsumerBG {
     double dcr = 0.0;
     Asset newAsset;
     HashMap map = null, ratesMap = new HashMap();
-    if (result == null) {
-      return null;
-    }
+
     Enumeration results = result.elements();
     Object row[];
     while (results.hasMoreElements()) {
@@ -167,10 +110,6 @@ public class Level2AmmoConsumerBG extends AmmoConsumerBG {
       }
     }
     return ratesMap;
-  }
-
-  public PGDelegate copy(PropertyGroup pg) {
-    return null;
   }
 }
 
