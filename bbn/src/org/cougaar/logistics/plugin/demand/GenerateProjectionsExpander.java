@@ -28,24 +28,21 @@ import org.cougaar.glm.plugins.AssetUtils;
 import org.cougaar.glm.plugins.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
-import org.cougaar.logistics.ldm.asset.FuelConsumerBG;
-import org.cougaar.logistics.ldm.asset.FuelConsumerPG;
-import org.cougaar.logistics.ldm.asset.NewFuelConsumerPG;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
+import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * <pre>
@@ -72,25 +69,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   public void expandGenerateProjections(Task gpTask, Schedule schedule, Asset consumer) {
 
     // TODO: Add diff based planning code
-    // TODO: handle adds, changes, removes as necessary
+    // TODO: document, add logger, handle null checks
     // TODO: create method to compare rates and extract tasks based on time, e.g., overlapping schedules
 
-    // This is a mix of temp code to capture the logic. Add
-    // real code when it is available.  --llg
 
-    // asset.getBG
+    PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
 
-//     FuelConsumerBG bg = new FuelConsumerBGImpl("foo", new Service("bar"), "shebop");
-    NewFuelConsumerPG pg =
-        (NewFuelConsumerPG) getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
-//     pg.setMei(anAsset);
-    pg.setService("bar");
-    pg.setTheater("shebop");
-    FuelConsumerBG bg = new FuelConsumerBG(pg);
-    pg.setFuelBG(bg);
-//     pg.initialize(this);
-
-    Collection items = bg.getConsumed();
+    Collection items = getConsumed(pg);
     Collection subTasks = new ArrayList();
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
       Asset consumedItem = (Asset) iterator.next();
@@ -99,7 +84,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       // for every item consumed, walk the schedule elements and get the rates
       while (scheduleElements.hasMoreElements()) {
         ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
-        rate = bg.getRate(consumedItem, (List) ose.getObject());
+        rate = getRate(pg, consumedItem, (List) ose.getObject());
         subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                              ose.getEndTime(), rate));
       }
@@ -349,8 +334,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     return null;
   }
-
-
 }
 
 
