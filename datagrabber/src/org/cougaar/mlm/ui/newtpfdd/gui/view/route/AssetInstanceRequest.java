@@ -34,7 +34,7 @@ import java.util.Date;
 
 /**
  * A request for an AssetInstance to be displayed.
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 4/20/01
  **/
@@ -220,7 +220,7 @@ public class AssetInstanceRequest extends RouteViewRequest{
       aiAssetID+"='"+assetid+"'\nand "+
       aiAssetID+"="+instanceID+"\nand "+
       instanceProtoID+"="+protoID+"\nand "+
-      clRouteID+" is null";
+      clRouteID+"='null'";
 
     if (debug)
       TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "AssetInstanceRequest - sql\n" + sql);
