@@ -205,6 +205,9 @@ public class InventoryPlugin extends ComponentPlugin {
 	  }
 	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
 					   refillComparator);
+      } else { // Backwards Flow
+	externalAllocator.updateAllocationResult(refillAllocationSubscription);
+     // AllocationAssessor.reconcileInventoryLevels(refillAllocationSubscription.getAddedCollection());
       }
 						       
       takeInventorySnapshot(getTouchedInventories());
@@ -234,6 +237,9 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for incoming Projection tasks **/
   private IncrementalSubscription projectionTaskSubscription;
 
+  /** Subscription for outgoing Refill (Supply & ProjectSupply) tasks **/
+  private IncrementalSubscription refillAllocationSubscription;
+
   /** Subscription for InventoryPolicy **/
   private IncrementalSubscription inventoryPolicySubscription;
 
@@ -251,6 +257,7 @@ public class InventoryPlugin extends ComponentPlugin {
   protected void setupSubscriptions2() {
     supplyTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new SupplyTaskPredicate(supplyType, myOrgName, taskUtils));
     projectionTaskSubscription = (IncrementalSubscription) blackboard.subscribe( new ProjectionTaskPredicate(supplyType, myOrgName, taskUtils));
+    refillAllocationSubscription = (IncrementalSubscription) blackboard.subscribe(new RefillAllocPredicate(supplyType, myOrgName, taskUtils));
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -441,6 +448,39 @@ public class InventoryPlugin extends ComponentPlugin {
 	    return false;
 	}
     }
+
+    //Allocation of refill tasks
+  static class RefillAllocPredicate implements UnaryPredicate {
+    String type_;
+    String orgName_;
+    TaskUtils taskUtils;
+    
+    public RefillAllocPredicate(String type, String orgName, TaskUtils aTaskUtils) {
+      type_ = type;
+      orgName_ = orgName;
+      taskUtils = aTaskUtils;
+    }
+    
+    public boolean execute(Object o) {
+      if (o instanceof Allocation ) {
+	Task task = ((Allocation)o).getTask();
+	Verb verb = task.getVerb();
+	if (verb.equals(Constants.Verb.SUPPLY)
+	    || verb.equals(Constants.Verb.PROJECTSUPPLY)) {
+	  if (taskUtils.isDirectObjectOfType(task, type_)) {
+	    // need to check if externally allocated
+	    if(((Allocation)o).getAsset() instanceof Organization) {
+	      if (taskUtils.isMyRefillTask(task, orgName_)){
+		return true;
+	      }
+	    }
+	  }
+	}
+      }
+      return false;
+    }
+  }
+
 
   private class InventoryPolicyPredicate implements UnaryPredicate {
     String type;
