@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 2001-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -35,7 +35,6 @@ import org.cougaar.planning.ldm.measure.Area;
 import org.cougaar.planning.ldm.measure.Mass;
 import org.cougaar.planning.ldm.measure.Volume;
 import org.cougaar.planning.ldm.plan.*;
-import org.cougaar.util.DynamicUnaryPredicate;
 import org.cougaar.util.UnaryPredicate;
 
 import java.util.*;
@@ -58,13 +57,13 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   public TaskUtils taskUtils;
 
-  /** 
+  /**
    * rely upon load-time introspection to set these services - 
    * don't worry about revokation.
    */
   public void setLoggingService(LoggingService bs) {
-      super.setLoggingService(bs);
-      taskUtils = new TaskUtils(logger);
+    super.setLoggingService(bs);
+    taskUtils = new TaskUtils(logger);
   }
 
 
@@ -73,50 +72,50 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     try {
       if (getMyParams ().hasParam ("CHUNK_DAYS"))
-	CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
+        CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
     } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
   }
 
-  protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
+  protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) {
     if (isInfoEnabled())
       info (getName () + " : Filtering for Expandable Tasks...");
 
     myInputTaskCallback = new UTILExpandableTaskCallback (bufferingThread, logger) {
-	protected UnaryPredicate getPredicate () {
-	  return new UnaryPredicate() {
-      protected TaskUtils myTaskUtils = new TaskUtils(logger);
+      protected UnaryPredicate getPredicate () {
+        return new UnaryPredicate() {
+          protected TaskUtils myTaskUtils = new TaskUtils(logger);
 
-	      public boolean execute(Object o) {
-		  if ( o instanceof Task ) {
-		  Task task = (Task) o;
-		  boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
-		  boolean isReserved   = (task.getPrepositionalPhrase (START) != null);
-		  if (hasTransport && isReserved) return true;
+          public boolean execute(Object o) {
+            if ( o instanceof Task ) {
+              Task task = (Task) o;
+              boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
+              boolean isReserved   = (task.getPrepositionalPhrase (START) != null);
+              if (hasTransport && isReserved) return true;
 
-		  if((task.getPlanElement() == null ) &&
-		     (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) &&
-		     (myTaskUtils.isLevel2(task))) {
-			 boolean isReadyForTransport=(myTaskUtils.isReadyForTransport(task));
-			 //TODO: MWD delete this debug line
-			 if((isReadyForTransport) &&
-           logger.isDebugEnabled()){
-			     logger.debug("AmmoProjectionExpanderPlugin:isLevel2 ReadyForTransport=" + isReadyForTransport);
-			 }
-			 return isReadyForTransport;
+              if((task.getPlanElement() == null ) &&
+                  (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) &&
+                  (myTaskUtils.isLevel2(task))) {
+                boolean isReadyForTransport=(myTaskUtils.isReadyForTransport(task));
+                //TODO: MWD delete this debug line
+                if((isReadyForTransport) &&
+                    logger.isDebugEnabled()){
+                  logger.debug("AmmoProjectionExpanderPlugin:isLevel2 ReadyForTransport=" + isReadyForTransport);
+                }
+                return isReadyForTransport;
+              }
+
+              return ((task.getWorkflow() == null )  &&
+                  (task.getPlanElement() == null ) &&
+                  ((UTILGenericListener) myListener).interestingTask (task));
+            }
+            return false;
+          }
+        };
       }
-
-		  return ((task.getWorkflow() == null )  &&
-			  (task.getPlanElement() == null ) &&
-			  ((UTILGenericListener) myListener).interestingTask (task)); 
-		}
-		return false;
-	      }
-	    };
-	}
-      };  
+    };
 
     return myInputTaskCallback;
-  } 
+  }
 
   /**
    * State that we are interested in all transport tasks
@@ -156,7 +155,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     Preference pref = prefHelper.getPrefWithAspectType (parentTask, AlpineAspectType.DEMANDRATE);
     double ratePerSec = prefHelper.getPreferenceBestValue (pref); // base number is in tons per second!
-    double ratePerDay = ratePerSec*SECS_PER_DAY; 
+    double ratePerDay = ratePerSec*SECS_PER_DAY;
 
     Date readyAt = prefHelper.getReadyAt   (parentTask);
     Date early   = getEarlyDate (parentTask);
@@ -175,19 +174,19 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       numSubtasks++;
 
     if (numSubtasks < 1) {
-      error (getName () + ".getSubtasks - task " + parentTask.getUID () + 
-	     " will create no subtasks?  Window was " + originalWindowInDays + " days");
+      error (getName () + ".getSubtasks - task " + parentTask.getUID () +
+             " will create no subtasks?  Window was " + originalWindowInDays + " days");
     }
 
     if (isInfoEnabled ()) {
-      info (getName () + ".getSubtasks - task " + parentTask.getUID () + 
-	    " from " + readyAt + 
-	    " to " + best + 
-	    " will produce " + numSubtasks + " subtasks.");
+      info (getName () + ".getSubtasks - task " + parentTask.getUID () +
+            " from " + readyAt +
+            " to " + best +
+            " will produce " + numSubtasks + " subtasks.");
     }
-    
+
     String unit = (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR)) ?
-      (String) prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR) : "null";
+        (String) prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR) : "null";
 
     // create one subtask for every chunk set of days, with an asset that is the total
     // delivered over the period = days*ratePerDay
@@ -197,8 +196,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Date lastBestDate = readyAt;
 
     if (isInfoEnabled ()) {
-      info (getName () + ".getSubtasks - task " + parentTask.getUID () + " target quantity " + targetQuantity + 
-	    " windowInSec " + window/1000l + " rate/sec " + ratePerSec);
+      info (getName () + ".getSubtasks - task " + parentTask.getUID () + " target quantity " + targetQuantity +
+            " windowInSec " + window/1000l + " rate/sec " + ratePerSec);
     }
 
     for (int i = 0; i < (int) numSubtasks; i++) {
@@ -206,32 +205,32 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       long daysToChunk = (onLastTask) ? window/MILLIS_PER_DAY : CHUNK_DAYS;
 
       if (isInfoEnabled () && onLastTask)
-	info ("on last task - days " + daysToChunk + " since " + window/MILLIS_PER_DAY + " < " + CHUNK_DAYS);
+        info ("on last task - days " + daysToChunk + " since " + window/MILLIS_PER_DAY + " < " + CHUNK_DAYS);
 
       daysSoFar += daysToChunk;
       window    -= daysToChunk*MILLIS_PER_DAY;
       double quantity = ((double)daysToChunk) * ratePerDay;
       if (onLastTask && ((totalQuantity + quantity) != targetQuantity)) {
-	if (isInfoEnabled ())
-	  info (" task " + parentTask.getUID () + 
-		" adjusting quantity from " +quantity + 
-		" to " + (targetQuantity - totalQuantity) + 
-		" total is " + totalQuantity);
-	quantity = targetQuantity - totalQuantity;
+        if (isInfoEnabled ())
+          info (" task " + parentTask.getUID () +
+                " adjusting quantity from " +quantity +
+                " to " + (targetQuantity - totalQuantity) +
+                " total is " + totalQuantity);
+        quantity = targetQuantity - totalQuantity;
       } else if (isInfoEnabled ()) {
-	info (".getSubtasks - task " + parentTask.getUID () + " quantity is " + quantity + 
-	      " chunk days " + daysToChunk+ " rate " + ratePerDay);
+        info (".getSubtasks - task " + parentTask.getUID () + " quantity is " + quantity +
+              " chunk days " + daysToChunk+ " rate " + ratePerDay);
       }
 
       if (quantity < 0.00001) {
-	if (isInfoEnabled()) {
-	  info (".getSubtasks - task " + parentTask.getUID () + 
-		" gets a quantity of zero, ratePerDay was " + ratePerDay + 
-		" chunk days " +daysToChunk);
-	}
+        if (isInfoEnabled()) {
+          info (".getSubtasks - task " + parentTask.getUID () +
+                " gets a quantity of zero, ratePerDay was " + ratePerDay +
+                " chunk days " +daysToChunk);
+        }
       }
-      
-      //      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity; 
+
+      //      double massInKGs = ((GLMAsset)supplyAsset).getPhysicalPG().getMass().getKilograms()*quantity;
       double massInSTons = quantity;
       totalQuantity += quantity;
 
@@ -244,41 +243,41 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       String itemNomen = itemIDPG.getNomenclature ();
 
       if (itemID == null) {
-	TypeIdentificationPG typeID = supplyAsset.getTypeIdentificationPG ();
-	itemID = typeID.getTypeIdentification();
+        TypeIdentificationPG typeID = supplyAsset.getTypeIdentificationPG ();
+        itemID = typeID.getTypeIdentification();
       }
 
       if (itemNomen == null) {
-	TypeIdentificationPG typeID = supplyAsset.getTypeIdentificationPG ();
-	itemNomen = typeID.getNomenclature();
+        TypeIdentificationPG typeID = supplyAsset.getTypeIdentificationPG ();
+        itemNomen = typeID.getNomenclature();
       }
 
-      Asset directObject = 
-	  getMilvanDirectObject (itemNomen, itemID, unit, massInSTons);
+      Asset directObject =
+          getMilvanDirectObject (itemNomen, itemID, unit, massInSTons);
 
       Task subTask = makeTask (parentTask, directObject);//deliveredAsset);
       long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
       if (bestTime > best.getTime()) {
-	if (isInfoEnabled())
-	  info (getName () + 
-		".getSubtasks - had to correct bestTime, was " + new Date (bestTime) + 
-		" now " + best);
-	bestTime = best.getTime();
+        if (isInfoEnabled())
+          info (getName () +
+                ".getSubtasks - had to correct bestTime, was " + new Date (bestTime) +
+                " now " + best);
+        bestTime = best.getTime();
       }
 
-      Date startDate = new Date(getAlarmService().currentTimeMillis () + 
-				TASK_TRANSMISSION_DELAY);
+      Date startDate = new Date(getAlarmService().currentTimeMillis () +
+                                TASK_TRANSMISSION_DELAY);
       if (isInfoEnabled ())
-	info (getName () + ".getSubtasks - making task " + subTask.getUID() + 
-	      " with best arrival " + new Date(bestTime) + " and start " + startDate);
-      prefHelper.replacePreference((NewTask)subTask, 
-				   prefHelper.makeEndDatePreference (ldmf,
-								     early, 
-								     new Date (bestTime),
-								     late));
+        info (getName () + ".getSubtasks - making task " + subTask.getUID() +
+              " with best arrival " + new Date(bestTime) + " and start " + startDate);
+      prefHelper.replacePreference((NewTask)subTask,
+                                   prefHelper.makeEndDatePreference (ldmf,
+                                                                     early,
+                                                                     new Date (bestTime),
+                                                                     late));
 
-      prefHelper.replacePreference((NewTask)subTask, 
-				   prefHelper.makeStartDatePreference (ldmf, startDate));
+      prefHelper.replacePreference((NewTask)subTask,
+                                   prefHelper.makeStartDatePreference (ldmf, startDate));
 
       prefHelper.removePrefWithAspectType (subTask, AlpineAspectType.DEMANDRATE); // we've included it in the d.o.
 
@@ -287,11 +286,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
 
       if (isInfoEnabled())
-	info (getName () + " publishing reservation " + subTask.getUID() + 
-	      " for " + itemNomen + 
-	      " from " + lastBestDate + " to " + new Date(bestTime) + " weight " +
-	      //massInKGs + " kgs.");
-	      massInSTons + " short tons.");
+        info (getName () + " publishing reservation " + subTask.getUID() +
+              " for " + itemNomen +
+              " from " + lastBestDate + " to " + new Date(bestTime) + " weight " +
+              //massInKGs + " kgs.");
+              massInSTons + " short tons.");
 
       lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
@@ -300,10 +299,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     // post condition
     if (totalQuantity != targetQuantity) {
       if (isWarnEnabled ())
-	warn (getName () + " total quantity " + totalQuantity + 
-	      " != original total " + targetQuantity +
-	      " = window " + originalWindowInDays + 
-	      " * ratePerDay " + ratePerDay);
+        warn (getName () + " total quantity " + totalQuantity +
+              " != original total " + targetQuantity +
+              " = window " + originalWindowInDays +
+              " * ratePerDay " + ratePerDay);
     }
 
     if (isInfoEnabled())
@@ -312,40 +311,40 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return childTasks;
   }
 
-    private static final double MAX_IN_MILVAN = 13.9;
+  private static final double MAX_IN_MILVAN = 13.9;
 
-    protected Asset getMilvanDirectObject (String itemNomen, String itemID, 
-					   String unit, double massInSTons) {
-      int numMilvans = (int) Math.ceil(massInSTons/MAX_IN_MILVAN);
-      if (numMilvans == 0) {
-	  numMilvans++;
-	  if (isWarnEnabled())
-	      warn ("Got mass that was zero : " + massInSTons);
-	  massInSTons += 0.1;
-      }
-      double tonsLeft = massInSTons;
-      
-      if (numMilvans == 1) {
-	  GLMAsset milvan = makeMilvan ();
-	  addContentsInfo (milvan, itemNomen, itemID, unit, massInSTons);
-	  return milvan;
-      }
-      else {
-	  Vector milvans = new Vector();
-	  for (int i = 0; i < numMilvans; i++) {
-	      GLMAsset milvan = makeMilvan ();
-	      double amount = Math.min (tonsLeft, MAX_IN_MILVAN);
-	      addContentsInfo (milvan, itemNomen, itemID, unit, amount);
-	      tonsLeft -= amount;
-	      milvans.add (milvan);
-	  }
-	  if ((tonsLeft > 0.0000001) || (tonsLeft < -0.0000001)) {
-	      error ("Tons left is not zero = " + tonsLeft);
-	  }
-	  return assetHelper.makeAssetGroup(getLDMService().getLDM().getFactory(), 
-					    milvans);
-      }
+  protected Asset getMilvanDirectObject (String itemNomen, String itemID,
+                                         String unit, double massInSTons) {
+    int numMilvans = (int) Math.ceil(massInSTons/MAX_IN_MILVAN);
+    if (numMilvans == 0) {
+      numMilvans++;
+      if (isWarnEnabled())
+        warn ("Got mass that was zero : " + massInSTons);
+      massInSTons += 0.1;
     }
+    double tonsLeft = massInSTons;
+
+    if (numMilvans == 1) {
+      GLMAsset milvan = makeMilvan ();
+      addContentsInfo (milvan, itemNomen, itemID, unit, massInSTons);
+      return milvan;
+    }
+    else {
+      Vector milvans = new Vector();
+      for (int i = 0; i < numMilvans; i++) {
+        GLMAsset milvan = makeMilvan ();
+        double amount = Math.min (tonsLeft, MAX_IN_MILVAN);
+        addContentsInfo (milvan, itemNomen, itemID, unit, amount);
+        tonsLeft -= amount;
+        milvans.add (milvan);
+      }
+      if ((tonsLeft > 0.0000001) || (tonsLeft < -0.0000001)) {
+        error ("Tons left is not zero = " + tonsLeft);
+      }
+      return assetHelper.makeAssetGroup(getLDMService().getLDM().getFactory(),
+                                        milvans);
+    }
+  }
 
   public Date getEarlyDate(Task t) {
     Preference endDatePref = prefHelper.getPrefWithAspectType(t, AspectType.END_TIME);
@@ -364,11 +363,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     cal.set(Calendar.MILLISECOND, 0);
     Date endOfRange = (Date) cal.getTime();
 
-    Enumeration validRanges = 
-      endDatePref.getScoringFunction().getValidRanges (TimeAspectValue.create (AspectType.END_TIME,
-									    0l),
-						       TimeAspectValue.create (AspectType.END_TIME,
-									    endOfRange));
+    Enumeration validRanges =
+        endDatePref.getScoringFunction().getValidRanges (TimeAspectValue.create (AspectType.END_TIME,
+                                                                                 0l),
+                                                         TimeAspectValue.create (AspectType.END_TIME,
+                                                                                 endOfRange));
     return validRanges;
   }
 
@@ -380,35 +379,35 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       prototype = originalAsset;
       GLMAsset glmProto = (GLMAsset)prototype;
       if (!glmProto.hasPhysicalPG()) {
-	warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + " - " +
-	      prototype + " doesn't have a physical PG - " + glmProto.getPhysicalPG());
-	if (!(prototype instanceof PhysicalAsset))
-	  error ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + 
-		 prototype + " is not a physical asset?.");
-	else if (isInfoEnabled()){
-	  info ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + 
-		" is a physical asset.");
-	}
+        warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + " - " +
+              prototype + " doesn't have a physical PG - " + glmProto.getPhysicalPG());
+        if (!(prototype instanceof PhysicalAsset))
+          error ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " +
+                 prototype + " is not a physical asset?.");
+        else if (isInfoEnabled()){
+          info ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() +
+                " is a physical asset.");
+        }
       }
-      else { 
-	if (glmProto.getPhysicalPG().getFootprintArea() == null) {
-	  ((NewPhysicalPG)glmProto.getPhysicalPG()).setFootprintArea (new Area (Area.SQUARE_FEET, 1));
-	  if (isWarnEnabled()) {
-	    warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + 
-		  " doesn't have an area slot on its physical pg.");
-	  }
-	}
-	if (glmProto.getPhysicalPG().getVolume() == null) {
-	  ((NewPhysicalPG)glmProto.getPhysicalPG()).setVolume (new Volume (Volume.CUBIC_FEET, 1)); 
-	  if (isWarnEnabled()) {
-	    warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + 
-		  " doesn't have a volume slot on its physical pg.");
-	  }
-	}
+      else {
+        if (glmProto.getPhysicalPG().getFootprintArea() == null) {
+          ((NewPhysicalPG)glmProto.getPhysicalPG()).setFootprintArea (new Area (Area.SQUARE_FEET, 1));
+          if (isWarnEnabled()) {
+            warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() +
+                  " doesn't have an area slot on its physical pg.");
+          }
+        }
+        if (glmProto.getPhysicalPG().getVolume() == null) {
+          ((NewPhysicalPG)glmProto.getPhysicalPG()).setVolume (new Volume (Volume.CUBIC_FEET, 1));
+          if (isWarnEnabled()) {
+            warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() +
+                  " doesn't have a volume slot on its physical pg.");
+          }
+        }
       }
       if (!glmProto.hasPackagePG()) {
-	warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + " - " + 
-	      prototype + " doesn't have a package PG.");
+        warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + " - " +
+              prototype + " doesn't have a package PG.");
       }
     }
 
@@ -427,10 +426,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (t.getPlanElement () instanceof Expansion) {
       addToEstimatedAR (t.getPlanElement (), ratePerSec);
       if (isInfoEnabled()) {
-	Workflow tasksWorkflow = t.getWorkflow();
-	Workflow peWorkflow = ((Expansion)t.getPlanElement()).getWorkflow();
-	info (getName () + ".handleTask " + t.getUID() + " in " + ((tasksWorkflow != null) ? tasksWorkflow.getUID().toString() : "null wf?")+ 
-	      " p.e. " +t.getPlanElement ().getUID() + " p.e. wf. " + ((peWorkflow != null) ? peWorkflow.getUID().toString() : " null p.e. wf?"));
+        Workflow tasksWorkflow = t.getWorkflow();
+        Workflow peWorkflow = ((Expansion)t.getPlanElement()).getWorkflow();
+        info (getName () + ".handleTask " + t.getUID() + " in " + ((tasksWorkflow != null) ? tasksWorkflow.getUID().toString() : "null wf?")+
+              " p.e. " +t.getPlanElement ().getUID() + " p.e. wf. " + ((peWorkflow != null) ? peWorkflow.getUID().toString() : " null p.e. wf?"));
       }
     } 
     else if (isWarnEnabled ()) 
@@ -444,8 +443,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
     copy[aspectValues.length] = rate;
 
-    AllocationResult replacement =  
-      ldmf.newAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
+    AllocationResult replacement =
+        ldmf.newAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
     exp.setEstimatedResult (replacement);
   }
 
@@ -462,14 +461,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * No allocation results flow upward unless reported confidence reaches 100%.
    *
    * </pre>
-   * @param exp Expansion that has changed.
+   * @param cpe Expansion that has changed.
    * @see org.cougaar.lib.filter.UTILPluginAdapter#updateAllocationResult
    */
   public void reportChangedExpansion(Expansion cpe) { 
     if (isDebugEnabled ())
-      debug (getName () + " : Received changed pe " + 
-	    cpe.getUID () + " for task " + 
-	    cpe.getTask ().getUID());
+      debug (getName () + " : Received changed pe " +
+             cpe.getUID () + " for task " +
+             cpe.getTask ().getUID());
     AllocationResult reportedresult = cpe.getReportedResult();
     if (reportedresult != null) {
       // compare entire allocationresults.
@@ -479,60 +478,60 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       // if we are not ignoring low confidence reported values
       boolean highConfidence = (!skipLowConfidence || confidence > HIGH_CONFIDENCE);
 
-      if ( nullEstimated  || 
-	   (highConfidence &&
-	    (! isEqual(estimatedresult, reportedresult)))) { 
-	if (isDebugEnabled ())
-          debug (getName () + " : Swapping Alloc Results for task " + 
-                              cpe.getTask ().getUID ());
+      if ( nullEstimated  ||
+          (highConfidence &&
+          (! isEqual(estimatedresult, reportedresult)))) {
+        if (isDebugEnabled ())
+          debug (getName () + " : Swapping Alloc Results for task " +
+                 cpe.getTask ().getUID ());
         if (isWarnEnabled() && !reportedresult.isSuccess ())
-          warn (getName () + " : " + 
-		cpe.getTask ().getUID () + " failed to allocate.");
+          warn (getName () + " : " +
+                cpe.getTask ().getUID () + " failed to allocate.");
 
         cpe.setEstimatedResult(reportedresult);
 
-	//        double prefValue = getScaledRate (cpe); 
-	Task task = cpe.getTask();
-	AspectValue prefRate = 
-	  task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue();
-	
+        //        double prefValue = getScaledRate (cpe);
+        Task task = cpe.getTask();
+        AspectValue prefRate =
+            task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue();
+
         AspectValue[] aspectValues = cpe.getEstimatedResult().getAspectValueResults();
 
-	AspectValue [] copy = new AspectValue [aspectValues.length+1];
-	System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
-	copy[aspectValues.length] = prefRate;
+        AspectValue [] copy = new AspectValue [aspectValues.length+1];
+        System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
+        copy[aspectValues.length] = prefRate;
 
-	// fix start time to echo start time preference
-	for (int i = 0; i < copy.length; i++) {
-	  AspectValue value = copy[i];
-	  if (value.getAspectType () == AspectType.START_TIME) {
-	    Date preferredStart = prefHelper.getReadyAt (task);
-	    copy[i] = AspectValue.newAspectValue (AspectType.START_TIME, preferredStart);
-	    break;
-	  }
-	}
+        // fix start time to echo start time preference
+        for (int i = 0; i < copy.length; i++) {
+          AspectValue value = copy[i];
+          if (value.getAspectType () == AspectType.START_TIME) {
+            Date preferredStart = prefHelper.getReadyAt (task);
+            copy[i] = AspectValue.newAspectValue (AspectType.START_TIME, preferredStart);
+            break;
+          }
+        }
 
-	AllocationResult correctedAR = 
-	  new AllocationResult(reportedresult.getConfidenceRating(),
-			       reportedresult.isSuccess(),
-			       copy);
+        AllocationResult correctedAR =
+            new AllocationResult(reportedresult.getConfidenceRating(),
+                                 reportedresult.isSuccess(),
+                                 copy);
 
-	cpe.setEstimatedResult(correctedAR);          
+        cpe.setEstimatedResult(correctedAR);
 
-        if (isInfoEnabled()) 
+        if (isInfoEnabled())
           info (getName () + " : publish changing task " + cpe.getTask ().getUID ());
 
-	blackboard.publishChange(cpe);
+        blackboard.publishChange(cpe);
       }
     }
     else if (!cpe.getTask().getSource().equals(getAgentIdentifier())) {
-      error ("ERROR! " + getName() + 
-	     " : "     + cpe.getTask().getUID() + 
-	     " has a null reported allocation.");
+      error ("ERROR! " + getName() +
+             " : "     + cpe.getTask().getUID() +
+             " has a null reported allocation.");
     }
   }
 
-  /** 
+  /**
    * <pre>
    * scale the rate to make it the rate over the time of the performance of the 
    * task, so that when the inventory does days*rate, they come up with the original
@@ -546,47 +545,47 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    */
   protected double getScaledRate (PlanElement planElement) {
     Task task = planElement.getTask();
-    double prefRate = 
-      task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
-    
+    double prefRate =
+        task.getPreference(AlpineAspectType.DEMANDRATE).getScoringFunction().getBest().getAspectValue().getValue();
+
     Date preferredStart = prefHelper.getReadyAt (task);
     Date preferredEnd   = prefHelper.getBestDate(task);
 
     Date reportedStart  = prefHelper.getReportedReadyAt (planElement);
     Date reportedEnd    = prefHelper.getReportedEndDate (planElement);
-    
+
     long preferredWindow = preferredEnd.getTime () - preferredStart.getTime();
     long reportedWindow  = reportedEnd.getTime  () - reportedStart.getTime();
-    
+
     double ratio = (double)preferredWindow/(double)reportedWindow;
 
     return prefRate*ratio;
   }
 
   /** checks to see if the AllocationResult is equal to this one.
-     * @param thisAR
-     * @param that
-     * @return boolean
-     */
+   * @param thisAR
+   * @param that
+   * @return boolean
+   */
   public boolean isEqual(AllocationResult thisAR, AllocationResult that) {
     if (thisAR == that) return true; // quick success
     if (that == null) return false; // quick fail
     if (!(thisAR.isSuccess() == that.isSuccess() &&
-          thisAR.isPhased() == that.isPhased() &&
-          thisAR.getConfidenceRating() == that.getConfidenceRating())) {
+        thisAR.isPhased() == that.isPhased() &&
+        thisAR.getConfidenceRating() == that.getConfidenceRating())) {
       if (isInfoEnabled())
-	info ("AspectValues - success/phased/confidence this AR " + thisAR + " != " + that);
+        info ("AspectValues - success/phased/confidence this AR " + thisAR + " != " + that);
       return false;
     }
-       
+
     //check the real stuff now!
     //check the aspect types
     //check the summary results
     synchronized (thisAR.getAspectValueResults()) {
       if (!nearlyEquals(thisAR.getAspectValueResults(), that.getAspectValueResults())) {
-	if (isDebugEnabled())
-	  debug ("AspectValues - this AR " + thisAR + " != " + that);
-	return false;
+        if (isDebugEnabled())
+          debug ("AspectValues - this AR " + thisAR + " != " + that);
+        return false;
       }
       // check the phased results
       if (thisAR.isPhased()) {
@@ -595,21 +594,21 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
         while (i1.hasNext()) {
           if (!i2.hasNext()) return false;
           if (!nearlyEquals((AspectValue[]) i1.next(), (AspectValue[]) i2.next())) {
-	    if (isDebugEnabled())
-	      debug ("phased AspectValues - this AR " + thisAR + " != " + that);
-	    return false;
-	  }
+            if (isDebugEnabled())
+              debug ("phased AspectValues - this AR " + thisAR + " != " + that);
+            return false;
+          }
         }
         if (i2.hasNext()) return false;
       }
     }
 
     // check the aux queries
-    
+
     /*
     String[] taux = that.auxqueries;
     if (auxqueries != taux) {
-      if (!Arrays.equals(taux, auxqueries)) return false;
+    if (!Arrays.equals(taux, auxqueries)) return false;
     }
     */
 
@@ -620,15 +619,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public boolean nearlyEquals(AspectValue[] avs1, AspectValue[] avs2) {
     int len = avs1.length;
     // if (len != avs2.length) return false; // Can't be equal if different length
-  outer:
+    outer:
     for (int i = 0; i < len; i++) {
       AspectValue av1 = avs1[i];
       int type1 = av1.getAspectType();
       if (type1 == AlpineAspectType.DEMANDRATE)
-	continue; // ignore DEMAND RATE!
+        continue; // ignore DEMAND RATE!
       if (type1 == AspectType.START_TIME)
-	continue; // ignore Start time, since it doesn't mean the same in the inventory world
-    inner:
+        continue; // ignore Start time, since it doesn't mean the same in the inventory world
+      inner:
       for (int j = 0; j < len; j++) {
         int k = (i + j) % len;
         AspectValue av2 = avs2[k];
@@ -648,35 +647,35 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * (military container) carrying ammunition
    */
   protected GLMAsset makeMilvan() {
-    
+
     if (MILVAN_PROTOTYPE == null) {
       MILVAN_PROTOTYPE = getLDMService().getLDM().getPrototype(MILVAN_NSN);
-      
+
       if (MILVAN_PROTOTYPE == null) {
         error("AmmoTransport: Error! Unable to get prototype for" +
-	      " milvan NSN -" + MILVAN_NSN);
+              " milvan NSN -" + MILVAN_NSN);
         return null;
       }
     }
-    
+
     String itemID = makeMilvanID();
-    Container milvan = 
-      (Container)getLDMService().getLDM().getFactory().createInstance(MILVAN_PROTOTYPE, itemID);
-    
+    Container milvan =
+        (Container)getLDMService().getLDM().getFactory().createInstance(MILVAN_PROTOTYPE, itemID);
+
     // AMMO Cargo Code
     NewMovabilityPG movabilityPG =
-      PropertyGroupFactory.newMovabilityPG(milvan.getMovabilityPG());
+        PropertyGroupFactory.newMovabilityPG(milvan.getMovabilityPG());
     movabilityPG.setCargoCategoryCode(AMMO_CATEGORY_CODE);
     milvan.setMovabilityPG(movabilityPG);
-    
+
     // Milvan Contents
-    NewContentsPG contentsPG = 
-      PropertyGroupFactory.newContentsPG();
+    NewContentsPG contentsPG =
+        PropertyGroupFactory.newContentsPG();
     milvan.setContentsPG(contentsPG);
-    
+
     // Unique Item Identification
-    NewItemIdentificationPG itemIdentificationPG = 
-      PropertyGroupFactory.newItemIdentificationPG ();
+    NewItemIdentificationPG itemIdentificationPG =
+        PropertyGroupFactory.newItemIdentificationPG ();
 
     //    String itemID = makeMilvanID();
     itemIdentificationPG.setItemIdentification(itemID); // redundant?
@@ -686,11 +685,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     return milvan;
   }
-  
+
   protected String makeMilvanID() {
     return new String("Reserved_" + getCounter());
   }
-  
+
   private static int COUNTER = 0;
 
   private static synchronized long getCounter() {
@@ -705,15 +704,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     typeIDs.add(typeID);
     nomenclatures.add(nomen);
-      
-    Mass mass = Mass.newMass(massInSTons, Mass.SHORT_TONS); 
+
+    Mass mass = Mass.newMass(massInSTons, Mass.SHORT_TONS);
     weights.add(mass);
-      
+
     receivers.add(unit);
-    
+
     // Contents
-    NewContentsPG contentsPG = 
-      PropertyGroupFactory.newContentsPG();
+    NewContentsPG contentsPG =
+        PropertyGroupFactory.newContentsPG();
     contentsPG.setNomenclatures(nomenclatures);
     contentsPG.setTypeIdentifications(typeIDs);
     contentsPG.setWeights(weights);
@@ -721,7 +720,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     container.setContentsPG(contentsPG);
   }
 
-  /** 
+  /**
    * Implemented for UTILBufferingPlugin interface
    *
    * @param tasks that have been buffered up to this point
@@ -729,8 +728,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    */
   public void processTasks (List tasks) {
     if (isInfoEnabled()) {
-      info (getName () + 
-	    ".processTasks - processing " + tasks.size() + " tasks.");
+      info (getName () +
+            ".processTasks - processing " + tasks.size() + " tasks.");
     }
 
     tasks = getPrunedTaskList (tasks);
@@ -740,45 +739,45 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       Task task = (Task) tasks.get (i);
 
       if (task.getVerb ().equals (Constants.Verb.TRANSPORT))
-	handleTransportTask (task, reservedToActual);
+        handleTransportTask (task, reservedToActual);
       else
-	handleProjectSupplyTask (task);
+        handleProjectSupplyTask (task);
     }
 
     for (Iterator iter = reservedToActual.keySet().iterator(); iter.hasNext(); ) {
       Task reserved = (Task)iter.next ();
       Task actual   = (Task) reservedToActual.get(reserved);
       synchronized (reserved.getWorkflow ()) {
-	if (ownWorkflow (reserved)) {
-	  dealWithReservedTask (actual, reserved);
-	}
-	else if (isInfoEnabled()) {
-	  info ("reserved task " + reserved.getUID () + 
-		" not a member of it's own workflow " + reserved.getWorkflow () + 
-		"\nworkflow task uids : " + uidsWorkflow(reserved) + " - assuming it will be removed.");
-	}
+        if (ownWorkflow (reserved)) {
+          dealWithReservedTask (actual, reserved);
+        }
+        else if (isInfoEnabled()) {
+          info ("reserved task " + reserved.getUID () +
+                " not a member of it's own workflow " + reserved.getWorkflow () +
+                "\nworkflow task uids : " + uidsWorkflow(reserved) + " - assuming it will be removed.");
+        }
       }
     }
   }
 
-    protected List getPrunedTaskList (List tasks) {
-	java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
+  protected List getPrunedTaskList (List tasks) {
+    java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
 
-	Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
-	
-	for (Iterator iter = tasks.iterator(); iter.hasNext();){
-	    Task task = (Task) iter.next();
-	    if (removed.contains(task)) {
-		if (isInfoEnabled()) {
-		    info ("ignoring task on removed list " + task.getUID());
-		}
-	    }
-	    else
-		prunedTasks.add (task);
-	}
+    Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
 
-	return prunedTasks;
+    for (Iterator iter = tasks.iterator(); iter.hasNext();){
+      Task task = (Task) iter.next();
+      if (removed.contains(task)) {
+        if (isInfoEnabled()) {
+          info ("ignoring task on removed list " + task.getUID());
+        }
+      }
+      else
+        prunedTasks.add (task);
     }
+
+    return prunedTasks;
+  }
 
   /**
    * <pre>
@@ -798,83 +797,83 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     final boolean isReserved = isReservedTask (task);
 
     if (isReservedTask (task) && !ownWorkflow(task)) {
-      if (isInfoEnabled()) info (".handleTask - skipping reserved task " + task.getUID () + 
-				" that's not in it's own workflow.");
+      if (isInfoEnabled()) info (".handleTask - skipping reserved task " + task.getUID () +
+                                 " that's not in it's own workflow.");
       return;
     }
 
     if (isInfoEnabled())
-      info (getName () + ".handleTask - looking through blackboard for task to match " + 
-	    ((isReserved) ? "reserved " : "normal ") + task.getUID());
+      info (getName () + ".handleTask - looking through blackboard for task to match " +
+            ((isReserved) ? "reserved " : "normal ") + task.getUID());
 
     Collection matchingTaskCollection = blackboard.query (new UnaryPredicate () {
-	public boolean execute (Object obj) {
-	  if (!(obj instanceof Task)) return false;
-	  Task examinedTask = (Task) obj;
-	  if (task.getUID().equals(examinedTask.getUID())) {
-	    if (isDebugEnabled())
-	      debug ("skipping self " + examinedTask.getUID());
-	    return false; // don't match yourself
-	  }
+      public boolean execute (Object obj) {
+        if (!(obj instanceof Task)) return false;
+        Task examinedTask = (Task) obj;
+        if (task.getUID().equals(examinedTask.getUID())) {
+          if (isDebugEnabled())
+            debug ("skipping self " + examinedTask.getUID());
+          return false; // don't match yourself
+        }
 
-	  // better be a transport task
-	  if (!(examinedTask.getVerb ().equals (Constants.Verb.TRANSPORT))) {
-	    if (isDebugEnabled())
-	      debug ("skipping non-transport task " + examinedTask.getUID());
-	    return false;
-	  }
+        // better be a transport task
+        if (!(examinedTask.getVerb ().equals (Constants.Verb.TRANSPORT))) {
+          if (isDebugEnabled())
+            debug ("skipping non-transport task " + examinedTask.getUID());
+          return false;
+        }
 
-	  // is it a reservation task?
-	  boolean examinedIsReserved = isReservedTask (examinedTask);
-	  if ((!isReserved && !examinedIsReserved) || 
-	      ( isReserved &&  examinedIsReserved)) {
-	    if (isDebugEnabled())
-	      debug ("skipping examined transport task because same type " + examinedTask.getUID() + " and " + task.getUID());
-	    return false;
-	  }
+        // is it a reservation task?
+        boolean examinedIsReserved = isReservedTask (examinedTask);
+        if ((!isReserved && !examinedIsReserved) ||
+            ( isReserved &&  examinedIsReserved)) {
+          if (isDebugEnabled())
+            debug ("skipping examined transport task because same type " + examinedTask.getUID() + " and " + task.getUID());
+          return false;
+        }
 
-	  if (examinedIsReserved) {
-	    // has it already been removed from workflow?
-	    if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
-	      if (isInfoEnabled ())
-		info ("skipping reserved transport task " + examinedTask.getUID() + 
-		      " since it's already been removed from it's workflow.");
-	      return false;
-	    }
-	  }
-	  else if (!(task instanceof MPTask)) {
-	    if (isInfoEnabled ())
-	      info ("saw transport task "  + task.getUID());
-	  }
+        if (examinedIsReserved) {
+          // has it already been removed from workflow?
+          if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
+            if (isInfoEnabled ())
+              info ("skipping reserved transport task " + examinedTask.getUID() +
+                    " since it's already been removed from it's workflow.");
+            return false;
+          }
+        }
+        else if (!(task instanceof MPTask)) {
+          if (isInfoEnabled ())
+            info ("saw transport task "  + task.getUID());
+        }
 
-	  // is it for the same org? 
-	  Collection examinedUnits = findForPreps (examinedTask);
-	  Collection copy = new ArrayList(examinedUnits);
-	  examinedUnits.retainAll (units);
-	  if (examinedUnits.isEmpty ()) {
-	    if (isDebugEnabled())
-	      debug ("skipping transport task where units don't match " + units + " vs examined " + copy);
-	    return false;
-	  }
+        // is it for the same org?
+        Collection examinedUnits = findForPreps (examinedTask);
+        Collection copy = new ArrayList(examinedUnits);
+        examinedUnits.retainAll (units);
+        if (examinedUnits.isEmpty ()) {
+          if (isDebugEnabled())
+            debug ("skipping transport task where units don't match " + units + " vs examined " + copy);
+          return false;
+        }
 
-	  // are they for the same type of supply?
-	  if (!contentTypesOverlap (task, examinedTask)) return false;
+        // are they for the same type of supply?
+        if (!contentTypesOverlap (task, examinedTask)) return false;
 
-	  // do the dates overlap
-	  Task reserved, transport;
-	  if (examinedIsReserved) {
-	    reserved  = examinedTask;
-	    transport = task;
-	  }
-	  else {
-	    reserved  = task;
-	    transport = examinedTask;
-	  }
-	  
-	  return transportDateWithinReservedWindow (transport, reserved);
-	}
-      } 
-							  );
+        // do the dates overlap
+        Task reserved, transport;
+        if (examinedIsReserved) {
+          reserved  = examinedTask;
+          transport = task;
+        }
+        else {
+          reserved  = task;
+          transport = examinedTask;
+        }
+
+        return transportDateWithinReservedWindow (transport, reserved);
+      }
+    }
+    );
 
     // there can be more than one matching reserved task, e.g. when the actual contains multiple different DODICS:
     //  types [DODIC/C787, DODIC/C380, ] vs [DODIC/C787] (Task 1)
@@ -892,20 +891,20 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       Task reservedTask, actual;
 
       if (isReserved) {
-	reservedTask = task;
-	actual       = (Task)iter.next();
+        reservedTask = task;
+        actual       = (Task)iter.next();
       }
       else {
-	reservedTask = (Task) iter.next ();
-	actual       = task;
+        reservedTask = (Task) iter.next ();
+        actual       = task;
       }
 
       if (!ownWorkflow (reservedTask)) {
-	  if (isInfoEnabled()) {
-	      info (".handleTask - huh? reserved task " + reservedTask.getUID () + 
-		    " not a member of it's own workflow " + reservedTask.getWorkflow () + 
-		    "\nuids " + uidsWorkflow(reservedTask));
-	  }
+        if (isInfoEnabled()) {
+          info (".handleTask - huh? reserved task " + reservedTask.getUID () +
+                " not a member of it's own workflow " + reservedTask.getWorkflow () +
+                "\nuids " + uidsWorkflow(reservedTask));
+        }
       }
 
       updateMap (reservedToActual, actual, reservedTask);
@@ -913,24 +912,24 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   protected boolean contentTypesOverlap (Task task, Task examinedTask){
-      Container taskDO;
+    Container taskDO;
     if (task.getDirectObject() instanceof AssetGroup) {
-	taskDO=
-	    (Container) ((AssetGroup) 
-			 task.getDirectObject()).getAssets().iterator().next();
+      taskDO=
+          (Container) ((AssetGroup)
+          task.getDirectObject()).getAssets().iterator().next();
     }
     else {
-	taskDO = (Container)task.getDirectObject ();
+      taskDO = (Container)task.getDirectObject ();
     }
 
     Container examinedDO;
     if (examinedTask.getDirectObject() instanceof AssetGroup) {
-	examinedDO=
-	    (Container) ((AssetGroup) 
-			 examinedTask.getDirectObject()).getAssets().iterator().next();
+      examinedDO=
+          (Container) ((AssetGroup)
+          examinedTask.getDirectObject()).getAssets().iterator().next();
     }
     else {
-	examinedDO = (Container)examinedTask.getDirectObject ();
+      examinedDO = (Container)examinedTask.getDirectObject ();
     }
 
     ContentsPG contents = taskDO.getContentsPG ();
@@ -943,9 +942,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     copy.retainAll (typeIDs);
     if (copy.isEmpty()) {
       if (isDebugEnabled())
-	debug ("skipping transport task where type ids don't match. No overlap between examined container " + 
-	       examinedTypeIDs + 
-	       " and other container's list " + typeIDs);
+        debug ("skipping transport task where type ids don't match. No overlap between examined container " +
+               examinedTypeIDs +
+               " and other container's list " + typeIDs);
       return false;
     }
     else {
@@ -957,12 +956,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Container taskDO = (Container)task.getDirectObject ();
     Container examinedDO;
     if (examinedTask.getDirectObject() instanceof AssetGroup) {
-	examinedDO=
-	    (Container) ((AssetGroup) 
-			 examinedTask.getDirectObject()).getAssets().iterator().next();
+      examinedDO=
+          (Container) ((AssetGroup)
+          examinedTask.getDirectObject()).getAssets().iterator().next();
     }
     else {
-	examinedDO = (Container)examinedTask.getDirectObject ();
+      examinedDO = (Container)examinedTask.getDirectObject ();
     }
 
     ContentsPG contents = taskDO.getContentsPG ();
@@ -972,7 +971,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
 
     StringBuffer buf =new StringBuffer();
-    
+
     buf.append("[");
     for (Iterator iter = typeIDs.iterator(); iter.hasNext();)
       buf.append(iter.next() + ", ");
@@ -994,24 +993,24 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     if (reservedReady.getTime () >= best.getTime()) {
       if (isDebugEnabled())
-	debug ("skipping transport task where task best " + best + 
-	       " before examined ready " + reservedReady);
+        debug ("skipping transport task where task best " + best +
+               " before examined ready " + reservedReady);
       return false;
     }
-	  
-    if (isInfoEnabled ()) 
-      info ("transport " + transport.getUID() + " best "+ best+ " after reserved " + reserved.getUID()+ 
-	    " ready " + reservedReady);
+
+    if (isInfoEnabled ())
+      info ("transport " + transport.getUID() + " best "+ best+ " after reserved " + reserved.getUID()+
+            " ready " + reservedReady);
 
     return true;
   }
 
   /*
   protected String reportTransportDate (Task reserved){
-    Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
-    Date reservedBest  = prefHelper.getBestDate  (reserved);
+  Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
+  Date reservedBest  = prefHelper.getBestDate  (reserved);
 
-    return " ready "+reservedReady+ " -> " + reservedBest;
+  return " ready "+reservedReady+ " -> " + reservedBest;
   }
   */
 
@@ -1019,26 +1018,26 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     Task foundActual;
     if ((foundActual = (Task) reservedToActual.get (reserved)) == null) {
       if (isInfoEnabled ()) {
-	info ("initally, actual " + actual.getUID () + " matches reserved " + reserved.getUID());
+        info ("initally, actual " + actual.getUID () + " matches reserved " + reserved.getUID());
       }
       reservedToActual.put (reserved, actual);
     }
     else {
       if (isDebugEnabled ()) {
-	debug ("actual " + actual.getUID () + " matches reserved " + reserved.getUID());
+        debug ("actual " + actual.getUID () + " matches reserved " + reserved.getUID());
       }
 
       if (prefHelper.getBestDate(foundActual).getTime()<prefHelper.getBestDate(actual).getTime()) {
-	if (isInfoEnabled ()) {
-	  info ("replacing foundActual " + foundActual.getUID () + " with actual " + actual.getUID () + 
-		" which matches reserved " + reserved.getUID());
-	}
-	reservedToActual.put (reserved, actual); // replace with later date
+        if (isInfoEnabled ()) {
+          info ("replacing foundActual " + foundActual.getUID () + " with actual " + actual.getUID () +
+                " which matches reserved " + reserved.getUID());
+        }
+        reservedToActual.put (reserved, actual); // replace with later date
       }
     }
   }
 
-  /** 
+  /**
    * <pre>
    * Called from processTasks. 
    *
@@ -1059,7 +1058,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    *
    * </pre>
    * @param task actual transport task
-   * @param reserverTask reserved transport task to be replaced
+   * @param reservedTask reserved transport task to be replaced
    */
   protected void dealWithReservedTask (Task task, Task reservedTask) {
     // preconditions
@@ -1072,11 +1071,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     /** this is unnecessary now, since check done in processTasks */
     /*
     if (!ownWorkflow (reservedTask)) {
-      error ("huh? reserved task " + reservedTask.getUID () + " not a member of it's own workflow " + reservedTask.getWorkflow () + 
-	     "\nuids " + uidsWorkflow(reservedTask)); 
-      error ("assuming it will be removed -- returning.");
+    error ("huh? reserved task " + reservedTask.getUID () + " not a member of it's own workflow " + reservedTask.getWorkflow () +
+    "\nuids " + uidsWorkflow(reservedTask));
+    error ("assuming it will be removed -- returning.");
 
-      return;
+    return;
     }
     */
     NewWorkflow tasksWorkflow = (NewWorkflow) reservedTask.getWorkflow ();
@@ -1098,118 +1097,118 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     if (isInfoEnabled ()) {
       info (getName() + ".dealWithReservedTask - applying actual " + task.getUID () + " best " + best +
-	    " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
+            " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
       info ("\t" + reportContentTypes (task, reservedTask));
     }
 
     double factor = (double)daysLeft/(double)currentDays;
     if (factor > 0) {
-      Asset deliveredAsset = 
-	  getTrimmedDirectObject (reservedTask.getDirectObject(), factor);
+      Asset deliveredAsset =
+          getTrimmedDirectObject (reservedTask.getDirectObject(), factor);
 
-      NewTask replacement = 
-	(NewTask) expandHelper.makeSubTask (ldmf,
-					    reservedTask.getPlan(),
-					    reservedTask.getParentTaskUID(),
-					    reservedTask.getVerb(),
-					    reservedTask.getPrepositionalPhrases(),
-					    deliveredAsset,
-					    reservedTask.getPreferences(),
-					    reservedTask.getPriority(),
-					    reservedTask.getSource());
+      NewTask replacement =
+          (NewTask) expandHelper.makeSubTask (ldmf,
+                                              reservedTask.getPlan(),
+                                              reservedTask.getParentTaskUID(),
+                                              reservedTask.getVerb(),
+                                              reservedTask.getPrepositionalPhrases(),
+                                              deliveredAsset,
+                                              reservedTask.getPreferences(),
+                                              reservedTask.getPriority(),
+                                              reservedTask.getSource());
       replacement.setContext(reservedTask.getContext());
 
       if (isInfoEnabled ())
-	info ("Reserved task " + reservedTask.getUID () + 
-	      " current days " + currentDays + 
-	      " daysLeft " + daysLeft + 
-	      " replacing asset weights.");
+        info ("Reserved task " + reservedTask.getUID () +
+              " current days " + currentDays +
+              " daysLeft " + daysLeft +
+              " replacing asset weights.");
 
       if (isInfoEnabled ())
-	info ("on task " + replacement.getUID() + " replacing start prep date " + reservedReady + 
-	      " with " + best + " - also becomes early date for task.");
+        info ("on task " + replacement.getUID() + " replacing start prep date " + reservedReady +
+              " with " + best + " - also becomes early date for task.");
 
-      prepHelper.replacePrepOnTask (replacement, 
-				    prepHelper.makePrepositionalPhrase(ldmf,START,best));
+      prepHelper.replacePrepOnTask (replacement,
+                                    prepHelper.makePrepositionalPhrase(ldmf,START,best));
 
-      prefHelper.replacePreference (replacement, 
-				    prefHelper.makeEndDatePreference(ldmf, 
-								     best, 
-								     reservedBest, 
-								     prefHelper.getLateDate(reservedTask)));
+      prefHelper.replacePreference (replacement,
+                                    prefHelper.makeEndDatePreference(ldmf,
+                                                                     best,
+                                                                     reservedBest,
+                                                                     prefHelper.getLateDate(reservedTask)));
 
       replacement.setWorkflow(tasksWorkflow);
       tasksWorkflow.addTask (replacement);
       publishAdd (replacement);
       if (isInfoEnabled ()) {
-	info ("Publishing replacement " + replacement.getUID() + " in workflow "+ tasksWorkflow.getUID() + 
-	      " start " + best + " best " + reservedBest);
+        info ("Publishing replacement " + replacement.getUID() + " in workflow "+ tasksWorkflow.getUID() +
+              " start " + best + " best " + reservedBest);
       }
 
       if (best.getTime () != ((Date)prepHelper.getIndirectObject(replacement, START)).getTime()) {
-	error ("replacement start " + prepHelper.getIndirectObject(replacement, START) + " != " + best);
+        error ("replacement start " + prepHelper.getIndirectObject(replacement, START) + " != " + best);
       }
 
       if (!taskInWorkflow(replacement, tasksWorkflow)) {
-	error ("huh? after adding to workflow, replacement " + replacement.getUID () + " is not in workflow " + tasksWorkflow + "?"); 
+        error ("huh? after adding to workflow, replacement " + replacement.getUID () + " is not in workflow " + tasksWorkflow + "?");
       }
     }
     else {
       if (isInfoEnabled ())
-	info ("Removing reserved task " + reservedTask.getUID () + " since weight is zero. Days Left was " + daysLeft + 
-	      ", current days was " + currentDays + " parent was " + reservedTask.getParentTaskUID());
+        info ("Removing reserved task " + reservedTask.getUID () + " since weight is zero. Days Left was " + daysLeft +
+              ", current days was " + currentDays + " parent was " + reservedTask.getParentTaskUID());
     }
 
     tasksWorkflow.removeTask (reservedTask);
     publishRemove(reservedTask);
 
     if (taskInWorkflow(reservedTask, tasksWorkflow))
-      error ("huh? after removing, reserved task " + reservedTask.getUID () + " is still a member of workflow " + tasksWorkflow); 
+      error ("huh? after removing, reserved task " + reservedTask.getUID () + " is still a member of workflow " + tasksWorkflow);
 
     int numTasksAfter = numTasksInWorkflow (tasksWorkflow);
 
     if (numTasksAfter == 0) {
       final Task reservedCopy = reservedTask;
-	if (isInfoEnabled ()) {
-	  info ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
-	}
-	Collection parents = blackboard.query (new UnaryPredicate () { 
-	  public boolean execute (Object obj) { 
-	    if (obj instanceof Task) {
-	      return (((Task) obj).getUID().equals (reservedCopy.getParentTaskUID()));
-	    } 
-	    else return false;
-	  }
-	}
-					     );
+      if (isInfoEnabled ()) {
+        info ("looking for parent of task " + reservedTask.getUID () + " verb " + reservedTask.getVerb());
+      }
+      Collection parents = blackboard.query (new UnaryPredicate () {
+        public boolean execute (Object obj) {
+          if (obj instanceof Task) {
+            return (((Task) obj).getUID().equals (reservedCopy.getParentTaskUID()));
+          }
+          else return false;
+        }
+      }
+      );
 
       if (!parents.isEmpty()) { // I guess if the task is being removed, the parent could be missing from the blackboard
-	Task parent = (Task) parents.iterator ().next();
-	PlanElement exp = parent.getPlanElement();
-	if (exp == null) {
-	  if (isWarnEnabled ()) {
-	    warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
-	  }
-	} 
-	else {
-	  publishRemove(exp);
-	  if (isInfoEnabled ()) {
-	    info ("removing expansion of task " + exp.getTask().getUID());
-	  }
-	  //	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
-	  AllocationResult ar = makeSuccessfulDisposition(parent);
-	  Disposition disposition =
-	    ldmf.createDisposition(parent.getPlan(), parent, ar);
-	  publishAdd (disposition);
-	  if (isInfoEnabled ())
-	    info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
-	}
+        Task parent = (Task) parents.iterator ().next();
+        PlanElement exp = parent.getPlanElement();
+        if (exp == null) {
+          if (isWarnEnabled ()) {
+            warn ("found task " + parent.getUID () + " verb " + parent.getVerb() + " that had no plan element.");
+          }
+        }
+        else {
+          publishRemove(exp);
+          if (isInfoEnabled ()) {
+            info ("removing expansion of task " + exp.getTask().getUID());
+          }
+          //	  AllocationResult ar = new AllocationResult(1.0, true, exp.getEstimatedResult().getAspectValueResults());
+          AllocationResult ar = makeSuccessfulDisposition(parent);
+          Disposition disposition =
+              ldmf.createDisposition(parent.getPlan(), parent, ar);
+          publishAdd (disposition);
+          if (isInfoEnabled ())
+            info (" task " + parent.getUID () + " verb " + parent.getVerb() + " - will get a DISPOSITION, since workflow now empty.");
+        }
       }
     }
 
     if (factor < 0.00000001 && (numTasksAfter != numTasksBefore-1))
-      error ("Reserved task " + reservedTask.getUID() + "'s workflow had " + numTasksBefore + " should have " + (numTasksBefore-1) + 
-	     " but has " + numTasksAfter);
+      error ("Reserved task " + reservedTask.getUID() + "'s workflow had " + numTasksBefore + " should have " + (numTasksBefore-1) +
+             " but has " + numTasksAfter);
     else if (factor > 0 && (numTasksAfter != numTasksBefore))
       error ("Reserved task " + reservedTask.getUID() + "'s workflow had " + numTasksBefore + " != numTaskAfter, which is " + numTasksAfter);
   }
@@ -1230,7 +1229,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     boolean found = false;
     for (int i = 0; i < uidsInWorkflow.length && !found; i++)
       if (uidsInWorkflow[i].equals(task.getUID().toString()))
-	found = true;
+        found = true;
 
     return found;
   }
@@ -1252,7 +1251,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return num;
   }
 
-  /** 
+  /**
    * Makes allocation result with aspect values that echo the task preferences
    *
    * @param task to dispose
@@ -1268,12 +1267,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       aspectValues.add (sfunc.getBest().getAspectValue());
     }
 
-    AspectValue [] aspectValueArray = 
-      (AspectValue []) aspectValues.toArray(new AspectValue [aspectValues.size()]);
+    AspectValue [] aspectValueArray =
+        (AspectValue []) aspectValues.toArray(new AspectValue [aspectValues.size()]);
 
-    AllocationResult successfulAR = ldmf.newAVAllocationResult(1.0, 
-							       true, 
-							       aspectValueArray);
+    AllocationResult successfulAR = ldmf.newAVAllocationResult(1.0,
+                                                               true,
+                                                               aspectValueArray);
     return successfulAR;
   }
 
@@ -1282,27 +1281,27 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     if (task instanceof MPTask) {
       Collection parents = ((MPTask)task).getComposition().getParentTasks ();
       for (Iterator iter = parents.iterator(); iter.hasNext(); ) {
-	Task parentTask = (Task) iter.next();
-	if (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR))
-	  units.add (prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR));
+        Task parentTask = (Task) iter.next();
+        if (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR))
+          units.add (prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR));
       }
     }
     else {
       if (prepHelper.hasPrepNamed (task, Constants.Preposition.FOR)) {
-	units.add (prepHelper.getIndirectObject (task, Constants.Preposition.FOR));
+        units.add (prepHelper.getIndirectObject (task, Constants.Preposition.FOR));
       }
       else {
-	if (isWarnEnabled())
-	  warn ("no FOR prep on task " + task.getUID() + " using UID owner ");
-	units.add (task.getUID().getOwner());
+        if (isWarnEnabled())
+          warn ("no FOR prep on task " + task.getUID() + " using UID owner ");
+        units.add (task.getUID().getOwner());
       }
     }
 
     if (isDebugEnabled())
       debug ("Units for " + task.getUID() + " were " + units);
-    
+
     return units;
-  }    
+  }
 
   /**
    * Assumes the direct object is either an asset group or a container (milvan).
@@ -1321,25 +1320,25 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       double total = 0.0;
       Container last = null;
 
-      for (Iterator iter = 
-	     ((AssetGroup) directObject).getAssets().iterator();
-	   iter.hasNext();) {
-	last = (Container) iter.next();
-	total += getContainerTons (last);
+      for (Iterator iter =
+          ((AssetGroup) directObject).getAssets().iterator();
+           iter.hasNext();) {
+        last = (Container) iter.next();
+        total += getContainerTons (last);
       }
 
       if (last == null) {
-	error ("Nothing in the asset group of milvans?");
+        error ("Nothing in the asset group of milvans?");
       }
 
       ContentsPG contents = last.getContentsPG ();
 
-      String nomen = 
-	(String) contents.getNomenclatures().iterator().next();
-      String type  = 
-	(String) contents.getTypeIdentifications().iterator().next();
-      String unit = 
-	(String) contents.getReceivers().iterator().next();
+      String nomen =
+          (String) contents.getNomenclatures().iterator().next();
+      String type  =
+          (String) contents.getTypeIdentifications().iterator().next();
+      String unit =
+          (String) contents.getReceivers().iterator().next();
 
       return getMilvanDirectObject (nomen, type, unit, total*factor);
     }
@@ -1353,7 +1352,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       return reserved;
     }
   }
-    
+
   /** assumes only one type of ammo in container -- true for reservations */
   protected double getContainerTons (Container container) {
     ContentsPG contents = container.getContentsPG();
