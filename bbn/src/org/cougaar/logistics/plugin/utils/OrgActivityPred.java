@@ -39,8 +39,9 @@ public class OrgActivityPred implements UnaryPredicate {
   public boolean execute (Object o) {
     if (o instanceof OrgActivity) {
       String activityType = ((OrgActivity)o).getActivityType();
-      if (!activityType.toUpperCase().equals("DEPLOYMENT")) {
-	return true;
+      if (activityType != null &&
+          !activityType.toUpperCase().equals("DEPLOYMENT")) {
+        return true;
       }
     }
     return false;
