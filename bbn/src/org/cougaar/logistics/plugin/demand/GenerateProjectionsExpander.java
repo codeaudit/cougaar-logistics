@@ -114,8 +114,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       assetList.add(asset);
       logger.debug("Handling consumed item " + dfPlugin.getAssetUtils().getAssetIdentifier(asset));
       Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
-      Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
-      Schedule newTasksSched = newObjectSchedule(newTasks);
+      Schedule publishedTasksSched = TaskUtils.newObjectSchedule(publishedTasks);
+      Schedule newTasksSched = TaskUtils.newObjectSchedule(newTasks);
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched, timespan);
       addToAndPublishExpansion(gpTask, diffedTasks);
     }
@@ -423,22 +423,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
-  public static Schedule newObjectSchedule(Collection tasks) {
-    Vector os_elements = new Vector();
-    ScheduleImpl s = new ScheduleImpl();
-    s.setScheduleElementType(PlanScheduleElementType.OBJECT);
-    s.setScheduleType(ScheduleType.OTHER);
-
-    for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
-      Task task = (Task)iterator.next();
-      os_elements.add(new ObjectScheduleElement(TaskUtils.getStartTime(task),
-                                                TaskUtils.getEndTime(task), task));
-    }
-    s.setScheduleElements(os_elements.elements());
-    return s;
-  }
-
-
   /**
    * Reconcile an intended schedule of projections with the
    * currently published schedule of projections so as to reuse as
@@ -574,7 +558,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
         logger.debug(" Comparing plublished task  "+dfPlugin.getTaskUtils().taskDesc(published_task)+
                      " with \n"+dfPlugin.getTaskUtils().taskDesc(new_task));
-        published_task = changeTask(published_task, new_task);
+        published_task = TaskUtils.changeTask(published_task, new_task);
         if (published_task != null) {
           logger.debug(printProjection("********** Replaced task with ---> \n", published_task));
           dfPlugin.publishChange(published_task);
@@ -594,31 +578,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     return add_tasks;
   }
-
-
-
-  /** Create String defining task identity. Defaults to comparing preferences.
-   * @param prev_task previously published task.
-   * @param new_task already defined to have the same taskKey as task a.
-   * @return null if the two tasks are the same,
-   *         or returns task a modified for a publishChange.
-   */
-  protected Task changeTask(Task prev_task, Task new_task) {
-    // Checks for changed preferences.
-    if(prev_task==new_task) {
-      return new_task;
-    }
-    if (!getTaskUtils().comparePreferences(new_task, prev_task)) {
-      synchronized ( new_task ) {
-        Enumeration ntPrefs = new_task.getPreferences();
-        ((NewTask)prev_task).setPreferences(ntPrefs);
-      } // synch
-      return prev_task;
-    }
-    return null;
-  }
-
-
 
   protected void setStartTimePreference(NewTask task, long start) {
     task.setPreference(createTimePreference(start, AspectType.START_TIME));
