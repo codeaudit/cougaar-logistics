@@ -574,6 +574,13 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
 
+  public String getOrgName() {
+    if (myOrgName == null) {
+      myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    }
+    return myOrgName;
+  }
+
   /**
    Self-Test
    **/
