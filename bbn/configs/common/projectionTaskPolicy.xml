@@ -3,6 +3,9 @@
 
 <POLICY>
 <PRIORITIES>
-<CRITERION passall="true" />
+<CRITERION earliest="0" latest="7" />
+<CRITERION earliest="7" latest="21" />
+<CRITERION earliest="21" latest="60" />
+<CRITERION earliest="60" latest="205" />
 </PRIORITIES>
 </POLICY>
