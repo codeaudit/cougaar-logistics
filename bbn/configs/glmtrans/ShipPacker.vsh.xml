@@ -84,12 +84,18 @@
 </DELTACRITERION>
 <BESTTIME>
 <OPERATOR operation="-" >
+<OPERATOR operation="-" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
 <LITERAL value="arrival" type="constant" datatype="string" />
 <LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
 <LITERAL value="duration" type="variable" datatype="number" />
+</OPERATOR>
+<OPERATOR operation="*" >
+<LITERAL value="12.0" type="constant" datatype="number" />
+<LITERAL value="3600.0" type="constant" datatype="number" />
+</OPERATOR>
 </OPERATOR>
 </BESTTIME>
 <TASKDURATION>
