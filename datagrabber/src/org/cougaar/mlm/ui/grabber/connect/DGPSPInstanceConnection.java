@@ -49,7 +49,7 @@ import org.cougaar.planning.ldm.measure.Mass;
 
 /**
  * Handles getting instance data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/19/01
  **/
@@ -246,17 +246,22 @@ public class DGPSPInstanceConnection extends DGPSPConnection
       int i = 0;
       Iterator typeIter = part.typeIdentifications.iterator();
       Iterator weightsIter = part.weights.iterator();
+      Iterator receiverIter = part.receivers.iterator();
 
       for (Iterator nomenIter = part.nomenclatures.iterator (); nomenIter.hasNext ();) {
 	i++;
 	String nomen = (String) nomenIter.next ();
 	String type  = (String) typeIter.next ();
 	double weight = ((Mass) weightsIter.next ()).getGrams();
+	String receiver = (String) receiverIter.next ();
+	if (logger.isTrivialEnabled()) {
+	  logMessage(Logger.TRIVIAL,Logger.RESULT," Found receiver " + receiver);
+	}
 
 	int col = 0;
 	s.setString(++col,part.UID + "-item-" + i);
 	s.setString(++col,part.UID.toString());
-	s.setString(++col,part.name+"-item-"+nomen+"-"+i);
+	s.setString(++col,receiver +":"+part.name+"-item-"+nomen+"-"+i);
 	s.setString(++col,type);
 	s.setString(++col,nomen+" "+type);
 	s.setDouble(++col,weight);

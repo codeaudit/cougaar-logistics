@@ -724,6 +724,7 @@ typical_case:
 	      toCargo.nomenclatures = (List) contentsPG.getNomenclatures ();
 	      toCargo.typeIdentifications = (List) contentsPG.getTypeIdentifications ();
 	      toCargo.weights = (List) contentsPG.getWeights ();
+	      toCargo.receivers = (List) contentsPG.getReceivers ();
 	    }
 	  }
 	}

@@ -79,6 +79,7 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
   public List nomenclatures;
   public List typeIdentifications;
   public List weights;
+  public List receivers;
   public String name;
 
   public static int numUID = 2;
@@ -194,17 +195,25 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
       }
     }
 
-    out.writeInt ((typeIdentifications != null) ? typeIdentifications.size() : 0);
     if (typeIdentifications != null) {
       for (Iterator iter = typeIdentifications.iterator(); iter.hasNext(); ) {
 	out.writeObject(iter.next());
       }
     }
 
-    out.writeInt ((weights != null) ? weights.size() : 0);
     if (weights != null) {
       for (Iterator iter = weights.iterator(); iter.hasNext(); ) {
 	out.writeObject(iter.next());
+      }
+    }
+
+    out.writeInt ((receivers != null) ? receivers.size() : 0);
+    if (receivers == null && nomenclatures != null)
+      System.err.println ("Instance " + UID + " - inconsistent receivers was null, but nomen was not.");
+    if (receivers != null) {
+      for (Iterator iter = receivers.iterator(); iter.hasNext(); ) {
+	Object obj = iter.next();
+	out.writeObject(obj);
       }
     }
   }
@@ -234,15 +243,21 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
     for (int i = 0; i < numToRead; i++)
       nomenclatures.add (((String) in.readObject()).intern());
 
-    numToRead = in.readInt();
     if (numToRead > 0) typeIdentifications = new ArrayList(numToRead);
     for (int i = 0; i < numToRead; i++)
       typeIdentifications.add (((String) in.readObject()).intern());
 
-    numToRead = in.readInt();
     if (numToRead > 0) weights = new ArrayList(numToRead);
     for (int i = 0; i < numToRead; i++)
       weights.add (in.readObject()); // should be instances of Mass
+
+    numToRead = in.readInt();
+    if (numToRead > 0) {
+      receivers = new ArrayList(numToRead);
+    }
+    for (int i = 0; i < numToRead; i++) {
+      receivers.add (in.readObject());
+    }
   }
 
   /**

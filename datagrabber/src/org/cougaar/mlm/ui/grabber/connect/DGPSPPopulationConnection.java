@@ -116,8 +116,8 @@ public class DGPSPPopulationConnection extends DGPSPConnection
       //ever have duplicate assets
       if(dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())&&
 	 ci.selfPropelled){
-	if (logger.isMinorEnabled()) {
-	  logMessage(Logger.MINOR,Logger.RESULT,
+	if (logger.isTrivialEnabled()) {
+	  logMessage(Logger.TRIVIAL,Logger.RESULT,
 		     "Found duplicate self-propelled instance");
 	}
 	return true;

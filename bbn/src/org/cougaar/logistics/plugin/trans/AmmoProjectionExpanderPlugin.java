@@ -577,8 +577,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
   
   protected String makeMilvanID() {
-    return new String(((PluginBindingSite)getBindingSite()).getAgentIdentifier() +
-                      ":Reserved_" + getCounter());
+    return new String("Reserved_" + getCounter());
   }
   
   private static int COUNTER = 0;
