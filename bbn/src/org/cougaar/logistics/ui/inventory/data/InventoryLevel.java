@@ -21,6 +21,10 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
+
 import java.util.Date;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
@@ -104,7 +108,8 @@ public class InventoryLevel extends InventoryScheduleElement {
 	long nowTime = now.getTime();
 	InventoryLevel level = InventoryLevel.createFromCSV(nowTime + "," + nowTime + "," +
 							    (nowTime + (3*TimeUtils.MSEC_PER_DAY)) + ",42.0,123.0");
-	System.out.println("InventoryLevel is " + level);
+	Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
+	logger.shout("InventoryLevel is " + level);
     }
     
 }

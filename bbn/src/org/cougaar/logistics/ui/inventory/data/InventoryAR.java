@@ -22,6 +22,11 @@
 package org.cougaar.logistics.ui.inventory.data;
 
 import java.util.Date;
+
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
+
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
 /** 
@@ -138,7 +143,8 @@ public class InventoryAR extends InventoryTaskBase {
     public static void main(String[] args) {
 	Date now = new Date();
 	InventoryAR ar = InventoryAR.createFromCSV(now.getTime() + ",parent UID,UID, SUPPLY,3-69-ARBN,ESTIMATED,SUCCESS," + now.getTime() + "," + (now.getTime() + 1) + "," + 23 +"\n");
-	System.out.println("InventoryAR is " + ar);
+	Logger logger = Logging.getLoggerFactory().createLogger(InventoryAR.class.getName());
+	logger.shout("InventoryAR is " + ar);
     }
 }
 

@@ -21,6 +21,10 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
+
 import java.util.Date;
 
 /** 
@@ -80,7 +84,8 @@ public class InventoryTask extends InventoryTaskBase {
     public static void main(String[] args) {
 	Date now = new Date();
 	InventoryTask task = InventoryTask.createFromCSV(now.getTime() + ",parent UID,UID, SUPPLY,3-69-ARBN,," + (now.getTime() + 50000) + "," + 23 +"\n");
-	System.out.println("InventoryTask is " + task);
+	Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
+	logger.shout("InventoryTask is " + task);
     }
 }
 

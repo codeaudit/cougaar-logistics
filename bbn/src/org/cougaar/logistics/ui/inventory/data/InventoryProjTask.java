@@ -24,6 +24,10 @@ package org.cougaar.logistics.ui.inventory.data;
 import java.util.Date;
 import java.util.ArrayList;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
+
 import org.cougaar.logistics.plugin.inventory.TimeUtils;    
 
 
@@ -101,13 +105,14 @@ public class InventoryProjTask extends InventoryTaskBase {
 
     public static void main(String[] args) {
 	Date now = new Date();
+	Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
 	InventoryProjTask task = InventoryProjTask.createFromCSV(now.getTime() + ",parent UID,UID, PROJECTSUPPLY,3-69-ARBN," + now.getTime() + "," +  (now.getTime() + (4*TimeUtils.MSEC_PER_DAY)) + "," + 23 +"\n");
-	System.out.println("InventoryProjTask is " + task);
+	logger.shout("InventoryProjTask is " + task);
 	InventoryChildProjTask[] expansion = InventoryChildProjTask.expandProjTask(task,
 										   2*TimeUtils.MSEC_PER_DAY);
-	System.out.println("ChildTasks are:");
+	logger.shout("ChildTasks are:");
 	for(int i=0; i < expansion.length; i++){
-	    System.out.println(expansion[i]);
+	    logger.shout(expansion[i].toString());
 	}
 	
     }

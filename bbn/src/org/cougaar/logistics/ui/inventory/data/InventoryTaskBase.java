@@ -21,6 +21,10 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
+
 /** 
  * <pre>
  * 

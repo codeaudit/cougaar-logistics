@@ -24,6 +24,9 @@ package org.cougaar.logistics.ui.inventory.data;
 import java.util.Vector;
 import java.util.Hashtable;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.util.TimeSpan;
 
 /** 
@@ -57,9 +60,12 @@ public abstract class InventoryScheduleElement implements TimeSpan {
     long startTime;
     long endTime;
 
+    protected Logger logger;
+
     public InventoryScheduleElement(long aStartTime, long anEndTime) {
 	startTime = aStartTime;
 	endTime = anEndTime;
+	logger = Logging.getLogger(this);
     }
 
     public long getStartTime() {

@@ -21,6 +21,10 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
+
 import java.util.Date;
 import java.util.ArrayList;
 
@@ -121,12 +125,13 @@ public class InventoryProjAR extends InventoryAR {
     public static void main(String[] args) {
 	Date now = new Date();
 	InventoryProjAR ar = InventoryProjAR.createProjFromCSV(now.getTime() + ",parent UID,UID, SUPPLY,3-69-ARBN,ESTIMATED,SUCCESS," + now.getTime() + "," + (now.getTime() + (TimeUtils.MSEC_PER_DAY*3)) + "," + 69 +"\n");
-	System.out.println("InventoryProjAR is " + ar);
-	System.out.println("Children are");
+	Logger logger = Logging.getLoggerFactory().createLogger(InventoryLevel.class.getName());
+	logger.shout("InventoryProjAR is " + ar);
+	logger.shout("Children are");
 	InventoryChildProjAR[] children = InventoryChildProjAR.expandProjAR(ar,
 									    (TimeUtils.MSEC_PER_DAY*2));
 	for(int i=0; i < children.length; i++){
-	    System.out.println(children[i]);
+	    logger.shout(children[i].toString());
 	}
     }
 }

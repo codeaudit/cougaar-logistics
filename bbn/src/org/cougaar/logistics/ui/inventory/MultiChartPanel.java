@@ -38,6 +38,9 @@ import com.klg.jclass.chart.JCChartEvent;
 import com.klg.jclass.chart.JCChart;
 import com.klg.jclass.chart.JCAxis;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 /** 
@@ -63,8 +66,11 @@ public class MultiChartPanel extends JPanel
     protected InventoryRefillChart refillChart;
     protected InventoryDemandChart demandChart;
 
+    private Logger logger;
+
     public MultiChartPanel() {
 	super();
+	logger = Logging.getLogger(this);
 	initializeCharts();
     }
 
@@ -130,7 +136,9 @@ public class MultiChartPanel extends JPanel
 	if(!axis.isVertical()) {
 	    double xStart = axis.getMin();
 	    double xEnd = axis.getMax();
-	    System.out.println("X-Axis of " + headerText + " changed min: " + axis.getMin() + " Max: " + axis.getMax());
+	    if(logger.isDebugEnabled()) {
+		logger.debug("X-Axis of " + headerText + " changed min: " + axis.getMin() + " Max: " + axis.getMax());
+	    }
 	    removeAllChartListeners();
 	    levelChart.setXZoom(xStart,xEnd);
 	    refillChart.setXZoom(xStart,xEnd);

@@ -53,7 +53,6 @@ public class InventoryChildProjAR extends InventoryProjAR {
 
     public static InventoryChildProjAR[] expandProjAR(InventoryProjAR ar,
 						      long bucketDuration) {
-	String parentUID = ar.getUID();
 	Vector childARs = new Vector();
 	long startTime = ar.getStartTime();
 	long endTime = ar.getEndTime();

@@ -58,7 +58,6 @@ public class InventoryChildProjTask extends InventoryProjTask {
 
     public static InventoryChildProjTask[] expandProjTask(InventoryProjTask task,
 							  long bucketDuration) {
-	String parentUID = task.getUID();
 	Vector childTasks = new Vector();
 	long startTime = task.getStartTime();
 	long endTime = task.getEndTime();
