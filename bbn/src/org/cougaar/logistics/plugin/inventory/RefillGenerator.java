@@ -111,6 +111,7 @@ public class RefillGenerator extends InventoryModule {
         //  TODO...add refill to local inventory count
         // make a task for this refill and publish it to glue plugin
         createRefillTask(aRefill, refillDay, anInventory, today);
+	// TODO: Apply Refill to LogisticsInventoryBG
         refillDay = getTimeUtils().addNDays(refillDay, orderFrequency);
       }
       
@@ -146,11 +147,8 @@ public class RefillGenerator extends InventoryModule {
   private void createRefillTask(double quantity, long endDay, Asset inv, long today) {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
-    // who sets the parent?? - THE GLUE PLUGIN
-    //newRefill.setParentTask(theParent);
     newRefill.setVerb(Constants.Verb.Supply);
     newRefill.setDirectObject(inv);
-    //plan??
     // create preferences
     Vector prefs = new Vector();
     Preference p_end,p_qty;
@@ -215,18 +213,21 @@ public class RefillGenerator extends InventoryModule {
   }
 
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
-    NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().newPrepositionalPhrase();
+    NewPrepositionalPhrase newpp = inventoryPlugin.getRootFactory().
+	newPrepositionalPhrase();
     newpp.setPreposition(prep);
     newpp.setIndirectObject(io);
     return newpp;
   }
+
   //Get and Keep organization info from the InventoryPlugin.
   private Organization getMyOrganization() {
     if (myOrg == null) {
        myOrg = inventoryPlugin.getMyOrganization();
        // if we still don't have it after we ask the inventory plugin, throw an error!
        if (myOrg == null) {
-	 logger.error("RefillGenerator can not got MyOrganization from the InventoryPlugin");
+	 logger.error("RefillGenerator can not get MyOrganization from " +
+		      "the InventoryPlugin");
        }
     } 
     return myOrg;
