@@ -216,9 +216,9 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       }
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
-      dgPlugin.publishAdd(task);
       wf.addTask(task);
       ((NewTask)task).setWorkflow(wf);
+      dgPlugin.publishAdd(task);
     }
     dgPlugin.publishChange(expansion);
   }

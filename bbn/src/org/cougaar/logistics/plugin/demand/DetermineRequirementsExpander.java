@@ -152,9 +152,9 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     Iterator subtasksIT = subtasks.iterator();
     while (subtasksIT.hasNext()) {
       Task task = (Task) subtasksIT.next();
-      dfPlugin.publishAdd(task);
       wf.addTask(task);
       ((NewTask) task).setWorkflow(wf);
+      dfPlugin.publishAdd(task);
     }
     dfPlugin.publishChange(expansion);
   }
