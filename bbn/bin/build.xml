@@ -487,7 +487,28 @@
 		</copy>
 	</target>
 
+
   <!-- Create the Cougaar overlay -->
+	<property environment="env"/>
+	<property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+
+	<target name="datagrabber">
+			<property name="dg" value="datagrabber"/>
+			<path id="cougaar.libs">
+				<fileset dir="${cougaar}/lib">
+					<include name="**/*.jar"/>
+				</fileset>
+				<fileset dir="${cougaar}/sys">
+					<include name="**/*.jar"/>
+				</fileset>
+  		</path>
+			<mkdir dir="${dg}/build"/>
+			<javac srcdir="${dg}/src" destdir="${dg}/build">
+				<classpath refid="cougaar.libs"/>
+			</javac> 
+			<jar jarfile="${zipbase}/${module}/lib/datagrabber.jar" basedir="${dg}/build"/>
+	</target>
+
 	<target name="create_cougaar_overlay" depends="set-zip-dirs">
 		<delete dir="${zipbase}"/>
 		<antcall target="clean-docs"/>
@@ -501,6 +522,7 @@
 		<copy todir="${zipbase}/${module}/lib">
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
+		<antcall target="datagrabber"/>
 		<zip zipfile="bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
