@@ -30,6 +30,7 @@ import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.ldm.plan.NewWorkflow;
+import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 
 import java.util.ArrayList;
@@ -148,8 +149,9 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
           logger.debug("DiffSupply Remove unwanted published task from previous plan "+
                        getTaskUtils().taskDesc(oldRefill));
         }
-        ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
-	inventoryPlugin.publishRemove(oldRefill);
+        //((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+     	//inventoryPlugin.publishRemove(oldRefill);
+        inventoryPlugin.removeSubTask(oldRefill);
       }
     }      
   }
@@ -192,8 +194,9 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         }
         if (oldRefill != null) {
 	  // clean out the reference in the maintain inventory workflow
-	  ((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
-          inventoryPlugin.publishRemove(oldRefill);
+	  //((NewWorkflow)oldRefill.getWorkflow()).removeTask(oldRefill);
+          //inventoryPlugin.publishRemove(oldRefill);
+          inventoryPlugin.removeSubTask(oldRefill);
         }
       }
       return;
@@ -267,8 +270,9 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
         logger.debug("DiffProj Remove unwanted published task from previous plan "+
                      getTaskUtils().taskDesc(task));
       }
-      ((NewWorkflow)task.getWorkflow()).removeTask(task);
-      inventoryPlugin.publishRemove(task);
+      //((NewWorkflow)task.getWorkflow()).removeTask(task);
+      //inventoryPlugin.publishRemove(task);
+      inventoryPlugin.removeSubTask(task);
     }
   }
 }

@@ -252,6 +252,11 @@ public class InventoryPlugin extends ComponentPlugin
     return true;
   }
 
+  public void removeSubTask(Task taskToRemove) {
+    PluginHelper.removeSubTask(getBlackboardService(), taskToRemove);
+    publishRemove(taskToRemove);
+  }
+
   public PlanningFactory getPlanningFactory() {
     PlanningFactory rootFactory = null;
     if (domainService != null) {
