@@ -81,7 +81,10 @@ public class RefillGenerator extends InventoryModule {
    *  @param touchedInventories  The collection of changed Inventories.
    *  @param policy The InventoryPolicy
    **/
-  public void calculateRefills(ArrayList touchedInventories, InventoryPolicy policy) {
+  public void calculateRefills(ArrayList touchedInventories, InventoryPolicy policy, 
+			       RefillComparator myComparator) {
+    ArrayList newRefills = new ArrayList();
+    ArrayList oldRefills = new ArrayList();
     int orderShipTime = policy.getOrderShipTime();
     int maxLeadTime = policy.getSupplierAdvanceNoticeTime() + orderShipTime;
     
@@ -94,11 +97,14 @@ public class RefillGenerator extends InventoryModule {
     
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
+      // clear the refill lists from the last inventory
+      oldRefills.clear();
+      newRefills.clear();
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
       //clear the refills
-      thePG.clearRefillTasks(new Date(start));
+      oldRefills.addAll(thePG.clearRefillTasks(new Date(start)));
 
       int inventoryBucket = thePG.convertTimeToBucket(today);
       int startBucket = thePG.convertTimeToBucket(start);
@@ -130,14 +136,20 @@ public class RefillGenerator extends InventoryModule {
                                             reorderPeriodEndBucket, thePG);
           // make a task for this refill and publish it to glue plugin
           // and apply it to the LogisticsInventoryBG
-          createRefillTask(refillQty, thePG.convertBucketToTime(refillBucket), 
-                           anInventory, thePG, today, orderShipTime);
+          Task theRefill = createRefillTask(refillQty, 
+					    thePG.convertBucketToTime(refillBucket), 
+					    anInventory, thePG, 
+					    today, orderShipTime);
+	  newRefills.add(theRefill);
           thePG.setLevel(refillBucket, (invLevel + refillQty));
         }
         //reset the buckets
         startBucket = refillBucket;
         refillBucket = startBucket + 1;
       }
+      // call the Comparator for this Inventory which will compare the old and
+      // new Refills and then publish the new Refills and Rescind the old Refills.
+      myComparator.compareRefills(newRefills, oldRefills, anInventory);
     
     } // done going through inventories
   }
@@ -187,18 +199,17 @@ public class RefillGenerator extends InventoryModule {
     return totalDemand;
   }
 
-  /** Make a Refill Task and publish it to the InventoryPlugin 
-   *  The InventoryPlugin will hook it up with the MaintainInventory task
-   *  and it's workflow as well as publishing it to the Blackboard.
+  /** Make a Refill Task 
    *  @param quantity The quantity of the Refill Task
    *  @param endDay  The desired delivery date of the Refill Task
    *  @param inv  The Inventory this Refill Task is resupplying
    *  @param thePG  The LogisticsInventoryPG for the Inventory.
    *  @param today  Time representing now to use as the earliest possible delivery
    *  @param ost The OrderShipTime used to calculate the CommitmentDate
+   *  @return Task The new Refill Task
    **/
-  private void createRefillTask(double quantity, long endDay, 
-                                Asset inv, LogisticsInventoryPG thePG, 
+  private Task createRefillTask(double quantity, long endDay, 
+                                Inventory inv, LogisticsInventoryPG thePG, 
                                 long today, int ost) {
     // make a new task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
@@ -239,10 +250,7 @@ public class RefillGenerator extends InventoryModule {
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
-    // hook this in with MaintainInventory and publish
-    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
-    //apply this to the LogisticsInventoryBG
-    thePG.addRefillRequisition(newRefill);
+    return newRefill;
   }
 
   /** Utility method to create the Refill tasks time preference

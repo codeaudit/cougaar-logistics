@@ -82,7 +82,8 @@ public class RefillProjectionGenerator extends InventoryModule {
    *   from the VariableTimeHorizon OperatingMode (knob)
    **/
   public void calculateRefillProjections(ArrayList touchedInventories, int daysOnHand,
-                                         long endOfLevelSix, long endOfLevelTwo) {
+                                         long endOfLevelSix, long endOfLevelTwo, 
+					 RefillComparator theComparator) {
     // get the demand projections for each customer from bg
     // time shift the demand for each customer
     // sum the each customer's time shifted demand
@@ -91,7 +92,8 @@ public class RefillProjectionGenerator extends InventoryModule {
     long today = inventoryPlugin.getCurrentTimeMillis();
     
     if (today < endOfLevelSix) {
-      calculateLevelSixProjections(touchedInventories, daysOnHand, endOfLevelSix);
+      calculateLevelSixProjections(touchedInventories, daysOnHand, 
+				   endOfLevelSix, theComparator);
       calculateLevelTwoProjections(inventoryPlugin.getInventories(), daysOnHand, 
                                    getTimeUtils().addNDays(endOfLevelSix, 1),
                                    endOfLevelTwo);
@@ -112,14 +114,21 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param endOfLevelSix The date representing the end of the Level 6 VTH window.
    **/
   private void calculateLevelSixProjections(ArrayList touchedInventories, 
-                                            int daysOnHand, long endOfLevelSix) {
+                                            int daysOnHand, long endOfLevelSix, 
+					    RefillComparator myComparator) {
+
+    ArrayList refillProjections = new ArrayList();
+    ArrayList oldProjections = new ArrayList();
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
+      // clear out the old and new projections for the last Inventory
+      refillProjections.clear();
+      oldProjections.clear();
       Inventory anInventory = (Inventory) tiIter.next();
       LogisticsInventoryPG thePG = (LogisticsInventoryPG)anInventory.
         searchForPropertyGroup(LogisticsInventoryPG.class);
       // clear all of the projections
-      thePG.clearRefillProjectionTasks();
+      oldProjections.addAll(thePG.clearRefillProjectionTasks());
 
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
@@ -146,9 +155,10 @@ public class RefillProjectionGenerator extends InventoryModule {
         nextProjDemand = thePG.getProjectedDemand(customerDemandBucket);
         if (projDemand != nextProjDemand) {
           //if there's a change in the demand, create a refill projection
-          createProjectionRefill(thePG.convertBucketToTime(startBucket), 
-                                 thePG.convertBucketToTime(currentBucket -1),
-                                 projDemand, anInventory, thePG);
+          Task refill = createProjectionRefill(thePG.convertBucketToTime(startBucket), 
+					       thePG.convertBucketToTime(currentBucket -1),
+					       projDemand, anInventory, thePG);
+	  refillProjections.add(refill);
           //then reset the start bucket and the new demand 
           startBucket = currentBucket;
           projDemand = nextProjDemand;
@@ -160,11 +170,16 @@ public class RefillProjectionGenerator extends InventoryModule {
       // when we get to the end of the level six window create the last
       // projection task (if there is one)
       if (startBucket != currentBucket) {
-        createProjectionRefill(thePG.convertBucketToTime(startBucket),
+        Task lastRefill = createProjectionRefill(thePG.convertBucketToTime(startBucket),
                                thePG.convertBucketToTime(currentBucket - 1),
                                projDemand, anInventory, thePG);
+	refillProjections.add(lastRefill);
       }
-     }
+      // send the new projections and the old projections to the Comparator
+      // the comparator will rescind the old and publish the new projections
+      myComparator.compareRefillProjections(refillProjections, oldProjections, 
+					    anInventory);
+    }
   }
 
   /** Calculate the Projection Refills in Level 2
@@ -238,7 +253,7 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param inv  The inventory Asset this Task is refilling.
    *  @param thePG  The Property Group of the Inventory Asset
    **/
-  private void createProjectionRefill(long start, long end,
+  private Task createProjectionRefill(long start, long end,
                                       double demand, Inventory inv, 
                                       LogisticsInventoryPG thePG) {
     //create a projection refill task
@@ -246,10 +261,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(inv);
     fillInTask(newRefill, start, end, thePG.getStartTime(), demand, thePG.getResource());
-    // publish the refill
-    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
-    // apply this to the bg
-    thePG.addRefillProjection(newRefill);
+    return newRefill;
   }
 
   /** Create a Level 2 Projection Refill

@@ -21,7 +21,11 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
+import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.planning.ldm.plan.Task;
+
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /** The Refill Comparator Module is responsible for deciding whether to
  *  rescind all previous refills and publish all new refills generated
@@ -29,14 +33,12 @@ import java.util.ArrayList;
  *  compare and merge the 'old' and 'new' refill tasks.  The first
  *  version will simply rescind all old refills and publish all new
  *  refills.
- *  Called by the Refill Generator(?) with the new refills.
- *  Uses the InventoryBG module to get the old refills.
- *  Publishes new Refill tasks through the InventoryPlugin.
+ *  Called by the Refill Generator with the new refills and old refills.
+ *  Publishes new Refill tasks and rescinds the old through the InventoryPlugin.
+ *  Also applies the new Refill tasks to the Inventory's BG.
  **/
 
 public class RefillComparator extends InventoryModule {
-  private ArrayList newRefills;
-  private ArrayList oldRefills;
 
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
@@ -45,14 +47,69 @@ public class RefillComparator extends InventoryModule {
     super(imPlugin);
   }
 
-  public void compareRefills(ArrayList newRefills) {
-    this.newRefills = newRefills;
-    // get the old Refills for the affected inventory bin(s)
-    //imPlugin.publishRemove(oldRefills);
-    //imPlugin.publishAdd(newRefills);
+  /** Compares the old and new Refill tasks.
+   *  Publishes any new Refills and Rescinds any old Refill Tasks.
+   *  For now this implementation rescinds ALL old Refills and publishes ALL
+   *  new Refill tasks.  In the future a smart comparison will be done.
+   *  @param newRefills The collection of newly generated Refills from the
+   *    RefillGeneratorModule
+   *  @param oldRefills The previously generated Refill Tasks
+   *  @param inv The Inventory the Refills are refilling.
+   **/
+  public void compareRefills(ArrayList newRefills, ArrayList oldRefills, Inventory inv) {
+    //Rescind all old Refill Tasks
+    Iterator oldIter = oldRefills.iterator();
+    while (oldIter.hasNext()) {
+      Task oldRefill = (Task) oldIter.next();
+      inventoryPlugin.publishRemove(oldRefill);
+    }
+
+    //Process all new Refill Tasks
+    LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
+	searchForPropertyGroup(LogisticsInventoryPG.class);
+    Iterator newIter = newRefills.iterator();
+    while (newIter.hasNext()) {
+      Task newRefill = (Task) newIter.next();
+      // apply the Task to the LogisticsInventoryBG
+      thePG.addRefillRequisition(newRefill);
+      // hook the task in with the MaintainInventory workflow and publish
+      inventoryPlugin.publishRefillTask(newRefill, inv);
+    }
   }
                        
+ /** Compares the old and new Refill Projection tasks.
+   *  Publishes any new Refill Projections and Rescinds any old Refill Projection Tasks.
+   *  For now this implementation rescinds ALL old Refill Projections
+   *  and publishes ALL new Refill Projection tasks.  
+   *  In the future a smart comparison will be done.
+   *  Right now this method is almost identical to compareRefills.
+   *  @param newRefillProjs The collection of newly generated Refill Projections
+   *    from the RefillProjectionsGenerator Module
+   *  @param oldRefillProjs The previously generated Refill Projection Tasks
+   *  @param inv The Inventory the Refills Projections are refilling.
+   **/
+  public void compareRefillProjections(ArrayList newRefillProjs, 
+					ArrayList oldRefillProjs, 
+					Inventory inv) {
+    //Rescind all old Refill Projection Tasks
+    Iterator oldIter = oldRefillProjs.iterator();
+    while (oldIter.hasNext()) {
+      Task oldRefillProj = (Task) oldIter.next();
+      inventoryPlugin.publishRemove(oldRefillProj);
+    }
 
+    //Process all new Refill Projection Tasks
+    LogisticsInventoryPG thePG = (LogisticsInventoryPG)inv.
+	searchForPropertyGroup(LogisticsInventoryPG.class);
+    Iterator newIter = newRefillProjs.iterator();
+    while (newIter.hasNext()) {
+      Task newRefillProj = (Task) newIter.next();
+      // apply the Task to the LogisticsInventoryBG
+      thePG.addRefillProjection(newRefillProj);
+      // hook the task in with the MaintainInventory workflow and publish
+      inventoryPlugin.publishRefillTask(newRefillProj, inv);
+    }
+  }
 
 }
     
