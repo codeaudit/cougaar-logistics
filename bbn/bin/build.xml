@@ -27,10 +27,16 @@
 	<property file="${user.home}/.ant.properties" />
 
 	<!-- Set some global properties -->
-	<property name="lib" value="c:\alp\cougaarHEAD\lib" />
+
+	<!-- This scopes all the environment variables -->
+	<property environment="env"/>
+
+	<!--OLD <property name="lib" value="c:\alp\cougaarHEAD\lib" /> -->
+	<property name="lib" value="${env.COUGAAR_INSTALL_PATH}/lib" />
 
 	<!-- Third party jar files go in CIP/sys -->
-	<property name="sys" value="c:\alp\cougaarHEAD\sys" />
+	<!--OLD <property name="sys" value="c:\alp\cougaarHEAD\sys" /> -->
+	<property name="sys" value="${env.COUGAAR_INSTALL_PATH}/sys" />
 
 	<property name="src" value="./src" />
 	<property name="testsrc" value="./regress" />
