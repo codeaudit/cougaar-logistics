@@ -747,7 +747,7 @@ public class InventoryPlugin extends ComponentPlugin
 
     // Setup TaskSchedulers
     String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
-    boolean turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
+    turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
         getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService)
