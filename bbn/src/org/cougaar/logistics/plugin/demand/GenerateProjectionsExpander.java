@@ -35,7 +35,7 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.measure.Rate;
+import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.TimeSpan;
@@ -102,6 +102,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
       Asset asset = (Asset) iterator.next();
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
+      logger.debug("Handling consumed item "+dfPlugin.getAssetUtils().getAssetIdentifier(asset));
+
       if (publishedTasks.isEmpty()) {
         logger.error("No project supply tasks were found for parent task " + gpTask.toString());
         return;
@@ -151,7 +153,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
           if (rate == null)  {
             continue;
           }
-          logger.info("checking Rate on consumed item " + rate.toString());
+          logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
+		      " rate "+getDailyQuantity(rate));
           subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                                ose.getEndTime(), rate));
         }
@@ -552,12 +555,12 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
+        logger.debug("replace "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+                     " with "+dfPlugin.getTaskUtils().taskDesc(new_task));
         published_task = changeTask(published_task, new_task);
         if (published_task != null) {
           logger.debug(printProjection("replace with", published_task));
           dfPlugin.publishChange(published_task);
-//  		    printDebug("publishChangeProjection(), Publishing changed Projections: "+
-//  			       TaskUtils.projectionDesc(new_task));
         }
       }
       else {
@@ -628,6 +631,22 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       wf.removeTask(subtask);
     }
     dfPlugin.publishRemove(subtask);
+  }
+
+  public double getDailyQuantity(Rate r) {
+    Duration d = Duration.newDays(1.0);
+    Scalar measure = (Scalar)r.computeNumerator(d);
+    double result = Double.NaN;
+    if (measure instanceof Volume) {
+      result = ((Volume)measure).getGallons();
+    } else if (measure instanceof Count) {
+      result = ((Count)measure).getEaches();
+    } else if (measure instanceof Mass) {
+      result = ((Mass)measure).getShortTons();
+    } else {
+      logger.error("cannot determine type of measure");
+    }
+    return result;
   }
 }
 
