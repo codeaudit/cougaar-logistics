@@ -86,7 +86,7 @@
            <pathelement location="${lib}/glm.jar" />
            <pathelement location="${lib}/glmtrans.jar" />
            <pathelement location="${lib}/vishnu.jar" />
-           <pathelement location="${other}/vishnuServer.jar" />
+           <pathelement location="${sys}/vishnuServer.jar" />
 	   <pathelement location="${sys}/xerces.jar" />
 	   <pathelement location="${sys}/openmap.jar" />
 	   <pathelement location="${sys}/fesi-111.jar" />
