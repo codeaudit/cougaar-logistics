@@ -215,6 +215,24 @@ public class InventoryPlugin extends ComponentPlugin {
   protected void execute() {
     //clear our new refill list
     newRefills.clear();
+
+    // if the OM changed and the window is further out then before
+    // then mark the flag true so we process previously ignored tasks
+    // and allocation results.  If it went down - don't undo work
+    if (! Level6OMSubscription.getChangedCollection().isEmpty()) {
+      long currentLevel6 = getEndOfLevelSix();
+      if (logger.isInfoEnabled()) {
+        logger.info("Inv Mgr got changed OM ... new end of level 6 window is: " +
+                    currentLevel6 + " in agent: " + getAgentIdentifier() +
+                    " supply type: " + getSupplyType());
+      }
+      if (currentLevel6 > prevLevel6) {
+        OMChange = true;
+      }
+      //reset the previous level 6 to the current
+      prevLevel6 = currentLevel6; 
+    }
+
     if (inventoryPolicy == null) {
       updateInventoryPolicy(inventoryPolicySubscription);
     }
@@ -269,18 +287,6 @@ public class InventoryPlugin extends ComponentPlugin {
 	supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
-
-      // if the OM changed and the window is further out then before
-      // then mark the flag true so we process previously ignored tasks
-      // and allocation results.  If it went down - don't undo work
-      if (! Level6OMSubscription.getChangedCollection().isEmpty()) {
-        long currentLevel6 = getEndOfLevelSix();
-        if (currentLevel6 > prevLevel6) {
-          OMChange = true;
-        }
-        //reset the previous level 6 to the current
-        prevLevel6 = currentLevel6; 
-      }
 
       // If its the first time we've gotten this far we now have our policy, org and others.
       // However, we may have missed some tasks on the added list in previous executes.
@@ -379,6 +385,13 @@ public class InventoryPlugin extends ComponentPlugin {
             allocationAssessor.reconcileInventoryLevels(getInventories()); 
           } else {
             allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
+          }
+        } else {
+          // if the we are not in backwards flow but the OM changed
+          // process ARs anyway because we may not get woken up again to 
+          // process them if they have all come in already     
+          if (OMChange) {
+            allocationAssessor.reconcileInventoryLevels(getInventories());
           }
         }
           
