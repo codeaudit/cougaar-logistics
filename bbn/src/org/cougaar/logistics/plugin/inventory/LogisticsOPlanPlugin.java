@@ -121,62 +121,59 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
   }
   
   protected void setupSubscriptions() {
-    oplans = (IncrementalSubscription)getBlackboardService().subscribe(new OplanPredicate());
     selfOrganizations = (IncrementalSubscription) getBlackboardService().subscribe(orgsPredicate);
 
-    Collection anyOplans = getBlackboardService().query(new OplanPredicate());
-
-    if((anyOplans != null) &&
-       (!(anyOplans.isEmpty())) &&
-       getBlackboardService().didRehydrate()) {
-      getLogisticsOPlans();
-      doUpdateOplans();
-      publishLogOplanObjects();
-    }
-  }
-
-  private void getLogisticsOPlans() {
-
-
-    Collection c = getBlackboardService().query(logisticsOPlanPredicate);
-    if (myOrganization == null) {
+    // If we are rehydrating then this subscription will have things on it
+    // So restore our private variables
+    if (myOrganization == null && ! selfOrganizations.isEmpty()) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
       if (myOrganization != null) {
 	clusterId = myOrganization.getClusterPG().getMessageAddress();
       }
     }
-    int waited = 0;
-    while (c.isEmpty()) {
-      try {
-        if (logger.isErrorEnabled()) {
-          logger.error("starting to sleep for oplan objects at "+waited+" seconds at "+clusterId);
-        }
-	Thread.currentThread().sleep(3000);
-	waited=waited+3;
-      } catch (Exception ex) {
-        if (logger.isErrorEnabled()) {
-          logger.error("Exception sleeping for OPlan "+ex);
-        }
-	ex.printStackTrace();
+
+    oplans = (IncrementalSubscription)getBlackboardService().subscribe(new OplanPredicate());
+
+    // If there are oplans on our subscription, then restore the
+    // private hashes / subscriptions
+    // Note the assumption that there will be an Oplan object before or
+    // at least at same time as there are OrgActivities and therefore
+    // LogOplans.
+    if (! oplans.isEmpty()) {
+      if (logger.isInfoEnabled())
+	logger.info(getAgentIdentifier() + ".setupSub: have oplans. Restoring hashes.");
+      // Restore org activities subscriptions / hash
+      Enumeration enum = oplans.elements();
+      while (enum.hasMoreElements()) {
+	Oplan oplan = (Oplan)enum.nextElement();
+	UID oplanUID = oplan.getUID();
+	IncrementalSubscription oplanActivities = (IncrementalSubscription)
+	  orgActivitySubscriptionOfOPlanUID.get(oplanUID);
+	if (oplanActivities == null) {
+	  oplanActivities = (IncrementalSubscription)
+	    getBlackboardService().subscribe(new OplanOrgActivitiesPredicate(oplanUID));
+	  orgActivitySubscriptionOfOPlanUID.put(oplanUID, oplanActivities);
+	}
+        // publish code was here
       }
-      c = getBlackboardService().query(logisticsOPlanPredicate);
-    }
-    if (logger.isDebugEnabled()) {
-      logger.debug("Got the OPlan at "+clusterId);
-    }
-    for (Iterator i = c.iterator(); i.hasNext(); ) {
-      LogisticsOPlan loplan = (LogisticsOPlan) i.next();
-      oplanHash.put(loplan.getOplanUID(), loplan);
+
+      // Restore LogOplan hash
+      // If there are none on the blackboard, then wait for the execute
+      // method of this Plugin to fire on new OrgActivities,
+      // and create one.
+      Collection c = getBlackboardService().query(logisticsOPlanPredicate);
+      for (Iterator i = c.iterator(); i.hasNext(); ) {
+	LogisticsOPlan loplan = (LogisticsOPlan) i.next();
+	oplanHash.put(loplan.getOplanUID(), loplan);
+      }
       
-      UID oplanUID = loplan.getOplanUID();
-      IncrementalSubscription oplanActivities = (IncrementalSubscription)
-	orgActivitySubscriptionOfOPlanUID.get(oplanUID);
-      if (oplanActivities == null) {
-	oplanActivities = (IncrementalSubscription)
-	  getBlackboardService().subscribe(new OplanOrgActivitiesPredicate(oplanUID));
-	orgActivitySubscriptionOfOPlanUID.put(oplanUID, oplanActivities);
-      }
-    }
+      // If there already are OrgActivities on the subscriptions we just
+      // restored above, but we have not yet created the LogOplans
+      // to got with them, then create them here.
+      // This may not strictly be necessary, but it doesn't hurt
+      publishLogOplanObjects();
+    } // end of check for oplans on subscription
+
   }
 
   private boolean updateOplans() {
@@ -272,6 +269,8 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
       IncrementalSubscription s = (IncrementalSubscription)
 	orgActivitySubscriptionOfOPlanUID.get(oplanUID);
       if (loplan == null) {
+	if (logger.isInfoEnabled())
+	  logger.info(getAgentIdentifier() + ".publishLogOplan: no loplan for uid " + oplanUID + ". OrgActivity sub.isEmpty? " + s.isEmpty());
         if (!s.isEmpty()) {
           loplan = new LogisticsOPlan(clusterId, oplan);
           loplan.updateOrgActivities(s);
