@@ -21,8 +21,12 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import java.util.Date;
+
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
+
+
 
 
 /** 
@@ -72,6 +76,12 @@ public abstract class InventoryTaskBase extends InventoryScheduleElement {
     public String getParentUID() { return parentUID; }
     public String getVerb() { return verb; }
     public String getDestination() { return forOrg; }
+
+    public String toHRString() {
+	return getParentUID() + "," + getUID() + "," +
+	    getVerb() + "," + getDestination() + "," +
+	    new Date(startTime) + "," +  new Date(endTime);
+    } 
 
     public String toString() {
 	return super.toString() + ",ParentUID=" + getParentUID() +

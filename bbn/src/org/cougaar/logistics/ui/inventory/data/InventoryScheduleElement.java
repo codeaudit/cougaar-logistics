@@ -80,6 +80,9 @@ public abstract class InventoryScheduleElement implements TimeSpan {
 	return super.toString() + " - startTime=" + getStartTime() + ",endTime=" + getEndTime();
     }
 
+
+    public String getHRHeader() { return ""; }
+    public String toHRString() { return ""; }
 }
 
 

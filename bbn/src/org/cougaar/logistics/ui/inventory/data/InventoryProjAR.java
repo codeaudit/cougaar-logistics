@@ -93,6 +93,10 @@ public class InventoryProjAR extends InventoryAR {
 	return super.toString() + ",dailyRate=" + getDailyRate();
     }
 
+    public String getHRHeader() {
+	return "<parent UID,UID,Verb,For Org,Result Type,Success?,Start Time,End Time,Daily Rate>";
+    }
+
     public static InventoryProjAR createProjFromCSV(String csvString) {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
 	

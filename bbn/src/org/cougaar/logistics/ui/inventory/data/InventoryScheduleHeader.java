@@ -21,6 +21,9 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import java.io.Writer;
+import java.io.IOException;
+
 import java.util.ArrayList;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
@@ -73,6 +76,37 @@ public class InventoryScheduleHeader{
 	if(aType.equals(LogisticsInventoryFormatter.LEVELS_TYPE))
 	    return InventoryScheduleHeader.LEVELS_TYPE;
 	return -1;
+    }
+
+    public static String getTypeString(int aType) {
+	switch(aType) {
+	case InventoryScheduleHeader.TASKS_TYPE:
+	    return LogisticsInventoryFormatter.TASKS_TYPE;
+	case InventoryScheduleHeader.PROJ_TASKS_TYPE:
+	    return LogisticsInventoryFormatter.PROJ_TASKS_TYPE;
+	case InventoryScheduleHeader.ARS_TYPE:
+	    return LogisticsInventoryFormatter.ARS_TYPE;
+	case InventoryScheduleHeader.PROJ_ARS_TYPE:
+	    return LogisticsInventoryFormatter.PROJ_ARS_TYPE;
+	case InventoryScheduleHeader.LEVELS_TYPE:
+	    return LogisticsInventoryFormatter.LEVELS_TYPE;
+	default:
+	    return "Unknown Type";
+	}
+    }
+
+    public void writeHRString(Writer writer) throws IOException {
+	writer.write("<" + getName() + "  type=" + 
+		     getTypeString(getType()) + ">\n");
+	for(int i=0; i < schedule.size(); i++) {
+	    InventoryScheduleElement e = 
+		(InventoryScheduleElement)schedule.get(i);
+	    if(i==0) {
+		writer.write(e.getHRHeader() + "\n");
+	    }
+	    writer.write(e.toHRString() + "\n");
+	}
+	writer.write("</" + getName() + ">\n");
     }
 }
 

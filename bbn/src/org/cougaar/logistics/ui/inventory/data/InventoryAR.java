@@ -90,7 +90,26 @@ public class InventoryAR extends InventoryTaskBase {
 	else
 	    return AR_ESTIMATED_STR;
     }
+
+    public String getSuccessStr() {
+	if(isSuccess()) {
+	    return AR_SUCCESS_STR;
+	}
+	else
+	    return AR_FAILURE_STR;
+    }
     
+    public String getHRHeader() {
+	return "<parent UID,UID,Verb,For Org,Result Type,Success?,Start Time,End Time,Qty>";
+    }
+
+    public String toHRString() {
+	return getParentUID() + "," + getUID() + "," +
+	    getVerb() + "," + getDestination() + "," +
+	    getResultTypeStr() + "," + getSuccessStr() + "," +
+	    new Date(startTime) + "," +  new Date(endTime) + ","
+	    + getQty();
+    }
 
     public static InventoryAR createFromCSV(String csvString) {
 	String[] subStrings = csvString.split(SPLIT_REGEX);

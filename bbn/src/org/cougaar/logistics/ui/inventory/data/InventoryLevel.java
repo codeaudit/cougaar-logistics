@@ -68,6 +68,16 @@ public class InventoryLevel extends InventoryScheduleElement {
     public double getInventoryLevel() { return inventoryLevel; }
     public Double getTargetLevel() { return targetLevel;}
 
+    public String getHRHeader() {
+	return "<Start Time,End Time,Reorder Level,Inventory Level, Target Level>";
+    }
+
+    public String toHRString() {
+	return "" + new Date(startTime) + "," +  new Date(endTime) + ","
+	    + getReorderLevel() + "," + getInventoryLevel() + "," +
+	    getTargetLevel();
+    }
+
     public String toString() {
 	return super.toString() + ",reorderLevel=" + getReorderLevel() + 
 	    ",inventoryLevel=" + getInventoryLevel();

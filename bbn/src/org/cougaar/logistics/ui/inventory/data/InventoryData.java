@@ -21,6 +21,9 @@
  
 package org.cougaar.logistics.ui.inventory.data;
 
+import java.io.Writer;
+import java.util.Enumeration;
+
 import java.util.ArrayList;
 import java.util.Hashtable;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
@@ -52,6 +55,25 @@ public class InventoryData {
     }
 
     public Hashtable getSchedules() { return schedules; }
+
+    public void writeHRString(Writer writer) throws java.io.IOException {
+	writer.write("<" + LogisticsInventoryFormatter.INVENTORY_DUMP_TAG +
+		     " org=" + org + " item=" + item + ">\n");
+
+	for(int i=1; i <= 5; i++) {
+	    Enumeration e = getSchedules().elements();
+	    while(e.hasMoreElements()) {
+		InventoryScheduleHeader schedule = 
+		    (InventoryScheduleHeader) e.nextElement();
+		if(schedule.getType() == i) {
+		    schedule.writeHRString(writer);
+		}
+	    }
+	}
+	writer.write("</" + LogisticsInventoryFormatter.INVENTORY_DUMP_TAG 
+		     + ">\n");
+    }
+
 }
 
 

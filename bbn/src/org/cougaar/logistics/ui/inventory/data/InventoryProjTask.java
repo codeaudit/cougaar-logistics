@@ -61,6 +61,15 @@ public class InventoryProjTask extends InventoryTaskBase {
     public double getDailyRate() { return rate; }
 
 
+    public String getHRHeader() {
+	return "<parent UID,UID,Verb,For Org,Start Time,End Time,Daily Rate>";
+    }
+
+    public String toHRString() {
+	return super.toHRString() + "," + getDailyRate();
+    }
+
+
     public ArrayList explodeToDaily() {
 	ArrayList dailys = new ArrayList();
 	long currStartTime = startTime;

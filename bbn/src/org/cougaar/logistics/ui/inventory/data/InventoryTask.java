@@ -55,6 +55,14 @@ public class InventoryTask extends InventoryTaskBase {
 
     public double getQty() { return qty; }
 
+    public String getHRHeader() {
+	return "<parent UID,UID,Verb,For Org,Start Time,End Time,Qty";
+    }
+
+    public String toHRString() {
+	return super.toHRString() + "," + getQty();
+    }
+
 
     public static InventoryTask createFromCSV(String csvString) {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
