@@ -138,6 +138,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         createWithdrawAllocations(today_bucket, lastRefillBucket, inventory, thePG);
       }
       determineProjectionAllocations(lastRefillBucket+1, end_bucket, inventory, thePG);
+      createProjectionAllocations(allocatedProjections, inventory);
+      // createLateProjectionAllocations(trailingPointersHash, inventory);
     }
   }
 
@@ -363,14 +365,27 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     thePG.updateWithdrawRequisition(withdraw);
   }
 
-  private void createProjectionAllocation(Task projWdraw, Inventory inv, 
-					  LogisticsInventoryPG thePG, long start, long end) {
-    AllocationResultHelper helper = new AllocationResultHelper(projWdraw, null);
-    helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
-    AllocationResult ar = helper.getAllocationResult(1.0);
-    Allocation alloc = inventoryPlugin.getRootFactory().
-      createAllocation(projWdraw.getPlan(), projWdraw, inv, ar, myRole);
-    inventoryPlugin.publishAdd(alloc);
+  private void createProjectionAllocations(Collection list, Inventory inv) {
+    AllocationResultHelper helper;
+    Task task;
+    AllocationResult ar;
+    Allocation alloc;
+    Iterator taskIter = list.iterator();
+    while (taskIter.hasNext()) {
+      task = (Task)taskIter.next();
+      if (task.getPlanElement() == null) {
+	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+	helper = new AllocationResultHelper(task, null);
+	helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
+	ar = helper.getAllocationResult(1.0);
+	alloc = inventoryPlugin.getRootFactory().
+	  createAllocation(task.getPlan(), task, inv, ar, myRole);
+	inventoryPlugin.publishAdd(alloc);
+      } else {
+	// need to check the Allocation Result
+      }
+    }
     // Only need to update BG for late deliveries
   }
 
