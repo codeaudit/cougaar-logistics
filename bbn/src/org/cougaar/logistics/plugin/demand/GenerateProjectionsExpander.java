@@ -58,9 +58,9 @@ import java.util.Vector;
  *
  *
  **/
-
+ 
 public class GenerateProjectionsExpander extends DemandForecastModule implements GenProjExpanderIfc {
-
+  private String myOrgName = null;
 
   public GenerateProjectionsExpander(DemandForecastPlugin dfPlugin) {
     super(dfPlugin);
@@ -206,7 +206,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Vector prepPhrases = new Vector();
 
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType()));
-    prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, dfPlugin.getMyOrganization()));
+    prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, getOrgName()));
 
     createGeolocPrepPhrases(parentTask, end, prepPhrases);
 
@@ -262,6 +262,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return null;
   }
 
+ /** Utility accessor to get the Org Name from my organization and keep it around **/
+  private String getOrgName() {
+    if (myOrgName == null) {
+      myOrgName =dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    } 
+    return myOrgName;
+  }
 
   private void createAndPublishExpansion(Task parent, Collection subtasks) {
     Iterator subtasksIT = subtasks.iterator();
