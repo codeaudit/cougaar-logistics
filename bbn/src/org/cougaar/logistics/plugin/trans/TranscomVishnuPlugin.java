@@ -20,9 +20,7 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.cougaar.lib.vishnu.client.custom.CustomVishnuAllocatorPlugin;
 import org.cougaar.lib.vishnu.client.XMLizer;
@@ -78,8 +76,8 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       try {
 	if (asset instanceof Organization) {
 	  name = getOrganizationRole(asset);
-	  if (isDebugEnabled()) {
-	    debug (".handleNewAssets - " + asset + "'s name is " + name);
+	  if (isWarnEnabled()) {
+	      warn (".handleNewAssets - received subordinate org : " + asset + "'s name is " + name);
 	  }
 	}
 	else {
@@ -145,6 +143,42 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
   /** use the TranscomDataXMLize XMLizer */
   protected XMLizer createXMLizer (boolean direct) {
     return new TranscomDataXMLize (direct, logger, GLOBAL_AIR_ID, GLOBAL_SEA_ID, NULL_ASSET_ID);
+  }
+
+  protected Collection getAllAssets() {
+      if (!allNecessaryAssetsReported()) {
+	  if (isWarnEnabled()) {
+	      warn ("Trying to find subordinates, despite not seeing the following in added lists...");
+	      
+	      reportMissingAssets();
+	  }
+	  
+	  // send subscription contents through again...
+	  Collection assets = getAssetCallback().getSubscription ().getCollection();
+	  List orgs = new ArrayList ();
+
+	  for (Iterator iter = assets.iterator(); iter.hasNext(); ) {
+	      Asset asset = (Asset) iter.next();
+	      if (asset instanceof Organization) {
+		  String name = getOrganizationRole(asset);
+		  if (!globalAirReport && name.startsWith (GLOBAL_AIR_ID))
+		      orgs.add (asset);
+		  if (!globalSeaReport && name.startsWith (GLOBAL_SEA_ID))
+		      orgs.add (asset);
+	      }
+	  }
+	      
+	  if (!orgs.isEmpty()) {
+	      // send them through again as though they appeared on the added list
+	      if (isWarnEnabled()) {
+		  warn ("Found the missing subord(s) : " + orgs);
+	      }
+
+	      handleNewAssets(Collections.enumeration(orgs));
+	  }
+      }
+
+      return super.getAllAssets();
   }
 
   /**
