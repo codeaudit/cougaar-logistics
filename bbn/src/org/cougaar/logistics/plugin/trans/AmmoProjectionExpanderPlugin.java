@@ -26,6 +26,7 @@ import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.lib.callback.UTILExpandableTaskCallback;
 import org.cougaar.lib.callback.UTILFilterCallback;
+import org.cougaar.lib.callback.UTILFilterCallbackAdapter;
 import org.cougaar.lib.callback.UTILGenericListener;
 import org.cougaar.lib.util.UTILAllocate;
 import org.cougaar.logistics.ldm.Constants;
@@ -55,6 +56,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   private static Asset MILVAN_PROTOTYPE = null;
   public static String START = "Start";
   protected Map childToParent = new HashMap ();
+  protected Map uidToTask   = new HashMap ();
+  protected Map typeToTasks   = new HashMap ();
+  protected UTILFilterCallback myTaskCallback;
 
   public TaskUtils taskUtils;
 
@@ -75,6 +79,106 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       if (getMyParams ().hasParam ("CHUNK_DAYS"))
         CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
     } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
+  }
+
+  /**
+   * Uses a special callback that maintains two maps :
+   *
+   * a uidToTask map so we can do parent task lookup efficiently AND
+   * a typeToTasks map so we can look up a list of tasks by what ammo type they are
+   *
+   * @see #getMatchingTasksByType
+   */
+  public void setupFilters () {
+    super.setupFilters ();
+
+    addFilter (myTaskCallback = new UTILFilterCallbackAdapter (this, logger) {
+	protected UnaryPredicate getPredicate () {
+	  return new UnaryPredicate() {
+	      public boolean execute(Object o) {
+		return ( o instanceof Task );
+	      }
+	    };
+	}
+	public void reactToChangedFilter () {
+	  Enumeration addedtasks = getSubscription().getAddedList();
+	  while (addedtasks.hasMoreElements()) {
+	    Task task = (Task) addedtasks.nextElement();
+
+	    if (!(task instanceof Task))
+	      error ("huh? " + task + " is not an MPTask??");
+
+	    if (isInfoEnabled ()) {
+	      info ("uidToTask - mapping task " + task.getUID());
+	    }
+
+	    uidToTask.put (task.getUID (), task);
+
+	    // keep a ammo type to tasks map so we can later compare
+	    // an actual task with a reserved or vice versa by just examining 
+	    // tasks with the same ammo type
+	    // see #getMatchingTasksByType
+
+	    if (task.getVerb ().equals (Constants.Verb.TRANSPORT)) {
+	      Collection types = getTypesInContainer (task);
+
+	      for (Iterator iter = types.iterator(); iter.hasNext(); ) {
+		String type = (String) iter.next();
+		List tasksForType = (List) typeToTasks.get(type);
+		if (tasksForType == null) {
+		  typeToTasks.put (type, tasksForType = new ArrayList());
+		  if (isInfoEnabled()) {
+		    info ("adding type " + type + " to map.");
+		  }
+		}
+		tasksForType.add (task);
+	      }
+	    }
+	  }
+
+	  if (getSubscription().getRemovedList().hasMoreElements ()) {
+	    Set uniqueTasks = new HashSet ();
+	    Enumeration removedtasks = getSubscription().getRemovedList();
+	    while (removedtasks.hasMoreElements()) {
+	      Task task = (Task) removedtasks.nextElement();
+
+	      if (uniqueTasks.contains (task)) { // skip duplicate entries in removed list, if any
+		if (isWarnEnabled ()) { warn ("duplicate entries in removed list, skipping " + task.getUID()); }
+		continue;
+	      }
+	      else {
+		uniqueTasks.add (task);
+	      }
+
+	      if (uidToTask.remove (task.getUID()) == null) {
+		if (isWarnEnabled ()) { warn ("no task in uidToTask map with uid " + task.getUID ());	}
+	      }
+	      else {
+		if (isInfoEnabled ()) { info ("uidToTask - removing task uid " + task.getUID() + " from map."); }
+	      }
+
+	      // keep a ammo type to tasks map so we can later compare
+	      // an actual task with a reserved or vice versa by just examining 
+	      // tasks with the same ammo type
+	      // see #getMatchingTasksByType
+	      if (task.getVerb ().equals (Constants.Verb.TRANSPORT)) {
+		Collection types = getTypesInContainer (task);
+
+		for (Iterator iter = types.iterator(); iter.hasNext(); ) {
+		  String type = (String) iter.next();
+		  List tasksForType = (List) typeToTasks.get(type);
+
+		  if (!tasksForType.remove (task)) {
+		    if (isWarnEnabled()) { warn ("no task " + task.getUID() + " in typeToTasks."); }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+	       );
+
   }
 
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) {
@@ -140,9 +244,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   /**
    * Implemented for UTILExpanderPlugin interface
    *
-   * Break up tasks into constituent parts.
+   * Break up project supply tasks into reserved transport tasks for 
+   * discrete periods of time.  Takes the (demand rate X period) of the project
+   * supply task and breaks this up total ammo up across several subtasks, one
+   * per month.
    *
    * Called from handleTask, which is called from HandleProjectSupplyTask
+   * @see #handleProjectSupplyTask
+   * @return transport subtasks for the parent project supply
    */
   public Vector getSubtasks(Task parentTask) {
     if (!(parentTask.getVerb ().equals (Constants.Verb.PROJECTSUPPLY)))
@@ -256,42 +365,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       Asset directObject =
           getMilvanDirectObject (itemNomen, itemID, unit, massInSTons);
 
-      Task subTask = makeTask (parentTask, directObject);//deliveredAsset);
-      long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
-      if (bestTime > best.getTime()) {
-        if (isInfoEnabled())
-          info (getName () +
-                ".getSubtasks - had to correct bestTime, was " + new Date (bestTime) +
-                " now " + best);
-        bestTime = best.getTime();
-      }
+      long bestTime = getBestTime (early, best, daysSoFar);
 
-      Date startDate = new Date(getAlarmService().currentTimeMillis () +
-                                TASK_TRANSMISSION_DELAY);
-      if (isInfoEnabled ())
-        info (getName () + ".getSubtasks - making task " + subTask.getUID() +
-              " with best arrival " + new Date(bestTime) + " and start " + startDate);
-      prefHelper.replacePreference((NewTask)subTask,
-                                   prefHelper.makeEndDatePreference (ldmf,
-                                                                     early,
-                                                                     new Date (bestTime),
-                                                                     late));
-
-      prefHelper.replacePreference((NewTask)subTask,
-                                   prefHelper.makeStartDatePreference (ldmf, startDate));
-
-      prefHelper.removePrefWithAspectType (subTask, AlpineAspectType.DEMANDRATE); // we've included it in the d.o.
-
-      prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
-      prepHelper.removePrepNamed (subTask, Constants.Preposition.REFILL);
-      prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
-
-      if (isInfoEnabled())
-        info (getName () + " publishing reservation " + subTask.getUID() +
-              " for " + itemNomen +
-              " from " + lastBestDate + " to " + new Date(bestTime) + " weight " +
-              //massInKGs + " kgs.");
-              massInSTons + " short tons.");
+      Task subTask = createSubtask (parentTask, directObject,
+				    early, best, late,
+				    bestTime,
+				    daysSoFar,
+				    lastBestDate,
+				    itemNomen, 
+				    massInSTons);
 
       lastBestDate = new Date (bestTime);
       childTasks.addElement (subTask);
@@ -310,6 +392,65 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       info (getName () + " returning " + childTasks.size() + " subtasks for " + parentTask.getUID());
 
     return childTasks;
+  }
+
+  /** 
+   * make sure best time is before or equal to best time on task 
+   */
+  protected long getBestTime (Date early, Date best, long daysSoFar) {
+    long bestTime = early.getTime() + ((long)daysSoFar)*MILLIS_PER_DAY;
+    if (bestTime > best.getTime()) {
+      if (isInfoEnabled()) {
+	info (getName () +
+	      ".getSubtasks - had to correct bestTime, was " + new Date (bestTime) +
+	      " now " + best);
+      }
+
+      bestTime = best.getTime();
+    }
+
+    return bestTime;
+  }
+
+  /**
+   * Create the transport reservation subtask of the parent.
+   */
+  protected Task createSubtask (Task parentTask, Asset directObject, 
+				Date early, Date best, Date late, 
+				long bestTime,
+				long daysSoFar,
+				Date lastBestDate,
+				String itemNomen,
+				double massInSTons) {
+    Task subTask = makeTask (parentTask, directObject);//deliveredAsset);
+    Date startDate = new Date(getAlarmService().currentTimeMillis () +
+			      TASK_TRANSMISSION_DELAY);
+    if (isInfoEnabled ())
+      info (getName () + ".getSubtasks - making task " + subTask.getUID() +
+	    " with best arrival " + new Date(bestTime) + " and start " + startDate);
+    prefHelper.replacePreference((NewTask)subTask,
+				 prefHelper.makeEndDatePreference (ldmf,
+								   early,
+								   new Date (bestTime),
+								   late));
+
+    prefHelper.replacePreference((NewTask)subTask,
+				 prefHelper.makeStartDatePreference (ldmf, startDate));
+
+    prefHelper.removePrefWithAspectType (subTask, AlpineAspectType.DEMANDRATE); // we've included it in the d.o.
+
+    prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
+    prepHelper.removePrepNamed (subTask, Constants.Preposition.REFILL);
+    prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
+
+    if (isInfoEnabled()) {
+      info (getName () + " publishing reservation " + subTask.getUID() +
+	    " for " + itemNomen +
+	    " from " + lastBestDate + " to " + new Date(bestTime) + " weight " +
+	    massInSTons + " short tons.");
+    }
+
+    return subTask;
   }
 
   private static final double MAX_IN_MILVAN = 13.9;
@@ -415,41 +556,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     AggregateAsset deliveredAsset = (AggregateAsset) ldmf.createAggregate(prototype, quantity);
 
     return deliveredAsset;
-  }
-
-  public void handleProjectSupplyTask(Task t) {
-    wantConfidence = true;
-    if (t.getPlanElement() != null) {
-      publishRemove (t.getPlanElement());
-    }
-    handleTask(t);
-    Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
-    AspectValue ratePerSec = pref.getScoringFunction().getBest().getAspectValue();
-    if (isInfoEnabled ()) 
-      info (getName () + ".handleTask - task " + t.getUID() + " had p.e. " + t.getPlanElement().getUID());
-    if (t.getPlanElement () instanceof Expansion) {
-      addToEstimatedAR (t.getPlanElement (), ratePerSec);
-      if (isInfoEnabled()) {
-        Workflow tasksWorkflow = t.getWorkflow();
-        Workflow peWorkflow = ((Expansion)t.getPlanElement()).getWorkflow();
-        info (getName () + ".handleTask " + t.getUID() + " in " + ((tasksWorkflow != null) ? tasksWorkflow.getUID().toString() : "null wf?")+
-              " p.e. " +t.getPlanElement ().getUID() + " p.e. wf. " + ((peWorkflow != null) ? peWorkflow.getUID().toString() : " null p.e. wf?"));
-      }
-    } 
-    else if (isWarnEnabled ()) 
-      warn (getName () + ".handleTask - task " + t.getUID() + " had no p.e.???");
-  }
-
-  protected void addToEstimatedAR (PlanElement exp, AspectValue rate) {
-    AllocationResult estAR = exp.getEstimatedResult ();
-    AspectValue [] aspectValues = estAR.getAspectValueResults();
-    AspectValue [] copy = new AspectValue [aspectValues.length+1];
-    System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
-    copy[aspectValues.length] = rate;
-
-    AllocationResult replacement =
-        ldmf.newAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
-    exp.setEstimatedResult (replacement);
   }
 
   /**
@@ -566,7 +672,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return prefRate*ratio;
   }
 
-  /** checks to see if the AllocationResult is equal to this one.
+  /** 
+   * checks to see if the AllocationResult is equal to this one.
+   *
+   * We have to use this copy of the AllocationResult.isEqual because we want to
+   * to skip equals comparison of DEMANDRATE and START_TIME aspects. (why?)
+   *
+   * Mainly we need our own version of AspectValue.nearlyEquals
+   *
    * @param thisAR
    * @param that
    * @return boolean
@@ -609,6 +722,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     // check the aux queries
 
+    // AUX QUERIES are not used in this plugin - honestly, where are they used?
+
     /*
     String[] taux = that.auxqueries;
     if (auxqueries != taux) {
@@ -620,6 +735,18 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return true;
   }
 
+  /** 
+   * checks to see that two aspect value arrays are equal
+   *
+   * skips comparison of DEMANDRATE and START_TIME aspects.
+   *
+   * We have to skip start time, since it doesn't mean the same in the inventory world
+   * as in the transportation world.
+   *
+   * @param avs1 first set
+   * @param avs2 second set
+   * @return true if the same
+   */
   public boolean nearlyEquals(AspectValue[] avs1, AspectValue[] avs2) {
     int len = avs1.length;
     // if (len != avs2.length) return false; // Can't be equal if different length
@@ -736,8 +863,6 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
             ".processTasks - processing " + tasks.size() + " tasks.");
     }
 
-    tasks = getPrunedTaskList (tasks);
-
     Map reservedToActual = new HashMap ();
     for (int i = 0; i < tasks.size (); i++) {
       Task task = (Task) tasks.get (i);
@@ -752,64 +877,77 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       Task reserved = (Task)iter.next ();
       Task actual   = (Task) reservedToActual.get(reserved);
       Task reservedParent = getParentTask (reserved);
-      synchronized (reserved.getWorkflow ()) {
-        if (ownWorkflow (reserved)) {
-          dealWithReservedTask (actual, reserved, reservedParent);
-        }
-        else if (isInfoEnabled()) {
-          info ("reserved task " + reserved.getUID () +
-                " not a member of it's own workflow " + reserved.getWorkflow () +
-                "\nworkflow task uids : " + uidsWorkflow(reserved) + " - assuming it will be removed.");
-        }
+      if (reservedParent == null) {
+	if (isInfoEnabled()) {
+          info ("skipping reserved task " + reserved.getUID () + " with no parent on blackboard.");
+	}
+      }
+      else {
+	synchronized (reserved.getWorkflow ()) {
+	  if (ownWorkflow (reserved)) {
+	    dealWithReservedTask (actual, reserved, reservedParent);
+	  }
+	  else if (isInfoEnabled()) {
+	    info ("reserved task " + reserved.getUID () +
+		  " not a member of it's own workflow " + reserved.getWorkflow () +
+		  "\nworkflow task uids : " + uidsWorkflow(reserved) + " - assuming it will be removed.");
+	  }
+	}
       }
     }
+  }
+
+  /**
+   * Handle a task with verb Supply
+   */
+  public void handleProjectSupplyTask(Task t) {
+    wantConfidence = true;
+    if (t.getPlanElement() != null) {
+      publishRemove (t.getPlanElement());
+    }
+    handleTask(t); // expands t with subtasks from getSubtasks
+    Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
+    AspectValue ratePerSec = pref.getScoringFunction().getBest().getAspectValue();
+    if (isInfoEnabled ()) 
+      info (getName () + ".handleTask - task " + t.getUID() + " had p.e. " + t.getPlanElement().getUID());
+    if (t.getPlanElement () instanceof Expansion) {
+      addToEstimatedAR (t.getPlanElement (), ratePerSec);
+      if (isInfoEnabled()) {
+        Workflow tasksWorkflow = t.getWorkflow();
+        Workflow peWorkflow = ((Expansion)t.getPlanElement()).getWorkflow();
+        info (getName () + ".handleTask " + t.getUID() + " in " + ((tasksWorkflow != null) ? tasksWorkflow.getUID().toString() : "null wf?")+
+              " p.e. " +t.getPlanElement ().getUID() + " p.e. wf. " + ((peWorkflow != null) ? peWorkflow.getUID().toString() : " null p.e. wf?"));
+      }
+    } 
+    else if (isWarnEnabled ()) 
+      warn (getName () + ".handleTask - task " + t.getUID() + " had no p.e.???");
+  }
+
+  protected void addToEstimatedAR (PlanElement exp, AspectValue rate) {
+    AllocationResult estAR = exp.getEstimatedResult ();
+    AspectValue [] aspectValues = estAR.getAspectValueResults();
+    AspectValue [] copy = new AspectValue [aspectValues.length+1];
+    System.arraycopy (aspectValues, 0, copy, 0, aspectValues.length);
+    copy[aspectValues.length] = rate;
+
+    AllocationResult replacement =
+        ldmf.newAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
+    exp.setEstimatedResult (replacement);
   }
 
   /** 
-   * Queries the blackboard for the parent task of the child... 
-   * Stores result in a cache for better performance.
-   * The query is needed since the child task only has a UID reference and
-   * not an actual reference to the parent task.
+   * Queries the uid->task map for the parent task of the child... 
+   * must do this since child task has a uid reference to the parent task not
+   * an actual reference.
    */
   protected Task getParentTask (final Task child) {
-    Task parent = (Task) childToParent.get(child); // use a cache since query is expensive
-    if (parent != null)
-      return parent;
+    Task parent = (Task) uidToTask.get (child.getParentTaskUID ());
 
-    Collection parents = blackboard.query (new UnaryPredicate () {
-        public boolean execute (Object obj) {
-          if (obj instanceof Task) {
-            return (((Task) obj).getUID().equals (child.getParentTaskUID()));
-          }
-          else return false;
-        }
-      });
-
-    if (parents.isEmpty()) 
-      return null;
-    parent = (Task) parents.iterator().next(); // only one parent - not an MPTask
-    childToParent.put (child, parent);
-
-    return parent;
-  }
-
-  protected List getPrunedTaskList (List tasks) {
-    java.util.List prunedTasks = new java.util.ArrayList(tasks.size());
-
-    Collection removed = myInputTaskCallback.getSubscription().getRemovedCollection();
-
-    for (Iterator iter = tasks.iterator(); iter.hasNext();){
-      Task task = (Task) iter.next();
-      if (removed.contains(task)) {
-        if (isInfoEnabled()) {
-          info ("ignoring task on removed list " + task.getUID());
-        }
-      }
-      else
-        prunedTasks.add (task);
+    if (parent == null) {
+      logger.warn ("huh? no task with " + child.getParentTaskUID () + " in uid->task map.");
     }
 
-    return prunedTasks;
+    return parent;
   }
 
   /**
@@ -830,94 +968,27 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     final boolean isReserved = isReservedTask (task);
 
     if (isReservedTask (task) && !ownWorkflow(task)) {
-      if (isInfoEnabled()) info (".handleTask - skipping reserved task " + task.getUID () +
+      if (isInfoEnabled()) info (".handleTransportTask - skipping reserved task " + task.getUID () +
                                  " that's not in it's own workflow.");
       return;
     }
 
     if (isInfoEnabled())
-      info (getName () + ".handleTask - looking through blackboard for task to match " +
+      info (getName () + ".handleTransportTask - looking through blackboard for task to match " +
             ((isReserved) ? "reserved " : "normal ") + task.getUID());
 
-    Collection matchingTaskCollection = blackboard.query (new UnaryPredicate () {
-      public boolean execute (Object obj) {
-        if (!(obj instanceof Task)) return false;
-        Task examinedTask = (Task) obj;
-        if (task.getUID().equals(examinedTask.getUID())) {
-          if (isDebugEnabled())
-            debug ("skipping self " + examinedTask.getUID());
-          return false; // don't match yourself
-        }
-
-        // better be a transport task
-        if (!(examinedTask.getVerb ().equals (Constants.Verb.TRANSPORT))) {
-          if (isDebugEnabled())
-            debug ("skipping non-transport task " + examinedTask.getUID());
-          return false;
-        }
-
-        // is it a reservation task?
-        boolean examinedIsReserved = isReservedTask (examinedTask);
-        if ((!isReserved && !examinedIsReserved) ||
-            ( isReserved &&  examinedIsReserved)) {
-          if (isDebugEnabled())
-            debug ("skipping examined transport task because same type " + examinedTask.getUID() + " and " + task.getUID());
-          return false;
-        }
-
-        if (examinedIsReserved) {
-          // has it already been removed from workflow?
-          if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
-            if (isInfoEnabled ())
-              info ("skipping reserved transport task " + examinedTask.getUID() +
-                    " since it's already been removed from it's workflow.");
-            return false;
-          }
-        }
-        else if (!(task instanceof MPTask)) {
-          if (isInfoEnabled ())
-            info ("saw transport task "  + task.getUID());
-        }
-
-        // is it for the same org?
-        Collection examinedUnits = findForPreps (examinedTask);
-        Collection copy = new ArrayList(examinedUnits);
-        examinedUnits.retainAll (units);
-        if (examinedUnits.isEmpty ()) {
-          if (isDebugEnabled())
-            debug ("skipping transport task where units don't match " + units + " vs examined " + copy);
-          return false;
-        }
-
-        // are they for the same type of supply?
-        if (!contentTypesOverlap (task, examinedTask)) return false;
-
-        // do the dates overlap
-        Task reserved, transport;
-        if (examinedIsReserved) {
-          reserved  = examinedTask;
-          transport = task;
-        }
-        else {
-          reserved  = task;
-          transport = examinedTask;
-        }
-
-        return transportDateWithinReservedWindow (transport, reserved);
-      }
-    }
-    );
+    Collection matchingTaskCollection = getMatchingTasksByType (task, units, isReserved);
 
     // there can be more than one matching reserved task, e.g. when the actual contains multiple different DODICS:
     //  types [DODIC/C787, DODIC/C380, ] vs [DODIC/C787] (Task 1)
     //  types [DODIC/C787, DODIC/C380, ] vs [DODIC/C380] (Task 2)
 
     if (matchingTaskCollection.isEmpty () && isInfoEnabled ()) {
-      info (".handleTask - could not find matching task for " + task.getUID());
+      info (".handleTransportTask - could not find matching task for " + task.getUID());
       return;
     }
     if (isInfoEnabled ()) {
-      info  (".handleTask - found " + matchingTaskCollection.size () + " matches.");
+      info  (".handleTransportTask - found " + matchingTaskCollection.size () + " matches for task " + task.getUID());
     }
 
     for (Iterator iter = matchingTaskCollection.iterator(); iter.hasNext();) {
@@ -934,9 +1005,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
       if (!ownWorkflow (reservedTask)) {
         if (isInfoEnabled()) {
-          info (".handleTask - huh? reserved task " + reservedTask.getUID () +
+          info (".handleTransportTask - huh? reserved task " + reservedTask.getUID () +
                 " not a member of it's own workflow " + reservedTask.getWorkflow () +
                 "\nuids " + uidsWorkflow(reservedTask));
+        }
+      }
+      else {
+        if (isInfoEnabled()) {
+          info (".handleTransportTask - updating map with reserved task " + reservedTask.getUID () +
+                " and actual " + actual.getUID());
         }
       }
 
@@ -944,38 +1021,122 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     }
   }
 
+  /**
+   * Find those tasks of the same ammo type and try to find tasks that overlap in
+   * time with the given task.
+   *
+   * @param task to look for matching tasks for
+   * @param units units the task is for
+   * @param isReserved is the task a reserved (project supply child) task
+   * @return List of tasks that are for the same type of ammo, same unit, and for an overlapping period of time
+   */
+  protected List getMatchingTasksByType (Task task, Collection units, boolean isReserved) {
+    List matches = new ArrayList ();
+
+    Collection types = getTypesInContainer (task);
+
+    // reduce set of possible matching tasks to those for the same types of ammo
+    List possibleMatches = new ArrayList();
+    for (Iterator iter = types.iterator(); iter.hasNext(); ) {
+      String type = (String) iter.next();
+
+      List tasksForType = (List)typeToTasks.get(type);
+      possibleMatches.addAll (tasksForType);
+    }
+
+    if (isInfoEnabled()) {
+      info ("examining " + possibleMatches.size()+ " possible matches for task " + task.getUID());
+    }
+
+    for (Iterator iter = possibleMatches.iterator (); iter.hasNext(); ) {
+      Task examinedTask = (Task) iter.next();
+      if (task.getUID().equals(examinedTask.getUID())) {
+	if (isInfoEnabled()) {
+	  info ("skipping self " + examinedTask.getUID());
+	}
+
+	continue; // don't match yourself
+      }
+
+      // better be a transport task
+      /*
+      if (!(examinedTask.getVerb ().equals (Constants.Verb.TRANSPORT))) {
+	if (isDebugEnabled())
+	  debug ("skipping non-transport task " + examinedTask.getUID());
+	continue;
+      }
+      */
+
+      // is it a reservation task?
+      boolean examinedIsReserved = isReservedTask (examinedTask);
+      if ((!isReserved && !examinedIsReserved) ||
+	  ( isReserved &&  examinedIsReserved)) {
+	if (isInfoEnabled()) {
+	  info ("skipping examined transport task because same type " + examinedTask.getUID() + " and " + task.getUID());
+	}
+	continue;
+      }
+
+      if (examinedIsReserved) {
+	// has it already been removed from workflow?
+	if (!taskInWorkflow (examinedTask, examinedTask.getWorkflow())) {
+	  if (isInfoEnabled ())
+	    info ("skipping reserved transport task " + examinedTask.getUID() +
+		  " since it's already been removed from it's workflow.");
+	  continue;
+	}
+      }
+      else if (!(task instanceof MPTask)) {
+	if (isInfoEnabled ())
+	  info ("saw transport task "  + task.getUID() + " vs examined " + examinedTask.getUID());
+      }
+
+      // is it for the same org?
+      Collection examinedUnits = findForPreps (examinedTask);
+      Collection copy = new ArrayList(examinedUnits);
+      examinedUnits.retainAll (units);
+      if (examinedUnits.isEmpty ()) {
+	if (isInfoEnabled())
+	  info ("skipping transport task where units don't match " + units + " vs examined " + copy);
+	continue;
+      }
+
+      // THIS IS DONE WHEN WE GET POSSIBLE MATCHES
+      // are they for the same type of supply?
+      //      if (!contentTypesOverlap (task, examinedTask)) 
+      //	continue;
+
+      // do the dates overlap
+      Task reserved, transport;
+      if (examinedIsReserved) {
+	reserved  = examinedTask;
+	transport = task;
+      }
+      else {
+	reserved  = task;
+	transport = examinedTask;
+      }
+
+      if (transportDateWithinReservedWindow (transport, reserved)) {
+	matches.add (examinedTask);
+      }
+    }
+
+    return matches;
+  }
+
+  /*
   protected boolean contentTypesOverlap (Task task, Task examinedTask){
-    Container taskDO;
-    if (task.getDirectObject() instanceof AssetGroup) {
-      taskDO=
-          (Container) ((AssetGroup)
-          task.getDirectObject()).getAssets().iterator().next();
-    }
-    else {
-      taskDO = (Container)task.getDirectObject ();
-    }
+    Collection typeIDs  = getTypesInContainer (task);
 
-    Container examinedDO;
-    if (examinedTask.getDirectObject() instanceof AssetGroup) {
-      examinedDO=
-          (Container) ((AssetGroup)
-          examinedTask.getDirectObject()).getAssets().iterator().next();
-    }
-    else {
-      examinedDO = (Container)examinedTask.getDirectObject ();
-    }
-
-    ContentsPG contents = taskDO.getContentsPG ();
-    Collection typeIDs  = contents.getTypeIdentifications ();
-
-    ContentsPG examinedContents = examinedDO.getContentsPG ();
-    Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
+    Collection examinedTypeIDs  = getTypesInContainer (examinedTask);
     Collection copy = new ArrayList (examinedTypeIDs);
 
     copy.retainAll (typeIDs);
     if (copy.isEmpty()) {
       if (isDebugEnabled())
-        debug ("skipping transport task where type ids don't match. No overlap between examined container " +
+        debug ("skipping transport task where type ids don't match. " + 
+	       "No overlap between examined container " +
                examinedTypeIDs +
                " and other container's list " + typeIDs);
       return false;
@@ -984,40 +1145,71 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       return true;
     }
   }
+  */
 
-  protected String reportContentTypes (Task task, Task examinedTask){
-    Container taskDO = (Container)task.getDirectObject ();
-    Container examinedDO;
-    if (examinedTask.getDirectObject() instanceof AssetGroup) {
-      examinedDO=
-          (Container) ((AssetGroup)
-          examinedTask.getDirectObject()).getAssets().iterator().next();
+  /** 
+   * @return all the ammo types inside the task's milvan 
+   */
+  protected Collection getTypesInContainer (Task task) {
+    Container taskDO;
+    if (task.getDirectObject() instanceof AssetGroup) {
+      taskDO =
+	(Container) ((AssetGroup)
+		     task.getDirectObject()).getAssets().iterator().next();
     }
     else {
-      examinedDO = (Container)examinedTask.getDirectObject ();
+      taskDO = (Container)task.getDirectObject ();
     }
-
     ContentsPG contents = taskDO.getContentsPG ();
     Collection typeIDs  = contents.getTypeIdentifications ();
-
-    ContentsPG examinedContents = examinedDO.getContentsPG ();
-    Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
-
-    StringBuffer buf =new StringBuffer();
-
-    buf.append("[");
-    for (Iterator iter = typeIDs.iterator(); iter.hasNext();)
-      buf.append(iter.next() + ", ");
-    buf.append("]");
-    buf.append(" vs ");
-    buf.append("[");
-    for (Iterator iter = examinedTypeIDs.iterator(); iter.hasNext();)
-      buf.append(iter.next());
-    buf.append("]");
-
-    return buf.toString();
+    return typeIDs;
   }
 
+  /** 
+   * @return a report on all the ammo types inside both tasks' milvan 
+   */
+  protected String reportContentTypes (Task task, Task examinedTask){
+    if (task.getDirectObject () instanceof Container) {
+      Container taskDO = (Container)task.getDirectObject ();
+      Container examinedDO;
+      if (examinedTask.getDirectObject() instanceof AssetGroup) {
+	examinedDO=
+          (Container) ((AssetGroup)
+		       examinedTask.getDirectObject()).getAssets().iterator().next();
+      }
+      else {
+	examinedDO = (Container)examinedTask.getDirectObject ();
+      }
+      
+      ContentsPG contents = taskDO.getContentsPG ();
+      Collection typeIDs  = contents.getTypeIdentifications ();
+      
+      ContentsPG examinedContents = examinedDO.getContentsPG ();
+      Collection examinedTypeIDs  = examinedContents.getTypeIdentifications ();
+      
+      StringBuffer buf =new StringBuffer();
+
+      buf.append("[");
+      for (Iterator iter = typeIDs.iterator(); iter.hasNext();)
+	buf.append(iter.next() + ", ");
+      buf.append("]");
+      buf.append(" vs ");
+      buf.append("[");
+      for (Iterator iter = examinedTypeIDs.iterator(); iter.hasNext();)
+	buf.append(iter.next());
+      buf.append("]");
+
+      return buf.toString();
+    }
+    else 
+      return "<not a container>";
+  }
+
+  /** 
+   * @param transport - actual transport task
+   * @param reserved projected transport task
+   * @return true if transport task overlaps in time with the reserved task 
+   */
   protected boolean transportDateWithinReservedWindow (Task transport, Task reserved){
     Date reservedReady = (Date) prepHelper.getIndirectObject (reserved, START);
 
@@ -1109,8 +1301,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     long currentDays   = (reservedBest.getTime()-reservedReady.getTime())/MILLIS_PER_DAY;
 
     if (isInfoEnabled ()) {
-      info (getName() + ".dealWithReservedTask - applying actual " + task.getUID () + " best " + best +
-            " to reserved " + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
+      info (getName() + ".dealWithReservedTask - applying actual\n" + task.getUID () + " best " + best +
+            "\nto reserved\n" + reservedTask.getUID() + " reserved ready " + reservedReady + " to best " + reservedBest);
       info ("\t" + reportContentTypes (task, reservedTask));
     }
 
@@ -1232,6 +1424,10 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   protected String uidsWorkflow (Task task) {
+    if (task.getWorkflow () == null) {
+      return "<null workflow for " + task.getUID() + ">";
+    }
+
     return uids (((WorkflowImpl)task.getWorkflow ()).getTaskIDs());
   }
 
