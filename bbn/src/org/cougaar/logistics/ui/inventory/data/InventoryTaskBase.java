@@ -106,34 +106,6 @@ public abstract class InventoryTaskBase extends InventoryScheduleElement {
     return endOfBucket;
   }
 
-
-    /*
-    * TODO: MWD remove commented code
-    *
-protected static Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-
-
-  protected synchronized long getEndOfPeriod(long startOfPeriod, long msecUnits, int numUnits) {
-    long timeOut = 0;
-    double unitsPerDay = (double) msecUnits/TimeUtils.MSEC_PER_DAY;
-    long lastUnitInBucket = startOfPeriod + (msecUnits * (numUnits - 1));
-    calendar.setTimeInMillis(lastUnitInBucket);
-    if (unitsPerDay == 1) {
-      calendar.set(calendar.HOUR_OF_DAY, 23);
-    }
-    calendar.set(calendar.MINUTE, 59);
-    calendar.set(calendar.SECOND, 59);
-    calendar.set(calendar.MILLISECOND, 999);
-    timeOut = calendar.getTimeInMillis();
-    if (lastUnitInBucket == timeOut) {
-      logger.error("getEndOfPeriod - unexpected timeIn==timeOut==" + new Date(timeOut));
-    }
-    return timeOut;
-
-  }
-  */
-
-
 }
 
 

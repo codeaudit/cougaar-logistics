@@ -78,9 +78,6 @@ public class InventoryProjTask extends InventoryTaskBase {
     while (currStartTime < endTime) {
       long currEndTime = Math.min(getEndOfPeriod(currStartTime, msecUnits, numUnits), endTime);
       double durationInDays = (double) ((double) ((currEndTime - currStartTime) + 1) / (double) TimeUtils.MSEC_PER_DAY);
-      if (durationInDays != 1) {
-        System.out.println("InventoryProjTask:explodeToBuckets:Yikes! duration in days is " + durationInDays);
-      }
       double bucketRate = rate * durationInDays;
       bucketlys.add(new InventoryProjTask(parentUID,
                                           UID,
