@@ -293,12 +293,12 @@ public class SupplyExpander extends InventoryModule {
 	  thePG = getLogisticsInventoryPG(projSupply);
 	  if (thePG != null) {
 	    thePG.removeWithdrawProjection(task);
-	    ((NewWorkflow)wf).removeTask(task);
-	    inventoryPlugin.publishRemove(task);
-	    NewTask newtask = createProjectWithdrawTask(projSupply);
-	    inventoryPlugin.publishAdd(task);
-	    ((NewWorkflow)wf).addTask(newtask);
+	    inventoryPlugin.publishRemove(task.getPlanElement());
+	    ((NewTask)task).setPreferences(projSupply.getPreferences());
+	    inventoryPlugin.publishChange(task);
+	    ((NewWorkflow)wf).addTask(task);
 	    thePG.addWithdrawProjection(task);
+	    inventoryPlugin.publishChange(wf);
 	  }
 	} else if (task.getVerb().equals(Constants.Verb.TRANSPORT)) {
 	  ((NewTask)task).setPrepositionalPhrases(projSupply.getPrepositionalPhrases());
