@@ -52,7 +52,7 @@ public class InventoryXMLParser
     public void parseString(String xmlInput){
 	ctr=0;
 	inventory=null;
-	lines = xmlInput.split("$");
+	lines = xmlInput.split("\\n");
 	System.out.println("Number of Lines=" + lines.length);
 	parse();
     }
@@ -63,7 +63,7 @@ public class InventoryXMLParser
 	    if(currentString.startsWith("</")) {
 		popTag();
 	    }
-	    if(currentString.startsWith("<")) {
+	    else if(currentString.startsWith("<")) {
 		tagStack.push(currentString);
 		String name = getTagName(currentString);
 		if(name.equals(LogisticsInventoryFormatter.INVENTORY_DUMP_TAG)) {
@@ -78,7 +78,7 @@ public class InventoryXMLParser
 
     private String stripTag(String tag) {
 	int start=0;
-	int end=tag.length()-1;
+	int end=tag.length();
 	if(tag.startsWith("</")) {
 	    start=2;
 	}
@@ -109,7 +109,7 @@ public class InventoryXMLParser
 	asset=words[2].substring("item=".length());
       }
       inventory = new InventoryData(org,asset);
-      System.out.println("Parsed header w/org=|" +
+      System.out.println("Parsed header w/org=|" + org +
 			 "| item=|" + asset + "|");
       ctr++;
     }
@@ -122,7 +122,9 @@ public class InventoryXMLParser
 
     private void parseSchedule() {
         String name = getTagName(currentString);
+	System.out.print("Parsing Schedule " + name);
 	String typeStr = getScheduleType(currentString);
+	System.out.println(" of type " + typeStr);
 	int type = InventoryScheduleHeader.getTypeInt(typeStr);
 	int ctrIn = ctr;
 	currentString = lines[++ctr];
@@ -165,7 +167,7 @@ public class InventoryXMLParser
 	String lastTag = (String) tagStack.peek();
 	if(getTagName(lastTag).equals(getTagName(currentString))) {
 	    tagStack.pop();
-	    System.out.println("Popping" + getTagName(currentString));
+	    System.out.println("Popping " + getTagName(currentString));
 	}
 	else {
 	    throw new RuntimeException("ERROR:Last pushed tag doesn't match this termination tag");
