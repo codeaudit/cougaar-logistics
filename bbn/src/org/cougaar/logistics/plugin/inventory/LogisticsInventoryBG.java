@@ -342,7 +342,12 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public Task getRefillProjection(int bucket) {
-    return (Task) refillProjections.get(bucket);
+    // make sure the bucket doesn't cause an array out of bounds
+    if (bucket < refillProjections.size()) {
+      return (Task) refillProjections.get(bucket);
+    } else {
+	return null;
+    }
   }
 
   public double getCriticalLevel(int bucket) {
