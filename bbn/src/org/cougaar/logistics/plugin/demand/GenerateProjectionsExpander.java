@@ -132,7 +132,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
       dfPlugin.publishAdd(disp);
     }
-
   }
 
 
@@ -178,14 +177,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    * FIXME time - used to find the OPlan and the geoloc for the TO preposition
    * @return Vector of PrepostionalPhrases
    **/
-  protected Vector createPrepPhrases(Object consumer, Task parentTask) {
+  protected Vector createPrepPhrases(Object consumer, Task parentTask, long end) {
 
     Vector prepPhrases = new Vector();
 
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType()));
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, dfPlugin.getMyOrganization()));
 
-    GeolocLocation geoloc = getGeolocLocation(parentTask, dfPlugin.getCurrentTimeMillis());
+    GeolocLocation geoloc = getGeolocLocation(parentTask, (end-1000));
     if (geoloc != null) {
       prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
     } else { // Try to use HomeLocation
@@ -272,13 +271,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     prefs.addElement(createTimePreference(end, AspectType.END_TIME));
     newTask.setPreferences(prefs.elements());
 
-    Enumeration parentPhrases = parentTask.getPrepositionalPhrases();
-    Vector childPhrases = createPrepPhrases(consumer, parentTask);
-    if (parentPhrases.hasMoreElements()) {
-      newTask.setPrepositionalPhrases(addPrepositionalPhrase(parentPhrases, childPhrases).elements());
-    } else {
-      newTask.setPrepositionalPhrases(childPhrases.elements());
-    }
+    //Just use our own Prep phrases for now.  The parent task is only
+    // providing the ofType pp which we already create - otherwise we have dups.
+    //Enumeration parentPhrases = parentTask.getPrepositionalPhrases();
+    Vector childPhrases = createPrepPhrases(consumer, parentTask, end);
+    //if (parentPhrases.hasMoreElements()) {
+    //  newTask.setPrepositionalPhrases(addPrepositionalPhrase(parentPhrases, childPhrases).elements());
+    //} else {
+    newTask.setPrepositionalPhrases(childPhrases.elements());
+    //}
 
     return newTask;
   }
