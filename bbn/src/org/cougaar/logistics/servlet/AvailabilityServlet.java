@@ -172,9 +172,13 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
 
   private void clearSelectedRows() {
     String paramValues [] = request.getParameterValues(CLEAR);
-    for(int i = 0; i < paramValues.length; i++) {
-      int index = Integer.parseInt(paramValues[i]);
-      changeMessages.remove(index);
+    if (paramValues != null) {
+      for(int i = 0; i < paramValues.length; i++) {
+        int index = Integer.parseInt(paramValues[i]);
+        changeMessages.remove(index);
+      }
+    } else {
+      printError("You must select a row to clear");
     }
     printForm();
     printSelections();
