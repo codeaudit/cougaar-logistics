@@ -125,6 +125,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
       Task task = (Task) subtasksIT.next();
       dfPlugin.publishAdd(task);
       wf.addTask(task);
+      ((NewTask) task).setWorkflow(wf);
     }
     dfPlugin.publishChange(expansion);
   }
@@ -225,7 +226,7 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
         dfPlugin.publishChange(pe);
       }
     }
-  }  
+  }
 
 
   /**
