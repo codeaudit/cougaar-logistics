@@ -372,20 +372,17 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
   }
 
   public LogisticsInventoryPG getLogisticsInventoryPG(Task wdrawTask) {
-    LogisticsInventoryPG logInvPG = null;
-    Asset asset = (Asset)wdrawTask.getDirectObject();
-    // we might be looking at pass-thru's from the change list
-    Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
-    if (inventory != null) {
-      if (!wdrawTask.isDeleted()) {
-        inventoryPlugin.touchInventory(inventory);
-      } else {
-        inventoryPlugin.touchInventoryWithDeletions(inventory);
-      }
-      logInvPG = (LogisticsInventoryPG)
-          inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-    }
-    return logInvPG;
+	LogisticsInventoryPG logInvPG = null;
+	Asset asset = (Asset)wdrawTask.getDirectObject();
+	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
+	if (!wdrawTask.isDeleted()) {
+            inventoryPlugin.touchInventory(inventory);
+	} else {
+            inventoryPlugin.touchInventoryWithDeletions(inventory);
+	}
+	logInvPG = (LogisticsInventoryPG)
+	    inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+	return logInvPG;
   }
 
   public void updateExpandedTasks(Collection changedTasks) {

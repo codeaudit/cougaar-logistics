@@ -26,7 +26,7 @@
 
 package org.cougaar.logistics.plugin.inventory;
 
-
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
@@ -275,6 +275,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return assetUtils.isLevel2Asset(t.getDirectObject());
   }
 
+
   // TASK PREFERENCE UTILS
 
   public static double getQuantity(Task task) {
@@ -483,6 +484,120 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
     return null;
   }
+
+    // Time Preference Utils
+
+  /** Create a Time Preference for the Refill Task
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  @param start The earliest time this preference can have
+   *  @param end The last time this preference can have (such as Oplan end time)
+   *  @param aspectType The AspectType of the preference- should be start_time or end_time
+   *  @param planningFactory The planning factory from the plugin
+   *  @return Preference The new Time Preference
+   **/
+    public Preference createRefillTimePreference(long bestDay, long start, long end,
+                                                int aspectType, LogisticsInventoryPG thePG,
+						PlanningFactory planningFactory) {
+    //TODO - really need last day in theatre from an OrgActivity -
+    double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
+    //Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+    // define alpha .25
+    double alpha = .25;
+    Vector points = new Vector();
+
+    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
+    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
+//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
+//                                                        alpha, aspectType);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, 
+                                                                                  bestDay + thePG.getBucketMillis()), 
+                                                       alpha);
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
+                                                   (alpha + late_score));
+
+    points.addElement(earliest);
+    points.addElement(best);
+    points.addElement(first_late);
+    points.addElement(latest);
+    ScoringFunction timeSF = ScoringFunction.
+      createPiecewiseLinearScoringFunction(points.elements());
+    return planningFactory.newPreference(aspectType, timeSF);
+  }
+
+
+
+  /** Create a Time Preference for the Refill Task
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  @param early The earliest time this preference can have
+   *  @param end The last time this preference can have (such as Oplan end time)
+   *  @param aspectType The AspectType of the preference- should be start_time or end_time
+   *  @param clusterId Agent cluster ID
+   *  @param planningFactory Planning factory from plugin
+   *  @return Preference The new Time Preference
+   **/
+  public Preference createTimePreference(long bestDay, long early, long end, int aspectType, MessageAddress clusterId, PlanningFactory planningFactory) {
+    long late = getTimeUtils().addNDays(bestDay, 1);
+    double daysBetween = ((end - bestDay) / 86400000);
+
+    // Negative value here is bad. Note that end==bestDay is OK. This case 
+    // is handled below, where we skip adding the end AspectScorePoint
+    if (daysBetween < 0.0) {
+      if (logger.isWarnEnabled())
+	logger.warn(clusterId + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
+    }
+    
+    //Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+    // define alpha .25
+    double alpha = .25;
+
+    Vector points = new Vector();
+    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
+    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
+
+    // Don't add the early point if best is same time or earlier
+    if (bestDay > early) {
+      points.addElement(earliest);
+    } else if (bestDay == early) {
+      if (logger.isInfoEnabled()) {
+	logger.info(clusterId + ".createTimePref skipping early point: best == early (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
+      }
+    } else {
+      if (logger.isWarnEnabled()) {
+	logger.warn(clusterId + ".createTimePref skipping early point: best < early (OplanStart)! bestDay: " + new Date(bestDay) + ", early: " + new Date(early) + ". AspectType: " + aspectType);
+      }
+    }
+
+    points.addElement(best);
+    points.addElement(first_late);
+
+    // Only add the "late" point if it's value is later than first_late
+    if (end > late) {
+      points.addElement(latest);
+    } else if (logger.isInfoEnabled()) {
+      // Note that this case is equivalent to any daysBetween value <= 1.0,
+      // including the case above where daysBetween < 0.0
+
+      // If bestDay == end, this is almost certainly an end Preference, where the preference
+      // is OplanEnd. So best+1 is necessarily > end
+      // check aspectType == AspectType.END_TIME
+      logger.info(clusterId + ".createTimePref skipping end point: end <= late! end: " + new Date(end) + ", late: " + new Date(late) + ((bestDay==end && aspectType == AspectType.END_TIME) ? ". A Task EndPref where best==OplanEnd." : ". AspectType: " + aspectType));
+    }
+
+    ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
+    return planningFactory.newPreference(aspectType, timeSF);
+
+    // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
+    //return prefs;
+  }
+
 }
 
 

@@ -90,7 +90,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
   private boolean touchedProjections;
   private boolean touchedChangedProjections = false;
-  private String inventoryFile;
 //   private boolean fillToCapacity; Will be added bug #1482
 //   private boolean maintainAtCapacity; Will be added bug #1482
   private String myOrgName;
@@ -114,7 +113,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     timeUtils = new TimeUtils(this);
     AssetUtils = new AssetUtils(this);
     taskUtils = new TaskUtils(this);
-    // readParameters() initializes supplyType and inventoryFile
     pluginParams = readParameters();
     supplyExpander = getExpanderModule();
     externalAllocator = getAllocatorModule();
@@ -251,8 +249,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
 
     if (!initialized) {
       myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
-      inventoryFile = getInventoryFile(supplyType);
-      getInventoryData();
       initialized = true;
     }
 
@@ -316,52 +312,54 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       // Allocate any refill tasks from previous executions that were not allocated to providers
       // but only if we are not about to rip out previous work we have done
       if (didOrgRelationshipsChange()) {
+
 //        logger.warn("ORG RELATIONSHIPS CHANGED");
 //	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" +
 //			       supplyType + " role: " + getRole(supplyType) + "\n");
-        HashMap providers = getProvidersAndEndDates();
+        HashMap providerStartDates = new HashMap();
+	HashMap providerEndDates = new HashMap();
+        getProviderDates(providerStartDates, providerEndDates);
         Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                                         Constants.Verb.Supply,
-                                                        providers);
+                                                        providerStartDates,
+							providerEndDates);
         if (!unprovidedTasks.isEmpty()){
           if (logger.isWarnEnabled())
             logger.warn("Trying to rescind unprovided supply refill tasks...");
-          rescindTaskAllocations(unprovidedTasks);
+          externalAllocator.rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
         unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                              Constants.Verb.ProjectSupply,
-                                             providers);
+					     providerStartDates,
+					     providerEndDates);
         if (!unprovidedTasks.isEmpty()){
           if (logger.isWarnEnabled())
             logger.warn("Trying to rescind unprovided projection refill tasks...");
-          rescindTaskAllocations(unprovidedTasks);
+          externalAllocator.rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
 
         Collection unalloc = null;
         if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.Supply), "reconcile");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.Supply);
           if (!unalloc.isEmpty()){
             if (logger.isWarnEnabled())
               logger.warn("TRYING TO ALLOCATE SUPPLY REFILL TASKS...");
-            externalAllocator.allocateRefillTasks(unalloc);
+           externalAllocator.allocateRefillTasks(unalloc);
           }
         }
         if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.ProjectSupply), "reconcile");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.ProjectSupply);
           if (!unalloc.isEmpty()) {
             if (logger.isWarnEnabled())
               logger.warn("TRYING TO ALLOCATE PROJECTION REFILL TASKS...");
-            externalAllocator.allocateRefillTasks(unalloc);
+           externalAllocator.allocateRefillTasks(unalloc);
           }
         }
+
       }
 
       // call the Refill Generators if we have new demand
@@ -461,48 +459,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
                      + new Date(currentTimeMillis()));
       }
       expander.checkCommStatusAlarms();
-    }
-  }
-
-  private Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, HashMap providers) {
-    Iterator raIt = refill_allocations.iterator();
-    ArrayList unprovidedTasks = new ArrayList();
-    Task task;
-    Organization provider;
-    Allocation alloc;
-    long taskEnd;
-    Date providerEndDate;
-    while (raIt.hasNext()) {
-      alloc = (Allocation)raIt.next();
-      task = alloc.getTask();
-      if ((alloc != null) && (task.getVerb().equals(verb))){
-        taskEnd = TaskUtils.getEndTime(task);
-        provider = (Organization)alloc.getAsset();
-        if (alloc.getRole() != getRole(supplyType)) {
-          if (logger.isWarnEnabled())
-            logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
-        }
-        providerEndDate = (Date) providers.get(provider);
-        if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
-          unprovidedTasks.add(task);
-        }
-      }
-    }
-//       if (! unprovidedTasks.isEmpty()) {
-// 	  System.out.println("SDSD unprovided: " + unprovidedTasks + "\n");
-//       }
-    return unprovidedTasks;
-  }
-
-  private void rescindTaskAllocations(Collection tasks) {
-    Task task;
-    Allocation alloc;
-    Iterator taskIt = tasks.iterator();
-    while (taskIt.hasNext()) {
-      task = (Task) taskIt.next();
-      //	  System.out.println("SDSD rescind: " + task + "\n");
-      alloc = (Allocation) task.getPlanElement();
-      publishRemove(alloc);
     }
   }
 
@@ -1134,36 +1090,12 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     }
   }
 
-  // Determines which tasks should be expanded and which should be
-  // re-allocated to a supplier
-//  protected Collection sortIncomingSupplyTasks(Collection tasks) {
-//    ArrayList expandList = new ArrayList();
-//    ArrayList passThruList = new ArrayList();
-//    Task t;
-//    Inventory inventory;
-//    Asset asset;
-//    for (Iterator i = tasks.iterator(); i.hasNext();) {
-//      t = (Task) i.next();
-//      asset = (Asset) t.getDirectObject();
-//      inventory = findOrMakeInventory(asset);
-//      if (inventory != null) {
-//        expandList.add(t);
-//      } else {  // allocate tasks to supplier?
-//        passThruList.add(t);
-//      }
-//    }
-//    externalAllocator.forwardSupplyTasks(passThruList);
-//    return expandList;
-//  }
-
   private void expandIncomingRequisitions(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "reconcile");
-    supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
+     supplyExpander.expandAndDistributeRequisitions(tasks);
   }
 
   private boolean expandIncomingProjections(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "reconcile");
-    return supplyExpander.expandAndDistributeProjections(tasksToExpand);
+     return supplyExpander.expandAndDistributeProjections(tasks);
   }
 
   /**
@@ -1186,28 +1118,20 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     inventory = (Inventory) inventoryHash.get(item);
     if (inventory == null) {
       inventory = createInventory(resource, item);
-      if (inventory != null) {
-        addInventory(inventory);
-        publishAdd(inventory);
-        detReqHandler.findOrMakeMILTask(inventory, aggMILSubscription);
-      }
+      addInventory(inventory);
+      publishAdd(inventory);
+      detReqHandler.findOrMakeMILTask(inventory, aggMILSubscription);
     }
-    if (inventory == null) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Inventory is null for " + item);
-      }
-    } else {
-      if (logger.isDebugEnabled()) {
+    if (logger.isDebugEnabled()) {
         logger.debug("findOrMakeInventory(), CREATED inventory bin for: " +
                      AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
-      }
     }
     return inventory;
   }
 
   /**
    Read the Plugin parameters(Accepts key/value pairs)
-   Initializes supplyType and inventoryFile
+   Initializes supplyType
    **/
   private HashMap readParameters() {
     Collection p = getParameters();
@@ -1232,7 +1156,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       }
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
-//      inventoryFile = (String)map.get(INVENTORY_FILE);
     if (supplyType == null && logger.isErrorEnabled()) {
       logger.error("No SUPPLY_TYPE parameter: InventoryPlugin requires 1 parameter, Supply Type.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.InventoryPlugin("
                    + SUPPLY_TYPE
@@ -1259,26 +1182,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
     return map;
   }
 
-  private String getInventoryFile(String type) {
-    String result = null;
-    // if defined in plugin argument list
-    String inv_file = null;
-    if ((inv_file = (String) pluginParams.get(INVENTORY_FILE)) != null) {
-      result = inv_file;
-      //   }
-      //    else {
-//       result = getClusterSuffix(myOrganization.getClusterPG().getMessageAddress().toString()) +
-// 	"_"+type.toLowerCase()+".inv";
-    } else if (type.equals("Ammunition")) {
-      result = getAgentIdentifier().toString() +
-          "_" + type.toLowerCase() + ".inv";
-    } else {
-      result = getClusterSuffix(getAgentIdentifier().toString()) +
-          "_" + type.toLowerCase() + ".inv";
-    }
-    return result;
-  }
-
   private String getClusterSuffix(String clusterId) {
     String result = null;
     int i = clusterId.lastIndexOf("-");
@@ -1297,38 +1200,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
       myOrg = (Organization) orgs.nextElement();
     }
     return myOrg;
-  }
-
-  private String getInventoryFileName() {
-    return inventoryFile;
-  }
-  public void getInventoryData() {
-    String invFile = getInventoryFileName();
-    if (invFile != null) {
-      Enumeration initialInv = FileUtils.readConfigFile(invFile, getConfigFinder());
-      if (initialInv != null) {
-        stashInventoryInformation(initialInv);
-      }
-    }
-  }
-
-  private void stashInventoryInformation(Enumeration initInv) {
-    String line;
-    String item = null;
-    double capacity, level;
-
-    while (initInv.hasMoreElements()) {
-      line = (String) initInv.nextElement();
-      // Find the fields in the line, values seperated by ','
-      Vector fields = FileUtils.findFields(line, ',');
-      if (fields.size() < 3)
-        continue;
-      item = (String) fields.elementAt(0);
-      capacity = Double.valueOf((String) fields.elementAt(1)).doubleValue();
-      level = Double.valueOf((String) fields.elementAt(2)).doubleValue();
-      double[] levels = {capacity, level};
-      inventoryInitHash.put(item, levels);
-    }
   }
 
   protected boolean updateInventoryPolicy(Collection policies) {
@@ -1505,11 +1376,6 @@ public class ReconcileInventoryPlugin extends InventoryPlugin
   public void automatedSelfTest() {
     if (logger.isErrorEnabled()) {
       if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
-      if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
-      if (inventoryInitHash.isEmpty()) {
-        logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
-        logger.error("Could not find Inventory file : " + inventoryFile);
-      }
       if (detReqHandler.getDetermineRequirementsTask(aggMILSubscription) == null)
         logger.error("Missing DetermineRequirements for MaintainInventory task.");
       if (logOPlan == null)

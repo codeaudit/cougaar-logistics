@@ -43,6 +43,7 @@ import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.planning.ldm.plan.LocationScheduleElement;
 import org.cougaar.util.Enumerator;
 import org.cougaar.util.MutableTimeSpan;
+import org.cougaar.util.NewTimeSpan;
 import org.cougaar.util.TimeSpan;
 
 import java.util.*;
@@ -123,8 +124,10 @@ public class AssetUtils {
     }
 
     public Enumeration getSupportingOrgs(Organization myOrg, Role role, long start, long end) {
+      TimeSpan timespan = new MutableTimeSpan();
+      ((NewTimeSpan)timespan).setTimeSpan(start, end);
       RelationshipSchedule rel_sched = myOrg.getRelationshipSchedule();
-      Collection c = rel_sched.getMatchingRelationships(role, start, end);
+      Collection c = rel_sched.getMatchingRelationships(role, timespan);
       Vector support_orgs = new Vector();
       Iterator i = c.iterator();
       Relationship r;

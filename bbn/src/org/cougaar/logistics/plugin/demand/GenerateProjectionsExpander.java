@@ -192,74 +192,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return consumer;
   }
 
-  /** Create a Time Preference for the Refill Task
-   *  Use a Piecewise Linear Scoring Function.
-   *  For details see the IM SDD.
-   *  @param bestDay The time you want this preference to represent
-   *  @param aspectType The AspectType of the preference- should be start_time or end_time
-   *  @return Preference The new Time Preference
-   **/
-  private Preference createTimePreference(long bestDay, int aspectType) {
-    long early = dfPlugin.getLogOPlanStartTime();
-    long late = dfPlugin.getTimeUtils().addNDays(bestDay, 1);
-    long end = dfPlugin.getLogOPlanEndTime();
-    double daysBetween = ((end - bestDay) / 86400000);
-
-    // Negative value here is bad. Note that end==bestDay is OK. This case
-    // is handled below, where we skip adding the end AspectScorePoint
-    if (daysBetween < 0.0) {
-      if (logger.isWarnEnabled())
-	logger.warn(dfPlugin.getClusterId() + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
-    }
-
-    //Use .0033 as a slope for now
-    double late_score = .0033 * daysBetween;
-    // define alpha .25
-    double alpha = .25;
-
-    Vector points = new Vector();
-    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
-    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
-
-    // Don't add the early point if best is same time or earlier
-    if (bestDay > early) {
-      points.addElement(earliest);
-    } else if (bestDay == early) {
-      if (logger.isInfoEnabled()) {
-	logger.info(dfPlugin.getClusterId() + ".createTimePref skipping early point: best == early (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
-      }
-    } else {
-      if (logger.isWarnEnabled()) {
-	logger.warn(dfPlugin.getClusterId() + ".createTimePref skipping early point: best < early (OplanStart)! bestDay: " + new Date(bestDay) + ", early: " + new Date(early) + ". AspectType: " + aspectType);
-      }
-    }
-
-    points.addElement(best);
-    points.addElement(first_late);
-
-    // Only add the "late" point if it's value is later than first_late
-    if (end > late) {
-      points.addElement(latest);
-    } else if (logger.isInfoEnabled()) {
-      // Note that this case is equivalent to any daysBetween value <= 1.0,
-      // including the case above where daysBetween < 0.0
-
-      // If bestDay == end, this is almost certainly an end Preference, where the preference
-      // is OplanEnd. So best+1 is necessarily > end
-      // check aspectType == AspectType.END_TIME
-      logger.info(dfPlugin.getClusterId() + ".createTimePref skipping end point: end <= late! end: " + new Date(end) + ", late: " + new Date(late) + ((bestDay==end && aspectType == AspectType.END_TIME) ? ". A Task EndPref where best==OplanEnd." : ". AspectType: " + aspectType));
-    }
-
-    ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
-    return getPlanningFactory().newPreference(aspectType, timeSF);
-
-    // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
-    //return prefs;
-  }
-
-
   /** Create FOR, TO, MAINTAIN, and OFTYPE prepositional phrases
    *  for use by the subclasses.
    * @param consumer the consumer the task supports
@@ -373,8 +305,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Vector prefs = new Vector();
     prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
-    prefs.addElement(createTimePreference(start, AspectType.START_TIME));
-    prefs.addElement(createTimePreference(end, AspectType.END_TIME));
+    prefs.addElement(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
+    prefs.addElement(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
 
     newTask.setPreferences(prefs.elements());
     Vector childPhrases = createPrepPhrases(consumer, parentTask, end);
@@ -720,11 +652,11 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
   protected void setStartTimePreference(NewTask task, long start) {
-    task.setPreference(createTimePreference(start, AspectType.START_TIME));
+    task.setPreference(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
   }
 
   protected void setEndTimePreference(NewTask task, long end) {
-    task.setPreference(createTimePreference(end, AspectType.END_TIME));
+    task.setPreference(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory()));
   }
 
   private String printProjection(String msg, Task task) {

@@ -80,7 +80,7 @@ public class InventoryPlugin extends ComponentPlugin
   protected ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
   protected HashMap inventoryHash;
-  protected HashMap inventoryInitHash;
+    //  protected HashMap inventoryInitHash;
   protected HashSet touchedInventories;
   // inventoriesWithDeletions used to refresh snapshots.  
   // Ensures correct graphs during deletion periods.
@@ -89,7 +89,7 @@ public class InventoryPlugin extends ComponentPlugin
   private boolean touchedProjections;
   private boolean touchedChangedProjections = false;
   protected String supplyType;
-  private String inventoryFile;
+    //  private String inventoryFile;
 //   private boolean fillToCapacity; Will be added bug #1482
 //   private boolean maintainAtCapacity; Will be added bug #1482
   protected DetReqAggHandler detReqHandler;
@@ -155,7 +155,7 @@ public class InventoryPlugin extends ComponentPlugin
     refillComparator = getComparatorModule();
     allocationAssessor = new AllocationAssessor(this, getRole(supplyType));
     inventoryHash = new HashMap();
-    inventoryInitHash = new HashMap();
+    //    inventoryInitHash = new HashMap();
     touchedInventories = new HashSet();
     inventoriesWithDeletions = new HashSet();
     //backwardFlowInventories = new HashSet();
@@ -204,9 +204,9 @@ public class InventoryPlugin extends ComponentPlugin
     return supplyType;
   }
 
-  private String getInventoryFileName() {
-    return inventoryFile;
-  }
+//   private String getInventoryFileName() {
+//     return inventoryFile;
+//   }
 
   public Organization getMyOrganization() {
     return myOrganization;
@@ -321,8 +321,8 @@ public class InventoryPlugin extends ComponentPlugin
 
     if (!initialized) {
       myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
-      inventoryFile = getInventoryFile(supplyType);
-      getInventoryData();
+//       inventoryFile = getInventoryFile(supplyType);
+//       getInventoryData();
       initialized = true;
     }
 
@@ -435,30 +435,36 @@ public class InventoryPlugin extends ComponentPlugin
           logger.debug("ORG RELATIONSHIPS CHANGED SDSD myorg: " + myOrganization + " supply type:" +
                       supplyType + " role: " + getRole(supplyType) + "\n");
         }
-        HashMap providers = getProvidersAndEndDates();
+        // Handle unprovided tasks
+        HashMap providerStartDates = new HashMap();
+	HashMap providerEndDates = new HashMap();
+        getProviderDates(providerStartDates, providerEndDates);
         Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                                         Constants.Verb.Supply,
-                                                        providers);
+                                                        providerStartDates,
+							providerEndDates);
         if (!unprovidedTasks.isEmpty()){
-          if (logger.isWarnEnabled())
-            logger.warn("Trying to rescind unprovided supply refill tasks...");
-          rescindTaskAllocations(unprovidedTasks);
+	  if (logger.isWarnEnabled()) {
+            logger.warn("Trying to rescind and reallocate unprovided supply refill tasks...");
+	  }
+          externalAllocator.rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
         unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                              Constants.Verb.ProjectSupply,
-                                             providers);
+					     providerStartDates,
+					     providerEndDates);
         if (!unprovidedTasks.isEmpty()){
-          if (logger.isWarnEnabled())
-            logger.warn("Trying to rescind unprovided projection refill tasks...");
-          rescindTaskAllocations(unprovidedTasks);
+	  if (logger.isWarnEnabled()) {
+            logger.warn("Trying to rescind and reallocate unprovided projection refill tasks...");
+	  }
+          externalAllocator.rescindTaskAllocations(unprovidedTasks);
           externalAllocator.allocateRefillTasks(unprovidedTasks);
         }
 
+        // Handle unallocated tasks
         Collection unalloc = null;
         if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
-          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.Supply), "nonrefill supply unalloc");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.Supply);
           if (!unalloc.isEmpty()){
@@ -468,8 +474,6 @@ public class InventoryPlugin extends ComponentPlugin
           }
         }
         if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
-          sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.ProjectSupply), "nonrefill proj unalloc");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.ProjectSupply);
           if (!unalloc.isEmpty()) {
@@ -600,8 +604,7 @@ public class InventoryPlugin extends ComponentPlugin
     return touchedRemovedProjections;
   }
 
-  protected HashMap getProvidersAndEndDates() {
-    HashMap providers = new HashMap();
+  protected void getProviderDates(HashMap providerStartDates, HashMap providerEndDates) {
     RelationshipSchedule relSched = myOrganization.getRelationshipSchedule();
     Collection relationships = relSched.getMatchingRelationships(TimeSpan.MIN_VALUE,
                                                                  TimeSpan.MAX_VALUE);
@@ -609,42 +612,58 @@ public class InventoryPlugin extends ComponentPlugin
     Role myRole = getRole(supplyType);
 // 	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" +
 // 			       supplyType + " role: " + getRole(supplyType) + "\n");
+    Date date;
     while (rit.hasNext()) {
       Relationship r = (Relationship) rit.next();
       HasRelationships hr = relSched.getOther(r);
       if (hr instanceof Organization) {
         Role role = relSched.getOtherRole(r);
         if (role == myRole) {
-          Date endDate = r.getEndDate();
-          providers.put(hr, endDate);
-          //	  System.out.println("SDSD   org: " + hr + " end:" + endDate + "\n");
+	    date = r.getEndDate();
+	    providerEndDates.put(hr, date);
+	    date = r.getStartDate();
+	    providerStartDates.put(hr, date);
+          //	  System.out.println("SDSD   org: " + hr + " end:" + date + "\n");
         }
       }
     }
-    return providers;
   }
 
-  private Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, HashMap providers) {
+  protected Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, 
+					  HashMap providerStartDates, HashMap providerEndDates) {
     Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
     Task task;
     Organization provider;
     Allocation alloc;
-    long taskEnd;
-    Date providerEndDate;
+    long taskEnd, taskStart;
+    Date providerEndDate, providerStartDate;
     while (raIt.hasNext()) {
       alloc = (Allocation)raIt.next();
       task = alloc.getTask();
-      if ((alloc != null) && (task.getVerb().equals(verb))){
+      if (task.getVerb().equals(verb)){
         taskEnd = TaskUtils.getEndTime(task);
         provider = (Organization)alloc.getAsset();
         if (alloc.getRole() != getRole(supplyType)) {
-          if (logger.isWarnEnabled())
-            logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
+	    if (logger.isWarnEnabled()) {
+		logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");
+	    }
         }
-        providerEndDate = (Date) providers.get(provider);
-        if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
-          unprovidedTasks.add(task);
+        providerEndDate = (Date) providerEndDates.get(provider);
+	if (verb.equals(Constants.Verb.ProjectSupply)) {
+	    taskStart = TaskUtils.getStartTime(task);
+	    providerStartDate = (Date) providerStartDates.get(provider);
+
+	    // only need provider from start to end - bucketSize
+	    if ((providerEndDate != null && providerEndDate.getTime() < taskEnd - bucketSize) || 
+		(providerStartDate != null && providerStartDate.getTime() > taskStart))  {
+
+		unprovidedTasks.add(task);
+	    }
+	} else {
+	    if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
+		unprovidedTasks.add(task);
+	    }
         }
       }
     }
@@ -653,27 +672,6 @@ public class InventoryPlugin extends ComponentPlugin
 //       }
     return unprovidedTasks;
   }
-
-  private void rescindTaskAllocations(Collection tasks) {
-    Task task;
-    Allocation alloc;
-    Iterator taskIt = tasks.iterator();
-    while (taskIt.hasNext()) {
-      task = (Task) taskIt.next();
-      if (!(task.beforeCommitment(new Date(currentTimeMillis())))) {
-        if (logger.isWarnEnabled()) {
-          logger.warn("rescind unprovided Task Allocations: will not rescind allocation ... after commitment"+
-                      task.getCommitmentDate()+ " task:"+task);
-        }
-      } else {
-        //	  System.out.println("SDSD rescind: " + task + "\n");
-        alloc = (Allocation)task.getPlanElement();
-        publishRemove(alloc);
-      }
-    }
-  }
-
-
 
   /** Subscription for aggregatable support requests. **/
   private IncrementalSubscription detReqSubscription;
@@ -1339,40 +1337,12 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  // Determines which tasks should be expanded and which should be
-  // re-allocated to a supplier
-  protected Collection sortIncomingSupplyTasks(Collection tasks, String caller) {
-    ArrayList expandList = new ArrayList();
-    ArrayList passThruList = new ArrayList();
-    Task t;
-    Inventory inventory;
-    Asset asset;
-    for (Iterator i = tasks.iterator(); i.hasNext();) {
-      t = (Task) i.next();
-      if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + getAgentIdentifier().toString() + "InvPlugin[" + supplyType+"]" +
-                     "sorting " + caller + " task:" + t.getUID());
-      }
-      asset = (Asset) t.getDirectObject();
-      inventory = findOrMakeInventory(asset);
-      if (inventory != null) {
-        expandList.add(t);
-      } else {  // allocate tasks to supplier?
-        passThruList.add(t);
-      }
-    }
-    externalAllocator.forwardSupplyTasks(passThruList);
-    return expandList;
-  }
-
   private void expandIncomingRequisitions(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "new reqs");
-    supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
+    supplyExpander.expandAndDistributeRequisitions(tasks);
   }
 
   private boolean expandIncomingProjections(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "new projs");
-    return supplyExpander.expandAndDistributeProjections(tasksToExpand);
+    return supplyExpander.expandAndDistributeProjections(tasks);
   }
 
   /**
@@ -1454,67 +1424,68 @@ public class InventoryPlugin extends ComponentPlugin
       return inventory;
     } else {
       inventory = createInventory(resource, item);
-      if (inventory != null) {
-        addInventory(inventory);
-        publishAdd(inventory);
-        detReqHandler.findOrMakeMILTask(inventory, aggMILSubscription);
-      }
+      addInventory(inventory);
+      publishAdd(inventory);
+      detReqHandler.findOrMakeMILTask(inventory, aggMILSubscription);
     }
-    if (inventory == null) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Inventory is null for " + item);
-      }
-    } else {
-      if (logger.isDebugEnabled()) {
+    if (logger.isDebugEnabled()) {
         logger.debug("findOrMakeInventory(), CREATED inventory bin for: " +
                      AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
-      }
     }
     return inventory;
   }
 
   protected Inventory createInventory(Asset resource, String item) {
-    double levels[] = null;
+      //    double levels[] = null;
     Inventory inventory = null;
-    levels = (double[]) inventoryInitHash.get(item);
-    if (levels != null) {
-      inventory = (Inventory) getPlanningFactory().createAsset("Inventory");
-      NewLogisticsInventoryPG logInvPG =
-          (NewLogisticsInventoryPG) PropertyGroupFactory.newLogisticsInventoryPG();
-      inventory.addOtherPropertyGroup(logInvPG);
-      if (getAssetUtils().isLevel2Asset(resource)) {
+//     levels = (double[]) inventoryInitHash.get(item);
+//     if (levels == null) {
+//	levels = new double[2];
+	double capacity = getFuelCapacity(item);
+	double initialLevel = getInitialLevel(item);
+//     }
+    inventory = (Inventory) getPlanningFactory().createAsset("Inventory");
+    NewLogisticsInventoryPG logInvPG =
+	(NewLogisticsInventoryPG) PropertyGroupFactory.newLogisticsInventoryPG();
+    inventory.addOtherPropertyGroup(logInvPG);
+    if (getAssetUtils().isLevel2Asset(resource)) {
         logInvPG.setIsLevel2(true); // will need to key off asset to identify level2 item
         // Need to distinguish Level2Package aggregates of different supply types otherwise
         // they are determined to be the same asset and are removed from the blackboard
         ((NewItemIdentificationPG) inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item + ":" + supplyType);
-      } else {
+    } else {
         logInvPG.setIsLevel2(false);
         ((NewItemIdentificationPG) inventory.getItemIdentificationPG()).setItemIdentification("Inventory:" + item);
-      }
-      logInvPG.setCapacity(levels[0]);
-      logInvPG.setFillToCapacity(fillToCapacity);
-      logInvPG.setInitialLevel(levels[1]);
-      logInvPG.setResource(resource);
-      logInvPG.setOrg(getMyOrganization());
-      logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
-      logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
-      logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
-      logInvPG.setStartCDay(logOPlan.getOplanCday());
-
-      NewTypeIdentificationPG ti =
-          (NewTypeIdentificationPG) inventory.getTypeIdentificationPG();
-      ti.setTypeIdentification("InventoryAsset");
-      ti.setNomenclature("Inventory Asset");
-
-      NewScheduledContentPG scp;
-      scp = (NewScheduledContentPG) inventory.getScheduledContentPG();
-      scp.setAsset(resource);
-      scp.setSchedule(scheduleUtils.buildSimpleQuantitySchedule(levels[1], startTime,
-                                                                startTime + (TimeUtils.MSEC_PER_DAY * 10)));
     }
+    logInvPG.setCapacity(capacity);
+    logInvPG.setFillToCapacity(fillToCapacity);
+    logInvPG.setInitialLevel(initialLevel);
+    logInvPG.setResource(resource);
+    logInvPG.setOrg(getMyOrganization());
+    logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
+    logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
+    logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
+    logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
+    logInvPG.setStartCDay(logOPlan.getOplanCday());
+
+    NewTypeIdentificationPG ti =
+	(NewTypeIdentificationPG) inventory.getTypeIdentificationPG();
+    ti.setTypeIdentification("InventoryAsset");
+    ti.setNomenclature("Inventory Asset");
+
+    NewScheduledContentPG scp;
+    scp = (NewScheduledContentPG) inventory.getScheduledContentPG();
+    scp.setAsset(resource);
+    scp.setSchedule(scheduleUtils.buildSimpleQuantitySchedule(initialLevel, startTime,
+                                                                startTime + (TimeUtils.MSEC_PER_DAY * 10)));
+    
     return inventory;
   }
+
+    // Override these in a subclass if necessary
+    protected double getFuelCapacity(String item) { return 0.0; }
+    protected double getInitialLevel(String item) { return 0.0; }
+
 
   public void touchInventory(Inventory inventory) {
     if (!touchedInventories.contains(inventory)) {
@@ -1612,25 +1583,25 @@ public class InventoryPlugin extends ComponentPlugin
     return map;
   }
 
-  private String getInventoryFile(String type) {
-    String result = null;
-    // if defined in plugin argument list
-    String inv_file = null;
-    if ((inv_file = (String) pluginParams.get(INVENTORY_FILE)) != null) {
-      result = inv_file;
-      //   }
-      //    else {
-//       result = getClusterSuffix(myOrganization.getClusterPG().getMessageAddress().toString()) +
-// 	"_"+type.toLowerCase()+".inv";
-    } else if (type.equals("Ammunition")) {
-      result = getAgentPrefix(getAgentIdentifier().toString()) +
-          "_" + type.toLowerCase() + ".inv";
-    } else {
-      result = getClusterSuffix(getAgentPrefix(getAgentIdentifier().toString())) +
-          "_" + type.toLowerCase() + ".inv";
-    }
-    return result;
-  }
+//   private String getInventoryFile(String type) {
+//     String result = null;
+//     // if defined in plugin argument list
+//     String inv_file = null;
+//     if ((inv_file = (String) pluginParams.get(INVENTORY_FILE)) != null) {
+//       result = inv_file;
+//       //   }
+//       //    else {
+// //       result = getClusterSuffix(myOrganization.getClusterPG().getMessageAddress().toString()) +
+// // 	"_"+type.toLowerCase()+".inv";
+//     } else if (type.equals("Ammunition")) {
+//       result = getAgentPrefix(getAgentIdentifier().toString()) +
+//           "_" + type.toLowerCase() + ".inv";
+//     } else {
+//       result = getClusterSuffix(getAgentPrefix(getAgentIdentifier().toString())) +
+//           "_" + type.toLowerCase() + ".inv";
+//     }
+//     return result;
+//   }
 
   private String getAgentPrefix(String agentId) {
       int i=agentId.indexOf(".");
@@ -1797,34 +1768,35 @@ public class InventoryPlugin extends ComponentPlugin
     return getOPlanArrivalInTheaterTime() - (bucketSize * prepoArrivalOffset);
   }
 
-  public void getInventoryData() {
-    String invFile = getInventoryFileName();
-    if (invFile != null) {
-      Enumeration initialInv = FileUtils.readConfigFile(invFile, getConfigFinder());
-      if (initialInv != null) {
-        stashInventoryInformation(initialInv);
-      }
-    }
-  }
+//   public void getInventoryData() {
+//     String invFile = getInventoryFileName();
+//     if (invFile != null) {
+//       Enumeration initialInv = FileUtils.readConfigFile(invFile, getConfigFinder());
+//       if (initialInv != null) {
+//         stashInventoryInformation(initialInv);
+//       }
+//     }
+//   }
 
-  private void stashInventoryInformation(Enumeration initInv) {
-    String line;
-    String item = null;
-    double capacity, level;
 
-    while (initInv.hasMoreElements()) {
-      line = (String) initInv.nextElement();
-      // Find the fields in the line, values seperated by ','
-      Vector fields = FileUtils.findFields(line, ',');
-      if (fields.size() < 3)
-        continue;
-      item = (String) fields.elementAt(0);
-      capacity = Double.valueOf((String) fields.elementAt(1)).doubleValue();
-      level = Double.valueOf((String) fields.elementAt(2)).doubleValue();
-      double[] levels = {capacity, level};
-      inventoryInitHash.put(item, levels);
-    }
-  }
+//   private void stashInventoryInformation(Enumeration initInv) {
+//     String line;
+//     String item = null;
+//     double capacity, level;
+
+//     while (initInv.hasMoreElements()) {
+//       line = (String) initInv.nextElement();
+//       // Find the fields in the line, values seperated by ','
+//       Vector fields = FileUtils.findFields(line, ',');
+//       if (fields.size() < 3)
+//         continue;
+//       item = (String) fields.elementAt(0);
+//       capacity = Double.valueOf((String) fields.elementAt(1)).doubleValue();
+//       level = Double.valueOf((String) fields.elementAt(2)).doubleValue();
+//       double[] levels = {capacity, level};
+//       inventoryInitHash.put(item, levels);
+//     }
+//   }
 
   protected Role getRole(String supply_type) {
     if (supply_type.equals("Ammunition"))
@@ -2150,11 +2122,11 @@ public class InventoryPlugin extends ComponentPlugin
   public void automatedSelfTest() {
     if (logger.isErrorEnabled()) {
       if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
-      if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
-      if (inventoryInitHash.isEmpty()) {
-        logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
-        logger.error("Could not find Inventory file : " + inventoryFile);
-      }
+      //      if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
+//       if (inventoryInitHash.isEmpty()) {
+//         logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
+//         logger.error("Could not find Inventory file : " + inventoryFile);
+//       }
       if (detReqHandler.getDetermineRequirementsTask(aggMILSubscription) == null)
         logger.error("Missing DetermineRequirements for MaintainInventory task.");
       if (logOPlan == null)
@@ -2224,5 +2196,6 @@ public class InventoryPlugin extends ComponentPlugin
       logInvPG.Test();
     }
   }
+
 }
 

@@ -45,5 +45,7 @@ public interface AllocatorModule {
 
   HashSet updateAllocationResult(Collection sub);
 
-  void forwardSupplyTasks(Collection supplyTasks);
+  void rescindTaskAllocations(Collection tasks);
+
 }
+

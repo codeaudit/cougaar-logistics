@@ -209,9 +209,11 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       while(toCut.hasNext()) {
 	  Task taskToCut = (Task) toCut.next();
 	  if (taskToCut != null) {
-	      Preference new_end = createRefillTimePreference(cutoffTime, 
+	      Preference new_end = getTaskUtils().createRefillTimePreference(cutoffTime, 
 							      inventoryPlugin.getOPlanArrivalInTheaterTime(),
-							      AspectType.END_TIME, thePG);
+							      inventoryPlugin.getOPlanEndTime(),
+							      AspectType.END_TIME, thePG, 
+							      inventoryPlugin.getPlanningFactory());
 	      ((NewTask)taskToCut).setPreference(new_end);
 	      inventoryPlugin.publishChange(taskToCut);
 	      thePG.updateRefillProjection(taskToCut);
@@ -475,8 +477,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
-    p_start = createRefillTimePreference(start, earliest, AspectType.START_TIME, thePG);
-    p_end = createRefillTimePreference(end, earliest, AspectType.END_TIME, thePG);
+    p_start = getTaskUtils().createRefillTimePreference(start, earliest, inventoryPlugin.getOPlanEndTime(), AspectType.START_TIME, thePG, inventoryPlugin.getPlanningFactory());
+    p_end = getTaskUtils().createRefillTimePreference(end, earliest, inventoryPlugin.getOPlanEndTime(), AspectType.END_TIME, thePG, inventoryPlugin.getPlanningFactory());
     p_qty = createRefillRatePreference(qty, thePG.getBucketMillis());
     prefs.add(p_start);
     prefs.add(p_end);
@@ -509,78 +511,6 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     newRefill.setPrepositionalPhrases(pp_vector.elements());
     return newRefill;
   } 
-
-  /** Create a Time Preference for the Refill Task
-   *  Use a Piecewise Linear Scoring Function.
-   *  For details see the IM SDD.
-   *  @param bestDay The time you want this preference to represent
-   *  @param start The earliest time this preference can have
-   *  @param aspectType The AspectType of the preference- should be start_time or end_time
-   *  @return Preference The new Time Preference
-   **/
-  protected Preference createRefillTimePreference(long bestDay, long start, 
-                                                int aspectType, LogisticsInventoryPG thePG) {
-    //TODO - really need last day in theatre from an OrgActivity -
-    long end = inventoryPlugin.getOPlanEndTime();
-    long late = bestDay + thePG.getBucketMillis();
-    double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
-    //Use .0033 as a slope for now
-    double late_score = .0033 * daysBetween;
-    // define alpha .25
-    double alpha = .25;
-    Vector points = new Vector();
-
-    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, start), alpha);
-    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
-//                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType,late), alpha);
-    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
-                                                   (alpha + late_score));
-
-    // Don't add the early point if best is same time or earlier
-    if (bestDay > start) {
-      points.addElement(earliest);
-    } else if (bestDay == start) {
-      if (logger.isInfoEnabled()) {
-	logger.info(inventoryPlugin.getClusterId() + ".createTimePref skipping start point: best == start (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
-      }
-    } else {
-      if (logger.isWarnEnabled()) {
-	logger.warn(inventoryPlugin.getClusterId() + ".createTimePref skipping start point: best < start (OplanStart)! bestDay: " + new Date(bestDay) + ", start: " + new Date(start) + ". AspectType: " + aspectType);
-      }
-    }
-
-    points.addElement(best);
-    points.addElement(first_late);
-
-    // Only add the "late" point if it's value is later than first_late
-    if (end > late) {
-      points.addElement(latest);
-    } else if (logger.isInfoEnabled()) {
-      // Note that this case is equivalent to any daysBetween value <= 1.0,
-      // including the case above where daysBetween < 0.0
-
-      // If bestDay == end, this is almost certainly an end Preference, where the preference
-      // is OplanEnd. So best+1 is necessarily > end
-      // check aspectType == AspectType.END_TIME
-      logger.info(inventoryPlugin.getClusterId() + ".createTimePref skipping end point: end <= late! end: " + new Date(end) + ", late: " + new Date(late) + ((bestDay==end && aspectType == AspectType.END_TIME) ? ". A Task EndPref where best==OplanEnd." : ". AspectType: " + aspectType));
-    }
-
-    ScoringFunction timeSF = null;
-    
-    try {
-    timeSF = ScoringFunction.
-      createPiecewiseLinearScoringFunction(points.elements());
-    }
-    catch(IllegalArgumentException ex) {
-	logger.error("Time is now: " + inventoryPlugin.currentTimeMillis() + " at " + inventoryPlugin.getOrgName() + " - exception. End:" + new Date(end) + ", late: " + new Date(late) + " alpha: " + alpha + ", daysBetween: " + daysBetween + " bestDay: " + bestDay + ", start: " + start + " and BucketMillis: " + thePG.getBucketMillis() + ". Alpha: " + alpha + " late score: " + late_score + " = score ");
-	throw ex;
-    }
-
-    return inventoryPlugin.getPlanningFactory().
-      newPreference(aspectType, timeSF);
-  }
 
   /** Utility method to create Refill Projection Rate preference
    *  We use a V scoring function for this preference.
