@@ -1956,7 +1956,8 @@ public class InventoryPlugin extends ComponentPlugin
     public ShortfallInventory checkForShortfall(Inventory inv) {
       String invID = LogisticsInventoryServlet.getNomenclature(inv);
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-      return logInvPG.checkForShortfall(invID);
+      String unitOfIssue = LogisticsInventoryFormatter.getUnitForAsset(inv);
+      return logInvPG.checkForShortfall(invID,unitOfIssue);
     }
 
   /**
