@@ -185,8 +185,11 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service= srvc.toString();
-      } // if
-      configured = true;
+        configured = true;
+      } else {
+        logger.error("Organization has no Service :"+
+                     myOrg.getItemIdentificationPG().getItemIdentification());
+      }
     } // if
   } // configure
 
