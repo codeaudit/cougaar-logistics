@@ -26,6 +26,8 @@ import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.Service;
 import org.cougaar.glm.plugins.TaskUtils;
 import org.cougaar.logistics.ldm.asset.FuelConsumerBG;
+import org.cougaar.logistics.ldm.asset.FuelConsumerPG;
+import org.cougaar.logistics.ldm.asset.NewFuelConsumerPG;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PGDelegate;
@@ -79,7 +81,16 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // real code when it is available.  --llg
 
     // asset.getBG
-    FuelConsumerBG bg = new FuelConsumerBGImpl("foo", new Service("bar"), "shebop");
+
+//     FuelConsumerBG bg = new FuelConsumerBGImpl("foo", new Service("bar"), "shebop");
+    NewFuelConsumerPG pg = 
+      (NewFuelConsumerPG)getPlanningFactory().createPropertyGroup(FuelConsumerPG.class);
+//     pg.setMei(anAsset);
+    pg.setService("bar");
+    pg.setTheater("shebop");
+    FuelConsumerBG bg = new FuelConsumerBG(pg);
+    pg.setFuelBG(bg);
+//     pg.initialize(this);
     Collection items = bg.getConsumed();
     Collection subTasks = new ArrayList();
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
@@ -145,17 +156,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return prefs;
   }
 
-
-  // FIXME: Delete me!  Temp class to get codelogic in the body of the class
-  class FuelConsumerBGImpl extends FuelConsumerBG {
-    public FuelConsumerBGImpl(String typeId, Service service, String theater) {
-      super(typeId, service, theater);
-    }
-
-    public PGDelegate copy(PropertyGroup propertyGroup) {
-      return null;
-    }
-  }
 }
 
 
