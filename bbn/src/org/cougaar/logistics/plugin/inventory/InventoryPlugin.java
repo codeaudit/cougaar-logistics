@@ -104,12 +104,8 @@ public class InventoryPlugin extends ComponentPlugin {
 
   // as a default make the max the end of the oplan (225)
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
-  public final Integer LEVEL_2_60 = new Integer(60);
-  public final Integer LEVEL_2_MID = new Integer(80); 
   public final Integer LEVEL_2_MAX = new Integer(225);
   public final Integer LEVEL_6_MIN = new Integer(20);
-  public final Integer LEVEL_6_21 = new Integer(21);
-  public final Integer LEVEL_6_MID = new Integer(40);
   public final Integer LEVEL_6_MAX = new Integer(225);
   // then default to the end of the oplan (max)
   public final String  LEVEL_2_TIME_HORIZON = "Level2TimeHorizon";
@@ -1318,19 +1314,7 @@ public class InventoryPlugin extends ComponentPlugin {
   /** relative to now -- this is correct, isn't it? */
   protected long getEndOfLevelSix () {
     long now = currentTimeMillis();
-    int days;
-    if (level6Horizon.getValue().equals (LEVEL_6_MIN)) {
-      days = LEVEL_6_MIN.intValue();
-    } else if (level6Horizon.getValue().equals (LEVEL_6_MID)){
-      days = LEVEL_6_MID.intValue();
-    } else if (level6Horizon.getValue().equals (LEVEL_6_21)){
-      days = LEVEL_6_21.intValue();
-    } else {
-      //use all level 6 as the default
-      days = LEVEL_6_MAX.intValue();
-    }
-    // int days = (level6Horizon.getValue().equals (LEVEL_6_MIN))?
-//       LEVEL_6_MIN.intValue() : LEVEL_6_MID.intValue() : LEVEL_6_MAX.intValue();
+    int days = ((Integer)level6Horizon.getValue()).intValue();
     
     return timeUtils.addNDays(now, days);
   } 
@@ -1338,19 +1322,7 @@ public class InventoryPlugin extends ComponentPlugin {
   /** relative to now -- this is correct, isn't it? */
   protected long getEndOfLevelTwo () {
     long now = currentTimeMillis();
-    int days;
-    if (level2Horizon.getValue().equals (LEVEL_2_MIN)) {
-      days = LEVEL_2_MIN.intValue();
-    } else if (level2Horizon.getValue().equals (LEVEL_2_MID)){
-      days = LEVEL_2_MID.intValue();
-    } else if (level2Horizon.getValue().equals (LEVEL_2_60)){
-      days = LEVEL_2_60.intValue();
-    } else {
-      //use all level 6 as the default
-      days = LEVEL_2_MAX.intValue();
-    }
-   // int days = (level2Horizon.getValue().equals (LEVEL_2_MIN))?
-//      LEVEL_2_MIN.intValue() : LEVEL_2_MID.intValue() : LEVEL_2_MAX.intValue();
+    int days = ((Integer)level2Horizon.getValue()).intValue();
     
     return timeUtils.addNDays(now, days);
   }
