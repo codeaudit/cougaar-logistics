@@ -20,6 +20,8 @@
  */
 package org.cougaar.mlm.ui.newtpfdd.gui.view.details;
 
+import java.text.*;
+
 import  org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
 /**
@@ -42,8 +44,14 @@ public class CarrierDetails{
   public static final int SELFPROP = 5;
   public static final int AVESPEED = 6;
   public static final int WEIGHTCAP = 7;
-  public static final int VOLCAP = 8;
-  public static final int AREACAP = 9;
+  public static final int AREACAP = 8;
+  public static final int VOLCAP = 9;
+
+  private static double KGS_TO_STONS = 0.0011022927689594355d;
+  private static double METERS_TO_FEET = 3.28084d;
+  private static double SQUARE_METERS_TO_SQUARE_FEET = 10.763867d;
+  //  private static double CUBIC_METERS_TO_CUBIC_FEET = 35.314667d;
+  private static double LITERS_TO_CUBIC_FEET = 0.035315d;
 
   protected static final String[] fieldNames={"Owner",
 					      //"Home base",
@@ -53,9 +61,9 @@ public class CarrierDetails{
 					      "Carrier Name",
 					      "Self Prop Asset",
 					      "Ave Speed (mph)",
-					      "Weight Cap (kg)",
-					      "Vol Cap (Liters)",
-					      "Area Cap (Sq Meters)"};
+					      "Weight Cap (stons)",
+					      "Area Cap (ft^2)",
+					      "Vol Cap (ft^3)"};
   
   protected static final Class[] fieldClasses={String.class,
 					       //String.class,
@@ -64,10 +72,10 @@ public class CarrierDetails{
 					       String.class,
 					       String.class,
 					       String.class,
-					       Double.class,
-					       Double.class,
-					       Double.class,
-					       Double.class};
+					       String.class,
+					       String.class,
+					       String.class,
+					       String.class};
 
   //Variables:
   ////////////
@@ -78,10 +86,12 @@ public class CarrierDetails{
   private String protoName;
   private String bumperno;
   private int selfProp;
-  private double aveSpeed;
-  private double weightCap;
-  private double volCap;
-  private double areaCap;
+  private String aveSpeed;
+  private String weightCap;
+  private String areaCap;
+  private String volCap;
+
+  private DecimalFormat format = new DecimalFormat("#.#");
 
   //Constructors:
   ///////////////
@@ -110,13 +120,15 @@ public class CarrierDetails{
     case SELFPROP: 
       selfProp=((Integer)o).intValue();break;
     case AVESPEED: 
-      aveSpeed=((Double)o).doubleValue();break;
+      aveSpeed=format.format(((Double)o).doubleValue());break;
     case WEIGHTCAP: 
-      weightCap=((Double)o).doubleValue()/1000;break;
-    case VOLCAP: 
-      volCap=((Double)o).doubleValue();break;
+      weightCap=format.format((((Double)o).doubleValue()/1000)*KGS_TO_STONS);break;
     case AREACAP: 
-      areaCap=((Double)o).doubleValue();break;
+      System.out.println("area value " + ((Double)o).doubleValue());
+      areaCap=format.format(((Double)o).doubleValue()*SQUARE_METERS_TO_SQUARE_FEET);break;
+    case VOLCAP: 
+      System.out.println("vol value " + ((Double)o).doubleValue());
+      volCap=format.format(((Double)o).doubleValue()*LITERS_TO_CUBIC_FEET);break;
     }
   }
 
@@ -139,13 +151,13 @@ public class CarrierDetails{
     case SELFPROP: 
       return selfPropToString(selfProp);
     case AVESPEED: 
-      return new Double(aveSpeed);
+      return aveSpeed;
     case WEIGHTCAP: 
-      return new Double(weightCap);
-    case VOLCAP: 
-      return new Double(volCap);
+      return weightCap;
     case AREACAP: 
-      return new Double(areaCap);
+      return areaCap;
+    case VOLCAP: 
+      return volCap;
     default:
       return null;
     }

@@ -89,8 +89,8 @@ public class CarrierDetailRequest{
     cd.setValueAt(new Integer(rs.getInt(7)),CarrierDetails.SELFPROP);
     cd.setValueAt(new Double(rs.getDouble(8)),CarrierDetails.AVESPEED);
     cd.setValueAt(new Double(rs.getDouble(9)),CarrierDetails.WEIGHTCAP);
-    cd.setValueAt(new Double(rs.getDouble(10)),CarrierDetails.VOLCAP);
-    cd.setValueAt(new Double(rs.getDouble(11)),CarrierDetails.AREACAP);
+    cd.setValueAt(new Double(rs.getDouble(10)),CarrierDetails.AREACAP);
+    cd.setValueAt(new Double(rs.getDouble(11)),CarrierDetails.VOLCAP);
   }
 
   protected String getSql(DatabaseConfig dbConfig, int runID){
@@ -125,8 +125,8 @@ public class CarrierDetailRequest{
       ciSelfProp+", "+
       cpAveSpeed+", "+
       cpWeightCap+", "+
-      cpVolCap+", "+
-      cpAreaCap+
+      cpAreaCap+", "+
+      cpVolCap+
       " from "+
       ciTable+" ci, "+   
       cpTable+" cp "+
