@@ -164,8 +164,9 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                       srh);
           Iterator it = serviceRequestHistories.keySet().iterator();
           while(it.hasNext()) {
+            String key = (String)it.next();
             if (myLoggingService.isDebugEnabled()) {
-              myLoggingService.debug("key " +(String)it.next());
+              myLoggingService.debug("key " + key);
             }
           }
         }
@@ -327,8 +328,9 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       }
       Iterator it = serviceRequestHistories.keySet().iterator();
       while(it.hasNext()) {
+        String key = (String)it.next();
         if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug("key " +(String)it.next());
+          myLoggingService.debug("key " + key);
         }
       }
     }
@@ -475,7 +477,7 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
                                    " checkProviderCompletelyCovered has millisec difference of: "
                                    + (current.getEndTime() - current.getStartTime()) +
                                    " start " + current.getStartTime() + " end " +
-                                   current.getEndTime());
+                                   current.getEndTime() + " for role " + role);
         }
         return false;
       }
