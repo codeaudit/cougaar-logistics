@@ -76,7 +76,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
   public static final String ACTION_PARAM = "action";
   public static final String SHOW_OPLAN = "show_oplan";
   public static final String EDIT_ORGACTIVITY = "edit_orgactivity";
-  public static final String CHANGE_ORGACTIVITY = "change_orgactivity";
+  public static final String MODIFY_ORGACTIVITY = "modify_orgactivity";
   public static final String PUBLISH = "Publish";
   public static final String REFRESH = "Refresh";
   
@@ -153,54 +153,76 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     return new MyServlet();
   }
 
+  protected boolean adjustAdjacent(OrgActivity orgActivity, boolean adjustPrevious,
+                                   boolean adjustSubsequent) {
+    int orgIndex = orgActivities.indexOf(orgActivity);
+    TimeSpan timeSpan = orgActivity.getTimeSpan();
+
+    if ((adjustSubsequent) &&
+        ((orgIndex + 1) < orgActivities.size())) {
+      OrgActivity nextOrgActivity = (OrgActivity) orgActivities.get(orgIndex + 1);
+      if (nextOrgActivity.getOrgID().equals(orgActivity.getOrgID())) {
+        ChangeInfo nextChangeInfo = getChangeInfo(nextOrgActivity);
+
+        TimeSpan nextTimeSpan = nextChangeInfo.getModifiedOrgActivity().getTimeSpan();
+        // next start == current end so 
+        // make sure that we're not going to create an invalid timespan
+        if (timeSpan.getEndDate().getTime() >= nextTimeSpan.getEndDate().getTime()) {
+          return false;
+        }
+        nextTimeSpan.setStartDate(timeSpan.getEndDate());
+      }
+    }
+
+    if ((adjustPrevious) &&
+        ((orgIndex > 0))) {
+      OrgActivity previousOrgActivity = (OrgActivity) orgActivities.get(orgIndex - 1);
+      if (previousOrgActivity.getOrgID().equals(orgActivity.getOrgID())) {
+        ChangeInfo previousChangeInfo = getChangeInfo(previousOrgActivity);
+        
+        TimeSpan previousTimeSpan = previousChangeInfo.getModifiedOrgActivity().getTimeSpan();
+        // Previous end == current start so
+        // make sure that we're not going to create an invalid timespan
+        if (timeSpan.getStartDate().getTime() <= previousTimeSpan.getStartDate().getTime()) {
+          return false;
+        }
+
+        previousTimeSpan.setEndDate(timeSpan.getStartDate());
+      }
+    }
+
+    return true;
+  }
 
   /**
-   * Does lots of "new String" allocs for no good reason.
-   * Odd postData format -- should allow both postdata and
-   *   URL parameter line (ala PSP_PluginLoader).
+   * changeOrgActivity - apply changes to specified OrgActivity
    */
-  protected boolean changeOrg(OrgActivity orgActivity, HttpServletRequest request) {
+  protected boolean changeOrgActivity(OrgActivity orgActivity, HttpServletRequest request) {
     String startOffset;
     String endOffset;
     String select = " ";
-    OrgActivity origOrgActivity = orgActivity;
-    ChangeInfo changeInfo = (ChangeInfo) modifiedOrgActivities.get(orgActivity.getUID());
+    ChangeInfo changeInfo = getChangeInfo(orgActivity);
+    boolean adjustPrevious = true;
+    boolean adjustSubsequent = true;
 
     // Make sure we change the  copy so we can refresh if required.
     // Don't want our changes on the blackboard until we publish
-    if (changeInfo == null) {
-      // Keep orig and current set of changes for publish 
-      changeInfo = new ChangeInfo(orgActivity);
-      modifiedOrgActivities.put(orgActivity.getUID(), changeInfo);
-
-      // replace entry in orgActivities so we display the changes
-      // assumes that modifications do not change the sort order 
-      OrgActivity copyOrgActivity = (OrgActivity) orgActivity.clone();
-      int index = orgActivities.indexOf(orgActivity);
-      if (index >= 0) {
-        orgActivities.set(index, copyOrgActivity);
-      } else {
-        throw new IllegalArgumentException("OrgActivity - " + 
-                                           orgActivity + 
-                                           " - not found in current set of OrgActivities.");
-      }
-
-      // Work with copy from now on
-      System.out.println("Made copy : " + copyOrgActivity + " of " + orgActivity);
-      orgActivity = copyOrgActivity;
-    } 
+    OrgActivity modifiedOrgActivity = changeInfo.getModifiedOrgActivity();
 
     select = request.getParameter(OPTEMPO);
     startOffset = request.getParameter(START_OFFSET);
     endOffset = request.getParameter(END_OFFSET);
     
     if ((select != null) && (select.length() > 0)) {
-      orgActivity.setOpTempo(select);
+      modifiedOrgActivity.setOpTempo(select);
     }
 
     Date startDate;
     if ((startOffset != null) && (startOffset.length() > 0)) {
       startDate = getRelativeDate(oplan.getCday(), startOffset);
+      
+      // adjust end of previous
+      adjustPrevious = true;
     } else {
       startDate = orgActivity.getTimeSpan().getStartDate();
     }
@@ -210,6 +232,9 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       endDate = getRelativeDate(oplan.getCday(), endOffset);
     } else {
       endDate = orgActivity.getTimeSpan().getEndDate();
+      
+      //adjust start of Subsequent
+      adjustSubsequent = true;
     }
 
     // Make sure start is before end
@@ -217,15 +242,14 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       return false;
     } 
 
-    orgActivity.getTimeSpan().setStartDate(startDate);
-    orgActivity.getTimeSpan().setEndDate(endDate);
+    modifiedOrgActivity.getTimeSpan().setStartDate(startDate);
+    modifiedOrgActivity.getTimeSpan().setEndDate(endDate);
 
-    // Save changes to changeInfo if we need to publish later on
-    changeInfo.setTimeSpan(orgActivity.getTimeSpan());
-    changeInfo.setOpTempo(orgActivity.getOpTempo());
 
-    System.out.println("Orig: " + origOrgActivity.getOpTempo() + " " + origOrgActivity.getTimeSpan());
-    System.out.println("Modified: " + orgActivity.getOpTempo() + " " + orgActivity.getTimeSpan());
+    if (adjustPrevious || adjustSubsequent) {
+      return adjustAdjacent(modifiedOrgActivity, adjustPrevious, adjustSubsequent);
+    }
+
     return true;
   }
 
@@ -275,7 +299,6 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       PrintWriter out, boolean refresh) {
     try {
       if ((orgActivities.size() == 0) || (refresh == true)) {
-        System.out.println("Refreshing org activities");
         blackboard.openTransaction();
         orgActivities = new ArrayList(blackboard.query(orgActivitiesForOplanPred(oplan)));
         blackboard.closeTransaction();
@@ -324,7 +347,6 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       out.println("</table>");
       printHtmlEnd(out);
       e.printStackTrace();
-      System.out.println(e.getMessage());
     }
   }
 
@@ -455,7 +477,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
  
     out.println("<tr>");
     out.println("<input type=\"hidden\" name=\"" + ACTION_PARAM +
-                "\" value=\"" + CHANGE_ORGACTIVITY + "\">\n");
+                "\" value=\"" + MODIFY_ORGACTIVITY + "\">\n");
     out.println("<input type=\"hidden\" name=\"" + ORG_ID +
                 "\" value=\"" + org.getOrgID() + "\">\n");
     out.println("<input type=\"hidden\" name=\"" + ORG_UID +
@@ -537,18 +559,21 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
     for (Iterator iterator = changes.iterator();
          iterator.hasNext();) {
       ChangeInfo changeInfo = (ChangeInfo) iterator.next();
-      OrgActivity orgActivity = changeInfo.getOrgActivity();
-      
-      // Apply changes
-      orgActivity.setOpTempo(changeInfo.getOpTempo());
-      orgActivity.getTimeSpan().setStartDate(changeInfo.getTimeSpan().getStartDate());
-      orgActivity.getTimeSpan().setEndDate(changeInfo.getTimeSpan().getEndDate());
+      OrgActivity orgActivity = changeInfo.getOrigOrgActivity();
+      OrgActivity modifiedOrgActivity = changeInfo.getModifiedOrgActivity();
+
+      // Apply changes - currently only supporting changes to the op tempo,
+      // start and end times.
+      orgActivity.setOpTempo(modifiedOrgActivity.getOpTempo());
+      orgActivity.setTimeSpan(modifiedOrgActivity.getTimeSpan());
 
       boolean status = blackboard.publishChange(orgActivity);
+      /*
       System.out.println("Publish status of " + status + " for " + orgActivity);
       System.out.println(orgActivity.getUID() + " " + orgActivity.getOpTempo() + " " + 
                          orgActivity.getTimeSpan().getStartDate() + " " +
                          orgActivity.getTimeSpan().getEndDate());
+      */
     }
     /*
      * KLUDGE - Don't publish the coupon because the GLSInitServlet will
@@ -595,9 +620,33 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
       }
     }
 
-    System.out.println("Should never be trying to get specific org " +
-                       "before initializing OrgActivities");
-    return null;
+    throw new IllegalArgumentException("OrgActivity UID - " + 
+                                       orgUID + 
+                                       " - not found in current set of OrgActivities.");
+  }
+
+  protected ChangeInfo getChangeInfo(OrgActivity orgActivity) {
+    ChangeInfo changeInfo = (ChangeInfo) modifiedOrgActivities.get(orgActivity.getUID());
+
+    if (changeInfo == null) {
+      // replace copy in orgActivities so we display the changes
+      // assume that modifications will not change the sort order 
+      OrgActivity copyOrgActivity = (OrgActivity) orgActivity.clone();
+      int index = orgActivities.indexOf(orgActivity);
+      if (index >= 0) {
+        orgActivities.set(index, copyOrgActivity);
+      } else {
+        throw new IllegalArgumentException("OrgActivity - " + 
+                                           orgActivity + 
+                                           " - not found in current set of OrgActivities.");
+      }
+
+      // Keep orig and current set of changes for publish 
+      changeInfo = new ChangeInfo(orgActivity, copyOrgActivity);
+      modifiedOrgActivities.put(orgActivity.getUID(), changeInfo);
+    }
+
+    return changeInfo;
   }
 
   private static class OrgActivityComparator implements Comparator {
@@ -772,12 +821,12 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
             displayOplanEdit(out, false);
           } else if (action.equals(EDIT_ORGACTIVITY)) {
             editOrgActivity(out);
-          }  else if (action.equals(CHANGE_ORGACTIVITY)) {
-            changeOrgActivity(out); 
+          }  else if (action.equals(MODIFY_ORGACTIVITY)) {
+            modifyOrgActivity(out); 
           } else if (action.equals(PUBLISH)) { 
             publish(out);
           } else if (action.equals(REFRESH)) { 
-            displayOplanEdit(out, true);
+            refreshOrgActivities(out);
           }
         } catch (Exception topLevelException) {
           displayExceptionFailure(out, topLevelException);
@@ -790,9 +839,9 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
         String orgUID = request.getParameter(ORG_UID);
         
         if ((orgID == null) || (orgUID == null)) {
-          System.err.println("Malformed " + EDIT_ORGACTIVITY + " request. " +
-                             " Must include " + ORG_ID + " and " + ORG_UID + " values.");
-          return;
+          throw new IllegalArgumentException("Malformed " + EDIT_ORGACTIVITY + " request. " +
+                                             " Must include " + ORG_ID + " and " + ORG_UID + 
+                                             " values.");
         }
         
         OrgActivity orgActivity = findOrg(UID.toUID(orgUID));
@@ -805,62 +854,48 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
         }
       }
       
-      protected void changeOrgActivity(PrintWriter out) {
+      protected void modifyOrgActivity(PrintWriter out) {
         String orgID = request.getParameter(ORG_ID);
         String orgUID = request.getParameter(ORG_UID);
 
         if ((orgID == null) || (orgUID == null)) {
-          System.err.println("Malformed " + CHANGE_ORGACTIVITY + " request. " +
-                             " Must include " + ORG_ID + " and " + ORG_UID + " values.");
-
-          return;
+          throw new IllegalArgumentException("Malformed " + MODIFY_ORGACTIVITY + " request. " +
+                                             " Must include " + ORG_ID + " and " + ORG_UID + 
+                                             " values.");
         }
         
         OrgActivity orgActivity = findOrg(UID.toUID(orgUID));
         
-        if (changeOrg(orgActivity, request)) {
+        if (changeOrgActivity(orgActivity, request)) {
           displayPostSuccess(out);
         } else {
           displayPostFailure(out);
         }
       }
+
+      protected void refreshOrgActivities(PrintWriter out) {
+        // Forget about all previous edits
+        modifiedOrgActivities.clear();
+        displayOplanEdit(out, true);
+      }
     }
   }
 
   private static class ChangeInfo {
-    private OrgActivity myOrgActivity;
-    private String myOpTempo;
-    private TimeSpan myTimeSpan;
+    private OrgActivity myOrigOrgActivity;
+    private OrgActivity myModifiedOrgActivity;
 
-    public ChangeInfo(OrgActivity orgActivity, String opTempo, 
-                      TimeSpan timeSpan) {
-      myOrgActivity = orgActivity;
-      myOpTempo = opTempo;
-      myTimeSpan = timeSpan;
+    public ChangeInfo(OrgActivity origOrgActivity, OrgActivity modifiedOrgActivity) {
+      myOrigOrgActivity = origOrgActivity;
+      myModifiedOrgActivity = modifiedOrgActivity;
     }
 
-    public ChangeInfo(OrgActivity orgActivity) {
-      myOrgActivity = orgActivity;
+    public OrgActivity getOrigOrgActivity() {
+      return myOrigOrgActivity;
     }
 
-    public String getOpTempo() {
-      return myOpTempo;
-    }
-
-    public void setOpTempo(String opTempo) {
-      myOpTempo = opTempo;
-    }
-
-    public TimeSpan getTimeSpan() {
-      return myTimeSpan;
-    }
-    
-    public void setTimeSpan(TimeSpan timeSpan) {
-      myTimeSpan = timeSpan;
-    }
-
-    public OrgActivity getOrgActivity() {
-      return myOrgActivity;
+    public OrgActivity getModifiedOrgActivity() {
+      return myModifiedOrgActivity;
     }
   }
 
