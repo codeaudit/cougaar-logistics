@@ -92,8 +92,9 @@ public class SeaDataXMLize extends GenericDataXMLize {
       baseAsset = (GLMAsset)directObject;
     }
 	
+    boolean isContainer = isContainer (baseAsset);
     dataHelper.createField(object, "Transport", "isContainer", isContainer (baseAsset) ? TRUE : FALSE);
-    dataHelper.createField(object, "Transport", "isAmmo", isAmmo (baseAsset) ? TRUE : FALSE);
+    dataHelper.createField(object, "Transport", "isAmmo", (isContainer ? (isAmmo (baseAsset) ? TRUE : FALSE) : FALSE));
 
     Date earliestArrival = new Date(prefHelper.getEarlyDate(task).getTime());
     dataHelper.createDateField(object, "earliestArrival", earliestArrival);
@@ -109,19 +110,23 @@ public class SeaDataXMLize extends GenericDataXMLize {
   protected void addPassengerCapacity (Object object, GLMAsset asset) {}
 
   protected boolean isContainer (GLMAsset asset) {
-    return asset instanceof Container;
+    LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
+      asset.resolvePG (LowFidelityAssetPG.class);
+    
+    if (currentLowFiAssetPG != null)
+      return currentLowFiAssetPG.getCCCDim().getIsContainer();
+    else
+      return asset instanceof Container;
   }
 
   /** 
    * this is a hack -- we tell if a container is an ammo container if it comes 
    * from the ammo packer.  There should be a better way to tell that it's a 
    * container full of ammo.
+   *
+   * NOTE : should call isContainer first!
    */
   protected boolean isAmmo (GLMAsset asset) {
-    boolean isContainer = isContainer(asset);
-    if (!isContainer)
-      return false;
-
     String unit = "";
     try{
       unit = asset.getForUnitPG ().getUnit ();
@@ -129,7 +134,7 @@ public class SeaDataXMLize extends GenericDataXMLize {
       return false;
     }
 	
-    return unit.equals ("IOC") || unit.equals ("OSC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
+    return unit.equals ("OSC") || unit.equals ("IOC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
   }
 
   protected double getContainerCapacity (GLMAsset asset) {

@@ -495,7 +495,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 
     NewMovabilityPG movabilityPG = (NewMovabilityPG)ldmf.createPropertyGroup(MovabilityPG.class);
     ((GLMAsset)truckSizedAsset).setMovabilityPG(movabilityPG);
-    movabilityPG.setCargoCategoryCode(currentLowFiAssetPG.getCCCDimsAsArray()[0].getCargoCatCode());
+    movabilityPG.setCargoCategoryCode(currentLowFiAssetPG.getCCCDim().getCargoCatCode());
 
     adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, contrib);
 
