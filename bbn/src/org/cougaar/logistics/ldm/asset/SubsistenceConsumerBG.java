@@ -91,42 +91,42 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 //      String myOrgName = parentPlugin.getMyOrg().getItemIdentificationPG().getItemIdentification();
 //     if (myOrgName.indexOf("35-ARBN") >= 0) {
 //       System.out.println("getParamSched() Asset is "+
-// 			 myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
+//                       myPG.getMei().getTypeIdentificationPG().getTypeIdentification());
 //     }
     while (predList.hasNext()) {
       Iterator list = ((Collection)predList.next()).iterator();
       predicate = (UnaryPredicate)list.next();
       if (predicate instanceof MilitaryPersonPred) {
-	Schedule consumerSched = 
-	  parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("getParamSched() ConsumerSched "+consumerSched);
-// 	}
- 	params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
+        Schedule consumerSched = 
+          parentPlugin.getScheduleUtils().createConsumerSchedule((Collection)list.next());
+//      if (myOrgName.indexOf("35-ARBN") >= 0) {
+//        System.out.println("getParamSched() ConsumerSched "+consumerSched);
+//      }
+        params.add(parentPlugin.getScheduleUtils().convertQuantitySchedule(consumerSched));
       } else if (predicate instanceof OrgActivityPred) {
-	Schedule orgActSched = 
-	  parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
- 	params.add(orgActSched);
-// 	if (myOrgName.indexOf("35-ARBN") >= 0) {
-// 	  System.out.println("getParamSched() OrgActSched "+orgActSched);
-// 	}
+        Schedule orgActSched = 
+          parentPlugin.getScheduleUtils().createOrgActivitySchedule((Collection)list.next());
+        params.add(orgActSched);
+//      if (myOrgName.indexOf("35-ARBN") >= 0) {
+//        System.out.println("getParamSched() OrgActSched "+orgActSched);
+//      }
       } else if (predicate instanceof LogisticsOPlanPredicate) {
-	Collection oplanColl = (Collection)list.next();
-	Iterator it = oplanColl.iterator();
-	if (it.hasNext()) {
-	  logOPlan = (LogisticsOPlan)it.next();
-	}
+        Collection oplanColl = (Collection)list.next();
+        Iterator it = oplanColl.iterator();
+        if (it.hasNext()) {
+          logOPlan = (LogisticsOPlan)it.next();
+        }
       } else if (predicate instanceof FeedingPolicyPred) {
-	Collection fpColl = (Collection) list.next();
-	Iterator it = fpColl.iterator();
-	if (it.hasNext()) {
-	  feedingPolicy = (FeedingPolicy)it.next();
-	  params.add(getFeedingPolicySchedule(feedingPolicy));
-	  params.add(getEnhancementPolicySchedule(feedingPolicy));
-	  params.add(getWaterPolicySchedule(feedingPolicy));
-	}
+        Collection fpColl = (Collection) list.next();
+        Iterator it = fpColl.iterator();
+        if (it.hasNext()) {
+          feedingPolicy = (FeedingPolicy)it.next();
+          params.add(getFeedingPolicySchedule(feedingPolicy));
+          params.add(getEnhancementPolicySchedule(feedingPolicy));
+          params.add(getWaterPolicySchedule(feedingPolicy));
+        }
       } else {
- 	logger.error("getParameterSchedule: unknown predicate "+predicate);
+        logger.error("getParameterSchedule: unknown predicate "+predicate);
       }
     }
     paramSchedule = parentPlugin.getScheduleUtils().getMergedSchedule(params);
@@ -161,7 +161,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       // e.g., min = 1 then start is C + 1 or 2nd day of the operation
       start =  parentPlugin.getTimeUtils().addNDays(logOPlan.getStartTime(), (int)ose.getStartTime());
       end = parentPlugin.getTimeUtils().addNDays(start,((int)ose.getEndTime() - 
-							(int)ose.getStartTime() + 1));
+                                                        (int)ose.getStartTime() + 1));
       element = new ObjectScheduleElement(start, end, ose.getObject());
       sched_els.addElement(element);
       start = end;
@@ -178,16 +178,16 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       // e.g., min = 0 then start is C + 0 or C - Day of the operation
       // e.g., min = 1 then start is C + 1 or 2nd day of the operation
       if (waterRanges.length > 0) {
-	start =  parentPlugin.getTimeUtils().addNDays(logOPlan.getStartTime(), waterRanges[0].getRangeMin());
-	for (int i = 0; i < waterRanges.length; i++) {
-	  end = parentPlugin.getTimeUtils().addNDays(start,(waterRanges[i].getRangeMax() - 
-							    waterRanges[i].getRangeMin() + 1));
-	  KeyRuleParameterEntry [] keys = fp.getRangeKeys(waterRanges[i]);
-	  element = new ObjectScheduleElement(start, end, 
-					      addWater(new HashMap(), BOTTLED_WATER, new Double(keys[0].getValue())));
-	  sched_els.addElement(element);
-	  start = end;
-	}
+        start =  parentPlugin.getTimeUtils().addNDays(logOPlan.getStartTime(), waterRanges[0].getRangeMin());
+        for (int i = 0; i < waterRanges.length; i++) {
+          end = parentPlugin.getTimeUtils().addNDays(start,(waterRanges[i].getRangeMax() - 
+                                                            waterRanges[i].getRangeMin() + 1));
+          KeyRuleParameterEntry [] keys = fp.getRangeKeys(waterRanges[i]);
+          element = new ObjectScheduleElement(start, end, 
+                                              addWater(new HashMap(), BOTTLED_WATER, new Double(keys[0].getValue())));
+          sched_els.addElement(element);
+          start = end;
+        }
       }
     }// else feeding policy is null return empty schedule
     return parentPlugin.getScheduleUtils().newObjectSchedule(sched_els.elements());
@@ -203,14 +203,14 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       // e.g., min = 0 then start is C + 0 or C - Day of the operation
       // e.g., min = 1 then start is C + 1 or 2nd day of the operation
       if (eRanges.length > 0) {
-	start =  parentPlugin.getTimeUtils().addNDays(logOPlan.getStartTime(), eRanges[0].getRangeMin());
-	for (int i = 0; i < eRanges.length; i++) {
-	  end = parentPlugin.getTimeUtils().addNDays(start,(eRanges[i].getRangeMax() - 
-							    eRanges[i].getRangeMin() + 1));
-	  element = new ObjectScheduleElement(start, end, addEnhancements(new HashMap(), nsns, i, fp));
-	  sched_els.addElement(element);
-	  start = end;
-	}
+        start =  parentPlugin.getTimeUtils().addNDays(logOPlan.getStartTime(), eRanges[0].getRangeMin());
+        for (int i = 0; i < eRanges.length; i++) {
+          end = parentPlugin.getTimeUtils().addNDays(start,(eRanges[i].getRangeMax() - 
+                                                            eRanges[i].getRangeMin() + 1));
+          element = new ObjectScheduleElement(start, end, addEnhancements(new HashMap(), nsns, i, fp));
+          sched_els.addElement(element);
+          start = end;
+        }
       }
     }// else feeding policy is null return empty schedule
     return parentPlugin.getScheduleUtils().newObjectSchedule(sched_els.elements());
@@ -228,7 +228,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       quantity = ((Double) obj).doubleValue();
     } else {
       if (obj != null) {
-	logger.debug ( "Bad param - expected quantity got " + obj); 
+        logger.debug ( "Bad param - expected quantity got " + obj); 
       } // if
       return null;
     } // if
@@ -238,7 +238,7 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       act = (OrgActivity) obj;
     } else {
       if (obj != null) {
-	logger.debug ( "Bad param - expected OrgActivity got " + obj); 
+        logger.debug ( "Bad param - expected OrgActivity got " + obj); 
       } // if
       return null;
     } // if
@@ -261,43 +261,43 @@ public class SubsistenceConsumerBG extends ConsumerBG {
 
     if (keys != null) {
       for (int j = 0; j < keys.length; j++) {
-	if ((keys[j].getKey().equalsIgnoreCase("Breakfast")
-	     && (keys[j].getValue().equals(identifier)))
-	    || (keys[j].getKey().equalsIgnoreCase("Lunch")
-		&& (keys[j].getValue().equals(identifier)))
-	    || (keys[j].getKey().equalsIgnoreCase("Dinner")
-		&& (keys[j].getValue().equals(identifier)))) {
-	  resource_count += 1.0;
-	}
+        if ((keys[j].getKey().equalsIgnoreCase("Breakfast")
+             && (keys[j].getValue().equals(identifier)))
+            || (keys[j].getKey().equalsIgnoreCase("Lunch")
+                && (keys[j].getValue().equals(identifier)))
+            || (keys[j].getKey().equalsIgnoreCase("Dinner")
+                && (keys[j].getValue().equals(identifier)))) {
+          resource_count += 1.0;
+        }
       }
     } else {
       // Optempo does not over rule
       logger.debug( " meal params is " +
-		    params.get(2) + " resource is " + identifier);
+                    params.get(2) + " resource is " + identifier);
       if (params.size() < 3) {
-	logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
+        logger.error("Class I ose array in getRate() is missing element "+2+" (meal)");
       } else if (params.get(2) != null) {
-	  if (((HashMap) params.get(2)).containsKey(identifier)) {
-	    // Meals
-	    resource_count += ((Double) ((HashMap)
-					 params.get(2)).get(identifier)).doubleValue(); 
-	    logger.debug(identifier+" rate is "+resource_count);
-	  } // if
-	  // DEBUG
-	  else {
-	    logger.debug("No meal rates for "+identifier);
-	  }
+          if (((HashMap) params.get(2)).containsKey(identifier)) {
+            // Meals
+            resource_count += ((Double) ((HashMap)
+                                         params.get(2)).get(identifier)).doubleValue(); 
+            logger.debug(identifier+" rate is "+resource_count);
+          } // if
+          // DEBUG
+          else {
+            logger.debug("No meal rates for "+identifier);
+          }
       } // if
 
       // Enhancements policy
       if (params.get(3) != null) {
-	if (((HashMap) params.get(3)).containsKey(identifier)) {
-	  // Meals
-	  resource_count += ((Double) ((HashMap)
-				       params.get(3)).get(identifier)).doubleValue(); 
-	  logger.debug ( " enhance params is " + ((Double)
-						  ((HashMap) params.get(3)).get (identifier)).doubleValue());
-	}
+        if (((HashMap) params.get(3)).containsKey(identifier)) {
+          // Meals
+          resource_count += ((Double) ((HashMap)
+                                       params.get(3)).get(identifier)).doubleValue(); 
+          logger.debug ( " enhance params is " + ((Double)
+                                                  ((HashMap) params.get(3)).get (identifier)).doubleValue());
+        }
       }
     }
 
@@ -306,27 +306,27 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       logger.error("Class I ose array in getRate() is missing element "+5+" water");
     } else {
       if (params.get(4) != null) {
-	if (((HashMap) params.get(4)).containsKey(identifier)) {
-	  // water
-	  resource_count += ((Double) ((HashMap)
-				       params.get (4)).get(identifier)).doubleValue(); 
-	  logger.debug ( " water params is " + ((Double) ((HashMap)
-							 params.get(4)).get (identifier)).doubleValue());
-	} // if
+        if (((HashMap) params.get(4)).containsKey(identifier)) {
+          // water
+          resource_count += ((Double) ((HashMap)
+                                       params.get (4)).get(identifier)).doubleValue(); 
+          logger.debug ( " water params is " + ((Double) ((HashMap)
+                                                         params.get(4)).get (identifier)).doubleValue());
+        } // if
       } // if
     } // if
 
     if (resource_count > 0) {
       double total = 
-	Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity); 
+        Math.ceil (resource_count * (1.0 / ppg.getCountPerPack()) * quantity); 
       result = CountRate.newEachesPerDay (total);
       RationPG rpg = (RationPG)
-	asset.searchForPropertyGroup(RationPG.class);
+        asset.searchForPropertyGroup(RationPG.class);
       logger.debug ("\n THE rate is " +
-		   CountRate.newEachesPerDay (total) + " for asset " +
-		   identifier + " the ration type is " + rpg.getRationType());
+                   CountRate.newEachesPerDay (total) + " for asset " +
+                   identifier + " the ration type is " + rpg.getRationType());
       logger.debug ( " Unit of Issue  is " + ppg.getUnitOfIssue()
-		    + " count per pack" + ppg.getCountPerPack());
+                    + " count per pack" + ppg.getCountPerPack());
     } // if
     return result;
   } // getRate
@@ -337,10 +337,10 @@ public class SubsistenceConsumerBG extends ConsumerBG {
       Vector result = parentPlugin.generateRationList();
 
       if (result == null) {
-	logger.debug("getConsumed(): Database query returned EMPTY result set for "+
-		     myPG.getMei()+", "+supplyType);
+        logger.debug("getConsumed(): Database query returned EMPTY result set for "+
+                     myPG.getMei()+", "+supplyType);
       } else {
-	parseResults(result);
+        parseResults(result);
       }
     }
     return consumedItems;
