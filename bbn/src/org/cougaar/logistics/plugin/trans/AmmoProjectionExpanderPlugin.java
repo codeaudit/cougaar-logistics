@@ -20,73 +20,25 @@
  */
 package org.cougaar.logistics.plugin.trans;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Date;
-import java.util.Vector;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Vector;
-
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectScorePoint;
-import org.cougaar.planning.ldm.plan.AspectScoreRange;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.TimeAspectValue;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.Disposition;
-import org.cougaar.planning.ldm.plan.Workflow;
-import org.cougaar.planning.ldm.asset.AssetGroup;
-
-import org.cougaar.logistics.ldm.Constants;
-
-import org.cougaar.glm.packer.Geolocs;
-import org.cougaar.glm.ldm.plan.AlpineAspectType;
-import org.cougaar.glm.ldm.asset.GLMAsset;
-import org.cougaar.glm.ldm.asset.NewPhysicalPG;
-import org.cougaar.glm.ldm.asset.ContentsPG;
-import org.cougaar.glm.ldm.asset.NewContentsPG;
-import org.cougaar.glm.ldm.asset.NewMovabilityPG;
-import org.cougaar.glm.ldm.asset.Container;
-import org.cougaar.planning.ldm.measure.*;
-
-import org.cougaar.glm.util.GLMPrepPhrase;
-
-import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
-import org.cougaar.lib.callback.*;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
-import org.cougaar.logistics.plugin.inventory.TaskUtils;
-
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
-import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
-import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.lib.util.UTILAllocate;
-import org.cougaar.lib.util.UTILPreference;
-
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
-import org.cougaar.glm.ldm.asset.PhysicalAsset;
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.planning.ldm.plan.NewWorkflow;
-import org.cougaar.planning.ldm.plan.Workflow;
-import org.cougaar.planning.ldm.plan.WorkflowImpl;
-import org.cougaar.planning.ldm.plan.RelationshipSchedule;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.MPTask;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.glm.ldm.asset.*;
+import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
+import org.cougaar.lib.callback.UTILExpandableTaskCallback;
+import org.cougaar.lib.callback.UTILFilterCallback;
+import org.cougaar.lib.callback.UTILGenericListener;
+import org.cougaar.lib.util.UTILAllocate;
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.planning.ldm.asset.*;
+import org.cougaar.planning.ldm.measure.Area;
+import org.cougaar.planning.ldm.measure.Mass;
+import org.cougaar.planning.ldm.measure.Volume;
+import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.util.DynamicUnaryPredicate;
+import org.cougaar.util.UnaryPredicate;
+
+import java.util.*;
 
 /**
  * Takes PROJECT_SUPPLY tasks 
@@ -133,16 +85,30 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     myInputTaskCallback = new UTILExpandableTaskCallback (bufferingThread, logger) {
 	protected UnaryPredicate getPredicate () {
 	  return new UnaryPredicate() {
+      protected TaskUtils myTaskUtils = new TaskUtils(logger);
+
 	      public boolean execute(Object o) {
-		if ( o instanceof Task ) {
+		  if ( o instanceof Task ) {
 		  Task task = (Task) o;
 		  boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
 		  boolean isReserved   = (task.getPrepositionalPhrase (START) != null);
 		  if (hasTransport && isReserved) return true;
 
-		  return ( (((Task)o).getWorkflow() == null )  &&
-			   (((Task)o).getPlanElement() == null ) &&
-			   ((UTILGenericListener) myListener).interestingTask ((Task) o)); 
+		  if((task.getPlanElement() == null ) &&
+		     (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) &&
+		     (myTaskUtils.isLevel2(task))) {
+			 boolean isReadyForTransport=(myTaskUtils.isReadyForTransport(task));
+			 //TODO: MWD delete this debug line
+			 if((isReadyForTransport) &&
+           logger.isDebugEnabled()){
+			     logger.debug("AmmoProjectionExpanderPlugin:isLevel2 ReadyForTransport=" + isReadyForTransport);
+			 }
+			 return isReadyForTransport;
+      }
+
+		  return ((task.getWorkflow() == null )  &&
+			  (task.getPlanElement() == null ) &&
+			  ((UTILGenericListener) myListener).interestingTask (task)); 
 		}
 		return false;
 	      }
@@ -162,20 +128,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     boolean hasSupply = task.getVerb().equals (Constants.Verb.PROJECTSUPPLY);
     boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
 
-    boolean isReadyForTransport=true;
-
-    if(hasSupply) {
-      if(taskUtils.isLevel2(task)) {
-        isReadyForTransport = taskUtils.isReadyForTransport(task);
-      }
-    }
-
-    if (isDebugEnabled() && hasSupply  && isReadyForTransport)
+    if (isDebugEnabled() && hasSupply)
       debug (".interestingTask - processing PROJECT_SUPPLY task " + task.getUID ());
     if (isDebugEnabled() && hasTransport)
       debug (".interestingTask - processing TRANSPORT task " + task.getUID ());
 
-    return ((hasSupply  && isReadyForTransport) || hasTransport);
+    return (hasSupply || hasTransport);
   }
 
   int total = 0;
@@ -430,7 +388,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       }
       else { 
 	if (glmProto.getPhysicalPG().getFootprintArea() == null) {
-	  ((NewPhysicalPG)glmProto.getPhysicalPG()).setFootprintArea (new Area (Area.SQUARE_FEET, 1)); 
+	  ((NewPhysicalPG)glmProto.getPhysicalPG()).setFootprintArea (new Area (Area.SQUARE_FEET, 1));
 	  if (isWarnEnabled()) {
 	    warn ("createDeliveredAsset - task " + originalTask.getUID () + "'s d.o. " + prototype.getUID() + 
 		  " doesn't have an area slot on its physical pg.");
@@ -491,8 +449,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * Report to superior that the expansion has changed. Usually just a pass
    * through to the UTILPluginAdapter's updateAllocationResult.
    *
-   * @param exp Expansion that has changed.
-   * @see UTILPluginAdapter#updateAllocationResult
+   * @param cpe Expansion that has changed.
+   * @see org.cougaar.lib.filter.UTILPluginAdapter#updateAllocationResult
    */
   public void reportChangedExpansion(Expansion cpe) { 
     if (isDebugEnabled ())
@@ -591,7 +549,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   /** checks to see if the AllocationResult is equal to this one.
-     * @param anAllocationResult
+     * @param thisAR
+     * @param that
      * @return boolean
      */
   public boolean isEqual(AllocationResult thisAR, AllocationResult that) {
@@ -690,7 +649,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       (Container)getLDMService().getLDM().getFactory().createInstance(MILVAN_PROTOTYPE, itemID);
     
     // AMMO Cargo Code
-    NewMovabilityPG movabilityPG = 
+    NewMovabilityPG movabilityPG =
       PropertyGroupFactory.newMovabilityPG(milvan.getMovabilityPG());
     movabilityPG.setCargoCategoryCode(AMMO_CATEGORY_CODE);
     milvan.setMovabilityPG(movabilityPG);
@@ -751,7 +710,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * Implemented for UTILBufferingPlugin interface
    *
    * @param tasks that have been buffered up to this point
-   * @see UTILBufferingPlugin
+   * @see org.cougaar.lib.filter.UTILBufferingPlugin
    */
   public void processTasks (List tasks) {
     if (isInfoEnabled()) {
