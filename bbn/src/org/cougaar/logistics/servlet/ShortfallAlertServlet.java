@@ -30,14 +30,20 @@ package org.cougaar.logistics.servlet;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.ObjectOutputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.StreamCorruptedException;
 
 import java.net.URLEncoder;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +54,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.Comparator;
+import java.util.TimeZone;
+
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -84,8 +95,12 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.Filters;
 import org.cougaar.util.ConfigFinder;
 
+import org.cougaar.glm.ldm.oplan.Oplan;
+
 import org.cougaar.logistics.plugin.inventory.ShortfallSummary;
 import org.cougaar.logistics.plugin.inventory.ShortfallInventory;
+import org.cougaar.logistics.plugin.inventory.ShortfallPeriod;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 /**
  * A <code>Servlet</code>, loaded by the 
@@ -103,6 +118,14 @@ extends BaseServletComponent
         }
       };
 
+  protected static UnaryPredicate OPLAN_PREDICATE = 
+      new UnaryPredicate() {
+	  public boolean execute(Object o) {
+	      return (o instanceof Oplan);
+	  }
+      };
+    
+
   protected static final String[] iframeBrowsers = {
     "mozilla/5",
     "msie 5",
@@ -110,6 +133,8 @@ extends BaseServletComponent
   };
 
   protected static final String RULE_CONFIG_FILE="ShortfallAlertConfig.txt";
+
+  protected static final String USER_MODE="USER_MODE";
 
   public static final double DEFAULT_RED_THRESHOLD = 4;
 
@@ -131,18 +156,45 @@ extends BaseServletComponent
   protected final Object lock = new Object();
   protected LoggingService logger;
 
+  protected SimpleDateFormat dayFormat=null;
+  protected SimpleDateFormat hourFormat=null;
+
+  protected DecimalFormat numberFormat=null;
+
+  protected boolean userMode=false;
+
   public ShortfallAlertServlet() {
     super();
     path = getDefaultPath();
+    dayFormat = new SimpleDateFormat("MM/dd/yyyy");
+    dayFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    hourFormat= new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    hourFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    numberFormat = new DecimalFormat("############.##");
   }
 
   public void setParameter(Object o) {
     if (o instanceof String) {
       path = (String) o;
-    } else if (o instanceof Collection) {
-      Collection c = (Collection) o;
-      if (!(c.isEmpty())) {
-        path = (String) c.iterator().next();
+    } else if (o instanceof List) {
+      List l = (List) o;
+      if (!(l.isEmpty())) {
+        path = (String) l.iterator().next();
+      }
+      if(l.size() > 1) {
+	Object o2 = l.get(1);
+	if(!(o2 instanceof String)) {
+	    throw new IllegalArgumentException("Expecting third optional argument as a string, not ("+o2+")");
+	}
+	String[] keyAndValue = ((String) o2).split("=");
+	if((keyAndValue.length == 2) &&
+	   (keyAndValue[0].trim().equals(USER_MODE)) &&
+	   (!(keyAndValue[1].trim().equals("")))) {
+	    userMode = keyAndValue[1].trim().toLowerCase().equals("true");
+	}
+	else {
+	    throw new IllegalArgumentException("Optional second argument should be " + USER_MODE + "=<true or false>");
+	}
       }
     } else if (o == null) {
       // ignore
@@ -343,6 +395,8 @@ extends BaseServletComponent
     double yellowThreshold;
     int refreshInterval;
 
+    Date startCDay=null;
+
     public ShortfallChecker(
         HttpServletRequest request, 
         HttpServletResponse response)
@@ -409,6 +463,8 @@ extends BaseServletComponent
         viewAgentSmall();
       } else if ("viewMoreLink".equals(viewType)) {
         viewMoreLink();
+      } else if ("viewNumShortfall".equals(viewType)) {
+        viewNumShortfall();
       } else {
         viewDefault(); // other
       }
@@ -668,9 +724,126 @@ extends BaseServletComponent
       out.println("</form>");
     }
 
+
+    private class AgentShortfall {
+	
+      private String agent;
+      private int numShortfall;
+	
+      public AgentShortfall(String agent, int numShortfall) {
+	this.agent = agent;
+	this.numShortfall = numShortfall;
+      }
+
+      public String getAgent() { return agent; }
+      public int getNumShortfall() { return numShortfall; } 
+
+    }
+
+    private class ShortfallComparator implements Comparator {
+
+	public boolean equals(Object aComparator) {    
+	    return aComparator instanceof ShortfallComparator;
+	}
+	
+	public int compare(Object obj1, Object obj2) {
+	    AgentShortfall as1 = (AgentShortfall) obj1;
+	    AgentShortfall as2 = (AgentShortfall) obj2;
+	    return (as2.getNumShortfall() - as1.getNumShortfall());
+	}
+    }
+
+    private ArrayList getSortedShortfallAgents(List agents){
+      boolean VERBOSE = true;
+      ArrayList filteredAS = new ArrayList();
+      Iterator agentIt = agents.iterator();
+      while(agentIt.hasNext()) {
+	String agent = (String)agentIt.next();
+	InputStream is = null;
+	BufferedReader reader = null;
+	
+	try {
+	  // build URL for remote connection
+	  StringBuffer buf = new StringBuffer();
+	  buf.append(getBaseURL());
+	  buf.append("$");
+          buf.append(formURLEncode(agent));
+          buf.append(getPath());
+          buf.append("?viewType=viewNumShortfall");
+
+	  //buf.append("http://");
+	  //buf.append(request.getServerName());
+	  //buf.append(":");
+	  //buf.append(request.getServerPort());
+	  //buf.append("/$");
+	  //buf.append(subOrgName);
+	  //buf.append(support.getPath());
+
+	  String url = buf.toString();
+ 
+	  if (VERBOSE) {
+	    logger.warn("URL is: " + url);
+	  }
+
+	  // open connection
+	  URL myURL = new URL(url);
+	  URLConnection myConnection = myURL.openConnection();
+	  is = myConnection.getInputStream();
+
+	  reader = new BufferedReader(new InputStreamReader(is));
+	  
+	  // read single HierarchyData Object from subordinate
+	  
+	  int numShortfall = Integer.parseInt(reader.readLine());
+
+	  if(numShortfall > 0) {
+	      filteredAS.add(new AgentShortfall(agent,numShortfall));
+	  }
+	} catch (StreamCorruptedException sce) {
+	  if (VERBOSE) {
+	    System.err.println ("In "+getEncodedAgentName() +
+				" while hitting " + agent +
+				", got exception : ");
+	    sce.printStackTrace ();
+	  }
+	} catch (FileNotFoundException fnf) {
+	  if (VERBOSE) {
+	    System.err.println ("In "+getEncodedAgentName() +
+				" while hitting " + agent +
+				", got exception : ");
+	    fnf.printStackTrace ();
+	  }
+	} catch (Exception e) {
+	  System.err.println ("In "+getEncodedAgentName() +
+			      " while hitting " + agent +
+			      ", got exception : ");
+	  e.printStackTrace();
+	} finally {
+	  try {
+	    if (reader != null)
+	      reader.close();
+	    if (is != null)
+	      is.close();
+	  } catch (Exception e) {}
+	}
+      }
+
+      Collections.sort(filteredAS,new ShortfallComparator());
+
+      Iterator filteredIt = filteredAS.iterator();
+      ArrayList filteredAgents = new ArrayList(filteredAS.size());
+      while(filteredIt.hasNext()) {
+	  String agentWShortfall = ((AgentShortfall) filteredIt.next()).getAgent();
+	  filteredAgents.add(agentWShortfall);
+      }
+
+      return filteredAgents;
+    }
+
     // Output a page showing summary info for all agents
     private void viewAllAgents() throws IOException {
-      viewSelectedAgents(getAllAgentNames(), "All");
+      ArrayList filteredAgents = getSortedShortfallAgents(getAllAgentNames());
+      viewSelectedAgents(filteredAgents, "All");
     }
 
     private void viewSelectedAgents() throws IOException {
@@ -707,19 +880,23 @@ extends BaseServletComponent
             title+
             "</h2></center>");
         printThresholdAndRefreshForm(out, agents, null, null);
-        for (int i = 0, n = agents.size(); i < n; i++) {
-          String agentName = (String) agents.get(i);
-          out.println("<iframe src=\"/$"
-                      + formURLEncode(agentName)
-                      + getPath()
-                      + "?viewType=viewAgentSmall&redThreshold="
-                      + redThreshold
-                      + "&yellowThreshold="
-                      + yellowThreshold
-                      + "\" scrolling=\"no\" width=300 height=151>"
-                      + agentName
-                      + "</iframe>");
-        }
+	if(agents.size() > 0) {
+	  for (int i = 0, n = agents.size(); i < n; i++) {
+            String agentName = (String) agents.get(i);
+            out.println("<iframe src=\"/$"
+                        + formURLEncode(agentName)
+                        + getPath()
+                        + "?viewType=viewAgentSmall&redThreshold="
+                        + redThreshold
+                        + "&yellowThreshold="
+			+ yellowThreshold
+			+ "\" scrolling=\"no\" width=300 height=151>"
+			+ agentName
+			+ "</iframe>");
+	  }
+	} else {
+	  out.println(" No Agents with Shortfall.");
+	}
         out.println("</body>");
       } else {
         int totalAgents = agents.size();
@@ -810,6 +987,44 @@ extends BaseServletComponent
         return Collections.EMPTY_LIST;
       }
     }
+
+    protected String getTimeString(long time, long bucketSize) {
+	String timeString = "";
+	if(bucketSize == TimeUtils.MSEC_PER_DAY) {
+	    timeString = dayFormat.format(new Date(time));
+	}
+	else if (bucketSize == TimeUtils.MSEC_PER_HOUR) {    
+	    timeString = hourFormat.format(new Date(time));
+	}
+	timeString = timeString + " (C" + getCBucket(time,bucketSize) + ")";
+	return timeString;
+    }
+
+
+
+    protected int getCBucket(long time, long bucketSize) {
+	long c0Day = startCDay.getTime();
+	int cBucket = ((int) ((time-c0Day) / bucketSize));
+	return cBucket;
+    }
+
+    protected Date getStartDate() {
+      Date startingCDay=null;
+
+      // get oplan
+
+      Collection oplanCollection = queryBlackboard(OPLAN_PREDICATE);
+
+      if (!(oplanCollection.isEmpty())) {
+        Iterator iter = oplanCollection.iterator();
+        Oplan plan = (Oplan) iter.next();
+	startingCDay = plan.getCday();
+      }
+      return startingCDay;
+    }
+
+
+
 
     // Output a checkbox form allowing selection of multiple agents
     private void viewManyAgents() throws IOException {
@@ -921,16 +1136,21 @@ extends BaseServletComponent
       ShortfallShortData result = getShortfallData();
       int numShortfall = result.getNumberOfShortfallInventories();
 
+      int numShortfallPeriodInvs = result.getNumberOfShortfallPeriodInventories();
+      
       int numTempShortfall = result.getNumberOfTempShortfallInventories();
 
-      int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
-
+      int numUnexpectedShortfall = numShortfallPeriodInvs;
+      
+      if(!userMode) {  
+	numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
+      }
       String bgcolor, fgcolor, lncolor;
-      if ((numUnexpectedShortfall - numTempShortfall) >= redThreshold) {
+      if (numUnexpectedShortfall >= redThreshold) {
         bgcolor = "#aa0000";
         fgcolor = "#ffffff";
         lncolor = "#ffff00";
-      } else if ((numUnexpectedShortfall - numTempShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
+      } else if ((numUnexpectedShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
         bgcolor = "#ffff00";
         fgcolor = "#000000";
         lncolor = "#0000ff";
@@ -953,11 +1173,40 @@ extends BaseServletComponent
 		  "\" target=\"_top\">"+
 		  agent+
 		  "</a>");
-      out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfall + "</b>");
-      out.println(formatLabel("Num Temp Shortfall Inventories:") + " <b>" + numTempShortfall + "</b>");
-      out.println(formatLabel("Num Unexpected Shortfall Inventories:") + " <b>" + numUnexpectedShortfall + "</b>");
+      if(userMode) {
+	out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfallPeriodInvs + "</b>");
+      }
+      else {
+	out.println(formatLabel("Num Shortfall Inventories:") + " <b>" + numShortfall + "</b>");
+	out.println(formatLabel("Num Shortfall Period Inventories:") + " <b>" + numShortfallPeriodInvs + "</b>");
+	out.println(formatLabel("Num Temp Shortfall Inventories:") + " <b>" + numTempShortfall + "</b>");
+	out.println(formatLabel("Num Unexpected Shortfall Inventories:") + " <b>" + numUnexpectedShortfall + "</b>");
+      }
       out.println(formatLabel("Effected Supply Types:\n") + result.getSupplyTypes());
       out.println("</body>\n</html>");
+    }
+
+
+    // Output a small page showing summary info for one agent
+    private void viewNumShortfall() throws IOException {
+      response.setContentType("text/html");
+      out = response.getWriter();
+      format = FORMAT_HTML;     // Force html format
+      String agent = getEncodedAgentName();
+      ShortfallShortData result = getShortfallData();
+      int numShortfall = 0;
+
+      //int numTempShortfall = result.getNumberOfTempShortfallInventories();
+      
+      if(!userMode) {
+	numShortfall = result.getNumberOfUnexpectedShortfallInventories();
+      }
+      else {
+	numShortfall = result.getNumberOfShortfallPeriodInventories();
+      }
+
+      out.println(Integer.toString(numShortfall));
+		  
     }
 
     private String formatLabel(String lbl) {
@@ -1007,17 +1256,37 @@ extends BaseServletComponent
       // get tasks
       Collection summaries = getAllShortfallSummaries();
       long nowTime = System.currentTimeMillis();
+      startCDay = getStartDate();
       ShortfallShortData data;
       if(showTables) {
-	  data = new FullShortfallData(getEncodedAgentName(),nowTime,summaries);
+	  data = new FullShortfallData(getEncodedAgentName(),
+				       nowTime,
+				       summaries,
+				       userMode);
       }
       else {
-	  data = new ShortfallShortData(getEncodedAgentName(),nowTime,summaries);
+	  data = new ShortfallShortData(getEncodedAgentName(),
+					nowTime,
+					summaries,
+					userMode);
       }
       return data;
     }
 
 
+
+
+    protected String getBaseURL() {	
+      String baseURL =   
+        request.getScheme()+
+	"://"+
+        request.getServerName()+
+        ":"+
+        request.getServerPort()+
+        "/";
+
+        return baseURL;
+    }
 
  
 
@@ -1089,12 +1358,17 @@ extends BaseServletComponent
 
     protected void printCountersAsHTML(ShortfallShortData result) {
       int numShortfall = result.getNumberOfShortfallInventories();
+      int numShortfallPeriodInvs = result.getNumberOfShortfallPeriodInventories();
       int numTempShortfall = result.getNumberOfTempShortfallInventories();
-      int numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
+      int numUnexpectedShortfall = numShortfallPeriodInvs;
+      
+      if(!userMode) {
+        numUnexpectedShortfall = result.getNumberOfUnexpectedShortfallInventories();
+      }
       String shortfallColor;
-      if ((numUnexpectedShortfall - numTempShortfall) >= redThreshold) {
+      if (numUnexpectedShortfall >= redThreshold) {
         shortfallColor = "red";
-      } else if (((numUnexpectedShortfall - numTempShortfall) >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
+      } else if ((numUnexpectedShortfall >= yellowThreshold) || (numTempShortfall >= yellowThreshold)) {
         shortfallColor = "yellow";
       } else {
         shortfallColor = "#00d000";
@@ -1107,17 +1381,30 @@ extends BaseServletComponent
       out.print(new Date(timeMillis));
       out.print("</b>   (");
       out.print(timeMillis);
-      out.print(" MS)\n"+
+      if(userMode) {
+	out.print(" MS)\n"+
+		  getTitlePrefix()+
+		  "Number of Shortfall Inventories: <b>"+
+		  numShortfallPeriodInvs +
+		  "</b>\n");
+      }
+      else {
+	out.print(" MS)\n"+
           getTitlePrefix()+
           "Number of Shortfall Inventories: <b>"+
           numShortfall +
           "</b>\n");
-      out.print("Number of Temporary Shortfall Inventories: <b>"+
-          numTempShortfall +
-          "</b>\n");
-      out.print("Number of Unexpected Shortfall Inventories: <b>"+
-          numUnexpectedShortfall +
-          "</b>\n");
+	out.print("Number of Shortfall Period Inventories: <b>"+
+		  numShortfallPeriodInvs +
+		  "</b>\n");
+	out.print("Number of Temporary Shortfall Inventories: <b>"+
+		  numTempShortfall +
+		  "</b>\n");
+
+	out.print("Number of Unexpected Shortfall Inventories: <b>"+
+		  numUnexpectedShortfall +
+		  "</b>\n");
+      }
       out.println(formatLabel("Effected Supply Types:") + ((result.getSupplyTypes()).replaceAll("\n","")) + "\n");
       out.print("</pre>\n");
     }
@@ -1132,7 +1419,7 @@ extends BaseServletComponent
 	    
 	    beginShortfallHTMLTable(
 			       (supplyType + " shortfall items:"+numShortfallInvs+"]"),
-			       "wFailedTasks");
+			       "wFailedTasks", summary.getUnit());
 	    printShortfallSummaryAsHTML(summary);
 
 	    endShortfallHTMLTable();
@@ -1158,10 +1445,16 @@ extends BaseServletComponent
      * Begin a table of <tt>printShortfallSummaryAsHTML</tt> entries.
      */
     protected void beginShortfallHTMLTable(
-        String title, String subTitle) {
+        String title, String subTitle, String unit) {
       out.print(
-          "<table border=1 cellpadding=3 cellspacing=1 width=\"100%\">\n"+
-          "<tr bgcolor=lightgrey><th align=left colspan=7>");
+        "<table border=1 cellpadding=3 cellspacing=1 width=\"100%\">\n"+
+        "<tr bgcolor=lightgrey>");
+      if(userMode) {
+	out.print("<th align=left colspan=9>");
+      }
+      else {
+	out.print("<th align=left colspan=14>");
+      }
       out.print(title);
       if (subTitle != null) {
         out.print(
@@ -1172,14 +1465,23 @@ extends BaseServletComponent
       out.print(
           "</th></tr>\n"+
           "<tr>"+
-          "<th></th>"+
-          "<th>Inventory Item</th>"+
-          "<th>Demand Shortfall</th>"+
-          "<th>Refill Shortfall</th>"+
-          "<th>Supply Shortfall</th>"+
-	  "<th>Temp Shortfall</th>"+
-          "<th>ProjectSupply Shortfall</th>"+
-          "</tr>\n");
+          "<th></th>" +
+	  "<th>Inventory Item</th>");
+      if(!userMode) {
+	out.print("<th>Demand Shortfall</th>"+
+		  "<th>Refill Shortfall</th>"+
+		  "<th>Supply Shortfall</th>"+
+		  "<th>Temp Shortfall</th>"+
+		  "<th>ProjectSupply Shortfall</th>");
+      }
+	out.print("<th>Shortfall Start</th>" +
+		  "<th>Shortfall End</th>" +
+		  "<th>Num " + unit + "</th>" +
+		  "<th>Demand</th>" +
+		  "<th>Filled</th>" +
+		  "<th>Shortfall</th>" +
+		  "<th>Percent Shortfall</th>" +
+		  "</tr>\n");
     }
 
     /**
@@ -1198,12 +1500,16 @@ extends BaseServletComponent
       Iterator inventoryItems = summary.getShortfallInventories().iterator();
       int index=0;
       while(inventoryItems.hasNext()) {
-	  ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
-	  String invItem = inv.getInvID();
-	  out.print("<tr align=left><td>");
-	  out.print(++index);
-	  out.print("</td><td>");
-	  out.print("<b>" + invItem + "</b>");
+	ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
+	String invItem = inv.getInvID();
+	if(userMode && (inv.getShortfallPeriods().isEmpty())) {
+	    continue;
+	}
+	out.print("<tr align=left><td>");
+	out.print(++index);
+	out.print("</td><td>");
+	out.print("<b>" + invItem + "</b>");
+	if(!userMode) {
 	  out.print("</td><td>");
 	  out.print("<b>" + inv.getNumDemand() + "</b>");
 	  out.print("</td><td>");
@@ -1214,8 +1520,58 @@ extends BaseServletComponent
 	  out.print("<b>" + inv.getNumTempShortfall() + "</b>");
 	  out.print("</td><td>");
 	  out.print("<b>" + inv.getNumProjection() + "</b>");
+	}
+	if(inv.getShortfallPeriods().isEmpty()) {
+	  out.print("</td><td> </td><td> </td><td> </td><td> </td><td> </td><td> </td><td>  ");
 	  out.print("</td></tr>\n");
+	}
+	else {
+	  Iterator shortfallPeriodIt = inv.getShortfallPeriods().iterator();
+	  ShortfallPeriod currPeriod = (ShortfallPeriod) shortfallPeriodIt.next();
+	  printShortfallPeriodAsHTML(currPeriod, summary.getMsecPerBucket());
+	  out.print("</td></tr>\n");
+	  while(shortfallPeriodIt.hasNext()) {
+	    currPeriod = (ShortfallPeriod) shortfallPeriodIt.next();
+	    index = printShortfallPeriodRowAsHTML(currPeriod,index, summary.getMsecPerBucket());
+	  }
+	}
       }
+    }
+
+    protected int printShortfallPeriodRowAsHTML(ShortfallPeriod period, 
+						int index, 
+						long bucketSize) {
+      out.print("<tr align=left><td>");
+      out.print(++index);
+      out.print("</td><td>");
+      if(!userMode) {
+	out.print("</td><td>");
+	out.print("</td><td>");
+	out.print("</td><td>");
+	out.print("</td><td>");
+	out.print("</td><td>");
+      }
+      printShortfallPeriodAsHTML(period, bucketSize);
+      out.print("</td></tr>\n");
+      return index;
+    }
+
+   protected void printShortfallPeriodAsHTML(ShortfallPeriod period,
+					     long bucketSize) {
+       out.print("</td><td>");
+       out.print("<b>" + getTimeString(period.getStartTime(),bucketSize) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>" + getTimeString(period.getEndTime(),bucketSize) + "</b>");
+       out.print("</td><td>");       
+       out.print("<b>" + period.getNumBuckets(bucketSize) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>" + numberFormat.format(period.getTotalDemand()) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>" + numberFormat.format(period.getTotalFilled()) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>" + numberFormat.format(period.getShortfallQty()) + "</b>");
+       out.print("</td><td>");
+       out.print("<b>%" + numberFormat.format(period.getPercentShortfall()) + "</b>");
     }
   }
 }
