@@ -30,7 +30,6 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
-import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
@@ -67,7 +66,6 @@ import java.util.Set;
 public class DemandForecastPlugin extends ComponentPlugin
     implements UtilsProvider {
 
-  private boolean initialized = false;
   private DomainService domainService;
   private LoggingService logger;
   private TaskUtils taskUtils;
@@ -75,8 +73,8 @@ public class DemandForecastPlugin extends ComponentPlugin
   private AssetUtils AssetUtils;
   private ScheduleUtils scheduleUtils;
   private HashMap pluginParams;
-  private HashMap bgToPredsHash;
-  private HashMap subToBGsHash;
+  private HashMap pgToPredsHash;
+  private HashMap subToPGsHash;
   private HashMap predToSubHash;
 
   private String supplyType;
@@ -97,7 +95,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   public final String PROJ_EXPANDER = "PROJ_EXPANDER";
 
   private transient ArrayList newRefills = new ArrayList();
-  private boolean processDetReq;
+
 
 
   public void load() {
@@ -106,6 +104,8 @@ public class DemandForecastPlugin extends ComponentPlugin
     timeUtils = new TimeUtils(this);
     AssetUtils = new AssetUtils(this);
     taskUtils = new TaskUtils(this);
+    scheduleUtils = new ScheduleUtils(this);
+
     //detReqHandler = new DetReqAggHandler(this);
     // readParameters() initializes supplyType and inventoryFile
     pluginParams = readParameters();
@@ -113,8 +113,8 @@ public class DemandForecastPlugin extends ComponentPlugin
     generateProjectionsExpander = getGenerateProjectionsExpanderModule();
 
 
-    bgToPredsHash = new HashMap();
-    subToBGsHash = new HashMap();
+    pgToPredsHash = new HashMap();
+    subToPGsHash = new HashMap();
     predToSubHash = new HashMap();
 
     //startTime = currentTimeMillis();
@@ -205,17 +205,18 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   protected void execute() {
 
-    if ((oplanSubscription.getCollection().isEmpty()) ||
+    if ((supplyClassPG == null) ||
+        (oplanSubscription.getCollection().isEmpty()) ||
         (orgActivities.getCollection().isEmpty()) ||
         (detReqSubscription.getCollection().isEmpty())) {
-      processDetReq = false;
+      processedDetReq = false;
       return;
     }
 
     if (!detReqSubscription.getCollection().isEmpty()) {
       Iterator detReqIt = detReqSubscription.getCollection().iterator();
       Task detReqTask = (Task) detReqIt.next();
-      processDetReq = (!(detReqTask.getPlanElement() == null));
+      processedDetReq = (!(detReqTask.getPlanElement() == null));
     }
 
     //There should be both a determineRequirements task
@@ -282,15 +283,19 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     UnaryPredicate orgActivityPred = new OrgActivityPred();
     orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
-    predToSubHash.put(orgActivityPred,orgActivities);
+    predToSubHash.put(orgActivityPred, orgActivities);
 
     oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
 
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetReqPredicate(supplyType, taskUtils));
 
-    genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyClassPG));
+    genProjSubscription = null;
+    assetsWithPGSubscription = null;
 
-    assetsWithPGSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
+    if (supplyClassPG != null) {
+      genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyClassPG));
+      assetsWithPGSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
+    }
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -302,11 +307,6 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   };
 
-  private static UnaryPredicate orgActivityPredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof OrgActivity);
-    }
-  };
 
   private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -412,7 +412,8 @@ public class DemandForecastPlugin extends ComponentPlugin
    Initializes supplyType and inventoryFile
    **/
   private HashMap readParameters() {
-    final String errorString = "DemandForecastPlugin requires 2 parameters, Supply Type and associated SupplyPGClass.  Additional parameter for csv logging, default is disabled.   e.g. org.cougaar.logistics.plugin.inventory.DemandForecastPlugin(" + SUPPLY_TYPE + "=BulkPOL, " + SUPPLY_PG_CLASS + "=org.cougaar.logistics.ldm.asset.BulkPOLPG);";
+    final String errorString = "DemandForecastPlugin requires 2 parameters, Supply Type and associated SupplyPGClass.  Additional parameter to change expander module.  e.g. org.cougaar.logistics.plugin.inventory.DemandForecastPlugin(" +
+        SUPPLY_TYPE + "=BulkPOL, " + SUPPLY_PG_CLASS + "=FuelConsumerPG); Default package for SUPPLY_PG_CLASS is org.cougaar.logistics.ldm.asset.   If PG is not in this package use fully qualified name.";
     Collection p = getParameters();
 
     if (p.isEmpty()) {
@@ -440,11 +441,16 @@ public class DemandForecastPlugin extends ComponentPlugin
         && logger.isErrorEnabled())) {
       logger.error(errorString);
     } else {
+      if(supplyClassPGStr.indexOf(".") == -1){
+        supplyClassPGStr = "org.cougaar.logistics.ldm.asset." + supplyClassPGStr;
+      }
       try {
         supplyClassPG = Class.forName(supplyClassPGStr);
       } catch (Exception e) {
-        logger.error("Problem loading SUPPLY_PG_CLASS: " + e);
+        logger.error("Problem loading SUPPLY_PG_CLASS-" + supplyClassPGStr +
+                     "- exeception: " + e);
         logger.error(errorString);
+        supplyClassPG = null;
       }
     }
     return map;
@@ -473,12 +479,12 @@ public class DemandForecastPlugin extends ComponentPlugin
       Task genProj = (Task) gpIt.next();
       Asset asset = genProj.getDirectObject();
       PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
-      Collection bgInputs = getSubscriptions(pg);
+      Collection pgInputs = getSubscriptions(pg);
       Oplan oplan = getOplan();
       //TimeSpan projectSpan = opPlanningScheduler.getProjectDemandTimeSpan();
       TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
                                                      oplan.getEndDay());
-      Schedule paramSchedule = getParameterSchedule(pg, bgInputs, projectSpan);
+      Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
       generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, asset);
 
     }
@@ -500,24 +506,24 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   protected Collection getSubscriptions(PropertyGroup pg) {
-    if(!bgToPredsHash.containsKey(pg)) {
-	    addNewBG(pg);
+    if (!pgToPredsHash.containsKey(pg)) {
+      addNewPG(pg);
     }
-    ArrayList bgInputs = new ArrayList();
-    Collection preds = (Collection) bgToPredsHash.get(pg);
+    ArrayList pgInputs = new ArrayList();
+    Collection preds = (Collection) pgToPredsHash.get(pg);
     Iterator predsIt = preds.iterator();
-    while(predsIt.hasNext()){
-        UnaryPredicate pred = (UnaryPredicate) predsIt.next();
-	      ArrayList inputPair = new ArrayList();
-	      IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
-	      inputPair.add(pred);
-	      inputPair.add(sub.getCollection());
-	      bgInputs.add(inputPair);
+    while (predsIt.hasNext()) {
+      UnaryPredicate pred = (UnaryPredicate) predsIt.next();
+      ArrayList inputPair = new ArrayList();
+      IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
+      inputPair.add(pred);
+      inputPair.add(sub.getCollection());
+      pgInputs.add(inputPair);
     }
-    return bgInputs;
+    return pgInputs;
   }
 
-  protected void addNewBG(PropertyGroup pg) {
+  protected void addNewPG(PropertyGroup pg) {
     Collection preds = getPredicates(pg);
     Iterator predIt = preds.iterator();
     while (predIt.hasNext()) {
@@ -527,19 +533,19 @@ public class DemandForecastPlugin extends ComponentPlugin
         sub = (IncrementalSubscription) blackboard.subscribe(pred);
         predToSubHash.put(pred, sub);
       }
-      Collection PGs = (Collection) subToBGsHash.get(sub);
+      Collection PGs = (Collection) subToPGsHash.get(sub);
       if (PGs == null) {
         PGs = new ArrayList();
-        subToBGsHash.put(sub, PGs);
+        subToPGsHash.put(sub, PGs);
       }
       if (!PGs.contains(pg)) {
         PGs.add(pg);
       }
     }
-       Collection hashPreds = (Collection) bgToPredsHash.get(pg);
-      if (hashPreds == null) {
-        bgToPredsHash.put(pg, getPredicates(pg));
-      }
+    Collection hashPreds = (Collection) pgToPredsHash.get(pg);
+    if (hashPreds == null) {
+      pgToPredsHash.put(pg, getPredicates(pg));
+    }
   }
 
   private String getClusterSuffix(String clusterId) {
@@ -617,7 +623,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     if (pe == null) {
       PlanningFactory factory = getPlanningFactory();
       // Create workflow
-      wf = (NewWorkflow) factory.newWorkflow();
+      wf = factory.newWorkflow();
       wf.setParentTask(parent);
       wf.setIsPropagatingToSubtasks(true);
       wf.addTask(subtask);
@@ -725,11 +731,11 @@ public class DemandForecastPlugin extends ComponentPlugin
 
 
   public Schedule getParameterSchedule(PropertyGroup pg,
-                                       Collection bgInputs,
+                                       Collection pgInputs,
                                        TimeSpan projectSpan) {
     Schedule paramSchedule = null;
     Class parameters[] = {Collection.class, TimeSpan.class};
-    Object arguments[] = {bgInputs, projectSpan};
+    Object arguments[] = {pgInputs, projectSpan};
     Method m = null;
     try {
       m = supplyClassPG.getMethod("getParameterSchedule", parameters);
