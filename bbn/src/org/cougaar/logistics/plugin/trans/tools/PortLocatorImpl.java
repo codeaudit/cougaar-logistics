@@ -79,7 +79,6 @@ public class PortLocatorImpl extends LocatorImpl {
   public PortLocatorImpl(BlackboardPlugin pi, Logger logger) {
     super (pi, logger);
 
-    allocHelper = new UTILAllocate (logger);
   }
 
   /** 
@@ -89,6 +88,12 @@ public class PortLocatorImpl extends LocatorImpl {
   public void handleNewLocations(Enumeration newLocations) {
     Vector newPorts = allocHelper.enumToVector (newLocations);
     super.handleNewLocations (newPorts.elements());
+
+    if (POEExceptions == null) {
+      allocHelper = new UTILAllocate (logger);
+      POEExceptions = new HashSet(); 
+      routeCache = new HashMap ();
+    }
 
     if (POEExceptions.isEmpty ()) {
       Object port = getAssetAtGeolocCode ("WMPT");
@@ -266,8 +271,8 @@ public class PortLocatorImpl extends LocatorImpl {
     return name;
   }
 
-  protected transient Set POEExceptions = new HashSet(); // Locations
-  protected transient Map routeCache = new HashMap ();
+  protected transient Set POEExceptions; // Locations
+  protected transient Map routeCache;
 
   UTILAllocate allocHelper;
 }
