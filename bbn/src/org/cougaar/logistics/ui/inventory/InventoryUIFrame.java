@@ -640,7 +640,7 @@ public class InventoryUIFrame extends JFrame
 
   private static void displayWarnString(String title, String reply) {
     JOptionPane.showMessageDialog(null, reply, title,
-                                  JOptionPane.WARN_MESSAGE);
+                                  JOptionPane.WARNING_MESSAGE);
   }
 
   public void selectionChanged(InventorySelectionEvent e) {
