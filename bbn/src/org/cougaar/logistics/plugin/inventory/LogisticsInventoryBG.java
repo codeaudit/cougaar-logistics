@@ -26,6 +26,8 @@ import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.AspectType;
+import org.cougaar.planning.ldm.plan.TimeAspectValue;
+import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.glm.ldm.asset.Inventory;
@@ -37,6 +39,7 @@ import org.cougaar.glm.ldm.plan.PlanScheduleType;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.plugin.util.AllocationResultHelper;
 import org.cougaar.core.plugin.util.PluginHelper;
 import org.cougaar.glm.plugins.TimeUtils;
 
@@ -156,12 +159,12 @@ public class LogisticsInventoryBG implements PGDelegate {
     for (int i=bucket_start; i < bucket_end; i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
       list.add(task);
-      updateProjectedDemandList(task, i, start, end);
+      updateProjectedDemandList(task, i, start, end, true);
     }
   }
 
   public void addWithdrawRequisition(Task task) {
-    long endTime = PluginHelper.getEndTime(task);
+    long endTime = getEndTime(task);
     Object org = TaskUtils.getCustomer(task);
     if (org != null) {
       Long lastActualSeen = (Long)customerHash.get(org);
@@ -182,23 +185,25 @@ public class LogisticsInventoryBG implements PGDelegate {
   // jive when comparing daily buckets to 3-day buckets
   // Updates the running demand sum per bucket
   private void updateProjectedDemandList(Task task, int bucket,
-					 long start, long end) {
+					 long start, long end, boolean add) {
     int days_spanned = getDaysSpanned(bucket, start, end);
     Rate rate = taskUtils.getRate(task);
     Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
     double demand = taskUtils.getDouble(scalar);
-    projectedDemandArray[bucket] += demand;
+    if (add)
+      projectedDemandArray[bucket] += demand;
+    else
+      projectedDemandArray[bucket] -= demand;
 //      logger.error("Bucket "+bucket+": new demand "+demand+", total is "+
 //  		 projectedDemandArray[bucket]);
   }
 
-  // If have alloc results then use to remove from buckets
-  // else use add method for removal
-  // Make this a general method (finding the days)
-  // findFirstBucket(projection)
-  // findLastBucket(projection)  may be able to use same
-  // methods for refill requisitions as well
-  public void removeWithdrawTask(Task task) {
+  // Beth,  Because allocation results on Withdraw tasks can change,
+  // from one transaction to the next, I do not know which bucket to
+  // look in for this task.  Is there a better way of doing this?
+  // Do you want to treat Withdraws the way we treat ProjectWithdraws?
+  // (remove, readd)
+  public void removeWithdrawRequisition(Task task) {
     int index;
     for (int i=0; i < dueOutList.size(); i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
@@ -206,8 +211,24 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
   }
 
+  // Opportunity for some refactoring
+  // Code is virtually identical to addWithdrawProjection()
+  // try to refactor and reuse - AHF
+  public void removeWithdrawProjection(Task task) {
+    compute_critical_levels = true;
+    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
+    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    int bucket_start = convertTimeToBucket(start);
+    int bucket_end = convertTimeToBucket(end);
+    for (int i=bucket_start; i < bucket_end; i++) {
+      ArrayList list = (ArrayList)dueOutList.get(i);
+      list.remove(task);
+      updateProjectedDemandList(task, i, start, end, false);
+    }
+  }
+
   public void addRefillRequisition(Task task) {
-    long endTime = PluginHelper.getEndTime(task);
+    long endTime = getEndTime(task);
     int bucket = convertTimeToBucket(endTime);
     while (bucket >= refillRequisitions.size()) {
       refillRequisitions.add(null);
@@ -216,8 +237,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addRefillProjection(Task task) {
-    long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
-    long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    long start = getStartTime(task);
+    long end = getEndTime(task);
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
     while (bucket_end >= refillProjections.size()) {
@@ -333,13 +354,19 @@ public class LogisticsInventoryBG implements PGDelegate {
     inventoryLevelsArray[bucket] = value;
   }
 
-  public void updateRefillAllocation(Task task) {
-    // need to update DueIn list
-    // different updates obviously needed for Supply
-    // and ProjectSupply because projections can span
-    // serveral buckets.
-    // This needs to be a well implemented method as it involves
-    // shifting Refills and Projections in the dueIn list
+  public void updateRefillRequisition(Task task) {
+    removeRefillRequisition(task);
+    addRefillRequisition(task);
+  }
+
+  public void updateWithdrawRequisition(Task task) {
+    removeWithdrawRequisition(task);
+    addWithdrawRequisition(task);
+  }
+
+  public void updateRefillProjection(Task task) {
+    removeRefillProjection(task);
+    addRefillProjection(task);
   }
 
   public double getProjectedDemand(int bucket) {
@@ -445,6 +472,26 @@ public class LogisticsInventoryBG implements PGDelegate {
     return (bucket + timeZero) * MSEC_PER_BUCKET;
   }
 
+  private long getStartTime(Task task) {
+    PlanElement pe = task.getPlanElement();
+    // If the task has no plan element then return the EndTime Pref
+    if (pe == null) {
+      return PluginHelper.getStartTime(task);
+    }
+    AllocationResultHelper helper = new AllocationResultHelper(task, pe);
+    return (long)PluginHelper.getStartTime(helper.getAllocationResult());
+  }
+
+  private long getEndTime(Task task) {
+    PlanElement pe = task.getPlanElement();
+    // If the task has no plan element then return the EndTime Pref
+    if (pe == null) {
+      return PluginHelper.getEndTime(task);
+    }
+    AllocationResultHelper helper = new AllocationResultHelper(task, pe);
+    return (long)PluginHelper.getEndTime(helper.getAllocationResult());
+  }
+
   private double[] expandArray(double[] doubleArray) {
     double biggerArray[] = new double[(int)(doubleArray.length*1.5)];
     for (int i=0; i < doubleArray.length; i++) {
@@ -497,20 +544,6 @@ public class LogisticsInventoryBG implements PGDelegate {
 							    PlanScheduleType.OTHER);
     NewScheduledContentPG scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
     scp.setSchedule(bufferedInventoryLevels);
-  }
-
-  // If have alloc results then use to remove from buckets
-  // else use add method for removal
-  // Make this a general method (finding the days)
-  // findFirstBucket(projection)
-  // findLastBucket(projection)  may be able to use same
-  // methods for refill requisitions as well
-  private int findFirstBucket(Task task) {
-    return 0;
-  }
-
-  private int findLastBucket(Task task) {
-    return 0;
   }
 
   public boolean getFailuresFlag() {
