@@ -22,9 +22,13 @@
 package org.cougaar.logistics.ui.inventory.data;
 
 import java.util.Date;
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.util.GregorianCalendar;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 
 
@@ -89,6 +93,46 @@ public abstract class InventoryTaskBase extends InventoryScheduleElement {
 	    ",Verb=" + getVerb() +
 	    ",For(ORG)=" + getDestination();
     }
+
+  /**
+   * Get the time in milliseconds that would be just before midnight of the next day
+   *  or 1 millisecond shy of the next bucket start date.
+   *
+   * @return - the time in milliseconds that represents last millisecond of the bucket
+   */
+  protected long getEndOfPeriod(long startOfPeriod, long msecUnits, int numUnits) {
+    int bucket = (int) (startOfPeriod / (msecUnits * numUnits));
+    long endOfBucket = (((bucket + 1) * msecUnits * numUnits) - 1);
+    return endOfBucket;
+  }
+
+
+    /*
+    * TODO: MWD remove commented code
+    *
+protected static Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+
+
+  protected synchronized long getEndOfPeriod(long startOfPeriod, long msecUnits, int numUnits) {
+    long timeOut = 0;
+    double unitsPerDay = (double) msecUnits/TimeUtils.MSEC_PER_DAY;
+    long lastUnitInBucket = startOfPeriod + (msecUnits * (numUnits - 1));
+    calendar.setTimeInMillis(lastUnitInBucket);
+    if (unitsPerDay == 1) {
+      calendar.set(calendar.HOUR_OF_DAY, 23);
+    }
+    calendar.set(calendar.MINUTE, 59);
+    calendar.set(calendar.SECOND, 59);
+    calendar.set(calendar.MILLISECOND, 999);
+    timeOut = calendar.getTimeInMillis();
+    if (lastUnitInBucket == timeOut) {
+      logger.error("getEndOfPeriod - unexpected timeIn==timeOut==" + new Date(timeOut));
+    }
+    return timeOut;
+
+  }
+  */
+
 
 }
 
