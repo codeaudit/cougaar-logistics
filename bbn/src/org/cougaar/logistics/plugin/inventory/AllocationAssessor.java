@@ -129,15 +129,15 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       reconcileThePast(today_bucket, thePG);
       //TODO figure out what the end is
       // AF - we should get this from the BG (PG)
-      int end_bucket = 180;
+      int end_bucket = thePG.getLastDemandBucket();
       int lastWithdrawBucket = thePG.getLastWithdrawBucket();
+      int firstProjectBucket = thePG.getFirstProjectWithdrawBucket();
       // bump this one more day - otherwise we get withdraws at the boundary
-//        int reorderPeriod = ((int) thePG.getReorderPeriod()) + 2;
       if (today_bucket < lastWithdrawBucket) {
         createWithdrawAllocations(today_bucket, lastWithdrawBucket, inventory, thePG);
       }
-      determineProjectionAllocations(lastWithdrawBucket+1, end_bucket, inventory, thePG);
-      createBestProjectionAllocations(allocatedProjections, inventory);
+      determineProjectionAllocations(firstProjectBucket, end_bucket, inventory, thePG);
+      createBestProjectionAllocations(allocatedProjections, inventory, thePG);
       allocateLateDeliveries(trailingPointersHash, inventory);
     }
   }
@@ -183,24 +183,26 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       Iterator wdIter = wdTasks.iterator();
       while(wdIter.hasNext()) {
         Task withdraw = (Task)wdIter.next();
-        qty = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
-        // check the level
-        testQty = runningQty + qty;
-        testLevel = yesterdayLevel - testQty + todayRefill;
-        if (testLevel >= 0) {
-          // if its ok give it a pe and update the quantity
-          runningQty = runningQty + qty;
-          if (withdraw.getPlanElement() == null) {
-            createBestAllocation(withdraw, inv, thePG);
-          } else {
-            checkPlanElement(withdraw, thePG);
-          }
-        } else {
-          //if we can't fulfill this withdraw add it for later
-          trailingPointersHash.put(withdraw, new TaskDeficit(currentBucket, 0, qty));
-          // if it already has a pe - should we rescind it?
-          // if (pe != null) publishRemove(pe);	  
-        }
+	if (withdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
+	  qty = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
+	  // check the level
+	  testQty = runningQty + qty;
+	  testLevel = yesterdayLevel - testQty + todayRefill;
+	  if (testLevel >= 0) {
+	    // if its ok give it a pe and update the quantity
+	    runningQty = runningQty + qty;
+	    if (withdraw.getPlanElement() == null) {
+	      createBestAllocation(withdraw, inv, thePG);
+	    } else {
+	      checkPlanElement(withdraw, thePG);
+	    }
+	  } else {
+	    //if we can't fulfill this withdraw add it for later
+	    trailingPointersHash.put(withdraw, new TaskDeficit(currentBucket, 0, qty));
+	    // if it already has a pe - should we rescind it?
+	    // if (pe != null) publishRemove(pe);	  
+	  }
+	}
       }
       //when we are done going through all the tasks for the day set the level
       todayLevel = yesterdayLevel - runningQty + todayRefill;
@@ -281,7 +283,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     double runningQty = 0;
     double todayLevel, yesterdayLevel, todayRefill, testLevel, testQty;
     long start, end;
-
+    Task failedProjection = null;
+    int endOfLevelSixBucket = thePG.getEndOfLevelSixBucket();
+    endBucket = Math.min(endOfLevelSixBucket-1, endBucket);
     // loop through the bucket in the inventory
     while (currentBucket <= endBucket) {
       yesterdayLevel = thePG.getLevel(currentBucket - 1);
@@ -305,46 +309,54 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       Iterator wdIter = wdTasks.iterator();
       while (wdIter.hasNext()) {
 	Task projWdraw = (Task)wdIter.next();
-	start = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.START_TIME);
-	end = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.END_TIME);
-	if(logger.isWarnEnabled() && projWdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
-	  logger.warn("\n AA.determineProjectionAllocations got a WITHDRAW task... start is: " +
-		       start + " end is: " + end + " current bucket time is: " +
-		       thePG.convertBucketToTime(currentBucket) + " method start bucket: " +
-		       thePG.convertBucketToTime(startBucket));
-	}
-	qty = thePG.getProjectionTaskDemand(projWdraw, currentBucket, start, end);
-	testQty = runningQty + qty;
-	testLevel = yesterdayLevel - testQty + todayRefill;
-	if(logger.isWarnEnabled()) {
-	  logger.warn("AA.determineProjectionAllocations " +
-		      "Got " + projWdraw.getVerb() + 
-		      " task thats in actual demand zone. Test Qty : " +
-		      testQty + ". Test Level is : " + testLevel);
-	}
-		      
-	if (testLevel >= 0.0) {
-	  // if its ok give it a pe and update the quantity  
-	  runningQty = runningQty + qty;
-	  if (projWdraw.getPlanElement() == null) {
+	if (projWdraw.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
+	  start = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.START_TIME);
+	  end = (long)PluginHelper.getPreferenceBestValue(projWdraw, AspectType.END_TIME);
+	  qty = thePG.getProjectionTaskDemand(projWdraw, currentBucket, start, end);
+	  testQty = runningQty + qty;
+	  testLevel = yesterdayLevel - testQty + todayRefill;
+	  
+	  if (testLevel >= 0.0) {
+	    // if its ok give it a pe and update the quantity  
+	    runningQty = runningQty + qty;
+	    if (projWdraw.getPlanElement() == null) {
+	      TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
+	      if (taskdeficit == null) {
+		allocatedProjections.add(projWdraw);
+//  		if(logger.isWarnEnabled()) {
+//  		  logger.warn("AA.determineProjectionAllocations Adding to allocated projections "+
+//  			      getTaskUtils().taskDesc(projWdraw));
+//  		}
+	      } else {
+		taskdeficit.addBucket(qty, 0);
+	      }
+	    }
+	  } else {
+//  	    System.out.println("&&&&&&&&&&Failed projectWithdraw, todayRefill ="+
+//  			       todayRefill+" "+			       
+//    			       getTaskUtils().taskDesc(projWdraw));
+//  	    int cb=1;
+//  	    while (cb <= currentBucket+2) {
+//  	      System.out.println("bucket: "+cb+" "+
+//  				 TimeUtils.dateString(thePG.convertBucketToTime(cb))+
+//  				 " level="+
+//  				 thePG.getLevel(cb));
+//  	      cb=cb+1;
+//  	    }
+
+	    failedProjection=projWdraw;
+	    allocatedProjections.remove(projWdraw);
 	    TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
 	    if (taskdeficit == null) {
-	      allocatedProjections.add(projWdraw);
-	      if(logger.isWarnEnabled()) {
-		logger.warn("AA.determineProjectionAllocations Adding to allocated projections");
-	      }
+	      trailingPointersHash.put(projWdraw, new TaskDeficit(currentBucket, 0, qty));
 	    } else {
-	      taskdeficit.addBucket(qty, 0);
+	      taskdeficit.addBucket(0, qty);
 	    }
 	  }
 	} else {
-	  allocatedProjections.remove(projWdraw);
-	  TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(projWdraw);
-	  if (taskdeficit == null) {
-	    trailingPointersHash.put(projWdraw, new TaskDeficit(currentBucket, 0, qty));
-	  } else {
-	    taskdeficit.addBucket(0, qty);
-	  }
+	  logger.error("AA.determineProjectionAllocations " +
+		       "Got SUPPLY task while processing ProjecWithdraws : " +
+		       getTaskUtils().taskDesc(projWdraw));
 	}
       }
       todayLevel = yesterdayLevel - runningQty + todayRefill;
@@ -397,7 +409,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     thePG.updateWithdrawRequisition(withdraw);
   }
 
-  private void createBestProjectionAllocations(Collection list, Inventory inv) {
+  private void createBestProjectionAllocations(Collection list, Inventory inv, 
+					       LogisticsInventoryPG thePG) {
     LogisticsAllocationResultHelper helper;
     Task task;
     AllocationResult ar;
@@ -408,12 +421,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       if (task.getPlanElement() == null) {
 	long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
 	long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-	helper = new LogisticsAllocationResultHelper(task, null);
-	helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
-	ar = helper.getAllocationResult(0.9);
-	alloc = inventoryPlugin.getRootFactory().
-	  createAllocation(task.getPlan(), task, inv, ar, myRole);
-	inventoryPlugin.publishAdd(alloc);
+	int endOfLevelSixBucket = thePG.getEndOfLevelSixBucket();
+	if (thePG.convertTimeToBucket(end) <= endOfLevelSixBucket) {
+	  helper = new LogisticsAllocationResultHelper(task, null);
+	  helper.setBest(AlpineAspectType.DEMANDRATE, start, end);
+	  ar = helper.getAllocationResult(0.9);
+	  alloc = inventoryPlugin.getRootFactory().
+	    createAllocation(task.getPlan(), task, inv, ar, myRole);
+	  inventoryPlugin.publishAdd(alloc);
+	} else {
+//  	  System.out.println(" Not generating AR for PW :"+getTaskUtils().taskDesc(task));
+	}
       } else {
 	// need to check the Allocation Result
       }
