@@ -207,7 +207,7 @@ public class InventoryPlugin extends ComponentPlugin {
 					   refillComparator);
       } else { // Backwards Flow
 	externalAllocator.updateAllocationResult(refillAllocationSubscription);
-     // AllocationAssessor.reconcileInventoryLevels(refillAllocationSubscription.getAddedCollection());
+     // AllocationAssessor.reconcileInventoryLevels(getTouchedInventories());
 	supplyExpander.updateAllocationResult(expansionSubscription);
       }
 						       
@@ -238,7 +238,7 @@ public class InventoryPlugin extends ComponentPlugin {
   /** Subscription for incoming Projection tasks **/
   private IncrementalSubscription projectionTaskSubscription;
 
-  /** Subscription for outgoing Refill (Supply & ProjectSupply) tasks **/
+  /** Subscription for Allocations on outgoing Refill (Supply & ProjectSupply) tasks **/
   private IncrementalSubscription refillAllocationSubscription;
 
   /** Subscription for Supply/ProjectSupply Expansions **/
@@ -469,9 +469,8 @@ public class InventoryPlugin extends ComponentPlugin {
     public boolean execute(Object o) {
       if (o instanceof Allocation ) {
 	Task task = ((Allocation)o).getTask();
-	Verb verb = task.getVerb();
-	if (verb.equals(Constants.Verb.SUPPLY)
-	    || verb.equals(Constants.Verb.PROJECTSUPPLY)) {
+	if (task.getVerb().equals(Constants.Verb.SUPPLY) ||
+	    task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
 	  if (taskUtils.isDirectObjectOfType(task, type_)) {
 	    // need to check if externally allocated
 	    if(((Allocation)o).getAsset() instanceof Organization) {
@@ -637,7 +636,7 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setResource(resource);
       logInvPG.setOrg(getMyOrganization());
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, logToCSV, this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, getCurrentTimeMillis(), logToCSV, this);
 
       NewTypeIdentificationPG ti = 
 	(NewTypeIdentificationPG)inventory.getTypeIdentificationPG();
@@ -836,9 +835,9 @@ public class InventoryPlugin extends ComponentPlugin {
   }
 
   /**
-     IM Doctor
+     Self-Test
   **/
-  public void IMDoctor() {
+  public void automatedSelfTest() {
     if (supplyType == null) logger.error("No SupplyType Plugin parameter.");
     if (inventoryFile == null) logger.error("No Inventory File Plugin parameter.");
     if (inventoryInitHash.isEmpty())
