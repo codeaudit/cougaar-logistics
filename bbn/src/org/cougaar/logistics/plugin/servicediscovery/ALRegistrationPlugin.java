@@ -17,19 +17,15 @@ import java.util.Iterator;
 
 public class ALRegistrationPlugin extends SDRegistrationPlugin {
 
-  private void handleStatusChange(Collection statusChangeMessages) {
-    for (Iterator iterator = statusChangeMessages.iterator(); iterator.hasNext();) {
-      StatusChangeMessage statusChange = (StatusChangeMessage) iterator.next();
-      if(statusChange instanceof ALStatusChangeMessage) {
-        statusChange.setRegistryUpdated(true);
-        publishChange(statusChange);
-      }
-      else {
-        super.handleStatusChange(statusChange);
-      }
+  protected void handleStatusChange(StatusChangeMessage statusChange) {
+    if(statusChange instanceof ALStatusChangeMessage) {
+      statusChange.setStatus(StatusChangeMessage.COMPLETED);
+      statusChange.setRegistryUpdated(true);
+      publishChange(statusChange);
     }
-
-
+    else {
+      super.handleStatusChange(statusChange);
+    }
   }
 
 
