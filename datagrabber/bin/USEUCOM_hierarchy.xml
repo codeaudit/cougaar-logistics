@@ -4,6 +4,11 @@
 <OrgID>USEUCOM</OrgID>
 <Name>USEUCOM</Name>
 <Rel OrgID="USAEUR" Rel="1"/>
+<Rel OrgID="OSC" Rel="1"/>
+</Org>
+<Org>
+<OrgID>OSC</OrgID>
+<Name>OSC</Name>
 </Org>
 <Org>
 <OrgID>USAEUR</OrgID>
