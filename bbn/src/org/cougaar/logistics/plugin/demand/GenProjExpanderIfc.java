@@ -25,6 +25,8 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.Schedule;
 import org.cougaar.planning.ldm.asset.Asset;
 
+import java.util.Collection;
+
 
 /**
  * The GenProjExpanderIfc dictates the functionality needed by the
@@ -42,5 +44,12 @@ public interface GenProjExpanderIfc {
    * BG associated with the passed in supplyPGClass.
    **/
   void expandGenerateProjections(Task gpTask, Schedule schedule, Asset asset);
+
+  /** 
+   * Reflect new received results in the estimated results slot so that
+   * AllocationResult notifications flow back to the root.
+   * @param planElements - Collection of PlanElements to check for updates.
+   **/
+  void updateAllocationResults(Collection planElements);
 }
 

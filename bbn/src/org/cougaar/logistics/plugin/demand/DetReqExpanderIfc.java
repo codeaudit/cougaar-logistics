@@ -46,5 +46,12 @@ public interface DetReqExpanderIfc {
     
     void removeSubtasksFromDetermineRequirements(Task detReqTask, Collection removedAssets);
 
+  /** 
+   * Reflect new received results in the estimated results slot so that
+   * AllocationResult notifications flow back to the root.
+   * @param planElements - Collection of PlanElements to check for updates.
+   **/
+  void updateAllocationResults(Collection planElements);
+
 }
 

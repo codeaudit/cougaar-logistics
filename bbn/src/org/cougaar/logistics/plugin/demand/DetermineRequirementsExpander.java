@@ -31,6 +31,7 @@ import java.util.HashSet;
 
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.plugin.util.PluginHelper;
 
 import org.cougaar.glm.ldm.Constants;
 
@@ -215,6 +216,16 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
     pp.setIndirectObject(io);
     return pp;
   }
+
+  public void updateAllocationResults(Collection planElements) {
+    Iterator peIt = planElements.iterator();
+    while (peIt.hasNext()) {
+      PlanElement pe = (PlanElement) peIt.next();
+      if (PluginHelper.updatePlanElement(pe)) {
+        dfPlugin.publishChange(pe);
+      }
+    }
+  }  
 
 
   /**
