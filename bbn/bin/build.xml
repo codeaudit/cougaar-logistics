@@ -523,7 +523,7 @@
 			<fileset dir="${lib}" includes="${module}*.jar"/>
 		</copy>
 		<antcall target="datagrabber"/>
-		<zip zipfile="bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
+		<zip zipfile="Logistics_bbn_cougaar_overlay.zip" basedir="${zipbase}/${module}"/>
 		<delete dir="${zipbase}"/>
 	</target>
 
