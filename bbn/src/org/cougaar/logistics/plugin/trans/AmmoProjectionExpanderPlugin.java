@@ -64,6 +64,7 @@ import org.cougaar.lib.filter.UTILExpanderPluginAdapter;
 import org.cougaar.lib.callback.*;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
 
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
@@ -102,9 +103,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   //private static final String UNKNOWN = "unknown";
   public static String START = "Start";
 
+  public TaskUtils taskUtils;
+
   public void localSetup () {
     super.localSetup ();
-    
+
+    taskUtils = new TaskUtils(logger);
+
+
     try {
       if (getMyParams ().hasParam ("CHUNK_DAYS"))
 	CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
@@ -147,12 +153,20 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     boolean hasSupply = task.getVerb().equals (Constants.Verb.PROJECTSUPPLY);
     boolean hasTransport = task.getVerb().equals (Constants.Verb.TRANSPORT);
 
-    if (isDebugEnabled() && hasSupply)
+    boolean isReadyForTransport=true;
+
+    if(hasSupply) {
+      if(taskUtils.isLevel2(task)) {
+        isReadyForTransport = taskUtils.isReadyForTransport(task);
+      }
+    }
+
+    if (isDebugEnabled() && hasSupply  && isReadyForTransport)
       debug (".interestingTask - processing PROJECT_SUPPLY task " + task.getUID ());
     if (isDebugEnabled() && hasTransport)
       debug (".interestingTask - processing TRANSPORT task " + task.getUID ());
 
-    return (hasSupply || hasTransport);
+    return ((hasSupply  && isReadyForTransport) || hasTransport);
   }
 
   int total = 0;
