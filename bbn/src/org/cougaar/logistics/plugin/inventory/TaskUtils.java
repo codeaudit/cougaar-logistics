@@ -110,11 +110,21 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   // utility functions
   public String taskDesc(Task task) {
-    return task.getUID() + ": "
-      + task.getVerb()+"("+
-      getQuantity(task)+" "+
-      getTaskItemName(task)+") "+
-      new Date(getEndTime(task));
+    if (isProjection(task)) {
+      return task.getUID() + ": "
+	+ task.getVerb()+"("+
+	getDailyQuantity(task)+" "+
+	getTaskItemName(task)+") "+
+	new Date(getStartTime(task))+
+	"  -  " +
+	new Date(getEndTime(task));
+    } else {
+      return task.getUID() + ": "
+	+ task.getVerb()+"("+
+	getQuantity(task)+" "+
+	getTaskItemName(task)+") "+
+	new Date(getEndTime(task));
+    }
   }
 
     public String getTaskItemName(Task task){
