@@ -2,7 +2,7 @@
 
 <!DOCTYPE Policy SYSTEM "Policy.ldm.dtd" []>
 
-<!-- Inventory Policy for ARBN, et al: First Level Supply units -->
+<!-- Inventory Policy for FSB, et al: First Level Supply units -->
 
 <Policies>
 
@@ -12,15 +12,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="11" min="-1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="97" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="1" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -44,11 +44,11 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="1" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="97" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -75,15 +75,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="2" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="97" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="3" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -107,15 +107,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="6" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="97" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="6" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -138,15 +138,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="6" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="97" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="6" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">

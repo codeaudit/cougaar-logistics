@@ -16,7 +16,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="7" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">

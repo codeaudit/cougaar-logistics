@@ -12,7 +12,7 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="5" min="-1" max="90"> 
+	<Integer value="10" min="-1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
@@ -20,7 +20,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="5" min="1" max="30">
+        <Integer value="10" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">

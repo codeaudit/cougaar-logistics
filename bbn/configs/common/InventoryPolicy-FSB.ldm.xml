@@ -12,15 +12,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="2" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="57" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="2" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -44,15 +44,15 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="2" min="-1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="42" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="1" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -75,11 +75,11 @@
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="2" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="42" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -100,22 +100,21 @@
     </RuleParam>
   </Policy>
 
-
 <Policy name="AmmunitionPolicy" type="org.cougaar.logistics.plugin.inventory.InventoryPolicy">
     <RuleParam name="ResourceType">
       	<String value ="Ammunition">
 	</String>
     </RuleParam>
     <RuleParam name="Critical">
-	<Integer value="3" min="1" max="90"> 
+	<Integer value="2" min="1" max="90"> 
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="27" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="2" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
@@ -142,11 +141,11 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="7" min="1" max="30">
+        <Integer value="42" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
-        <Integer value="4" min="1" max="30">
+        <Integer value="3" min="1" max="30">
 	</Integer>
     </RuleParam>
     <RuleParam name="HandlingTime">
