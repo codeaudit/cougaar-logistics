@@ -170,7 +170,9 @@ public abstract class PSPConnection extends PSPWork{
   //Steps in perform()
 
   protected InputStream connectFile(String file){
-    logMessage(Logger.MINOR,Logger.FILE_IO,"Connecting to file: " + file);
+    if (logger.isMinorEnabled())
+      logMessage(Logger.MINOR,Logger.FILE_IO,"Connecting to file: " + file);
+
     File f = new File(file);
     InputStream inStr=null;
     try{
@@ -185,7 +187,8 @@ public abstract class PSPConnection extends PSPWork{
   /**connect to the URL and post any data returned by getPostData()**/
   protected InputStream connectURL(String urlStr)
     throws UnableToConnectException{
-    logMessage(Logger.MINOR,Logger.NET_IO,"Connecting to URL: " + urlStr);
+    if (logger.isMinorEnabled())
+      logMessage(Logger.MINOR,Logger.NET_IO,"Connecting to URL: " + urlStr);
 
     URL url=null;
     InputStream inStream=null;
@@ -259,8 +262,9 @@ public abstract class PSPConnection extends PSPWork{
       }
     }
     setStatus("Done reading object");
-    logMessage(Logger.MINOR,Logger.NET_IO,
-	       "Object Read");
+    if (logger.isMinorEnabled())
+      logMessage(Logger.MINOR,Logger.NET_IO,
+		 "Object Read");
     return ret;
   }
 
@@ -383,17 +387,20 @@ public abstract class PSPConnection extends PSPWork{
   protected void setEpoch(int e){
     super.setEpoch (e);
     
-    logMessage(Logger.TRIVIAL,Logger.NET_IO, "set Epoch to be " + e);
+    if (logger.isTrivialEnabled())
+      logMessage(Logger.TRIVIAL,Logger.NET_IO, "set Epoch to be " + e);
 
     if (e == CONNECTING) {
       startURLReadTime = System.currentTimeMillis ();
-      logMessage(Logger.MINOR,Logger.NET_IO, " starting POST_QUERY at " + 
-		 sqlDate.format(new Date(startURLReadTime)));
+      if (logger.isMinorEnabled())
+	logMessage(Logger.MINOR,Logger.NET_IO, " starting POST_QUERY at " + 
+		   sqlDate.format(new Date(startURLReadTime)));
     }
     else if (e == UPDATINGDB) {
       endURLReadTime = System.currentTimeMillis ();
-      logMessage(Logger.MINOR,Logger.NET_IO, " starting UPDATINGDB at " + 
-		 sqlDate.format(new Date(endURLReadTime)));
+      if (logger.isMinorEnabled())
+	logMessage(Logger.MINOR,Logger.NET_IO, " starting UPDATINGDB at " + 
+		   sqlDate.format(new Date(endURLReadTime)));
     }
   }
 
