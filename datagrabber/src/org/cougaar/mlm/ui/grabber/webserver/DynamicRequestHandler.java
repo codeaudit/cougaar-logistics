@@ -305,12 +305,14 @@ public abstract class DynamicRequestHandler extends RequestHandler{
       runIDs.add (new Integer(runID));
     }
 
+    String sqlBase = "select count(distinct " + 
+	DGPSPConstants.COL_OWNER + "), count(*)" + 
+      "\nfrom ";
+
     for(Iterator iter = runIDs.iterator(); iter.hasNext(); ) {
       Integer runID = (Integer) iter.next(); 
       
-      String perRunSQL = "select count(distinct " + 
-	DGPSPConstants.COL_OWNER + "), count(*)" + 
-	"\nfrom " + 
+      String perRunSQL = sqlBase + 
 	Controller.getTableName (DGPSPConstants.ASSET_INSTANCE_TABLE, runID.intValue());
 
       try {

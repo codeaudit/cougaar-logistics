@@ -178,6 +178,11 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     footer(h);
   }
 
+  protected static String runTableSQLBase = "SELECT "+Controller.COL_RUNID+","+
+      Controller.COL_STARTTIME+","+
+      Controller.COL_ENDTIME+","+
+      Controller.COL_CONDITION+" FROM ";
+
   protected void printRunTable(HTMLizer h, Statement s, boolean showSpace)
     throws IOException,SQLException{
     long total = 0;
@@ -185,10 +190,7 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     if(showSpace)
       runToSize=getDiskSpacePerRun (s);
 	
-    String sql = "SELECT "+Controller.COL_RUNID+","+
-      Controller.COL_STARTTIME+","+
-      Controller.COL_ENDTIME+","+
-      Controller.COL_CONDITION+" FROM "+
+    String sql = runTableSQLBase +
       controller.getRunTableName() +
       " ORDER BY "+Controller.COL_RUNID;
 
