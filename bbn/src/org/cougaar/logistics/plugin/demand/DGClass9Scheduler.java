@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -37,32 +37,33 @@ import org.cougaar.planning.ldm.asset.PropertyGroup;
  * @see DemandGeneratorModule
  **/
 
-public class DGClass9Scheduler extends DemandGeneratorModule
-{
+public class DGClass9Scheduler extends DemandGeneratorModule {
 
-    int maxPartsPolicy;
-    int maxPartsLimit;
+  int maxPartsPolicy;
+  int maxPartsLimit;
 
-    public DGClass9Scheduler(DemandGeneratorPlugin demandGeneratorPlugin) {
-	super(demandGeneratorPlugin);
-    }
+  public DGClass9Scheduler(DemandGeneratorPlugin demandGeneratorPlugin) {
+    super(demandGeneratorPlugin);
+  }
 
-    public void newMaxPartsPolicy(int policy) {
-	maxPartsPolicy = policy;
-    }
+  public void newMaxPartsPolicy(int policy) {
+    maxPartsPolicy = policy;
+  }
 
-    public void limitMaxNumberPartsTo(int maxParts) {
-	maxPartsLimit = maxParts;
-    }
+  public void limitMaxNumberPartsTo(int maxParts) {
+    maxPartsLimit = maxParts;
+  }
 
 
-    public Collection filterProjectionsToMaxSpareParts(PropertyGroup pg, Collection projections) {
-	return projections;
-    }
+  public Collection filterProjectionsToMaxSpareParts(Collection projections) {
+    //get the first projection and see if it contains a class 9 PG on it - if it do use the PG
+    //to filter the top n NSNs
+    return projections;
+  }
 
-    protected Collection getConsumedParts(PropertyGroup pg) {
-      return new ArrayList();
-    }
+  protected Collection getConsumedParts(PropertyGroup pg) {
+    return new ArrayList();
+  }
 
 }
 

@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -37,16 +37,16 @@ import org.cougaar.planning.ldm.plan.Task;
 public class DemandTaskGenerator extends DemandGeneratorModule
     implements DemandTaskGeneratorIfc {
 
-    public DemandTaskGenerator(DemandGeneratorPlugin demandGeneratorPlugin) {
-	super(demandGeneratorPlugin);
-    }
+  public DemandTaskGenerator(DemandGeneratorPlugin demandGeneratorPlugin) {
+    super(demandGeneratorPlugin);
+  }
 
-    /** 
-     * Generate actual demand tasks from the passed in projections
-     **/
-    
-    public void generateDemandTasks(Date cougaarNow, Collection projectSupplys){
+  /**
+   * Generate actual demand tasks from the passed in projections
+   **/
 
-    }
+  public void generateDemandTasks(long startGen, long duration, Collection relevantProjectSupplys) {
+
+  }
 }
 
