@@ -91,14 +91,15 @@ public class Validator{
     t.add(new TonnageInfo(dbConfig,false,false,false,false));
     t.add(new TonnageInfo(dbConfig,false,true,false,false));
     t.add(new TonnageInfo(dbConfig,false,true,true,false));
-    t.add(new TonnageInfo(dbConfig,false,true,true,true));
+    //    t.add(new TonnageInfo(dbConfig,false,true,true,true));
     t.add(new TonnageInfo(dbConfig,true,false,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,false,false));
     t.add(new TonnageInfo(dbConfig,true,true,true,false));
-    t.add(new TonnageInfo(dbConfig,true,true,true,true));
-    t.add(new TonnageInfo(dbConfig,false,false,false,true));
-    t.add(new TonnageInfo(dbConfig,false,true,false,true));
+    //    t.add(new TonnageInfo(dbConfig,true,true,true,true));
+    //    t.add(new TonnageInfo(dbConfig,false,false,false,true));
+    //    t.add(new TonnageInfo(dbConfig,false,true,false,true));
 
+    /*
     t.add(new AvgTonnageInfo(dbConfig,false,false,false,false));
     t.add(new AvgTonnageInfo(dbConfig,false,true,false,false));
     t.add(new AvgTonnageInfo(dbConfig,false,true,true,false));
@@ -109,6 +110,7 @@ public class Validator{
     t.add(new AvgTonnageInfo(dbConfig,true,true,true,true));
     t.add(new AvgTonnageInfo(dbConfig,false,false,false,true));
     t.add(new AvgTonnageInfo(dbConfig,false,true,false,true));
+    */
     t.add(new PeopleInfo(dbConfig,true));
     t.add(new MissionInfo(dbConfig,true));
     /*Test Missing references:*/
