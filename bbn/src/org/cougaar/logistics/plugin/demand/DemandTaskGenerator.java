@@ -85,34 +85,27 @@ public class DemandTaskGenerator extends DemandGeneratorModule
         Asset consumed = (Asset) assetsIt.next();
         Collection projTasks = (Collection) (assetMap.get(consumed));
 
-        // Step through the period one hour at a time
-        long step = 3600000;
+        double totalQty = deriveTotalQty(start, start+duration, projTasks);
+        if (totalQty <= 0.0) {
+          continue;
+        }
+        double taskQty = 0.0;
+        if (dgPlugin.getPoissonOn()) {
+          taskQty = poissonGen.nextPoisson(totalQty);
+        }
+        else {
+          taskQty = totalQty;
+        }
 
-        // Step through each hour of the requested period
-        for (long time=start; time<end; time += step) {
+        Iterator projTaskIt = projTasks.iterator();
 
-          double totalQty = deriveTotalQty(time,time+step,projTasks);
-          if (totalQty <= 0.0) {
-            continue;
-          }
-          double taskQty = 0.0;
-          if (dgPlugin.getPoissonOn()) {
-            taskQty = poissonGen.nextPoisson(totalQty);
-          }
-          else {
-            taskQty = totalQty;
-          }
-
-          Iterator projTaskIt = projTasks.iterator();
-
-          if((taskQty > 0) && (projTaskIt.hasNext())) {
-            supplyTasks.add(createNewDemandTask(gpTask,
+        if((taskQty > 0) && (projTaskIt.hasNext())) {
+          supplyTasks.add(createNewDemandTask(gpTask,
                                                   (Task) projTaskIt.next(),
                                                   consumed,
-                                                  time,
-                                                  time+step,
+                                                  start,
+                                                  start+duration,
                                                   taskQty));
-          }
         }
       }
       if(!supplyTasks.isEmpty()){
@@ -168,9 +161,11 @@ public class DemandTaskGenerator extends DemandGeneratorModule
       long taskStart = getTaskUtils().getStartTime(projTask);
       long taskEnd  = getTaskUtils().getEndTime(projTask);
 
+      /*
       if (taskStart > bucketEnd || taskEnd < bucketStart) {
         continue;
       }
+      */
 
       long start = Math.max(taskStart, bucketStart);
       long end = Math.min(taskEnd, bucketEnd);

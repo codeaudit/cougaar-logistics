@@ -121,7 +121,6 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
 
   }
 
-  private static final long ONE_HOUR = 3600000l;
   private BufferedReader reader;
   private int maxLineLength = 256;
 
@@ -259,7 +258,7 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
 
         // Create the new demand task for the entry and add to list of new subtasks
         Task demandTask = createNewDemandTask(gpTask, consumed, timeStamp,
-            timeStamp+ONE_HOUR, qty, geoLoc, org, type, item);
+            timeStamp+duration, qty, geoLoc, org, type, item);
         demandTasks.add(demandTask);
 
         ArrayList subtasks = (ArrayList)subtaskMap.get(gpTask);

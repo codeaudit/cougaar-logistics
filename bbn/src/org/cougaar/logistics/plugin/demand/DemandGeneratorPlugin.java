@@ -62,9 +62,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   private String supplyType;
   private long period;
+  private long stepPeriod;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String GENERATE_PERIOD = "GENERATE_PERIOD";
+  public final String STEP_PERIOD = "STEP_PERIOD";
   public final String RANDOM_DEVIATION_ON = "RANDOM_DEVIATION_ON";
 
   public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
@@ -389,20 +391,26 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       if (logger.isInfoEnabled()) {
         logger.info("Timer has gone off.  Planning for the next " + ((int) (period / getTimeUtils().MSEC_PER_HOUR)) + "hours from " + new Date(planTime));
       }
-      Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
-                                                         planTime,
-                                                         planTime + period);
-      //TODO: MWD Remove debug statements:
-      if ((getOrgName() != null) &&
-          (getOrgName().trim().equals("1-35-ARBN"))) {
-        System.out.println("I'm waking up - new period starts " + new Date(planTime) + " and Num of projections for " + getOrgName() + " is: " + relevantProjs.size());
-      }
+      for (long time = planTime; time<planTime+period; time += stepPeriod) {
 
-      relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
-      List demandTasks = demandGenerator.generateDemandTasks(planTime, period, relevantProjs);
+        Collection relevantProjs = filterProjectionsOnTime(projectionTaskSubscription,
+                                                         time, time + stepPeriod);
+        //TODO: MWD Remove debug statements:
+        if ((getOrgName() != null) &&
+            (getOrgName().trim().equals("1-35-ARBN"))) {
+          System.out.println("I'm waking up - new period starts " + new Date(planTime) +
+                             " and step (start,dur) is (" + new Date(time) +
+                             "," + stepPeriod + ")" +
+                             " and Num of projections for " + getOrgName() +
+                             " is: " + relevantProjs.size());
+        }
 
-      if (demandOutputModule != null) {
-        demandOutputModule.writeDemandOutputToFile(demandTasks);
+        relevantProjs = class9Scheduler.filterProjectionsToMaxSpareParts(relevantProjs);
+        List demandTasks = demandGenerator.generateDemandTasks(time, stepPeriod, relevantProjs);
+
+        if (demandOutputModule != null) {
+          demandOutputModule.writeDemandOutputToFile(demandTasks);
+        }
       }
 
       resetTimer();
@@ -478,10 +486,10 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   private boolean isLegalPeriod(long periodInMSEC) {
     long remainder = -1;
-    if (period >= getTimeUtils().MSEC_PER_DAY) {
-      remainder = period % getTimeUtils().MSEC_PER_DAY;
-    } else if (period >= getTimeUtils().MSEC_PER_HOUR) {
-      remainder = period % getTimeUtils().MSEC_PER_HOUR;
+    if (periodInMSEC >= getTimeUtils().MSEC_PER_DAY) {
+      remainder = periodInMSEC % getTimeUtils().MSEC_PER_DAY;
+    } else if (periodInMSEC >= getTimeUtils().MSEC_PER_HOUR) {
+      remainder = periodInMSEC % getTimeUtils().MSEC_PER_HOUR;
     }
     return ((periodInMSEC > 0) && (remainder == 0));
   }
@@ -549,6 +557,26 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       logger.error("Illegal Period - not in days or hours");
       period = -1;
     }
+
+    String stepPeriodString = (String)map.get(STEP_PERIOD);
+    if ((stepPeriodString != null) &&
+        (!(stepPeriodString.trim().equals("")))) {
+      try {
+        stepPeriod = (new Long(stepPeriodString)).longValue();
+      } catch (Exception e) {
+        stepPeriod = -1;
+      }
+    } else {
+      //Default is 24 hours
+      stepPeriod = 24 * 60 * 60;
+      stepPeriod = stepPeriod * 1000;
+    }
+
+    if (!isLegalPeriod(stepPeriod)) {
+      logger.error("Illegal Step Period - not in days or hours");
+      stepPeriod = -1;
+    }
+
 
     String poissonOnString = (String) map.get(RANDOM_DEVIATION_ON);
 
