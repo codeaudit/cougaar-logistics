@@ -22,6 +22,8 @@
 package org.cougaar.logistics.ui.inventory.data;
 
 import java.util.Date;
+import java.util.ArrayList;
+
 import org.cougaar.logistics.plugin.inventory.TimeUtils;    
 
 /** 
@@ -43,19 +45,44 @@ public class InventoryProjAR extends InventoryAR {
 		       String aForOrg,
 		       int aResultType,
 		       boolean isSuccess,
-		       double aQty,
+		       double aRate,
 		       long aStartTime, 
 		       long anEndTime) {
 	super(aParentUID,myUID,aVerb,aForOrg,
-	      aResultType,isSuccess,aQty,aStartTime,anEndTime);
+	      aResultType,isSuccess,aRate,aStartTime,anEndTime);
+    }
+
+    public ArrayList explodeToDaily() {
+	ArrayList dailys = new ArrayList();
+	long currStartTime = startTime;
+	while(success && 
+	      (currStartTime < endTime)) {
+	    long currEndTime = (currStartTime+TimeUtils.MSEC_PER_DAY)-1;
+	    dailys.add(new InventoryProjAR(parentUID,
+					   UID,
+					   verb,
+					   forOrg,
+					   resultType,
+					   success,
+					   getDailyRate(),
+					   currStartTime,
+					   currEndTime));
+	    currStartTime = currEndTime + 1;
+	}
+	return dailys;
     }
 
     public double getDailyRate() {
+	/*** MWD remove - projection ars are daily rates
 	long duration = getEndTime() - getStartTime();
 	if(duration < TimeUtils.MSEC_PER_DAY)
 	    return getQty();
 	else
 	    return getQty()/(duration/TimeUtils.MSEC_PER_DAY);
+	**
+	***/
+	    
+        return getQty();
     }
 
     public String toString() {

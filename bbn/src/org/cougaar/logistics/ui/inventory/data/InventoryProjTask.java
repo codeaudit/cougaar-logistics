@@ -22,6 +22,8 @@
 package org.cougaar.logistics.ui.inventory.data;
 
 import java.util.Date;
+import java.util.ArrayList;
+
 import org.cougaar.logistics.plugin.inventory.TimeUtils;    
 
 
@@ -54,6 +56,23 @@ public class InventoryProjTask extends InventoryTaskBase {
 
     public double getDailyRate() { return rate; }
 
+
+    public ArrayList explodeToDaily() {
+	ArrayList dailys = new ArrayList();
+	long currStartTime = startTime;
+	while(currStartTime < endTime) {
+	    long currEndTime = (currStartTime+TimeUtils.MSEC_PER_DAY)-1;
+	    dailys.add(new InventoryProjTask(parentUID,
+					     UID,
+					     verb,
+					     forOrg,
+					     rate,
+					     currStartTime,
+					     currEndTime));
+	    currStartTime = currEndTime + 1;
+	}
+	return dailys;
+    }
 
     public static InventoryProjTask createFromCSV(String csvString) {
 	String[] subStrings = csvString.split(SPLIT_REGEX);
