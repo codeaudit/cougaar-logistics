@@ -58,6 +58,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 
 
   protected final static String AGENT_NAME_TAG = "AGENT";
+  protected final static String GEO_LOC_TAG = "GEO_LOC";
+  protected final static String USER_MODE_TAG = "USER_MODE";
   protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
   protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
   protected final static String NUM_SHORTFALL_PERIOD_INVENTORIES_TAG = "NUM_SHORTFALL_PERIOD_INVENTORIES";
@@ -71,6 +73,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected String agentName;
 
+  protected String geoLocString;
+
   protected long timeMillis;
 
   protected HashMap summaryMap;
@@ -83,6 +87,8 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   protected int numUnexpectedShortfallInventories;
 
+  protected long c0Time;
+
   protected boolean userMode=false;
 
 
@@ -90,12 +96,16 @@ public class ShortfallShortData implements XMLable, Serializable{
   ///////////////
 
 
-  public ShortfallShortData(String agentName, 
+  public ShortfallShortData(String agentName,
+			    String geoLocString,
 			    long time, 
+			    long c0Time,
 			    Collection summaries, 
 			    boolean userMode) {
       this.agentName = agentName;
+      this.geoLocString = geoLocString;
       this.timeMillis = time;
+      this.c0Time = c0Time;
       this.userMode = userMode;
       numShortfallInventories = 0;
       numShortfallPeriodInventories = 0;
@@ -119,6 +129,10 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   public void setAgentName(String agentName) {
     this.agentName = agentName;
+  }
+
+  public void setGeoLocString(String geoLocString) {
+    this.geoLocString = geoLocString;
   }
 
   public static void setRulesList(ArrayList theRulesList) {
@@ -146,6 +160,10 @@ public class ShortfallShortData implements XMLable, Serializable{
 
   public String getAgentName() {
     return agentName;
+  }
+
+  public String getGeoLocString() {
+    return geoLocString;
   }
 
   public HashMap getShortfallSummaries() {
@@ -248,16 +266,24 @@ public class ShortfallShortData implements XMLable, Serializable{
   //----------------
 
  public void supplyTypesToXML(XMLWriter w) throws IOException {
-      Collection threads  = summaryMap.keySet();
-      Iterator it=threads.iterator();
-      String threadsStr = "";
-      w.optagln(EFFECTED_THREADS_TAG);
-      while(it.hasNext()) {
-	  String thread = (String) it.next();
-	  w.tagln(EFFECTED_THREAD_TAG,thread);
+    Iterator summaries = summaryMap.values().iterator();
+    w.optagln(EFFECTED_THREADS_TAG);
+    while(summaries.hasNext()) {
+      ShortfallSummary summary = (ShortfallSummary) summaries.next();
+      Iterator invIT = summary.getShortfallInventories().iterator();
+    invLoop: while(invIT.hasNext()) {
+      ShortfallInventory shortInv = (ShortfallInventory)invIT.next();
+      if(((userMode) && 
+	  (!shortInv.getShortfallPeriods().isEmpty()) && 
+	  (shortInv.getUnexpected())) || (!userMode)) {
+	  w.tagln(EFFECTED_THREADS_TAG,summary.getSupplyType());
+	  break invLoop;
       }
-      w.cltagln(EFFECTED_THREADS_TAG);
-  }
+    }
+    }
+    w.cltagln(EFFECTED_THREADS_TAG);
+   }
+
 
 
   /**
@@ -267,11 +293,18 @@ public class ShortfallShortData implements XMLable, Serializable{
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(getNameTag());
     w.tagln(AGENT_NAME_TAG, getAgentName());
-    w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
-    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
-    w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
-    w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
-    w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    w.tagln(GEO_LOC_TAG, getGeoLocString());
+    w.tagln(USER_MODE_TAG, Boolean.toString(userMode));
+    w.tagln(TIME_MILLIS_TAG, getTimeMillis());
+    if(userMode) {
+      w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallPeriodInventories());
+    }
+    else {
+      w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+      w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
+      w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
+      w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    }
     supplyTypesToXML(w);
     w.cltagln(getNameTag());
   }

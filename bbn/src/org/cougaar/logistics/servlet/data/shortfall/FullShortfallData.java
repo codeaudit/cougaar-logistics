@@ -35,8 +35,11 @@ import org.cougaar.planning.servlet.data.xml.UnexpectedXMLException;
 import org.cougaar.planning.servlet.data.xml.XMLWriter;
 import org.cougaar.planning.servlet.data.xml.XMLable;
 import org.xml.sax.Attributes;
+import org.cougaar.logistics.servlet.ShortfallAlertServlet;
 import org.cougaar.logistics.plugin.inventory.ShortfallSummary;
 import org.cougaar.logistics.plugin.inventory.ShortfallInventory;
+import org.cougaar.logistics.plugin.inventory.ShortfallPeriod;
+import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
 
 /**
@@ -50,8 +53,9 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   //Variables:
   ////////////
 
-  public final static String THREAD_TAG="CLASS_OF_SUPPLY";
+  public final static String THREAD_ATTR="ClassOfSupply";
   public final static String INVENTORIES_TAG="INVENTORIES";
+  public final static String INVENTORIES_TYPE_TAG="INVENTORIES_TYPE";
   public final static String INVENTORY_TAG="INVENTORY";
   public final static String SHORTFALL_PERIOD_TAG = "SHORTFALL_PERIOD";
 
@@ -62,15 +66,27 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   public final static String INVENTORY_NUM_ACTUAL_ATTR="NumActual";
   public final static String INVENTORY_IS_UNEXPECTED_ATTR = "Unexpected";
 
+  public final static String INVENTORY_PERIOD_TAG = "SHORTFALL_PERIOD";
+  public final static String PERIOD_START_TIME_ATTR = "StartTime";
+  public final static String PERIOD_END_TIME_ATTR = "EndTime";
+  public final static String PERIOD_DURATION_ATTR = "Duration";
+  public final static String UNIT_OF_ISSUE_ATTR = "UnitOfIssue";
+  public final static String PERIOD_TOTAL_DEMAND_ATTR = "TotalDemand";
+  public final static String PERIOD_TOTAL_FILLED_ATTR = "TotalFilled";
+  public final static String PERIOD_SHORTFALL_QTY_ATTR = "ShortfallQty";
+  public final static String PERIOD_PERCENT_SHORTFALL_ATTR = "PercentShortfall";
+
   //Constructors:
   ///////////////
 
 
   public FullShortfallData(String agentName,
+			   String geoLocString,
 			   long time, 
+			   long c0Time,
 			   Collection summaries,
 			   boolean userMode) {
-      super(agentName,time,summaries,userMode);
+      super(agentName,geoLocString,time,c0Time,summaries,userMode);
   }
 
 
@@ -89,27 +105,65 @@ public class FullShortfallData extends ShortfallShortData implements XMLable, Se
   public void toXML(XMLWriter w) throws IOException{
     w.optagln(getNameTag());
     w.tagln(AGENT_NAME_TAG, getAgentName());
+    w.tagln(GEO_LOC_TAG, getGeoLocString());
+    w.tagln(USER_MODE_TAG, Boolean.toString(userMode));
     w.tagln(TIME_MILLIS_TAG, getTimeMillis());    
-    w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
-    w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
-    w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
-    w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    if(userMode) {
+      w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallPeriodInventories());
+    }
+    else{
+      w.tagln(NUM_SHORTFALL_INVENTORIES_TAG, getNumberOfShortfallInventories());
+      w.tagln(NUM_SHORTFALL_PERIOD_INVENTORIES_TAG,getNumberOfShortfallPeriodInventories());
+      w.tagln(NUM_TEMP_SHORTFALL_INVENTORIES_TAG,getNumberOfTempShortfallInventories());
+      w.tagln(NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG, getNumberOfUnexpectedShortfallInventories());    
+    }    
     supplyTypesToXML(w);
+
+    w.optagln(INVENTORIES_TAG);
     Iterator summaries = summaryMap.values().iterator();
     while(summaries.hasNext()) {
 	ShortfallSummary summary = (ShortfallSummary) summaries.next();
-	w.optagln(INVENTORIES_TAG,THREAD_TAG, summary.getSupplyType());
+	w.optagln(INVENTORIES_TYPE_TAG,THREAD_ATTR, summary.getSupplyType());
 	Iterator inventoryItems = summary.getShortfallInventories().iterator();
 	while(inventoryItems.hasNext()) {
 	    ShortfallInventory inv = (ShortfallInventory) inventoryItems.next();
-	    w.optagln(INVENTORY_TAG,
-		      INVENTORY_ID_ATTR,inv.getInvID(),
-		      INVENTORY_IS_UNEXPECTED_ATTR,Boolean.toString(inv.getUnexpected())
-		      );
-	    w.cltagln(INVENTORY_TAG);
+	    if((!userMode) ||
+	       ((userMode) && !(inv.getShortfallPeriods().isEmpty()))) {
+		if(userMode) {
+		w.optagln(INVENTORY_TAG,
+			  INVENTORY_ID_ATTR,inv.getInvID()
+			  );
+		}
+		else {
+		w.optagln(INVENTORY_TAG,
+			  INVENTORY_ID_ATTR,inv.getInvID(),
+			  INVENTORY_IS_UNEXPECTED_ATTR,Boolean.toString(inv.getUnexpected())
+			  );
+
+		}
+		Iterator periods = inv.getShortfallPeriods().iterator();
+		while(periods.hasNext()) {
+		  ShortfallPeriod period = (ShortfallPeriod) periods.next();
+		  String unitOfIssue = inv.getUnitOfIssue();
+		  long bucketSize = summary.getMsecPerBucket();
+		  boolean roundToInt = !(unitOfIssue.equals(LogisticsInventoryFormatter.AMMUNITION_UNIT));
+		  w.sitagln(INVENTORY_PERIOD_TAG,
+			    PERIOD_START_TIME_ATTR,ShortfallAlertServlet.createTimeString(period.getStartTime(),bucketSize,c0Time),
+			    PERIOD_END_TIME_ATTR,ShortfallAlertServlet.createTimeString(period.getEndTime(),bucketSize,c0Time),
+			    PERIOD_DURATION_ATTR,Integer.toString(period.getNumBuckets(bucketSize)),
+			    UNIT_OF_ISSUE_ATTR,unitOfIssue,
+			    PERIOD_TOTAL_DEMAND_ATTR,Double.toString(period.getRoundedTotalDemand(roundToInt)),
+			    PERIOD_TOTAL_FILLED_ATTR,Double.toString(period.getRoundedTotalFilled(roundToInt)),
+			    PERIOD_SHORTFALL_QTY_ATTR,Double.toString(period.getShortfallQty(roundToInt)),
+			    PERIOD_PERCENT_SHORTFALL_ATTR,Double.toString(period.getPercentShortfall()));
+			    
+		}
+		w.cltagln(INVENTORY_TAG);
+	    }
 	}
-	w.cltagln(INVENTORIES_TAG);
+	w.cltagln(INVENTORIES_TYPE_TAG);
     }
+    w.cltagln(INVENTORIES_TAG);
     w.cltagln(getNameTag());
   }
 
