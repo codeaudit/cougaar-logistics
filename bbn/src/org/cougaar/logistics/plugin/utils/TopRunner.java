@@ -6,6 +6,14 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.Set;
 import java.io.StreamTokenizer;
 
 public class TopRunner implements Runnable {
@@ -14,11 +22,19 @@ public class TopRunner implements Runnable {
   long period = 10000;
   long last = -1;
   SimpleDateFormat format = new SimpleDateFormat ("HH:mm:ss");
+  Map timeToResult;
+  boolean showIntermediate = false;
 
-  public TopRunner (int samples, long period, String machine) {
+  public TopRunner (int samples, long period) {
+    this.samples = samples;
+    this.machine = machine;
+  }
+
+  public TopRunner (int samples, long period, String machine, Map timeToResult) {
     this.samples = samples;
     this.machine = machine;
     this.period  = period;
+    this.timeToResult = timeToResult;
   }
 
   public void run () {
@@ -27,7 +43,9 @@ public class TopRunner implements Runnable {
 
       BufferedInputStream stream = null;
       try {
-	Process proc = Runtime.getRuntime().exec ("ssh " + machine + " top -n 1 -b");
+	String command ="ssh " + machine + " top -n 1 -b";
+	// System.err.println ("doing command " + command);
+	Process proc = Runtime.getRuntime().exec (command);
 	stream = new BufferedInputStream (proc.getInputStream ());
       } catch (Exception e) {
 	System.err.println ("exception " + e);
@@ -69,17 +87,85 @@ public class TopRunner implements Runnable {
       }
 
       synchronized(System.out) {
-	System.out.println (format.format (new Date(last)) + "," + machine + "," + buf);
+	String topTime = format.format (new Date(last));
+	Map resultsAtTime = (Map) timeToResult.get (topTime); 
+
+	if (resultsAtTime == null) {
+	  timeToResult.put (topTime, resultsAtTime = new HashMap());
+	  System.err.println ("timeToResult now " + timeToResult);
+	}
+
+	for (int i = 0; i < cpus; i++) {
+	  String key = (machine+"-CPU_"+i);
+	  String value = "" + percentage[i];
+	  resultsAtTime.put (key, value);
+	   System.err.println ("timeToResult put " + key + "->" + value);
+	}
+
+	if (showIntermediate)
+	  System.out.println (format.format (new Date(last)) + "," + machine + "," + buf);
       }
 
       synchronized (this) {
 	long timeTaken = System.currentTimeMillis () - last;
-	if (timeTaken < period) {
+	if (timeTaken < period && samples > 0) {
 	  try {
+	    // System.err.println ("waiting " + (period-timeTaken));
 	    wait (period - timeTaken); 
 	  } 
 	  catch (Exception e) {}
 	}
+      }
+    }
+  }
+
+  protected void startThreads(Set machines) {
+    Thread [] threads = new Thread [machines.size()];
+
+    int i = 0;
+    Map timeToResult = new HashMap();
+    for (Iterator iter = machines.iterator(); iter.hasNext(); ) {
+      String machine = (String) iter.next();
+      // System.out.println ("machine " + machine);
+      threads[i] = new Thread(new TopRunner (samples, period, machine, timeToResult));
+      threads[i++].start();
+    }
+
+    i = 0;
+    for (Iterator iter = machines.iterator(); iter.hasNext(); ) {
+      try { 
+	iter.next();
+	threads[i++].join(); 
+      } catch (Exception e) { System.err.println ("on join, got " +e); }
+    }
+
+    List keys = new ArrayList (timeToResult.keySet());
+    Collections.sort (keys);
+
+    System.out.print ("Time,");
+    //    System.err.println ("keys were "+ keys);
+    List sortedMachines = null;
+    for (Iterator timeIter = keys.iterator(); timeIter.hasNext(); ) {
+      Object topTime = timeIter.next();
+      sortedMachines = new ArrayList (((Map) timeToResult.get(topTime)).keySet());
+      Collections.sort (sortedMachines);
+      
+      for (Iterator machineCPUPairIter = sortedMachines.iterator(); machineCPUPairIter.hasNext(); ) {
+	Object machineCPUPair = machineCPUPairIter.next();
+	System.out.print (machineCPUPair + (machineCPUPairIter.hasNext() ? "," : "\n"));
+      }
+      break;
+    }
+
+    for (Iterator timeIter = keys.iterator(); timeIter.hasNext(); ) {
+      Object topTime = timeIter.next();
+      Map resultsAtTime = (Map) timeToResult.get(topTime);
+      System.out.print (topTime +",");
+      for (Iterator machineCPUPairIter = sortedMachines.iterator(); machineCPUPairIter.hasNext(); ) {
+	Object machineCPUPair = machineCPUPairIter.next();
+	Object value = resultsAtTime.get(machineCPUPair);
+	// System.err.println ("value for "+ machineCPUPair + " was " + value);
+	System.out.print ((value == null ? "-0" : value) + (machineCPUPairIter.hasNext() ? "," : "\n"));
       }
     }
   }
@@ -94,17 +180,10 @@ public class TopRunner implements Runnable {
     try { samples = Integer.parseInt(args[0]); } catch (Exception e) {}
     try { period  = ((long)Integer.parseInt  (args[1]))*1000l; } catch (Exception e) {}
 
-    Thread [] threads = new Thread [args.length-2];
-
-    for (int i = 2; i < args.length; i++) {
-      String machine = args[i];
-      // System.out.println ("machine " + machine);
-      threads[i-2] = new Thread(new TopRunner (samples, period, machine));
-      threads[i-2].start();
-    }
-
-    for (int i = 0; i < args.length-2; i++) {
-      try { threads[i].join(); } catch (Exception e) { System.err.println ("on join, got " +e); }
-    }
+    TopRunner runner = new TopRunner (samples, period);
+    Set machines = new HashSet();
+    for (int i = 2; i < args.length; i++)
+      machines.add (args[i]);
+    runner.startThreads(machines);
   }
 }
