@@ -193,7 +193,7 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
     
     public void computeCriticalNValues() {
 	
-	minDay = -1;
+	minDay = 0;
 	maxDay = 0;
 	bucketDays = 1;
 	nValues=0;
@@ -203,8 +203,11 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 	InventoryScheduleHeader schedHeader = (InventoryScheduleHeader)
 	    inventory.getSchedules().get(LogisticsInventoryFormatter.INVENTORY_LEVELS_TAG);
 	ArrayList levels = schedHeader.getSchedule();
-	
+
+	if(levels.size() == 0) { return; }
+
 	bucketDays = -1;
+	minDay = -1;
 	
 	for (int i=0; i < levels.size(); i++) {
 	    InventoryScheduleElement level = (InventoryScheduleElement) levels.get(i);

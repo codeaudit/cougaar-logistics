@@ -646,7 +646,14 @@ public class LogisticsInventoryFormatter {
 	    header ="<" + INVENTORY_HEADER_GUI_TAG + " org=" + orgId + " item=" + assetName;	    
 	}
 
-	header = header + " unit=" + getUnitForAsset(invAsset) + " cDay=" + startCDay.getTime() + ">";
+	header = header + " unit=" + getUnitForAsset(invAsset);
+
+	if(humanReadable) {
+	    header = header+" cDay="+(new Date(startCDay.getTime()))+ ">";
+	}
+	else {
+	    header = header + " cDay=" + startCDay.getTime() + ">";
+	}
 
 	writeNoCycleLn(header);
 	ArrayList countedProjWithdrawList = extractProjFromCounted(countedDemandList);

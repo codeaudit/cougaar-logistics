@@ -216,6 +216,15 @@ public class LogisticsInventoryServlet
 	 if (nomenclature != null) {
 	     nomenclature = nomenclature + ":" + typeId;
 	 }
+	 else if(logInvPG.getIsLevel2()) {
+	     SupplyClassPG supplyPG = (SupplyClassPG)logInvPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
+	     if (supplyPG != null) {
+		 nomenclature = typeId + ":" + supplyPG.getSupplyType();
+	     }
+	     else {
+		 nomenclature = typeId;
+	     }
+	 }
 	 else {
 	     nomenclature = typeId;
 	 }
@@ -300,12 +309,14 @@ public class LogisticsInventoryServlet
       *****/
 
       // get asset and tasks we need to create the inventory
+
+      logger.debug("Getting Inventory w/InventoryPredicate for " + desiredAssetName);
     
       InventoryPredicate inventoryPredicate = new InventoryPredicate(desiredAssetName, support.getEncodedAgentName(),logger);
       Collection collection = support.queryBlackboard(inventoryPredicate);
     
       if (collection.isEmpty()) {
-        //logger.debug("\n\n\n\n\n\n\n ************* collection is empty; return no response!");
+        logger.warn("\n\n ************* collection is empty; return no response!");
 	return;
       }
     
@@ -433,17 +444,29 @@ class InventoryPredicate implements UnaryPredicate {
     logger = aLogger;
   }
     
-  private boolean assetMatch(Asset asset) {
+  private boolean assetMatch(Asset asset,boolean level2) {
     TypeIdentificationPG typeIdPG = asset.getTypeIdentificationPG();
     if (typeIdPG == null) {
-      logger.warn(" No typeIdentificationPG for asset");
+      logger.warn("No typeIdentificationPG for asset");
       return false;
     }
     String nomenclature = typeIdPG.getNomenclature();
     String typeId = typeIdPG.getTypeIdentification();
-    if (nomenclature == null)
-      return false;
-    nomenclature = nomenclature + ":" + typeId;
+    if (nomenclature != null) {
+	nomenclature = nomenclature + ":" + typeId; 
+    }
+    else if(level2) {
+	SupplyClassPG supplyPG = (SupplyClassPG)asset.searchForPropertyGroup(SupplyClassPG.class);
+	if (supplyPG != null) {
+	    nomenclature = typeId + ":" + supplyPG.getSupplyType();
+	}
+	else {
+	    nomenclature = typeId;
+	}
+    }
+    else {
+	nomenclature = typeId;
+    }
     return nomenclature.equals(desiredAssetName);
   }
     
@@ -467,7 +490,7 @@ class InventoryPredicate implements UnaryPredicate {
 	logger.warn("no asset in Inventory in InventoryPredicate");
 	return false;
       }
-      return assetMatch(a1);
+      return assetMatch(a1,logInvPG.getIsLevel2());
     }
     return false; 
   }
