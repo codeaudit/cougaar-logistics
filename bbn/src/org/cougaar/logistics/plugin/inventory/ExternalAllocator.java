@@ -89,7 +89,7 @@ public class ExternalAllocator extends InventoryModule {
     private boolean allocateTask(Task task) {
 	Organization provider = findBestSource(task);
 	if (provider != null) {
-	  if(verifyAllocation(task,provider)){
+	  if(verifyBeforeAllocation(task,provider)){
 	    AllocationResult estAR =  createPredictedAllocationResult(task,provider);
 	    Allocation alloc = buildAllocation(task, provider, providerRole);
 	    if (estAR != null){
@@ -158,7 +158,7 @@ public class ExternalAllocator extends InventoryModule {
 
 
 
-    private boolean verifyAllocation(Task task, Organization org) {
+    private boolean verifyBeforeAllocation(Task task, Organization org) {
       // Do not allocate tasks after they have taken place-AF does this make sense?
       if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
       logger.warn("publishAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);

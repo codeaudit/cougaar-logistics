@@ -826,7 +826,10 @@ public class InventoryPlugin extends ComponentPlugin {
     if (!publishAdd(subtask)) {
       logger.error("publishAddToExpansion fail to publish task "+taskUtils.taskDesc(subtask));
     }
-    newRefills.add(subtask);
+    if((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
+       (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
+      newRefills.add(subtask);
+    }
   }
 
   // called by the RefillGenerator to hook up the refill task to the maintain
