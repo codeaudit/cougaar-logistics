@@ -432,16 +432,16 @@ public class RefillProjectionGenerator extends InventoryModule {
       lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
                              FlowRate.newGallonsPerDay(0.01));
       bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              FlowRate.newGallonsPerDay(refill_qty));
+                              FlowRate.newGallonsPerDay(ratevalue));
       highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              FlowRate.newGallonsPerDay(refill_qty+1.0));
+                              FlowRate.newGallonsPerDay(ratevalue+1.0));
     } else {
       lowAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
                              CountRate.newEachesPerDay(0.01));
       bestAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              CountRate.newEachesPerDay(refill_qty));
+                              CountRate.newEachesPerDay(ratevalue));
       highAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                              CountRate.newEachesPerDay(refill_qty+1.0));
+                              CountRate.newEachesPerDay(ratevalue+1.0));
     }
     ScoringFunction qtySF = ScoringFunction.
 	createVScoringFunction(lowAV, bestAV, highAV);
