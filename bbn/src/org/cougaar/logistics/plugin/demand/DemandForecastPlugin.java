@@ -247,9 +247,9 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     if (myOrganization == null) {
       if (logger.isInfoEnabled()) {
-        logger.info("\n DemandForecastPlugin " + supplyType +
-                    " not ready to process tasks yet." +
-                    " my org is: " + myOrganization);
+	  logger.info("\n DemandForecastPlugin " + supplyType +
+		      " not ready to process tasks yet." +
+		      " my org is: " + myOrganization);
       }
       return;
     }
@@ -296,13 +296,15 @@ public class DemandForecastPlugin extends ComponentPlugin
         //we only expect to have one
         logOPlan = (LogisticsOPlan) opIt.next();
       }
+      if((logOPlan != null) &&
+         (processedDetReq)) {
+        processAllHashSubscriptions();
+      }
     }
-
     //if the determine requirements task has already fired we're this far down
     //in the execute we should check the hash table subscriptions and see if
     //we have to regenerate some of the expansions due to subscription changes.
-    if (processedDetReq &&
-        (logOPlan != null)) {
+    else if (processedDetReq) {
       checkAndProcessHashSubscriptions();
     }
 
@@ -762,6 +764,31 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   }
 
+
+  /**
+   * This method goes through the HashTables and gets all the current PGs
+   * registered in the Hash Table and has all of them reprocess.   This occurs
+   * the if we get the log Oplan for the first time, after possibly some of the
+   * subscriptions in the hash tables have fired.
+   */
+
+  protected void processAllHashSubscriptions() {
+    Set PGs = pgToPredsHash.keySet();
+    if (PGs.isEmpty()) {
+      if (logger.isDebugEnabled()) {
+        logger.debug("No PGs in the hash tables: " + pgToPredsHash);
+      }
+    } else {
+      if (logger.isDebugEnabled()) {
+        //logger.debug("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
+        logger.debug("DemandForecastPlugin::ProcessAllHashSubscriptions at " + myOrganization +
+                           "with Num PGs: " + PGs.size());
+      }
+      processSubscriptionChangedPG(PGs);
+    }
+  }
+
+
   //Invoke the BG and the genProjExpander if there are changes
   //in the OrgActivities or Removals of OrgActivities.
   private void processSubscriptionChangedPG(Collection PGs) {
@@ -783,33 +810,6 @@ public class DemandForecastPlugin extends ComponentPlugin
           logger.error("Property group :" + pg + " does not have an associated GenerateProjections task in the HashMap.");
         }
       }
-
-      /**
-       *  TODO: MWD Remove this code which has been handled instead
-       * by the hash table code up above.
-
-       Asset asset = getMEI(pg);
-       if (asset instanceof AggregateAsset) {
-       asset = ((AggregateAsset) asset).getAsset();
-       }
-       Iterator gpIt = genProjSubscription.iterator();
-       while (gpIt.hasNext()) {
-       Task gp = (Task) gpIt.next();
-       PlanElement pe = gp.getPlanElement();
-       if ((pe == null) ||
-       (!(pe instanceof Disposition))) {
-       Asset directObj = gp.getDirectObject();
-       if (directObj instanceof AggregateAsset) {
-       directObj = ((AggregateAsset) directObj).getAsset();
-       }
-       if (directObj.equals(asset)) {
-       System.out.println("******* invoking BG and GPE with changed Subscriptions **********");
-       invokeGenProjectionsExp(pg, gp);
-       break;
-       }
-       }
-       }
-       **/
     }
   }
 
