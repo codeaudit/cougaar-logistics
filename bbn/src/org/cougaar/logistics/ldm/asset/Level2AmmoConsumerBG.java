@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.List;
+import java.math.BigDecimal;
 
 public class Level2AmmoConsumerBG extends AmmoConsumerBG {
 
@@ -151,7 +152,7 @@ public class Level2AmmoConsumerBG extends AmmoConsumerBG {
       newAsset = parentPlugin.getPrototype(LEVEL2AMMUNITION);
       if (newAsset != null) {
         optempo = (String) row[0];
-        dcr = ((Double) row[1]).doubleValue();
+        dcr = ((BigDecimal) row[1]).doubleValue();
         map = (HashMap) ratesMap.get(newAsset);
         if (map == null) {
           map = new HashMap();
