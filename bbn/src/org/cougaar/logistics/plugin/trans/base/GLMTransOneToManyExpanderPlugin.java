@@ -352,8 +352,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public void processTasks (java.util.List tasks) {
       super.processTasks (getPrunedTaskList(tasks));
       
-      if (isWarnEnabled()) {
-	  warn ("Finished processing " + tasks.size() + " tasks at " + new Date(alarmService.currentTimeMillis()) + 
+      if (isDebugEnabled()) {
+	  debug ("Finished processing " + tasks.size() + " tasks at " + new Date(alarmService.currentTimeMillis()) + 
 		" Cougaar Time " + new Date() + " clock time.");
       }
   }
@@ -1182,7 +1182,9 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 					   reviewLevel2 ();
 					   processTasks (new ArrayList(myInputTaskCallback.getSubscription().getCollection()));
 					 } catch (Throwable t) {
-					   System.err.println("Error: Uncaught exception in "+this+": "+t);
+					   //System.err.println("Error: Uncaught exception in "+this+": "+t);
+                                           if (logger.isErrorEnabled()) {
+                                             logger.error("Error: Uncaught exception in "+this+": "+t);
 					   t.printStackTrace();
 					 } finally {
 					   blackboard.closeTransaction();
