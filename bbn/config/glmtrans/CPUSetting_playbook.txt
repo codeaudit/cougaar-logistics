@@ -1,0 +1,2 @@
+CPUSettingServlet.CPULevel > 0.5  : FidelityKnob = 0;
+CPUSettingServlet.CPULevel <= 0.5 : FidelityKnob = 1;
