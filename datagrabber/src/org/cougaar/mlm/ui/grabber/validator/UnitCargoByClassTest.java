@@ -231,7 +231,7 @@ public class UnitCargoByClassTest extends UnitCargoAmountTest{
     int result = columnCompare(logger, rs1, rs2, UNIT);
 
     if (result != EQUALTO) {
-	return CONFLICT;
+	return result;
     }
 
     result = columnCompare(logger, rs1, rs2, MOVED);

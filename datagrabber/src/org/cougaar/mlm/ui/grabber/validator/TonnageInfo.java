@@ -288,6 +288,14 @@ public class TonnageInfo extends AbstractTonnageInfo implements Graphable {
       }
     }
       
+    if (showUnit) { // unit goes first
+      int result = columnCompare(logger, rs1, rs2, 1);
+      
+      if (result != EQUALTO) {
+	return result;
+      }
+    }
+
     int result = columnCompare(logger, rs1, rs2, tonnageColumn+1);
 
     if (result != EQUALTO) {
