@@ -26,6 +26,8 @@ import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
 
+import org.cougaar.planning.ldm.PlanningFactory;
+
 /** 
  * <pre>
  * A utility superclass for all the sub-modules of the DemandGeneratorPlugin
@@ -51,6 +53,10 @@ public class DemandForecastModule {
     public TaskUtils    getTaskUtils() {return dfPlugin.getTaskUtils();}
     public TimeUtils    getTimeUtils() {return dfPlugin.getTimeUtils();}
     public AssetUtils   getAssetUtils(){return dfPlugin.getAssetUtils();}
+
+    public PlanningFactory getPlanningFactory() {
+	return dfPlugin.getPlanningFactory();
+    }
 
 }
     
