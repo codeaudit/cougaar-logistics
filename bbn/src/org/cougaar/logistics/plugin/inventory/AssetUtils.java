@@ -148,5 +148,16 @@ public class AssetUtils {
     return (getAssetIdentifier(actualAsset).startsWith("Level2"));
   }
 
+  public long getQuantity(Asset asset) {
+    long qty = 0;
+    if (asset instanceof AggregateAsset) {
+      AggregateAsset aa = (AggregateAsset)asset;
+      qty = aa.getQuantity();
+    } else {
+      qty = 1;
+    }
+    return qty;
+  }
+
 }
 
