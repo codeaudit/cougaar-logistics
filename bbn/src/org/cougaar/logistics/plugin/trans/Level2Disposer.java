@@ -55,14 +55,14 @@ public class Level2Disposer extends Level2TranslatorModule {
     super(translatePlugin);
   }
 
-   /**
+  /**
    * Remove the expansion which is the transport version of the Level2 task
    * and then successfully dispose of each level 2 Task in the collection (should be 1)/
    **/
   public void disposeAndRemoveExpansion(Collection taskCollect) {
     Iterator it = taskCollect.iterator();
-    while(it.hasNext()) {
-      disposeAndRemoveExpansion((Task)it.next());
+    while (it.hasNext()) {
+      disposeAndRemoveExpansion((Task) it.next());
     }
   }
 
@@ -104,7 +104,7 @@ public class Level2Disposer extends Level2TranslatorModule {
 
   /**
    *
-   * MWD remove
+   * TODO: MWD remove
    *
 
    protected long getStartTimePref(Task task) {

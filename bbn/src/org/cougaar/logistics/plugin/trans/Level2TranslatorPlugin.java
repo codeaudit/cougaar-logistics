@@ -37,7 +37,6 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.logistics.ldm.Constants;
-import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.util.UnaryPredicate;
@@ -59,10 +58,11 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   private HashMap pluginParams;
 
   private Level2Disposer disposer;
+  private Level2Expander expander;
 
 
   private String supplyType;
-  private boolean doTranslate=true;
+  private boolean doTranslate = false;
 
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
@@ -72,7 +72,6 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   private Organization myOrganization;
   private String myOrgName;
 
-  LogisticsOPlan logOPlan = null;
 
   public void load() {
     super.load();
@@ -96,6 +95,7 @@ public class Level2TranslatorPlugin extends ComponentPlugin
     logger = getLoggingService(this);
 
     disposer = getNewLevel2DisposerModule();
+    expander = getNewLevel2ExpanderModule();
 
   }
 
@@ -113,24 +113,11 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   private IncrementalSubscription projectionTaskSubscription;
   private IncrementalSubscription level2TaskSubscription;
 
-  private IncrementalSubscription logisticsOPlanSubscription;
-
 
   public void setupSubscriptions() {
 
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
-
-    //TODO: MWD Remove
-    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
-  }
-
-
-  /** Selects the LogisticsOPlan objects **/
-  private static class LogisticsOPlanPredicate implements UnaryPredicate {
-    public boolean execute(Object o) {
-      return o instanceof LogisticsOPlan;
-    }
   }
 
 
@@ -291,21 +278,15 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
   protected void execute() {
 
-    //TODO: Remove All Log Oplan references
-    // get the Logistics OPlan (our homegrown version with specific dates).
-    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
-      Iterator opIt = logisticsOPlanSubscription.iterator();
-      if (opIt.hasNext()) {
-        //we only expect to have one
-        logOPlan = (LogisticsOPlan) opIt.next();
-      }
-    }
-
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-    if (myOrganization != null) {
+      if (myOrganization != null) {
         level2TaskSubscription = (IncrementalSubscription) blackboard.
             subscribe(new Level2TaskPredicate(supplyType, taskUtils));
+        supplyTaskSubscription = (IncrementalSubscription) blackboard.
+            subscribe(new SupplyTaskPredicate(supplyType, taskUtils));
+        projectionTaskSubscription = (IncrementalSubscription) blackboard.
+            subscribe(new ProjectionTaskPredicate(supplyType, taskUtils));
         if (logger.isDebugEnabled()) {
           logger.debug("Level2TranslatorPlugin just loaded level 2 subscription");
         }
@@ -314,27 +295,50 @@ public class Level2TranslatorPlugin extends ComponentPlugin
           logger.info("\n Level2TranslatorPlugin " + supplyType +
                       " not ready to process tasks yet." +
                       " my org is: " + myOrganization +
-		       " supply type is " + supplyType);
+                      " supply type is " + supplyType);
         }
         return;
-    }
+      }
     }
 
 
     if ((level2TaskSubscription != null) &&
-	(!level2TaskSubscription.getAddedCollection().isEmpty())) {
-      supplyTaskSubscription = (IncrementalSubscription) blackboard.
-          subscribe(new SupplyTaskPredicate(supplyType, taskUtils));
+        (!level2TaskSubscription.getAddedCollection().isEmpty())) {
 
-      projectionTaskSubscription = (IncrementalSubscription) blackboard.
-          subscribe(new ProjectionTaskPredicate(supplyType, taskUtils));
-
-      //logger.shout("Level2TranslatorPlugin got Level 2 task - now disposing");
-
-      //for now just dispose of them
-      disposer.disposeAndRemoveExpansion(level2TaskSubscription.getAddedCollection());
+      if (doTranslate) {
+        translateTasks(level2TaskSubscription.getAddedCollection(),
+                       projectionTaskSubscription.getCollection(),
+                       supplyTaskSubscription.getCollection());
+      } else {
+        //logger.shout("Level2TranslatorPlugin got Level 2 task - now disposing");
+        disposer.disposeAndRemoveExpansion(level2TaskSubscription.getAddedCollection());
+      }
+    } else if ((level2TaskSubscription != null) &&
+        ((level2TaskSubscription.hasChanged()) ||
+        (projectionTaskSubscription.hasChanged()) ||
+        (supplyTaskSubscription.hasChanged()))) {
+      if (doTranslate) {
+        translateTasks(level2TaskSubscription.getCollection(),
+                       projectionTaskSubscription.getCollection(),
+                       supplyTaskSubscription.getCollection());
+      }
     }
 
+
+  }
+
+  private void translateTasks(Collection level2Tasks,
+                              Collection level6Tasks,
+                              Collection supplyTasks) {
+    Collection doneL2Tasks = expander.translateLevel2Tasks(level2Tasks,
+                                                           level6Tasks,
+                                                           supplyTasks);
+    if (!doneL2Tasks.isEmpty()) {
+      if (logger.isDebugEnabled()) {
+        logger.debug("Level2TranslatorPlugin:There are done tasks! disposing.");
+      }
+      disposer.disposeAndRemoveExpansion(doneL2Tasks);
+    }
 
   }
 
@@ -343,15 +347,8 @@ public class Level2TranslatorPlugin extends ComponentPlugin
     return new Level2Disposer(this);
   }
 
-
-  // get the first day in theater
-  public long getLogOPlanStartTime() {
-    return logOPlan.getStartTime();
-  }
-
-  // get the last day in theater
-  public long getLogOPlanEndTime() {
-    return logOPlan.getEndTime();
+  private Level2Expander getNewLevel2ExpanderModule() {
+    return new Level2Expander(this);
   }
 
 
@@ -383,9 +380,9 @@ public class Level2TranslatorPlugin extends ComponentPlugin
     supplyType = (String) map.get(SUPPLY_TYPE);
     String translateOn = (String) map.get(TRANSLATOR_ON);
 
-    if(translateOn != null) {
-	translateOn = translateOn.trim().toLowerCase();
-	doTranslate = (translateOn.equals("true"));
+    if (translateOn != null) {
+      translateOn = translateOn.trim().toLowerCase();
+      doTranslate = (translateOn.equals("true"));
     }
 
     //MWD Is this right

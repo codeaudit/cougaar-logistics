@@ -36,6 +36,7 @@ import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.util.Random;
 
 
@@ -64,14 +65,13 @@ public class Level2Expander extends Level2TranslatorModule {
     ArrayList doneLevel2s = new ArrayList();
     mapLevel2ToLevel6(level2Tasks, level6Tasks);
     mapCustomerEndTimes(supplyTasks);
-    //TODO: stopped here MWD
     Iterator subIt = level2To6Map.entrySet().iterator();
     while (subIt.hasNext()) {
       Map.Entry entry = (Map.Entry) subIt.next();
       Task level2Task = (Task) entry.getKey();
       Collection relLevel6Tasks = (Collection) entry.getValue();
-      Task aDoneLevel2 = translateLevel2Task(level2Task,relLevel6Tasks);
-      if(aDoneLevel2 != null){
+      Task aDoneLevel2 = translateLevel2Task(level2Task, relLevel6Tasks);
+      if (aDoneLevel2 != null) {
         doneLevel2s.add(aDoneLevel2);
       }
     }
@@ -81,11 +81,15 @@ public class Level2Expander extends Level2TranslatorModule {
 
 
   private Task translateLevel2Task(Task level2Task,
-                                     Collection relevantL6Tasks) {
+                                   Collection relevantL6Tasks) {
     Task doneLevel2Task = null;
-    long lastActualSeen = ((Long) endTimeMap.get(getTaskUtils().getCustomer(level2Task))).longValue();
     long endTime = getTaskUtils().getEndTime(level2Task);
     long startTime = getTaskUtils().getStartTime(level2Task);
+    long lastActualSeen = startTime;
+    Long custLastActual = (Long) endTimeMap.get(getTaskUtils().getCustomer(level2Task));
+    if (custLastActual != null) {
+      lastActualSeen = custLastActual.longValue();
+    }
     boolean alreadyDisposed = false;
 
     double expL2BaseRate = 0;
@@ -107,21 +111,34 @@ public class Level2Expander extends Level2TranslatorModule {
       doneLevel2Task = level2Task;
     } else {
       long countedStartTime = Math.max(startTime, lastActualSeen);
-      double totalL6BaseRate = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
+      double totalL6BaseQty = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
       Rate origL2Rate = getTaskUtils().getRate(level2Task);
-      double origL2BaseRate = deriveTotalQty(countedStartTime, endTime, level2Task);
-//      double origL2BaseRate = getBaseUnitPerSecond(origL2Rate);
+      double origL2BaseQty = deriveTotalQty(countedStartTime, endTime, level2Task);
+//
 
-      if (totalL6BaseRate >= origL2BaseRate) {
+      if (totalL6BaseQty >= origL2BaseQty) {
         doneLevel2Task = level2Task;
       } else {
-        double newL2BaseRate = origL2BaseRate - totalL6BaseRate;
-        if (newL2BaseRate != origL2BaseRate) {
+        double durationMillis = (endTime - countedStartTime);
+        double durationSecs = (durationMillis / 1000);
+        double newL2BaseRate = ((origL2BaseQty - totalL6BaseQty) / durationSecs);
+        if (newL2BaseRate != expL2BaseRate) {
+          double origL2BaseRate = getBaseUnitPerSecond(origL2Rate);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Level2Expander:Original Rate per day:" + (origL2BaseRate * TimeUtils.SEC_PER_DAY) +
+                         ".  Changing expanded rate from " + (expL2BaseRate * TimeUtils.SEC_PER_DAY) +
+                         " to " + (newL2BaseRate * TimeUtils.SEC_PER_DAY));
+            logger.debug("     and L2 Start time is " + new Date(startTime) + " and end time is " + new Date(endTime) + ", but last actual seen is " + new Date(lastActualSeen));
+            logger.debug("  and also origL2BaseQty:" + origL2BaseQty + " totalL6BaseQty:" + totalL6BaseQty);
+          }
+
           Rate newL2Rate = newRateFromUnitPerSecond(origL2Rate, newL2BaseRate);
           expandLevel2Task(level2Task, newL2Rate, lastActualSeen);
         }
       }
     }
+    //If alreadyDisposed and still done we don't want to re-dispose.
+    //If alreadyDisposed and we just expanded it, we don't want to dispose.
     if (alreadyDisposed) {
       return null;
     }
@@ -163,14 +180,17 @@ public class Level2Expander extends Level2TranslatorModule {
         long l6StartTime = getTaskUtils().getStartTime(level6Task);
         long l6EndTime = getTaskUtils().getEndTime(level6Task);
         Object l6Cust = getTaskUtils().getCustomer(level2Task);
-        if ((l6StartTime < l2EndTime) ||
+        if ((l6StartTime < l2EndTime) &&
             (l6EndTime > l2StartTime)) {
           if (l2Cust.equals(l6Cust)) {
             mappedL6s.add(level6Task);
             if ((alreadyMapped.contains(level6Task)) &&
-                logger.isErrorEnabled()) {
-              logger.error("The following task has already been mapped: " + level6Task +
-                           " It ovelaps two different level 2 tasks.");
+                logger.isWarnEnabled()) {
+              //Apparently lots overlap TODO: MWD either take out alreadyMapped and all debug related or debug more.
+              logger.warn("The following task has already been mapped: " + level6Task.getUID() + " startTime: " +
+                          new Date(l6StartTime) + " endTime: " +
+                          new Date(l6EndTime) + ".  And the new overlapping L2 Task startTime " + new Date(l2StartTime) +
+                          " and endTime is:" + new Date(l2EndTime));
             } else {
               alreadyMapped.add(level6Task);
             }
@@ -244,8 +264,8 @@ public class Level2Expander extends Level2TranslatorModule {
 
 
   private void expandLevel2Task(Task parent,
-                                  Rate newRate,
-                                  long lastSupplyTaskTime) {
+                                Rate newRate,
+                                long lastSupplyTaskTime) {
 
 
     NewTask childTask = createNewLevel2Task(parent,
@@ -256,6 +276,10 @@ public class Level2Expander extends Level2TranslatorModule {
       createAndPublishExpansion(parent, childTask);
     } else if (pe instanceof Expansion) {
       republishExpansionWithTask(parent, childTask);
+    } else if (pe instanceof Disposition) {
+      logger.warn("Level2Expander:expandLevel2Task: Expanding an already disposed task");
+      removeDisposition(parent);
+      createAndPublishExpansion(parent, childTask);
     } else if (logger.isErrorEnabled()) {
       logger.error("Unknown Plan Element on task-" + parent);
     }
@@ -263,14 +287,18 @@ public class Level2Expander extends Level2TranslatorModule {
 
   }
 
+  private void removeDisposition(Task level2Task) {
+    Disposition disposition = (Disposition) level2Task.getPlanElement();
+    translatorPlugin.publishRemove(disposition);
+  }
+
   private void republishExpansionWithTask(Task parent, NewTask childTask) {
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     removeAllFromWorkflow(wf);
-    //TODO: MWD Remove debug statements:
-    if ((translatorPlugin.getOrgName() != null) &&
-        (translatorPlugin.getOrgName().trim().equals("1-35-ARBN"))) {
-      System.out.println("translatorPlugin:Level2Expander:I'm publishing 1 Level2 " + translatorPlugin.getSupplyType() + "  task.");
+    if (logger.isDebugEnabled()) {
+      logger.debug("translatorPlug  in:Level2Expander:I'm re-publishing 1 Level2 " +
+                   translatorPlugin.getSupplyType() + "  task.");
     }
     childTask.setWorkflow(wf);
     translatorPlugin.publishAdd(childTask);
@@ -313,8 +341,8 @@ public class Level2Expander extends Level2TranslatorModule {
 
 
   private NewTask createNewLevel2Task(Task parentTask,
-                                        Rate newRate,
-                                        long lastSupplyEndTime) {
+                                      Rate newRate,
+                                      long lastSupplyEndTime) {
 
     Vector newPrefs = new Vector();
     Enumeration oldPrefs = parentTask.getPreferences();
@@ -328,7 +356,7 @@ public class Level2Expander extends Level2TranslatorModule {
       }
       if ((lastSupplyEndTime > startTime) &&
           (pref.getAspectType() == AspectType.START_TIME)) {
-        pref = createTimePreference(lastSupplyEndTime, AspectType.START_TIME);
+        pref = createNewTimePreference(lastSupplyEndTime, pref);
       }
       newPrefs.add(pref);
     }
@@ -351,22 +379,69 @@ public class Level2Expander extends Level2TranslatorModule {
     newTask.setPreferences(newPrefs.elements());
     newTask.setPrepositionalPhrases(newPreps.elements());
 
+    newTask.setContext(parentTask.getContext());
+
     //newTask.setCommitmentDate(parentTask.getCommitmentDate());
 
     return newTask;
   }
 
-  /** Create a Time Preference for the Refill Task
+  /**
+   *   Create a Time Preference for the Refill Task
    *  Use a Piecewise Linear Scoring Function.
    *  For details see the IM SDD.
    *  @param bestDay The time you want this preference to represent
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @return Preference The new Time Preference
+   *
+   * TODO: MWD Remove this method it is no longer necessary and relys on
+   *       getLogOPlanStart and endTime can't be used no LogOplan can be at OSC
+   *
+
+   private Preference createTimePreference(long bestDay, int aspectType) {
+   long early = translatorPlugin.getLogOPlanStartTime();
+   long late = getTimeUtils().addNDays(bestDay, 1);
+   long end = translatorPlugin.getLogOPlanEndTime();
+   double daysBetween = ((end - bestDay) / 86400000);
+   //Use .0033 as a slope for now
+   double late_score = .0033 * daysBetween;
+   // define alpha .25
+   double alpha = .25;
+
+   Vector points = new Vector();
+   AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
+   AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
+   AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
+   AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
+
+   points.addElement(earliest);
+   points.addElement(best);
+   points.addElement(first_late);
+   points.addElement(latest);
+   ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
+   return getPlanningFactory().newPreference(aspectType, timeSF);
+
+   // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
+   //return prefs;
+   }
+
+   ** End of remove
    **/
-  private Preference createTimePreference(long bestDay, int aspectType) {
-    long early = translatorPlugin.getLogOPlanStartTime();
+
+  /** Create a Time Preference for the Refill Task
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  @param origTimePref A simarly generated time preference that was taken from the parent (we want a duplicate with a different best time)
+   *  @return Preference The new Time Preference
+   **/
+  private Preference createNewTimePreference(long bestDay, Preference origTimePref) {
+    int aspectType = origTimePref.getAspectType();
+    ScoringFunction.PiecewiseLinearScoringFunction origTimeSF = (ScoringFunction.PiecewiseLinearScoringFunction) origTimePref.getScoringFunction();
+    AspectScoreRange origRange = origTimeSF.getDefinedRange();
+    long early = (long) origRange.getRangeStartPoint().getValue();
     long late = getTimeUtils().addNDays(bestDay, 1);
-    long end = translatorPlugin.getLogOPlanEndTime();
+    long end = (long) origRange.getRangeEndPoint().getValue();
     double daysBetween = ((end - bestDay) / 86400000);
 //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
