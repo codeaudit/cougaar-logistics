@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class HttpRequestTest  extends TestCase {
 
-    private class MyInputStream extends InputStream {
+    private static class MyInputStream extends InputStream {
 
         private String data;
         private InputStream stream;
@@ -64,7 +64,7 @@ public class HttpRequestTest  extends TestCase {
         }
 
     }
-    private class MySocket extends Socket {
+    private static class MySocket extends Socket {
 
         private InputStream stream;
 
