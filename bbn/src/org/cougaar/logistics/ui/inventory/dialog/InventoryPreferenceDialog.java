@@ -98,7 +98,7 @@ public class InventoryPreferenceDialog extends JDialog
   static final Cursor defaultCursor =
       Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
-  private Container contentPane;
+  protected Container contentPane;
 
   protected JTextArea editPane;
   protected JFileChooser fileChooser;
@@ -110,9 +110,9 @@ public class InventoryPreferenceDialog extends JDialog
 
   protected JTabbedPane prefTabs;
 
-  String cip;
-  String helpFileStr;
-  String defaultSavePrefPath;
+  protected String cip;
+  protected String helpFileStr;
+  protected String defaultSavePrefPath;
 
 
   public InventoryPreferenceDialog(InventoryUIFrame invUIFrame,
@@ -341,7 +341,7 @@ public class InventoryPreferenceDialog extends JDialog
   }
 
 
-  private static void displayErrorString(String reply) {
+  protected static void displayErrorString(String reply) {
     JOptionPane.showMessageDialog(null, reply, reply,
                                   JOptionPane.ERROR_MESSAGE);
   }
