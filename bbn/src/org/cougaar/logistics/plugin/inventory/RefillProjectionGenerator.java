@@ -414,7 +414,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator {
     Object io;
     Enumeration geolocs = getAssetUtils().getGeolocLocationAtTime(
 								  getMyOrganization(),
-								  end);
+								  (end-1000));
     if (geolocs.hasMoreElements()) {
       io = (GeolocLocation)geolocs.nextElement();
     } else {
