@@ -136,7 +136,7 @@ public class CargoDimensionTest extends Test implements Graphable {
       rs=s.executeQuery(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-		   "CargoProfileTest.insertResults - Problem executing query : " + sql,
+		   "CargoDimensionTest.insertResults - Problem executing query : " + sql,
 		   sqle);
     }
     try {
@@ -150,11 +150,19 @@ public class CargoDimensionTest extends Test implements Graphable {
 	// weight is in grams, we want short tons = 2000 pounds
 	double weight = (rs.getDouble (7)/1000000.0)*METRIC_TO_SHORT_TON;
 		
+	if (l.isMinorEnabled())
+	  l.logMessage(Logger.MINOR,Logger.DB_WRITE,"CargoDimensionTest - h " + height + 
+		       " w " + width +
+		       " d " + depth +
+		       " a " + area +
+		       " v " + volume +
+		       " weight " + weight + " stons");
+
 	insertRow(l,s,run,nomenclature,height,width,depth,area,volume,weight);
       }    
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-		   "CargoProfileTest.insertResults - Problem walking results.",sqle);
+		   "CargoDimensionTest.insertResults - Problem walking results.",sqle);
     }
   }
   
@@ -172,7 +180,7 @@ public class CargoDimensionTest extends Test implements Graphable {
     String cccDimProto = cccDimTable+"."+DGPSPConstants.COL_PROTOTYPEID;
 
     String sqlQuery =
-      "select "+nomenclature+"," + height + "," + width + "," + depth + "," + weight + "," + area + "," + volume + "\n"+
+      "select "+nomenclature+"," + height + "," + width + "," + depth + "," + area + "," + volume + "," + weight + "\n"+
       "from "+protoTable+", " + cccDimTable +"\n"+
       "where " + protoProto + "=" + cccDimProto + "\n" +
       "order by "+nomenclature;
@@ -214,9 +222,33 @@ public class CargoDimensionTest extends Test implements Graphable {
       s.executeUpdate(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
-		   "CargoProfileTest.insertRow - Problem inserting rows in table. Sql was " + sql,
+		   "CargoDimensionTest.insertRow - Problem inserting rows in table. Sql was " + sql,
 		   sqle);
     }
+  }
+
+  /**
+   * Get the result based on the table.
+   * If all the rows are the info rows (start with the bold tag)
+   * then it's not a warning.
+   **/
+  protected int determineResult(Statement s, int run) throws SQLException {
+    String sql = "SELECT COUNT(*) FROM "+getTableName(run);
+    ResultSet rs=null;
+    
+    sql = getQuery(run);
+    rs=s.executeQuery(sql);
+
+    boolean hitRealRow = false;
+    while(rs.next() && !hitRealRow){
+      String nomenclature = rs.getString(1);
+      //      System.out.println ("nomen " + nomenclature);
+      hitRealRow = !nomenclature.startsWith ("<b>");
+    }
+    if (hitRealRow)
+      return failureLevel();
+
+    return RESULT_OK;
   }
 
   //InnerClasses:
