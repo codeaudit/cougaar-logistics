@@ -170,7 +170,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	dueOutList.add(new ArrayList());
       }
       for (; start < end; start++) {
-	ArrayList list = (ArrayList)dueOutList.get(i);
+	ArrayList list = (ArrayList)dueOutList.get(start);
 	list.add(task);
       }
     }
