@@ -190,25 +190,21 @@ public class SupplyExpander extends InventoryModule {
     public static final Verb                 PROJECTWITHDRAWVERB = Constants.Verb.ProjectWithdraw;
     public static final Verb                 TRANSPORTVERB = new Verb(Constants.Verb.TRANSPORT);
 
-    private Organization myOrg;
+  //private Organization myOrg;
     protected boolean addTransport; // Add load tasks when expanding supply tasks
     private long ost;
     private static AllocationResultAggregator projectionARA = new ProjectionARA();
     private static AllocationResultAggregator supplyARA = new SupplyARA();
 
-    private ClusterIdentifier clusterId;
+  private ClusterIdentifier clusterId;
 
 
     public SupplyExpander(InventoryPlugin imPlugin) {
 	super(imPlugin);
 	ost = DEFAULT_ORDER_AND_SHIPTIME;  //In the future plugin should supply from suppliers predictor the OST - MWD
 	addTransport = false;
+        clusterId = imPlugin.getClusterId();
     }
-
-  public void initialize(Organization org) {
-    myOrg = org;
-    clusterId = myOrg.getClusterPG().getClusterIdentifier();
-  }
 
     public boolean expandAndDistributeProjections(Collection tasks) {
 	boolean newProjections = false;

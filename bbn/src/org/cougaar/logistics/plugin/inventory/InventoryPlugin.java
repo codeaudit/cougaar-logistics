@@ -66,6 +66,8 @@ import org.cougaar.core.adaptivity.OperatingModeImpl;
 
 public class InventoryPlugin extends ComponentPlugin {
 
+  private boolean initialized = false;
+  private boolean firstTimeThrough = true;
   private DomainService domainService;
   private LoggingService logger;
   private TaskUtils taskUtils;
@@ -154,6 +156,13 @@ public class InventoryPlugin extends ComponentPlugin {
 //   		       " this plugin is: " + this);
   }
 
+    public void unload() {
+      super.unload();
+      if (domainService != null) {
+        getServiceBroker().releaseService(this, DomainService.class, domainService);
+      }
+    }
+
   public TaskUtils      getTaskUtils() {return taskUtils;}
   public TimeUtils      getTimeUtils() {return timeUtils;}
   public AssetUtils     getAssetUtils() {return AssetUtils;}  
@@ -223,12 +232,11 @@ public class InventoryPlugin extends ComponentPlugin {
       return;
     }
 
-    if (supplyTaskSubscription == null) {
+    if (!initialized) {
       myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
       inventoryFile = getInventoryFile(supplyType);
       getInventoryData();
-      supplyExpander.initialize(myOrganization);
-      setupSubscriptions2();
+      initialized = true;
     } 
 
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -246,41 +254,60 @@ public class InventoryPlugin extends ComponentPlugin {
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
-      Collection addedSupply = supplyTaskSubscription.getAddedCollection();
-      expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
+      // If its the first time we've gotten this far we now have our policy, org and others.
+      // However, we may have missed some tasks on the added list in previous executes.
+      // If its the first time through use the underlying subscription collection instead of the added list.
+      if (firstTimeThrough) {
+        Enumeration newReqs = supplyTaskSubscription.elements();
+        ArrayList newReqsCollection = new ArrayList();
+        while (newReqs.hasMoreElements()) {
+          newReqsCollection.add(newReqs.nextElement());
+        }
+        expandIncomingRequisitions(getTasksWithoutPEs(newReqsCollection));
+        Enumeration newProjReqs = projectionTaskSubscription.elements();
+        ArrayList newProjReqsCollection = new ArrayList();
+        while (newProjReqs.hasMoreElements()) {
+          newProjReqsCollection.add(newProjReqs.nextElement());
+        }
+        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
+        firstTimeThrough = false;
+      } else {
+        Collection addedSupply = supplyTaskSubscription.getAddedCollection();
+        expandIncomingRequisitions(getTasksWithoutPEs(addedSupply)); // fix for bug #1695
 
-      Collection addedProjections = projectionTaskSubscription.getAddedCollection();
-      touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections)); // fix for bug #1695
+        Collection addedProjections = projectionTaskSubscription.getAddedCollection();
+        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(addedProjections)); // fix for bug #1695
 
-      // call the Refill Generators if we have new demand
-      if (! getTouchedInventories().isEmpty()) {
+        // call the Refill Generators if we have new demand
+        if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections
 	  if (touchedProjections || touchedRemovedProjections) {
-	      refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
-							     criticalLevel, 
-							     getEndOfLevelSix(), 
-							     getEndOfLevelTwo(), 
-							     refillComparator);
+            refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
+                                                           criticalLevel, 
+                                                           getEndOfLevelSix(), 
+                                                           getEndOfLevelTwo(), 
+                                                           refillComparator);
 	  }
 	  refillGenerator.calculateRefills(getTouchedInventories(), inventoryPolicy,
 					   refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
-      } else { // Backwards Flow
-	externalAllocator.updateAllocationResult(refillAllocationSubscription);
-        allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
-	supplyExpander.updateAllocationResult(expansionSubscription);
-        // update the Maintain Inventory Expansion results
-        PluginHelper.updateAllocationResult(MIExpansionSubscription);
-        PluginHelper.updateAllocationResult(MITopExpansionSubscription);
-        PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
+        } else { // Backwards Flow
+          externalAllocator.updateAllocationResult(refillAllocationSubscription);
+          allocationAssessor.reconcileInventoryLevels(getTouchedInventories());
+          supplyExpander.updateAllocationResult(expansionSubscription);
+          // update the Maintain Inventory Expansion results
+          PluginHelper.updateAllocationResult(MIExpansionSubscription);
+          PluginHelper.updateAllocationResult(MITopExpansionSubscription);
+          PluginHelper.updateAllocationResult(DetReqInvExpansionSubscription);
+        }
+        
+        takeInventorySnapshot(getTouchedInventories());
+        
+        // touchedInventories should not be cleared until the end of transaction
+        touchedInventories.clear();
+        touchedProjections = false;
+        //testBG();
       }
-
-      takeInventorySnapshot(getTouchedInventories());
-
-      // touchedInventories should not be cleared until the end of transaction
-      touchedInventories.clear();
-      touchedProjections = false;
-      //testBG();
     }
   }
 
@@ -343,17 +370,23 @@ public class InventoryPlugin extends ComponentPlugin {
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
     withdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new WithdrawPredicate(supplyType));
     projectWithdrawTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new ProjectWithdrawPredicate(supplyType));
-  }
-
-  protected void setupSubscriptions2() {
-    supplyTaskSubscription = (IncrementalSubscription) blackboard.subscribe(new SupplyTaskPredicate(supplyType, myOrgName, taskUtils));
-    projectionTaskSubscription = (IncrementalSubscription) blackboard.subscribe( new ProjectionTaskPredicate(supplyType, myOrgName, taskUtils));
-    refillAllocationSubscription = (IncrementalSubscription) blackboard.subscribe(new RefillAllocPredicate(supplyType, myOrgName, taskUtils));
-    expansionSubscription = (IncrementalSubscription)blackboard.subscribe(new ExpansionPredicate(supplyType, myOrgName, taskUtils));
-    refillSubscription = (IncrementalSubscription)blackboard.subscribe(new RefillPredicate(supplyType, myOrgName, taskUtils));
     MIExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new MIExpansionPredicate(supplyType, taskUtils));
     MITopExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new MITopExpansionPredicate());
     DetReqInvExpansionSubscription = (IncrementalSubscription)blackboard.subscribe(new DetReqInvExpansionPredicate(taskUtils));
+
+    if (getAgentIdentifier() == null) {
+      logger.error("No agentIdentifier ... subscriptions need this info!!  In plugin: " + this);
+    }
+    refillAllocationSubscription = (IncrementalSubscription) blackboard.
+      subscribe(new RefillAllocPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    expansionSubscription = (IncrementalSubscription)blackboard.
+      subscribe(new ExpansionPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    refillSubscription = (IncrementalSubscription)blackboard.
+      subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    supplyTaskSubscription = (IncrementalSubscription) blackboard.
+      subscribe(new SupplyTaskPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+    projectionTaskSubscription = (IncrementalSubscription) blackboard.
+      subscribe( new ProjectionTaskPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
   }
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
@@ -954,10 +987,13 @@ public class InventoryPlugin extends ComponentPlugin {
     String inv_file = null;
     if ((inv_file = (String)pluginParams.get(INVENTORY_FILE)) != null) {
       result = inv_file;
-    } 
-    else {
-      result = getClusterSuffix(myOrganization.getClusterPG().getClusterIdentifier().toString()) +
-	"_"+type.toLowerCase()+".inv";
+      //   } 
+ //    else {
+//       result = getClusterSuffix(myOrganization.getClusterPG().getClusterIdentifier().toString()) +
+// 	"_"+type.toLowerCase()+".inv";
+    } else {
+       result = getClusterSuffix(getAgentIdentifier().toString()) +
+ 	"_"+type.toLowerCase()+".inv";
     }
     return result;
   }
@@ -1180,6 +1216,10 @@ public class InventoryPlugin extends ComponentPlugin {
         invPG.removeRefillProjection(removed);
       }
     }
+  }
+
+  public ClusterIdentifier getClusterId() {
+    return getAgentIdentifier();
   }
 
   /**
