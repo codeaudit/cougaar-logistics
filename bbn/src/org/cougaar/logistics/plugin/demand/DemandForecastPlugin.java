@@ -380,49 +380,19 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   private void setupTaskScheduler() {
-    // 0 = Level 2
-    // 1 = Level 6
-    // and the order of the list sets the priority so,
-    // Priority 1 - Level 6 for the 1st timespan
-    // Priority 2 - Level 2 for the 2nd timespan
-    // Priority 3 - Level 2 for the 3rd timespan
-    // Priority 4 - Level 6 for the 2nd timespan
-    // Priority 5 - Level 2 for the 4th timespan
-    // Priority 6 - Level 6 for the 3rd timespan
-    // Priority 7 - Level 6 for the 4th timespan
-
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
     boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
-    long now = getAlarmService().currentTimeMillis();
-    long date1 = timeUtils.addNDays (now, 7);
-    long date2 = timeUtils.addNDays (now, 21);
-    long date3 = timeUtils.addNDays (now, 60);
-//     long date4 = timeUtils.addNDays (now, 180);
-    long date4 = timeUtils.addNDays (now, 205);
-    TimeSpan ts1 = TaskSchedulingPolicy.makeTimeSpan (now, date1);
-    TimeSpan ts2 = TaskSchedulingPolicy.makeTimeSpan (date1, date2);
-    TimeSpan ts3 = TaskSchedulingPolicy.makeTimeSpan (date2, date3);
-    TimeSpan ts4 = TaskSchedulingPolicy.makeTimeSpan (date3, date4);
     if (!turnOffTaskSched) {
+      java.io.InputStream is = null;
+      try {
+        is = getConfigFinder().open ("demandSchedPolicy.xml");
+      } catch (Exception e) {
+        logger.error ("Could not find file demandSchedPolicy.xml");
+      }
       genProjTaskScheduler = new TaskScheduler
         (new GenProjPredicate (supplyType, taskUtils),
-         new TaskSchedulingPolicy (
-         new TaskSchedulingPolicy.Predicate[] {
-           new TaskSchedulingPolicy.Predicate() {
-             public boolean execute (Task task) {
-               return taskUtils.isLevel2 (task); }},
-           new TaskSchedulingPolicy.Predicate() {
-             public boolean execute (Task task) {
-               return ! taskUtils.isLevel2 (task); }}},
-         new TaskSchedulingPolicy.PriorityPhaseMix[] {
-           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts1),
-           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts2),
-           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts3),
-           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts2),
-           new TaskSchedulingPolicy.PriorityPhaseMix (0, ts4),
-           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts3),
-           new TaskSchedulingPolicy.PriorityPhaseMix (1, ts4)}),
-       blackboard, logger,"GenProjs for " + getBlackboardClientName());
+         TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
+         blackboard, logger,"GenProjs for " + getBlackboardClientName());
     } else {
       logger.debug("TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF - TASK SCHEDULER OFF");
      genProjTaskScheduler = new TaskScheduler
