@@ -307,10 +307,12 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       double av = p.getScoringFunction().getBest().getValue();
       double bv = getPreferenceBestValue(b, at);
       if (at == AspectType.START_TIME || at == AspectType.END_TIME) {
-        //for times say they are nearly equal if they are within 30 minutes
+        //for times say they are nearly equal if they are within the same hour
         // it could be longer if we only had daily buckets - but this should
         // work for both daily and hourly buckets
-        if (!MoreMath.nearlyEquals(av, bv, 0.00000008)) return false;
+        long aHourLong = (new Double(av/3600000).longValue());
+        long bHourLong = (new Double(bv/3600000).longValue());
+        if (aHourLong != bHourLong) return false;
       }  else {
         if (!MoreMath.nearlyEquals(av, bv, 0.0001)) return false;
       }
