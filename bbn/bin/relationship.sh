@@ -26,6 +26,6 @@ source $COUGAAR_INSTALL_PATH/bin/setarguments.sh
 # Modify the argument org.cougaar.ui.userAuthClass to use a
 # UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
 
-MYCLASSES="org.cougaar.logistics.plugin.servicediscovery.RelationshipUILauncherFrame"
+MYCLASSES="org.cougaar.logistics.ui.servicediscovery.RelationshipUILauncherFrame"
 
 exec java $MYPROPERTIES -classpath $LIBPATHS $BOOTSTRAPPER $DEVP $MYCLASSES $*

@@ -28,7 +28,7 @@ REM Modify the argument org.cougaar.ui.userAuthClass to use a
 REM UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
 
 
-set MYCLASSES=org.cougaar.logistics.plugin.servicediscovery.RelationshipUILauncherFrame
+set MYCLASSES=org.cougaar.logistics.ui.servicediscovery.RelationshipUILauncherFrame
 set BS=org.cougaar.bootstrap.Bootstrapper
 set MYMEMORY=-Xms100m -Xmx300m
 REM set MYPROPERTIES= -Dorg.cougaar.config.path=%COUGAAR_INSTALL_PATH%\configs\common -Dorg.cougaar.core.logging.config.filename=Log4jInit.txt
