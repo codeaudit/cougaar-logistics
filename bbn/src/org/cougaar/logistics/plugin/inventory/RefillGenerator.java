@@ -489,6 +489,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
   protected void calculateInventoryLevelsForRG(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
     //calculate inventory levels for today through start (today + OST)
+    startBucket = (startBucket < thePG.getStartBucket()) ? thePG.getStartBucket() : startBucket;
     while (startBucket <= endBucket) {
       double level;
       if (startBucket == 0) {
