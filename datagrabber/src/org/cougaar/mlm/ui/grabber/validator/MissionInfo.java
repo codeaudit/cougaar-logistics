@@ -135,6 +135,7 @@ public class MissionInfo extends Test implements Graphable {
     
     try {
       sql = getQuery(run);
+      l.logMessage(Logger.MINOR,Logger.DB_WRITE,"SQL is " + sql);
       rs=s.executeQuery(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
