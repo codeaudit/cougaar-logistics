@@ -1241,6 +1241,7 @@ public class InventoryPlugin extends ComponentPlugin
         ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
         logInvPG.setStartCDay(logOPlan.getOplanCday());
         publishChange(inv);
+	touchInventory(inv);
       }
     }
   }
