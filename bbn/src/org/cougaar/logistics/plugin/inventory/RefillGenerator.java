@@ -29,6 +29,7 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
 import org.cougaar.planning.ldm.plan.AllocationResult;
+import org.cougaar.planning.ldm.plan.AspectScorePoint;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.NewTask;
@@ -275,6 +276,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     double late_score = .0033 * daysBetween;
     // define alpha .25
     double alpha = .25;
+    Vector points = new Vector();
 
     AspectScorePoint earliest = new AspectScorePoint(today, alpha);
     AspectScorePoint best = new AspectScorePoint(bestDay, 0.0);
@@ -282,7 +284,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
                                                        alpha);
     AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score));
 
-    Vector points = new Vector(earliest, best, first_late, latest);
+    points.addElement(earliest);
+    points.addElement(best);
+    points.addElement(first_late);
+    points.addElement(latest);
     ScoringFunction endTimeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getRootFactory().

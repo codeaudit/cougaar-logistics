@@ -34,6 +34,7 @@ import org.cougaar.planning.ldm.measure.CountRate;
 import org.cougaar.planning.ldm.measure.FlowRate;
 
 import org.cougaar.planning.ldm.plan.AspectRate;
+import org.cougaar.planning.ldm.plan.AspectScorePoint;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.plan.NewTask;
@@ -391,15 +392,16 @@ public class RefillProjectionGenerator extends InventoryModule {
   private Preference createRefillTimePreference(long bestDay, long start, 
                                                 int aspectType) {
     //TODO - really need end of deployment from an OrgActivity -
-    // As a hack for now just add 180 days from today - note that this
+    // As a hack for now just add 180 days from start - note that this
     // will push the possible end date out too far...
     // long end = inventoryPlugin.getEndOfDeplyment()); 
-    long end = getTimeUtils().addNDays(today, 180);
+    long end = getTimeUtils().addNDays(start, 180);
     double daysBetween = ((end - bestDay)  / getTimeUtils().MSEC_PER_DAY) - 1;
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
     double alpha = .25;
+    Vector points = new Vector();
 
     AspectScorePoint earliest = new AspectScorePoint(start, alpha);
     AspectScorePoint best = new AspectScorePoint(bestDay, 0.0);
@@ -407,7 +409,10 @@ public class RefillProjectionGenerator extends InventoryModule {
                                                        alpha);
     AspectScorePoint latest = new AspectScorePoint(end, (alpha + late_score));
 
-    Vector points = new Vector(earliest, best, first_late, latest);
+    points.addElement(earliest);
+    points.addElement(best);
+    points.addElement(first_late);
+    points.addElement(latest);
     ScoringFunction timeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getRootFactory().
