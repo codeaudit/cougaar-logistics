@@ -323,16 +323,12 @@ abstract public class GenericPlugin extends SimplePlugin {
   /** Function that tests if the first argument is of a given class
    */
   public boolean testInstance(Object arg, String ty) {
-    boolean test = true;
-
     try {
-      test = (Class.forName(ty)).isInstance(arg);
+      return (Class.forName(ty)).isInstance(arg);
     } catch (ClassNotFoundException e) {
       getLoggingService().error(e.getMessage(), e);
-      test = false;
+      return false;
     } 
-
-    return test;
   }
 
   /**
