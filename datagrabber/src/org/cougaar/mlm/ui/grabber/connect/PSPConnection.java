@@ -36,6 +36,7 @@ import org.cougaar.mlm.ui.grabber.controller.RunResult;
 
 import java.io.InputStream;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -59,7 +60,7 @@ import java.text.SimpleDateFormat;
  * Basic infrastructure to talk to a PSP that uses the 
  * XMLable/serializable interfaces
  * 
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/01/01
  **/
@@ -255,8 +256,12 @@ public abstract class PSPConnection extends PSPWork{
       }
     }else{
       try{
+	//	ByteArrayInputStream bytes = new ByteArrayInputStream (s);
+	//	BufferedInputStream buffered = new BufferedInputStream (bytes);
 	ObjectInputStream objInStream = new ObjectInputStream(inStream);
+	long millis = System.currentTimeMillis ();
 	ret = (DeXMLable)objInStream.readObject();
+	logMessage (Logger.MINOR, Logger.NET_IO, "Took " + (System.currentTimeMillis ()-millis) + " to read object");
       }catch(Exception e){
 	e.printStackTrace();
 	throw new UnableToStreamException("Error reading serialized object",e);

@@ -41,7 +41,7 @@ import java.util.Iterator;
 
 /**
  * Handles getting population data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/19/01
  **/
@@ -116,8 +116,10 @@ public class DGPSPPopulationConnection extends DGPSPConnection
       //ever have duplicate assets
       if(dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())&&
 	 ci.selfPropelled){
-	logMessage(Logger.MINOR,Logger.RESULT,
-		   "Found duplicate self-propelled instance");
+	if (logger.isMinorEnabled()) {
+	  logMessage(Logger.MINOR,Logger.RESULT,
+		     "Found duplicate self-propelled instance");
+	}
 	return true;
       }else{
 	haltForError(Logger.DB_WRITE,"Could not update table("+
