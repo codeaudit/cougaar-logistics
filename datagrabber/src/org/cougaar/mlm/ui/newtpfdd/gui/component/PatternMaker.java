@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.4 2002-08-09 16:46:10 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.5 2002-08-13 14:22:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -241,8 +241,11 @@ public class PatternMaker {
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
 
-	if (slopeIsPositive) term = x+y;
-	else term = x-y;
+	if (slopeIsPositive) {
+        term = x+y;
+	} else {
+        term = x-y;
+    }
  
 	boolean foregroundPixel = false;
  
@@ -251,11 +254,11 @@ public class PatternMaker {
 	    foregroundPixel = true;
 	}
  
-	if (foregroundPixel)
+ if (foregroundPixel) {
 	  pix[index++] = fgColor;
-	else if (pix[index] == 0)
+ } else if (pix[index] == 0) {
 	  pix[index++] = bgColor;
-	else;
+ } 
 
       }
     }
@@ -276,10 +279,11 @@ public class PatternMaker {
     index = 0;
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
-	if ((x-y) % spacing == 0 || (x+y) % spacing == 0) 
+	if ((x-y) % spacing == 0 || (x+y) % spacing == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else { 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -299,10 +303,11 @@ public class PatternMaker {
     index = 0;
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
-	if (y % spacing == 0) 
+	if (y % spacing == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else{ 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -423,10 +428,11 @@ public class PatternMaker {
     index = 0;
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
-	if (y % spacing == 0 && x % spacing == 0) 
+	if (y % spacing == 0 && x % spacing == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else{ 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -455,11 +461,11 @@ public class PatternMaker {
 	boolean foregroundPixel = false;
  
 	for (j=0; j < 2; j++) {    
-	  if ((term1 - j) % spacing == 0)
+	  if ((term1 - j) % spacing == 0) {
 	    foregroundPixel = true;
-	  else if ((term2 - j) % spacing == 0)
+	  } else if ((term2 - j) % spacing == 0){
 	    foregroundPixel = true;
-	  else;
+	  } 
 	}
 
 	boolean foregroundPixel2 = true;
@@ -477,14 +483,15 @@ public class PatternMaker {
 	  if ((y+j) % spacing == 0) foregroundPixel4= false;
 	}
 
-	if (foregroundPixel && foregroundPixel2)
+	if (foregroundPixel && foregroundPixel2) {
 	  pix[index++] = starColor;
-	else if (foregroundPixel3 && foregroundPixel4)
+	} else if (foregroundPixel3 && foregroundPixel4) {
 	  pix[index++] = starColor;
-	else if (x % spacing == 0 || x % (spacing/2) == 0)
+	} else if (x % spacing == 0 || x % (spacing/2) == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else { 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -553,10 +560,11 @@ public class PatternMaker {
     index = 0;
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
-	if (y % spacing == 0 || (y+1) % spacing == 0) 
+	if (y % spacing == 0 || (y+1) % spacing == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else{ 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -605,10 +613,11 @@ public class PatternMaker {
     index = 0;
     for (y=0; y<h; y++) {
       for (x=0; x<w; x++) {
-	if (x % spacing == 0) 
+	if (x % spacing == 0) {
 	  pix[index++] = fgColor;
-	else 
+	} else { 
 	  pix[index++] = bgColor;
+    }
       }
     }
     MemoryImageSource mi = new MemoryImageSource(w, h, pix, 0, w);
@@ -639,10 +648,11 @@ public class PatternMaker {
     int imageWidth = PatternMaker.getWidth();
     int imageHeight = PatternMaker.getHeight();
  
-    if (width > imageWidth || height > imageHeight)
+ if (width > imageWidth || height > imageHeight) {
       tiling = true;
-    else
+ } else {
       tiling = false;
+ }
  
     g.setClip(r.x+1, r.y+1, r.width-1,r.height-1);
  

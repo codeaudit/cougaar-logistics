@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/Slider.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/Slider.java,v 1.2 2002-08-13 14:22:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -192,10 +192,11 @@ implements Adjustable
   public int getOrientation() { return myOrientation; }  
   public Dimension getPreferredSize()
   {
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  return new Dimension( myPreferredLength, myPreferredThickness );
-	else
+	} else {
 	  return new Dimension( myPreferredThickness, myPreferredLength );
+    }
   }  
   private int getRange()
   {
@@ -203,10 +204,11 @@ implements Adjustable
   }  
   private int getSliderEnd()
   {
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  return getSize().width-1;
-	else
+	} else {
 	  return getSize().height-1;
+    }
   }  
   // Event Processing
   ////////////////////////////////////////////
@@ -250,10 +252,11 @@ implements Adjustable
   }  
   private int getTriangleLength()
   {
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  return (getSize().height-2) / 2;
-	else
+	} else{ 
 	  return (getSize().width-2) / 2;
+    }
   }  
   public int getUnitIncrement() { return myUnitIncrement; }  
   public int getValue() { return myValue; }  
@@ -278,10 +281,11 @@ implements Adjustable
 	  return null;
 	if( b.start > a.start )			// b overlaps high side of a
 	  return new Range( a.start, b.start-a.start );
-	if( b.getEnd() < a.getEnd() )	// b overlaps low side of a
+	if( b.getEnd() < a.getEnd() ) {	// b overlaps low side of a
 	  return new Range( b.getEnd(), a.getEnd()-b.getEnd() );
-	else
+	} else {
 	  return null;
+    }
   }  
   /**
 	  * relocates and redraws thumb in a new location in an optimized fashion
@@ -306,10 +310,11 @@ implements Adjustable
 	if( leftovers != null )
 	  {
 	g.setColor( getBackground() );
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  g.fillRect( leftovers.start, 0+1,  leftovers.width, getSize().height-2 );
-	else
+	} else {
 	  g.fillRect( 0+1, leftovers.start,  getSize().width-2, leftovers.width );
+    }
 	  }
 
 	return true;
@@ -396,10 +401,11 @@ implements Adjustable
 	int mouseLocation = 0;
 	if( e instanceof MouseEvent )
 	  {
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  mouseLocation = ((MouseEvent)e).getX();
-	else
+	} else{ 
 	  mouseLocation = ((MouseEvent)e).getY();
+    }
 	  }
 
 	switch( e.getID() )
@@ -433,23 +439,25 @@ implements Adjustable
 	requestFocus();
 
 	myDragStartValue = getValue();
-	if( getOrientation() == Adjustable.HORIZONTAL )
+	if( getOrientation() == Adjustable.HORIZONTAL ) {
 	  myDragOrigin = ((MouseEvent)e).getX();
-	else
+	} else {
 	  myDragOrigin = ((MouseEvent)e).getY();
+    }
 			
-	if ( mouseLocation > getMovementEnd() )
+	if ( mouseLocation > getMovementEnd() ) {
 	  doUnitIncrement();	// top triangle
-	else if( mouseLocation > getThumbEnd() )
+	} else if( mouseLocation > getThumbEnd() ) {
 	  doBlockIncrement();	// above thumb
-	else if( mouseLocation > getThumbMid() )
+	} else if( mouseLocation > getThumbMid() ) {
 	  doUnitIncrement();	// thumb top
-	else if( mouseLocation > getThumbStart() )
+	} else if( mouseLocation > getThumbStart() ) {
 	  doUnitDecrement();	// thumb bottom
-	else if( mouseLocation > getMovementStart() )
+	} else if( mouseLocation > getMovementStart() ) {
 	  doBlockDecrement();	// below thumb
-	else
+	} else {
 	  doUnitDecrement();	// bottom triangle
+    }
 	break;
 
 	  case MouseEvent.MOUSE_DRAGGED:

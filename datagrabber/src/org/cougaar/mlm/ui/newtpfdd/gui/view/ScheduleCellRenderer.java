@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.3 2002-08-07 20:58:53 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.4 2002-08-13 14:22:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -240,26 +240,29 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	g.setColor(Color.white);
 	// put start date if it fits
 	width = defaultFontMetrics.stringWidth(startDateString);
-	if ( startLoc - width - 4 >= 0 )
+	if ( startLoc - width - 4 >= 0 ){
 	  g.drawString(startDateString, startLoc - width - 2, cellDim.height / 2
 				   + (fontHeight / 2 - fontDescent));
-	else if (debug)
+	} else if (debug) {
 	  System.out.println ("SchedulerCellRenderer.paint not drawing startDate " + startDateString);
+    }
 	
 	// put end date if it fits
 	width = defaultFontMetrics.stringWidth(endDateString);
-	if ( endLoc + width + 4 < cellDim.width )
+	if ( endLoc + width + 4 < cellDim.width ) {
 	  g.drawString(endDateString, endLoc + 2, cellDim.height / 2
 				   + (fontHeight / 2 - fontDescent));
-	else if (debug)
+	}else if (debug){
 	  System.out.println ("SchedulerCellRenderer.paint not drawing endDate " + endDateString);
+    }
 
 	if ( minStart != 0 ) {
 	    int minStartLoc = (int)((minStart - earliest) * (cellDim.width - 100) / range) + 50;
-	    if ( start >= minStart )
+	    if ( start >= minStart ){
 		/* drawDiamond(g, minStartLoc, (cellDim.height / 2) - 1, Color.cyan) */;
-	    else
+	    } else {
 		drawDiamond(g, minStartLoc, (cellDim.height / 2) - 1, Color.red);
+        }
 
 	    minStartString = Node.longDate(new Date(minStart));
 	    width = defaultFontMetrics.stringWidth(minStartString);
@@ -273,18 +276,20 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 
 	if ( minEnd != 0 ) {
 	    int minEndLoc = (int)((minEnd - earliest) * (cellDim.width - 100) / range) + 50;
-	    if ( end >= minEnd )
+	    if ( end >= minEnd ) {
 		/* drawUpTriangle(g, minEndLoc, (cellDim.height / 2) - 1, Color.cyan) */;
-	    else
+	    } else {
 		drawUpTriangle(g, minEndLoc, (cellDim.height / 2) - 1, Color.red);
+        }
 	}
 
 	if ( maxEnd != 0 ) {
 	    int maxEndLoc = (int)((maxEnd - earliest) * (cellDim.width - 100) / range) + 50;
-	    if ( end <= maxEnd )
+	    if ( end <= maxEnd ) {
 		/* drawDownTriangle(g, maxEndLoc, (cellDim.height / 2) + 1, Color.cyan) */;
-	    else
+	    } else {
 		drawDownTriangle(g, maxEndLoc, (cellDim.height / 2) + 1, Color.red);
+        }
 	}
     }
 
@@ -297,10 +302,11 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	//	Debug.out("SCR:gTCRC enter " + ((Node)value).getUUID() + "isTransport: "
 	//		  + ((Node)value).isTransport());
 	setForeground(Color.white);
-	if ( isSelected )
+	if ( isSelected ) {
 	    setBackground(table.getSelectionBackground());
-	else
+	} else {
 	    setBackground(table.getBackground());
+    }
        
 	isSelected = isSelected;
 	Node node = (Node)value;
@@ -328,14 +334,16 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	//	latest = taskModel.getProvider().getMaxTaskEnd();
 	earliest = taskModel.getMinTaskStart();
 	latest = taskModel.getMaxTaskEnd();
-	if (node.getActualStart () == null)
+	if (node.getActualStart () == null) {
 	  start = 0;//earliest;
-	else 
+	} else { 
 	  start = node.getActualStart().getTime();
-	if (node.getActualEnd() == null)
+    }
+	if (node.getActualEnd() == null) {
 	  end = 0;//latest;
-	else
+	} else {
 	  end = node.getActualEnd().getTime();
+    }
 	// Debug.out("SCR:gTCRC UUID: " + Node.getUUID() + " start: " + start + " end: " + end
 	//	     + " earliest " + earliest + " latest " + latest);
 	// Following two values never set - go why get them

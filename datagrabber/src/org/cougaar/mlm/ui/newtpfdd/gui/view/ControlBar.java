@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ControlBar.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ControlBar.java,v 1.2 2002-08-13 14:22:30 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -245,24 +245,25 @@ public class ControlBar extends JPanel implements ActionListener
 		return;
 	  }
 	try {
-	    if ( source == getplusButton() )
+	    if ( source == getplusButton() ) {
 		gc.setVisibleAmount(gc.getVisibleAmount() + 1);
-	    else if ( source == getminusButton() )
+	    } else if ( source == getminusButton() ) {
 		gc.setVisibleAmount(gc.getVisibleAmount() - 1);
-	    else if ( source == getplusFiveButton() )
+	    } else if ( source == getplusFiveButton() ) {
 		gc.setVisibleAmount(gc.getVisibleAmount() + 5);
-	    else if ( source == getminusFiveButton() )
+	    } else if ( source == getminusFiveButton() ){
 		gc.setVisibleAmount(gc.getVisibleAmount() - 5);
-	    else if ( source == getfitToViewButton() )
+	    } else if ( source == getfitToViewButton() ){
 		gc.fitToView();
-	    else if ( source == getearliestButton() )
+	    } else if ( source == getearliestButton() ) {
 		gc.setVirtualXLocation(taskModel.getMinTaskStart() - TaskGanttChart.DAYLEN);
-	    else if ( source == getlatestButton() )
+	    } else if ( source == getlatestButton() ) {
 		gc.setVirtualXLocation(taskModel.getMaxTaskEnd() - gc.getVirtualXSize() + TaskGanttChart.DAYLEN);
-	    else if ( source == getshowPrefs() )
+	    } else if ( source == getshowPrefs() ){
 		gc.getLozengePanel().setLayerActive(0, getshowPrefs().isSelected());
-	    else
+	    } else {
 		OutputHandler.out("CB:aP Error: unknown JButton source: " + source);
+        }
 	}
 	catch ( Exception e ) {
 	    OutputHandler.out(ExceptionTools.toString("CQ:aP", e));
