@@ -17,60 +17,9 @@ import java.io.IOException;
 
 public class HttpRequestTest  extends TestCase {
 
-    private static class MyInputStream extends InputStream {
-
-        private String data;
-        private InputStream stream;
-
-        public void setData(String data) {
-            this.data = data;
-            stream = new StringBufferInputStream(data);
-        }
-
-        public int read() throws IOException {
-            return stream.read();
-        }
-
-        public int read(byte[] b) throws IOException {
-            return stream.read(b);
-        }
-
-        public int read(byte[] b, int off, int len) throws IOException {
-            return stream.read(b, off, len);
-        }
-
-        public int available() throws IOException {
-            return stream.available();
-        }
-
-        public boolean markSupported()  {
-            return stream.markSupported();
-        }
-
-        public void mark(int lim) {
-            stream.mark(lim);
-        }
-
-        public void reset() throws IOException {
-            stream.reset();
-        }
-
-        public long skip(long n) throws IOException {
-            return stream.skip(n);
-        }
-
-        public void close() throws IOException {
-            stream.close();
-        }
-
-    }
     private static class MySocket extends Socket {
 
         private InputStream stream;
-
-        public MySocket() {
-            stream = new MyInputStream();
-        }
 
         public MySocket(InputStream stream) {
             this.stream = stream;
@@ -86,7 +35,7 @@ public class HttpRequestTest  extends TestCase {
     }
 
     public void testBasic() throws Throwable {
-        HttpRequest h = new HttpRequest(1, new MySocket());
+        HttpRequest h = new HttpRequest(1, new MySocket(new StringBufferInputStream("hi")));
         assertEquals(1, h.getID());
         assertEquals(0, h.getCommand());
         assertNull(h.getTarget());
@@ -119,10 +68,7 @@ public class HttpRequestTest  extends TestCase {
     }
 
     private MySocket createSocketWith(String data) {
-        MyInputStream stream = new MyInputStream();
-        stream.setData(data + System.getProperty("line.separator")+ System.getProperty("line.separator"));
-        MySocket socket = new MySocket(stream);
-        return socket;
+        return new MySocket(new StringBufferInputStream(data + System.getProperty("line.separator")+ System.getProperty("line.separator")));
     }
 
 }
