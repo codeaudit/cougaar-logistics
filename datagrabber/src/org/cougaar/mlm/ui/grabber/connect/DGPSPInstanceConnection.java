@@ -40,6 +40,8 @@ import java.sql.*;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.text.DecimalFormat;
 
@@ -83,125 +85,16 @@ public class DGPSPInstanceConnection extends DGPSPConnection
 
   //Actions:
 
-  protected boolean updateAssetInstance(Statement s, Instance part){
-    boolean ret=false;
-    try{
-      StringBuffer sb=new StringBuffer();
-      boolean hasNomen=!(part.itemNomen==null||part.itemNomen.equals(""));
-      sb.append("INSERT INTO ");
-      sb.append(getTableName(ASSET_INSTANCE_TABLE));
-      sb.append(" (");
-      sb.append(COL_ASSETID);sb.append(",");
-      sb.append(COL_AGGREGATE);sb.append(",");
-      sb.append(COL_OWNER);sb.append(",");
-      sb.append(COL_PROTOTYPEID);sb.append(",");
-      sb.append(COL_NAME);
-      if(hasNomen){
-	sb.append(",");
-	sb.append(COL_ALP_ITEM_NOMEN);
-      }
-      sb.append(") VALUES('");
-      sb.append(part.UID);sb.append("',");
-      sb.append(part.aggregateNumber);sb.append(",'");
-      sb.append(part.ownerID==null?"":part.ownerID);sb.append("','");
-      sb.append(part.prototypeUID);sb.append("','");
-      sb.append(part.name==null?"":part.name);
-      sb.append("'");
-      if(hasNomen){
-	sb.append(",'");
-	sb.append(part.itemNomen);
-	sb.append("'");
-      }
-      sb.append(")");
-      ret=(s.executeUpdate(sb.toString())==1);
-    }catch(SQLException e){
-      if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){
-	haltForError(Logger.DB_WRITE,"Could not update table("+
-		     getTableName(ASSET_INSTANCE_TABLE)+")"+
-		     "["+e.getSQLState()+"]",e);
-	return false;
-      }else
-	return true;
-    }
-    return ret;
-  }
-
-  DecimalFormat noExponentNoFractionDoubleFormat=new DecimalFormat ("#");
-
-  protected boolean updateManifest(Statement s, Instance part){
-    boolean ret=false;
-    StringBuffer sb = null;
-
-    int i = 0;
-    //      System.out.println ("instance manifest type ids " +  part.typeIdentifications);
-    //      System.out.println ("instance manifest weights " +  part.weights);
-    //      System.out.println ("instance manifest nomenclatures " +  part.nomenclatures);
-
-    Iterator typeIter = part.typeIdentifications.iterator();
-    Iterator weightsIter = part.weights.iterator();
-    for (Iterator nomenIter = part.nomenclatures.iterator (); nomenIter.hasNext ();) {
-      i++;
-      sb=new StringBuffer();
-      sb.append("INSERT INTO ");
-      sb.append(getTableName(MANIFEST_TABLE));
-      sb.append(" (");
-      sb.append (COL_MANIFEST_ITEM_ID);sb.append(",");
-      sb.append (COL_ASSETID);sb.append(",");
-      sb.append (COL_NAME);sb.append(",");
-      sb.append (COL_ALP_TYPEID);sb.append(",");
-      sb.append (COL_ALP_NOMENCLATURE);sb.append(",");
-      sb.append (COL_WEIGHT);
-
-      String nomen = (String) nomenIter.next ();
-      String type  = (String) typeIter.next ();
-      double weight = ((Mass) weightsIter.next ()).getGrams();
-
-      sb.append(")\nVALUES('");
-      sb.append(part.UID + "-item-" + i);sb.append("','");
-      sb.append(part.UID);sb.append("','");
-      sb.append(part.name+"-item-"+nomen+"-"+i);sb.append("','");
-      sb.append(type);sb.append("','");
-      sb.append(nomen+" "+type+"");sb.append("','");
-      sb.append(noExponentNoFractionDoubleFormat.format(weight));
-      sb.append("')");
-      try{
-	int rowsInserted = s.executeUpdate(sb.toString());
-	if (rowsInserted == 1) 
-	  ret = true;
-	else {
-	  ret = false;
-	  logMessage(Logger.WARNING,Logger.DB_WRITE,
-		     getClusterName()+" could not insert manifest info into database.");
-	  logMessage(Logger.WARNING,Logger.DB_WRITE,
-		     getClusterName()+" inserted " + rowsInserted + " rows");
-	  logMessage(Logger.WARNING,Logger.DB_WRITE,
-		     getClusterName()+" sql was " + sb);
-	  break;
-	}
-      }catch(SQLException e){
-	if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){
-	  haltForError(Logger.DB_WRITE,"Could not update table("+
-		       getTableName(MANIFEST_TABLE)+")"+
-		       "["+e.getSQLState()+"]",e);
-	  System.out.println ("*** Sql is\n" + sb);
-	  return false;
-	}else {
-	  //	logMessage(Logger.WARNING,Logger.DB_WRITE,
-	  //		   getClusterName()+" got an exception " + e);
-	  //	System.err.println (getClusterName()+" got an exception! : " + e);
-	  return true;
-	}
-      }
-    }
-    return ret;
-  }
-
   protected void updateDB(Connection c, DeXMLable obj){
     setStatus("Starting");
     InstancesData data=(InstancesData)obj;
-    Statement s;
+    PreparedStatement instancePS, manifestPS;
+
     try{
-      s = c.createStatement();
+      instancePS = getInstancePreparedStatement (c);
+      manifestPS = getManifestPreparedStatement (c);
+      logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+		 getClusterName()+" instance created prepared statements.");
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not create Statement",e);
       return;
@@ -209,31 +102,177 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     int num=0;
     int unsuccessful=0;
     Iterator iter=data.getInstancesIterator();
-    setStatus("Updating instances...");
+    setStatus("Creating batch updates for instances...");
     while(iter.hasNext()){
       num++;
       Instance part=(Instance)iter.next();
-      if(!updateAssetInstance(s,part))
+      if(!updateAssetInstance(instancePS,part))
 	unsuccessful++;
       if(part.hasManifest) {
-	if(!updateManifest(s,part))
+	if(!updateManifest(manifestPS,part))
 	  unsuccessful++;
       }
+
+      if ((num +1) % 1000 == 0) {
+	try{
+	  logMessage(Logger.MINOR,Logger.DB_WRITE,
+		     getClusterName()+" executing a prepared batch of a thousand instances, " + num + " so far ");
+	  instancePS.executeBatch();
+	  manifestPS.executeBatch();
+	}catch(SQLException e){
+	  if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
+	    // this well happen, since the same asset UID may appear in multiple agents
+	    logMessage(Logger.WARNING,Logger.DB_WRITE,"While executing batch, got SQL Error - " + e);
+	    e.printStackTrace ();
+	  }
+	}
+      }
+
       if(halt)return;
     }
-    logMessage(Logger.MINOR,Logger.DB_WRITE,
-	       getClusterName()+" added "+num+" instance(s)");
+
+    try{
+      logMessage(Logger.MINOR,Logger.DB_WRITE,
+		 getClusterName()+" executing the last prepared batch, " + num + " total instances done.");
+      instancePS.executeBatch();
+      manifestPS.executeBatch();
+    }catch(SQLException e){
+      if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){ 
+	// this well happen, since the same asset UID may appear in multiple agents
+	logMessage(Logger.WARNING,Logger.DB_WRITE,"SQL Error - " + e);
+	e.printStackTrace ();
+      }
+    }
+
     if(unsuccessful>0)
       logMessage(Logger.WARNING,Logger.DB_WRITE,
 		 getClusterName()+" could not add "+unsuccessful+
 		 " instances(s)");
+
+    try { 
+      instancePS.close();
+      manifestPS.close(); 
+    } catch(Exception e){
+      logMessage(Logger.WARNING,Logger.DB_WRITE,
+		 getClusterName()+" got exception closing prepared statement " + instancePS + 
+		 " or " + manifestPS +
+		 " - exception was : " + e);
+      e.printStackTrace ();
+    }
+
     setStatus("Done");
-    if(s!=null){
-      try{
-	s.close();
-      }catch(Exception e){
+  }
+
+  protected PreparedStatement getInstancePreparedStatement (Connection con) throws SQLException {
+    StringBuffer sb=new StringBuffer();
+
+    sb.append("INSERT INTO ");
+    sb.append(getTableName(ASSET_INSTANCE_TABLE));
+    sb.append(" (");
+    sb.append(COL_ASSETID);sb.append(",");
+    sb.append(COL_AGGREGATE);sb.append(",");
+    sb.append(COL_OWNER);sb.append(",");
+    sb.append(COL_PROTOTYPEID);sb.append(",");
+    sb.append(COL_NAME);sb.append(",");
+    sb.append(COL_ALP_ITEM_NOMEN);
+    sb.append(") VALUES(");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(")");
+
+    return con.prepareStatement(sb.toString());
+  }
+
+  protected PreparedStatement getManifestPreparedStatement (Connection con) throws SQLException {
+    StringBuffer sb=new StringBuffer();
+
+    sb.append("INSERT INTO ");
+    sb.append(getTableName(MANIFEST_TABLE));
+    sb.append(" (");
+    sb.append (COL_MANIFEST_ITEM_ID);sb.append(",");
+    sb.append (COL_ASSETID);sb.append(",");
+    sb.append (COL_NAME);sb.append(",");
+    sb.append (COL_ALP_TYPEID);sb.append(",");
+    sb.append (COL_ALP_NOMENCLATURE);sb.append(",");
+    sb.append (COL_WEIGHT);
+
+    sb.append(") VALUES(");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(")");
+
+    return con.prepareStatement(sb.toString());
+  }
+
+  Map uidToString = new HashMap ();
+
+  protected boolean updateAssetInstance(PreparedStatement s, Instance part){
+    try{
+      int col = 0;
+      s.setString(++col,getUID(part.UID, uidToString));
+      s.setLong  (++col,part.aggregateNumber);
+      s.setString(++col,part.ownerID==null?"":part.ownerID);
+      s.setString(++col,part.prototypeUID);
+      s.setString(++col,part.name==null?"":part.name);
+      s.setString(++col,part.itemNomen);
+      s.addBatch();
+    }catch(SQLException e){
+      haltForError(Logger.DB_WRITE,"Could not add batch to table("+
+		   getTableName(CONVEYED_LEG_TABLE)+")"+
+		   "["+e.getSQLState()+"]",e);
+      return false;
+    }
+    return true;
+  }
+
+  protected String getUID (UID uid, Map uidToString) {
+    String returnedUID = (String) uidToString.get (uid);
+    if (returnedUID == null) {
+      uidToString.put (uid, (returnedUID = uid.toString()));
+    }
+    return returnedUID;
+  }
+
+  DecimalFormat noExponentNoFractionDoubleFormat=new DecimalFormat ("#");
+
+  protected boolean updateManifest(PreparedStatement s, Instance part){
+    try {
+      int i = 0;
+      Iterator typeIter = part.typeIdentifications.iterator();
+      Iterator weightsIter = part.weights.iterator();
+
+      for (Iterator nomenIter = part.nomenclatures.iterator (); nomenIter.hasNext ();) {
+	i++;
+	String nomen = (String) nomenIter.next ();
+	String type  = (String) typeIter.next ();
+	double weight = ((Mass) weightsIter.next ()).getGrams();
+
+	int col = 0;
+	s.setString(++col,part.UID + "-item-" + i);
+	s.setString(++col,part.UID.toString());
+	s.setString(++col,part.name+"-item-"+nomen+"-"+i);
+	s.setString(++col,type);
+	s.setString(++col,nomen+" "+type);
+	s.setDouble(++col,weight);
+	s.addBatch ();
+      }
+
+    }catch(SQLException e){
+      if(!dbConfig.getUniqueViolatedErrorCode().equals(e.getSQLState())){
+	haltForError(Logger.DB_WRITE,"Could not add batch to table("+
+		     getTableName(MANIFEST_TABLE)+")"+
+		     "["+e.getSQLState()+"]",e);
+	return false;
       }
     }
+
+    return true;
   }
 
   protected RunResult prepResult(DeXMLable obj){
