@@ -63,10 +63,8 @@ public class TonnageInfo extends AbstractTonnageInfo implements Graphable {
       init(showUnit, showClass, showType, showLocation);
   }
 
-  /**for gui**/
   public String getDescription(){
-    return "Tonnage Information by "+(showUnit?"Unit":"")+
-      (showClass?"Class":"")+(showType?"Type":"")+(showLocation?"Location":"");
+      return super.getDescription("Tonnage Information by");
   }
 
   /**Get header strings for the table**/
@@ -116,13 +114,6 @@ public class TonnageInfo extends AbstractTonnageInfo implements Graphable {
    * show one graph per X dimension entry 
    **/
   public boolean showMultipleGraphs () { return false; }
-
-  /**Actually do the query and build the table**/
-  protected void constructTable(Logger l, Statement s, int run)
-    throws SQLException{
-    createTable(s, run);
-    insertResults(l,s,run);
-  }
 
   protected void createTable(Statement s, int run) throws SQLException{
     s.executeUpdate("CREATE TABLE "+getTableName(run)+" ( "+

@@ -52,8 +52,7 @@ public class AvgTonnageInfo extends AbstractTonnageInfo {
 
   /**for gui**/
   public String getDescription(){
-    return "Average Tonnage Per Day Information by "+(showUnit?"Unit":"")+
-      (showClass?"Class":"")+(showType?"Type":"")+(showLocation?"Location":"");
+      return super.getDescription("Average Tonnage Per Day Information by ");
   }
 
   /**Get header strings for the table**/
@@ -88,13 +87,6 @@ public class AvgTonnageInfo extends AbstractTonnageInfo {
     }
     types[count-1] = TYPE_TONNAGE_THREE_DIGITS;
     return types;
-  }
-
-  /**Actually do the query and build the table**/
-  protected void constructTable(Logger l, Statement s, int run)
-    throws SQLException{
-    createTable(s, run);
-    insertResults(l,s,run);
   }
 
   protected void createTable(Statement s, int run) throws SQLException{
