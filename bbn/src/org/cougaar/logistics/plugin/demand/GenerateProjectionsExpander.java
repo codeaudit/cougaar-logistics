@@ -32,6 +32,7 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.ItemIdentificationPG;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
 
@@ -72,13 +73,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // TODO: document, add logger, handle null checks
     // TODO: create method to compare rates and extract tasks based on time, e.g., overlapping schedules
 
-
+    if (consumer instanceof AggregateAsset) {
+      consumer = ((AggregateAsset) consumer).getAsset();
+    }
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
-
     Collection items = getConsumed(pg);
     Collection subTasks = new ArrayList();
+    Asset consumedItem;
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
-      Asset consumedItem = (Asset) iterator.next();
+      consumedItem = (Asset) iterator.next();
 
       Enumeration scheduleElements = schedule.getAllScheduleElements();
       Rate rate;
@@ -86,12 +89,23 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       while (scheduleElements.hasMoreElements()) {
         ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
         rate = getRate(pg, consumedItem, (List) ose.getObject());
+        // FIXME:  Should we report a warning or is this normal????
+        if (rate == null)  {
+          System.out.println("------------------ THE RATE is NULL ------------------------  " +
+                             consumedItem.getTypeIdentificationPG().getNomenclature());
+          continue;
+        }
         logger.info("checking Rate on consumed item " + rate.toString());
         subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
                                              ose.getEndTime(), rate));
       }
+    }
+    System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
+                       consumer.getTypeIdentificationPG().getNomenclature());
+    if (!subTasks.isEmpty()) {
       createAndPublishExpansion(gpTask, subTasks);
     }
+
   }
 
 
@@ -196,18 +210,19 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   }
 
 
-  protected void createAndPublishExpansion(Task parent, Collection subtasks) {
+  private void createAndPublishExpansion(Task parent, Collection subtasks) {
     Iterator subtasksIT = subtasks.iterator();
     while (subtasksIT.hasNext()) {
       dfPlugin.publishAdd(subtasksIT.next());
     }
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
-     logger.info("GenerateProjectionsExpander publishing expansion ");
+    logger.info("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
+    System.out.println("GenerateProjectionsExpander publishing expansion " + dfPlugin.getClusterId());
     dfPlugin.publishAdd(expansion);
   }
 
-  protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
+  private void addToAndPublishExpansion(Task parent, Collection subtasks) {
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
@@ -222,7 +237,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
                                           long end, Rate rate) {
-    logger.info("GenerateProjectionsExpander create ProjectSupply Task ");
+    logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
+    System.out.println("GenerateProjectionsExpander create ProjectSupply Task ");
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
