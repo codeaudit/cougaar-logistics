@@ -45,17 +45,18 @@ public class InventoryLevelGenerator extends InventoryModule {
 
   protected void calculateInventoryLevels(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
     //calculate inventory levels for today through start (today + OST)
-    while (startBucket <= endBucket) {
+    int start = (thePG.getStartBucket() > startBucket) ? thePG.getStartBucket() : startBucket;
+    while (start <= endBucket) {
       double level;
-      if (startBucket == 0) {
+      if (start == 0) {
         level = thePG.getLevel(0);
       } else {
-        level = thePG.getLevel(startBucket - 1) -
-          thePG.getActualDemand(startBucket);
+        level = thePG.getLevel(start - 1) -
+          thePG.getActualDemand(start);
       }
-      double committedRefill = findCommittedRefill(startBucket, thePG, true);
-      thePG.setLevel(startBucket, (level + committedRefill) );
-      startBucket = startBucket + 1;
+      double committedRefill = findCommittedRefill(start, thePG, true);
+      thePG.setLevel(start, (level + committedRefill) );
+      start = start + 1;
     }
 
   }
@@ -168,7 +169,6 @@ public class InventoryLevelGenerator extends InventoryModule {
                    startBucket);
     }
 
-//     thePG.clearTargetLevels(startBucket);
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int lastDemandBucket = thePG.getLastDemandBucket();
     double lastTarget;
@@ -244,6 +244,14 @@ public class InventoryLevelGenerator extends InventoryModule {
      //                                               reorderPeriodEndBucket-1);
 
     targetLevel = criticalAtEndOfPeriod + demandForPeriod + .0005;
+    if (logger.isDebugEnabled()) {
+      if ((inventoryPlugin.getOrgName().indexOf("ARBN") > -1) &&
+          (thePG.getResource().getTypeIdentificationPG().getTypeIdentification().indexOf("C380") > -1)) {
+        logger.debug("##ILG## "+getTimeUtils().dateString(thePG.convertBucketToTime(refillBucket))+
+                     " Target "+targetLevel+" = critical "+criticalAtEndOfPeriod+" + demand "+
+                     demandForPeriod);
+      }
+    }
     return targetLevel;
   }
 
