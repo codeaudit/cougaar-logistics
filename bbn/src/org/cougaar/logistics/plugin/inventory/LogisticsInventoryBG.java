@@ -38,12 +38,12 @@ import org.cougaar.logistics.plugin.inventory.TaskUtils;
 public class LogisticsInventoryBG implements PGDelegate {
 
   // Beth, if you can come up with something better than 
-  // 'period', I'd appreciate it.
-  // Period will be a knob, this implementation temporary
-  private long MSEC_PER_PERIOD = TimeUtils.MSEC_PER_DAY;
+  // 'bucket', I'd appreciate it.
+  // Bucket will be a knob, this implementation temporary
+  private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY;
   protected LogisticsInventoryPG myPG;
   protected long startTime;
-  protected int startPeriod;
+  protected int timeZero;
   private boolean initialized;
   private LoggingService logger;
   private LogisticsInventoryLogger csvLogger=null;
@@ -71,7 +71,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     // log an error so I added the initialized boolean but I don't care
     // for it.
     startTime = today;
-    startPeriod = (int)(startTime/MSEC_PER_PERIOD);
+    timeZero = (int)(startTime/MSEC_PER_BUCKET);
     logger = parentPlugin.getLoggingService(this);
     if(false) {
 	csvLogger = new LogisticsInventoryLogger(myPG.getResource(),parentPlugin);
@@ -107,26 +107,26 @@ public class LogisticsInventoryBG implements PGDelegate {
 	customerHash.put(org, new Long(endTime));
       }
     }
-    int period = convertTimeToPeriod(endTime);
-    addDueOut(task, period);
+    int bucket = convertTimeToBucket(endTime);
+    addDueOut(task, bucket);
   }
 
   private void addDueOutProjection(Task task) {
     long start = (long)PluginHelper.getPreferenceBestValue(task, AspectType.START_TIME);
     long end = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-    int period_start = convertTimeToPeriod(start);
-    int period_end = convertTimeToPeriod(end);
+    int bucket_start = convertTimeToBucket(start);
+    int bucket_end = convertTimeToBucket(end);
     // There are more efficient ways of doing this but this is easy and clear
-    for (int i=period_start; i < period_end; i++) {
+    for (int i=bucket_start; i < bucket_end; i++) {
       addDueOut(task, i);
     }
   }
 
-  private void addDueOut(Task task, int period) {
-    while (period >= DueOut.size()) {
+  private void addDueOut(Task task, int bucket) {
+    while (bucket >= DueOut.size()) {
       DueOut.add(new ArrayList());
     }
-    ArrayList list = (ArrayList)DueOut.get(period);
+    ArrayList list = (ArrayList)DueOut.get(bucket);
     list.add(task);
   }
 
@@ -137,7 +137,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     // need to update DueIn list
     // different updates obviously needed for Supply
     // and ProjectSupply because projections can span
-    // serveral periods.
+    // serveral buckets.
     // This needs to be a well implemented method as it involves
     // shifting Refills and Projections in the dueIn list
   }
@@ -188,12 +188,12 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   /**
-   * Convert a time (long) into a period of this inventory that can be
+   * Convert a time (long) into a bucket of this inventory that can be
    * used to index duein/out vectors, levels, etc.
    **/
-  public int convertTimeToPeriod(long time) {
-    int thisDay = (int) (time / MSEC_PER_PERIOD);
-    return thisDay - startPeriod;
+  public int convertTimeToBucket(long time) {
+    int thisDay = (int) (time / MSEC_PER_BUCKET);
+    return thisDay - timeZero;
   }
 
   // Ask Beth about persistance.  Would like to make sure structures
