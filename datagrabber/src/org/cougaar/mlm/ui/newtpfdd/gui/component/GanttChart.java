@@ -652,8 +652,7 @@ public class GanttChart extends Container
 	 }
 	 */
 
-  public void setTicInterval(long n)
-  {
+  public void setTicInterval(long n) {
     myVirtualXScroller.setTicInterval(n); 
     myLozengeGrid.setVirtualXInterval(n);
     myVirtualXScroller.setLabelInterval(n);
@@ -781,7 +780,8 @@ public class GanttChart extends Container
     myVirtualXSync.setVirtualXLocation(newLocation);
   }
 
-  private static long MINUTE = 60l*1000l;
+  private static long SECOND = 1000l;
+  private static long MINUTE = 60l*SECOND;
   private static long HOUR   = 60l*MINUTE;
   private static long DAY    = 24l*HOUR;
   private static long WEEK   = 7l*DAY;
@@ -794,14 +794,36 @@ public class GanttChart extends Container
       setTicInterval (YEAR);
     } else if (newSize > 12*MONTH) {
       setTicInterval (MONTH);
-    } else if (newSize > 12*WEEK) {
+    } else if (newSize > MONTH) {
       setTicInterval (WEEK);
-    } else if (newSize > DAY) {
+    } else if (newSize > WEEK) {
+      setTicInterval (3*DAY);
+    } else if (newSize > 3*DAY) {
       setTicInterval (DAY);
-    } else if (newSize < DAY) {
+    } else if (newSize > DAY) {
+      setTicInterval (12*HOUR);
+    } else if (newSize > 12*HOUR) {
+      setTicInterval (6*HOUR);
+    } else if (newSize > 6*HOUR) {
+      setTicInterval (3*HOUR);
+    } else if (newSize > 3*HOUR) {
       setTicInterval (HOUR);
-    } else if (newSize < HOUR) {
-      setTicInterval (MINUTE);
+    } else if (newSize > HOUR) {
+      setTicInterval (15*MINUTE);
+    } else if (newSize > 15*MINUTE) {
+      setTicInterval (5*MINUTE);
+    } else if (newSize > 5*MINUTE) {
+      setTicInterval (2*MINUTE);
+    } else if (newSize > 2*MINUTE) {
+      setTicInterval (30*SECOND);
+    } else if (newSize > 30*SECOND) {
+      setTicInterval (15*SECOND);
+    } else if (newSize > 15*SECOND) {
+      setTicInterval (5*SECOND);
+    } else if (newSize > 5*SECOND) {
+      setTicInterval (2*SECOND);
+    } else {
+      setTicInterval (SECOND);
     }
   }
 

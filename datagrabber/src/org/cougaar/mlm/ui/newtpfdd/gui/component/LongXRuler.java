@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LongXRuler.java,v 1.3 2003-02-03 22:27:59 mthome Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LongXRuler.java,v 1.4 2004-02-25 23:42:25 gvidaver Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -42,10 +42,13 @@ public class LongXRuler extends VirtualXComponent
     long myVXOriginalSize;
     boolean myAmResizing;	// are we resizing or moving?
     boolean myResizingFromTop;	// are we resizing the top or bottom end?
+  boolean debug = false;
 
-  private static long MINUTE = 60l*1000l;
+  private static long SECOND = 1000l;
+  private static long MINUTE = 60l*SECOND;
   private static long HOUR   = 60l*MINUTE;
   private static long DAY    = 24l*HOUR;
+  private static long DAY_THRESHOLD = 3;
   private static Font biggerFont = new Font("SansSerif", Font.BOLD, 14);
 
     LongXRuler()
@@ -95,25 +98,32 @@ public class LongXRuler extends VirtualXComponent
 	    firstTic = start
 		/ getTicInterval()
 		* getTicInterval();
-    }
+	}
 
 	long firstLabel;
 	if( start >=0 ) {
 	    firstLabel = ((start+getLabelInterval()-1)
 			  / getLabelInterval())
-		* getLabelInterval();
+	      * getLabelInterval();
 	}else { // ( start < 0 )
 	    firstLabel = start / getLabelInterval() * getLabelInterval();
-    }
+	}
 
 	// paint tics
 	g.setColor( getForeground() );
+
+	if (debug)
+	  System.out.println ("first " + firstTic + " end " + end + " interval " + getTicInterval());
+
 	for( long i=firstTic; i<=end; i+=getTicInterval() )
-	    {
-		long x = i + getCDayZeroTime();
-		g.drawLine( ScreenXOfVirtualX(x), 0,
-			    ScreenXOfVirtualX(x), getSize().height );
-	    }
+	  {
+	    long x = i + getCDayZeroTime();
+	    if (debug)
+	      System.out.println ("i " + i + " drawing line at " + x + " or " + ScreenXOfVirtualX(x));
+
+	    g.drawLine( ScreenXOfVirtualX(x), 0,
+			ScreenXOfVirtualX(x), getSize().height );
+	  }
 
 	// paint labels
 	g.setFont( getFont() );
@@ -146,16 +156,31 @@ public class LongXRuler extends VirtualXComponent
 		if (getTicInterval () < DAY) {
 		  long millisToday = labelx % DAY;
 		  long hour = millisToday / HOUR;
-		  if (millisToday >= HOUR) {
-			if (hour < 10) {
-			  text = "0" + hour + ":00";
-			} else {
-			  text = "" + hour + ":00";
-            }
-			g.setFont( getFont () );
-		  }
-		  else
-			g.setFont( biggerFont );
+		  if (debug)
+		    System.out.println ("millis < HOUR ( = " +  millisToday/1000 + " secs.)");
+
+		  String day = text;
+		  long mins = (millisToday-(hour*HOUR))/MINUTE;
+		    if (hour < 10) {
+		      text = "0";
+		    } else {
+		      text = "";
+		    }
+
+		    if (end-firstLabel > DAY_THRESHOLD) {
+		      text = day + "-" + text;
+		    }
+
+		    String minutes = getTicInterval () < HOUR ? (mins == 0 ? "00" : ((mins < 10 ? "0" : "") + mins)) : "00";
+		    text += hour + ":" + minutes;
+		    if (getTicInterval () < MINUTE) {
+		      long secs = (millisToday - (hour*HOUR) - (mins*MINUTE))/SECOND;
+		      if (secs == 0)
+			text += ":00";
+		      else
+			text += ":" + (secs < 10? "0" :"") + secs;
+		    }
+		    g.setFont( getFont () );
 		}
 		
 		final int textwidth = fm.stringWidth( text );
