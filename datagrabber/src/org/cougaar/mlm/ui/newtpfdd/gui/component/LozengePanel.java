@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengePanel.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LozengePanel.java,v 1.2 2002-08-07 21:09:33 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -111,8 +111,6 @@ public class LozengePanel extends Container
 	final int indLozengeHeight = cumLozengeHeight / numRows;
 	final int lozengeRowInterval = getSize().height / numRows;
 	setFont(FontCache.get((lozengeRowInterval + 1) / 2));
-
-	int row;
 
 	for( int r=0, y=2;  r<numRows;  r++, y+=lozengeRowInterval )
 	    {

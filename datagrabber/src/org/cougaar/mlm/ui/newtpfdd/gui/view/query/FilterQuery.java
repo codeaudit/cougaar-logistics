@@ -214,7 +214,6 @@ public class FilterQuery extends TPFDDQuery {
   protected void attachRollupLegsFromResult (ResultSet rs, UIDGenerator generator, 
 					     Map prototypeToNode, Tree cargoTree) {
     Map protoToPaths = new HashMap();
-    Map legToAggNumber = new HashMap();
 
     try{
       int total = 0;
@@ -812,7 +811,6 @@ public class FilterQuery extends TPFDDQuery {
   }
 
   protected String formFastCargoLegSql (FilterClauses filterClauses, int recentRun) {
-    String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
     String derivedTable = PrepareDerivedTables.getDerivedTableName(PrepareDerivedTables.CARGO_LEG,recentRun);
 
     String assetInstanceOwner = DGPSPConstants.COL_OWNER;
@@ -822,7 +820,6 @@ public class FilterQuery extends TPFDDQuery {
     String cLegStart   = DGPSPConstants.COL_STARTTIME;
     String cLegEnd     = DGPSPConstants.COL_ENDTIME;
     String cLegType    = DGPSPConstants.COL_LEGTYPE;
-    String cLegConvID  = DGPSPConstants.COL_CONVEYANCEID;
     String cLegReadyAt = DGPSPConstants.COL_READYAT;
 
     String l1geoloc = PrepareDerivedTables.COL_START_GEOLOC;
@@ -940,8 +937,6 @@ public class FilterQuery extends TPFDDQuery {
     String prototypeWidth  = DGPSPConstants.COL_WIDTH;
     String prototypeHeight = DGPSPConstants.COL_HEIGHT;
     String prototypeDepth  = DGPSPConstants.COL_DEPTH;
-    String prototypeVolume = DGPSPConstants.COL_VOLUME;
-    String prototypeArea   = DGPSPConstants.COL_AREA;
     
     String instanceOwner  = DGPSPConstants.COL_OWNER;
     String instanceID     = DGPSPConstants.COL_ASSETID;
@@ -972,7 +967,6 @@ public class FilterQuery extends TPFDDQuery {
     String self2TypeID  = "self2" + "." + DGPSPConstants.COL_ALP_TYPEID;
     String self2Nomen   = "self2" + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
     String self2Proto   = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
-    String self2ParentProto  = "self2" + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
     
     String instanceOwner  = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
     String instanceProto  = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -1168,18 +1162,15 @@ public class FilterQuery extends TPFDDQuery {
   }
 
   protected String formManifestLegSql (FilterClauses filterClauses, int recentRun) {
-    String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
     String derivedTable = PrepareDerivedTables.getDerivedTableName(PrepareDerivedTables.CARGO_LEG,recentRun);
     String manifestTable = DGPSPConstants.MANIFEST_TABLE + "_" + recentRun;
 
     String assetInstanceOwner = DGPSPConstants.COL_OWNER;
     String assetInstanceID    = DGPSPConstants.COL_ASSETID;
-    String instanceProto      = PrepareDerivedTables.COL_INST_PROTOTYPEID;
     String cLegID      = DGPSPConstants.COL_LEGID;
     String cLegStart   = DGPSPConstants.COL_STARTTIME;
     String cLegEnd     = DGPSPConstants.COL_ENDTIME;
     String cLegType    = DGPSPConstants.COL_LEGTYPE;
-    String cLegConvID  = DGPSPConstants.COL_CONVEYANCEID;
     String cLegReadyAt = DGPSPConstants.COL_READYAT;
 
     String l1geoloc = PrepareDerivedTables.COL_START_GEOLOC;

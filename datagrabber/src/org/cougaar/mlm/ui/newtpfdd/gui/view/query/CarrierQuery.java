@@ -508,10 +508,6 @@ public class CarrierQuery extends UnitQuery {
 	String conveyanceInstanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String conveyancePrototypeTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
 
-	String self2TypeID  = "self2" + "." + DGPSPConstants.COL_ALP_TYPEID;
-	String self2Nomen   = "self2" + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
-	String self2Proto   = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
-
 	String instanceOwner  = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
 	String instanceID     = assetInstanceTable + "." + DGPSPConstants.COL_ASSETID;
 	String itineraryID    = assetItineraryTable + "." + DGPSPConstants.COL_ASSETID;
@@ -631,7 +627,6 @@ public class CarrierQuery extends UnitQuery {
 	String self2TypeID  = "self2" + "." + DGPSPConstants.COL_ALP_TYPEID;
 	String self2Nomen   = "self2" + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
 	String self2Proto   = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
-	String self2ParentProto  = "self2" + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
 
 	String instanceOwner  = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
 	String instanceProto  = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -696,7 +691,6 @@ public class CarrierQuery extends UnitQuery {
 	String convInstanceID   = convInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
 
 	String convProtoTable   = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
-	String convProtoProtoID = convProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
 
 	String assetInstanceTable = DGPSPConstants.ASSET_INSTANCE_TABLE + "_" + recentRun;
 	String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;

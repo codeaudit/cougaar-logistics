@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.2 2002-08-07 20:58:53 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/PatternMaker.java,v 1.3 2002-08-07 21:09:33 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -65,7 +65,6 @@ public class PatternMaker {
     int pix[] = new int[w*h];
  
     int index, y,x;
-    int thickness = 2;
  
     index = 0;
     int band = 16;
@@ -93,8 +92,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
  
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
  
     index = 0;
     int band = 8;
@@ -158,7 +156,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
  
-    int index, y,x,j;
+    int index, y,x;
     int band = 8;
  
     index = 0;
@@ -267,8 +265,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
 
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
 
     index = 0;
     for (y=0; y<h; y++) {
@@ -291,8 +288,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
 
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
 
     index = 0;
     for (y=0; y<h; y++) {
@@ -416,8 +412,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
 
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
 
     index = 0;
     for (y=0; y<h; y++) {
@@ -442,7 +437,6 @@ public class PatternMaker {
  
  
     int index, y,x,j;
-    int thickness = 2;
     int spacing = 16;   //hardwired
  
     index = 0;
@@ -500,7 +494,6 @@ public class PatternMaker {
     int pix[] = new int[w*h];
 
     int index, y,x,j;
-    int thickness = 2;
     int spacing = 16;    //hardwired
     int band = 4;
  
@@ -549,8 +542,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
 
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
 
     index = 0;
     for (y=0; y<h; y++) {
@@ -602,8 +594,7 @@ public class PatternMaker {
     int h = imageHeight_;
     int pix[] = new int[w*h];
 
-    int index, y,x,j;
-    int thickness = 2;
+    int index, y,x;
 
     index = 0;
     for (y=0; y<h; y++) {

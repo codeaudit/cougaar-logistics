@@ -88,7 +88,6 @@ public class AssetTPFDDQuery extends SqlQuery {
 	if (showSqlTime) {
 	    Date now = new Date();
 	    long diff = now.getTime()-then.getTime();
-	    long secdiff = diff/1000l;
 	    System.out.println ("AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
 	}
 	
@@ -231,7 +230,6 @@ public class AssetTPFDDQuery extends SqlQuery {
     String l2id     = "l2" + "." + DGPSPConstants.COL_LOCID;
     String l2geoloc = "l2" + "." + DGPSPConstants.COL_GEOLOC;
     String l2name   = "l2" + "." + DGPSPConstants.COL_PRETTYNAME;
-    String cvConvID       = convoyTable         + "." + DGPSPConstants.COL_CONVEYANCEID;
 
 
     String sqlQuery =

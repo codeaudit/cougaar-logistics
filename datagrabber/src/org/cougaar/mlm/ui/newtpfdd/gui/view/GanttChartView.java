@@ -161,7 +161,6 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
     }
     
     private void runloop() {
-      int i = 0;
       while ( !workIsDone ) {
 	try {
 	  synchronized (this) {
@@ -214,7 +213,6 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 
   public void actionPerformed(ActionEvent event) {
     String command = event.getActionCommand();
-    Object source = event.getSource();
 
     // for now, there is only one command
     boolean allLegs = command.equals ("Export CSV file");

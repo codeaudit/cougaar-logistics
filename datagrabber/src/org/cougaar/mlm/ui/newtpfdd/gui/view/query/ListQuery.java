@@ -201,7 +201,6 @@ public class ListQuery extends CarrierQuery {
   protected void showTime (Date then, String label) {
 	Date now = new Date();
 	long diff = now.getTime()-then.getTime();
-	long secdiff = diff/1000l;
 	System.out.println ("ListQuery.getResponse - " + label + " in " + diff+" msecs.");
   }
 
@@ -352,7 +351,6 @@ public class ListQuery extends CarrierQuery {
     String manifestInstanceID = manifestTable + "." + DGPSPConstants.COL_MANIFEST_ITEM_ID;
     String manifestName      = manifestTable + "." + DGPSPConstants.COL_NAME;
     String instanceOwner     = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
-    String instanceID    = DGPSPConstants.COL_ASSETID;
     String manifestAssetID = manifestTable + "." + DGPSPConstants.COL_ASSETID;
     String instanceAssetID = assetInstanceTable + "." + DGPSPConstants.COL_ASSETID;
 

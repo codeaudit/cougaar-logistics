@@ -53,7 +53,6 @@ public class LegendPanel extends JPanel {
 	  g.drawString("Ground", leftOffset+(3*itemWidth)+margin, height);
 	  g.drawString("Level-2", leftOffset+(4*itemWidth)+margin, height);
 
-	  int top = height;
 	  int bottom = height-boxHeight;
 
 	  g.setColor(TPFDDColor.TPFDDPurple);

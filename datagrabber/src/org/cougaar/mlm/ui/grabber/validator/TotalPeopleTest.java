@@ -111,7 +111,6 @@ public class TotalPeopleTest extends Test{
   }
 
   protected void insertResults (Logger l, Statement s, int run) {
-	String currentOrg = null;
     ResultSet rs=null;
 	String sql = null;
 

@@ -126,7 +126,6 @@ public class AssetCategoryQuery extends SqlQuery {
       String instTable  = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
       String protoID = DGPSPConstants.COL_PROTOTYPEID;
       String convType = DGPSPConstants.COL_CONVEYANCE_TYPE;
-      String convID = DGPSPConstants.COL_CONVEYANCEID;
       String selfprop = DGPSPConstants.COL_SELFPROP;
 	
       String sqlQuery = 
@@ -147,7 +146,6 @@ public class AssetCategoryQuery extends SqlQuery {
     String instTable  = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
     String legTable = DGPSPConstants.CONVEYED_LEG_TABLE + "_" + recentRun;
     String protoID = DGPSPConstants.COL_PROTOTYPEID;
-    String convType = DGPSPConstants.COL_CONVEYANCE_TYPE;
     String convID = DGPSPConstants.COL_CONVEYANCEID;
 
     String sqlQuery =

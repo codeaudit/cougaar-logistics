@@ -200,9 +200,6 @@ public class UnitCargoBySeaOrAirTest extends UnitCargoByClassTest{
   private String getQuery (int run) {
     String assetTable = Controller.getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,run);
     String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
-    String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
-    String convInstTable = Controller.getTableName(DGPSPConstants.CONV_INSTANCE_TABLE,run);
-    String convProtoTable = Controller.getTableName(DGPSPConstants.CONV_PROTOTYPE_TABLE,run);
     String owner = assetTable + "."+ DGPSPConstants.COL_OWNER;
     String aggnum = DGPSPConstants.COL_AGGREGATE;
     String instProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;

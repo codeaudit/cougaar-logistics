@@ -135,7 +135,6 @@ public class SqlQuery implements Query {
     if (showSqlTime) {
       Date now = new Date();
       long diff = now.getTime()-then.getTime();
-      long secdiff = diff/1000l;
       System.out.println ("SqlQuery.getResultSet - query took " + diff+" msecs.");
     }
 	
@@ -221,7 +220,6 @@ public class SqlQuery implements Query {
    */
   protected List getRuns (String database, Connection connection) {
     ResultSet rs = null;
-    int runToUse = 1;
     List runs = new ArrayList ();
     Set tableNames=getTableNames(connection);
 

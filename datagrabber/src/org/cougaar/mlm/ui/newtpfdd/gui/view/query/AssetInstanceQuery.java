@@ -103,7 +103,6 @@ public class AssetInstanceQuery extends SqlQuery {
     if (showSqlTime) {
       Date now = new Date();
       long diff = now.getTime()-then.getTime();
-      long secdiff = diff/1000l;
       System.out.println ("AssetInstanceQuery.getResponse - built tree in " + diff+" msecs.");
     }
 	
@@ -123,7 +122,6 @@ public class AssetInstanceQuery extends SqlQuery {
     List instances = new LinkedList();
     Node locationNode = null;
     Node convoyNode = null;
-    Node legNode = null;
     Hashtable convoyIDToNode = new Hashtable();
 
     String legID = null;
@@ -134,10 +132,6 @@ public class AssetInstanceQuery extends SqlQuery {
     Date end = null;
 
     Node tempInstance = null;
-    String tempConvID = null;
-    Date tempStart = null;
-    Date tempEnd = null;
-    int tempConvType = 0;
 	
     if (debug) System.out.println("AssetInstanceQuery.buildPrototypeTreesFromResult - ");
 
@@ -325,7 +319,6 @@ public class AssetInstanceQuery extends SqlQuery {
     String baseloc = DGPSPConstants.COL_OWNER;
     String convid = DGPSPConstants.COL_CONVEYANCEID;
     String prototypeid = DGPSPConstants.COL_PROTOTYPEID;
-    String legid = DGPSPConstants.COL_LEGID;
     String convType = DGPSPConstants.COL_CONVEYANCE_TYPE;
     String bumperno = DGPSPConstants.COL_BUMPERNO;
     String starttime = convoyNameTable+"."+DGPSPConstants.COL_STARTTIME;

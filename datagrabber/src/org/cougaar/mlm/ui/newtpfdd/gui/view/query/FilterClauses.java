@@ -207,7 +207,6 @@ public class FilterClauses {
   }
   
   protected String getTables (int recentRun) {
-	String convProtoTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
 	String convInstanceTable = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String itinTable = DGPSPConstants.ASSET_ITINERARY_TABLE + "_" + recentRun;
 	String cLegTable = DGPSPConstants.CONVEYED_LEG_TABLE + "_" + recentRun;
@@ -258,10 +257,8 @@ public class FilterClauses {
 
 	String convInstanceTable    = DGPSPConstants.CONV_INSTANCE_TABLE + "_" + recentRun;
 	String convInstanceID       = convInstanceTable + "." + DGPSPConstants.COL_CONVEYANCEID;
-	String convInstanceProtoID  = convInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
 
 	String convProtoTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
-	String convProtoProtoID = convProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
 
 	String joinsToCarrierInstance = "\nand " + instanceID + " = " + itinID +
 	  "\nand " + itinLeg + " = " + cLegID +
