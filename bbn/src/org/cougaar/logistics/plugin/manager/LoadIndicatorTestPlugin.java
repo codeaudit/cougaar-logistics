@@ -29,6 +29,7 @@ import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.service.community.CommunityService;
 
 import org.cougaar.multicast.AttributeBasedAddress;
 
@@ -37,7 +38,6 @@ import org.cougaar.planning.ldm.plan.Verb;
 
 import org.cougaar.core.util.UID;
 
-import org.cougaar.util.log.Logging;
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.glm.ldm.oplan.Oplan;
@@ -54,6 +54,7 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
   private IncrementalSubscription myInterAgentOperatingModePolicySubscription;
 
   private BlackboardService myBlackboardService;
+  private LoggingService myLoggingService;
   private UIDService myUIDService;
 
   private UnaryPredicate myOplanPred = new UnaryPredicate() {
@@ -106,26 +107,52 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
     myGLSSubscription = (IncrementalSubscription)subscribe(myGLSPred);
     myInterAgentOperatingModePolicySubscription = (IncrementalSubscription)subscribe(myInterAgentOperatingModePolicyPred);
     
-
     myBlackboardService = 
       (BlackboardService) getBindingSite().getServiceBroker().getService(this, BlackboardService.class, null);
 
     myUIDService = 
-      (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
+      (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null); 
+
+    myLoggingService = 
+      (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null); 
+    
   }
 
   public void execute() {
     if (myOplanSubscription.getAddedCollection().size() > 0) {
-      LoadIndicator loadIndicator = 
-        new LoadIndicator(this.getClass(), 
-                          getBindingSite().getAgentIdentifier().toString(),
-                          myUIDService.nextUID(),
-                          LoadIndicator.NORMAL_LOAD);
-      loadIndicator.addTarget(new AttributeBasedAddress("MiniTestConfig",
-                                                        "Role", 
-                                                        "Manager"));
-      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": adding LoadIndicator to be sent to " + loadIndicator.getTargets());
-      publishAdd(loadIndicator);
+      CommunityService communityService = 
+        (CommunityService) getBindingSite().getServiceBroker().getService(this, CommunityService.class, null);
+
+      if (communityService == null) {
+        myLoggingService.error("CommunityService not available.");
+        return;
+      }
+
+      Collection alCommunities = communityService.listParentCommunities(getAgentIdentifier().toString(), "(CommunityType=AdaptiveLogistics)");
+
+      if (alCommunities.size() == 0) {
+        myLoggingService.warn(getAgentIdentifier().toString() + 
+                                     " does not belong to an AdaptiveLogistics community.");
+      }
+
+      for (Iterator iterator = alCommunities.iterator();
+           iterator.hasNext();) {
+        String community = (String) iterator.next();
+        LoadIndicator loadIndicator = 
+          new LoadIndicator(this.getClass(), 
+                            getBindingSite().getAgentIdentifier().toString(),
+                            myUIDService.nextUID(),
+                            LoadIndicator.MODERATE_LOAD);
+        loadIndicator.addTarget(new AttributeBasedAddress(community,
+                                                          "Role", 
+                                                          "AdaptiveLogisticsManager"));
+        if (myLoggingService.isDebugEnabled()) {
+          myLoggingService.debug(getAgentIdentifier().toString() + 
+                                 ": adding LoadIndicator to be sent to " + 
+                                 loadIndicator.getTargets());
+        }
+        publishAdd(loadIndicator);
+      }
     }
 
     if (myGLSSubscription.getAddedCollection().size() > 0) {
@@ -133,28 +160,39 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
            iterator.hasNext();) {
         LoadIndicator loadIndicator = (LoadIndicator) iterator.next();
         loadIndicator.setLoadStatus(LoadIndicator.SEVERE_LOAD);
-        Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": changing load status for LoadIndicator: " + loadIndicator.getTargets());
+        if (myLoggingService.isDebugEnabled()) {
+          myLoggingService.debug(getAgentIdentifier().toString() + 
+                                 ": changing load status to SEVERE_LOAD for LoadIndicator to  " + 
+                                 loadIndicator.getTargets());
+        }
         publishChange(loadIndicator);
       }
     }
 
-    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getAddedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": new InterAgentOperatingModePolicy: " + 
-                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
-    }
-    
-    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getChangedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": modified InterAgentOperatingModePolicy: " + 
-                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
-    }
-
-    for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getRemovedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn(getAgentIdentifier().toString() + ": removed InterAgentOperatingModePolicy: " + 
-                            ((InterAgentOperatingModePolicy) iterator.next()).toString());
-
+    if (myLoggingService.isDebugEnabled()) {
+      for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getAddedCollection().iterator(); 
+           iterator.hasNext();) {
+        
+        myLoggingService.debug(getAgentIdentifier().toString() + 
+                               ": new InterAgentOperatingModePolicy: " + 
+                               ((InterAgentOperatingModePolicy) iterator.next()).toString());
+        
+      } 
+      
+      for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getChangedCollection().iterator(); 
+           iterator.hasNext();) {
+        
+        myLoggingService.debug(getAgentIdentifier().toString() + ": modified InterAgentOperatingModePolicy: " + 
+                               ((InterAgentOperatingModePolicy) iterator.next()).toString());
+      }
+      
+      for (Iterator iterator = myInterAgentOperatingModePolicySubscription.getRemovedCollection().iterator(); 
+           iterator.hasNext();) {
+        myLoggingService.debug(getAgentIdentifier().toString() + 
+                               ": removed InterAgentOperatingModePolicy: " + 
+                               ((InterAgentOperatingModePolicy) iterator.next()).toString());
+        
+      } 
     }
   }
 

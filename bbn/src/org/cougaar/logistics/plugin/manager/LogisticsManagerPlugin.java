@@ -28,15 +28,14 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityRequest;
-import org.cougaar.core.service.community.CommunityRoster;
 import org.cougaar.core.util.UID;
 
 import org.cougaar.multicast.AttributeBasedAddress;
 
-import org.cougaar.util.log.Logging;
 import org.cougaar.util.UnaryPredicate;
 
 
@@ -47,9 +46,9 @@ import org.cougaar.util.UnaryPredicate;
 public class LogisticsManagerPlugin extends SimplePlugin {
   private IncrementalSubscription myLoadIndicators;
   private IncrementalSubscription myFallingBehindPolicies;
-  private IncrementalSubscription myCommunityRequests;
 
   private UIDService myUIDService;
+  private LoggingService myLoggingService;
 
   private double myFallingBehindValue = UNINITIALIZED;
 
@@ -62,6 +61,7 @@ public class LogisticsManagerPlugin extends SimplePlugin {
   private static double MODERATE = 1.0;
   private static double SEVERE = 2.0;
   private static double MAX_FALLING_BEHIND_VALUE = SEVERE;
+  private static double DEFAULT_FALLING_BEHIND_VALUE = NORMAL;
   
 
   private static UnaryPredicate myLoadIndicatorsPred = new UnaryPredicate() {
@@ -84,37 +84,13 @@ public class LogisticsManagerPlugin extends SimplePlugin {
     }
   };
 
-  /**
-   * Predicate for CommunityRequests.  Used to receive CommunityResponse objects
-   * with CommunityRosters.
-   */
-  private UnaryPredicate myCommunityRequestPredicate = new UnaryPredicate() {
-    public boolean execute (Object o) {
-      if (o instanceof CommunityRequest) {
-        String communityName = ((CommunityRequest)o).getTargetCommunityName();
-        if (communityName == null) {
-          return false;
-        }
-        
-        for (Iterator iterator = myCommunitiesToManage.iterator(); iterator.hasNext();) {
-          if (communityName.equals(iterator.next())) {
-            return true;
-          }
-        }
-        return false;
-      }
-      return false;
-    }
-  };
-
   protected void setupSubscriptions() {
-    if (Logging.defaultLogger().isDebugEnabled()) {
-      Logging.defaultLogger().debug("LogisticsManagerPlugin: setting up subscriptions.");
-    }
-
     myUIDService = 
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
     
+    myLoggingService = 
+      (LoggingService) getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
+
     myLoadIndicators = (IncrementalSubscription) subscribe(myLoadIndicatorsPred);
     myFallingBehindPolicies = (IncrementalSubscription) subscribe(myFallingBehindPoliciesPred);
 
@@ -122,46 +98,56 @@ public class LogisticsManagerPlugin extends SimplePlugin {
     myCommunitiesToManage = getCommunityService().search("(CommunityManager=" +
       getAgentIdentifier().toString() + ")");
     if (myCommunitiesToManage.isEmpty()) {
-      Logging.defaultLogger().warn(getAgentIdentifier() + " is not a CommunityManager." +
+      myLoggingService.warn(getAgentIdentifier() + " is not a CommunityManager." +
                             " Plugin will not be receiving LoadIndicators.");
     }
-
-    // Subscribe to CommunityRequests to get roster (and roster updates)
-    // from CommunityPlugin
-    myCommunityRequests = (IncrementalSubscription) subscribe(myCommunityRequestPredicate);
 
     if (didRehydrate()) {
       myFallingBehindValue = communityFallingBehindValue();
     }
-  }
 
-  public void execute() {
-    for (Iterator iterator = myLoadIndicators.getAddedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn("New LoadIndicator: " + 
-                            ((LoadIndicator) iterator.next()).toString());
+
+    if (myFallingBehindValue == UNINITIALIZED) {
+      myFallingBehindValue = DEFAULT_FALLING_BEHIND_VALUE;
+    }
+
+    if (myFallingBehindPolicies.size() == 0) {
+      createFallingBehindPolicies();
     }
     
-    for (Iterator iterator = myLoadIndicators.getChangedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn("Modified LoadIndicator: " + 
-                            ((LoadIndicator) iterator.next()).toString());
+  }
+  
+  public void execute() {
+
+    if (myLoggingService.isDebugEnabled()) {
+      for (Iterator iterator = myLoadIndicators.getAddedCollection().iterator(); 
+           iterator.hasNext();) {
+        myLoggingService.debug("New LoadIndicator: " + 
+                               ((LoadIndicator) iterator.next()).toString());
+      }
+      
+      for (Iterator iterator = myLoadIndicators.getChangedCollection().iterator(); 
+           iterator.hasNext();) {
+        myLoggingService.debug("Modified LoadIndicator: " + 
+                               ((LoadIndicator) iterator.next()).toString());
+      }
+      
+      for (Iterator iterator = myLoadIndicators.getRemovedCollection().iterator(); 
+           iterator.hasNext();) {
+        myLoggingService.debug("Removed LoadIndicator: " + 
+                               ((LoadIndicator) iterator.next()).toString());
+      }
     }
 
-    for (Iterator iterator = myLoadIndicators.getRemovedCollection().iterator(); 
-         iterator.hasNext();) {
-      Logging.defaultLogger().warn("Removed LoadIndicator: " + 
-                            ((LoadIndicator) iterator.next()).toString());
-
+    if (myLoadIndicators.hasChanged()) {
+      double currentFallingBehindValue = communityFallingBehindValue();
+      
+      if (myFallingBehindValue != currentFallingBehindValue) {
+        myFallingBehindValue = currentFallingBehindValue;
+        adjustFallingBehindPolicy();
+        
+      }
     }
-
-    double currentFallingBehindValue = communityFallingBehindValue();
-
-    if (myFallingBehindValue != currentFallingBehindValue) {
-      myFallingBehindValue = currentFallingBehindValue;
-      adjustFallingBehindPolicy();
-    }
-
   }
 
   protected double getFallingBehindValue() {
@@ -197,31 +183,26 @@ public class LogisticsManagerPlugin extends SimplePlugin {
     } else if (loadStatus.equals(LoadIndicator.SEVERE_LOAD)) {
       return SEVERE;
     } else {
-      Logging.defaultLogger().warn("Unrecognized load status: " + loadStatus);
+      myLoggingService.warn("Unrecognized load status: " + loadStatus);
       return UNINITIALIZED;
     }
   }
 
 
   private void adjustFallingBehindPolicy() {
-    Logging.defaultLogger().warn("Modifying FallingBehindPolicy: new falling behind =  " + getFallingBehindValue()); 
+    if (myLoggingService.isDebugEnabled()) {
+      myLoggingService.debug("Modifying FallingBehindPolicy: new falling behind =  " + getFallingBehindValue()); 
+    }
 
     FallingBehindPolicy fallingBehindPolicy;
 
-    if (myFallingBehindPolicies.size() > 0) {
-      fallingBehindPolicy = (FallingBehindPolicy) myFallingBehindPolicies.iterator().next();
-      fallingBehindPolicy.setFallingBehindValue(getFallingBehindValue());
-      publishChange(fallingBehindPolicy);
-    } else for (Iterator iterator = myCommunitiesToManage.iterator(); 
-                iterator.hasNext();) {
-      fallingBehindPolicy = new FallingBehindPolicy(getFallingBehindValue());
-      fallingBehindPolicy.setUID(myUIDService.nextUID());
-      
-      fallingBehindPolicy.setTarget(new AttributeBasedAddress((String) iterator.next(),
-                                                              "Role",
-                                                              "Member"));
-      publishAdd(fallingBehindPolicy);
+    for (Iterator iterator = myFallingBehindPolicies.iterator();
+           iterator.hasNext();) {
+        fallingBehindPolicy = (FallingBehindPolicy) iterator.next();
+        fallingBehindPolicy.setFallingBehindValue(getFallingBehindValue());
+        publishChange(fallingBehindPolicy);
     }
+
   }
 
   /**
@@ -235,11 +216,26 @@ public class LogisticsManagerPlugin extends SimplePlugin {
           public void serviceRevoked(ServiceRevokedEvent re) {}
       });
     } else {
-      Logging.defaultLogger().error("CommunityService not available");
+      myLoggingService.error("CommunityService not available");
       return null;
     }
   }
-      
+ 
+  private void createFallingBehindPolicies() {
+    // Publish default falling behind policy
+    for (Iterator iterator = myCommunitiesToManage.iterator(); 
+         iterator.hasNext();) {
+      FallingBehindPolicy fallingBehindPolicy = 
+        new FallingBehindPolicy(getFallingBehindValue());
+      fallingBehindPolicy.setUID(myUIDService.nextUID());
+      String community = (String) iterator.next();
+      fallingBehindPolicy.setTarget(new AttributeBasedAddress(community,
+                                                              "Role",
+                                                              "Member"));
+      publishAdd(fallingBehindPolicy);
+    }
+  }
+    
 }
 
 
