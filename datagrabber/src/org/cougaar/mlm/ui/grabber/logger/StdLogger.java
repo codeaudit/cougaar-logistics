@@ -22,7 +22,7 @@ package org.cougaar.mlm.ui.grabber.logger;
 
 /**
  * Logs to Std streams.
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/01/01
  **/
@@ -72,14 +72,7 @@ public class StdLogger implements IDLogger{
     sb.append(pad(TYPES[type],12));
     sb.append("] ");
     sb.append(message);
-    if(severity<NORMAL){
-      System.err.println(sb.toString());
-      System.err.flush();
-    }
-    else{
-      System.out.println(sb.toString());
-      System.out.flush();
-    }
+    chooseAStream(severity, sb);
   }
 
   public void logMessage(int severity, int type, String message, Exception e){
@@ -102,14 +95,7 @@ public class StdLogger implements IDLogger{
     sb.append(id);
     sb.append("] ");
     sb.append(message);
-    if(severity<NORMAL){
-      System.err.println(sb.toString());
-      System.err.flush();
-    }
-    else{
-      System.out.println(sb.toString());
-      System.out.flush();
-    }
+    chooseAStream(severity, sb);
   }
 
   public void logMessage(int id, int severity, int type, String message, 
@@ -120,6 +106,17 @@ public class StdLogger implements IDLogger{
       logMessage(id,severity,type,message+": "+e.toString());
     }
   }
+
+    private void chooseAStream(int severity, StringBuffer sb) {
+        if(severity<NORMAL){
+          System.err.println(sb.toString());
+          System.err.flush();
+        }
+        else{
+          System.out.println(sb.toString());
+          System.out.flush();
+        }
+    }
 
   //Static Members:
   /////////////////
