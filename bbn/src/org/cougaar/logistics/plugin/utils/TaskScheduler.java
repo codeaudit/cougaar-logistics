@@ -26,7 +26,6 @@ import org.cougaar.util.TimeSpan;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.QuiescenceReportService;
 import org.cougaar.util.log.Logger;
 import org.cougaar.core.blackboard.Publishable;
 import java.util.*;
@@ -57,8 +56,8 @@ public class TaskScheduler {
   private TaskSchedulingPolicy policy;
   private IncrementalSubscription[] subscriptions;
   private Logger logger;
+  private QuiescenceAccumulator quiescence;
   private BlackboardService blackboard;
-  private QuiescenceReportService quiescence;
   private String id;
   private Storage storage;
 
@@ -81,7 +80,7 @@ public class TaskScheduler {
   public TaskScheduler (TaskSchedulingPolicy.Predicate outerFilter,
                         TaskSchedulingPolicy policy,
                         BlackboardService blackboard,
-                        QuiescenceReportService quiescence,
+                        QuiescenceAccumulator quiescence,
                         Logger logger,
                         String id) {
     this.outerFilter = outerFilter;
@@ -172,10 +171,10 @@ public class TaskScheduler {
     // only requeue for execution if more to do
     if (currentPhase < policy.getOrdering().length) {
       blackboard.signalClientActivity();
-      quiescence.clearQuiescentState();
+      quiescence.clearQuiescentState (this);
     } else {
       resetCurrentPhase();
-      quiescence.setQuiescentState();
+      quiescence.setQuiescentState (this);
     }
     updateStorage();
     blackboard.publishChange (storage);

@@ -43,6 +43,7 @@ import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.utils.TaskScheduler;
 import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
+import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -387,11 +388,12 @@ public class DemandForecastPlugin extends ComponentPlugin
   private void setupTaskScheduler() {
     String taskScheduler = (String) pluginParams.get(TASK_SCHEDULER_OFF);
     boolean turnOffTaskSched = new Boolean(taskScheduler).booleanValue();
-    QuiescenceReportService q = (QuiescenceReportService)
+    QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService) 
       getServiceBroker().getService(this, AgentIdentificationService.class, null);
-    q.setAgentIdentificationService(ais);
+    qrs.setAgentIdentificationService(ais);
+    QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     if (!turnOffTaskSched) {
       java.io.InputStream is = null;
       try {

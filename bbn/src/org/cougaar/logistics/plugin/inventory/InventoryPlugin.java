@@ -48,6 +48,7 @@ import org.cougaar.util.TimeSpan;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.logistics.plugin.utils.TaskScheduler;
 import org.cougaar.logistics.plugin.utils.TaskSchedulingPolicy;
+import org.cougaar.logistics.plugin.utils.QuiescenceAccumulator;
 
 import org.cougaar.core.blackboard.*;
 import org.cougaar.core.component.Component;
@@ -612,11 +613,12 @@ public class InventoryPlugin extends ComponentPlugin
     refillSubscription = (IncrementalSubscription) blackboard.
         subscribe(new RefillPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
 
-    QuiescenceReportService q = (QuiescenceReportService)
+    QuiescenceReportService qrs = (QuiescenceReportService)
       getServiceBroker().getService(this, QuiescenceReportService.class, null);
     AgentIdentificationService ais = (AgentIdentificationService) 
       getServiceBroker().getService(this, AgentIdentificationService.class, null);
-    q.setAgentIdentificationService(ais);
+    qrs.setAgentIdentificationService(ais);
+    QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     String id = getAgentIdentifier().toString();
     java.io.InputStream is = null;
     try {
