@@ -298,11 +298,11 @@ public abstract class Run implements ResultHandler, Logger{
     logger.logMessage(id,severity,type,message,e);
   }
 
-  public boolean isWarningEnabled   () { return true; }
-  public boolean isImportantEnabled () { return true; }
-  public boolean isNormalEnabled    () { return true; }
-  public boolean isMinorEnabled     () { return true; }
-  public boolean isTrivialEnabled   () { return true; }
+  public boolean isWarningEnabled   () { return logger.isWarningEnabled(); }
+  public boolean isImportantEnabled () { return logger.isImportantEnabled(); }
+  public boolean isNormalEnabled    () { return logger.isNormalEnabled(); }
+  public boolean isMinorEnabled     () { return logger.isMinorEnabled(); }
+  public boolean isTrivialEnabled   () { return logger.isTrivialEnabled(); }
 
   //InnerClasses:
   ///////////////
