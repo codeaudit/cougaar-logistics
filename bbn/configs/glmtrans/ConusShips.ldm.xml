@@ -55,7 +55,4 @@
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
 
-  <instance prototype="Watson_Prototype" id="Sisler">
-    <schedule end="12/31/06" start="01/01/00"/>
-  </instance>
 </AssetList>
