@@ -25,7 +25,9 @@ import org.cougaar.glm.ldm.GLMFactory;
 import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 import org.cougaar.glm.ldm.asset.ScheduledContentPG;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.plan.NewQuantityScheduleElement;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.glm.ldm.plan.PlanScheduleType;
@@ -165,7 +167,7 @@ public class ScheduleUtils {
     return se;
   }
 
-  protected Schedule createConsumerSchedule(Collection col) {
+  public Schedule createConsumerSchedule(Collection col) {
     ScheduledContentPG scp;
     int qty;
     Asset consumer, asset;
@@ -306,6 +308,41 @@ public class ScheduleUtils {
     mergedSchedule = newObjectSchedule(result_sched.elements());
     logger.debug("getMergedSchedule created mergedSchedule "+result_sched.size());
     return mergedSchedule;
+  }
+
+  public Schedule convertQuantitySchedule (Schedule qty_sched) {
+    ObjectScheduleElement element;
+    QuantityScheduleElement qty_el;
+    Vector sched_els = new Vector();
+    Enumeration qty_els = qty_sched.getAllScheduleElements();
+    while (qty_els.hasMoreElements()) {
+      qty_el = (QuantityScheduleElement) qty_els.nextElement();
+      element = new ObjectScheduleElement(qty_el.getStartDate(), qty_el.getEndDate(),
+					  new Double(qty_el.getQuantity()));
+      sched_els.addElement(element);
+    }
+    Schedule result_sched = newObjectSchedule(sched_els.elements());
+    return result_sched;
+  }
+
+  public Schedule createOrgActivitySchedule(Collection col) {
+    OrgActivity orgAct = null;
+    long start, end;
+    Schedule orgActSchedule = null;
+    Vector schedElements = new Vector();
+    if (col != null) {
+      Iterator list = col.iterator();
+      while (list.hasNext()) {
+	orgAct = (OrgActivity)list.next();
+	start = orgAct.getStartTime();
+	end = orgAct.getEndTime();
+	schedElements.add(new ObjectScheduleElement(start, end, orgAct));
+      }
+      orgActSchedule = newObjectSchedule(schedElements.elements());
+    } else {
+      logger.error("createOrgActivitySchedule passed empty collection");
+    }
+    return orgActSchedule;
   }
 
 }
