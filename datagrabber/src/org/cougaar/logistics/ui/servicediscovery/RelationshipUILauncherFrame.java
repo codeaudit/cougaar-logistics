@@ -391,7 +391,7 @@ public class RelationshipUILauncherFrame extends JFrame
         ConnectionHelper connection = null;
         try {
             connection = new ConnectionHelper(getURLString());
-            agentURLs = connection.getClusterIdsAndURLs();
+            agentURLs = connection.getClusterIdsAndURLs(this);
             connection.closeConnection();
             connection = null;
             if (agentURLs == null) {
