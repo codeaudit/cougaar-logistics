@@ -197,6 +197,16 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       reportMissingAssets ();
   }
   
+  public void handleAssignment (org.cougaar.planning.ldm.plan.Task task, Asset asset, 
+				Date start, Date end, Date setupStart, Date wrapupEnd) {
+    Date best = prefHelper.getBestDate(task);
+    if (end.getTime() > best.getTime() &&
+	end.getTime() < (best.getTime() + 1000l)) {
+      end = best;
+    }
+    super.handleAssignment (task, asset, start, end, setupStart, wrapupEnd);
+  }
+
   protected boolean allNecessaryAssetsReported () {
     return (globalSeaReport && globalAirReport && nullAssetReport);
   }

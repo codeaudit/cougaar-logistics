@@ -179,8 +179,7 @@ public class TranscomDataXMLize extends CustomDataXMLize {
 
     dataHelper.createDateField(object, "departure", glmPrefHelper.getReadyAt(task));
 
-    // prevents occasional rounding errors from date->string->date
-    Date arrival = new Date(glmPrefHelper.getBestDate(task).getTime()-1000l);
+    Date arrival = new Date(glmPrefHelper.getBestDate(task).getTime());
     dataHelper.createDateField(object, "arrival", arrival);
     GeolocLocation from = glmPrepHelper.getFromLocation (task);
     GeolocLocation to   = glmPrepHelper.getToLocation (task);
