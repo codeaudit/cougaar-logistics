@@ -148,10 +148,7 @@ public class Controller extends Thread implements ResultHandler{
   protected Connection getNewDBConnection(DBConfig dbConfig){
     Connection c = null;
     try{
-      c=DriverManager.getConnection
-	(dbConfig.getConnectionURL(),
-	 dbConfig.getUser(),
-	 dbConfig.getPassword());
+      c=getConnection(dbConfig);
     }catch(SQLException e){
 	  logger.logMessage(Logger.MINOR,Logger.DB_CONNECT,
 						"SQL Error code was " + e.getErrorCode());
@@ -165,15 +162,15 @@ public class Controller extends Thread implements ResultHandler{
     return c;
   }
 
+    private Connection getConnection(DBConfig dbConfig) throws SQLException {
+        return DriverManager.getConnection(dbConfig.getConnectionURL(), dbConfig.getUser(), dbConfig.getPassword());
+    }
+
   protected Connection createDatabase (DBConfig dbConfig) {
     Connection c = null;
     try{
 	  System.out.println ("URL " + dbConfig.getConnectionURLNoDatabase());
-	  
-      c=DriverManager.getConnection
-	(dbConfig.getConnectionURLNoDatabase(),
-	 dbConfig.getUser(),
-	 dbConfig.getPassword());
+        c=getConnection(dbConfig);
     }catch(SQLException e){
       logger.logMessage(Logger.FATAL,Logger.DB_CONNECT,
 		 "Could not establish DB connection",e);
@@ -198,10 +195,7 @@ public class Controller extends Thread implements ResultHandler{
     }
 
     try{
-      c=DriverManager.getConnection
-	(dbConfig.getConnectionURL(),
-	 dbConfig.getUser(),
-	 dbConfig.getPassword());
+        c=getConnection(dbConfig);
     }catch(SQLException e){
 	  logger.logMessage(Logger.FATAL,Logger.DB_CONNECT,
 	  		 "Could not establish DB connection",e);
