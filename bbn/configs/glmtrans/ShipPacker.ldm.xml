@@ -90,6 +90,10 @@
   <instance prototype="Butte_Prototype" id="Shasta">
     <schedule end="12/31/06" start="01/01/00"/>
   </instance>
+
+  <instance prototype="Butte_Prototype" id="Shasta_Mark_II">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
 </AssetList>
 
 
