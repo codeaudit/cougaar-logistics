@@ -205,7 +205,8 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 	
 	    if (commandLineage != null) {
 	      ArrayList arrayList = new ArrayList(1);
-	      arrayList.add(opconInterval);
+	      arrayList.add(new TimeInterval(opconInterval.getStartTime(),
+					     opconInterval.getEndTime()));
 	      
 	      LineageEchelonScorer serviceScorer = 
 		new ALLineageEchelonScorer(commandLineage,
