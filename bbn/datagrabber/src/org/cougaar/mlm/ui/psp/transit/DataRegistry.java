@@ -40,8 +40,8 @@ import org.cougaar.glm.ldm.asset.*;
 
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.util.AssetUtil;
-import org.cougaar.logistics.plugin.trans.LowFidelityAssetUIDPG;
-import org.cougaar.logistics.plugin.trans.LowFidelityAssetUIDPGImpl;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetPGImpl;
 
 import org.cougaar.mlm.ui.psp.transit.data.instances.*;
 import org.cougaar.mlm.ui.psp.transit.data.legs.*;
@@ -614,16 +614,17 @@ typical_case:
       List toCargoIds,
       Asset instAsset) {
 
-    if (instAsset instanceof AssetGroup) {
+    if (instAsset instanceof AssetGroup) { // happens most of the time
       // divide group into separate assets
       List groupL = assetHelper.expandAssetGroup((AssetGroup)instAsset);
       int n = groupL.size();
       for (int i = 0; i < n; i++) {
         Asset ai = (Asset)groupL.get(i);
-        String aiId;
+        String aiId = null;
         try {
           aiId = registerCargoInstance(toReg, ai);
         } catch (RuntimeException e) {
+	  e.printStackTrace();
           throw new IllegalArgumentException(
               "Unable to expand assetGroup "+
               ((instAsset != null) ?
@@ -637,12 +638,11 @@ typical_case:
       }
     } else {
       // add the single element
-      toCargoIds.add(
-          registerCargoInstance(toReg, instAsset));
+      String aiId = registerCargoInstance(toReg, instAsset);
+      toCargoIds.add(aiId);
     }
 
-    // return list of identifiers
-    return true;
+    return true; // handled successfully
   }
 
   /**
@@ -651,9 +651,8 @@ typical_case:
    *
    * Only for use by <tt>registerCargoInstance(Registry,List,Asset)</tt>!
    */
-  private static String registerCargoInstance(
-      Registry toReg, 
-      Asset instAsset) {
+  private static String registerCargoInstance(Registry toReg, 
+					      Asset instAsset) {
     //
     // ASSERT(!(instAsset instanceof AssetGroup));
     //
@@ -663,16 +662,19 @@ typical_case:
     // get the cargo id
     String instId = instAsset.getUID().toString();
 
+    LowFidelityAssetPG lowFiUID = (LowFidelityAssetPG)
+      instAsset.resolvePG (LowFidelityAssetPG.class);
+    boolean isLowFiCargo = (lowFiUID != null);
 
-    LowFidelityAssetUIDPG lowFiUID = (LowFidelityAssetUIDPG)
-      instAsset.resolvePG (LowFidelityAssetUIDPG.class);
-
-    if (lowFiUID == null) {
-      System.out.println ("registerCargoInstance - no low fi pg for asset " + instId);
+    if (isLowFiCargo) {
+      if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoInstance - found low fi pg for asset " + instId);
+      instId    = lowFiUID.getOriginalAsset().getUID().toString();
+      instAsset = lowFiUID.getOriginalAsset();
     }
     else {
-      System.out.println ("registerCargoInstance - found low fi pg for asset " + instId);
-      instId = lowFiUID.getUID().toString();
+      if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoInstance - no low fi pg for asset " + instId);
     }
 
     // check if cargo instance is registered
@@ -713,16 +715,16 @@ typical_case:
 	    System.out.println ("Added stuff to container " + instAsset);
 	  }
 	  /*
-	  else {
+	    else {
 	    Class contentsPGClass = org.cougaar.domain.glm.ldm.asset.ContentsPG.class;
 	    ContentsPG contentsPG = (ContentsPG) instAsset.searchForPropertyGroup (contentsPGClass);
 	    if (contentsPG != null) {
-	      toCargo.hasManifest = true;
-	      toCargo.nomenclatures = (List) contentsPG.getNomenclatures ();
-	      toCargo.typeIdentifications = (List) contentsPG.getTypeIdentifications ();
-	      toCargo.weights = (List) contentsPG.getWeights ();
+	    toCargo.hasManifest = true;
+	    toCargo.nomenclatures = (List) contentsPG.getNomenclatures ();
+	    toCargo.typeIdentifications = (List) contentsPG.getTypeIdentifications ();
+	    toCargo.weights = (List) contentsPG.getWeights ();
 	    }
-	  }
+	    }
 	  */
 	}
         singleAsset = instAsset;
@@ -730,7 +732,7 @@ typical_case:
 
       // set prototype id
       toCargo.prototypeUID = 
-        registerCargoPrototype(toReg, singleAsset);
+        registerCargoPrototype(toReg, singleAsset, isLowFiCargo);
 
       // set the item id == "bumper number"
       ItemIdentificationPG itemPG = 
@@ -745,6 +747,9 @@ typical_case:
       // register the cargo
       toReg.cargoInstances.addInstance(toCargo);
     }
+    else if (DEBUG)
+      System.out.println (Thread.currentThread () + ".registerCargoInstance - cargo instance " + instId + 
+			  " is already registered.");
 
     // return the id
     return instId;
@@ -765,8 +770,9 @@ typical_case:
    * <code>Prototype</code> as the <tt>parentUID</tt>.
    */
   private static String registerCargoPrototype(
-      Registry toReg, 
-      Asset instAsset) {
+					       Registry toReg, 
+					       Asset instAsset,
+					       boolean isLowFiCargo) {
 
     // given an "instance" of a cargoAsset, register it with
     //   it's "template" (== "prototype").
@@ -774,8 +780,13 @@ typical_case:
     // check for the typical case in TOPS, where an instance is
     //   equivalent to it's prototype.  This often happens for
     //   tanks, pallets, etc.
+
+    if (DEBUG)
+      System.out.println (Thread.currentThread () + 
+			  ".registerCargoPrototype - trying to register " + instAsset.getUID());
+
     Asset protAsset = instAsset.getPrototype();
-typical_case:
+  typical_case:
     if (protAsset instanceof GLMAsset) {
       // instAsset must also be an GLMAsset
       GLMAsset alpInst = (GLMAsset)instAsset;
@@ -793,16 +804,21 @@ typical_case:
       // compare physicalPGs (weight, width, height, depth)
       PhysicalPG instPhysPG = alpInst.getPhysicalPG();
       PhysicalPG protPhysPG = alpProt.getPhysicalPG();
+      
       if (instPhysPG != protPhysPG) {
+	if (DEBUG)
+	  System.out.println (Thread.currentThread () + 
+			      ".registerCargoPrototype - Comparing pgs for " + instAsset.getUID () + 
+			      " - " + instAsset + " - not equal.");
         break typical_case;
       }
       // compare typeIdPGs (typeId, nomen)
       TypeIdentificationPG instTypeIdPG = 
-        instAsset.getTypeIdentificationPG();
+	instAsset.getTypeIdentificationPG();
       TypeIdentificationPG protTypeIdPG = 
-        protAsset.getTypeIdentificationPG();
+	protAsset.getTypeIdentificationPG();
       if (instTypeIdPG != protTypeIdPG) {
-        break typical_case;
+	break typical_case;
       }
 
       // instance is equivalent to it's prototype!
@@ -810,59 +826,64 @@ typical_case:
       // register the prototype
       String protId;
       if ((protTypeIdPG == null) ||
-          ((protId = protTypeIdPG.getTypeIdentification()) == null)) {
-        // typically use typeId, but here use UID
-        protId = alpProt.getUID().toString();
+	  ((protId = protTypeIdPG.getTypeIdentification()) == null)) {
+	// typically use typeId, but here use UID
+	protId = alpProt.getUID().toString();
       }
       if (toReg.cargoPrototypes.getPrototype(protId) == null) {
-        // must register this cargo prototype
-        //
-        // create a new cargo prototype
-        Prototype toProt = new Prototype();
-        toProt.UID = protId;
+	// must register this cargo prototype
+	//
+	// create a new cargo prototype
+	Prototype toProt = new Prototype();
+	toProt.UID = protId;
+	toProt.isLowFidelity = isLowFiCargo;
 
-        // toProt.parentUID is null, since we're using the prototype
-        //
-        // asset class (CLASS_I, CLASS_IV, etc)
-        toProt.assetClass = protAssetClass;
-        // asset type (CONTAINER or !CONTAINER)
-        toProt.assetType = 
-          ((protAssetClass == Prototype.ASSET_CLASS_CONTAINER) ?
-           (Prototype.ASSET_TYPE_CONTAINER) :
-           (Prototype.ASSET_TYPE_ASSET));
-        if (protPhysPG != null) {
-          // weight in grams
-          Mass protWeight = protPhysPG.getMass();
-          if (protWeight != null) {
-            toProt.weight = protWeight.getGrams();
-          }
-          // width in meters
-          Distance protWidth = protPhysPG.getWidth();
-          if (protWidth != null) {
-            toProt.width = protWidth.getMeters();
-          }
-          // height in meters
-          Distance protHeight = protPhysPG.getHeight();
-          if (protHeight != null) {
-            toProt.height = protHeight.getMeters();
-          }
-          // depth in meters
-          Distance protDepth = protPhysPG.getLength();
-          if (protDepth != null) {
-            toProt.depth = protDepth.getMeters();
-          }
-        }
-        if (protTypeIdPG != null) {
-          // type id
-          toProt.alpTypeID = 
-            protTypeIdPG.getTypeIdentification();
-          // nomen
-          toProt.nomenclature = 
-            protTypeIdPG.getNomenclature();
-        }
+	// toProt.parentUID is null, since we're using the prototype
+	//
+	// asset class (CLASS_I, CLASS_IV, etc)
+	toProt.assetClass = protAssetClass;
+	// asset type (CONTAINER or !CONTAINER)
+	toProt.assetType = 
+	  ((protAssetClass == Prototype.ASSET_CLASS_CONTAINER) ?
+	   (Prototype.ASSET_TYPE_CONTAINER) :
+	   (Prototype.ASSET_TYPE_ASSET));
+	if (protPhysPG != null) {
+	  if (DEBUG)
+	    System.out.println (Thread.currentThread () + "." +"registerCargoPrototype - Using prototype dimensions, e.g. " + 
+				protPhysPG.getMass().getTons());
 
-        // register the cargo prototype
-        toReg.cargoPrototypes.addPrototype(toProt);
+	  // weight in grams
+	  Mass protWeight = protPhysPG.getMass();
+	  if (protWeight != null) {
+	    toProt.weight = protWeight.getGrams();
+	  }
+	  // width in meters
+	  Distance protWidth = protPhysPG.getWidth();
+	  if (protWidth != null) {
+	    toProt.width = protWidth.getMeters();
+	  }
+	  // height in meters
+	  Distance protHeight = protPhysPG.getHeight();
+	  if (protHeight != null) {
+	    toProt.height = protHeight.getMeters();
+	  }
+	  // depth in meters
+	  Distance protDepth = protPhysPG.getLength();
+	  if (protDepth != null) {
+	    toProt.depth = protDepth.getMeters();
+	  }
+	}
+	if (protTypeIdPG != null) {
+	  // type id
+	  toProt.alpTypeID = 
+	    protTypeIdPG.getTypeIdentification();
+	  // nomen
+	  toProt.nomenclature = 
+	    protTypeIdPG.getNomenclature();
+	}
+
+	// register the cargo prototype
+	toReg.cargoPrototypes.addPrototype(toProt);
       }
 
       // return the id
@@ -890,62 +911,67 @@ typical_case:
     if (protAsset != null) {
       protAssetClass = getAssetClass(protAsset);
       protAssetType = 
-        ((protAssetClass == Prototype.ASSET_CLASS_CONTAINER) ?
-         (Prototype.ASSET_TYPE_CONTAINER) :
-         (Prototype.ASSET_TYPE_ASSET));
+	((protAssetClass == Prototype.ASSET_CLASS_CONTAINER) ?
+	 (Prototype.ASSET_TYPE_CONTAINER) :
+	 (Prototype.ASSET_TYPE_ASSET));
       TypeIdentificationPG protTypePG = 
-        protAsset.getTypeIdentificationPG();
+	protAsset.getTypeIdentificationPG();
       if (protTypePG != null) {
-        protAlpTypeId = 
-          protTypePG.getTypeIdentification();
-        protNomenclature = 
-          protTypePG.getNomenclature();
+	protAlpTypeId = 
+	  protTypePG.getTypeIdentification();
+	protNomenclature = 
+	  protTypePG.getNomenclature();
       }
       if (protAsset instanceof GLMAsset) {
-        PhysicalPG protPhysPG = 
-          ((GLMAsset)protAsset).getPhysicalPG();
-        if (protPhysPG != null) {
-          Mass weight = protPhysPG.getMass();
-          if (weight != null) {
-            protWeight = weight.getGrams();
-          }
-          Distance width = protPhysPG.getWidth();
-          if (width != null) {
-            protWidth = width.getMeters();
-          }
-          Distance height = protPhysPG.getHeight();
-          if (height != null) {
-            protHeight = height.getMeters();
-          }
-          Distance depth = protPhysPG.getLength();
-          if (depth != null) {
-            protDepth = depth.getMeters();
-          }
-        }
+	PhysicalPG protPhysPG = 
+	  ((GLMAsset)protAsset).getPhysicalPG();
+	if (protPhysPG != null) {
+	  Mass weight = protPhysPG.getMass();
+	  if (weight != null) {
+	    protWeight = weight.getGrams();
+	  }
+	  Distance width = protPhysPG.getWidth();
+	  if (width != null) {
+	    protWidth = width.getMeters();
+	  }
+	  Distance height = protPhysPG.getHeight();
+	  if (height != null) {
+	    protHeight = height.getMeters();
+	  }
+	  Distance depth = protPhysPG.getLength();
+	  if (depth != null) {
+	    protDepth = depth.getMeters();
+	  }
+	}
       }
 
       // register the prototype
       protId =
-        ((protAlpTypeId != null) ?
-         (protAlpTypeId) :
-         (protAsset.getUID().toString()));
+	((protAlpTypeId != null) ?
+	 (protAlpTypeId) :
+	 (protAsset.getUID().toString()));
       if (toReg.cargoPrototypes.getPrototype(protId) == null) {
-        // must register this prototype
-        //
-        // create a new cargo prototype
-        Prototype toProt = new Prototype();
-        toProt.UID = protId;
-        toProt.assetClass = protAssetClass;
-        toProt.assetType = protAssetType;
-        toProt.alpTypeID = protAlpTypeId;
-        toProt.nomenclature = protNomenclature;
-        toProt.weight = protWeight;
-        toProt.width = protWidth;
-        toProt.height = protHeight;
-        toProt.depth = protDepth;
+	// must register this prototype
+	//
+	// create a new cargo prototype
+	Prototype toProt = new Prototype();
+	toProt.UID = protId;
+	toProt.isLowFidelity = isLowFiCargo;
+	toProt.assetClass = protAssetClass;
+	toProt.assetType = protAssetType;
+	toProt.alpTypeID = protAlpTypeId;
+	toProt.nomenclature = protNomenclature;
+	toProt.weight = protWeight;
+	toProt.width = protWidth;
+	toProt.height = protHeight;
+	toProt.depth = protDepth;
 
-        // register the cargo prototype
-        toReg.cargoPrototypes.addPrototype(toProt);
+	// register the cargo prototype
+	if (DEBUG)
+	  System.out.println (Thread.currentThread () + 
+			      ".registerCargoPrototype - register proto proto for "+instAsset.getUID());
+
+	toReg.cargoPrototypes.addPrototype(toProt);
       }
 
       // don't return the protId just yet!
@@ -970,30 +996,35 @@ typical_case:
       instAsset.getTypeIdentificationPG();
     if (instTypeIdPG != null) {
       instAlpTypeId = 
-        instTypeIdPG.getTypeIdentification();
+	instTypeIdPG.getTypeIdentification();
       instNomenclature = 
-        instTypeIdPG.getNomenclature();
+	instTypeIdPG.getNomenclature();
     }
     if (instAsset instanceof GLMAsset) {
       PhysicalPG instPhysPG = 
-        ((GLMAsset)instAsset).getPhysicalPG();
+	((GLMAsset)instAsset).getPhysicalPG();
+
+      if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoPrototype - Instance dimensions for " + instAsset.getUID() + 
+			    " - mass " + instPhysPG.getMass().getTons());
+
       if (instPhysPG != null) {
-        Mass weight = instPhysPG.getMass();
-        if (weight != null) {
-          instWeight = weight.getGrams();
-        }
-        Distance width = instPhysPG.getWidth();
-        if (width != null) {
-          instWidth = width.getMeters();
-        }
-        Distance height = instPhysPG.getHeight();
-        if (height != null) {
-          instHeight = height.getMeters();
-        }
-        Distance depth = instPhysPG.getLength();
-        if (depth != null) {
-          instDepth = depth.getMeters();
-        }
+	Mass weight = instPhysPG.getMass();
+	if (weight != null) {
+	  instWeight = weight.getGrams();
+	}
+	Distance width = instPhysPG.getWidth();
+	if (width != null) {
+	  instWidth = width.getMeters();
+	}
+	Distance height = instPhysPG.getHeight();
+	if (height != null) {
+	  instHeight = height.getMeters();
+	}
+	Distance depth = instPhysPG.getLength();
+	if (depth != null) {
+	  instDepth = depth.getMeters();
+	}
       }
     }
 
@@ -1001,51 +1032,60 @@ typical_case:
     //
     // FIXME double equality should probably use +/- epsilon
     if ((protId != null) &&
-        (instAssetClass == protAssetClass) &&
-        (instAssetType == protAssetType) &&
-        ((instAlpTypeId == protAlpTypeId) ||
-         ((protAlpTypeId != null) &&
-          (protAlpTypeId.equals(instAlpTypeId)))) &&
-        ((instNomenclature == protNomenclature) ||
-         ((protNomenclature != null) &&
-          (protNomenclature.equals(instNomenclature)))) &&
-        (instWeight == protWeight) &&
-        (instWidth == protWidth) &&
-        (instHeight == protHeight) &&
-        (instDepth == protDepth)) {
+	(instAssetClass == protAssetClass) &&
+	(instAssetType == protAssetType) &&
+	((instAlpTypeId == protAlpTypeId) ||
+	 ((protAlpTypeId != null) &&
+	  (protAlpTypeId.equals(instAlpTypeId)))) &&
+	((instNomenclature == protNomenclature) ||
+	 ((protNomenclature != null) &&
+	  (protNomenclature.equals(instNomenclature)))) &&
+	(instWeight == protWeight) &&
+	(instWidth == protWidth) &&
+	(instHeight == protHeight) &&
+	(instDepth == protDepth)) {
       // instance is equivalent to it's prototype!
       //
       // already registered the prototype, so just 
       //   return it's id
+      if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoPrototype - returning already registered proto " + protId);
       return protId;
     } else {
       // instAsset is different than it's prototype
       //
       // register the instance
       String instId =
-        ((instAlpTypeId != null) ?
-         (instAlpTypeId) :
-         (instAsset.getUID().toString()));
-      if (toReg.cargoPrototypes.getPrototype(instId) == null) {
-        // must register this "instance" prototype
-        //
-        // create a new cargo "instance" prototype
-        Prototype toProt = new Prototype();
-        toProt.UID = instId;
-        // parentUID is the already registered prototype!
-        toProt.parentUID = protId; 
-        toProt.assetClass = instAssetClass;
-        toProt.assetType = instAssetType;
-        toProt.alpTypeID = instAlpTypeId;
-        toProt.nomenclature = instNomenclature;
-        toProt.weight = instWeight;
-        toProt.width = instWidth;
-        toProt.height = instHeight;
-        toProt.depth = instDepth;
+	((instAlpTypeId != null) ?
+	 //         (instAlpTypeId) :
+	 (instAsset.getItemIdentificationPG().getItemIdentification()) :
+	 (instAsset.getUID().toString()));
+      if (toReg.cargoPrototypes.getPrototype(instId) == null) { 
+	// must register this "instance" prototype
+	//
+	// create a new cargo "instance" prototype
+	Prototype toProt = new Prototype();
+	toProt.UID = instId;
+	toProt.isLowFidelity = isLowFiCargo;
+	// parentUID is the already registered prototype!
+	toProt.parentUID = protId; 
+	toProt.assetClass = instAssetClass;
+	toProt.assetType = instAssetType;
+	toProt.alpTypeID = instAlpTypeId;
+	toProt.nomenclature = instNomenclature;
+	toProt.weight = instWeight;
+	toProt.width = instWidth;
+	toProt.height = instHeight;
+	toProt.depth = instDepth;
 
-        // register the cargo "instance" prototype
-        toReg.cargoPrototypes.addPrototype(toProt);
+	// register the cargo "instance" prototype
+	if (DEBUG)
+	  System.out.println (Thread.currentThread () + ".registerCargoPrototype - register Instance proto for "+ instAsset.getUID());
+
+	toReg.cargoPrototypes.addPrototype(toProt);
       }
+      else if (DEBUG)
+	System.out.println (Thread.currentThread () + ".registerCargoPrototype - ignoring instId " + instId);
 
       // return the instance id
       return instId;

@@ -36,9 +36,7 @@ import org.cougaar.glm.ldm.plan.*;
 
 import org.cougaar.mlm.ui.psp.transit.data.legs.Leg;
 
-//import org.cougaar.pkg.tops.TOPSConst;
 import org.cougaar.lib.util.UTILPrepPhrase;
-
 
 /**
  * The <code>DataComputer</code> contains all the "TOPS-guts" for the
@@ -320,6 +318,7 @@ public abstract class DataComputer {
         Allocation alloc = (Allocation)task.getPlanElement();
         // get the "cargo" == whatever's being moved
         Asset cargoAsset = task.getDirectObject();
+
         // get the "carrier" == the conveyer == the mover
         Asset carrierAsset = alloc.getAsset();
 
@@ -335,11 +334,18 @@ public abstract class DataComputer {
 
         // register the cargo
         List cargoIds = new ArrayList();
-        if (!(DataRegistry.registerCargoInstance(
-                toReg, cargoIds, cargoAsset))) {
+	boolean validCargoID = 
+	  DataRegistry.registerCargoInstance(toReg, 
+					     cargoIds, 
+					     cargoAsset);
+
+        if (!validCargoID) {
           // invalid cargo?
+	  System.err.println ("DataComputer got null cargoID for " + cargoAsset + 
+			      "? This should never happen.");
           continue;
         }
+
         int nCargoIds = cargoIds.size();
 
         // get a unique leg prefix
@@ -347,8 +353,10 @@ public abstract class DataComputer {
 
         // configure and register our legs
         int i = 0; 
+
         do {
           Leg li = (Leg)tmpLegs.get(i);
+
           // configure leg
           li.UID = legIdPrefix + Integer.toString(i);
           li.conveyanceUID = carrierId;
