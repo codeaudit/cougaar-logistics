@@ -49,8 +49,10 @@ import org.cougaar.util.ShortDateFormat;
 import java.util.Date;
 
 /**
- * Class <code>StrategicTransportExpanderPlugin</code> is a replacement
- * for <code>StrategicTranportProjectorPlugin</code>.
+ * Class <code>org.cougaar.logistics.plugin.strattrans.StrategicTransportProjectorPlugin</code> is a replacement
+ * for <code>org.cougaar.mlm.plugin.sample.StrategicTranportProjectorPlugin</code>.
+ * <p>
+ * (updated based upon ComponentPlugin and Toolkit)
  * <p>
  * This class subscribes to the single "Deploy" "DetermineRequirements" 
  * Task and expands it to "Transport" Tasks for all applicable assets.
@@ -61,7 +63,7 @@ import java.util.Date;
  * Debug information is now off by default.  See method <code>setDebug()</code>
  */
 
-public class StrategicTransportExpanderPlugin extends UTILExpanderPluginAdapter 
+public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter 
     implements UTILOrgActivityListener, UTILOrganizationListener, UTILParameterizedAssetListener {
 
 
