@@ -404,10 +404,32 @@ public class InventoryPlugin extends ComponentPlugin
         }
         projectionTaskScheduler.finishedExecuteCycle();
 
+	// Rescind tasks that no longer have a provider
+	// and
         // Allocate any refill tasks from previous executions that were not allocated to providers
         // but only if we are not about to rip out previous work we have done
         if (didOrgRelationshipsChange()) {
-//           logger.warn("ORG RELATIONSHIPS CHANGED");
+//        logger.warn("ORG RELATIONSHIPS CHANGED");
+//	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" + 
+//			       supplyType + " role: " + getRole(supplyType) + "\n");
+	  HashMap providers = getProvidersAndEndDates();
+	  Collection unprovidedTasks = getUnprovidedTasks(refillSubscription, 
+							    Constants.Verb.Supply,
+							    providers);
+	  if (!unprovidedTasks.isEmpty()){
+	      logger.warn("Trying to rescind unprovided supply refill tasks...");
+	      rescindTaskAllocations(unprovidedTasks);
+	      externalAllocator.allocateRefillTasks(unprovidedTasks);
+	  }
+	  unprovidedTasks = getUnprovidedTasks(refillSubscription, 
+						 Constants.Verb.ProjectSupply,
+						 providers);
+	  if (!unprovidedTasks.isEmpty()){
+	      logger.warn("Trying to rescind unprovided projection refill tasks...");
+	      rescindTaskAllocations(unprovidedTasks);
+	      externalAllocator.allocateRefillTasks(unprovidedTasks);
+	  }
+
           Collection unallocRefill = null;
           if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
             unallocRefill = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(refillSubscription, 
@@ -514,6 +536,71 @@ public class InventoryPlugin extends ComponentPlugin
       OMChange = false;
       //testBG();
     }
+  }
+
+  protected HashMap getProvidersAndEndDates() {
+      HashMap providers = new HashMap();
+      RelationshipSchedule relSched = myOrganization.getRelationshipSchedule();
+      Collection relationships = relSched.getMatchingRelationships(TimeSpan.MIN_VALUE,
+								   TimeSpan.MAX_VALUE);
+      Iterator rit = relationships.iterator();
+      Role myRole = getRole(supplyType);
+// 	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" + 
+// 			       supplyType + " role: " + getRole(supplyType) + "\n");
+      while (rit.hasNext()) {
+	  Relationship r = (Relationship) rit.next();
+	  HasRelationships hr = relSched.getOther(r);
+	  if (hr instanceof Organization) {
+	      Role role = relSched.getOtherRole(r);
+	      if (role == myRole) {
+		  Date endDate = r.getEndDate();
+		  providers.put(hr, endDate);
+		  //	  System.out.println("SDSD   org: " + hr + " end:" + endDate + "\n");
+	      }
+	  }
+      }
+      return providers;
+  }
+
+  private Collection getUnprovidedTasks(Collection tasks, Verb verb, HashMap providers) {
+      Iterator taskIt = tasks.iterator();
+      ArrayList unprovidedTasks = new ArrayList();
+      Task task;
+      Organization provider;
+      Allocation alloc;
+      long taskEnd;
+      Date providerEndDate;
+      while (taskIt.hasNext()) {
+	  task = (Task)taskIt.next();
+	  alloc = (Allocation)task.getPlanElement();
+	  if ((alloc != null) && (task.getVerb().equals(verb))){
+	      taskEnd = TaskUtils.getEndTime(task);
+	      provider = (Organization)alloc.getAsset();
+	      if (alloc.getRole() != getRole(supplyType)) {
+		  logger.warn("SDSD MISMATCH: " + alloc.getRole() + " " + task + "\n");	
+	      }
+	      providerEndDate = (Date) providers.get(provider);
+	      if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
+		  unprovidedTasks.add(task);
+	      }
+	  }
+      }
+//       if (! unprovidedTasks.isEmpty()) {
+// 	  System.out.println("SDSD unprovided: " + unprovidedTasks + "\n");	
+//       }
+      return unprovidedTasks;
+  }
+
+  private void rescindTaskAllocations(Collection tasks) {
+      Task task;
+      Allocation alloc;
+      Iterator taskIt = tasks.iterator(); 
+      while (taskIt.hasNext()) {
+	  task = (Task) taskIt.next();
+	  //	  System.out.println("SDSD rescind: " + task + "\n");
+	  alloc = (Allocation)task.getPlanElement();
+	  publishRemove(alloc);
+      }
   }
 
   /** Subscription for aggregatable support requests. **/
