@@ -43,7 +43,7 @@ public class InventoryLevelGenerator extends InventoryModule {
     super(imPlugin);
   }
 
-  protected void calculateInventoryLevels(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
+  public void calculateInventoryLevels(int startBucket, int endBucket, LogisticsInventoryPG thePG) {
     //calculate inventory levels for today through start (today + OST)
     int start = (thePG.getStartBucket() > startBucket) ? thePG.getStartBucket() : startBucket;
     while (start <= endBucket) {
