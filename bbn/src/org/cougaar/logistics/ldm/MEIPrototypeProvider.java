@@ -62,7 +62,11 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   public static final String MEI_STRING = "ClassVIIMajorEndItem";
   public static final String THEATER = "SWA";
   public static final String LEVEL2 = "Level2";
+
   private String service = null;
+  private static final String LEVEL2TOGGLE = "-Level2";
+  // By default, do level 2
+  private boolean level2Off = false;
   // Subscription to policies
   private IncrementalSubscription meiSubscription;
 
@@ -155,6 +159,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         logger.error("Unable to get query service");
       }
     }
+    Vector params = getParameters();
+    if (params != null) {
+      level2Off = params.contains(LEVEL2TOGGLE);
+    }
   }
 
   protected void setupSubscriptions() {
@@ -223,8 +231,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       if (srvc != null) {
         service= srvc.toString();
 //         System.out.println("MEIPrototypeProvider configured for "+getAgentIdentifier());
-        if (!publishedLevel2MeiAsset && !queryLevel2Mei()) {
-          publishLevel2Mei();
+        if (!level2Off) {
+          if (!publishedLevel2MeiAsset && !queryLevel2Mei()) {
+            publishLevel2Mei();
+          }
         }
         configured = true;
       } else {
