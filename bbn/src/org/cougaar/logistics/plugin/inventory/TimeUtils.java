@@ -44,6 +44,7 @@ public class TimeUtils {
     public static final long MSEC_PER_DAY  =     86400000L;
     public static final long MSEC_PER_HOUR =      3600000L;
     public static final long MSEC_PER_MIN  =        60000L;
+    public static final long SEC_PER_DAY   =        86400L;
 
     private transient Logger logger;
 

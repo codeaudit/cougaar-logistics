@@ -71,6 +71,15 @@ public class AssetUtils {
 	    logger = (Logger)invPlugin.getLoggingService(this);
 	}
     }
+
+
+    public AssetUtils(Logger aLogger) {
+	invPlugin = null;
+	logger = aLogger;
+	if(logger == null) {
+	    logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
+	}
+    }
  
     public String assetDesc(Asset asset){
 	String nsn = getAssetIdentifier(asset);

@@ -205,7 +205,7 @@ public class LogisticsInventoryFormatter {
 		}
 		String outputStr = taskStr + getDateString(startTime,expandTimestamp) + ",";
 		outputStr = outputStr + getDateString(endTime,expandTimestamp) + ",";
-		outputStr = outputStr + TaskUtils.getQuantity(ar);
+		outputStr = outputStr + TaskUtils.getQuantity(aTask,ar);
 		writeln(outputStr);
 	    }
 	    else {
@@ -261,7 +261,7 @@ public class LogisticsInventoryFormatter {
 			logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
 		    }
 		    else {
-			outputStr += results[qtyInd];
+			outputStr += taskUtils.convertResultsToDailyRate(aTask,results[qtyInd]);
 			if(startTime<=endTime){
 			    writeln(outputStr);
 			}

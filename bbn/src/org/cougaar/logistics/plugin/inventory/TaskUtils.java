@@ -58,17 +58,20 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
     private transient Logger logger;
     private transient InventoryPlugin invPlugin;
+    private transient AssetUtils assetUtils;
 
     public TaskUtils(InventoryPlugin aPlugin) {
 	super();
 	invPlugin = aPlugin;
 	logger = (Logger)invPlugin.getLoggingService(this);
+	assetUtils = invPlugin.getAssetUtils();
     }
 
     public TaskUtils(LoggingService aLogger) {
 	super();
 	invPlugin = null;
 	logger = (Logger)aLogger;
+	assetUtils = new AssetUtils(aLogger);
     }
 
   /** @param task
@@ -133,10 +136,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
+
     public String getTaskItemName(Task task){
 	Asset prototype = (Asset)task.getDirectObject();
 	if (prototype == null) return "null";
-	return invPlugin.getAssetUtils().assetDesc(prototype);
+	return assetUtils.assetDesc(prototype);
     }
 
   public static boolean isMyRefillTask(Task task, String myOrgName) {
@@ -235,6 +239,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
+
   public static double getDailyQuantity(Rate r) {
     if (r instanceof FlowRate) {
       return ((FlowRate) r).getGallonsPerDay();
@@ -271,6 +276,32 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return getARAspectValue(ar, AspectType.QUANTITY);
   }
 
+    // Hand in the demandRate from a phase of particular allocation result
+    // and its parent task.  This function basically handles the
+    // contained demand rate result and returns the corresponding
+    // daily rate.    If its fuel (FlowRate) that's already gallons
+    // per day, otherwise its eaches per millisecond and should be
+    // multiplied correspondingly.
+  public double convertResultsToDailyRate(Task task, double demandRate) {
+      if(isProjection(task)) {
+	  Rate r = getRate(task);
+	  if(!(r instanceof FlowRate)) {
+	      return demandRate * TimeUtils.SEC_PER_DAY;
+	  }
+      }
+      return demandRate;
+  }
+
+  public double getQuantity(Task task, AllocationResult ar) {
+      if(isProjection(task)) {
+	  logger.warn("TaskUtils::getting qty from projection!");
+	  return convertResultsToDailyRate(task,
+					   getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
+      }
+      else {
+	  return getQuantity(ar);
+      }
+  }
 }
 
 
