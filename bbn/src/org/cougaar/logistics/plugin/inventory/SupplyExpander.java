@@ -325,10 +325,13 @@ public class SupplyExpander extends InventoryModule {
   public LogisticsInventoryPG getLogisticsInventoryPG(Task wdrawTask) {
 	LogisticsInventoryPG logInvPG = null;
 	Asset asset = (Asset)wdrawTask.getDirectObject();
+	// we might be looking at pass-thru's from the change list
 	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
-	inventoryPlugin.touchInventory(inventory);
-	logInvPG = (LogisticsInventoryPG)
-	  inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+	if (inventory != null) {
+	  inventoryPlugin.touchInventory(inventory);
+	  logInvPG = (LogisticsInventoryPG)
+	    inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+	}
 	return logInvPG;
   }
 
