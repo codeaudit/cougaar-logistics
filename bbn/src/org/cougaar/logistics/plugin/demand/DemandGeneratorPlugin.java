@@ -29,14 +29,15 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
-import org.cougaar.logistics.plugin.inventory.AssetUtils;
-import org.cougaar.logistics.plugin.inventory.TaskUtils;
-import org.cougaar.logistics.plugin.inventory.TimeUtils;
-import org.cougaar.logistics.plugin.inventory.UtilsProvider;
+import org.cougaar.logistics.plugin.inventory.*;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.oplan.Oplan;
+import org.cougaar.glm.ldm.oplan.OrgActivity;
+import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.util.UnaryPredicate;
 
 import java.lang.reflect.Constructor;
@@ -65,6 +66,16 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   public final String GENERATE_FREQUENCY = "GENERATE_FREQUENCY";
 
   public final String DEMAND_GENERATOR = "DEMAND_GENERATOR";
+
+  private Organization myOrganization;
+  private String myOrgName;
+
+  //MWD Remove
+  //private long orgStartTime=-1;
+  //private long orgEndTime=-1;
+
+  LogisticsOPlan logOPlan = null;
+
 
   /** A timer for recurrent events.  All access should be synchronized on timerLock **/
   private Alarm timer = null;
@@ -108,14 +119,46 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
   }
 
+  /** Subscription for the Organization(s) in which this plugin resides **/
+  private IncrementalSubscription selfOrganizations;
+
   private IncrementalSubscription projectionTaskSubscription;
 
+  /*** MWD Remove
+  private IncrementalSubscription orgActivities;
+  private IncrementalSubscription oplanSubscription;
+  **/
+  private IncrementalSubscription logisticsOPlanSubscription;
+
+
   public void setupSubscriptions() {
-    projectionTaskSubscription = (IncrementalSubscription) blackboard.
-        subscribe(new ProjectionTaskPredicate(supplyType, getAgentIdentifier().toString(), taskUtils));
+
+    selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
+
+    //MWD Remove
+    //UnaryPredicate orgActivityPred = new OrgActivityPred();
+    //orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
+    //oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
+    logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
+
     resetTimer();
   }
 
+  /** MWD Remove
+  private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof Oplan);
+    }
+  };
+
+ **/
+
+    /** Selects the LogisticsOPlan objects **/
+  private static class LogisticsOPlanPredicate implements UnaryPredicate{
+    public boolean execute(Object o) {
+      return o instanceof LogisticsOPlan;
+    }
+  }
 
   private static class ProjectionTaskPredicate implements UnaryPredicate {
     String supplyType;
@@ -144,6 +187,57 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   }
 
+  private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof Organization) {
+        return ((Organization) o).isSelf();
+      }
+      return false;
+    }
+  };
+
+
+    /** MWD Remove
+     *  Find the earliest and latest times of all the org activites.
+     *
+    private void computeOrgTimes(Enumeration orgActs) {
+        long latestEnd = 0;
+        long earliestStart = 0;
+        while(orgActs.hasMoreElements()) {
+            OrgActivity oa = (OrgActivity) orgActs.nextElement();
+            long endTime = oa.getEndTime();
+            if (endTime > latestEnd) {
+                latestEnd = endTime;
+            }
+            long startTime = oa.getStartTime();
+            if (startTime < earliestStart) {
+                earliestStart = startTime;
+            }
+        }
+        orgEndTime = latestEnd;
+        orgStartTime = earliestStart;
+    }
+    
+    public long getOrgStartTime() {
+	return orgStartTime;
+    }
+
+    public long getOrgEndTime() {
+	return orgEndTime;
+    }
+
+    ***/
+
+  // get the first day in theater
+  public long getLogOPlanStartTime() {
+    return logOPlan.getStartTime();
+  }
+
+  // get the last day in theater
+  public long getLogOPlanEndTime() {
+    return logOPlan.getEndTime();
+  }
+
   public TaskUtils getTaskUtils() {
     return taskUtils;
   }
@@ -162,6 +256,29 @@ public class DemandGeneratorPlugin extends ComponentPlugin
 
   public String getSupplyType() {
     return supplyType;
+  }
+
+  private Organization getMyOrganization(Enumeration orgs) {
+    Organization myOrg = null;
+    // look for this organization
+    if (orgs.hasMoreElements()) {
+      myOrg = (Organization) orgs.nextElement();
+    }
+    return myOrg;
+  }
+
+  public Organization getMyOrganization() {
+    return myOrganization;
+  }
+
+
+
+
+ public String getOrgName() {
+    if (myOrgName == null) {
+      myOrgName = getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    }
+    return myOrgName;
   }
 
   public long getCurrentTimeMillis() {
@@ -199,6 +316,45 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
   protected void execute() {
+    if (myOrganization == null) {
+      myOrganization = getMyOrganization(selfOrganizations.elements());
+      if(myOrganization != null) {
+	  projectionTaskSubscription = (IncrementalSubscription) blackboard.
+	      subscribe(new ProjectionTaskPredicate(supplyType, getOrgName(), taskUtils));
+      }
+    }
+
+    /** MWD Remove
+    if(orgActivities.getCollection().isEmpty()) {
+	return;
+    }
+    else if((orgStartTime == -1) || (orgEndTime == -1)) {
+	computeOrgTimes(orgActivities.elements());
+    }
+
+    if (oplanSubscription.getCollection().isEmpty()) {
+      return;
+    }
+    **/
+
+    // get the Logistics OPlan (our homegrown version with specific dates).
+    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
+      Iterator opIt = logisticsOPlanSubscription.iterator();
+      if (opIt.hasNext()) {
+        //we only expect to have one
+        logOPlan = (LogisticsOPlan) opIt.next();
+      }
+    }
+
+    if (myOrganization == null) {
+      if (logger.isInfoEnabled()) {
+        logger.info("\n DemandGeneratorPlugin " + supplyType +
+                    " not ready to process tasks yet." +
+                    " my org is: " + myOrganization);
+      }
+      return;
+    }
+
     //nothing for now
     if (timerExpired()) {
       long planTime = getStartOfPeriod();
@@ -272,6 +428,9 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     return new DGClass9Scheduler(this);
   }
 
+
+public long getFrequency() { return frequency; }
+
   private boolean isLegalFrequency(long frequencyInMSEC) {
     long remainder = 0;
       if(frequency >= getTimeUtils().MSEC_PER_DAY) {
@@ -284,11 +443,11 @@ public class DemandGeneratorPlugin extends ComponentPlugin
   }
 
 
-  private boolean frequencyInDays() {
+  public boolean frequencyInDays() {
     return (getFrequencyUnit() == getTimeUtils().MSEC_PER_DAY);
   }
 
-  private long getFrequencyUnit() {
+  public long getFrequencyUnit() {
       if(frequency >= getTimeUtils().MSEC_PER_DAY) {
         return getTimeUtils().MSEC_PER_DAY;
       }
@@ -371,6 +530,8 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     }
     return timeOut;
   }
+
+
 
 
   /**
