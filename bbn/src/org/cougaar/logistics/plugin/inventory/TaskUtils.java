@@ -85,7 +85,22 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       if (obj instanceof Asset) {
 	Asset a = (Asset)obj;
 	return a.getTypeIdentificationPG().getTypeIdentification().equals(type);
-      }
+      } 
+    }
+    return false;
+  }
+
+ /** @param task
+   *  @param type type identification string
+   *  @return true if the task's OFTYPE preposition's indirect object is 
+   *  an string with nomeclature equal to 'type'.*/
+  public static boolean isTaskOfTypeString(Task t, String type) {
+    PrepositionalPhrase pp =t.getPrepositionalPhrase(Constants.Preposition.OFTYPE) ;
+    if (pp != null) {
+      Object obj = pp.getIndirectObject();
+      if (obj instanceof String) {
+	return ((String)obj).equals(type);
+      } 
     }
     return false;
   }
