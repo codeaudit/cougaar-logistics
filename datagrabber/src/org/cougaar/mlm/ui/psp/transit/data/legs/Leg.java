@@ -79,8 +79,9 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
   protected static final String LEG_TYPE_ATTR = "Type";
   protected static final String CONV_ID_ATTR = "ConvID";
   protected static final String ROUTE_ID_ATTR = "RouteID";
-  protected static final String MISSION_ID_ATTR = "MissionID";
   protected static final String IS_DETAIL_ATTR= "IsDetail";
+
+  protected static final boolean writePreferences = false;
 
   //Variables:
   ////////////
@@ -98,8 +99,6 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
   public int legType;
   public UID conveyanceUID;
   public UID routeUID;
-  /**unique identifier to group missions**/
-  public UID missionUID;
 
   /**this leg provides detail (that is additional information, 
    * ie what deck) for another existing leg that exactly mirrors it in time
@@ -154,21 +153,34 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
    * @param w output Writer
    **/
   public void toXML(XMLWriter w) throws IOException{
-    w.optagln(NAME_TAG,
-	      UID_ATTR, UID.toString(),
-	      START_TIME_ATTR, Long.toString(startTime),
-	      END_TIME_ATTR, Long.toString(endTime),
-	      READYAT_ATTR, Long.toString(readyAtTime),
-	      EARLIEST_END_ATTR, Long.toString(earliestEndTime),
-	      BEST_END_ATTR, Long.toString(bestEndTime),
-	      LATEST_END_ATTR,Long.toString(latestEndTime),
-	      START_LOC_ATTR, startLoc,
-	      END_LOC_ATTR, endLoc,
-	      LEG_TYPE_ATTR, Integer.toString(legType),
-	      CONV_ID_ATTR, conveyanceUID.toString(),
-	      ROUTE_ID_ATTR, routeUID.toString(),
-	      MISSION_ID_ATTR, missionUID.toString(),
-	      IS_DETAIL_ATTR, isDetail?"T":"F");
+    if (writePreferences) {
+      w.optagln(NAME_TAG,
+		UID_ATTR, UID.toString(),
+		START_TIME_ATTR, Long.toString(startTime),
+		END_TIME_ATTR, Long.toString(endTime),
+		READYAT_ATTR, Long.toString(readyAtTime),
+		EARLIEST_END_ATTR, Long.toString(earliestEndTime),
+		BEST_END_ATTR, Long.toString(bestEndTime),
+		LATEST_END_ATTR,Long.toString(latestEndTime),
+		START_LOC_ATTR, startLoc,
+		END_LOC_ATTR, endLoc,
+		LEG_TYPE_ATTR, Integer.toString(legType),
+		CONV_ID_ATTR, conveyanceUID.toString(),
+		ROUTE_ID_ATTR, routeUID.toString(),
+		IS_DETAIL_ATTR, isDetail?"T":"F");
+    }
+    else {
+      w.optagln(NAME_TAG,
+		UID_ATTR, UID.toString(),
+		START_TIME_ATTR, Long.toString(startTime),
+		END_TIME_ATTR, Long.toString(endTime),
+		START_LOC_ATTR, startLoc,
+		END_LOC_ATTR, endLoc,
+		LEG_TYPE_ATTR, Integer.toString(legType),
+		CONV_ID_ATTR, conveyanceUID.toString(),
+		ROUTE_ID_ATTR, routeUID.toString(),
+		IS_DETAIL_ATTR, isDetail?"T":"F");
+    }
 
     for(int i=0;i<numCarriedAssets();i++)
       w.tagln(ASSET_TAG,getCarriedAssetAt(i).toString());
@@ -185,15 +197,19 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
     out.writeObject(UID);
     out.writeLong(startTime);
     out.writeLong(endTime);
-    out.writeLong(readyAtTime);
-    out.writeLong(earliestEndTime);
-    out.writeLong(latestEndTime);
+
+    if (writePreferences) {
+      out.writeLong(readyAtTime);
+      out.writeLong(earliestEndTime);
+      out.writeLong(bestEndTime);
+      out.writeLong(latestEndTime);
+    }
+
     out.writeObject(startLoc.intern());
     out.writeObject(endLoc.intern());
     out.writeInt(legType);
     out.writeObject(conveyanceUID);
     out.writeObject(routeUID);
-    out.writeObject(missionUID);
     out.writeBoolean(isDetail);
     out.writeInt (assetsOnLeg.size());
 
@@ -214,15 +230,19 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
     UID = (UID)in.readObject();
     startTime = in.readLong();
     endTime = in.readLong();
-    readyAtTime = in.readLong();
-    earliestEndTime = in.readLong();
-    latestEndTime = in.readLong();
+
+    if (writePreferences) {
+      readyAtTime = in.readLong();
+      earliestEndTime = in.readLong();
+      bestEndTime = in.readLong();
+      latestEndTime = in.readLong();
+    }
+
     startLoc = (String) in.readObject();
     endLoc = (String) in.readObject();
     legType = in.readInt();
     conveyanceUID = (UID) in.readObject();
     routeUID = (UID) in.readObject();
-    missionUID = (UID) in.readObject();
     isDetail = in.readBoolean();
 
     int numToRead = in.readInt();
@@ -252,16 +272,19 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
 	UID=UID.toUID(attr.getValue(UID_ATTR));
 	startTime=Long.parseLong(attr.getValue(START_TIME_ATTR));
 	endTime=Long.parseLong(attr.getValue(END_TIME_ATTR));
-	readyAtTime=Long.parseLong(attr.getValue(READYAT_ATTR));
-	earliestEndTime=Long.parseLong(attr.getValue(EARLIEST_END_ATTR));
-	bestEndTime=Long.parseLong(attr.getValue(BEST_END_ATTR));
-	latestEndTime=Long.parseLong(attr.getValue(LATEST_END_ATTR));
+
+	if (writePreferences) {
+	  readyAtTime=Long.parseLong(attr.getValue(READYAT_ATTR));
+	  earliestEndTime=Long.parseLong(attr.getValue(EARLIEST_END_ATTR));
+	  bestEndTime=Long.parseLong(attr.getValue(BEST_END_ATTR));
+	  latestEndTime=Long.parseLong(attr.getValue(LATEST_END_ATTR));
+	}
+
 	startLoc=attr.getValue(START_LOC_ATTR);
 	endLoc=attr.getValue(END_LOC_ATTR);
 	legType=Integer.parseInt(attr.getValue(LEG_TYPE_ATTR));
 	conveyanceUID=UID.toUID(attr.getValue(CONV_ID_ATTR));
 	routeUID=UID.toUID(attr.getValue(ROUTE_ID_ATTR));
-	missionUID=UID.toUID(attr.getValue(MISSION_ID_ATTR));
 	isDetail=attr.getValue(IS_DETAIL_ATTR).equals("Y");
       }else if(name.equals(ASSET_TAG)){
 	addCarriedAsset(UID.toUID(data));

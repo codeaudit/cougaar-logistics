@@ -434,9 +434,6 @@ public abstract class DataComputer {
     leg.startLoc = startLoc;
     leg.endLoc = endLoc;
 
-    // use task's UID as the mission ID
-    leg.missionUID = task.getUID();
-
     if (DEBUG) {
       System.out.println(
           "DataComputer.computeLegFromTask - for leg " + leg + 
@@ -552,9 +549,6 @@ public abstract class DataComputer {
           (GeolocLocation)ie.getEndLocation());
     long endTime = ie.getEndTime();
     leg.endTime = endTime;
-
-    // use task's UID as the mission ID
-    leg.missionUID = task.getUID();
 
     // use start/end values for preferred time ranges
     leg.readyAtTime = leg.startTime;
