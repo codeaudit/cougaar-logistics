@@ -42,6 +42,18 @@ import org.cougaar.glm.ldm.asset.NewPhysicalPG;
 import org.cougaar.glm.ldm.asset.PhysicalPG;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
 
+import org.cougaar.glm.ldm.asset.ClassISubsistence;
+import org.cougaar.glm.ldm.asset.ClassIIClothingAndEquipment;
+import org.cougaar.glm.ldm.asset.ClassIIIPOL;
+import org.cougaar.glm.ldm.asset.ClassIVConstructionMaterial;
+import org.cougaar.glm.ldm.asset.ClassVAmmunition;
+import org.cougaar.glm.ldm.asset.ClassVIPersonalDemandItem;
+import org.cougaar.glm.ldm.asset.ClassVIIMajorEndItem;
+import org.cougaar.glm.ldm.asset.ClassVIIIMedical;
+import org.cougaar.glm.ldm.asset.ClassIXRepairPart;
+import org.cougaar.glm.ldm.asset.ClassXNonMilitaryItem;
+import org.cougaar.glm.ldm.asset.Person;
+
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
@@ -111,6 +123,19 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public final Integer LEVEL_6_TIME_HORIZON_DEFAULT = LEVEL_6_MAX;
 
   public final int NUM_TRANSPORT_CLASSES = 6;
+  public final int ASSET_CLASS_UNKNOWN = 0;
+  public final int ASSET_CLASS_1 = 1;
+  public final int ASSET_CLASS_2 = 2;
+  public final int ASSET_CLASS_3 = 3;
+  public final int ASSET_CLASS_4 = 4;
+  public final int ASSET_CLASS_5 = 5;
+  public final int ASSET_CLASS_6 = 6;
+  public final int ASSET_CLASS_7 = 7;
+  public final int ASSET_CLASS_8 = 8;
+  public final int ASSET_CLASS_9 = 9;
+  public final int ASSET_CLASS_10 = 10;
+  public final int ASSET_CLASS_CONTAINER = 11;
+  public final int ASSET_CLASS_PERSON = 12;
 
   public void localSetup() {     
     super.localSetup();
@@ -562,8 +587,8 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
     Object firstItem = realAssets.iterator().next();
 
-    PhysicalPG cccdPhysicalPG     = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
-    NewCargoCatCodeDimensionPG cccdPG     = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
+    PhysicalPG cccdPhysicalPG         = (PhysicalPG)ldmf.createPropertyGroup(PhysicalPG.class);
+    NewCargoCatCodeDimensionPG cccdPG = (NewCargoCatCodeDimensionPG)ldmf.createPropertyGroup(CargoCatCodeDimensionPG.class);
     cccdPG.setDimensions(cccdPhysicalPG);
 
     if (firstItem instanceof AggregateAsset) { // there is only one item...
@@ -597,6 +622,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 
 	if (baseAsset instanceof Container)
 	  cccdPG.setIsContainer(true);
+	cccdPG.setAssetClass(getAssetClass(baseAsset));
       }
     }
     else {
@@ -621,6 +647,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       }
       if (last instanceof Container)
 	cccdPG.setIsContainer(true);
+      cccdPG.setAssetClass(getAssetClass((Asset)last));
     }
 
     physicalPG.setMass  (new Mass     (mass,   Mass.KILOGRAMS ));
@@ -720,6 +747,41 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
 	     whichPG.getFootprintArea().getSquareMeters() + " m^2" + 
 	     whichPG.getVolume().getCubicMeters() + " m^3 " + 
 	     whichPG.getMass().getShortTons() + " short tons.");
+  }
+
+  private int getAssetClass(Asset a) {
+    int value = (a instanceof ClassISubsistence) ? 
+      ASSET_CLASS_1 :
+      (a instanceof ClassIIClothingAndEquipment) ?
+      ASSET_CLASS_2 :
+      (a instanceof ClassIIIPOL) ?
+      ASSET_CLASS_3 :
+      (a instanceof ClassIVConstructionMaterial) ?
+      ASSET_CLASS_4 :
+      (a instanceof ClassVAmmunition) ?
+      ASSET_CLASS_5 :
+      (a instanceof ClassVIPersonalDemandItem) ?
+      ASSET_CLASS_6 :
+      (a instanceof ClassVIIMajorEndItem) ?
+      ASSET_CLASS_7 :
+      (a instanceof ClassVIIIMedical) ?
+      ASSET_CLASS_8 :
+      (a instanceof ClassIXRepairPart) ?
+      ASSET_CLASS_9 :
+      (a instanceof ClassXNonMilitaryItem) ?
+      ASSET_CLASS_10 :
+      ((a instanceof Container) ||
+       (a instanceof org.cougaar.glm.ldm.asset.Package)// ||
+       //       (glmAssetHelper.isPallet(a))) ?
+       ) ?
+      ASSET_CLASS_CONTAINER :
+      ((a instanceof Person) ||
+       ((a instanceof GLMAsset) &&
+        (((GLMAsset)a).hasPersonPG()))) ?
+      ASSET_CLASS_PERSON :
+      ASSET_CLASS_UNKNOWN;
+
+    return value;
   }
 
   /** 
