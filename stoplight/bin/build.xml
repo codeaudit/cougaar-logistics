@@ -34,7 +34,7 @@ ARCHIVE_TIME=${build.time}
   <mkdir dir="${build}"/>
   <javac classpathref="tic.build.overlay.class.path" srcdir="${src}" destdir="${build}"/>
   <jar jarfile="staging/lib/stoplight.jar" basedir="${build}"/>
-	<signjar jar="staging/lib/stoplight.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+	<signjar jar="staging/lib/stoplight.jar" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 	<move todir="staging/Manifest">
 		<fileset dir="Manifest"/>
 	</move>
