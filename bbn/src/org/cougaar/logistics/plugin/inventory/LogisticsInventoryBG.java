@@ -51,7 +51,7 @@ import org.cougaar.logistics.plugin.inventory.TaskUtils;
 public class LogisticsInventoryBG implements PGDelegate {
 
   // Bucket will be a knob, this implementation temporary
-  private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 3;
+  private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 1;
   private Duration durationArray[];
   protected LogisticsInventoryPG myPG;
   protected long startTime;
@@ -68,13 +68,13 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected ArrayList refillRequisitions;
   protected ArrayList dueOutList;
 //    protected Schedule inventoryLevelsSchedule;
-  protected Schedule criticalLevelsSchedule;
   // projectedDemandList mirrors dueOutList, each element
   // contains the sum of all Projected Demand for corresponding
   // bucket in dueOutList
   protected double projectedDemandArray[];
   // Policy inputs
   protected int criticalLevel = 3;
+  protected Schedule criticalLevelsSchedule;
   // Lists for csv logging & UI support
   protected ArrayList projWithdrawList;
   protected ArrayList withdrawList;
@@ -82,6 +82,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected ArrayList supplyList;
   protected Schedule  bufferedCritLevels;
   // protected <unknown> bufferedInvLevels;
+  boolean failures = false;
   
   public LogisticsInventoryBG(LogisticsInventoryPG pg) {
     myPG = pg;
@@ -250,11 +251,53 @@ public class LogisticsInventoryBG implements PGDelegate {
     return taskList;
   }
 
-  public Schedule computeCriticalLevel() {
-    // Need a generic way of thinking about buckets and
-    // reconciling the buckets with the criticalLevel,
-    // a number representing days
-    return null;
+  public Schedule computeCriticalLevels() {
+    long days_per_bucket = MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY;
+    double cl_per_bucket = (double)criticalLevel/(double)days_per_bucket;
+//      System.out.println("criticalLevel: "+criticalLevel+", days_per_bucket: "+
+//  		       days_per_bucket+", cl_per_bucket: "+cl_per_bucket);
+    int mode = (int)Math.floor(cl_per_bucket);
+    QuantityScheduleElement qse;
+    long start = convertBucketToTime(0);
+    double Ci;
+    Vector levels = new Vector(projectedDemandArray.length);
+    // Number of days in criticalLevel falls within a single bucket
+    if (mode == 0) { 
+      for (int i=0; i < projectedDemandArray.length; i++) {
+	Ci =  projectedDemandArray[i] * cl_per_bucket;
+	qse = ScheduleUtils.buildQuantityScheduleElement(Ci, start, start+MSEC_PER_BUCKET);
+	start = start + MSEC_PER_BUCKET;
+	levels.add(qse);
+      }
+    } else { // Number of days in criticalLevel spans multiple buckets
+      int buckets = (int)Math.floor(cl_per_bucket);
+      double fe = cl_per_bucket - buckets;
+      Ci = 0.0;
+      for (int i=1; i <= buckets; i++) {
+	Ci += projectedDemandArray[i];
+      }
+      Ci += projectedDemandArray[buckets+1]*fe;
+      qse = ScheduleUtils.buildQuantityScheduleElement(Ci, start, start+MSEC_PER_BUCKET);
+      start = start + MSEC_PER_BUCKET;
+      levels.add(qse);
+      for (int i=1; i < projectedDemandArray.length-buckets-1; i++) {
+	Ci =  Ci - projectedDemandArray[i] + projectedDemandArray[i+buckets]*(1-fe)+
+	  projectedDemandArray[i+buckets+1]*fe;
+	qse = ScheduleUtils.buildQuantityScheduleElement(Ci, start, start+MSEC_PER_BUCKET);
+	start = start + MSEC_PER_BUCKET;
+	levels.add(qse);
+      }
+      for (int i=projectedDemandArray.length-buckets-1; i < projectedDemandArray.length; i++) {
+	Ci =  Ci - projectedDemandArray[i];
+	qse = ScheduleUtils.buildQuantityScheduleElement(Ci, start, start+MSEC_PER_BUCKET);
+	start = start + MSEC_PER_BUCKET;
+	levels.add(qse);
+      }
+    }
+    criticalLevelsSchedule = 
+      GLMFactory.newQuantitySchedule(levels.elements(), "Critical Levels Schedule");
+    printQuantityScheduleTimes(criticalLevelsSchedule);
+    return criticalLevelsSchedule;
   }
 
   public void updateRefillAllocation(Task task) {
@@ -271,7 +314,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     Vector new_elements = new Vector();
     QuantityScheduleElement qse;
     long bucket_zero_time = convertBucketToTime(0);
-    int demand_end = projectedDemandArray.length;
+    int demand_end = projectedDemandArray.length-1;
     for (int i=projectedDemandArray.length-1; i >= 0; i--){
       if (projectedDemandArray[i] > 0.0) {
 	demand_end = i;
@@ -347,6 +390,12 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   private int findLastBucket(Task task) {
     return 0;
+  }
+
+  // failures boolean used to determine when due outs
+  // need to be re-bucketed
+  public void setFailures(boolean value) {
+    failures = value;
   }
 
   // Ask Beth about persistance.  Would like to make sure structures
