@@ -147,6 +147,10 @@ public abstract class PSPWork implements Work, Logger{
   }
 
   public String getName(){
+    return getSimpleName();
+  }
+  
+  protected String getSimpleName () {
     String name = getClass().getName();
     int loc = name.lastIndexOf('.');
     if(loc==-1)
