@@ -498,6 +498,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	(bucket < 0)) {
       return 0.0;
     }
+
     return projectedDemandArray[bucket];
   }
 
@@ -609,7 +610,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   /** 
       Ignore projected demand that occurs before customer switchover day.
    **/
-  private long getEffectiveProjectionStart(Task task, long start) {
+  public long getEffectiveProjectionStart(Task task, long start) {
     long firstProjectionDay;
     Object org = taskUtils.getCustomer(task);
     if (org != null) {

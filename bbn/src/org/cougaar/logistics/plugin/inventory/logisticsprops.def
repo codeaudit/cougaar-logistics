@@ -86,7 +86,8 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	Schedule  getBufferedCritLevels(); \
 	Schedule  getBufferedInvLevels(); \
 	ArrayList getTargetLevelsList(); \
-	ArrayList getActualDemandTasksList();
+	ArrayList getActualDemandTasksList(); \
+	long getEffectiveProjectionStart(Task task, long start);
 
 ;;
 ;; examples
