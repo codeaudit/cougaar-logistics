@@ -53,7 +53,7 @@ import java.util.*;
 public class SubsistenceConsumerBG extends ConsumerBG {
 
   protected SubsistenceConsumerPG myPG;
-  ClassIConsumerPrototypeProvider parentPlugin;
+  transient ClassIConsumerPrototypeProvider parentPlugin;
   String supplyType = "Subsistence";
   private transient LoggingService logger;
   private LogisticsOPlan logOPlan = null;
