@@ -74,15 +74,35 @@ public class SequentialGlobalSeaPlugin extends SequentialGlobalAirPlugin {
 
   protected String type () { return "seaport"; }
 
-  public Organization findOrgForMiddleStep () {
-    Organization org = findOrgWithRole(GLMTransConst.SHIP_PACKER_ROLE);
+  public Organization findOrgForMiddleStep (Task task) {
+    Organization org = null;
+    if (isAmmo((GLMAsset) task.getDirectObject ())) {
+      org = findOrgWithRole(GLMTransConst.AMMO_SHIP_PACKER_ROLE);
+      if (org == null) {
+	org = findOrgWithRole(GLMTransConst.SHIP_PACKER_ROLE);
+      }
+    }
+    else
+      org = findOrgWithRole(GLMTransConst.SHIP_PACKER_ROLE);
+
     if (org == null) {
-      error(".MiddlePortion.planMe - ERROR - No subordinate with role " + 
+      error(getName () + "findOrgForMiddleStep - No subordinate with role " + 
 	    GLMTransConst.SHIP_PACKER_ROLE);
       return null;
     }
     return org;
   }
+
+  /** 
+   * An asset is an ammo container if it has a contents pg, since
+   * only the Ammo Packer put a contents pg on a container.
+   *
+   * NOTE : should call isContainer first!
+   */
+  protected boolean isAmmo (GLMAsset asset) {
+    return asset.hasContentsPG ();
+  }
+
 
   /** don't include destination ports as POEs */
   boolean startsAtPOE (Task task) {

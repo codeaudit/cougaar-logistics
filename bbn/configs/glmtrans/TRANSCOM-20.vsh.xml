@@ -1,0 +1,128 @@
+<SPECS direction="minimize" multitasking="ungrouped" >
+<BESTTIME>
+<OPERATOR operation="-" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<LITERAL value="duration" type="variable" datatype="number" />
+</OPERATOR>
+</BESTTIME>
+<CAPABILITY>
+<OPERATOR operation="or" >
+<OPERATOR operation="and" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="isAmmo" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="boolean" />
+</OPERATOR>
+<OPERATOR operation="=" >
+<OPERATOR operation="get" >
+<LITERAL value="resource" type="variable" datatype="resource" />
+<LITERAL value="type" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="string" />
+</OPERATOR>
+<LITERAL value="AmmoStrategicTransportationProvider" type="constant" datatype="string" />
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="and" >
+<OPERATOR operation="and" >
+<OPERATOR operation="not" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="isAmmo" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="boolean" />
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="&lt;" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="from.latlong.longitude" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="number" />
+</OPERATOR>
+<LITERAL value="-60.0" type="constant" datatype="number" />
+</OPERATOR>
+<OPERATOR operation="=" >
+<OPERATOR operation="get" >
+<LITERAL value="resource" type="variable" datatype="resource" />
+<LITERAL value="type" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="string" />
+</OPERATOR>
+<LITERAL value="ConusStrategicTransportationProvider" type="constant" datatype="string" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="and" >
+<OPERATOR operation="and" >
+<OPERATOR operation="not" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="isAmmo" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="boolean" />
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="&gt;=" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="from.latlong.longitude" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="number" />
+</OPERATOR>
+<LITERAL value="-60.0" type="constant" datatype="number" />
+</OPERATOR>
+<OPERATOR operation="=" >
+<OPERATOR operation="get" >
+<LITERAL value="resource" type="variable" datatype="resource" />
+<LITERAL value="type" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="string" />
+</OPERATOR>
+<LITERAL value="EuroStrategicTransportationProvider" type="constant" datatype="string" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+</CAPABILITY>
+<TASKDURATION>
+<OPERATOR operation="+" >
+<LITERAL value="-60.0" type="constant" datatype="number" />
+<OPERATOR operation="-" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="departure" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+</TASKDURATION>
+<TASKUNAVAIL>
+<OPERATOR operation="list" >
+<OPERATOR operation="interval" >
+<LITERAL value="start_time" type="variable" datatype="datetime" />
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="departure" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="interval" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<LITERAL value="end_time" type="variable" datatype="datetime" />
+</OPERATOR>
+</OPERATOR>
+</TASKUNAVAIL>
+<COLORTESTS>
+</COLORTESTS>
+<FILTERS>
+</FILTERS>
+<VIEWS>
+</VIEWS>
+</SPECS>

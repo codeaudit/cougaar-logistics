@@ -22,38 +22,64 @@ package org.cougaar.logistics.plugin.trans;
 
 import java.util.*;
 
-import org.cougaar.lib.vishnu.client.custom.CustomVishnuAllocatorPlugin;
-import org.cougaar.lib.vishnu.client.XMLizer;
-import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.Organization;
 
-import org.w3c.dom.Document;
+import org.cougaar.lib.callback.UTILFilterCallback;
+import org.cougaar.lib.callback.UTILGenericListener;
+import org.cougaar.lib.callback.UTILWorkflowCallback;
 
-import java.util.Collection;
+import org.cougaar.lib.vishnu.client.XMLizer;
+import org.cougaar.lib.vishnu.client.custom.CustomVishnuAllocatorPlugin;
+
 import org.cougaar.logistics.ldm.Constants;
+
+import org.cougaar.planning.ldm.asset.Asset;
+
 import org.cougaar.planning.ldm.plan.Relationship;
 import org.cougaar.planning.ldm.plan.RelationshipType;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.Task;
+
 import org.cougaar.util.TimeSpan;
+import org.cougaar.util.UnaryPredicate;
+
+import org.w3c.dom.Document;
 
 public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
+  protected Set reportedIDs = new HashSet ();
+  protected Set expectedIDs = new HashSet();
+  protected TranscomDataXMLize transcomDataXMLizer;
+  protected List delayedTasks = new ArrayList ();
+  protected long waitTime = 10000; // millis
+
   public void localSetup() {     
     super.localSetup();
 
+    addExpectedProviders();
+
+    createXMLizer (getRunDirectly()); // we need one of these for getOrganizationRole
+  }
+
+  protected void addExpectedProviders() {
     try {
-      GLOBAL_AIR_ID = (getMyParams().hasParam ("GlobalAirRole")) ?
+      boolean needsAir = !getMyParams().hasParam ("doesNotNeedAirTransportProvider");
+      String GLOBAL_AIR_ID = (getMyParams().hasParam ("GlobalAirRole")) ?
 	getMyParams().getStringParam("GlobalAirRole") :
 	"AirTransportationProvider";
 
-      GLOBAL_SEA_ID = (getMyParams().hasParam ("GlobalSeaRole")) ?
+      String GLOBAL_SEA_ID = (getMyParams().hasParam ("GlobalSeaRole")) ?
 	getMyParams().getStringParam("GlobalSeaRole") :
 	"SeaTransportationProvider";
 
-      NULL_ASSET_ID = (getMyParams().hasParam ("NullAssetRole")) ?
+      String NULL_ASSET_ID = (getMyParams().hasParam ("NullAssetRole")) ?
 	getMyParams().getStringParam("NullAssetRole") :
 	"NullNomen";
+      
+      if (needsAir) 
+	expectedIDs.add (GLOBAL_AIR_ID);
 
+      expectedIDs.add (GLOBAL_SEA_ID);
+      expectedIDs.add (NULL_ASSET_ID);
     } catch(Exception e) {
       error ("got really unexpected exception " + e);
     } 
@@ -72,6 +98,10 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
     if (!super.interestingTask (t))
       return false;
     boolean hasTransport = t.getVerb().equals (Constants.Verb.TRANSPORT);
+
+    if (logger.isDebugEnabled())
+      logger.debug ("found " + t.getUID() + (hasTransport ? " interesting" : " uninteresting"));
+
     return hasTransport;
   }
 
@@ -80,122 +110,99 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
    *
    * @param newAssets new assets found in the container
    */
+  public void handleChangedAssets(Enumeration newAssets) {
+    handleNewAssets (newAssets);
+  }
+
   public void handleNewAssets(Enumeration newAssets) {
     super.handleNewAssets (newAssets);
     if (isInfoEnabled()) {
-      info (".handleNewAssets - got called with " + myNewAssets.size() + " assets.");
+      info ("handleNewAssets - got called with " + myNewAssets.size() + " assets.");
     }
 
     for (Iterator iter = myNewAssets.iterator (); iter.hasNext (); ) {
       String name = "";
 
       Asset asset = (Asset) iter.next();
+      boolean isOrg = false;
       try {
 	if (asset instanceof Organization) {
 	  name = getOrganizationRole(asset);
 	  if (isInfoEnabled()) {
-	      info (".handleNewAssets - received subordinate org : " + asset + "'s name is " + name);
+	    info ("handleNewAssets - received subordinate org : " + asset + "'s name is " + name);
 	  }
 	}
 	else {
 	  name = asset.getTypeIdentificationPG().getNomenclature();
 	  if (isDebugEnabled()) {
-	    debug (".handleNewAssets - " + asset + " is NOT an org.");
+	    debug ("handleNewAssets - " + asset + " is NOT an org.");
 	  }
 	}
       } catch (Exception e) {
-	if (isDebugEnabled()) {
-	  logger.debug (".handleNewAssets - " + asset + " was strange - ", e);
+	if (isWarnEnabled()) {
+	  logger.warn ("handleNewAssets - " + asset + " was strange - ", e);
 	}
       }
 
       if (name != null) {
-	if (name.startsWith (GLOBAL_AIR_ID))
-	  globalAirReport = true;
-	if (name.startsWith (GLOBAL_SEA_ID))
-	  globalSeaReport = true;
-	if (name.startsWith (NULL_ASSET_ID))
-	  nullAssetReport = true;
+	if (expectedIDs.contains (name)) {
+	  if (!reportedIDs.contains(name)) {
+	    if (logger.isInfoEnabled())
+	      logger.info (getName() + " - expected "+  name + " has reported.");
+	    reportedIDs.add (name);
+	  }
+	}
+	else {
+	  if (logger.isInfoEnabled())
+	    logger.info ("ignoring id "+  name);
+	}
       }
     }
   }
 
-  /** replicated from TranscomDataXMLize - evil, but just for the moment */
+  /** calls TranscomDataXMLize */
   protected String getOrganizationRole (Asset asset) {
-    Organization org = (Organization) asset;
-
-    Collection providers = 
-      org.getRelationshipSchedule().getMatchingRelationships(Constants.RelationshipType.PROVIDER_SUFFIX,
-							     TimeSpan.MIN_VALUE,
-							     TimeSpan.MAX_VALUE);
-
-    if (providers == null)
-      return "NO_PROVIDERS";
-
-    if (providers.size () > 1) {
-      if (isDebugEnabled()) {
-	debug ("TranscomDataXMLize.getOrganizationRole - NOTE - org " + org + " has multiple providers.\n");
-      }
-      return "MANY_PROVIDERS";
-    }
-	  
-    if (providers.isEmpty ()) {
-      if (isDebugEnabled()) {
-	debug ("TranscomDataXMLize.getOrganizationRole - Note - no providers for " + org + ", relationships are " +
-	      providers);
-      }	
-      return "NO_PROVIDERS";
-    }
-
-    Relationship relationToSuperior = (Relationship) providers.iterator().next();
-    Role subRoleA  = relationToSuperior.getRoleA();
-    Role subRoleB = relationToSuperior.getRoleB();
-    if (isDebugEnabled()) {
-      debug ("TranscomDataXMLize.getOrganizationRole - org " + org + " - roleA " + subRoleA + " roleB " + subRoleB);
-    }
-    // don't want the converse one - it seems random which org gets to be A and which B
-    return (subRoleA.getName().startsWith ("Converse") ? subRoleB.getName () : subRoleA.getName());
+    return transcomDataXMLizer.getOrganizationRole (asset);
   }
 
   /** use the TranscomDataXMLize XMLizer */
   protected XMLizer createXMLizer (boolean direct) {
-    return new TranscomDataXMLize (direct, logger, GLOBAL_AIR_ID, GLOBAL_SEA_ID, NULL_ASSET_ID);
+    return (transcomDataXMLizer = new TranscomDataXMLize (direct, logger, expectedIDs));
   }
 
   protected Collection getAllAssets() {
-      if (!allNecessaryAssetsReported()) {
-	  if (isWarnEnabled()) {
-	      warn ("Trying to find subordinates, despite not seeing the following in added lists...");
+    if (!allNecessaryAssetsReported()) {
+      if (isWarnEnabled()) {
+	warn ("Trying to find subordinates, despite not seeing the following in added lists...");
 	      
-	      reportMissingAssets();
-	  }
-	  
-	  // send subscription contents through again...
-	  Collection assets = getAssetCallback().getSubscription ().getCollection();
-	  List orgs = new ArrayList ();
-
-	  for (Iterator iter = assets.iterator(); iter.hasNext(); ) {
-	      Asset asset = (Asset) iter.next();
-	      if (asset instanceof Organization) {
-		  String name = getOrganizationRole(asset);
-		  if (!globalAirReport && name.startsWith (GLOBAL_AIR_ID))
-		      orgs.add (asset);
-		  if (!globalSeaReport && name.startsWith (GLOBAL_SEA_ID))
-		      orgs.add (asset);
-	      }
-	  }
-	      
-	  if (!orgs.isEmpty()) {
-	      // send them through again as though they appeared on the added list
-	      if (isWarnEnabled()) {
-		  warn ("Found the missing subord(s) : " + orgs);
-	      }
-
-	      handleNewAssets(Collections.enumeration(orgs));
-	  }
+	reportMissingAssets();
       }
+	  
+      // send subscription contents through again...
+      Collection assets = getAssetCallback().getSubscription ().getCollection();
+      List orgs = new ArrayList ();
 
-      return super.getAllAssets();
+      for (Iterator iter = assets.iterator(); iter.hasNext(); ) {
+	Asset asset = (Asset) iter.next();
+	if (asset instanceof Organization) {
+	  String name = getOrganizationRole(asset);
+	  if (expectedIDs.contains(name) && !reportedIDs.contains(name)) {
+	    orgs.add (asset);
+	  }
+	}
+      }
+	      
+      if (!orgs.isEmpty()) {
+	// send them through again as though they appeared on the added list
+	if (isWarnEnabled()) {
+	  warn ("Found the missing subord(s) : " + orgs);
+	}
+
+	handleNewAssets(Collections.enumeration(orgs));
+      }
+    }
+
+    return super.getAllAssets();
   }
 
   /**
@@ -225,23 +232,34 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
   }
 
   protected boolean allNecessaryAssetsReported () {
-    return (globalSeaReport && globalAirReport && nullAssetReport);
+    return (reportedIDs.size() == expectedIDs.size());
   }
 
   protected void reportMissingAssets () {
-    if (!globalAirReport)
-      error (" - ERROR - missing expected subordinate with type nomen " + GLOBAL_AIR_ID);
-    if (!globalSeaReport)
-      error (" - ERROR - missing expected subordinate with type nomen " + GLOBAL_SEA_ID);
-    if (!nullAssetReport)
-      error (" - ERROR - missing expected asset " + NULL_ASSET_ID);
+    for (Iterator iter = expectedIDs.iterator(); iter.hasNext(); ) {
+      Object key = iter.next();
+      if (!reportedIDs.contains (key)) {
+	error (" - ERROR - missing expected asset with role " + key);
+      }
+    }
   }
 
-  protected String GLOBAL_AIR_ID;
-  protected String GLOBAL_SEA_ID;
-  protected String NULL_ASSET_ID;
-  
-  boolean globalAirReport = false;
-  boolean globalSeaReport = false;
-  boolean nullAssetReport = false;
+  /** so we can deal with race condition between tasks showing up and subordinates showing up */
+  public void processTasks (List tasks) {
+    if (!allNecessaryAssetsReported()) { // if need subordinates aren't there yet, way 10 seconds
+      if (logger.isInfoEnabled())
+	logger.info (getName() + " - necessary subords have not reported, so waiting " + waitTime);
+
+      delayedTasks.addAll (tasks);
+      examineBufferAgainIn (waitTime); // wait 10 seconds and check again
+    }
+    else { // ok, all subords are here, lets go!
+      if (logger.isInfoEnabled())
+	logger.info (getName() + " - all necessary subords have reported, so processing " + tasks.size() + " tasks.");
+
+      tasks.addAll (delayedTasks);
+      delayedTasks.clear();
+      super.processTasks (tasks);
+    }
+  }
 }

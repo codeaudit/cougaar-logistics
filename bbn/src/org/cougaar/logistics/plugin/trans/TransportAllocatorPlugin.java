@@ -22,6 +22,7 @@ package org.cougaar.logistics.plugin.trans;
 
 import org.cougaar.planning.ldm.asset.Asset;
 
+import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.MPTask;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Task;
@@ -32,6 +33,8 @@ import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.lib.filter.UTILSingleTaskAllocatorPlugin;
 
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
@@ -98,6 +101,44 @@ public class TransportAllocatorPlugin extends UTILSingleTaskAllocatorPlugin {
     return (Asset) returnedObj;
   }
   
+  /**
+   * Deal with the tasks that we have accumulated.
+   * Find the asset that is attached to the task 
+   * (in agents with this plugin the vishnu aggregator makes 
+   * the task->asset assignment, encoded as a WITH preposition),
+   * make an allocation, and publish the allocation.
+   *
+   * @param List of tasks to handle
+   * @see #getAssetFromTask
+   */
+  public void processTasks (List tasks) {
+    for (Iterator iter = tasks.iterator(); iter.hasNext(); ) {
+      Task t = (Task) iter.next();
+      if (t.getPlanElement () == null) {
+	Asset a = findAsset(t);
+	PlanElement alloc = createAllocation(t, a);
+	publishAddingOfAllocation(alloc);
+      }
+      else {
+	Object uid = ((Allocation)t.getPlanElement()).getAsset().getUID();
+
+	// this will happen when we become aware of changed tasks
+	if (isInfoEnabled()) {
+	  info (getName () + " task " + t.getUID () + " was already allocated to " + uid);
+	}
+
+	if (!uid.equals(findAsset(t).getUID ())) {
+	  if (isWarnEnabled()) {
+	    warn (getName () + " task " + t.getUID () + " was already allocated to " + uid + 
+		  " but trying to allocate to different asset " + findAsset(t).getUID());
+	  }
+	}
+      }
+    } 
+
+    tasks.clear();
+  }
+
   /** 
    * <pre>
    * Do the actual allocation here

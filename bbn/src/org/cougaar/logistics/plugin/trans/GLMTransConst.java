@@ -140,7 +140,7 @@ public class GLMTransConst {
     public static final String FROMTABLE = "FromTable";
   
   public static final org.cougaar.planning.ldm.plan.Role THEATER_MCC_ROLE =
-    org.cougaar.planning.ldm.plan.Role.getRole("TheaterStrategicTransportationProvider");
+    org.cougaar.planning.ldm.plan.Role.getRole("FromPODGroundTransportationProvider");
 
   // Air Roles
   public static final org.cougaar.planning.ldm.plan.Role GLOBAL_AIR_ROLE = 
@@ -169,6 +169,8 @@ public class GLMTransConst {
     org.cougaar.planning.ldm.plan.Role.getRole("SeaTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role SHIP_PACKER_ROLE =
     org.cougaar.planning.ldm.plan.Role.getRole("ShipPackingTransportationProvider");
+  public static final org.cougaar.planning.ldm.plan.Role AMMO_SHIP_PACKER_ROLE =
+    org.cougaar.planning.ldm.plan.Role.getRole("AmmoShipPackingTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role GLOBAL_SEA_AMMO_ROLE =
     org.cougaar.planning.ldm.plan.Role.getRole("AmmoTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role GENERIC_PORT_ROLE =
@@ -180,11 +182,11 @@ public class GLMTransConst {
 
   // Ground Roles
   public static final org.cougaar.planning.ldm.plan.Role CONUS_GROUND_ROLE =
-    org.cougaar.planning.ldm.plan.Role.getRole("CONUSGroundTransportationProvider");
+    org.cougaar.planning.ldm.plan.Role.getRole("ToPOEGroundTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role COMMERCIAL_GROUND_ROLE =
     org.cougaar.planning.ldm.plan.Role.getRole("CommercialGroundTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role THEATER_GROUND_ROLE =
-    org.cougaar.planning.ldm.plan.Role.getRole("TheaterGroundTransportationProvider");
+    org.cougaar.planning.ldm.plan.Role.getRole("FromPODGroundTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role ITO_ROLE =
     org.cougaar.planning.ldm.plan.Role.getRole("GroundTransportationProvider");
   public static final org.cougaar.planning.ldm.plan.Role TRANSCAP_ROLE =

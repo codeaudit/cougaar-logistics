@@ -1,0 +1,63 @@
+<?xml version="1.0"  encoding="US-ASCII"?>
+
+<!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [
+<!ENTITY AmmoShipPrototypes SYSTEM "AmmoShipPrototypes.ldm.xml">]>
+
+<AssetList>
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                    First the Prototypes                     ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  &AmmoShipPrototypes;
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                      Now the Instances                      ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+<!-- see http://www.msc.navy.mil/cgi-bin/inventory-ship.pl?var=Ammunitionship -->
+<!-- for brief info on all these ships -->
+<!-- As of 12/06/03 there are only 6 ammo ships listed -->
+<!-- BOZO : the prototype info is not right currently and needs to be updated -->
+<!-- GWFV 01/17/01 -->
+
+<!--
+  <instance prototype="Butte_Prototype" id="Butte">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Butte_Mark_II">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Butte_Mark_III">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+-->
+
+  <instance prototype="Butte_Prototype" id="Flint">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Kilauea">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Kiska">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Mount_Baker">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Santa_Barbara">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <instance prototype="Butte_Prototype" id="Shasta">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+</AssetList>
+
+

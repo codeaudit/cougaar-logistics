@@ -264,8 +264,11 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   public boolean isTaskWellFormed(Task taskToCheck) {
     boolean taskTiming = verifyHelper.isTaskTimingCorrect (taskToCheck);
 	
-    if (!taskTiming)
+    if (!taskTiming) {
+      reportError (taskToCheck.getUID () + 
+		   " failed timing constraint check - e.g. is earliest arrival before start?");
       return false;
+    }
 
     if (glmPrepHelper == null)
 	error (getName() + ".isTaskWellFormed - huh? glmPrepHelper is null??");
@@ -312,6 +315,7 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       //	info ("Distance between is : " + 
       //			    UTILUtil.distanceBetween (start, end).getMiles () + " miles.");
     }
+    
     return true;
   }
 

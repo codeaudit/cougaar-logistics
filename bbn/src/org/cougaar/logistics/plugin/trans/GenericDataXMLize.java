@@ -21,6 +21,7 @@
 package org.cougaar.logistics.plugin.trans;
 
 import java.util.Date;
+import java.util.HashSet;
 
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -40,7 +41,7 @@ public class GenericDataXMLize extends TranscomDataXMLize {
     System.getProperty ("GenericDataXMLize.warnAboutMissingSpeed", "false").equals("true");
 
   public GenericDataXMLize (boolean direct, Logger logger) {
-    super (direct, logger, null, null, null);
+    super (direct, logger, new HashSet());
   }
 
   /** 

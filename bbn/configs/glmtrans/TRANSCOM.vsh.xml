@@ -1,5 +1,4 @@
-<?xml version='1.0'?>
-<SPECS direction="minimize" setupdisplay="left" wrapupdisplay="right" multitasking="ungrouped" >
+<SPECS direction="minimize" multitasking="ungrouped" >
 <BESTTIME>
 <OPERATOR operation="-" >
 <OPERATOR operation="get" >
@@ -10,23 +9,6 @@
 <LITERAL value="duration" type="variable" datatype="number" />
 </OPERATOR>
 </BESTTIME>
-<TASKDURATION>
-<OPERATOR operation="+" >
-<LITERAL value="-60.0" type="constant" datatype="number" />
-<OPERATOR operation="-" >
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="arrival" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-<OPERATOR operation="get" >
-<LITERAL value="task" type="variable" datatype="task" />
-<LITERAL value="departure" type="constant" datatype="string" />
-<LITERAL value="" type="variable" datatype="datetime" />
-</OPERATOR>
-</OPERATOR>
-</OPERATOR>
-</TASKDURATION>
 <CAPABILITY>
 <OPERATOR operation="or" >
 <OPERATOR operation="and" >
@@ -69,6 +51,7 @@
 </OPERATOR>
 <OPERATOR operation="/" >
 <OPERATOR operation="-" >
+<OPERATOR operation="-" >
 <OPERATOR operation="get" >
 <LITERAL value="task" type="variable" datatype="task" />
 <LITERAL value="arrival" type="constant" datatype="string" />
@@ -80,10 +63,15 @@
 <LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
 </OPERATOR>
+<OPERATOR operation="*" >
+<LITERAL value="24.0" type="constant" datatype="number" />
 <LITERAL value="3600.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="15.0" type="constant" datatype="number" />
+<LITERAL value="3600.0" type="constant" datatype="number" />
+</OPERATOR>
+</OPERATOR>
+<LITERAL value="24.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
@@ -121,29 +109,35 @@
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="&lt;" >
- <OPERATOR operation="/" >
-  <OPERATOR operation="get" >
-   <LITERAL value="task" type="variable" datatype="task" />
-   <LITERAL value="distance" type="constant" datatype="string" />
-   <LITERAL value="" type="variable" datatype="number" />
-  </OPERATOR>
- <OPERATOR operation="/" >
-  <OPERATOR operation="-" >
-   <OPERATOR operation="get" >
-    <LITERAL value="task" type="variable" datatype="task" />
-    <LITERAL value="arrival" type="constant" datatype="string" />
-    <LITERAL value="" type="variable" datatype="datetime" />
-   </OPERATOR>
-  <OPERATOR operation="get" >
-   <LITERAL value="task" type="variable" datatype="task" />
-   <LITERAL value="departure" type="constant" datatype="string" />
-   <LITERAL value="" type="variable" datatype="datetime" />
-  </OPERATOR>
- </OPERATOR>
- <LITERAL value="3600.0" type="constant" datatype="number" />
+<OPERATOR operation="/" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="distance" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="number" />
+</OPERATOR>
+<OPERATOR operation="/" >
+<OPERATOR operation="-" >
+<OPERATOR operation="-" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="departure" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="15.0" type="constant" datatype="number" />
+<OPERATOR operation="*" >
+<LITERAL value="24.0" type="constant" datatype="number" />
+<LITERAL value="3600.0" type="constant" datatype="number" />
+</OPERATOR>
+</OPERATOR>
+<LITERAL value="3600.0" type="constant" datatype="number" />
+</OPERATOR>
+</OPERATOR>
+<LITERAL value="24.0" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="=" >
@@ -179,6 +173,23 @@
 </OPERATOR>
 </OPERATOR>
 </CAPABILITY>
+<TASKDURATION>
+<OPERATOR operation="+" >
+<LITERAL value="-60.0" type="constant" datatype="number" />
+<OPERATOR operation="-" >
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="departure" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+</TASKDURATION>
 <TASKUNAVAIL>
 <OPERATOR operation="list" >
 <OPERATOR operation="interval" >
@@ -201,4 +212,8 @@
 </TASKUNAVAIL>
 <COLORTESTS>
 </COLORTESTS>
+<FILTERS>
+</FILTERS>
+<VIEWS>
+</VIEWS>
 </SPECS>

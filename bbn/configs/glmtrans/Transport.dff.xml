@@ -14,6 +14,7 @@
 <FIELDFORMAT name="area" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="quantity" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="isPerson" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
+<FIELDFORMAT name="isAmmo" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="isVehicle" datatype="boolean" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 <FIELDFORMAT name="distance" datatype="number" is_subobject="false" is_globalptr="false" is_list="false" is_key="false" />
 </OBJECTFORMAT>

@@ -81,7 +81,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
    */
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
     if (isInfoEnabled())
-      logger.info(getAgentIdentifier() + " : Filtering for Expandable Tasks...");
+      info(getAgentIdentifier() + " : Filtering for Expandable Tasks...");
     myInputTaskCallback = new UTILExpandableChildTaskCallback (bufferingThread, logger);
     return myInputTaskCallback;
   } 
@@ -96,18 +96,20 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       boolean alreadyFound = false;
 
       if (isInfoEnabled()) {
-	if (!enum.hasMoreElements())
-	  logger.info ("no tasks to replan on redo?");
+	if (!enum.hasMoreElements()) {
+	  info ("no tasks to replan on redo?");
+	}
       }
 
       while (enum.hasMoreElements()) {
-	if (alreadyFound)
-	  logger.warn(getAgentIdentifier() + " - more than one determine requirements task!");
+	if (alreadyFound) {
+	  warn(getAgentIdentifier() + " - more than one determine requirements task!");
+	}
 	Task t = (Task) enum.nextElement();
 	alreadyFound = true;
 	if (t.getPlanElement() == null) {
 	  if (isInfoEnabled()) {
-	    logger.info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled for task " +t.getUID());
+	    info(getAgentIdentifier() + " - redoTasks: Null Plan Element to be filled for task " +t.getUID());
 	  }
 	  handleTask(t, subscriptionResults);
 	}
@@ -117,12 +119,12 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 	  // check to see if org activity in the past before we go tearing up the log plan
 	  if (orgActivityInThePast (subscriptionResults)) {
 	    if (isInfoEnabled()) {
-	      logger.info(getAgentIdentifier() + " - redoTasks: not replanning " + t.getUID() + " because it's in the past.");
+	      info(getAgentIdentifier() + " - redoTasks: not replanning " + t.getUID() + " because it's in the past.");
 	    }
 	  }
 	  else {
 	    if (isInfoEnabled()) {
-	      logger.info(getAgentIdentifier() + " - redoTasks: Plan Element removed from " + t.getUID() + " and replanned.");
+	      info(getAgentIdentifier() + " - redoTasks: Plan Element removed from " + t.getUID() + " and replanned.");
 	    }
 
 	    publishRemove(prevPE); // only remove old results if activity is in the future
@@ -131,7 +133,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 	    // postcondition test
 	    if ((t.getPlanElement () == null) ||
 		(t.getPlanElement () == prevPE)) {
-	      logger.warn (getAgentIdentifier() + 
+	      warn (getAgentIdentifier() + 
 			   " - redoTasks: didn't replan " + t.getUID () + 
 			   " properly, PE not updated.");
 	    }
@@ -140,25 +142,27 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       }
     }
     else {
-      logger.info ("Not acting on change since not all required elements on blackboard.");
+      if (isInfoEnabled()) {
+	info ("Not acting on change since not all required elements on blackboard.");
+      }
     }
   }
 
   public void handleNewOrganizations (Enumeration e) {
     if (isInfoEnabled())
-      logger.info ("Got new organization - " + e.nextElement());
+      info ("Got new organization - " + e.nextElement());
     redoTasks();
   }
 
   public void handleNewParameterizedAssets (Enumeration e, String key) {
     if (isInfoEnabled())
-      logger.info ("Got new assets - " + e.nextElement() + " key " +key);
+      info ("Got new assets - " + e.nextElement() + " key " +key);
     redoTasks();
   }
 
   public void handleNewOrgActivities (Enumeration e) {
     if (isInfoEnabled())
-      logger.info ("Got new org activity - " + e.nextElement());
+      info ("Got new org activity - " + e.nextElement());
     redoTasks();
   }
 
@@ -171,12 +175,12 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
    */
   public void handleChangedOrganizations (Enumeration e) {
     if (isInfoEnabled())
-      logger.info ("Got changed organization - " + e.nextElement() + " but not replanning.");
+      info ("Got changed organization - " + e.nextElement() + " but not replanning.");
   }
 
   public void handleChangedParameterizedAssets (Enumeration e, String key) {
     if (isInfoEnabled())
-      logger.info ("Got changed assets - " + e.nextElement() + " key " +key);
+      info ("Got changed assets - " + e.nextElement() + " key " +key);
     redoTasks();
   }
 
@@ -184,7 +188,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
     if (isInfoEnabled()) {
       while (e.hasMoreElements()) {
 	OrgActivity orgAct = (OrgActivity) e.nextElement();
-	logger.info ("Got changed org activity - " + orgAct + "'s end time " + orgAct.getTimeSpan().getEndDate());
+	info ("Got changed org activity - " + orgAct + "'s end time " + orgAct.getTimeSpan().getEndDate());
       }
     }
     redoTasks();
@@ -316,9 +320,9 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
   protected UTILParameterizedAggregateAssetCallback createParameterizedAggregateAssetCallback (String key, boolean isDynamic) { 
     if (isInfoEnabled()) {
       if (isDynamic)
-          System.out.println (getName () + " : Filtering for Asset/Aggregate Assets (that are dynamic) based on key: " + key + "...");
+          info (getName () + " : Filtering for Asset/Aggregate Assets (that are dynamic) based on key: " + key + "...");
       else
-          System.out.println (getName () + " : Filtering for Asset/Aggregate Assets (that are static) based on key: " + key + "...");
+          info (getName () + " : Filtering for Asset/Aggregate Assets (that are static) based on key: " + key + "...");
     }
         
     UTILParameterizedAggregateAssetCallback cb = new UTILParameterizedAggregateAssetCallback (this, logger, key, isDynamic); 
@@ -373,14 +377,17 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       while (selfOrgsElements.hasMoreElements()) {
           Organization org = (Organization) selfOrgsElements.nextElement();
           if (selfOrg != null) {
-              logger.error (getAgentIdentifier() + " - Expecting only one \"SELF\" Organization! Already have " 
+              error (getAgentIdentifier() + " - Expecting only one \"SELF\" Organization! Already have " 
               + selfOrg + " with self-id: " + getOrgID(selfOrg) + " >> ignoring org with id: " + getOrgID(org));
               continue;
           }
           selfOrg = org;
       }
-      if (selfOrg == null) 
-         logger.info (getAgentIdentifier() + " - Expecting a \"SELF\" Organization!   Expansion will fail");
+      if (selfOrg == null) {
+	if (isInfoEnabled()) {
+	  info (getAgentIdentifier() + " - Expecting a \"SELF\" Organization!   Expansion will fail");
+	}
+      }
 
       return selfOrg;
   }
@@ -398,8 +405,11 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
               break;
           }
       }
-      if (matchingOrgActivity == null) 
-         logger.info (getAgentIdentifier() + " - Expecting an org Activity with id " + id + "!   Expansion will fail");
+      if (matchingOrgActivity == null) {
+	if (isInfoEnabled()) {
+	  info (getAgentIdentifier() + " - Expecting an org Activity with id " + id + "!   Expansion will fail");
+	}
+      }
 
       return matchingOrgActivity;
   }
@@ -440,20 +450,21 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       SubscriptionResults results = new SubscriptionResults();
       results.selfOrg = getSelfOrg();
       if (results.selfOrg == null) {
-	if (logger.isInfoEnabled()) {
-          logger.info (getAgentIdentifier() + " - No self org yet.");
+	if (isInfoEnabled()) {
+          info (getAgentIdentifier() + " - No self org yet.");
 	}
 	return null; // if no self org, not valid
       }
 
       results.selfOrgID = getOrgID(results.selfOrg);
-      if (logger.isInfoEnabled()) 
-          logger.info (getAgentIdentifier() + " - Found Self: " + results.selfOrgID);
+      if (isInfoEnabled()) {
+	info (getAgentIdentifier() + " - Found Self: " + results.selfOrgID);
+      }
 
       results.selfDeployOrgActivity = getOrgActivity(results.selfOrgID);
       if (results.selfDeployOrgActivity == null) {
-	if (logger.isInfoEnabled()) {
-          logger.info (getAgentIdentifier() + " - no self deploy org act yet.");
+	if (isInfoEnabled()) {
+          info (getAgentIdentifier() + " - no self deploy org act yet.");
 	}
 	return null;  // if no deployment activity, not valid
       }
@@ -462,8 +473,8 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       results.MEIAssets = getMEIAssets();
       if ( (results.personAssets == null || results.personAssets.size() == 0) && 
            (results.MEIAssets == null || results.MEIAssets.size() == 0) ) {
-	if (logger.isInfoEnabled()) {
-          logger.info (getAgentIdentifier() + " - no people or MEI assets yet.");
+	if (isInfoEnabled()) {
+          info (getAgentIdentifier() + " - no people or MEI assets yet.");
 	}
 	return null;  // if nothing to transport, not valid
       }
@@ -521,7 +532,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 
     if (subtasks.size() > 0) {
       if (isInfoEnabled()) {
-	logger.info(getAgentIdentifier() + " - handleTask: Expanding " + t.getUID () + 
+	info (getAgentIdentifier() + " - handleTask: Expanding " + t.getUID () + 
 		    " with " + subtasks.size() + " subtasks.");
       }
 
@@ -534,7 +545,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
     }
     else {
       // postcondition test
-      logger.warn (getAgentIdentifier() + " - publishing no subtasks for " +t.getUID()+ 
+      warn (getAgentIdentifier() + " - publishing no subtasks for " +t.getUID()+ 
 		   " despite having subscription results = " + subscriptionResults);
     }
   }
@@ -590,7 +601,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
 
       if (orgActivityInThePast (subscriptionResults)) {
 	long curr = currentTimeMillis();
-	logger.warn(getName () + ": orgActivity for agent " + getAgentIdentifier () + 
+	warn(getName () + ": orgActivity for agent " + getAgentIdentifier () + 
 		    " is in the past, will be ignored: activity thru time: " + thruTime.toString() + 
 		    " vs. cougaar-time: " + (new Date(curr)).toString());
 	return (new Vector());  // return empty vector
@@ -634,7 +645,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
            "StrategicTransportation" );
         strans = (AbstractAsset) ldmf.createInstance( strans_proto );
       } catch (Exception exc) {
-        logger.error (getAgentIdentifier() + " - Unable to create abstract strategictransport\n"+exc);
+        error (getAgentIdentifier() + " - Unable to create abstract strategictransport\n"+exc);
       }
 
       prepositions.add(prepHelper.makePrepositionalPhrase(ldmf,
@@ -733,7 +744,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
       
       // postcondition test
       if (subtasks.isEmpty()) {
-	logger.warn (getAgentIdentifier() + " - producing no subtasks, expecting at least one of people or assets,\n" + 
+	warn (getAgentIdentifier() + " - producing no subtasks, expecting at least one of people or assets,\n" + 
 		     "num people " + subscriptionResults.personAssets.size() + 
 		     " num assets " + subscriptionResults.MEIAssets.size());
       }
@@ -761,7 +772,7 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
     }
 
     if (isWarnEnabled()) {
-      logger.warn (getAgentIdentifier() + " - taskInThePast : thruTime is null in deploy org activity???");
+      warn (getAgentIdentifier() + " - taskInThePast : thruTime is null in deploy org activity???");
     }
 
     return false;

@@ -94,7 +94,7 @@ public class SeaDataXMLize extends GenericDataXMLize {
 	
     boolean isContainer = isContainer (baseAsset);
     dataHelper.createField(object, "Transport", "isContainer", isContainer (baseAsset) ? TRUE : FALSE);
-    dataHelper.createField(object, "Transport", "isAmmo", (isContainer ? (isAmmo (baseAsset) ? TRUE : FALSE) : FALSE));
+    // dataHelper.createField(object, "Transport", "isAmmo", (isContainer ? (isAmmo (baseAsset) ? TRUE : FALSE) : FALSE));
 
     Date earliestArrival = new Date(prefHelper.getEarlyDate(task).getTime());
     dataHelper.createDateField(object, "earliestArrival", earliestArrival);
@@ -122,27 +122,14 @@ public class SeaDataXMLize extends GenericDataXMLize {
   }
 
   /** 
-   * this is a hack -- we tell if a container is an ammo container if it comes 
-   * from the ammo packer.  There should be a better way to tell that it's a 
-   * container full of ammo.
+   * An asset is an ammo container if it has a contents pg, since
+   * only the Ammo Packer put a contents pg on a container.
    *
    * NOTE : should call isContainer first!
    */
   protected boolean isAmmo (GLMAsset asset) {
-      return asset.hasContentsPG ();
-      /*
-    String unit = "";
-    try{
-      if (asset.hasForUnitPG())
-	unit = asset.getForUnitPG ().getUnit ();
-    } catch (Exception e) {
-      return false;
-    }
-	
-    return unit.equals("191-ORDBN") || unit.equals ("OSC") || unit.equals ("IOC") || getAssetType(asset).equals ("20FT_AMMO_CONTAINER");
-      */
+    return asset.hasContentsPG ();
   }
-
 
   protected double getContainerCapacity (GLMAsset asset) {
     return (asset.hasContainPG()) ?

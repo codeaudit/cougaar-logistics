@@ -103,6 +103,9 @@ public class DefaultPreferenceAggregator implements PreferenceAggregator {
     // System.out.println(" PREFERENCEAGG--> agg quant is " + quantity);
     //startTime = getStartOfPeriod();
     prefs.add(makeStartPreference(startTime, rootFactory));
+    if (earliest < startTime) {
+      earliest = startTime+60000;  // earliest arrival should never be before start time
+    }
     // make the endTime preference...
     prefs.add(makeEndPreference(earliest, best, latest, rootFactory));
     prefs.add(makeQuantityPreference(quantity, rootFactory));

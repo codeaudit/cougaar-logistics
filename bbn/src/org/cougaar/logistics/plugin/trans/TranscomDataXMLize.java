@@ -22,28 +22,33 @@ package org.cougaar.logistics.plugin.trans;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Set;
 
-import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.glm.ldm.asset.Container;
 import org.cougaar.glm.ldm.asset.GLMAsset;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
-
-import org.cougaar.logistics.plugin.trans.GLMTransConst;
 
 import org.cougaar.glm.util.GLMMeasure;
 import org.cougaar.glm.util.GLMPreference;
 import org.cougaar.glm.util.GLMPrepPhrase;
 
-import org.cougaar.lib.util.UTILPreference;
+import org.cougaar.lib.util.UTILAsset;
 
 import org.cougaar.lib.vishnu.client.custom.CustomDataXMLize;
 
+import org.cougaar.logistics.ldm.Constants;
+import org.cougaar.logistics.plugin.trans.GLMTransConst;
+
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.asset.AssetGroup;
 
 import org.cougaar.planning.ldm.measure.Distance;
 
 import org.cougaar.planning.ldm.plan.Relationship;
+import org.cougaar.planning.ldm.plan.RelationshipSchedule;
 import org.cougaar.planning.ldm.plan.RelationshipType;
 import org.cougaar.planning.ldm.plan.Role;
 import org.cougaar.planning.ldm.plan.Task;
@@ -60,15 +65,21 @@ import org.w3c.dom.Element;
  * <p>
  */
 public class TranscomDataXMLize extends CustomDataXMLize {
-  public TranscomDataXMLize (boolean direct, Logger logger, String GLOBAL_AIR_ID, String GLOBAL_SEA_ID, String NULL_ASSET_ID) {
+  public static final String TRUE  = "true";
+  public static final String FALSE = "false";
+
+  protected Set assetIncludeSet;
+  protected UTILAsset assetHelper;
+  protected Organization self;
+
+  public TranscomDataXMLize (boolean direct, Logger logger, Set includeSet) {
     super (direct, logger);
     glmPrepHelper = new GLMPrepPhrase (logger);
     glmPrefHelper = new GLMPreference (logger);
     measureHelper = new GLMMeasure    (logger);
 
-    this.GLOBAL_AIR_ID = GLOBAL_AIR_ID;
-    this.GLOBAL_SEA_ID = GLOBAL_SEA_ID;
-    this.NULL_ASSET_ID = NULL_ASSET_ID;
+    this.assetIncludeSet = includeSet;
+    this.assetHelper = new UTILAsset (logger);
   }
   
   public boolean interestingTask(Task t) {
@@ -116,9 +127,7 @@ public class TranscomDataXMLize extends CustomDataXMLize {
       logger.debug ("TranscomDataXMLize.processAsset - created resource " + object);
 	
     // ignore all but global air, sea, and nomenclature
-    return (type.startsWith (GLOBAL_AIR_ID) ||
-	    type.startsWith (GLOBAL_SEA_ID) ||
-	    type.startsWith (NULL_ASSET_ID));
+    return (assetIncludeSet.contains (type));
   }
 
   /** 
@@ -127,30 +136,94 @@ public class TranscomDataXMLize extends CustomDataXMLize {
    */
   protected String getOrganizationRole (Asset asset) {
     Organization org = (Organization) asset;
+    if (org.isSelf())
+      self = org;
 
     Collection providers = 
       org.getRelationshipSchedule().getMatchingRelationships(Constants.RelationshipType.PROVIDER_SUFFIX,
 							     TimeSpan.MIN_VALUE,
 							     TimeSpan.MAX_VALUE);
 
+    if (providers == null || providers.isEmpty()) {
+      if (logger.isInfoEnabled()) {
+	logger.info ("TranscomDataXMLize.getOrganizationRole - no providers for " + org + " schedule is " +
+		     org.getRelationshipSchedule() +
+		     " so getting superiors (which should be a TRANSCOM agent).");
+      }
+
+      /*
+      if (self != null) {
+	RelationshipSchedule schedule = self.getRelationshipSchedule();
+
+	Collection selfProviders = 
+	  schedule.getMatchingRelationships(Constants.RelationshipType.PROVIDER_SUFFIX,
+					    TimeSpan.MIN_VALUE,
+					    TimeSpan.MAX_VALUE);
+	if (selfProviders.isEmpty()) {
+	  if (logger.isInfoEnabled()) {
+	    logger.info ("hmmm, no providers on self schedule, it's " + schedule);
+	  }
+	}
+
+	for (Iterator iter = selfProviders.iterator (); iter.hasNext(); ) {
+	  Relationship relation = (Relationship) iter.next();
+	  if (schedule.getOther (relation).equals (org)) {
+	    Role subRoleA = relation.getRoleA();
+	    Role subRoleB = relation.getRoleB();
+	    if (logger.isWarnEnabled()) {
+	      logger.warn ("TranscomDataXMLize.getOrganizationRole - returning role for " + org);
+	    }
+	    return (subRoleA.getName().startsWith ("Converse") ? subRoleB.getName () : subRoleA.getName());
+	  }
+	  else {
+	    if (logger.isInfoEnabled()) {
+	      logger.info ("TranscomDataXMLize.getOrganizationRole - skipping provider " + schedule.getOther(relation) +
+			   " that is not new org " + org);
+	    }
+	  }
+	}
+      }
+      else {
+	if (logger.isInfoEnabled()) {
+	  logger.info ("TranscomDataXMLize.getOrganizationRole - no self org.");
+	}
+      }
+      
+      providers = org.getSuperiors(TimeSpan.MIN_VALUE, TimeSpan.MAX_VALUE);
+      */
+    }
+
     if (providers == null)
       return "NO_PROVIDERS";
 
     if (providers.size () > 1) {
-      if (logger.isDebugEnabled()) 
-	logger.debug ("TranscomDataXMLize.getOrganizationRole - NOTE - org " + org + " has multiple providers.\n");
+      if (logger.isInfoEnabled()) {
+	logger.info ("TranscomDataXMLize.getOrganizationRole - NOTE - org " + org + 
+		     " has multiple providers :");
+	if (logger.isInfoEnabled()) {
+	  for (Iterator iter = providers.iterator(); iter.hasNext(); ) {
+	    logger.info ("\tprovider " + iter.next());
+	  }
+	}
+      }
       return "MANY_PROVIDERS";
     }
 	  
     if (providers.isEmpty ()) {
-      if (logger.isDebugEnabled()) 
-	logger.debug ("TranscomDataXMLize.getOrganizationRole - Note - no providers for " + org + ", relationships are " +
-		     providers);
+      if (logger.isInfoEnabled()) {
+	logger.info ("TranscomDataXMLize.getOrganizationRole - Note - no providers for " + org + 
+		     " schedule is " + org.getRelationshipSchedule());
+      }
+
       return "NO_PROVIDERS";
     }
 
+    if (providers.size() == 1)
+      if (logger.isInfoEnabled()) 
+	logger.info ("found provider for " + org + " schedule was " + org.getRelationshipSchedule());
+
     Relationship relationToSuperior = (Relationship) providers.iterator().next();
-    Role subRoleA  = relationToSuperior.getRoleA();
+    Role subRoleA = relationToSuperior.getRoleA();
     Role subRoleB = relationToSuperior.getRoleB();
     if (logger.isDebugEnabled())
       logger.debug ("TranscomDataXMLize.getOrganizationRole - org " + org + " - roleA " + subRoleA + " roleB " + subRoleB);
@@ -216,7 +289,14 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     } 
     else {
       try {
-	baseAsset = (GLMAsset)directObject;
+	if (task.getDirectObject () instanceof AssetGroup) {
+	  if (logger.isInfoEnabled())
+	    logger.info("processTasks - got asset group for task " + task.getUID());
+	  baseAsset = getBaseAsset ((AssetGroup) task.getDirectObject ());
+	}
+	else {
+	  baseAsset = (GLMAsset)directObject;
+	}
       } catch (ClassCastException cce) {
 	logger.error ("TranscomDataXMLize.processTask - ERROR for task " + task +
 		      "\nDirectObject was not a GLMAsset, as expected.");
@@ -224,6 +304,10 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     }
 
     addTaskPersonField (object, baseAsset);
+    if (object == null)
+      logger.error ("huh? object is null for task " + task.getUID() + " verb " + task.getVerb() + 
+		    " is there a field missing for the task in the format file?");
+    addIsAmmoField     (object, baseAsset);
 
     float distance = (float) 
       ((glmPrepHelper.hasPrepNamed (task, GLMTransConst.SEAROUTE_DISTANCE)) ?
@@ -242,6 +326,35 @@ public class TranscomDataXMLize extends CustomDataXMLize {
     return true;
   }
 
+  /** 
+   * try to determine base asset of asset group 
+   * Basically, we're trying to determine whether this is ammo or not, or people or not
+   * and we need to go down the nested sets of things until we find atomic assets.
+   */
+  protected GLMAsset getBaseAsset (AssetGroup directObject) {
+    Collection assets = assetHelper.expandAssetGroup (directObject);
+    GLMAsset base = null;
+    for (Iterator iter = assets.iterator (); iter.hasNext () && base == null;) {
+      Asset subasset = (Asset) iter.next();
+      if (subasset instanceof AssetGroup) {
+	base = getBaseAsset ((AssetGroup) subasset); // recurse
+      }
+      else if (subasset instanceof AggregateAsset) {
+	base = (GLMAsset) ((AggregateAsset) subasset).getAsset();
+      }
+      else if (subasset instanceof GLMAsset) {
+	base = (GLMAsset) subasset;
+      }
+      else
+	logger.warn ("huh? unknown asset class " + subasset.getClass () + " for asset " + subasset);
+    }
+
+    if (!(base instanceof GLMAsset))
+      logger.error ("huh? " + base + " is not a GLMAsset");
+
+    return base;
+  }
+
   /** subclass if people aren't relevant */
   protected void addTaskPersonField (Object object, GLMAsset baseAsset) {
     dataHelper.createBooleanField(object, "isPerson", isPerson (baseAsset));
@@ -249,9 +362,36 @@ public class TranscomDataXMLize extends CustomDataXMLize {
   
   protected boolean isPerson (GLMAsset asset) {	return asset.hasPersonPG ();  }
 
-  protected String GLOBAL_AIR_ID;
-  protected String GLOBAL_SEA_ID;
-  protected String NULL_ASSET_ID;
+  protected void addIsAmmoField (Object object, GLMAsset baseAsset) {
+    if (object == null)
+      logger.error ("huh? object is null testing " + baseAsset);
+
+    boolean isContainer = isContainer (baseAsset);
+    dataHelper.createField(object, "Transport", "isAmmo", 
+			   (isContainer ? (isAmmo (baseAsset) ? TRUE : FALSE) : FALSE));
+  }
+
+  protected boolean isContainer (GLMAsset asset) {
+    LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
+      asset.resolvePG (LowFidelityAssetPG.class);
+    
+    if (currentLowFiAssetPG != null) {
+      return currentLowFiAssetPG.getCCCDim().getIsContainer();
+    }
+    else {
+      return asset instanceof Container;
+    }
+  }
+
+  /** 
+   * An asset is an ammo container if it has a contents pg, since
+   * only the Ammo Packer put a contents pg on a container.
+   *
+   * NOTE : should call isContainer first!
+   */
+  protected boolean isAmmo (GLMAsset asset) {
+    return asset.hasContentsPG ();
+  }
 
   protected GLMPrepPhrase glmPrepHelper;
   protected GLMPreference glmPrefHelper;

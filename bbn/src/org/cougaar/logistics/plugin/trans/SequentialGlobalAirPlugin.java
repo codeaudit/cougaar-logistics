@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
@@ -106,6 +107,8 @@ import org.cougaar.util.log.Logger;
  */
 public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
   implements GLMOrganizationListener, BlackboardPlugin {
+
+  protected TranscomDataXMLize dataXMLizer; // we need it for getOrganizationRole
   
   private static final long ONE_HOUR = 1000l*60l*60l;
   //private static final double BILLION = 1000000000.0d;
@@ -130,6 +133,8 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 
     if (isDebugEnabled())
       debug ("localSetup - this " + this + " prep helper " + glmPrepHelper);
+    
+    dataXMLizer = new TranscomDataXMLize(true, logger, new HashSet());
   }
 
   protected UTILFilterCallback createThreadCallback (UTILGenericListener bufferingThread) { 
@@ -222,9 +227,12 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     
   public void handleNewOrganization(Enumeration org_assets) {
     shouldRefreshOrgList = true;
+    for (;org_assets.hasMoreElements(); ) {
+      info (getName() + " - got new org " + org_assets.nextElement());
+    }
   }
 
-  public void handleChangedOrganization (Enumeration e) {}
+  public void handleChangedOrganization (Enumeration org_assets) {}
 
   public void handleTask(Task t) {
     NewTask subtask = expandHelper.makeSubTask (ldmf, t, t.getDirectObject(), getAgentIdentifier());
@@ -435,7 +443,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
     return (airport == null);
   }
 
-  public Organization findOrgForMiddleStep () {
+  public Organization findOrgForMiddleStep (Task ignored) {
     Organization organicAir = findOrgWithRole(GLMTransConst.ORGANIC_AIR_ROLE);
     if (organicAir == null) {
       error(".findOrgForMiddleStep - ERROR - No subordinate with role " + 
@@ -699,7 +707,7 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
 									    Constants.Preposition.TO,
 									    toLocation));
             
-      Organization middleOrg = plugin.findOrgForMiddleStep ();
+      Organization middleOrg = plugin.findOrgForMiddleStep (new_task);
 			
       List aspects = new ArrayList ();
       aspects.add (AspectValue.newAspectValue (AspectType.START_TIME, 
@@ -882,24 +890,84 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       Collection matchingRels =  sched.getMatchingRelationships(role,
 								TimeSpan.MIN_VALUE,
 								TimeSpan.MAX_VALUE);
-
+      if (isInfoEnabled()) {
+	info (getName () + " found " + matchingRels.size() + " matches for role " + role);
+      }
       for (Iterator it = matchingRels.iterator(); it.hasNext();) {
 	Relationship rel = (Relationship)it.next();
-	orgs.add (sched.getOther(rel));
+	Object other = sched.getOther(rel);
+	if (isInfoEnabled()) {
+	  info (getName () + " adding other " + other + " to known orgs for " + role);
+	}
+	orgs.add (other);
+
+	if (isInfoEnabled()) {
+	  info (getName () + " has " + orgs.size() + " orgs for role " + role);
+	}
+      }
+
+      if (matchingRels.size () == 1) {
+	Collection selfProviders = 
+	  sched.getMatchingRelationships(Constants.RelationshipType.PROVIDER_SUFFIX,
+					 TimeSpan.MIN_VALUE,
+					 TimeSpan.MAX_VALUE);
+
+	info (getName () + " self providers schedule was " + selfProviders);
+	/*
+	List otherWay = getOrgsWithRole (role);
+	if (otherWay.size () > 1) {
+	  info (getName () + " found more orgs by direct interrogation, so using them.");
+	  orgs = otherWay;
+	}
+	*/
       }
 
       shouldRefreshOrgList = false;
     }
 	
     if (orgs.isEmpty ()) {
-      error (".findOrgWithRole - could not find any organizations with role " + 
-	     role + " among subordinates -- relationship schedule is:\n" + 
-	     getSelf().getRelationshipSchedule());
+      if (isInfoEnabled()) {
+	info (getName() + ".findOrgWithRole - could not find any organizations with role " + 
+	      role + " among subordinates -- relationship schedule is:\n" + 
+	      getSelf().getRelationshipSchedule());
+      }
+
       return null;
     }
 
     return chooseAmongOrgs (orgs);
   }
+
+  /** 
+   * thought this might help, but didn't - self org and individual org role schedules 
+   * do in fact agree 
+   */
+  protected List getOrgsWithRole (Role role) {
+    // send subscription contents through again...
+    Collection assets = getOrganizationCallback().getSubscription ().getCollection();
+    List orgs = new ArrayList ();
+
+    for (Iterator iter = assets.iterator(); iter.hasNext(); ) {
+      Asset asset = (Asset) iter.next();
+      if (asset instanceof Organization) {
+	String name = dataXMLizer.getOrganizationRole(asset);
+
+	if (isInfoEnabled()) {
+	  info (getName () + " examining " + asset + " for role " + role + " says it's " + name);
+	}
+	if (role.getName().equals(name)) {
+	  if (isInfoEnabled()) {
+	    info (getName () + " " + asset + " indeed has role " + role);
+	  }
+
+	  orgs.add (asset);
+	}
+      }
+    }
+
+    return orgs;
+  }
+
 
   /** 
    * this could be more sophisticated in the future 

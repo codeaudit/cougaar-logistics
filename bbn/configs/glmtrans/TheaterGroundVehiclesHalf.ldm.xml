@@ -1,0 +1,30 @@
+<?xml version="1.0"  encoding="US-ASCII"?>
+
+<!DOCTYPE assetlist SYSTEM "AssetList.ldm.dtd" [
+<!ENTITY truckprototypes SYSTEM "GLMT.TruckPrototypes.ldm.xml">
+<!ENTITY dummyprototypes SYSTEM "DummyPrototypes.ldm.xml">]>
+
+<AssetList>
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                    First the Prototypes                     ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  &truckprototypes;
+  &dummyprototypes;
+
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- :::                      Now the Instances                      ::: -->
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+
+  <!-- HET flatbed --> 
+  <instance prototype="HET" id="het" quantity="45">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+  <!-- 34 ton flatbed --> 
+  <instance prototype="NSN-2330010398095" id="flt" quantity="30">
+    <schedule end="12/31/06" start="01/01/00"/>
+  </instance>
+
+</AssetList>
