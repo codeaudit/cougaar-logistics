@@ -206,9 +206,9 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     protected static final long MSEC_PER_HOUR = MSEC_PER_MIN *60;
     public static final long  DEFAULT_ORDER_AND_SHIPTIME = 24 * MSEC_PER_HOUR; // second day
 
-    public static final Verb                 WITHDRAWVERB = new Verb(Constants.Verb.WITHDRAW);
+    public static final Verb                 WITHDRAWVERB = Verb.get(Constants.Verb.WITHDRAW);
     public static final Verb                 PROJECTWITHDRAWVERB = Constants.Verb.ProjectWithdraw;
-    public static final Verb                 TRANSPORTVERB = new Verb(Constants.Verb.TRANSPORT);
+    public static final Verb                 TRANSPORTVERB = Verb.get(Constants.Verb.TRANSPORT);
 
   //private Organization myOrg;
     protected boolean addTransport; // Add load tasks when expanding supply tasks
