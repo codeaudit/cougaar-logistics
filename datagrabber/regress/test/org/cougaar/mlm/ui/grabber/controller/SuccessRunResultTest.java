@@ -20,4 +20,12 @@ public class SuccessRunResultTest extends TestCase {
         assertEquals(2, srr.getRunID());
     }
 
+    public void testBasic2() {
+        SuccessRunResult srr = new SuccessRunResult(1, 2, true, "foo");
+        assertEquals(1, srr.getID());
+        assertEquals(2, srr.getRunID());
+        assertTrue(srr.getWarning());
+        assertEquals("foo", srr.getReason());
+    }
+
 }
