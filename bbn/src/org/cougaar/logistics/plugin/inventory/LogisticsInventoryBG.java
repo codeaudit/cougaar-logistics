@@ -361,6 +361,10 @@ public class LogisticsInventoryBG implements PGDelegate {
   public void addRefillProjection(Task task) {
     long start = getStartTime(task);
     long end = getEndTime(task);
+    // Test for Failed Dispositions Bug #2033
+    if ((start < startTime) || (end <= start)) {
+      return;
+    }
     int bucket_start = convertTimeToBucket(start);
     int bucket_end = convertTimeToBucket(end);
     while (bucket_end >= refillProjections.size()) {
