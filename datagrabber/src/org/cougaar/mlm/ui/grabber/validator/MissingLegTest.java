@@ -33,7 +33,7 @@ import java.util.Calendar;
 
 /**
  * Looks for missing legs
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -118,23 +118,22 @@ public class MissingLegTest extends Test implements DGPSPConstants{
 		    ")");
   }
 
+    private void addCarrierFields(StringBuffer sb) {
+        sb.append(COL_LEGID);sb.append(",");
+        sb.append(COL_LEGTYPE);sb.append(",");
+        sb.append(COL_STARTTIME);sb.append(",");
+        sb.append(COL_ENDTIME);sb.append(",");
+        sb.append(COL_STARTLOC);sb.append(",");
+        sb.append(COL_ENDLOC);sb.append(",");
+    }
+
   private String getQuery(Logger l, int run){
     StringBuffer sb=new StringBuffer();
     switch(searchType){
     case BY_CARRIER:
       sb.append("select ");
-      sb.append(COL_LEGID);
-      sb.append(",");
-      sb.append(COL_LEGTYPE);
-      sb.append(",");
-      sb.append(COL_STARTTIME);
-      sb.append(",");
-      sb.append(COL_ENDTIME);
-      sb.append(",");
-      sb.append(COL_STARTLOC);
-      sb.append(",");
-      sb.append(COL_ENDLOC);
-      sb.append(",cl.");
+      addCarrierFields(sb);
+      sb.append("cl.");
       sb.append(COL_CONVEYANCEID);
       sb.append(",cl.");
       sb.append(COL_OWNER);
@@ -313,12 +312,7 @@ public class MissingLegTest extends Test implements DGPSPConstants{
     sb.append("INSERT INTO ");
     sb.append(getTableName(run));
     sb.append(" (");
-    sb.append(COL_LEGID);sb.append(",");
-    sb.append(COL_LEGTYPE);sb.append(",");
-    sb.append(COL_STARTTIME);sb.append(",");
-    sb.append(COL_ENDTIME);sb.append(",");
-    sb.append(COL_STARTLOC);sb.append(",");
-    sb.append(COL_ENDLOC);sb.append(",");
+    addCarrierFields(sb);
     sb.append(COL_SEARCH);sb.append(",");
     sb.append(COL_OWNER);sb.append(",");
     sb.append(COL_NAME);sb.append(",");

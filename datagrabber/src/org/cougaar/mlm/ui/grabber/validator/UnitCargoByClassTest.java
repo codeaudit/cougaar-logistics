@@ -198,44 +198,6 @@ public class UnitCargoByClassTest extends UnitCargoAmountTest{
 	return ((groupByUnit) ? "by_unit" : "") +
 	  ((groupByType) ? "by_type" : ""); 
   }
-
-  protected String getRomanClass (int i) 
-  {
-	switch (i) {
-	case DGPSPConstants.ASSET_CLASS_UNKNOWN:
-	  return "unknown";
-	case DGPSPConstants.ASSET_CLASS_1:
-	  return "I - Subsistence";
-	case DGPSPConstants.ASSET_CLASS_2:
-	  return "II - Expendables";
-	case DGPSPConstants.ASSET_CLASS_3:
-	  return "III - Fuel";
-	case DGPSPConstants.ASSET_CLASS_4:
-	  return "IV - Barrier Materials";
-	case DGPSPConstants.ASSET_CLASS_5:
-	  return "V - Ammo";
-	case DGPSPConstants.ASSET_CLASS_6:
-	  return "VI - Sundry";
-	case DGPSPConstants.ASSET_CLASS_7:
-	  return "VII - Major End Items";
-	case DGPSPConstants.ASSET_CLASS_8:
-	  return "VIII - Medical";
-	case DGPSPConstants.ASSET_CLASS_9:
-	  return "XI - Repair Parts";
-	case DGPSPConstants.ASSET_CLASS_10:
-	  return "X - Non-military material";
-	case DGPSPConstants.ASSET_CLASS_CONTAINER:
-	  return "Container";
-	case DGPSPConstants.ASSET_CLASS_PERSON:
-	  return "PAX";
-	default:
-	  return "unknown";
-	}
-	}
-  
-  
-  //InnerClasses:
-  ///////////////
 }
 
 
