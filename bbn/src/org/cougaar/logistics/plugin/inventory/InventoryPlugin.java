@@ -200,12 +200,21 @@ public class InventoryPlugin extends ComponentPlugin {
     cycleStamp = (new Date()).getTime();
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-      if ((myOrganization != null) && (supplyTaskSubscription == null)) {
+      if ((myOrganization != null) && (supplyTaskSubscription == null) && 
+	  (inventoryPolicy !=null)) {
 	myOrgName = myOrganization.getItemIdentificationPG().getItemIdentification();
 	inventoryFile = getInventoryFile(supplyType);
 	getInventoryData();
 	supplyExpander.initialize(myOrganization);
 	setupSubscriptions2();
+      } else {
+	if (logger.isDebugEnabled()) {
+	  logger.debug("\n InventoryPlugin " + supplyType + 
+		       " not ready to process tasks yet." +
+		       " my org is: " + myOrganization + " my inv policy is: " + 
+		       inventoryPolicy + " my supply task subscription is: " + 
+		       supplyTaskSubscription);
+	}
       }
     }
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null && 

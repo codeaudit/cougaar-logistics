@@ -84,6 +84,10 @@ public class RefillGenerator extends InventoryLevelGenerator {
    **/
   public void calculateRefills(Collection touchedInventories, InventoryPolicy policy, 
 			       RefillComparator myComparator) {
+    if (policy == null) {
+      logger.error("\n Inventory RefillGenerator got a null InventoryPolicy in: " +
+		   myOrgName);
+    }
     ArrayList newRefills = new ArrayList();
     ArrayList oldRefills = new ArrayList();
     int orderShipTime = policy.getOrderShipTime();
