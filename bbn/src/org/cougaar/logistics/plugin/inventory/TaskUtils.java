@@ -447,6 +447,21 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
+  public double getTotalQuantity(Task task,double demandRate, long startTime, long endTime ) {
+    if (isProjection(task)) {
+      double time_spanned = endTime - startTime;
+      if(time_spanned > 0) {
+	  double dailyRate = convertResultsToDailyRate(task,demandRate);
+	  return (dailyRate * (time_spanned/TimeUtils.MSEC_PER_DAY));
+      }
+      else {
+	  return 0.0d;
+      }
+    } else {
+      return getQuantity(task);
+    }
+  }
+
   public static Rate getARAspectRate(AllocationResult ar) {
     if (ar == null) return null;
     AspectValue[] avs = ar.getAspectValueResults();
