@@ -295,7 +295,8 @@ public class RefillProjectionGenerator extends InventoryModule {
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
     newRefill.setDirectObject(inv);
-    fillInTask(newRefill, start, end, thePG.getStartTime(), demand, thePG.getResource());
+    newRefill = fillInTask(newRefill, start, end, thePG.getStartTime(), 
+                           demand, thePG.getResource());
     return newRefill;
   }
 
@@ -319,7 +320,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     //physical pg needs to represent demand
     // level2Asset.setPhysicalPG(demand);
     newAggRefill.setDirectObject(level2Asset);
-    fillInTask(newAggRefill, start, end, earliest, 1, level2Asset);
+    newAggRefill = fillInTask(newAggRefill, start, end, earliest, 1, level2Asset);
     return newAggRefill;
   }
 
@@ -329,8 +330,9 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  @param end End Time for Task
    *  @param qty Quantity Pref for Task
    *  @param asset Direct Object for Task
+   *  @param NewTask Return the filled in Task
    **/
-  private void fillInTask(NewTask newRefill, long start, long end, long earliest, 
+  private NewTask fillInTask(NewTask newRefill, long start, long end, long earliest, 
                           double qty, Asset asset) {
     // create preferences
     Vector prefs = new Vector();
@@ -367,6 +369,7 @@ public class RefillProjectionGenerator extends InventoryModule {
     pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
     
     newRefill.setPrepositionalPhrases(pp_vector.elements());
+    return newRefill;
   } 
 
   /** Create a Time Preference for the Refill Task
