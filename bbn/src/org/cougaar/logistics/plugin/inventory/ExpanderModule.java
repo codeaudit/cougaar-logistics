@@ -29,6 +29,7 @@ package org.cougaar.logistics.plugin.inventory;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 
 /**
@@ -62,20 +63,12 @@ public interface ExpanderModule {
   boolean handleRemovedProjections(Collection tasks);
   
   /**
-   * Given removed Supply tasks, remove Withdraw child task from
+   * Remove Withdraw task from
    * the inventory's behavior group.
-   * (Ray) The above lies. The tasks are actually withdraw tasks.
    **/
   void handleRemovedRequisitions(Collection tasks);
 
   /**
-   * (Ray) Given removed Supply tasks, remove their expansions. This
-   * is not the same as handleRemovedRequisitions, which actually
-   * removes withdraw tasks, not requisitions.
-   **/
-  void handleRemovedRealRequisitions(Collection tasks);
-  
-  /** 
    * Given changed Supply tasks, Withdraw tasks are updated and
    * changed in the inventory's behavior group.
    **/
