@@ -335,7 +335,12 @@ public class DemandTaskGenerator extends DemandGeneratorModule
   protected Vector createDemandPreferences(long start, long end, double qty) {
     Vector prefs = new Vector();
 
-    prefs.addElement(createTimeScoringFunctionPref(start, AspectType.START_TIME));
+    //Took out START_TIME preference on 6/3/2003 as they seemed like misleading
+    //superfluous information that nobody else counts on.   Nominally a Supply
+    //task doesn't have a start time.   Didn't want to include it so that
+    //in the future someone may rely upon it.   If this Changes you have
+    //to tell PSU
+    //prefs.addElement(createTimeScoringFunctionPref(start, AspectType.START_TIME));
     prefs.addElement(createTimeScoringFunctionPref(end, AspectType.END_TIME));
 
     AspectValue av = AspectValue.newAspectValue(AspectType.QUANTITY, qty);
