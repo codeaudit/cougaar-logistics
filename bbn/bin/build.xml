@@ -55,7 +55,7 @@
 	<property name="build.javadocs" value="./doc/javadoc" />
 
 	<!-- <property name="build.compiler" value="classic"/>  -->
-	<property name="build.compiler" value="jikes"/>
+	<!--<property name="build.compiler" value="jikes"/>-->
 	<property name="build.compiler.warnings" value="true"/>
 	<property name="build.compiler.emacs" value="true"/>
 	<property name="doDeprecation" value="no"/>
@@ -519,6 +519,7 @@ ARCHIVE_TIME=${build.time}
 		<copy todir="${zipbase}/${module}/csmart">
 			<fileset dir="data/csmart"/>
 		</copy>
+		<delete dir="${zipbase}/${module}/data/csmart/data/database/csv/"/>
 		<move file="${zipbase}/${module}/lib/${module}.jar" tofile="${zipbase}/${module}/lib/albbn.jar"/>
       <move todir="${zipbase}/${module}/Manifest"> 
         <fileset dir="Manifest"/>
