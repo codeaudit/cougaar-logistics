@@ -38,9 +38,11 @@ import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Role;
 
+import org.cougaar.planning.ldm.measure.Count;
 import org.cougaar.planning.ldm.measure.CountRate;
+import org.cougaar.planning.ldm.measure.Duration;
 import org.cougaar.planning.ldm.measure.FlowRate;
-
+import org.cougaar.planning.ldm.measure.Volume;
 
 
 /** AllocationAssessor module is a module of the InventoryPlugin looks at
@@ -419,12 +421,12 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           rollupQty = rollupQty + ((aPhase.endBucket - aPhase.startBucket) * aPhase.amount);
           thisPhase[0] = new AspectValue(AspectType.END_TIME, thePG.convertBucketToTime(aPhase.endBucket));
           thisPhase[1] = new AspectValue(AspectType.START_TIME, thePG.convertBucketToTime(aPhase.startBucket));
-          thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis());
+          thisPhase[2] = getDemandRateAV(aPhase.amount, thePG.getBucketMillis(), thePG);
           // add this phase to our phased results list
           phasedResults.add(thisPhase);
         }
         AspectValue dav = getDemandRateAV(rollupQty, thePG.convertBucketToTime(rollupEnd) - 
-                                     thePG.convertBucketToTime( rollupStart));
+                                     thePG.convertBucketToTime( rollupStart), thePG);
         rollups[2] = dav.getValue();
       }
       
@@ -522,7 +524,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
   private void createFailedAllocation(Task task, Inventory inventory) {
       // make the failed time the day after the end of the oplan
-      long failed_time = getTimeUtils().addNDays(inventoryPlugin.getOPlanEndTime(), 1);
+      long failed_time = inventoryPlugin.getOPlanEndTime() + TimeUtils.MSEC_PER_DAY;
       int aspectTypes[];
       double results[];
       if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
@@ -607,15 +609,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
   }
 
-  public AspectValue getDemandRateAV(double amount, long millis) {
+  public AspectValue getDemandRateAV(double amount, long millis, LogisticsInventoryPG thePG) {
     AspectValue demandRateAV = null;
-    double ratevalue = amount / (millis / getTimeUtils().MSEC_PER_DAY);
+    Duration dur = new Duration(millis, Duration.MILLISECONDS);
     if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+      Volume vol = new Volume(amount, Volume.GALLONS);
       demandRateAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                                    FlowRate.newGallonsPerDay(ratevalue));
+                                    new FlowRate(vol, dur));
     } else {
+      Count cnt = new Count(amount, Count.EACHES);
       demandRateAV = new AspectRate(AlpineAspectType.DEMANDRATE, 
-                                    CountRate.newEachesPerDay(ratevalue));
+                                    new CountRate(cnt, dur));
     }
     return demandRateAV;
   }
