@@ -179,12 +179,10 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
 
 
   protected void disposeOfTask(Task task) {
-    double rating = 0;
-    boolean success = true;
-    int [] aspects = {15};
-    double [] results = {0.0};
+    AspectValue avs[] = new AspectValue[1];
+    avs[0] = AspectValue.newAspectValue(15, 0.0);
     AllocationResult dispAR =
-        getPlanningFactory().newAllocationResult (rating, success, aspects, results);
+        getPlanningFactory().newAllocationResult (1.0, true, avs);
     Disposition disposition =
         getPlanningFactory().createDisposition (task.getPlan(), task, dispAR);
     dfPlugin.publishAdd(disposition);
