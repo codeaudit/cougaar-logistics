@@ -26,6 +26,7 @@ import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.blackboard.Subscription;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.BlackboardQueryService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
@@ -65,7 +66,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   // Subscription to policies
   private IncrementalSubscription meiSubscription;
 	
-  private IncrementalSubscription myOrganizations;
+//   private IncrementalSubscription myOrganizations;
   protected Organization myOrg;
 
   private ServiceBroker serviceBroker;
@@ -74,6 +75,7 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   private TimeUtils timeUtils;
   private AssetUtils assetUtils;
   private ScheduleUtils scheduleUtils;
+  private BlackboardQueryService queryService;
 
   private static UnaryPredicate orgsPredicate = new UnaryPredicate() {
     public boolean execute (Object o) {
@@ -112,6 +114,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 						    null);
   }
 
+  public BlackboardQueryService getBlackboardQueryService(Object requestor) {
+    return (BlackboardQueryService)serviceBroker.getService(requestor,
+                                                            BlackboardQueryService.class,
+                                                            null);
+  }
+
   public void load() {
     super.load();
     serviceBroker = getBindingSite().getServiceBroker();
@@ -121,13 +129,15 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       assetUtils = new AssetUtils(this);
       taskUtils = new TaskUtils(this);
       scheduleUtils = new ScheduleUtils(this);
+      queryService = getBlackboardQueryService(this);
+      if (queryService == null) {
+        logger.error("Unable to get query service");
+      }
     }
   }
 
   protected void setupSubscriptions() { 
     super.setupSubscriptions();
-    myOrganizations =
-      (IncrementalSubscription) subscribe (orgsPredicate);
     meiSubscription =
       (IncrementalSubscription) subscribe (new ClassVIIPredicate());
     if (didRehydrate()) {
@@ -179,9 +189,9 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   }
 
   protected void configure() {
-    Enumeration new_orgs = myOrganizations.elements();
-    if (new_orgs.hasMoreElements()) { 
-      myOrg = (Organization) new_orgs.nextElement();
+    Iterator new_orgs = queryService.query(orgsPredicate).iterator();
+    if (new_orgs.hasNext()) { 
+      myOrg = (Organization) new_orgs.next();
       Service srvc = myOrg.getOrganizationPG().getService();
       if (srvc != null) {
 	service= srvc.toString();
@@ -190,8 +200,8 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         logger.error("Organization has no Service :"+
                      myOrg.getItemIdentificationPG().getItemIdentification());
       }
-    } // if
-  } // configure
+    }
+  }
 
   public void setServiceBroker(ServiceBroker serviceBroker) {
     this.serviceBroker = serviceBroker;
@@ -221,11 +231,14 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
 
   public Asset makePrototype (String type_name, Class class_hint) {
-    // Demand Rate Queries are based upon service
-    if (service == null) {
-      return null;
-    } 
-
+    // Demand Rate Queries are based upon service 
+    if (!configured) {
+      configure();
+      if (!configured) {
+        logger.error("fillProperties() plugin missing myOrganization");
+        return null;
+      }
+    }
     if ((class_hint != null) &&  !class_hint.getName().equals(MEI_STRING)) {
       logger.error("make prototype How did we get this far?? "+class_hint);
       return null;
@@ -339,6 +352,13 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
 
 
   public void fillProperties (Asset anAsset) {
+    if (!configured) {
+      configure();
+      if (!configured) {
+        logger.error("fillProperties() plugin missing myOrganization");
+        return;
+      }
+    }
     if (anAsset instanceof ClassVIIMajorEndItem) {
       logger.debug("fillProperties() CREATING FuelConsumerPG for "+anAsset);
       NewFuelConsumerPG fuelpg = 
