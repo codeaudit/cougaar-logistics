@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Vector;
 
 class Filler {
+  double MIN_DELTA = 0.0001; // 1/10 of a pound
+
   private static final String UNKNOWN = "UNKNOWN";
   private Sizer _sz;
 
@@ -90,7 +92,7 @@ class Filler {
       double latest = java.lang.Double.POSITIVE_INFINITY;
 
       // while our milvan is not yet full and there is more ammo left to pack
-      while (_ac.getQuantity() - amount > 0.0 && _sz.moreTasksInQueue()) {
+      while (_ac.getQuantity() - amount > MIN_DELTA && _sz.moreTasksInQueue()) {
         // ask the sizer for what an amount that would fill the milvan
         Task t = _sz.provide(_ac.getQuantity() - amount, earliest, latest);
         if (t == null) { // the next task is outside the earliest->latest window
@@ -103,9 +105,11 @@ class Filler {
         // some amount towards our overall amount
         double provided = t.getPreferredValue(AspectType.QUANTITY);
 
-        _gp.getLoggingService().info("Filler.execute - adding " + provided +
-                                     " to agg list vs " + (_ac.getQuantity() - amount) + " amount " +
-                                     amount);
+	if (_gp.getLoggingService().isInfoEnabled()) {
+	  _gp.getLoggingService().info("Filler.execute - adding " + provided +
+				       " to agg list vs " + (_ac.getQuantity() - amount) + " amount " +
+				       amount);
+	}
 
         Preference endDatePref = t.getPreference(AspectType.END_TIME);
         ScoringFunction sf = endDatePref.getScoringFunction();
@@ -131,11 +135,14 @@ class Filler {
         TRANSPORT_TONS += loadedQuantity;
         tonsPacked += loadedQuantity;
       }
-      _gp.getLoggingService().info("Filler.execute - aggregating together " + agglist.size() + " parents:");
-      for (Iterator iter = agglist.iterator(); iter.hasNext();) {
-        Task task = (Task) iter.next();
-        _gp.getLoggingService().info("Filler.execute - " + task.getUID() +
-                                     " end date " + new Date((long) task.getPreferredValue(AspectType.END_TIME)));
+
+      if (_gp.getLoggingService().isInfoEnabled()) {
+	_gp.getLoggingService().info("Filler.execute - aggregating together " + agglist.size() + " parents:");
+	for (Iterator iter = agglist.iterator(); iter.hasNext();) {
+	  Task task = (Task) iter.next();
+	  _gp.getLoggingService().info("Filler.execute - " + task.getUID() +
+				       " end date " + new Date((long) task.getPreferredValue(AspectType.END_TIME)));
+	}
       }
 
     }
