@@ -132,15 +132,10 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
 
       //parse the commUp
       String commUpStr = req.getParameter("commUp");
-      if (commUpStr != null) {
-        try {
-          commUp = Boolean.getBoolean(commUpStr);
-        } catch (Exception ex) {
-          errorMsg("commUp value incorrectly specified", out);
-          return;
-        }
+      if (commUpStr != null)  {
+        commUp = commUpStr.trim().equals("true");
       } else {
-        errorMsg("commUp value not specified", out);
+        errorMsg("commUpStr incorrectly specified: " + commUpStr, out);
         return;
       }
 
