@@ -196,8 +196,14 @@ public class DemandForecastPlugin extends ComponentPlugin
     protected void execute() {
 
 	if((orgActivities.getCollection().isEmpty()) || (detReqSubscription.getCollection().isEmpty())) {
-	    processedDetReq = false;
+	    processDetReq = false;
 	    return;
+	}
+
+	if(!detReqSubscription.getCollection.isEmpty()) {
+	    Iterator detReqIt = detReqSubscription.getCollection.iterator();
+	    Task detReqTask = (Task) detReqIt.next();
+	    processDetReq = (!(detReqTask.getPlanElement() == null));
 	}
 	
 	//There should be both a determineRequirements task
@@ -205,7 +211,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 	//from then on out we should be catching additional assets added, or removed.
 	//It is also possible that this agent has no assets and the expander has to dispose of the detReqTask.
 	
-	//if there is a new determine requirements task or also new assets do this
+	//if there is a new determine requirements task or new oplan do this
 	if(((!orgActivities.getAddedCollection().isEmpty()) &&
 	    (!processedDetReq)) ||
 	   (!detReqSubscription.getAddedCollection().isEmpty())) {
