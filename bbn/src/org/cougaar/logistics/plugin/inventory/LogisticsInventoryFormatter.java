@@ -166,15 +166,15 @@ public class LogisticsInventoryFormatter {
 	writeln(taskStr);
     } 
     
-    protected void logAllocationResults(ArrayList tasks, long aCycleStamp, boolean expandTimestamp) {
+    protected void logAllocationResults(ArrayList tasks, long aCycleStamp, boolean expandTimestamp, boolean isCountedAR) {
 	cycleStamp = aCycleStamp;
 	for(int i=0; i < tasks.size(); i++) {
 	    Task aTask = (Task) tasks.get(i);
-	    logAllocationResult(aTask, expandTimestamp);
+	    logAllocationResult(aTask, expandTimestamp, isCountedAR);
 	}
     }
 
-    protected void logAllocationResult(Task aTask, boolean expandTimestamp) {
+    protected void logAllocationResult(Task aTask, boolean expandTimestamp, boolean isCountedAR) {
 	if(aTask == null) {return;}
 	PlanElement pe = aTask.getPlanElement();
 	if(pe == null) { return; }
@@ -194,8 +194,17 @@ public class LogisticsInventoryFormatter {
 		taskStr = taskStr + AR_FAILURE_STR + ",";
 	    }
 	    if(!ar.isPhased()) {
-		String outputStr = taskStr + getDateString(TaskUtils.getStartTime(ar),expandTimestamp) + ",";
-		outputStr = outputStr + getDateString(TaskUtils.getEndTime(ar),expandTimestamp) + ",";
+		long startTime = (long) TaskUtils.getStartTime(ar);
+		long endTime = (long) TaskUtils.getEndTime(ar);
+		if(isCountedAR &&
+		   (TaskUtils.isProjection(aTask))) {
+		    startTime = logInvPG.getEffectiveProjectionStart(aTask,startTime);
+		    if(startTime >= endTime) {
+			return;
+		    }
+		}
+		String outputStr = taskStr + getDateString(startTime,expandTimestamp) + ",";
+		outputStr = outputStr + getDateString(endTime,expandTimestamp) + ",";
 		outputStr = outputStr + TaskUtils.getQuantity(ar);
 		writeln(outputStr);
 	    }
@@ -214,11 +223,18 @@ public class LogisticsInventoryFormatter {
 		while(phasedResults.hasMoreElements()) {
 		    double[] results = (double[])phasedResults.nextElement();
 		    String outputStr = taskStr;
+		    long startTime=0;
+		    long endTime;
 		    if(startInd == -1) {
 			outputStr += ",";
 		    } 
 		    else {
-			outputStr += getDateString(results[startInd],expandTimestamp) + ",";
+			startTime = (long) results[startInd];
+			if(isCountedAR &&
+			   (TaskUtils.isProjection(aTask))) {
+			    startTime = logInvPG.getEffectiveProjectionStart(aTask,startTime);
+			}
+			outputStr += getDateString(startTime,expandTimestamp) + ",";
 		    }
 		    if(endInd == -1) {
 			/** MWD The following line of code which replaces the
@@ -227,23 +243,31 @@ public class LogisticsInventoryFormatter {
 			 *  UniversalAllocator.   The UA is only setting
 			 *  the start time in the allocation result. There
 			 *  is a bug in and when the UA is fixed this line
-			 *  of code should be removed.  GUI needs the end
+			 *  of code should be removed. If there is no end time
+			 *  in the allocation result, none should be appended.
+			 *  GUI needs the end
 			 *  times for the rates.
 			 */
-			outputStr += getDateString(TaskUtils.getEndTime(aTask),expandTimestamp);
-
+			endTime = TaskUtils.getEndTime(aTask);
+			outputStr += getDateString(endTime,expandTimestamp);
 			outputStr += ",";
 		    }
 		    else {
-			outputStr += getDateString(results[endInd],expandTimestamp) + ",";
+			endTime = (long) results[endInd];
+			outputStr += getDateString(endTime,expandTimestamp) + ",";
 		    }
 		    if((qtyInd >= results.length) ||
 		       (qtyInd < 0)){
 			logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
 		    }
-		    else {
+		    else if(startTime<endTime){
 			outputStr += results[qtyInd];
 			writeln(outputStr);
+		    }
+		    else {
+			if(!isCountedAR) {
+			    logger.warn("logAllocationResult: not going to log an allocation result where start is less than end time.");
+			}
 		    }
 		}
 	    }
@@ -360,9 +384,9 @@ public class LogisticsInventoryFormatter {
     } 
     
 
-    protected void excelLogARs(ArrayList tasks,long aCycleStamp) {
+    protected void excelLogARs(ArrayList tasks,boolean isCountedAR, long aCycleStamp) {
 	writeNoCycleLn("CYCLE,PARENT UID,TASK UID,TASK VERB,TASK FOR(ORG),AR TYPE,AR SUCCESS,AR START TIME,AR END TIME,AR QTY");
-	logAllocationResults(tasks,aCycleStamp,true);
+	logAllocationResults(tasks,aCycleStamp,true,isCountedAR);
     } 
 
     protected ArrayList buildParentTaskArrayList(ArrayList tasks) {
@@ -472,23 +496,23 @@ public class LogisticsInventoryFormatter {
 
 	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS :START");
 	System.out.println("SUPPLY TASK ALLOCATION RESULTS :START");
-	excelLogARs(supplyList,aCycleStamp);
+	excelLogARs(supplyList,false,aCycleStamp);
 	writeNoCycleLn("SUPPLY TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("WITHDRAW TASK ALLOCATION RESULTS :START");
 	System.out.println("WITHDRAW TASK ALLOCATION RESULTS :START");
-	excelLogARs(withdrawList,aCycleStamp);
+	excelLogARs(withdrawList,false,aCycleStamp);
 	writeNoCycleLn("WITHDRAW TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("PROJECTSUPPLY TASK ALLOCATION RESULTS :START");
 	System.out.println("PROJECTSUPPLY TASK ALLOCATION RESULTS :START");
-	excelLogARs(projSupplyList,aCycleStamp);
+	excelLogARs(projSupplyList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTSUPPLY TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
 	System.out.println("PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
-	excelLogARs(projWithdrawList,aCycleStamp);
+	excelLogARs(projWithdrawList,false,aCycleStamp);
 	writeNoCycleLn("PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
 	System.out.println("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :START");
-	excelLogARs(countedProjWithdrawList,aCycleStamp);
+	excelLogARs(countedProjWithdrawList,true,aCycleStamp);
 	writeNoCycleLn("COUNTED PROJECTWITHDRAW TASK ALLOCATION RESULTS :END");
 
     }
@@ -506,10 +530,10 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASKS: END");
 
 	writeNoCycleLn("RESUPPLY SUPPLY TASK ALLOCATION RESULTS: START");
-	excelLogARs(resupplyList,aCycleStamp);
+	excelLogARs(resupplyList,false,aCycleStamp);
 	writeNoCycleLn("RESUPPLY SUPPLY TASK ALLOCATION RESULTS: END");
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS: START");
-	excelLogARs(projResupplyList,aCycleStamp);
+	excelLogARs(projResupplyList,false,aCycleStamp);
 	writeNoCycleLn("RESUPPLY PROJECTSUPPLY TASK ALLOCATION RESULTS: END");
 
     }
@@ -597,19 +621,19 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + SUPPLY_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(supplyList,aCycleStamp,false);
+	logAllocationResults(supplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + SUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + WITHDRAW_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(withdrawList,aCycleStamp,false);
+	logAllocationResults(withdrawList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + WITHDRAW_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projSupplyList,aCycleStamp,false);
+	logAllocationResults(projSupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + PROJECTSUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projWithdrawList,aCycleStamp,false);
+	logAllocationResults(projWithdrawList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(countedProjWithdrawList,aCycleStamp,false);
+	logAllocationResults(countedProjWithdrawList,aCycleStamp,false,true);
 	writeNoCycleLn("</" + COUNTED_PROJECTWITHDRAW_TASK_ARS_TAG + ">");
 
     }
@@ -627,10 +651,10 @@ public class LogisticsInventoryFormatter {
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASKS_TAG + ">");
 
 	writeNoCycleLn("<" + RESUPPLY_SUPPLY_TASK_ARS_TAG + " type=ARS>");
-	logAllocationResults(resupplyList,aCycleStamp,false);
+	logAllocationResults(resupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + RESUPPLY_SUPPLY_TASK_ARS_TAG + ">");
 	writeNoCycleLn("<" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + " type=PROJ_ARS>");
-	logAllocationResults(projResupplyList,aCycleStamp,false);
+	logAllocationResults(projResupplyList,aCycleStamp,false,false);
 	writeNoCycleLn("</" + RESUPPLY_PROJECTSUPPLY_TASK_ARS_TAG + ">");
 
     }
