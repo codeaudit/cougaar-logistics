@@ -13,9 +13,6 @@
 		<fileset dir="${cougaar}/sys">
 			<include name="**/*.jar"/>
 		</fileset>
-		<fileset dir="${cougaar}/other">
-			<include name="**/*.jar"/>
-		</fileset>
   </path>
 
 	<target name="delete">
