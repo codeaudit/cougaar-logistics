@@ -54,9 +54,9 @@ public class TaskScheduler {
 
   // lists of added, changed, and removed tasks that lives across
   // execute cycles; one for each priority/subscription
-  private ArrayList[] addedLists;
-  private ArrayList[] changedLists;
-  private ArrayList[] removedLists;
+  private ArrayList[][] addedLists;
+  private ArrayList[][] changedLists;
+  private ArrayList[][] removedLists;
   
   /**
    * Call this in the plugin's setupSubscriptions method
@@ -72,17 +72,23 @@ public class TaskScheduler {
     this.policy = policy;
     this.logger = logger;
     this.blackboard = blackboard;
-    addedLists = new ArrayList [policy.numPriorities()];
-    changedLists = new ArrayList [policy.numPriorities()];
-    removedLists = new ArrayList [policy.numPriorities()];
+    addedLists = setupLists();
+    changedLists = setupLists();
+    removedLists = setupLists();
     subscriptions = new IncrementalSubscription [policy.numPriorities()];
-    for (int i = 0; i < subscriptions.length; i++) {
+    for (int i = 0; i < subscriptions.length; i++) 
       subscriptions[i] = (IncrementalSubscription)
         blackboard.subscribe (ithPredicate (i));
-      addedLists[i] = new ArrayList();
-      changedLists[i] = new ArrayList();
-      removedLists[i] = new ArrayList();
+  }
+
+  private ArrayList[][] setupLists() {
+    ArrayList[][] lists = new ArrayList [policy.numPriorities()][];
+    for (int i = 0; i < policy.numPriorities(); i++) {
+      lists[i] = new ArrayList [policy.numPhases()];
+      for (int j = 0; j < policy.numPhases(); j++)
+        lists[i][j] = new ArrayList();
     }
+    return lists;
   }
 
   private UnaryPredicate ithPredicate (final int priority) {
@@ -101,9 +107,9 @@ public class TaskScheduler {
    */
   public void initForExecuteCycle() {
     for (int i = 0; i < addedLists.length; i++) {
-      addedLists[i].addAll (subscriptions[i].getAddedCollection());
-      changedLists[i].addAll (subscriptions[i].getChangedCollection());
-      removedLists[i].addAll (subscriptions[i].getRemovedCollection());
+      addedLists[i][0].addAll (subscriptions[i].getAddedCollection());
+      changedLists[i][0].addAll (subscriptions[i].getChangedCollection());
+      removedLists[i][0].addAll (subscriptions[i].getRemovedCollection());
     }
   }
 
@@ -122,40 +128,105 @@ public class TaskScheduler {
    * @param priority Lists for which priority level to clear
    */
   public void clearCollections (int priority) {
-    if (priority >= addedLists.length) {
+    clearCollections (priority, 0);
+  }
+
+  public void clearCollectionsForPhase (int phase) {
+    clearCollections (0, phase);
+  }
+
+  public void clearCollections (int priority, int phase) {
+    if (priority >= policy.numPriorities()) {
       logger.error ("Bad priority level " + priority);
       return;
     }
-    addedLists[priority].clear();
-    changedLists[priority].clear();
-    removedLists[priority].clear();
+    if (phase >= policy.numPhases()) {
+      logger.error ("Bad phase level " + phase);
+      return;
+    }
+    addedLists[priority][phase].clear();
+    changedLists[priority][phase].clear();
+    removedLists[priority][phase].clear();
   }
 
   /** All added tasks at given priority since last cleared */
   public Collection getAddedCollection (int priority) {
-    return addedLists[priority];
+    return addedLists[priority][0];
+  }
+
+  /** All added tasks at given phase since last cleared */
+  public Collection getAddedCollectionForPhase (int phase) {
+    return addedLists[0][phase];
+  }
+
+  /** All added tasks at given priority and phase since last cleared */
+  public Collection getAddedCollection (int priority, int phase) {
+    return addedLists[priority][phase];
   }
 
   /** All changed tasks at given priority since last cleared */
   public Collection getChangedCollection (int priority) {
-    return changedLists[priority];
+    return changedLists[priority][0];
+  }
+
+  /** All changed tasks at given phase since last cleared */
+  public Collection getChangedCollectionForPhase (int phase) {
+    return changedLists[0][phase];
+  }
+
+  /** All changed tasks at given priority and phase since last cleared */
+  public Collection getChangedCollection (int priority, int phase) {
+    return changedLists[priority][phase];
   }
 
   /** All removed tasks at given priority since last cleared */
   public Collection getRemovedCollection (int priority) {
-    return removedLists[priority];
+    return removedLists[priority][0];
   }
 
-  /** Tells the highest priority for which there are entries in
-   *  the subscription */
+  /** All removed tasks at given phase since last cleared */
+  public Collection getRemovedCollectionForPhase (int phase) {
+    return removedLists[0][phase];
+  }
+
+  /** All removed tasks at given priority and phase since last cleared */
+  public Collection getRemovedCollection (int priority, int phase) {
+    return removedLists[priority][phase];
+  }
+
+  /**
+   * Tells the highest priority for which there are entries in
+   * the subscription
+   */
   public int highestPriorityWithEntries() {
-    for (int i = 0; i < addedLists.length; i++) {
-      if ((addedLists[i].size() > 0) ||
-          (changedLists[i].size() > 0) ||
-          (removedLists[i].size() > 0))
-        return i;
-    }
+    for (int i = 0; i < addedLists.length; i++)
+      for (int j = 0; j < addedLists[0].length; j++)
+        if ((addedLists[i][j].size() > 0) ||
+            (changedLists[i][j].size() > 0) ||
+            (removedLists[i][j].size() > 0))
+          return i;
     return TaskSchedulingPolicy.UNKNOWN_PRIORITY;
+  }
+
+  /**
+   * Tells the earliest phase for which there are entries in
+   *  the subscription
+   */
+  public int earliestPhaseWithEntries() {
+    for (int j = 0; j < addedLists[0].length; j++)
+      for (int i = 0; i < addedLists.length; i++)
+        if ((addedLists[i][j].size() > 0) ||
+            (changedLists[i][j].size() > 0) ||
+            (removedLists[i][j].size() > 0))
+          return j;
+    return TaskSchedulingPolicy.UNKNOWN_PRIORITY;
+  }
+
+  /**
+   * Tell the time interval associate with a phase
+   */
+  public TaskSchedulingPolicy.TimePeriod getTimeInterval (int phase) {
+    return policy.getPhases()[phase];
   }
 
 }

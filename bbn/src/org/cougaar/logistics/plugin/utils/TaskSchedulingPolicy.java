@@ -35,6 +35,10 @@ import java.util.*;
  *  assigned the highest level.
  *  Note that the highest level corresponds to the lowest number (e.g.,
  *  priority 0 is the highest priority and should be scheduled first).
+ *  <p> A TaskSchedulingPolicy also can contain a sequence of time phases.
+ *  This specified how to break a task into different time periods without
+ *  actually expanding the task, hence allowing a plugin to handle
+ *  particular time periods before others.
  **/
 
 public class TaskSchedulingPolicy {
@@ -44,25 +48,66 @@ public class TaskSchedulingPolicy {
   // list of Predicates with 0th element corresponding to priority 0, etc.
   private Predicate[] priorityTests;
 
+  // list of TimePeriods specifying phases of processing for tasks
+  private TimePeriod[] phases;
+
   /** Like UnaryPredicate except that object must always be a Task */
   public static interface Predicate {
     public boolean execute (Task t);
   }
 
+  /** Specifies a time period over which to process tasks */
+  public static class TimePeriod {
+    private long start;
+    private long end;
+    public TimePeriod (long start, long end) {
+      this.start = start;
+      this.end = end;
+    }
+    public long getStart()  { return start; }
+    public long getEnd()  { return end; }
+  }
+
   /**
+   * Constructor when using just priorities and not phases
    * @param priorityTests A set of tests that determines what priority
    * a given task is. If a task passes the test in the i<sup>th</sup>
    * entry of the array but not previous test, then the task is
    * of priority i.
    */
   public TaskSchedulingPolicy (Predicate[] priorityTests) {
-    this.priorityTests = priorityTests;
+    this (priorityTests, null);
   }
 
-  /** It is anticipated that the most common usage will involve
-   *  tests on the start time and/or detail level of a task.
-   *  Therefore, we provide a generic predicate that implements
-   *  these tests.
+  /**
+   * Constructor when using just phases and not priorities
+   * @param phases A set of time intervals in order of how to hanlde
+   */
+  public TaskSchedulingPolicy (TimePeriod[] phases) {
+    this (new Predicate[] { PASSALL }, phases);
+  }
+
+  /**
+   * Constructor specifying both priorities and phases
+   */
+  public TaskSchedulingPolicy (Predicate[] priorityTests,
+                               TimePeriod[] phases) {
+    this.priorityTests = priorityTests;
+    this.phases = phases;
+  }
+
+  /**
+   * Predicate that lets everything pass
+   */
+  public static Predicate PASSALL = new Predicate() {
+    public boolean execute (Task task)  { return true; }
+  };
+
+  /** 
+   * It is anticipated that the most common usage will involve
+   * tests on the start time and/or detail level of a task.
+   * Therefore, we provide a generic predicate that implements
+   * these tests.
    */
   public static class StandardPredicate implements Predicate {
     long earliestStart;
@@ -90,6 +135,14 @@ public class TaskSchedulingPolicy {
       // level 6, etc.) is not greater than maxDetailLevel ?????
       return true;
     }
+  }
+
+  public TimePeriod[] getPhases() {
+    return phases;
+  }
+
+  public int numPhases() {
+    return ((phases == null) || (phases.length == 0)) ? 1 : phases.length;
   }
 
   /** number of different priorities */
