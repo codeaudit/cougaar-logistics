@@ -45,6 +45,7 @@ import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
+import org.cougaar.glm.ldm.asset.PackagePG;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.core.service.LoggingService;
@@ -822,6 +823,15 @@ public class LogisticsInventoryFormatter {
 
     header = header + " nomenclature=" + nomenclature;
 
+
+    LogisticsInventoryPG logInvPG = (LogisticsInventoryPG) invAsset.searchForPropertyGroup(LogisticsInventoryPG.class);
+
+    SupplyClassPG pg = (SupplyClassPG) logInvPG.getResource().searchForPropertyGroup(SupplyClassPG.class);
+    String supplyType = pg.getSupplyType();
+
+    header = header + " supplyType=" + supplyType;
+
+
     if (humanReadable) {
       header = header + " cDay=" + (new Date(startCDay.getTime())) + ">";
     } else {
@@ -1023,11 +1033,26 @@ public class LogisticsInventoryFormatter {
       String itemId = invAsset.getItemIdentificationPG().getItemIdentification();
       int idx = itemId.indexOf(':');
       itemId = itemId.substring(idx + 1);
+
       if (itemId.equals(WATER_ITEM_ID)) {
         return WATER_UNIT;
+      }
+      else {
+	  PackagePG packPG = (PackagePG) logInvPG.getResource().searchForPropertyGroup(PackagePG.class);
+
+	  return packPG.getUnitOfIssue();
+      }
+
+      /***      
+		Moved to PackagePG for bug# 13344
+				if (itemId.equals(WATER_ITEM_ID)) {
+        return WATER_UNIT;
+
       } else {
         return SUBSISTENCE_UNIT;
       }
+      ****/
+      
     } else if (supplyType.equals(BULK_POL_SUPPLY_TYPE)) {
       return BULK_POL_UNIT;
     } else if (supplyType.equals(PACKAGED_POL_SUPPLY_TYPE)) {
