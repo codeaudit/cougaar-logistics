@@ -63,6 +63,8 @@ import org.cougaar.planning.ldm.asset.NewItemIdentificationPG;
 
 import org.cougaar.planning.ldm.measure.Latitude;
 import org.cougaar.planning.ldm.measure.Longitude;
+import org.cougaar.logistics.plugin.trans.NewLowFidelityAssetPG;
+import org.cougaar.logistics.plugin.trans.LowFidelityAssetPG;
 
 /**
  * getSubtasks is filled in.  It justs blows up composite
@@ -247,6 +249,10 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
     else {
       GLMAsset lowFiAsset = 
 	(GLMAsset) assetHelper.createInstance (getLDMService().getLDM(), "LowFidelityPrototype", "LowFi_" + getNextID());
+      NewLowFidelityAssetPG lowFiPG = 
+	(NewLowFidelityAssetPG)ldmf.createPropertyGroup(LowFidelityAssetPG.class);
+      lowFiPG.setOriginalAsset (lowFiAsset);
+      attachPG(lowFiAsset, lowFiPG); // now subobject has pointer back to parent
 
       Asset asset = parentTask.getDirectObject();
 
@@ -278,6 +284,26 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
     retval.add(newTask);
 
     return retval;
+  }
+
+  /** 
+   * Since FOR preps are lost a custom property is added to determine unit
+   */
+  public void attachPG(Asset asset, PropertyGroup thisPG) {
+    if (asset instanceof AssetGroup) {
+      Vector assetList = ((AssetGroup)asset).getAssets();
+      for (int i = 0; i < assetList.size(); i++) {
+	attachPG((Asset)assetList.elementAt(i), thisPG);
+      }
+    } else if (asset instanceof AggregateAsset) {
+      // Put in both because unsure of behavior
+      asset.addOtherPropertyGroup(thisPG);
+      // Don't want to do this, since every aggregate of X
+      //XX asset will then have this pg
+      //	    attachUnitPG(((AggregateAsset)asset).getAsset(),unitPG);
+    } else {
+      asset.addOtherPropertyGroup(thisPG);
+    }
   }
 
   protected boolean isPerson (Task parentTask) {
@@ -403,26 +429,6 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter {
       prefHelper.removePrefWithAspectType(newtask, AspectType.QUANTITY);
 
     return newtask;
-  }
-
-  /** 
-   * Since FOR preps are lost a custom property is added to determine unit
-   */
-  public void attachPG(Asset asset, PropertyGroup thisPG) {
-    if (asset instanceof AssetGroup) {
-      Vector assetList = ((AssetGroup)asset).getAssets();
-      for (int i = 0; i < assetList.size(); i++) {
-	attachPG((Asset)assetList.elementAt(i), thisPG);
-      }
-    } else if (asset instanceof AggregateAsset) {
-      // Put in both because unsure of behavior
-      asset.addOtherPropertyGroup(thisPG);
-      // Don't want to do this, since every aggregate of X
-      //XX asset will then have this pg
-      //	    attachUnitPG(((AggregateAsset)asset).getAsset(),unitPG);
-    } else {
-      asset.addOtherPropertyGroup(thisPG);
-    }
   }
 
   /**
