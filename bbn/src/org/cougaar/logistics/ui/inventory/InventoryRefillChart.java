@@ -62,6 +62,9 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 public class InventoryRefillChart extends InventoryChart{
 
+    ChartDataView projChartDataView;
+    ChartDataView reqChartDataView;
+
     public final static String RESUPPLY_TASKS =
 	LogisticsInventoryFormatter.RESUPPLY_SUPPLY_TASKS_TAG;
     public final static String RESUPPLY_ARS =
@@ -93,8 +96,8 @@ public class InventoryRefillChart extends InventoryChart{
 					  reqDM,
 					  true);
 
-	ChartDataView projChartDataView = addView(JCChart.BAR, projDM);
-	ChartDataView reqChartDataView = addView(JCChart.BAR, reqDM);
+	projChartDataView = addView(JCChart.BAR, projDM);
+	reqChartDataView = addView(JCChart.BAR, reqDM);
 
 	setBarChartColors();
 	

@@ -30,6 +30,9 @@ import com.klg.jclass.chart.ChartDataEvent;
 import com.klg.jclass.chart.ChartDataManageable;
 import com.klg.jclass.chart.ChartDataManager;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
@@ -118,6 +121,7 @@ public class ProjectionsChartDataModel
 	seriesLabels = new String[2];
 	seriesLabels[0] = PROJECTION_SERIES_LABEL;
 	seriesLabels[1] = PROJECTION_ALLOCATION_SERIES_LABEL;
+	logger = Logging.getLogger(this);
 	initValues();
     }
 
@@ -196,11 +200,13 @@ public class ProjectionsChartDataModel
 		int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
 		int graphDay = (endDay - minDay)/bucketDays;
 		if(graphDay < 0) 
-		    System.out.println("Array out of bounds alright.  The Graphday is negative");
+		    logger.error("Array out of bounds alright.  The Graphday is negative");
 		if(graphDay < nValues)
 		    projYValues[0][graphDay]+=task.getDailyRate();
 		else {
-		    System.out.println("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+		    if(logger.isWarnEnabled()) {
+			logger.warn("ProjectionsChartDataModel:Index Out of bounds on the tasks - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+		    }
 		}
 	    }
 	}	    
@@ -215,11 +221,13 @@ public class ProjectionsChartDataModel
 		    int endDay = (int) ((endTime - baseTime) / MILLIS_IN_DAY);
 		    int graphDay = (endDay - minDay)/bucketDays;
 		    if(graphDay < 0) 
-			System.out.println("Array out of bounds alright.  The Graphday is negative");
+			logger.error("Array out of bounds alright.  The Graphday is negative");
 		    if(graphDay < nValues)
 			projYValues[1][graphDay]+=ar.getDailyRate();
 		    else {
-			System.out.println("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+			if(logger.isWarnEnabled()) {
+			    logger.warn("ProjectionsChartDataModel:Index Out of bounds on the ARs - falling off the end. Length " + nValues + " and graph day is: " + graphDay);
+			}
 		    }
 		}	    
 	    }
@@ -258,7 +266,7 @@ public class ProjectionsChartDataModel
   public synchronized double[] getRealYSeries(int index) {
       initValues();
       if (projYValues == null) {
-	  System.out.println("InventoryChartDataModel ERROR getRealYSeries has no projYValues?");
+	  logger.error("InventoryChartDataModel ERROR getRealYSeries has no projYValues?");
       }    
       return projYValues[index];
 

@@ -24,6 +24,9 @@ package org.cougaar.logistics.ui.inventory;
 import java.util.Stack;
 import java.util.ArrayList;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 import org.cougaar.logistics.ui.inventory.data.*;
 
@@ -44,16 +47,20 @@ public class InventoryXMLParser
     private InventoryData inventory;
     private String currentString;
     private Stack tagStack;
+    private Logger logger;
 
     public InventoryXMLParser() {
 	tagStack = new Stack();
+	logger = Logging.getLogger(this);
     }
 
     public InventoryData parseString(String xmlInput){
 	ctr=0;
 	inventory=null;
 	lines = xmlInput.split("\\n");
-	System.out.println("Number of Lines=" + lines.length);
+	if(logger.isDebugEnabled()) {
+	    logger.debug("Number of Lines=" + lines.length);
+	}
 	parse();
 	return inventory;
     }
@@ -75,7 +82,7 @@ public class InventoryXMLParser
 		}
 	    }
 	    else {
-		System.out.println("Unparseable line: " + currentString);
+		logger.warn("Unparseable line: " + currentString);
 		ctr++;
 	    }
 	}	
@@ -114,8 +121,10 @@ public class InventoryXMLParser
 	asset=words[2].substring("item=".length());
       }
       inventory = new InventoryData(org,asset);
-      System.out.println("Parsed header w/org=|" + org +
-			 "| item=|" + asset + "|");
+      if(logger.isDebugEnabled()) {
+	  logger.debug("Parsed header w/org=|" + org +
+		       "| item=|" + asset + "|");
+      }
       ctr++;
     }
 
@@ -127,9 +136,9 @@ public class InventoryXMLParser
 
     private void parseSchedule() {
         String name = getTagName(currentString);
-	System.out.print("Parsing Schedule " + name);
+	logger.debug("Parsing Schedule " + name);
 	String typeStr = getScheduleType(currentString);
-	System.out.println(" of type " + typeStr);
+	logger.debug(" of type " + typeStr);
 	int type = InventoryScheduleHeader.getTypeInt(typeStr);
 	int ctrIn = ctr;
 	currentString = lines[++ctr];
@@ -143,10 +152,12 @@ public class InventoryXMLParser
 								     type,
 								     elements);
 	inventory.addSchedule(header);
-
-	System.out.println("Parsed Schedule " + name 
-			   + " there were " + (ctr - ctrIn) +
-			   " lines of type " + typeStr);
+	
+	if(logger.isDebugEnabled()) {
+	    logger.debug("Parsed Schedule " + name 
+			 + " there were " + (ctr - ctrIn) +
+			 " lines of type " + typeStr);
+	}
 
     }
 	
@@ -174,7 +185,9 @@ public class InventoryXMLParser
 	String lastTag = (String) tagStack.peek();
 	if(getTagName(lastTag).equals(getTagName(currentString))) {
 	    tagStack.pop();
-	    System.out.println("Popping " + getTagName(currentString));
+	    if(logger.isDebugEnabled()) {
+		logger.debug("Popping " + getTagName(currentString));
+	    }
 	}
 	else {
 	    throw new RuntimeException("ERROR:Last pushed tag doesn't match this termination tag");

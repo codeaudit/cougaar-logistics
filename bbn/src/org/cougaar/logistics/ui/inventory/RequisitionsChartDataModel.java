@@ -30,6 +30,9 @@ import com.klg.jclass.chart.ChartDataEvent;
 import com.klg.jclass.chart.ChartDataManageable;
 import com.klg.jclass.chart.ChartDataManager;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
@@ -93,6 +96,7 @@ public class RequisitionsChartDataModel
 	seriesLabels = new String[2];
 	seriesLabels[0] = REQUISITION_SERIES_LABEL;
 	seriesLabels[1] = REQUISITION_ALLOCATION_SERIES_LABEL;
+	logger = Logging.getLogger(this);
 	initValues();
     }
 

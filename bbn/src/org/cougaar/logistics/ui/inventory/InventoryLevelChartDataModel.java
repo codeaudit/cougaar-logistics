@@ -30,12 +30,16 @@ import com.klg.jclass.chart.ChartDataEvent;
 import com.klg.jclass.chart.ChartDataManageable;
 import com.klg.jclass.chart.ChartDataManager;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 import org.cougaar.logistics.ui.inventory.data.InventoryLevel;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleHeader;
 import org.cougaar.logistics.ui.inventory.data.InventoryScheduleElement;
+
 
 /** 
  * <pre>
@@ -77,6 +81,7 @@ public class InventoryLevelChartDataModel
 	seriesLabels[0] = INVENTORY_LEVEL_SERIES_LABEL;
 	seriesLabels[1] = REORDER_LEVEL_SERIES_LABEL;
 	seriesLabels[2] = TARGET_LEVEL_SERIES_LABEL;
+	logger = Logging.getLogger(this);
 	initValues();
     }
 

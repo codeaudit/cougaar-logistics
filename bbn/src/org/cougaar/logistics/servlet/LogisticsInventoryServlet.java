@@ -108,12 +108,9 @@ public class LogisticsInventoryServlet
     // create a new "InventoryGetter" context per request
     InventoryGetter ig = new InventoryGetter(support,alarmService,logger);
     try {
-      //System.out.println("\n\n\n\n\n\n********* BEGIN PUT");
-    ig.execute(request, response);
-    //System.out.println("\n\n\n\n\n\n\n****** DID PUT");
+	ig.execute(request, response);
     } catch (Exception e) {
-      //System.out.println("\n\n\n\n\n********* FAILED PUT!!  Exception: "+e);
-      e.printStackTrace();
+	e.printStackTrace();
     }
   }
   
@@ -173,13 +170,13 @@ public class LogisticsInventoryServlet
       
       int len = req.getContentLength();
       if (len > 0) {
-	  //System.out.println("READ from content-length["+len+"]");
+	  //logger.debug("READ from content-length["+len+"]");
 	InputStream in = req.getInputStream();
         BufferedReader bin = new BufferedReader(new InputStreamReader(in));
         desiredAssetName = bin.readLine();
         bin.close();
 	desiredAssetName = desiredAssetName.trim();
-	System.out.println("POST DATA: " + desiredAssetName);
+	logger.info("POST DATA: " + desiredAssetName);
       } else {
 	logger.warn(" No asset to plot");
 	return;
@@ -216,10 +213,12 @@ public class LogisticsInventoryServlet
 	 TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
 	 String nomenclature = typeIdPG.getNomenclature();
 	 String typeId = typeIdPG.getTypeIdentification();
-	 if (nomenclature != null)
-	 nomenclature = nomenclature + ":" + typeId;
-	 else
-	 nomenclature = typeId;
+	 if (nomenclature != null) {
+	     nomenclature = nomenclature + ":" + typeId;
+	 }
+	 else {
+	     nomenclature = typeId;
+	 }
 	 assetNames.addElement(nomenclature);
 	 }
 	 
@@ -251,7 +250,7 @@ public class LogisticsInventoryServlet
 	// send the results
 	ObjectOutputStream p = new ObjectOutputStream(out);
 	p.writeObject(assetNames);
-	System.out.println("Sent asset names");
+        logger.info("Sent asset names");
 	return;
       } // end returning list of asset names
       
@@ -275,7 +274,7 @@ public class LogisticsInventoryServlet
       Date startDay=getStartDate();
 
       // get roles and determine if this cluster is a provider (or consumer)
-      //System.out.println("\n****** look for roles for agent \""+support.getEncodedAgentName()+"\"");
+      //logger.debug("\n****** look for roles for agent \""+support.getEncodedAgentName()+"\"");
       /**** MWD do we still need to know if we are a provider or not?
        ** all the role predicate code below
       RolePredicate rolePred = new RolePredicate(support.getEncodedAgentName());
@@ -306,7 +305,7 @@ public class LogisticsInventoryServlet
       Collection collection = support.queryBlackboard(inventoryPredicate);
     
       if (collection.isEmpty()) {
-        //System.out.println("\n\n\n\n\n\n\n ************* collection is empty; return no response!");
+        //logger.debug("\n\n\n\n\n\n\n ************* collection is empty; return no response!");
 	return;
       }
     
@@ -321,11 +320,11 @@ public class LogisticsInventoryServlet
       if ((xmlStr != null) && 
 	  (!(xmlStr.trim().equals("")))){
 	ObjectOutputStream p = new ObjectOutputStream(out);
-	//System.out.println("\n\n\n\n sending back a non-null inventory:\n"+simpleInventory);
+	//logger.debug("\n\n\n\n sending back a non-null inventory:\n"+simpleInventory);
 	p.writeObject(xmlStr);
-	System.out.println("Sent XML document");
+	logger.info("Sent XML document");
       } else {
-        //System.out.println("\n\n\n\n  simple-inventory is null!!!  return no response");
+        logger.error("XML string is null or empty.  returning null response.");
       }
     }
 
@@ -382,23 +381,7 @@ public class LogisticsInventoryServlet
       return startingCDay;
     }
 
-      /***   MWD Delete below
 
-    public boolean returnsXML() {
-      return true;
-    }
-    
-    public boolean returnsHTML() {
-      return false;
-    }
-    
-    public String getDTD() {
-      return "myDTD";
-    }
-    
-    public void subscriptionChanged(Subscription subscription) {
-    }
-    ***/
     private static UnaryPredicate oplanPredicate() {
       return new UnaryPredicate() {
 	  public boolean execute(Object o) {
@@ -544,7 +527,7 @@ class AssetPredicate implements UnaryPredicate {
 	  logger.warn(" The Supply type is: " + pg.getSupplyType());
 	  return false;
 	  }
-	  System.out.println("NO WARNING: SUCCESS got Asset of right type");
+	  logger.debug("NO WARNING: SUCCESS got Asset of right type");
       ***/
     }
     return true;

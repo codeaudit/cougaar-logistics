@@ -33,6 +33,9 @@ import javax.swing.JOptionPane;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /** 
  * <pre>
  * 
@@ -58,12 +61,13 @@ public class InventoryConnectionManager implements InventoryDataSource
     final public static String[] ASSET_CLASS_TYPES = {GET_ALL_CLASS_TYPES,"Ammunition","BulkPOL","ClassISubsistence","ClassVIIIMedical","PackagedPOL","Consumable"};
 
     private Component parentComponent;
-    private String clusterURL=null;
     private String servHost;
     private String servPort;
     Hashtable orgURLs;
 
     private String invXMLStr;
+
+    private Logger logger;
 
     public InventoryConnectionManager(Component parent) {
 	this(parent,"localhost","8800");
@@ -75,6 +79,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 	parentComponent = parent;
 	servHost = targetHost;
 	servPort = targetPort;
+	logger = Logging.getLogger(this);
     }   
 
     public static InventoryConnectionManager queryUserForConnection(Component parent) {
@@ -91,7 +96,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 	String orgURL = (String)orgURLs.get(orgName);
 	
     
-	System.out.println("ExecutingQuery: " + assetName + " to: " + orgURL +
+	logger.info("ExecutingQuery: " + assetName + " to: " + orgURL +
                        " for: " + SERV_ID);
 
 	try {
@@ -127,7 +132,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 	    queryStr = (ASSET_AND_CLASSTYPE + supplyType);
 	}
 
-	//System.out.println("Submitting: " + queryStr + " to: " + orgURL +
+	//logger.debug("Submitting: " + queryStr + " to: " + orgURL +
 	//                   " for: " + SERV_ID);
 	InputStream is = null;
 	try {
@@ -164,16 +169,16 @@ public class InventoryConnectionManager implements InventoryDataSource
     }
 
     public Vector getOrgNames() {
-	System.out.println("Getting Org List");
+	logger.debug("Getting Org List");
 	try {
 	    ConnectionHelper connection = new ConnectionHelper(getURLString());
 	    orgURLs = connection.getClusterIdsAndURLs();
 	    if (orgURLs == null) {
-		System.out.println("No ORG/Agents");
+		logger.warn("No ORG/Agents");
 		return null;
 	    }
 	} catch (Exception e) {
-	    System.out.println(e);
+	    logger.error(e.toString());
 	    return null;
 	}
 	return getSortedOrgNames();

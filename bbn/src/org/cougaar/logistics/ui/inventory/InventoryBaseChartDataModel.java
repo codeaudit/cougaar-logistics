@@ -30,6 +30,9 @@ import com.klg.jclass.chart.ChartDataEvent;
 import com.klg.jclass.chart.ChartDataManageable;
 import com.klg.jclass.chart.ChartDataManager;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryFormatter;
@@ -76,6 +79,8 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 
   protected boolean valuesSet;
 
+  protected Logger logger;
+
   public abstract void resetInventory(InventoryData inventory);
 
   public ChartDataManager getChartDataManager() { 
@@ -120,7 +125,7 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
   public double[] getXSeries(int index) {
     initValues();
     if (xvalues == null) {
-	System.out.println("InventoryChartDataModel ERROR getXSeries no xvalues?");
+	logger.error("InventoryChartDataModel ERROR getXSeries no xvalues?");
     }
     return xvalues[index];
   }
@@ -134,7 +139,7 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
   public synchronized double[] getYSeries(int index) {
     initValues();
     if (yvalues == null) {
-	System.out.println("InventoryChartDataModel ERROR getYSeries no yvalues?");
+	logger.error("InventoryChartDataModel ERROR getYSeries no yvalues?");
     }    
     return yvalues[index];
   }
@@ -190,10 +195,12 @@ public abstract class InventoryBaseChartDataModel extends ChartDataSupport
 		long bucketSize = endTime - startTime;
 		bucketDays = (int) (bucketSize / MILLIS_IN_DAY);
 	    }
-	    if (minDay == -1)
+	    if (minDay == -1) {
 		minDay = startDay;
-	    else if (startDay < minDay)
+	    }
+	    else if (startDay < minDay) {
 		minDay = startDay;
+	    }
 	    maxDay = Math.max(endDay, maxDay);
 	}
 	nValues = (maxDay - minDay + 1) / bucketDays;

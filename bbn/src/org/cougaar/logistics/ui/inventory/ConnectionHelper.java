@@ -29,6 +29,8 @@ import java.net.URLConnection;
 import java.util.Hashtable;
 import org.cougaar.util.OptionPane;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 /**
  * Creates connection between client and XML Plan Server.
@@ -42,11 +44,14 @@ public class ConnectionHelper {
   String clusterURL;
   boolean isDebugPSP = false;
 
+  private Logger logger;
+
   /**
     * If you create a ConnectionHelper instance with 0 params.  must
     * call setConnection()... to intialize connection
     **/
     public ConnectionHelper() {
+	logger = Logging.getLogger(this);
     }
 
   /**
@@ -57,15 +62,18 @@ public class ConnectionHelper {
   public ConnectionHelper(String clusterURL) throws MalformedURLException, IOException {
     this(clusterURL, DebugPSP_package, DebugPSP_id);
     isDebugPSP = true;
+    logger = Logging.getLogger(this);
   }
 
 
   public ConnectionHelper(String clusterURL, String path) throws MalformedURLException, IOException {
     this.clusterURL = clusterURL;
+    logger = Logging.getLogger(this);
     url = new URL(clusterURL + path);
     connection = url.openConnection();
     connection.setDoInput(true);
     connection.setDoOutput(true);
+
   }
 
   /**
@@ -142,11 +150,8 @@ public class ConnectionHelper {
     */
 
   public Hashtable getClusterIdsAndURLs() throws MalformedURLException, ClassNotFoundException, IOException {
-    ConnectionHelper debugConnection;
     Hashtable results = new Hashtable();
-    Hashtable results2 = new Hashtable();
 
-    try {
       /*
 get host:port from clusterURL
 open url connection to host:port/agents?all&text
@@ -160,7 +165,7 @@ return results
       
       int p = clusterURL.lastIndexOf(":");
       URL url = new URL(clusterURL + "agents?scope=all&format=text");
-      //System.out.println(url.toString());
+      //logger.debug(url.toString());
       URLConnection urlconn = null; 
       InputStream in;
       try {
@@ -174,45 +179,19 @@ return results
 	    if( n==null )
 	      break;
 	    String u = ((clusterURL.substring(0,p+1)) + "8800/$" + n + "/");
-	    //System.out.println(u);
+	    //logger.debug(u);
 	    results.put(n, u);
 	  }
 	} catch(IOException e) {
-	  System.out.println("Error reading agent list: " + e.getMessage());
+	    if(logger.isErrorEnabled()) {
+		logger.error("Error reading agent list: " + e.getMessage());
+	    }
 	}
       } catch(IOException e) {
-	System.out.println("Error reaching agents list: " + e.getMessage());
+	  if(logger.isErrorEnabled()) {
+	      logger.error("Error reaching agents list: " + e.getMessage());
+	  }
       }
-      
-      
-      
-// we don't want this code:
-      /*
-      if (!isDebugPSP) {
-        int i = clusterURL.lastIndexOf(":");
-        if (i == -1)
-          throw new MalformedURLException("Expected host:port");
-        debugConnection = new ConnectionHelper(clusterURL.substring(0,i+1) + "5555/");
-      } else {
-        debugConnection = this;
-      }
-      debugConnection.sendData("LIST_CLUSTERS");
-      ObjectInputStream ois = 
-        new ObjectInputStream(debugConnection.getInputStream());
-      while (true) {
-        String nextName = (String)ois.readObject();
-        String nextURL = (String)ois.readObject();
-        results.put(nextName, nextURL);
-      }
-//
-      
-    } catch (java.io.EOFException e) {
-      // ignore this one
-    }
-      */
-    } catch (Exception e) {
-      // ignore
-    }
 
     return results;
   }

@@ -45,6 +45,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 /** 
@@ -74,6 +77,8 @@ public class InventoryUIFrame extends JFrame
 
     MultiChartPanel     multiChart;
     InventoryData       inventory;
+    
+    private Logger logger;
 
 
     InventorySelectionPanel selector;
@@ -86,6 +91,7 @@ public class InventoryUIFrame extends JFrame
 	    });
 
 	parser = new InventoryXMLParser();
+	logger = Logging.getLogger(this);
 	contentPane = getRootPane().getContentPane();
 	// fills frame
 	doMyLayout();
@@ -168,7 +174,7 @@ public class InventoryUIFrame extends JFrame
 	    connectToServlet();
 	}
 	else if(e.getActionCommand().equals("Parse")) {
-	  System.out.println("Parsing");
+	    logger.info("Parsing");
 	    inventory = parser.parseString(editPane.getText());
 	    multiChart.setData(inventory);
 	}

@@ -249,7 +249,6 @@ public class InventorySelectionPanel extends JPanel
     }
 
     public void actionPerformed(ActionEvent e){
-	JComponent source = (JComponent) e.getSource();
 	if(e.getActionCommand().equals(SUBMIT)) {
 	  //System.out.println("Pressed Submit");
 	    fireInventorySelectionEvent(InventorySelectionEvent.INVENTORY_SELECT);

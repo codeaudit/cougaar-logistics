@@ -65,6 +65,9 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 public class InventoryDemandChart extends InventoryChart {
 
+    ChartDataView projChartDataView;
+    ChartDataView reqChartDataView;
+
     public final static String DEMAND_TASKS =
 	LogisticsInventoryFormatter.WITHDRAW_TASKS_TAG;
     public final static String DEMAND_ARS =
@@ -93,8 +96,8 @@ public class InventoryDemandChart extends InventoryChart {
 					  reqDM,
 					  false);
 
-	ChartDataView projChartDataView = addView(JCChart.BAR, projDM);
-	ChartDataView reqChartDataView = addView(JCChart.BAR, reqDM);
+	projChartDataView = addView(JCChart.BAR, projDM);
+	reqChartDataView = addView(JCChart.BAR, reqDM);
 	
 	setBarChartColors();
 		    

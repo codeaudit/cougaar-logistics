@@ -57,6 +57,8 @@ import com.klg.jclass.chart.ChartDataModel;
 import com.klg.jclass.chart.ChartDataEvent;
 import com.klg.jclass.chart.ChartText;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
@@ -87,6 +89,8 @@ public abstract class InventoryChart extends JPanel
 
     protected InventoryColorTable colorTable;
 
+    protected Logger logger;
+
 
     public abstract void initializeChart();
 
@@ -95,6 +99,8 @@ public abstract class InventoryChart extends JPanel
 	int gridy = 0;
 
 	viewIndex=0;
+
+	logger = Logging.getLogger(this);
 
 	colorTable = new InventoryColorTable();
 
@@ -172,19 +178,19 @@ public abstract class InventoryChart extends JPanel
 	JCDataIndex dataIndex = e.getPickResult();
 	// check for all the possible failures
 	if (dataIndex == null) {
-	    System.out.println("WARNING: dataIndex is null");
+	    logger.warn("WARNING: dataIndex is null");
 	    return;
 	}
 	ChartDataView chartDataView = dataIndex.getDataView();
 	if (chartDataView == null) {
-	    System.out.println("WARNING: chartDataView is null");
+	    logger.warn("WARNING: chartDataView is null");
 	    return;
 	}
 	int seriesIndex = dataIndex.getSeriesIndex();
 	int pt = dataIndex.getPoint();
 	if (pt < 0 || seriesIndex < 0) {
 	    
-	    System.out.println("WARNING: series or point index is null");
+	    logger.warn("WARNING: series or point index is null");
 	    return;
 	}
 	
@@ -195,13 +201,13 @@ public abstract class InventoryChart extends JPanel
 	ChartDataModel dataModel = chartDataView.getDataSource();
 
 	if (dataModel == null) {
-	    System.out.println("WARNING: data model is null");
+	    logger.warn("WARNING: data model is null");
 	    return;
 	}
 	
 	// user has picked a valid point
-	double[] x = dataModel.getXSeries(seriesIndex);
-	double[] y = dataModel.getYSeries(seriesIndex);
+	//double[] x = dataModel.getXSeries(seriesIndex);
+	//double[] y = dataModel.getYSeries(seriesIndex);
 	
 	//MWD just gets info doesn't do anything yet.  Copied
 	//from glm version.
@@ -243,7 +249,11 @@ public abstract class InventoryChart extends JPanel
 		xaxis.setGridSpacing(7);
 		xaxis.setTimeFormat("M/d");
 
-		//System.out.println("Base Date is: " + new Date(InventoryChartBaseCalendar.getBaseTime()));
+		/*
+		 *if(logger.isDebugEnabled()) {
+		 *logger.debug("Base Date is: " + new Date(InventoryChartBaseCalendar.getBaseTime()));
+		 *}
+		 */
 		xaxis.setGridVisible(true);
 		xaxis.setAnnotationRotation(JCAxis.ROTATE_270);
 	    }
