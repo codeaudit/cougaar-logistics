@@ -1,7 +1,0 @@
-<?xml version='1.0'?>
-
-<OBJECTFORMAT name="locations" is_task="false" is_resource="false" >
-  <FIELDFORMAT name="locations" datatype="string" is_subobject="false" is_list="true" is_key="false" />
-  <FIELDFORMAT name="depotIndex" datatype="number" is_subobject="false" is_list="false" is_key="false" />
-</OBJECTFORMAT>
-

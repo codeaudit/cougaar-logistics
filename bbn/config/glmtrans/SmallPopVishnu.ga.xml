@@ -1,8 +1,0 @@
-<?xml version='1.0'?>
-
-<GAPARMS pop_size="2" parent_scalar="0.99000" max_evals="1" max_time="5" max_duplicates="10" max_top_dog_age="3000" initializer="org.cougaar.lib.vishnu.server.OrderedInitializer" decoder="org.cougaar.lib.vishnu.server.OrderedDecoder" report_time="5">
-  <GAOPERATORS>
-    <GAOPERATOR name="org.cougaar.lib.vishnu.server.OrderedMutation" prob="0.50" parms="0.8" />
-    <GAOPERATOR name="org.cougaar.lib.vishnu.server.OrderedCrossover" prob="0.50" />
-  </GAOPERATORS>
-</GAPARMS>
