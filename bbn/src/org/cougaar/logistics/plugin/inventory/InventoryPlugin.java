@@ -98,6 +98,8 @@ public class InventoryPlugin extends ComponentPlugin {
   private boolean logToCSV=false;
   private transient ArrayList newRefills = new ArrayList();
   private boolean rehydrateInvs = false;
+  private boolean OMChange = false;
+  private long prevLevel6;
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
   public final String INVENTORY_FILE = "INVENTORY_FILE";
@@ -268,9 +270,22 @@ public class InventoryPlugin extends ComponentPlugin {
       supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
       handleRemovedRefills(refillSubscription.getRemovedCollection());
 
+      // if the OM changed and the window is further out then before
+      // then mark the flag true so we process previously ignored tasks
+      // and allocation results.  If it went down - don't undo work
+      if (! Level6OMSubscription.getChangedCollection().isEmpty()) {
+        long currentLevel6 = getEndOfLevelSix();
+        if (currentLevel6 > prevLevel6) {
+          OMChange = true;
+        }
+        //reset the previous level 6 to the current
+        prevLevel6 = currentLevel6; 
+      }
+
       // If its the first time we've gotten this far we now have our policy, org and others.
       // However, we may have missed some tasks on the added list in previous executes.
-      // If its the first time through use the underlying subscription collection instead of the added list.
+      // If its the first time through use the underlying subscription collection 
+      // instead of the added list.
       if (firstTimeThrough) {
         Enumeration newReqs = supplyTaskSubscription.elements();
         ArrayList newReqsCollection = new ArrayList();
@@ -312,11 +327,21 @@ public class InventoryPlugin extends ComponentPlugin {
         if (! getTouchedInventories().isEmpty()) {
 	  //check to see if we have new projections
 	  if (touchedProjections || touchedRemovedProjections || touchedChangedProjections) {
-            refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
-                                                           criticalLevel, 
-                                                           getEndOfLevelSix(), 
-                                                           getEndOfLevelTwo(), 
-                                                           refillComparator);
+            //check to see if the OM changed.  If it did process all inventories
+            //since we probably ignored some demand tasks before the change
+            if (OMChange) {
+              refillProjGenerator.calculateRefillProjections(getInventories(), 
+                                                             criticalLevel, 
+                                                             getEndOfLevelSix(), 
+                                                             getEndOfLevelTwo(), 
+                                                             refillComparator);
+            } else {
+              refillProjGenerator.calculateRefillProjections(getTouchedInventories(), 
+                                                             criticalLevel, 
+                                                             getEndOfLevelSix(), 
+                                                             getEndOfLevelTwo(), 
+                                                             refillComparator);
+            }
 	  }
  	  refillGenerator.calculateRefills(getTouchedInventories(), refillComparator);
           externalAllocator.allocateRefillTasks(newRefills);
@@ -340,31 +365,23 @@ public class InventoryPlugin extends ComponentPlugin {
         if (getTouchedInventories().isEmpty()) {
           supplyExpander.updateAllocationResult(expansionSubscription);
 	  backwardFlowTouched = 
-	      externalAllocator.updateAllocationResult(refillAllocationSubscription); 
+            externalAllocator.updateAllocationResult(refillAllocationSubscription); 
+          // if the OM changed, process ALL inventories for demand projections and 
+          // allocation results since some results were likely ignored before
+          // the OM level 6 window changed.
+          if (OMChange) {
+            refillProjGenerator.calculateRefillProjections(getInventories(), 
+                                                           criticalLevel, 
+                                                           getEndOfLevelSix(), 
+                                                           getEndOfLevelTwo(), 
+                                                           refillComparator);
+            externalAllocator.allocateRefillTasks(newRefills);
+            allocationAssessor.reconcileInventoryLevels(getInventories()); 
+          } else {
+            allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
+          }
+        }
           
-          allocationAssessor.reconcileInventoryLevels(backwardFlowTouched); 
-        }
-
-        // Kludge for now to make sure that all Subsistence withdraw tasks
-        // get allocated.  Bug is that when falling behind conditions change,
-        // some withdraw task's are ignored, but nothing necessarily kicks the inventory later
-        // when we come out of falling behind to allocated hose withdraw tasks since
-        // no level 2 work is done for Subsistence.
-        // Try to limit the amount of times we do this using the changed list from the
-        // level 6 om subscription.
-        if ((getSupplyType().equals("Subsistence")) 
-            && (! Level6OMSubscription.getChangedCollection().isEmpty()) &&
-            (((Integer)level6Horizon.getValue()).equals(LEVEL_6_MAX)) ) {
-          //System.out.println("Reconciling all inventory levels at: " + getAgentIdentifier());
-          refillProjGenerator.calculateRefillProjections(getInventories(), 
-                                                         criticalLevel, 
-                                                         getEndOfLevelSix(), 
-                                                         getEndOfLevelTwo(), 
-                                                         refillComparator);
-          externalAllocator.allocateRefillTasks(newRefills);
-          allocationAssessor.reconcileInventoryLevels(getInventories());
-        }
-        
         // update the Maintain Inventory Expansion results
         PluginHelper.updateAllocationResult(MIExpansionSubscription);
         PluginHelper.updateAllocationResult(MITopExpansionSubscription);
@@ -380,6 +397,7 @@ public class InventoryPlugin extends ComponentPlugin {
 	//backwardFlowInventories.clear(); //###
         touchedProjections = false;
         touchedChangedProjections = false;
+        OMChange = false;
         //testBG();
       }
     }
@@ -442,6 +460,7 @@ public class InventoryPlugin extends ComponentPlugin {
   protected void setupSubscriptions() {
     if (! getBlackboardService().didRehydrate()) {
       setupOperatingModes();
+      prevLevel6 = getEndOfLevelSix();
     } else {
       // if we did rehydrate set a flag to rehydrate the inventories 
       //when we are ready in the execute block
@@ -460,6 +479,7 @@ public class InventoryPlugin extends ComponentPlugin {
       if (level6it.hasNext()) {
         level6Horizon = (OperatingMode) level6it.next();
       }
+      prevLevel6 = getEndOfLevelSix();
       if (level2Horizon == null || level6Horizon == null) {
         if (logger.isErrorEnabled()) {
           logger.error("InventoryPlugin in agent: " + getAgentIdentifier() +
@@ -469,9 +489,8 @@ public class InventoryPlugin extends ComponentPlugin {
         }
       }
     }
-    if (getSupplyType().equals("Subsistence")) {
-      Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
-    }
+    
+    Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
