@@ -248,6 +248,10 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
+      if(myOrganization != null) {
+        projectSupplySubscription = (IncrementalSubscription)
+        blackboard.subscribe(new ProjectSupplyPredicate(supplyType, getOrgName(), taskUtils));
+      }
     }
 
     if (myOrganization == null) {
@@ -336,8 +340,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     genProjPESubscription = (IncrementalSubscription) 
       blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
-    projectSupplySubscription = (IncrementalSubscription) 
-      blackboard.subscribe(new ProjectSupplyPredicate(supplyType, taskUtils));
+
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
 
@@ -442,9 +445,11 @@ public class DemandForecastPlugin extends ComponentPlugin
   /** Predicate defining ProjectSupply tasks that this plugin created. **/
   private static class ProjectSupplyPredicate implements UnaryPredicate {
     private String supplyType;
+    private String orgName;
     private TaskUtils taskUtils;
-    public ProjectSupplyPredicate(String type, TaskUtils utils) {
+    public ProjectSupplyPredicate(String type, String myOrgName,TaskUtils utils) {
       this.supplyType = type;
+      this.orgName = myOrgName;
       this.taskUtils = utils;
     } 
     
@@ -452,7 +457,9 @@ public class DemandForecastPlugin extends ComponentPlugin
       if (o instanceof Task) {
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          return taskUtils.isTaskOfTypeString(t, supplyType);
+          if(taskUtils.isTaskOfTypeString(t, supplyType)) {
+            return (taskUtils.isMyDemandForecastProjection(t,orgName));
+          }
         }
       }
       return false;
