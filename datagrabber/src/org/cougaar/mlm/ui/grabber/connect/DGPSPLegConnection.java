@@ -48,7 +48,7 @@ import org.cougaar.planning.servlet.data.xml.DeXMLableFactory;
 
 /**
  * Handles getting leg data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/19/01
  **/
@@ -242,7 +242,6 @@ public class DGPSPLegConnection extends DGPSPConnection
   }
 
   protected boolean updateAssetItinerary(PreparedStatement s, Leg l){
-    boolean ret=false;
     try{
       Iterator iter=l.getCarriedAssetsIterator();
       while(iter.hasNext()){
@@ -260,7 +259,6 @@ public class DGPSPLegConnection extends DGPSPConnection
   }
 
   protected boolean updateConveyedLeg(PreparedStatement s, Leg l){
-    boolean ret=false;
     try{
       int col = 0;
       s.setString(++col, getUID(l.UID, legUIDToString));

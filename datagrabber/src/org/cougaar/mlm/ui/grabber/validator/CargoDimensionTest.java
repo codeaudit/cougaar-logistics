@@ -37,7 +37,7 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Shows dimension of cargo types
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -110,7 +110,6 @@ public class CargoDimensionTest extends Test implements Graphable {
   /**Actually do the query and build the table**/
   protected void constructTable(Logger l, Statement s, int run)
     throws SQLException{
-    StringBuffer sb=new StringBuffer();
     createTable(s, run);
     insertResults(l,s,run);
   }

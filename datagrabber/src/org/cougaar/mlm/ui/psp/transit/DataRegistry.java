@@ -1267,8 +1267,6 @@ typical_case:
       a = ((AggregateAsset)a).getAsset();
     }
 
-    LowFidelityAssetPG lowFiAssetPG;
-
     int value = (a instanceof ClassISubsistence) ? 
       Prototype.ASSET_CLASS_1 :
       (a instanceof ClassIIClothingAndEquipment) ?

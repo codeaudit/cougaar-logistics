@@ -318,7 +318,6 @@ public class TaskGanttChart extends GanttChart
   }
 
   protected Vector makeWayStations (Vector taskleaves) {
-    Lozenge loz;
     Vector waystations = new Vector ();
     if (debug) 
       System.out.println ("TaskGanttChart.makeLozengeRow - making way stations.");

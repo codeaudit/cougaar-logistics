@@ -364,7 +364,6 @@ public abstract class PSPConnection extends PSPWork{
 
     float total     = (float) (endOfWork      - startURLReadTime);
     float readTime  = (float) (endURLReadTime - startURLReadTime);
-    float writeTime = (float) (endOfWork      - endURLReadTime);
     float pct1      = (readTime/total);
     float pct2      = (1-pct1);        
 

@@ -31,7 +31,7 @@ import java.sql.ResultSet;
 
 /**
  * Looks for missing people
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -90,7 +90,6 @@ public class MissingCargoTest extends Test{
   /**Actually do the query and build the table**/
   protected void constructTable(Logger l, Statement s, int run)
     throws SQLException{
-    StringBuffer sb=new StringBuffer();
     createTable(s, run);
     insertResults(l,s,run);
   }
