@@ -850,6 +850,8 @@ public class InventoryPlugin extends ComponentPlugin {
       return Constants.Role.SPAREPARTSPROVIDER;
     if (supply_type.equals("PackagedPOL"))
       return Constants.Role.PACKAGEDPOLSUPPLYPROVIDER;
+    if (supply_type.equals("Subsistence"))
+      return Constants.Role.SUBSISTENCESUPPLYPROVIDER;
     logger.error("Unsupported Supply Type");
     return null;
   }
