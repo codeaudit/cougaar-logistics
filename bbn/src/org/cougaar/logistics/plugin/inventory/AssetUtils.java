@@ -87,7 +87,6 @@ public class AssetUtils {
     }
 
     public String getAssetIdentifier(Asset asset) {
-	String nsn = null;
 	if (asset == null) {
 	    return null;
 	} else {
@@ -118,7 +117,7 @@ public class AssetUtils {
 	return support_orgs.elements();
     }
 
-   public static Enumeration getGeolocLocationAtTime(Organization org, long time) {
+   public Enumeration getGeolocLocationAtTime(Organization org, long time) {
      LocationSchedulePG lspg = org.getLocationSchedulePG();
      Vector geolocs = new Vector();
      try {
@@ -130,7 +129,7 @@ public class AssetUtils {
        }
      } catch (NullPointerException npe) {
      // Not all organizations have LocationSchedulePG's
-     //logger.("AssetUtils AssetGeolocLocationAtTime(), LocationSchedulePG NOT found on "+org);
+       logger.info("AssetUtils AssetGeolocLocationAtTime(), LocationSchedulePG NOT found on "+org);
      }
      return geolocs.elements();
    }
