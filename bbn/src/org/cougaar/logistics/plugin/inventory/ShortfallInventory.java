@@ -39,6 +39,8 @@ import java.util.Iterator;
 
 public class ShortfallInventory implements java.io.Serializable, Publishable {
 
+
+
   private String invID;
   private int numDemandSupply=0;
   private int numResupplySupply=0;
@@ -46,6 +48,9 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
   private int numResupplyProj=0;
   private int numTempResupplySupply=0;
   private int numTempDemandSupply=0;
+
+  private ArrayList shortfallPeriods;
+
 
   /**
    * Constructor 
@@ -55,6 +60,7 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 
   public ShortfallInventory (String anInvID) {
       invID = anInvID;
+      shortfallPeriods = new ArrayList();
   }
   
   public String getInvID() { return invID; }
@@ -97,6 +103,11 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
       this.numTempResupplySupply = numResupplyTemp;
   }
 
+  public void addShortfallPeriod(ShortfallPeriod aPeriod) {
+      this.shortfallPeriods.add(aPeriod);
+  }
+
+  public ArrayList getShortfallPeriods() { return shortfallPeriods; }
 
   public String toString() {
     StringBuffer sb = new StringBuffer(getInvID());
@@ -117,10 +128,26 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 	      (this.getNumDemandProj() == si.getNumDemandProj()) &&
 	      (this.getNumResupplyProj() == si.getNumResupplyProj()) &&
 	      (this.getNumTempDemandSupply() == si.getNumTempDemandSupply()) &&
-	      (this.getNumTempResupplySupply() == si.getNumTempResupplySupply()));
+	      (this.getNumTempResupplySupply() == si.getNumTempResupplySupply()) &&
+	      (hasEqualShortfallPeriods(si.getShortfallPeriods())));
   }
-  
 
+  public boolean hasEqualShortfallPeriods(ArrayList otherShortfallPeriods) {
+    Iterator myPeriods = getShortfallPeriods().iterator();
+    outer_loop: while(myPeriods.hasNext()) {
+	ShortfallPeriod myPeriod = (ShortfallPeriod) myPeriods.next();
+	Iterator otherPeriods = otherShortfallPeriods.iterator();
+	boolean found=false;
+	while(otherPeriods.hasNext()) {
+	  ShortfallPeriod otherPeriod = (ShortfallPeriod) otherPeriods.next();
+	  if(myPeriod.equals(otherPeriod)) {
+	      continue outer_loop;
+	  }
+	}
+	return false;
+     }
+     return true;
+    }
   public boolean isPersistable() {
     return true;
   }
