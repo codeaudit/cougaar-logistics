@@ -32,6 +32,7 @@ import org.cougaar.mlm.ui.grabber.config.WebServerConfig;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 
 import org.cougaar.mlm.ui.grabber.controller.Controller;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
 import org.cougaar.mlm.ui.grabber.controller.Run;
 import org.cougaar.mlm.ui.grabber.validator.*;
 
@@ -77,15 +78,17 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
   protected int main=0;
 
   protected Validator validator;
+  protected DBConnectionProvider connectionProvider;
 
   //Constructors:
   ///////////////
 
-  public ValidatorRequestHandler(DBConfig dbConfig, Connection connection,
+  public ValidatorRequestHandler(DBConfig dbConfig, DBConnectionProvider connectionProvider,
 				  WebServerConfig config, 
 				  HttpRequest request){
-    super(dbConfig, connection,config,request);
+    super(dbConfig, connectionProvider.getDBConnection(),config,request);
     validator=new Validator(dbConfig);
+    this.connectionProvider = connectionProvider;
   }
 
   //Members:
@@ -334,7 +337,7 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
       h.sCenter();
       h.dismissLink();
 
-      validator.runTest(h,s,run,test);
+      validator.runTest(h,connectionProvider,run,test);
       h.eCenter();
       emptyFooter(h);
     }else{
