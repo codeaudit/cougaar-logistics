@@ -83,4 +83,10 @@ public interface Logger{
   public void logMessage(int severity, int type, String message);
 
   public void logMessage(int severity, int type, String message, Exception e);
+
+  boolean isWarningEnabled   ();
+  boolean isImportantEnabled ();
+  boolean isNormalEnabled    ();
+  boolean isMinorEnabled     ();
+  boolean isTrivialEnabled   ();
 }

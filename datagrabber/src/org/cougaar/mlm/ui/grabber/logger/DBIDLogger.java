@@ -96,6 +96,12 @@ public class DBIDLogger implements IDLogger{
     verbosityLevel=level;
   }
 
+  public boolean isWarningEnabled   () { return verbosityLevel <= WARNING; }
+  public boolean isImportantEnabled () { return verbosityLevel <= IMPORTANT; }
+  public boolean isNormalEnabled    () { return verbosityLevel <= NORMAL; }
+  public boolean isMinorEnabled     () { return verbosityLevel <= MINOR; }
+  public boolean isTrivialEnabled   () { return verbosityLevel <= TRIVIAL; }
+
   //Actions:
 
   protected int incSeqNumber(){

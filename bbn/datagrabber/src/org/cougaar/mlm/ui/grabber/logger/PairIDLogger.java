@@ -46,6 +46,11 @@ public class PairIDLogger implements IDLogger{
   //Members:
   //////////
   
+  public boolean isWarningEnabled   () { return true; }
+  public boolean isImportantEnabled () { return true; }
+  public boolean isNormalEnabled    () { return true; }
+  public boolean isMinorEnabled     () { return true; }
+  public boolean isTrivialEnabled   () { return true; }
 
   public void logMessage(int severity, int type, String message){
     a.logMessage(severity,type,message);

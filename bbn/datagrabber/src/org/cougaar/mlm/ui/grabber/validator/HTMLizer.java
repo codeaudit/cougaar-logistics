@@ -340,6 +340,12 @@ public class HTMLizer implements Logger{
     }
   }
 
+  public boolean isWarningEnabled   () { return true; }
+  public boolean isImportantEnabled () { return true; }
+  public boolean isNormalEnabled    () { return true; }
+  public boolean isMinorEnabled     () { return true; }
+  public boolean isTrivialEnabled   () { return true; }
+
   //InnerClasses:
   ///////////////
 }

@@ -193,6 +193,12 @@ public class WebServer extends Thread implements ResultHandler,
     logMessage(severity,type,message + ":"+e.toString());
   }
 
+  public boolean isWarningEnabled   () { return true; }
+  public boolean isImportantEnabled () { return true; }
+  public boolean isNormalEnabled    () { return true; }
+  public boolean isMinorEnabled     () { return true; }
+  public boolean isTrivialEnabled   () { return true; }
+
   //InnerClasses:
   ///////////////
 }
