@@ -48,6 +48,8 @@ import java.io.Serializable;
 
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
+import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
+import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
 /** Provides convenience methods. */
@@ -432,6 +434,45 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
     return list;
   }
+
+  public static Schedule newObjectSchedule(Collection tasks) {
+    Vector os_elements = new Vector();
+    ScheduleImpl s = new ScheduleImpl();
+    s.setScheduleElementType(PlanScheduleElementType.OBJECT);
+    s.setScheduleType(ScheduleType.OTHER);
+
+    for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
+      Task task = (Task)iterator.next();
+      os_elements.add(new ObjectScheduleElement(getStartTime(task),
+                                                getEndTime(task), task));
+    }
+    s.setScheduleElements(os_elements.elements());
+    return s;
+  }
+
+
+
+  /** Create String defining task identity. Defaults to comparing preferences.
+   * @param prev_task previously published task.
+   * @param new_task already defined to have the same taskKey as task a.
+   * @return null if the two tasks are the same,
+   *         or returns task a modified for a publishChange.
+   */
+  public static Task changeTask(Task prev_task, Task new_task) {
+    // Checks for changed preferences.
+    if(prev_task==new_task) {
+      return new_task;
+    }
+    if (!comparePreferences(new_task, prev_task)) {
+      synchronized ( new_task ) {
+        Enumeration ntPrefs = new_task.getPreferences();
+        ((NewTask)prev_task).setPreferences(ntPrefs);
+      } // synch
+      return prev_task;
+    }
+    return null;
+  }
+
 }
 
 
