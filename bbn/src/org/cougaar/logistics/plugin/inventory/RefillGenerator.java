@@ -153,8 +153,8 @@ public class RefillGenerator extends InventoryLevelGenerator {
           // subsistence charts we'll put in another check.
          //  if ((thePG.getCriticalLevel(refillBucket)< invLevel)  ||
           //     (thePG.getCriticalLevel(refillBucket) == 0.0)) {
-          if (thePG.getCriticalLevel(refillBucket)< invLevel) {
-
+          if ((thePG.getCriticalLevel(refillBucket)< invLevel) ||
+              ((thePG.getCriticalLevel(refillBucket) == 0.0) && (invLevel >= 0.0))){
             thePG.setLevel(refillBucket, invLevel);
 	    if (logger.isDebugEnabled()) { 
 		logger.debug("\nSetting the Inv Level for refillbucket: " + refillBucket +
@@ -180,13 +180,14 @@ public class RefillGenerator extends InventoryLevelGenerator {
 						anInventory, thePG, 
 						today, orderShipTime);
 	      newRefills.add(theRefill);
+	      invLevel = invLevel + refillQty;
       
 	    }
 	    else if (logger.isDebugEnabled()) {
 		logger.debug("Not placing a refill order of qty: " + refillQty) ;
 	    }
 
-	    thePG.setLevel(refillBucket, targetLevel);
+	    thePG.setLevel(refillBucket, invLevel);
             //set the target level to invlevel + refillQty (if we get the refill we
             //ask for we hit the target - otherwise we don't)
             thePG.setTarget(refillBucket, targetLevel);
