@@ -550,13 +550,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     return failures;
   }
 
-  public void setFailuresFlag(boolean value) {
-    failures = value;
-  }
-
   // failures boolean used to determine when due outs
   // need to be re-bucketed
-  public void setFailures(boolean value) {
+  public void setFailuresFlag(boolean value) {
     failures = value;
   }
 
