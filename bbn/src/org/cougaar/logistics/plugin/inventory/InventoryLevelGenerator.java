@@ -94,27 +94,34 @@ public class InventoryLevelGenerator extends InventoryModule {
         if (ar != null) {
           if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
             //demandrate
-//             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-//               //default rate for volume is days
-//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
-//             } else {
-//               //default rate for counts is millis
-//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
-// 	  }
+	    //             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+	    //               //default rate for volume is days
+	    //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
+	    //             } else {
+	    //               //default rate for counts is millis
+	    //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+	    // 	  }
 	    refillQty = getTaskUtils().getQuantity(refill, ar);
           } else {
             try {
               refillQty = ar.getValue(AspectType.QUANTITY);
+            } catch (IllegalArgumentException iae) {
+	      System.err.println ("findCommittedRefill - The refill task " + 
+				  refill.getUID() + "'s plan element has an allocation result without a quantity : " + ar);
             } catch (Exception e) {
-              System.err.println(" Task is " + getTaskUtils().taskDesc(refill) );
-              e.printStackTrace();
-            }
-          }
-          return refillQty;
+	      if (ar == null) {
+		System.err.println ("This would blow our minds.");
+	      }
+	      else 
+		System.err.println(" Task is " + getTaskUtils().taskDesc(refill) );
+		e.printStackTrace();
+	      }
+	    }
+	    return refillQty;
 	  
-        }
+	  }
+	}
       }
-    }
     // if we did not find a match return 0.0
     return refillQty;
   }
