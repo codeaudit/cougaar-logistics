@@ -44,7 +44,7 @@ import org.cougaar.glm.ldm.oplan.OrgActivity;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
 import org.cougaar.core.util.UID;
-
+import org.cougaar.util.DynamicUnaryPredicate;
 import java.io.Serializable;
 import java.util.*;
 
@@ -242,7 +242,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
       LogisticsOPlan loplan = (LogisticsOPlan) enum.next();
       IncrementalSubscription s = (IncrementalSubscription)
 	orgActivitySubscriptionOfOPlanUID.get(loplan.getOplanUID());
-      if (s.hasChanged()) {
+      if ((!s.getChangedCollection().isEmpty()) || 
+	  (!s.getAddedCollection().isEmpty()) ||
+	  (!s.getRemovedCollection().isEmpty())) {
         update = update || loplan.updateOrgActivities(s);
         getBlackboardService().publishChange(loplan);
       }
