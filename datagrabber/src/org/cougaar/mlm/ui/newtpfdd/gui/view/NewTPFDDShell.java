@@ -69,7 +69,7 @@ import org.cougaar.mlm.ui.newtpfdd.gui.view.statistics.StatisticsPane;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.statistics.GraphPane;
 
 public class NewTPFDDShell extends JApplet implements ActionListener,
-						      TPFDDConstants, DatabaseState
+						      TPFDDConstants, DatabaseState, PopupDialogSupport
 {
   private JMenu ivjactionMenu = null;
   private JMenu ivjclusterMenu = null;

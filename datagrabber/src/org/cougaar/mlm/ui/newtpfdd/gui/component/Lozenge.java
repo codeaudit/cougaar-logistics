@@ -1,17 +1,3 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/Lozenge.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
-
-/*
-  Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
-  Reserved.
-  
-  This material has been developed pursuant to the BBN/RTI "ALPINE"
-  Joint Venture contract number MDA972-97-C-0800, by Ascent Technology,
-  Inc. 64 Sidney Street, Suite 380, Cambridge, MA 02139.
-
-  @author Harry Tsai, Stephen Lines, Jason Leatherman, Daniel Bromberg
-*/
-
-
 package org.cougaar.mlm.ui.newtpfdd.gui.component;
 
 import java.awt.*;
@@ -26,7 +12,7 @@ import org.cougaar.mlm.ui.newtpfdd.util.Debug;
 
 
 public class Lozenge extends Component
-    implements MouseListener, MouseMotionListener
+  implements MouseListener, MouseMotionListener
 {
   static boolean debug = 
 	"true".equals (System.getProperty ("org.cougaar.mlm.ui.newtpfdd.gui.component.Lozenge.debug", 
@@ -56,6 +42,8 @@ public class Lozenge extends Component
 
     private LozengeBar lozBar = new LozengeBar(this, 1);
     private ArrayList decoratorList = new ArrayList();
+  
+  protected GanttChart ganttChart;
 
   /**Use this size as a fixed width (instead of VirtualX) if >=0**/
   private int fixedWidth=-1;
@@ -67,20 +55,20 @@ public class Lozenge extends Component
   public static final byte FWJ_LEFT=1;
   public static final byte FWJ_RIGHT=2;
 
-    public Lozenge()
+    public Lozenge(GanttChart gc)
     {
 	// setFillColor( Color.green );
-	addMouseListener(this);
-	addMouseMotionListener(this);
-
+      addMouseListener(this);
+      addMouseMotionListener(this);
+      ganttChart = gc;
     }
     
     public Lozenge(GanttChart gc, Object o)
     {
-	this();
-	addMouseListener(gc);
-	addPropertyChangeListener(gc);
-	id = o;
+      this(gc);
+
+      addPropertyChangeListener(gc);
+      id = o;
     }  
 
   /**Set to use a fixed width instead of a virtual size (that re-adjusts with zooming)**/
@@ -213,6 +201,7 @@ public class Lozenge extends Component
 
     // Single click -> selection.
     // Double click -> create editor.
+
     public void mouseClicked(MouseEvent me)
     {
 	if ( !myMouseInside )
@@ -221,14 +210,16 @@ public class Lozenge extends Component
 	Component c = getParent();
 	LozengeRow lozRow = (LozengeRow)c;
 	if ( c instanceof LozengeRow ) {
-	    if ((mod & InputEvent.BUTTON3_MASK) != 0) {
-		// Right mouse button: single click -> menu; double click -> default menu action
-		editProperties(me);
-	    } else {
-		// Left mouse button: treat single and double-click the same 
-		lozRow.setSelected(!lozRow.getSelected());
-		toggleSelected();
-	    }
+	  ganttChart.doPopup (lozRow);
+
+	  if ((mod & InputEvent.BUTTON3_MASK) != 0) {
+	    // Right mouse button: single click -> menu; double click -> default menu action
+	    editProperties(me);
+	  } else {
+	    // Left mouse button: treat single and double-click the same 
+	    lozRow.setSelected(!lozRow.getSelected());
+	    toggleSelected();
+	  }
 	} 
     }
 

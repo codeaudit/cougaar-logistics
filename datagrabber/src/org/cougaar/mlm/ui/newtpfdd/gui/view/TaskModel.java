@@ -559,6 +559,6 @@ public class TaskModel extends AbstractTreeTableModel implements TreeTableModel 
 	OutputHandler.out("Error: getValueAt() received invalid column: " + column);
 	return null;
     }
+
+  public DatabaseState getDBState () { return dbState; }
 }
-
-

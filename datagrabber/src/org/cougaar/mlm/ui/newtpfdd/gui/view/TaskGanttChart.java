@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Date;
 
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.geom.*;
 
 import java.util.List;
@@ -24,6 +25,8 @@ import org.cougaar.mlm.ui.newtpfdd.gui.component.RowLabel;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetDetailRequest;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetAssetDetailRequest;
 
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
@@ -173,11 +176,11 @@ public class TaskGanttChart extends GanttChart
     Vector waystations = new Vector ();
 
     // Create legs
-    LozengeRow lozrow = new LozengeRow(this);
+    Node assetInstanceNode = (Node) o;
+    LozengeRow lozrow = new LozengeRow(this, assetInstanceNode);
     Vector taskleaves = new Vector();
     //	Node t = null, oldt = null;
     Node leg = null;
-    Node assetInstanceNode = (Node) o;
 	
     if (debug) 
       System.out.println ("TaskGanttChart.makeLozengeRow - node " + assetInstanceNode + " has " +
@@ -475,7 +478,7 @@ public class TaskGanttChart extends GanttChart
     LozengeLabel lozLabel = new LozengeLabel(s);//, LozengeLabel.LEFT);
     //	lozLabel.setPosition (LozengeLabel.LEFT);
 	
-    Lozenge loz = new Lozenge();
+    Lozenge loz = new Lozenge(this);
     loz.setForeground(Color.black);
     loz.setLeftTipType(Lozenge.SQUARE_TIP);
     loz.setRightTipType(Lozenge.SQUARE_TIP);
@@ -483,7 +486,7 @@ public class TaskGanttChart extends GanttChart
     loz.setLozengeVirtualXSize(2 * getEndLozengeSize());
     loz.setLozengeDescription(node.getLongName());
     loz.addLozengeLabel(lozLabel);
-    LozengeRow lozRow = new LozengeRow();
+    LozengeRow lozRow = new LozengeRow(this, (Node)o);
     lozRow.setVirtualXLocation(0);
     lozRow.setVirtualXSize(2 * getEndLozengeSize());
     lozRow.addLozenge(loz);
@@ -509,4 +512,9 @@ public class TaskGanttChart extends GanttChart
     return t.getActualEnd();
   }
 
+  public void doPopup(LozengeRow row) {
+    String dbuid=taskModel.getDBUID(row.getCargoInstanceNode());
+    AssetDetailRequest adr = new AssetAssetDetailRequest(dbuid);
+    ((PopupDialogSupport) taskModel.getDBState()).showAssetDetailView (adr);
+  }
 }

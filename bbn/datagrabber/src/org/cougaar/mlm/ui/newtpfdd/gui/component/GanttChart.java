@@ -516,6 +516,8 @@ public class GanttChart extends Container
 
   public void mouseReleased(MouseEvent me) {}  
 
+  public void doPopup (LozengeRow row) {}
+
   public void paint(Graphics g)
   {
     if (getVisibleAmount() == 0 || getMaximum() == -1) return;
