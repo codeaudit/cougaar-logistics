@@ -182,7 +182,8 @@ public class DemandGeneratorPlugin extends ComponentPlugin
       }
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
-    frequency = (new Long((String)map.get(GENERATE_FREQUENCY))).longValue();
+    //frequency = (new Long((String)map.get(GENERATE_FREQUENCY))).longValue();
+    frequency=60*60*24;
     if (((supplyType == null) ||
          (frequency <= 0) && 
          logger.isErrorEnabled()))
