@@ -47,6 +47,7 @@ import java.util.Set;
 public class ResultTable {
   
   static int counter = 0;
+  static Object countMutex = new Object ();
 
   // Create a Set indicating whether a given test category has been run across
   // all runs.
@@ -233,47 +234,49 @@ public class ResultTable {
   }
   
   // instruct a query to a table to fill in an entry (entry created or alterred)
-  public static void updateStatus(Logger logger, Statement s, Validator tester, int compone, int comptwo, int test) {
-    confirmTableExistence(logger,s);
-    int x = compone; int y = comptwo;
-    if (comptwo < compone) { x = comptwo; y = compone; }
+  public static void updateStatus(Logger logger, Statement s, Validator tester, int compone, int comptwo, int test) { 
+    synchronized (countMutex) { // protects against two threads doing update status at the same time 
+      confirmTableExistence(logger,s);
+      int x = compone; int y = comptwo;
+      if (comptwo < compone) { x = comptwo; y = compone; }
     
-    int status;
-    if (compone == comptwo) {
-      status = tester.getTestResult(logger,s,x,test);
-    } else {
-      status = ((Contrastor)tester).getDiffResult(logger,s,x,y,test);
-    }
+      int status;
+      if (compone == comptwo) {
+	status = tester.getTestResult(logger,s,x,test);
+      } else {
+	status = ((Contrastor)tester).getDiffResult(logger,s,x,y,test);
+      }
     
-    // A whole comparison needs to be marked as different
-    if (compone != comptwo && status == Contrastor.RESULT_DIFF) {
+      // A whole comparison needs to be marked as different
+      if (compone != comptwo && status == Contrastor.RESULT_DIFF) {
+	try {
+	  ResultSet rs = s.executeQuery("select * from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+"' and"+
+					" runtwo = '"+y+"' and test = '0'");
+	  if (!rs.next()) {
+	    s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','0','"+status+"')");
+	  } else {
+	    s.executeQuery("update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
+			   "' and runtwo = '"+y+"' and test = '0'");
+	  }
+	} catch (SQLException e){
+	  logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
+			    "Problem altering comparison state info in status table",e);
+	}
+      }
+    
       try {
 	ResultSet rs = s.executeQuery("select * from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+"' and"+
-				      " runtwo = '"+y+"' and test = '0'");
+				      " runtwo = '"+y+"' and test = '"+test+"'");
 	if (!rs.next()) {
-	  s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','0','"+status+"')");
+	  s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','"+test+"','"+status+"')");
 	} else {
 	  s.executeQuery("update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
-			 "' and runtwo = '"+y+"' and test = '0'");
+			 "' and runtwo = '"+y+"' and test = '"+test+"'");
 	}
       } catch (SQLException e){
 	logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			  "Problem altering comparison state info in status table",e);
+			  "Problem altering test info in status table",e);
       }
-    }
-    
-    try {
-      ResultSet rs = s.executeQuery("select * from "+DGPSPConstants.STATUS_TABLE+" where runone = '"+x+"' and"+
-				    " runtwo = '"+y+"' and test = '"+test+"'");
-      if (!rs.next()) {
-	s.executeQuery("insert into "+DGPSPConstants.STATUS_TABLE+" values ('"+(counter++)+"','"+x+"','"+y+"','"+test+"','"+status+"')");
-      } else {
-	s.executeQuery("update "+DGPSPConstants.STATUS_TABLE+" set status = '"+status+"' where runone = '"+x+
-		       "' and runtwo = '"+y+"' and test = '"+test+"'");
-      }
-    } catch (SQLException e){
-      logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
-			"Problem altering test info in status table",e);
     }
   }
   
