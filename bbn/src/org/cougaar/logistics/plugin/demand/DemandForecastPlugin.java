@@ -87,6 +87,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private HashMap pgToPredsHash;
   private HashMap subToPGsHash;
   private HashMap predToSubHash;
+  private boolean rehydrate = false;
 
   private String supplyType;
   private Class supplyClassPG;
@@ -320,6 +321,12 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
     } 
 
+    //deal with rehydration
+    if (rehydrate) {
+      rehydrateHashMaps();
+      rehydrate = false;
+    }
+
   }
 
 
@@ -339,7 +346,9 @@ public class DemandForecastPlugin extends ComponentPlugin
   private IncrementalSubscription assetsWithPGSubscription;
 
   protected void setupSubscriptions() {
-
+    if (blackboard.didRehydrate()) {
+      rehydrate=true;
+    }
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
     UnaryPredicate orgActivityPred = new OrgActivityPred();
@@ -727,6 +736,19 @@ public class DemandForecastPlugin extends ComponentPlugin
       pgToPredsHash.put(pg, preds);
     }
   }
+
+  private void rehydrateHashMaps() {
+    Iterator meiIt = assetsWithPGSubscription.iterator();
+    while (meiIt.hasNext()) {
+      Asset mei = (Asset) meiIt.next();
+      if (mei instanceof AggregateAsset) {
+        mei = ((AggregateAsset) mei).getAsset();
+      }
+      PropertyGroup pg = mei.searchForPropertyGroup(supplyClassPG);
+      addNewPG(pg);
+    }
+  }
+      
 
   private String getClusterSuffix(String clusterId) {
     String result = null;
