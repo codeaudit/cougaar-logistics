@@ -34,8 +34,8 @@ import java.util.HashMap;
  **/
 public class MaintainedItem implements Serializable {
     
-  protected Logger logger;
-  protected InventoryPlugin invPlugin;
+  protected transient Logger logger;
+  protected transient InventoryPlugin invPlugin;
 
   protected String maintainedItemType = null;
   protected String typeIdentification = null;

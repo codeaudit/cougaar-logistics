@@ -55,8 +55,8 @@ import org.cougaar.glm.ldm.asset.SupplyClassPG;
 /** Provides convenience methods. */
 public class TaskUtils extends PluginHelper {
 
-    private Logger logger;
-    private InventoryPlugin invPlugin;
+    private transient Logger logger;
+    private transient InventoryPlugin invPlugin;
 
     public TaskUtils(InventoryPlugin aPlugin) {
 	super();

@@ -42,8 +42,8 @@ import org.cougaar.util.log.Logger;
 
 public class InventoryModule {
 
-    protected Logger logger;
-    protected InventoryPlugin inventoryPlugin;
+    protected transient Logger logger;
+    protected transient InventoryPlugin inventoryPlugin;
 
     public InventoryModule(InventoryPlugin imPlugin) {
 	inventoryPlugin = imPlugin;

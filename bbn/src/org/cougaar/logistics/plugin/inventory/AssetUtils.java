@@ -53,8 +53,8 @@ import org.cougaar.logistics.plugin.inventory.InventoryPlugin;
 public class AssetUtils {
 
 
-    private Logger logger;
-    private InventoryPlugin invPlugin;
+    private transient Logger logger;
+    private transient InventoryPlugin invPlugin;
 
   /** Cache for isAssetOfType. Keys are Strings, values are either
    * null (unknown), an Asset class (the type), or Object (== assetFail).

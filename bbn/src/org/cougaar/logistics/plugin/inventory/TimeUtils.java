@@ -45,7 +45,7 @@ public class TimeUtils {
     public static final long MSEC_PER_HOUR =      3600000L;
     public static final long MSEC_PER_MIN  =        60000L;
 
-    private Logger logger;
+    private transient Logger logger;
 
     public TimeUtils(InventoryPlugin aPlugin) {
 	if(aPlugin == null) {
