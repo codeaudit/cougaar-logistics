@@ -54,6 +54,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     private long MSEC_PER_BUCKET = TimeUtils.MSEC_PER_DAY * 1;
     protected LogisticsInventoryPG myPG;
     protected long startTime;
+    protected long arrivalTime;
     protected int timeZero;
     private transient LoggingService logger;
     private transient LogisticsInventoryLogger csvLogger = null;
@@ -77,6 +78,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     protected long bucketSize = MSEC_PER_BUCKET;
     protected int criticalLevel = 3; // num buckets
     protected int reorderPeriod = 3; // num buckets
+    protected int ost = 1;
+
     // Lists for csv logging & UI support
     protected ArrayList projWithdrawList;
     protected ArrayList withdrawList;
@@ -91,6 +94,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     private boolean failures = false;
     private boolean compute_critical_levels = true;
     private boolean regenerate_projected_demand = false;
+    private boolean recalculate_initial_level = true;
 
     public LogisticsInventoryBG(LogisticsInventoryPG pg) {
         myPG = pg;
@@ -112,8 +116,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    public void initialize(long startTime, int criticalLevel, int reorderPeriod, long bucketSize, long now, boolean logToCSV, Date startCDay, InventoryPlugin parentPlugin) {
+    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, long arrivalTime, Date startCDay, InventoryPlugin parentPlugin) {
         this.startTime = startTime;
+        this.arrivalTime = arrivalTime;
         // Set initial level of inventory from time zero to today.  This assumes that the inventory
         // is created because the existence of demand and the RefillGenerator will be run
         // on this inventory before time has advanced, thus the RefillGenerator will set
@@ -142,6 +147,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
         this.criticalLevel = criticalLevel;
         this.reorderPeriod = reorderPeriod;
+        this.ost = ost;
         bufferedCriticalLevels =
                 ScheduleUtils.buildSimpleQuantitySchedule(0, startTime, startTime + (TimeUtils.MSEC_PER_DAY * 10));
         bufferedTargetLevels =
@@ -181,6 +187,13 @@ public class LogisticsInventoryBG implements PGDelegate {
         // THIS ONE
         int bucket_start = convertTimeToBucket(start, false);
         int bucket_end = convertTimeToBucket(end, true);
+
+        //If this new projection effects the initial level demand then recalc.
+        if((bucket_start <= getInitialLevelDemandEndBucket()) &&
+	   (bucket_end >= convertTimeToBucket(arrivalTime,false))) {
+             recalculate_initial_level = true;
+        }
+
         if (bucket_end >= projectedDemandArray.length) {
             projectedDemandArray = expandArray(projectedDemandArray, bucket_end);
         }
@@ -290,6 +303,7 @@ public class LogisticsInventoryBG implements PGDelegate {
      **/
     public void removeWithdrawProjection(Task task) {
         compute_critical_levels = true;
+        recalculate_initial_level = true;
         regenerate_projected_demand = true;
         ArrayList list;
         for (int i = 0; i < dueOutList.size(); i++) {
@@ -319,6 +333,51 @@ public class LogisticsInventoryBG implements PGDelegate {
         return convertTimeToBucket(lastSeen, true);
     }
 
+    private int getInitialLevelDemandEndBucket() {
+      if(myPG.getSupplierArrivalTime() == -1) {
+        return -1;
+      }
+      else {
+        int supplierAvailableBucket = convertTimeToBucket(myPG.getSupplierArrivalTime(),false);
+
+	//At the top of the supply chain 191-ORDBN has a
+	//supplier available bucket that is 8/15 which is before its
+	//arrival time.  The supplier is only truly available to you
+	//once you arrive.
+	int arrivalBucket = convertTimeToBucket(arrivalTime,false);
+	if(supplierAvailableBucket < arrivalBucket) {
+	    supplierAvailableBucket = arrivalBucket;
+	}
+
+	//The end of the horizon lookahead to compute the initial level	
+	int initialLevelDemandEndBucket = supplierAvailableBucket + ost + criticalLevel;
+
+        return initialLevelDemandEndBucket;
+      }
+    }
+
+
+    private double getDemandDerivedInitialLevel() {
+	//Not sure if this should be false or true.
+	int startBucket = convertTimeToBucket(arrivalTime,false);
+	//This includes the critical level and order ship time.
+	int endBucket = getInitialLevelDemandEndBucket();
+	if(endBucket == -1) {
+	    return -1.0;
+	}
+	else {
+	    double totalDemand=0.0;
+	    for(int i=startBucket; i <= endBucket; i++) {
+		totalDemand+=getProjectedDemand(i);
+	    }
+	    //Round up,no matter, to the next larger whole integer
+	    //This is done mainly for class IX components, whose demand 
+	    //is fractional - but we reorder actuals in whole numbers.
+	    totalDemand = Math.ceil(totalDemand);
+	    return totalDemand;
+	}
+    }
+    
     public int getFirstProjectWithdrawBucket() {
         Iterator list = customerHash.values().iterator();
         // if we don't have any actual demand signal with -1
@@ -448,6 +507,17 @@ public class LogisticsInventoryBG implements PGDelegate {
         return 0.0;
     }
 
+    public void recalculateInitialLevel() {
+      double newInitialLevel = getDemandDerivedInitialLevel();
+      if(recalculate_initial_level) {
+	      if(newInitialLevel != -1.0) {
+	         inventoryLevelsArray[0] = newInitialLevel;
+        }
+      }
+      recalculate_initial_level = false;
+    }
+
+
     private double[] computeCriticalLevels() {
         if (regenerate_projected_demand) {
 	    regenerateProjectedDemandList();
@@ -456,27 +526,35 @@ public class LogisticsInventoryBG implements PGDelegate {
 	double Ci;
 	criticalLevelsArray = new double[projectedDemandArray.length];
 	// criticalLevel falls within a single bucket
-	if (criticalLevel == 1) { 
+	if (criticalLevel == 1) {
 	    for (int i=0; i < projectedDemandArray.length; i++) {
-	        Ci =  projectedDemandArray[i];
+	        Ci =  getProjectedDemand(i);
 		criticalLevelsArray[i] = Ci;
 	    }
 	} else { // criticalLevel spans multiple buckets
 	  int buckets = criticalLevel;
 	  Ci = 0.0;
 	  for (int i=1; i <= buckets; i++) {
-	      Ci += projectedDemandArray[i];	  
+	      Ci += getProjectedDemand(i);
 	  }
 	  criticalLevelsArray[0] = Ci;
 	  for (int i=1; i < projectedDemandArray.length-buckets-1; i++) {
-	      Ci =  Ci - projectedDemandArray[i] + projectedDemandArray[i+buckets];
+	      Ci =  Ci - getProjectedDemand(i) + getProjectedDemand(i+buckets);
 	      criticalLevelsArray[i] = Ci;
 	  }
 	  for (int i=projectedDemandArray.length-buckets-1; i < projectedDemandArray.length; i++) {
-	      Ci =  Ci - projectedDemandArray[i];
+	      Ci =  Ci - getProjectedDemand(i);
 	      criticalLevelsArray[i] = Ci;
 	  }
 	}
+
+	//No critical level before we arrive in theatre.
+	//We're not supposed to order refills before we arrive in theatre.
+	int arrivalTimeBucket = convertTimeToBucket(arrivalTime,true);
+	for (int i=0; i<arrivalTimeBucket; i++) {
+	    criticalLevelsArray[i] = 0.0;
+	}
+
 	return criticalLevelsArray;
     }
 
@@ -495,6 +573,11 @@ public class LogisticsInventoryBG implements PGDelegate {
         if (bucket >= inventoryLevelsArray.length) {
             inventoryLevelsArray = expandArray(inventoryLevelsArray, bucket);
         }
+	//Potentially if you reset the first inventory level bucket, you
+	//will want to reset it on the next refillGenerator call to recalculate
+	if(bucket == 0) {
+	    recalculate_initial_level=true;
+	}
         inventoryLevelsArray[bucket] = value;
     }
 
@@ -595,7 +678,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 		  rate = taskUtils.getRate(task);
 		  try {
 		      scalar = (Scalar)rate.computeNumerator(Duration.newMilliseconds((double)time_spanned));
-		      actualDemand += taskUtils.getDouble(scalar);	
+		      actualDemand += taskUtils.getDouble(scalar);
 		  } catch(Exception e) {
 		      if (logger.isErrorEnabled()) {
 			logger.error(taskUtils.taskDesc(task)+
@@ -608,7 +691,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	      actualDemand += taskUtils.getQuantity(task);
 	  }
 	}
-	return actualDemand; 
+	return actualDemand;
     }
 
     public Collection getActualDemandTasks(int bucket) {
@@ -779,7 +862,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   public HashMap getCustomerHash() {
     return customerHash;
   }
-    
+
 
   public void logAllToCSVFile(long aCycleStamp) {
     if (csvLogger != null) {
@@ -905,6 +988,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         }
     }
 
+
   // Grow the array by 50% at a time, but at least enough to cover
   // the incoming request
     private double[] expandArray(double[] doubleArray, int newMinLength) {
@@ -922,11 +1006,12 @@ public class LogisticsInventoryBG implements PGDelegate {
         return criticalLevel;
     }
 
+
     public void takeSnapshot(Inventory inventory) {
         ArrayList tmpProjWdraw = new ArrayList();
 	ArrayList tmpWdraw = new ArrayList();
 	ArrayList tmpProjResupply = new ArrayList();
-	
+
 	Iterator due_outs;
 	for (int i=0; i < dueOutList.size(); i++) {
 	    due_outs = ((ArrayList)dueOutList.get(i)).iterator();
@@ -951,22 +1036,37 @@ public class LogisticsInventoryBG implements PGDelegate {
 	        tmpProjResupply.add(task);
 	    }
 	}
-	
+
 	projSupplyList = tmpProjResupply;
 	supplyList = (ArrayList)refillRequisitions.clone();
 
 	// MWD took this out when converted list to a schedule.
 	//    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
-	
+
 	ArrayList tmpActualDemandTasksList = new ArrayList();
 	for (int i=0; i < dueOutList.size(); i++) {
 	    tmpActualDemandTasksList.add(getActualDemandTasks(i));
 	}
 	actualDemandTasksList = tmpActualDemandTasksList;
-	
+
 	Vector list = new Vector();
 	long start = convertBucketToTime(0);
-        int length = getMeaningfulLength(criticalLevelsArray);
+	//the length of the critical level and inventory level 
+	//arrays should match up
+        int length = Math.max(getMeaningfulLength(criticalLevelsArray),
+			      getMeaningfulLength(inventoryLevelsArray));
+
+	int maxArrayLength = Math.min(criticalLevelsArray.length,
+				   inventoryLevelsArray.length);
+
+	if((length > maxArrayLength)  && (logger.isWarnEnabled())) {
+	    logger.warn(getOrgName() + "-" + getItemName() + " Meaningful length is " + length + "but, criticalLevelsArray length is " + criticalLevelsArray.length + " and the inventoryLevelsArray length is " + inventoryLevelsArray.length + ". Will truncate to eliminate array index out of bounds error.");
+	}
+
+	//We want to make sure the meaningful length doesn't exceed
+	//the length of either array.
+	length = Math.min(length,maxArrayLength);
+
 	for (int i=0; i < length; i++) {
 	    if(criticalLevelsArray[i] >= 0.0) {
 	        list.add(ScheduleUtils.buildQuantityScheduleElement(criticalLevelsArray[i],
@@ -974,7 +1074,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	    }
 	    start += MSEC_PER_BUCKET;
 	}
-	bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(), 
+	bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(),
 								PlanScheduleType.OTHER);
 	start = convertBucketToTime(0);
 	list.clear();
@@ -988,16 +1088,16 @@ public class LogisticsInventoryBG implements PGDelegate {
 	bufferedTargetLevels = GLMFactory.newQuantitySchedule(list.elements(),
 							      PlanScheduleType.OTHER);
 
-	
+
 	start = convertBucketToTime(0);
 	list.clear();
-        length = getMeaningfulLength(inventoryLevelsArray);
+        //length = 
 	for (int i=0; i < length; i++) {
 	    list.add(ScheduleUtils.buildQuantityScheduleElement(inventoryLevelsArray[i],
 								start, start+MSEC_PER_BUCKET));
 	    start += MSEC_PER_BUCKET;
 	}
-	bufferedInventoryLevels = GLMFactory.newQuantitySchedule(list.elements(), 
+	bufferedInventoryLevels = GLMFactory.newQuantitySchedule(list.elements(),
 							    PlanScheduleType.OTHER);
 	NewScheduledContentPG scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
 	scp.setSchedule(bufferedInventoryLevels);
@@ -1085,5 +1185,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     return lastMeaningfulPosition+1;
   }
+
+    public String getOrgName() { return myPG.getOrg().getItemIdentificationPG().getItemIdentification(); }
+
+    public String getItemName() { return myPG.getResource().getTypeIdentificationPG().getTypeIdentification();}
 
 }
