@@ -236,11 +236,14 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       }
       checkQty = filled + qty;
       if ((level - checkQty) >= 0) {
-        //TODO - should the Alloc date be the start time of the currentBucket
-        // or should it be the end time??
+        //The Alloc start time is the start time of the currentBucket
+        // and the end time is the start time of currentBucket + 1
+        // If the bucket is more than one day we only want to promise that
+        // it will be delivered sometime during the bucket!
 	if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
 	  createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
-			       inv, thePG);
+                               thePG.convertBucketToTime(currentBucket+1), 
+                               inv, thePG);
 	  trailingPointersHash.remove(task);
 	} else {
 	  // Tasks remain in the trailingPointersHash (just projections for now)
@@ -345,16 +348,21 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 
   /** Utility method to create a late Allocation
    *  @param withdraw The withdraw task to allocate
-   *  @param time The time that it will be filled
+   *  @param start The start time of the window that it will be filled
+   *  @param end The end time of the window that it will be filled
    *  @param inv  The Inventory we are allocating against
    *  @param thePG  The PG for the Inventory we are allocating against
+   *  Note that we are using a start and end preference because the allocation
+   *  is based on a bucket that may span more than one day. So we want to say it
+   *  will be filled sometime within the bucket start and end time.
    **/
-  private void createLateAllocation(Task withdraw, long time, Inventory inv, 
-                                    LogisticsInventoryPG thePG) {
-    int aspectTypes[] = {AspectType.END_TIME, AspectType.QUANTITY};
-    double results[] = new double[2];
-    results[0] = (double) time;
-    results[1] = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
+  private void createLateAllocation(Task withdraw, long start, long end,
+                                    Inventory inv, LogisticsInventoryPG thePG) {
+    int aspectTypes[] = {AspectType.END_TIME, AspectType.END_TIME, AspectType.QUANTITY};
+    double results[] = new double[3];
+    results[0] = (double) start;
+    results[1] = (double) end;
+    results[2] = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
     AllocationResult estimatedResult = inventoryPlugin.getRootFactory().
       newAllocationResult(0.9, true, aspectTypes, results);
     Allocation lateAlloc = inventoryPlugin.getRootFactory().
