@@ -113,6 +113,12 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
     for (Iterator iterator = changedRelays.iterator();
 	   iterator.hasNext();) {
       ServiceContractRelay relay = (ServiceContractRelay)iterator.next();
+
+      // Only interested if we are the client
+      if (!(relay.getClient().equals(getSelfOrg()))) {
+	continue;
+      }
+
       ServiceContract contract = relay.getServiceContract();
       Role role = contract.getServiceRole();
 
@@ -125,127 +131,27 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
 				 "completely covered for " + role);
         }
         myServiceRequestHistories.remove(role);
-	continue;
-      }
+      } else {
 
-      //only take action if you are the client agent
-      // (not if you are the provider)
-
-      //if your service contract got revoked, or your requested
-      //service time interval was not satistied, do a new service query
-      if (myLoggingService.isDebugEnabled()) {
-        myLoggingService.debug(getAgentIdentifier() +
-                               " revoked " + 
-			       contract.isRevoked() +
-                               " !satisfied " + 
-			       !timeIntervalRequestedCompletelySatisfied(relay) +
-                               " client " + 
-			       relay.getClient().equals(getSelfOrg()));
-      }
-
-      if ((relay.getClient().equals(getSelfOrg())) &&
-	  ((contract.isRevoked() ||
-           !timeIntervalRequestedCompletelySatisfied(relay)))) {
-        if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug(getAgentIdentifier() +
-                                 " queryServices because a service contract was revoked or did not satisfy the request for " +
-                                 role);
-        }
-
-	TimeSpan requestedTimeInterval = 
-	  SDFactory.getTimeSpanFromPreferences(relay.getServiceRequest().getServicePreferences());
-	
-	ServiceRequestHistory srh = 
-	  augmentServiceRequestHistory(relay, requestedTimeInterval);
-
-	if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug(getAgentIdentifier() +
-                                 " do another queryServices for " +
-                                 role);
-        }
-
-	TimeSpan providedTimeInterval = 
-	  SDFactory.getTimeSpanFromPreferences(contract.getServicePreferences());
-
-	Collection uncoveredTimeIntervals = 
-	  TimeInterval.removeInterval(providedTimeInterval, requestedTimeInterval);
-
-	String minimumEchelon = getMinimumEchelon(role);
-
-	for (Iterator uncoveredIterator = uncoveredTimeIntervals.iterator();
-	     uncoveredIterator.hasNext();) {
-	
-	  TimeSpan uncoveredInterval = 
-	    (TimeSpan) uncoveredIterator.next();
-
-	  Collection opconIntervals = 
-	    getOPCONSchedule().intersectingSet(uncoveredInterval);
-	  if (opconIntervals.isEmpty()) {
- 	    myLoggingService.error(getAgentIdentifier() + 
-				   " handleChangedServiceContractRelays: " +
-				   " no OPCON lineage on blackboard for " + 
-				   new Date(uncoveredInterval.getStartTime()) + 
-				   " to " +
-				   new Date(uncoveredInterval.getEndTime()) +
-				   ". Unable to generate MMRoleQuery for " + role);
-	    continue;
-	  } else if (!continuousCoverage(uncoveredInterval, 
-					 new TimeSpanSet(opconIntervals))) {
- 	    myLoggingService.error(getAgentIdentifier() + 
-				   " handleChangedServiceContractRelays: " +
-				   " gap in OPCON coverage at some point in " + 
-				   new Date(uncoveredInterval.getStartTime()) + 
-				   " to " +
-				   new Date(uncoveredInterval.getEndTime()) +
-				   ".");
-	  }
-
-	  for (Iterator opconIterator = opconIntervals.iterator();
-	       opconIterator.hasNext();) {
-	    TimeSpan opconInterval = (TimeSpan) opconIterator.next();
-
-	    Lineage commandLineage = getCommandLineage(opconInterval);
-	
-	    if (commandLineage != null) {
-	      ArrayList arrayList = new ArrayList(1);
-	      arrayList.add(TimeSpans.getSpan(opconInterval.getStartTime(),
-					      opconInterval.getEndTime()));
-	      
-	      LineageEchelonScorer serviceScorer = 
-		new ALLineageEchelonScorer(commandLineage,
-					   getMinimumEchelon(role),
-					   role,
-					   getAgentIdentifier().toString(),
-					   srh, 
-					   arrayList);
-
-	      queryServices(role, serviceScorer, opconInterval);
-	    } else {
-	      // Should be impossible
-	      myLoggingService.error(getAgentIdentifier() + 
-				     " handleChangedServiceContractRelays: " +
-				     " no OPCON lineage on blackboard for " + 
-				     new Date(opconInterval.getStartTime()) + 
-				     " to " +
-				     new Date(opconInterval.getEndTime()) +
-				     " Unable to generate MMRoleQuery for " + role);
-	    }
-	  }
-	  //publishRemove(relay);
-	}
-      } else if ((relay.getClient().equals(getSelfOrg())) &&
-		 (timeIntervalRequestedCompletelySatisfied(relay))) {
+	//if your service contract got revoked, or your requested
+	//service time interval was not satistied, do a new service query
 	if (myLoggingService.isDebugEnabled()) {
 	  myLoggingService.debug(getAgentIdentifier() +
-				 " handleChangedServiceContractRelays timeIntervalRequestedCompletelySatisfied " +
-				 role);
+				 " revoked " + 
+				 contract.isRevoked() +
+				 " !satisfied " + 
+				 !timeIntervalRequestedCompletelySatisfied(relay));
 	}
-      } else if (!timeIntervalRequestedCompletelySatisfied(relay) &&
-		 relay.getClient().equals(getSelfOrg())) {
-	if (myLoggingService.isDebugEnabled()) {
-            myLoggingService.debug(getAgentIdentifier() +
-                                   " handleChangedServiceContractRelays not timeIntervalRequestedCompletelySatisfied " +
-                                   role);
+	
+	// Contract timespan does not == requested timespan
+	if ((contract.isRevoked() ||
+	     !timeIntervalRequestedCompletelySatisfied(relay))) {
+	  handleModifiedServiceContract(relay);
+	} else {
+	  // We know from checkProviderCovered that service is not covered
+	  // Ping execute so that we query for missing services
+	  setNeedToFindProviders(true);
+	  wake();
 	}
       }
     }
@@ -534,8 +440,12 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
    * that have start/end time not equal to default start/end.
    */
   protected boolean checkProviderCompletelyCoveredOrRequested(Role role) {
+    TimeSpan opconTimeSpan = getOPCONTimeSpan();
     Collection c = getCurrentlyUncoveredIntervalsWithoutOutstandingRequests(
-        SDFactory.DEFAULT_START_TIME, SDFactory.DEFAULT_END_TIME, role);
+        opconTimeSpan.getStartTime(),
+	opconTimeSpan.getEndTime(),
+	role);
+
     //check the personal history time interval (if it exists)
     //instead of the default interval
     ServiceRequestHistory srh = 
@@ -573,9 +483,10 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
    * that have start/end time not equal to default start/end.
    */
   protected boolean checkProviderCompletelyCovered(Role role) {
+    TimeSpan opconTimeSpan = getOPCONTimeSpan();
     Collection c = 
-      getCurrentlyUncoveredIntervals(SDFactory.DEFAULT_START_TIME, 
-				     SDFactory.DEFAULT_END_TIME,
+      getCurrentlyUncoveredIntervals(opconTimeSpan.getStartTime(),
+				     opconTimeSpan.getEndTime(),
 				     role);
 
     if (myLoggingService.isDebugEnabled()) {
@@ -618,6 +529,99 @@ public class ALDynamicSDClientPlugin extends SDClientPlugin implements GLSConsta
       }
     }
     return true;
+  }
+
+  protected void handleModifiedServiceContract(ServiceContractRelay relay) {
+    ServiceContract contract = relay.getServiceContract();
+    Role role = contract.getServiceRole();
+
+    if (myLoggingService.isDebugEnabled()) {
+      myLoggingService.debug(getAgentIdentifier() +
+			     " queryServices because a service contract was revoked or did not satisfy the request for " +
+			     role);
+    }
+    
+    TimeSpan requestedTimeInterval = 
+      SDFactory.getTimeSpanFromPreferences(relay.getServiceRequest().getServicePreferences());
+    
+    ServiceRequestHistory srh = 
+      augmentServiceRequestHistory(relay, requestedTimeInterval);
+    
+    if (myLoggingService.isDebugEnabled()) {
+      myLoggingService.debug(getAgentIdentifier() +
+			     " do another queryServices for " +
+			     role);
+    }
+    
+    TimeSpan providedTimeInterval = 
+      SDFactory.getTimeSpanFromPreferences(contract.getServicePreferences());
+    
+    Collection uncoveredTimeIntervals = 
+      TimeInterval.removeInterval(providedTimeInterval, requestedTimeInterval);
+    
+    String minimumEchelon = getMinimumEchelon(role);
+    
+    for (Iterator uncoveredIterator = uncoveredTimeIntervals.iterator();
+	 uncoveredIterator.hasNext();) {
+      
+      TimeSpan uncoveredInterval = 
+	(TimeSpan) uncoveredIterator.next();
+      
+      Collection opconIntervals = 
+	getOPCONSchedule().intersectingSet(uncoveredInterval);
+      if (opconIntervals.isEmpty()) {
+	myLoggingService.error(getAgentIdentifier() + 
+			       " handleChangedServiceContractRelays: " +
+			       " no OPCON lineage on blackboard for " + 
+			       new Date(uncoveredInterval.getStartTime()) + 
+			       " to " +
+			       new Date(uncoveredInterval.getEndTime()) +
+			       ". Unable to generate MMRoleQuery for " + role);
+	continue;
+      } else if (!continuousCoverage(uncoveredInterval, 
+				     new TimeSpanSet(opconIntervals))) {
+	myLoggingService.error(getAgentIdentifier() + 
+			       " handleChangedServiceContractRelays: " +
+			       " gap in OPCON coverage at some point in " + 
+			       new Date(uncoveredInterval.getStartTime()) + 
+			       " to " +
+			       new Date(uncoveredInterval.getEndTime()) +
+			       ".");
+      }
+      
+      for (Iterator opconIterator = opconIntervals.iterator();
+	   opconIterator.hasNext();) {
+	TimeSpan opconInterval = (TimeSpan) opconIterator.next();
+	
+	Lineage commandLineage = getCommandLineage(opconInterval);
+	
+	if (commandLineage != null) {
+	  ArrayList arrayList = new ArrayList(1);
+	  arrayList.add(TimeSpans.getSpan(opconInterval.getStartTime(),
+					  opconInterval.getEndTime()));
+	  
+	  LineageEchelonScorer serviceScorer = 
+	    new ALLineageEchelonScorer(commandLineage,
+				       getMinimumEchelon(role),
+				       role,
+				       getAgentIdentifier().toString(),
+				       srh, 
+				       arrayList);
+	  
+	  queryServices(role, serviceScorer, opconInterval);
+	} else {
+	  // Should be impossible
+	  myLoggingService.error(getAgentIdentifier() + 
+				 " handleChangedServiceContractRelays: " +
+				 " no OPCON lineage on blackboard for " + 
+				 new Date(opconInterval.getStartTime()) + 
+				 " to " +
+				 new Date(opconInterval.getEndTime()) +
+				 " Unable to generate MMRoleQuery for " + role);
+	}
+      }
+      //publishRemove(relay);
+    }
   }
 
   private void activateAutomaticFindProviderRetry() {
