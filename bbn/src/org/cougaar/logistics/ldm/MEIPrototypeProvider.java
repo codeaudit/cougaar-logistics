@@ -338,14 +338,30 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   public void fillProperties (Asset anAsset) {
     if (anAsset instanceof ClassVIIMajorEndItem) {
       logger.debug("fillProperties() CREATING FuelConsumerPG for "+anAsset);
-      NewFuelConsumerPG pg = 
+      NewFuelConsumerPG fuelpg = 
 	(NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
-      pg.setMei(anAsset);
-      pg.setService(service);
-      pg.setTheater(THEATER);
-      pg.setFuelBG(new FuelConsumerBG(pg));
-      pg.initialize(this);
-      anAsset.setPropertyGroup(pg);
+      fuelpg.setMei(anAsset);
+      fuelpg.setService(service);
+      fuelpg.setTheater(THEATER);
+      fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
+      fuelpg.initialize(this);
+      anAsset.setPropertyGroup(fuelpg);
+      NewAmmoConsumerPG ammopg = 
+	(NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
+      ammopg.setMei(anAsset);
+      ammopg.setService(service);
+      ammopg.setTheater(THEATER);
+      ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
+      ammopg.initialize(this);
+      anAsset.setPropertyGroup(ammopg);
+      NewPackagedPOLConsumerPG packagedpg = 
+	(NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
+      packagedpg.setMei(anAsset);
+      packagedpg.setService(service);
+      packagedpg.setTheater(THEATER);
+      packagedpg.setPackagedPOLBG(new PackagedPOLConsumerBG(packagedpg));
+      packagedpg.initialize(this);
+      anAsset.setPropertyGroup(packagedpg);
     } // if
   } // fillProperties
 
