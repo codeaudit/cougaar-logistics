@@ -222,10 +222,16 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public double getProjectionTaskDemand(Task task, int bucket, long start, long end) {
+    // If days_spanned is less than zero or days_spanned is greater than the bucket size
+    // then the task has no demand for this bucket
     int days_spanned = getDaysSpanned(bucket, start, end);
-    Rate rate = taskUtils.getRate(task);
-    Scalar scalar = (Scalar)rate.computeNumerator(durationArray[days_spanned]);
-    return taskUtils.getDouble(scalar);
+    if ((days_spanned > 0) && !(days_spanned > bucketSize)) {
+      Rate rate = taskUtils.getRate(task);
+      Duration d = durationArray[days_spanned];
+      Scalar scalar = (Scalar)rate.computeNumerator(d);
+      return taskUtils.getDouble(scalar);
+    }
+    return 0.0;
   }
   // Beth,  Because allocation results on Withdraw tasks can change,
   // from one transaction to the next, I do not know which bucket to
@@ -549,7 +555,17 @@ public class LogisticsInventoryBG implements PGDelegate {
     long bucket_end = bucket_start + MSEC_PER_BUCKET;
     long interval_start = Math.max(start, bucket_start);
     long interval_end = Math.min(end, bucket_end);
-    return (int)((interval_end - interval_start)/TimeUtils.MSEC_PER_DAY);
+    int value = (int)((interval_end - interval_start)/TimeUtils.MSEC_PER_DAY);
+    if (value > bucketSize) {
+      logger.error("bucket "+bucket+", Bucket start "+TimeUtils.dateString(bucket_start)+
+		   ", end "+TimeUtils.dateString(bucket_end));
+      logger.error("Task start "+TimeUtils.dateString(start)+", end "+TimeUtils.dateString(end));
+      logger.error("Interval start "+TimeUtils.dateString(interval_start)+", end "+
+		   TimeUtils.dateString(interval_end));
+      int b_end = convertTimeToBucket(end);
+      logger.error("Calculated bucket end "+b_end+", task end "+TimeUtils.dateString(end));
+    }
+    return value;
   }
 
   public double getReorderPeriod() {
