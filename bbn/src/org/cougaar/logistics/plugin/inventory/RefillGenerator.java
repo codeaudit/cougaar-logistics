@@ -365,10 +365,15 @@ public class RefillGenerator extends InventoryLevelGenerator {
     return homeGeoloc;
   }
   
-  /** Determines and sets Target Level for projection period.
-   *  Target Level used for display purposes only.
+  /** Determines and sets the Target and Inventory Levels for projection period.
+   *  Target and Inventory Levels are used for display purposes only.
    *  The calculation for Target Level during the projection period is:
    *  target = (criticalLevelEnd - criticalLevelBegin) + demand
+   *  The calculation for the Inventory level for each bucket during the projection period is
+   *  the average of the critical level and the target level for that day.
+   *  Note that since target levels are only set for each reorder period which usually spans
+   *  more than one bucket, we must interpolate what the target level would be for buckets in
+   *  the middle of the reorder period.
    *  @param thePG The LogisticsInventoryPG for current inventory
    *  @param startBucket The bucket that starts the Projection period.
    *  @return void  The target level is set in thePG with this method
@@ -380,7 +385,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
     int lastDemandBucket = thePG.getLastDemandBucket();
     double criticalLevelBegin, criticalLevelEnd;
     int startReorderBucket = -1;
-    int startTarget = -1;
+    double startTarget = -1;
     while (currentBucket <= lastDemandBucket) {
       criticalLevelBegin = thePG.getCriticalLevel(currentBucket);
       criticalLevelEnd = thePG.getCriticalLevel(reorderPeriodEndBucket);
@@ -392,16 +397,39 @@ public class RefillGenerator extends InventoryLevelGenerator {
       if (target < 0.0) {
 	target = 0.0;
       }
-      // if (startReorderBucket != -1) {
-//         // set the inventory levels for the entire reorder period based on the two
-//         // target levels we have
-//         if (startTarget == target) {
-//           // set all the days using target
-          
+      
+      // fill in the inventory levels for projections based on the target levels
+      // but don't start until we have two target points
+      if (startReorderBucket != -1) {
+        // set the inventory levels for the entire reorder period based on the two
+        // target levels we have
+        int levelBucket = startReorderBucket;
+        double calcTarget;
+        while (levelBucket < currentBucket) {
+          if ( (levelBucket == startReorderBucket) || (startTarget == target) ) {
+            calcTarget = startTarget;
+          } else {
+            int bucketsSpanned = currentBucket - startReorderBucket;
+            int bucketDiff = levelBucket - startReorderBucket;
+            double diff = target - startTarget; 
+            calcTarget = startTarget + ((diff/bucketsSpanned) * bucketDiff);
+          }
+          //inv level in projection land is the average of the critcial and target levels
+          double level = (thePG.getCriticalLevel(levelBucket) + calcTarget) / 2;
+          thePG.setLevel(levelBucket, level);
+          levelBucket = levelBucket + 1;
+        }
+      }
+
       thePG.setTarget(currentBucket, target);
+      startReorderBucket = currentBucket;
+      startTarget = target;
       currentBucket += reorderPeriod;
       reorderPeriodEndBucket = currentBucket + reorderPeriod;
     }
+    //at the end fill in the last inv level based on the last target level
+    double lastlevel = (thePG.getCriticalLevel(startReorderBucket) + startTarget) / 2;
+    thePG.setLevel(startReorderBucket, lastlevel);
   }
 
 }
