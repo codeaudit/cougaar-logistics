@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -20,57 +20,41 @@
  */
 package org.cougaar.logistics.plugin.utils;
 
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.planning.ldm.PlanningFactory;
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.AspectScorePoint;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.NewPrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.Preference;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.ScheduleImpl;
-import org.cougaar.planning.ldm.plan.ScheduleElement;
-import org.cougaar.planning.ldm.plan.ScheduleType;
-import org.cougaar.planning.ldm.plan.ScheduleUtilities;
-import org.cougaar.planning.ldm.plan.ScoringFunction;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.Verb;
-import org.cougaar.planning.plugin.legacy.PluginDelegate;
-
-import java.util.*;
-
-import org.cougaar.util.log.Logger;
-import org.cougaar.util.TimeSpan;
 import org.cougaar.core.logging.NullLoggingServiceImpl;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.component.ServiceBroker;
-
-import org.cougaar.logistics.plugin.inventory.TimeUtils;
-import org.cougaar.logistics.plugin.inventory.UtilsProvider;
-
 import org.cougaar.glm.ldm.GLMFactory;
 import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
-import org.cougaar.glm.ldm.asset.ScheduledContentPG;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
+import org.cougaar.glm.ldm.asset.ScheduledContentPG;
 import org.cougaar.glm.ldm.plan.NewQuantityScheduleElement;
+import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.glm.ldm.plan.PlanScheduleType;
 import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
-import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
-import org.cougaar.glm.ldm.plan.PlanScheduleType;
+import org.cougaar.logistics.plugin.inventory.TimeUtils;
+import org.cougaar.logistics.plugin.inventory.UtilsProvider;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.planning.ldm.plan.ScheduleElement;
+import org.cougaar.planning.ldm.plan.ScheduleImpl;
+import org.cougaar.planning.ldm.plan.ScheduleType;
+import org.cougaar.planning.ldm.plan.ScheduleUtilities;
+import org.cougaar.util.TimeSpan;
+import org.cougaar.util.log.Logger;
+
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Vector;
 
 /** Provide convenience methods for creating objects. */
 public class ScheduleUtils {
-  
+
   protected static final long MSEC_PER_DAY =  86400000;
-  protected static final long SECOND_IN_MS =  1000; 
-  
+  protected static final long SECOND_IN_MS =  1000;
+
   private transient Logger logger;
-  
+
   public ScheduleUtils(UtilsProvider provider) {
     if(provider == null) {
       logger = NullLoggingServiceImpl.getNullLoggingServiceImpl();
@@ -79,8 +63,8 @@ public class ScheduleUtils {
       logger = (Logger)provider.getLoggingService(this);
     }
   }
-  
-  
+
+
   public static Vector convertEnumToVector(Enumeration e) {
     Vector v = new Vector();
     while (e.hasMoreElements()) {
@@ -88,8 +72,8 @@ public class ScheduleUtils {
     }
     return v;
   }
-  
-  
+
+
   public static ScheduledContentPG createScheduledContentPG( Asset a, Schedule s) {
     NewScheduledContentPG scp = PropertyGroupFactory.newScheduledContentPG();
     scp.setAsset(a);
@@ -100,38 +84,38 @@ public class ScheduleUtils {
   // truncates time span
   // note amount can be positive or negative.
   public static Schedule adjustSchedule(Schedule sched, long start, long end, int amount, long time_incr) {
-    return adjustSchedule(sched, truncTime(start, time_incr), 
-			  truncTime(end+1, time_incr)-1, amount);
+    return adjustSchedule(sched, truncTime(start, time_incr),
+                          truncTime(end+1, time_incr)-1, amount);
   }
-  
+
   // note amount can be positive or negative.
   public static Schedule adjustSchedule(Schedule sched, long start, long end, int amount) {
     Schedule simple_sched = buildSimpleQuantitySchedule(amount, start, end);
     return ScheduleUtilities.addSchedules(sched, simple_sched);
   }
-  
-  public static Schedule buildSimpleQuantitySchedule(double qty, 
-						     long start, long end) {
-    QuantityScheduleElement nqse = buildQuantityScheduleElement(qty, 
-								start, 
-								end);
+
+  public static Schedule buildSimpleQuantitySchedule(double qty,
+                                                     long start, long end) {
+    QuantityScheduleElement nqse = buildQuantityScheduleElement(qty,
+                                                                start,
+                                                                end);
     Vector sched_el = new Vector();
     sched_el.addElement(nqse);
-    
-    return GLMFactory.newQuantitySchedule(sched_el.elements(), 
-					  PlanScheduleType.TOTAL_INVENTORY);
+
+    return GLMFactory.newQuantitySchedule(sched_el.elements(),
+                                          PlanScheduleType.TOTAL_INVENTORY);
   }
-  
-  public static Schedule buildSimpleQuantitySchedule(int qty, long start, 
-						     long end, long time_incr) {
+
+  public static Schedule buildSimpleQuantitySchedule(int qty, long start,
+                                                     long end, long time_incr) {
     return  buildSimpleQuantitySchedule(qty, truncTime(start, time_incr),
-					truncTime(end+1, time_incr)-1);
+                                        truncTime(end+1, time_incr)-1);
   }
-  
+
   public static long truncTime(long time, long time_incr) {
     return (time/time_incr)*time_incr;
   }
-  
+
   public static QuantityScheduleElement buildQuantityScheduleElement(double qty, long start, long end) {
     NewQuantityScheduleElement e = GLMFactory.newQuantityScheduleElement();
     e.setQuantity(qty);
@@ -141,11 +125,11 @@ public class ScheduleUtils {
   }
 
   public static QuantityScheduleElement buildQuantityScheduleElement(double qty, long start, long end, long time_incr) {
-    return buildQuantityScheduleElement(qty, truncTime(start, time_incr), 
-					truncTime(end+1, time_incr)-1);
+    return buildQuantityScheduleElement(qty, truncTime(start, time_incr),
+                                        truncTime(end+1, time_incr)-1);
   }
-  
-  
+
+
   // note amount can be positive or negative.
   // adjust quantity from start until end of schedule
   // if start is after end of schedule, 
@@ -155,7 +139,7 @@ public class ScheduleUtils {
     if (end > start) end = start+MSEC_PER_DAY;
     return adjustSchedule(sched, start, end, amount);
   }
-  
+
   public static boolean isOffendingSchedule(Schedule sched) {
     long start = sched.getStartTime() -1;
     QuantityScheduleElement qse;
@@ -163,24 +147,24 @@ public class ScheduleUtils {
     while (elements.hasMoreElements()){
       qse = (QuantityScheduleElement)elements.nextElement();
       if (qse.getStartTime() < start) {
-	return true;
+        return true;
       }
       start = qse.getStartTime();
     }
     return false;
   }
-  
+
   public static ScheduleElement getElementWithTime(Schedule s, long time) {
     ScheduleElement se = null;
     if (s != null) {
       Collection c = s.getScheduleElementsWithTime(time);
       if (!c.isEmpty()) {
-	se = (ScheduleElement)c.iterator().next();
+        se = (ScheduleElement)c.iterator().next();
       }
     }
     return se;
   }
-  
+
   protected Schedule createConsumerSchedule(Collection col) {
     ScheduledContentPG scp;
     int qty;
@@ -190,35 +174,35 @@ public class ScheduleUtils {
     while (list.hasNext()) {
       asset = (Asset)list.next();
       if (asset instanceof AggregateAsset) {
-	AggregateAsset aa = (AggregateAsset)asset;
-	qty = (int)aa.getQuantity();
-	consumer = aa.getAsset();
+        AggregateAsset aa = (AggregateAsset)asset;
+        qty = (int)aa.getQuantity();
+        consumer = aa.getAsset();
       } else {
-	qty = 1;
-	consumer = asset.getPrototype();
+        qty = 1;
+        consumer = asset.getPrototype();
       }
       if (consumer == null) {
-	logger.error("Missing prototype on asset: "+asset);
-	continue;
+        logger.error("Missing prototype on asset: "+asset);
+        continue;
       }
       Schedule roleSched = asset.getRoleSchedule().getAvailableSchedule();
       if (roleSched == null) {
-	logger.error("Missing RoleSchedule on asset: "+asset);
-	continue;
+        logger.error("Missing RoleSchedule on asset: "+asset);
+        continue;
       }
       long start = roleSched.getStartTime();
       long end = roleSched.getEndTime();
       if (start >= end-1) {
-	logger.error("Bad schedule time(s): start "+TimeUtils.dateString(start)+
-		     ", end "+TimeUtils.dateString(end)+" for asset: "+asset);
-	continue;
+        logger.error("Bad schedule time(s): start "+TimeUtils.dateString(start)+
+                     ", end "+TimeUtils.dateString(end)+" for asset: "+asset);
+        continue;
       }
       // ScheduleUtils schedule methods have a granularity - so 1000 = 1 sec
       // so everything is scheduled on an even second
       if (consumerSched == null) {
-	consumerSched = buildSimpleQuantitySchedule (qty, start, end, SECOND_IN_MS);
+        consumerSched = buildSimpleQuantitySchedule (qty, start, end, SECOND_IN_MS);
       } else {
-	consumerSched = adjustSchedule (consumerSched, start, end, qty, SECOND_IN_MS);
+        consumerSched = adjustSchedule (consumerSched, start, end, qty, SECOND_IN_MS);
       }
     }
     return consumerSched;
@@ -263,13 +247,13 @@ public class ScheduleUtils {
     for (int ii = 0; ii < num_params; ii++) {
       enums[ii] = ((Schedule) scheds.get(ii)).getAllScheduleElements();
       if (enums[ii].hasMoreElements()) {
-	ose = (ObjectScheduleElement) enums[ii].nextElement();
-	intervals[ii] = ose;
-	if (ose.getStartTime() < start) {
-	  start = ose.getStartTime();
-	}
+        ose = (ObjectScheduleElement) enums[ii].nextElement();
+        intervals[ii] = ose;
+        if (ose.getStartTime() < start) {
+          start = ose.getStartTime();
+        }
       } else {
-	intervals[ii] = null; // Empty schedule
+        intervals[ii] = null; // Empty schedule
       }
     }
 
@@ -281,41 +265,41 @@ public class ScheduleUtils {
       boolean haveParams = false;
       end = TimeSpan.MAX_VALUE;
       for (int ii = 0; ii < num_params; ii++) {
-	params.set(ii, null);// Presume no element for schedule(ii)
-	// check if interval good
-	ose = intervals[ii];
-	if (ose != null) {
-	  if (ose.getEndTime() <= start) {
-	    // This has already been covered; Step to next
-	    if (!enums[ii].hasMoreElements()) {
-	      // ran off end of schedule(ii)
-	      intervals[ii] = null;
-	      continue;
-	    }
-	    ose = (ObjectScheduleElement) enums[ii].nextElement();
-	    intervals[ii] = ose;
-	  }
-	  if (ose.getStartTime() > start) {
-	    // ose is _not_ part of this result
-	    // element, it's later (there is a gap)
-	    if (ose.getStartTime() < end) {
-	      // This result element ends not later
-	      // than the start of this pending element
-	      end = ose.getStartTime();
-	    }
-	    continue;
-	  }
-	  // search for earliest end time 
-	  if (ose.getEndTime() < end) {
-	    end = ose.getEndTime();
-	  }
-	  // add current param to list
-	  params.set(ii, ose.getObject());
-	  haveParams = true;
-	}
+        params.set(ii, null);// Presume no element for schedule(ii)
+        // check if interval good
+        ose = intervals[ii];
+        if (ose != null) {
+          if (ose.getEndTime() <= start) {
+            // This has already been covered; Step to next
+            if (!enums[ii].hasMoreElements()) {
+              // ran off end of schedule(ii)
+              intervals[ii] = null;
+              continue;
+            }
+            ose = (ObjectScheduleElement) enums[ii].nextElement();
+            intervals[ii] = ose;
+          }
+          if (ose.getStartTime() > start) {
+            // ose is _not_ part of this result
+            // element, it's later (there is a gap)
+            if (ose.getStartTime() < end) {
+              // This result element ends not later
+              // than the start of this pending element
+              end = ose.getStartTime();
+            }
+            continue;
+          }
+          // search for earliest end time
+          if (ose.getEndTime() < end) {
+            end = ose.getEndTime();
+          }
+          // add current param to list
+          params.set(ii, ose.getObject());
+          haveParams = true;
+        }
       }
       if (haveParams) {
-	result_sched.add(new ObjectScheduleElement(start, end, params));
+        result_sched.add(new ObjectScheduleElement(start, end, params));
       }
       start = end;
     }
