@@ -262,11 +262,7 @@ public class GanttChartView extends JPanel implements ActionListener, WorkListen
 
       String extension = getExtension(f);
       if (extension != null) {
-	if (extension.equals(CSV)) {
-	  return true;
-	} else {
-	  return false;
-	}
+	return extension.equals(CSV);
       }
 
       return false;

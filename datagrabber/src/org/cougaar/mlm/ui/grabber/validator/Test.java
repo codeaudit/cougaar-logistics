@@ -291,11 +291,7 @@ public abstract class Test{
   public boolean inKeySet(int x) {
     int[] types = getTypes();
     x--; // go from column index to array index
-    if (x == (types.length-1)) {
-        return false;
-    } else {
-        return true;
-    }
+    return !(x == (types.length-1));
   }
 
   public static final int LESSTHAN = -1;
