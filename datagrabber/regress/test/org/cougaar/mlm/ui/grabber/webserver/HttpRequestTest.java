@@ -33,7 +33,7 @@ public class HttpRequestTest  extends TestCase {
     }
 
     public void testBasic() throws Throwable {
-        HttpRequest h = new HttpRequest(1, new MySocket(new StringBufferInputStream("hi")));
+        HttpRequest h = new HttpRequest(1, new MySocket(null));
         assertEquals(1, h.getID());
         assertEquals(0, h.getCommand());
         assertNull(h.getTarget());
