@@ -122,17 +122,20 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (isProjection(task)) {
       return task.getUID() + ": "
 	+ task.getVerb()+"("+
-	getDailyQuantity(task)+" "+
-	getTaskItemName(task)+") "+
-	new Date(getStartTime(task))+
-	"  -  " +
-	new Date(getEndTime(task));
+	  getDailyQuantity(task)+" "+
+	  getTaskItemName(task)+") "+
+	  getTimeUtils().
+	  dateString(new Date(getStartTime(task)))+
+	  "  -  " +
+	  getTimeUtils().
+	  dateString(new Date(getEndTime(task)));
     } else {
       return task.getUID() + ": "
 	+ task.getVerb()+"("+
-	getQuantity(task)+" "+
-	getTaskItemName(task)+") "+
-	new Date(getEndTime(task));
+	  getQuantity(task)+" "+
+	  getTaskItemName(task)+") "+
+	  getTimeUtils().
+	  dateString(new Date(getEndTime(task)));
     }
   }
 
@@ -302,6 +305,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 	  return getQuantity(ar);
       }
   }
+
+    public TimeUtils getTimeUtils() {return invPlugin.getTimeUtils();}
 }
 
 
