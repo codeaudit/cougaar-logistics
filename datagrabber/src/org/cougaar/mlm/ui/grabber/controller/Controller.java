@@ -442,9 +442,6 @@ public class Controller extends Thread implements ResultHandler{
     }catch(SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
 			"Could not obtain largest run number",e);
-      logger.logMessage(Logger.ERROR,Logger.DB_QUERY,
-			"Connection was " + dbConnection + 
-			" is closed " + dbConnection.isClosed());
       e.printStackTrace();
     }
     return ret;

@@ -46,7 +46,7 @@ public class SuccessRunResultTest extends TestCase {
     }
 
     public void testBasic2() {
-        SuccessRunResult srr = new SuccessRunResult(1, 2, true, "foo");
+        SuccessRunResult srr = new SuccessRunResult(1, 2, true, "foo","","");
         assertEquals(1, srr.getID());
         assertEquals(2, srr.getRunID());
         assertTrue(srr.getWarning());
