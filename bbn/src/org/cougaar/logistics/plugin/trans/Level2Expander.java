@@ -35,6 +35,7 @@ import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
 import org.cougaar.planning.ldm.measure.*;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
+import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.util.Random;
 
 
@@ -48,36 +49,166 @@ import org.cougaar.util.Random;
 
 public class Level2Expander extends Level2TranslatorModule {
 
-
   HashMap level2To6Map;
-  HashMap level6CustomerMap;
+  HashMap endTimeMap;
 
   public Level2Expander(Level2TranslatorPlugin level2Translator) {
     super(level2Translator);
     level2To6Map = new HashMap();
-    level6CustomerMap = new HashMap();
+    endTimeMap = new HashMap();
   }
 
+  public Collection translateLevel2Tasks(Collection level2Tasks,
+                                         Collection level6Tasks,
+                                         Collection supplyTasks) {
+    ArrayList doneLevel2s = new ArrayList();
+    mapLevel2ToLevel6(level2Tasks, level6Tasks);
+    mapCustomerEndTimes(supplyTasks);
+    //TODO: stopped here MWD
+    Iterator subIt = level2To6Map.entrySet().iterator();
+    while (subIt.hasNext()) {
+      Map.Entry entry = (Map.Entry) subIt.next();
+      Task level2Task = (Task) entry.getKey();
+      Collection relLevel6Tasks = (Collection) entry.getValue();
+      Task aDoneLevel2 = translateLevel2Task(level2Task,relLevel6Tasks);
+      if(aDoneLevel2 != null){
+        doneLevel2s.add(aDoneLevel2);
+      }
+    }
+
+    return doneLevel2s;
+  }
+
+
+  private Task translateLevel2Task(Task level2Task,
+                                     Collection relevantL6Tasks) {
+    Task doneLevel2Task = null;
+    long lastActualSeen = ((Long) endTimeMap.get(getTaskUtils().getCustomer(level2Task))).longValue();
+    long endTime = getTaskUtils().getEndTime(level2Task);
+    long startTime = getTaskUtils().getStartTime(level2Task);
+    boolean alreadyDisposed = false;
+
+    double expL2BaseRate = 0;
+    PlanElement pe = level2Task.getPlanElement();
+    if (pe != null) {
+      if (pe instanceof Expansion) {
+        Expansion exp = (Expansion) pe;
+        Enumeration subtasks = exp.getWorkflow().getTasks();
+        while (subtasks.hasMoreElements()) {
+          Task subtask = (Task) subtasks.nextElement();
+          expL2BaseRate += getBaseUnitPerSecond(getTaskUtils().getRate(subtask));
+        }
+      } else if (pe instanceof Disposition) {
+        alreadyDisposed = true;
+      }
+    }
+
+    if (lastActualSeen >= endTime) {
+      doneLevel2Task = level2Task;
+    } else {
+      long countedStartTime = Math.max(startTime, lastActualSeen);
+      double totalL6BaseRate = deriveTotalQty(countedStartTime, endTime, relevantL6Tasks);
+      Rate origL2Rate = getTaskUtils().getRate(level2Task);
+      double origL2BaseRate = deriveTotalQty(countedStartTime, endTime, level2Task);
+//      double origL2BaseRate = getBaseUnitPerSecond(origL2Rate);
+
+      if (totalL6BaseRate >= origL2BaseRate) {
+        doneLevel2Task = level2Task;
+      } else {
+        double newL2BaseRate = origL2BaseRate - totalL6BaseRate;
+        if (newL2BaseRate != origL2BaseRate) {
+          Rate newL2Rate = newRateFromUnitPerSecond(origL2Rate, newL2BaseRate);
+          expandLevel2Task(level2Task, newL2Rate, lastActualSeen);
+        }
+      }
+    }
+    if (alreadyDisposed) {
+      return null;
+    }
+    return doneLevel2Task;
+  }
+
+
+  private void mapCustomerEndTimes(Collection supplyTasks) {
+    endTimeMap.clear();
+    Iterator supplyTaskIt = supplyTasks.iterator();
+    while (supplyTaskIt.hasNext()) {
+      Task supplyTask = (Task) supplyTaskIt.next();
+      long endTime = getTaskUtils().getEndTime(supplyTask);
+      Object org = getTaskUtils().getCustomer(supplyTask);
+      if (org != null) {
+        Long lastActualSeen = (Long) endTimeMap.get(org);
+        if ((lastActualSeen == null) || (endTime > lastActualSeen.longValue())) {
+          endTimeMap.put(org, new Long(endTime));
+        }
+      }
+    }
+  }
+
+  private void mapLevel2ToLevel6(Collection level2s, Collection level6s) {
+    //alreadyMapped is only here to print out the error below.   If this is
+    // a nominal case take already Mapped and the error out.  MWD.
+    HashSet alreadyMapped = new HashSet();
+    level2To6Map.clear();
+    Iterator level2It = level2s.iterator();
+    while (level2It.hasNext()) {
+      Task level2Task = (Task) level2It.next();
+      long l2StartTime = getTaskUtils().getStartTime(level2Task);
+      long l2EndTime = getTaskUtils().getEndTime(level2Task);
+      Object l2Cust = getTaskUtils().getCustomer(level2Task);
+      Iterator level6It = level6s.iterator();
+      ArrayList mappedL6s = new ArrayList();
+      while (level6It.hasNext()) {
+        Task level6Task = (Task) level6It.next();
+        long l6StartTime = getTaskUtils().getStartTime(level6Task);
+        long l6EndTime = getTaskUtils().getEndTime(level6Task);
+        Object l6Cust = getTaskUtils().getCustomer(level2Task);
+        if ((l6StartTime < l2EndTime) ||
+            (l6EndTime > l2StartTime)) {
+          if (l2Cust.equals(l6Cust)) {
+            mappedL6s.add(level6Task);
+            if ((alreadyMapped.contains(level6Task)) &&
+                logger.isErrorEnabled()) {
+              logger.error("The following task has already been mapped: " + level6Task +
+                           " It ovelaps two different level 2 tasks.");
+            } else {
+              alreadyMapped.add(level6Task);
+            }
+          } else {
+            logger.error("Unexpected Customer of level2Task " + l2Cust + " differs from level6 cust:" + l6Cust);
+          }
+        }
+      }
+      level2To6Map.put(level2Task, mappedL6s);
+    }
+  }
 
   protected double deriveTotalQty(long bucketStart, long bucketEnd, Collection projTasks) {
     Iterator tasksIt = projTasks.iterator();
     double totalQty = 0.0;
     while (tasksIt.hasNext()) {
       Task projTask = (Task) tasksIt.next();
-      long taskStart = getTaskUtils().getStartTime(projTask);
-      long taskEnd = getTaskUtils().getEndTime(projTask);
-      long start = Math.max(taskStart, bucketStart);
-      long end = Math.min(taskEnd, bucketEnd);
-      //duration in seconds
-      double duration = ((end - start) / 1000);
-      Rate rate = getTaskUtils().getRate(projTask);
-      double qty = (getBaseUnitPerSecond(rate) * duration);
+      double qty = deriveTotalQty(bucketStart, bucketEnd, projTask);
       totalQty += qty;
     }
     return totalQty;
   }
 
-  protected double getBaseUnitPerSecond(Rate rate) {
+
+  protected double deriveTotalQty(long bucketStart, long bucketEnd, Task projTask) {
+
+    long taskStart = getTaskUtils().getStartTime(projTask);
+    long taskEnd = getTaskUtils().getEndTime(projTask);
+    long start = Math.max(taskStart, bucketStart);
+    long end = Math.min(taskEnd, bucketEnd);
+    //duration in seconds
+    double duration = ((end - start) / 1000);
+    Rate rate = getTaskUtils().getRate(projTask);
+    double qty = (getBaseUnitPerSecond(rate) * duration);
+    return qty;
+  }
+
+  protected static double getBaseUnitPerSecond(Rate rate) {
     if (rate instanceof CostRate) {
       return ((CostRate) rate).getDollarsPerSecond();
     } else if (rate instanceof CountRate) {
@@ -92,8 +223,27 @@ public class Level2Expander extends Level2TranslatorModule {
     return 0.0;
   }
 
+  protected Rate newRateFromUnitPerSecond(Rate rate, double unitsPerSecond) {
+    if (rate instanceof CostRate) {
+      return (CostRate.newDollarsPerSecond(unitsPerSecond));
+    } else if (rate instanceof CountRate) {
+      return (CountRate.newEachesPerSecond(unitsPerSecond));
+    } else if (rate instanceof FlowRate) {
+      return (FlowRate.newGallonsPerSecond(unitsPerSecond));
+    } else if (rate instanceof MassTransferRate) {
+      return (MassTransferRate.newShortTonsPerSecond(unitsPerSecond));
+    } else if (rate instanceof TimeRate) {
+      return (TimeRate.newHoursPerSecond(unitsPerSecond));
+    } // if
 
-  protected void expandLevel2Task(Task parent,
+    if (logger.isErrorEnabled()) {
+      logger.error("Unknown rate type");
+    }
+    return (CountRate.newEachesPerSecond(unitsPerSecond));
+  }
+
+
+  private void expandLevel2Task(Task parent,
                                   Rate newRate,
                                   long lastSupplyTaskTime) {
 
@@ -113,7 +263,7 @@ public class Level2Expander extends Level2TranslatorModule {
 
   }
 
-  protected void republishExpansionWithTask(Task parent, NewTask childTask) {
+  private void republishExpansionWithTask(Task parent, NewTask childTask) {
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     removeAllFromWorkflow(wf);
@@ -129,7 +279,7 @@ public class Level2Expander extends Level2TranslatorModule {
   }
 
 
-  protected void removeAllFromWorkflow(NewWorkflow wf) {
+  private void removeAllFromWorkflow(NewWorkflow wf) {
     Enumeration subtasks = wf.getTasks();
     while (subtasks.hasMoreElements()) {
       Task childTask = (Task) subtasks.nextElement();
@@ -138,7 +288,7 @@ public class Level2Expander extends Level2TranslatorModule {
     }
   }
 
-  protected void createAndPublishExpansion(Task parent, NewTask childTask) {
+  private void createAndPublishExpansion(Task parent, NewTask childTask) {
     Workflow wf = buildWorkflow(parent, childTask);
     translatorPlugin.publishAdd(childTask);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
@@ -162,17 +312,23 @@ public class Level2Expander extends Level2TranslatorModule {
   }
 
 
-  protected NewTask createNewLevel2Task(Task parentTask,
+  private NewTask createNewLevel2Task(Task parentTask,
                                         Rate newRate,
                                         long lastSupplyEndTime) {
 
     Vector newPrefs = new Vector();
     Enumeration oldPrefs = parentTask.getPreferences();
 
+    long startTime = getTaskUtils().getStartTime(parentTask);
+
     while (oldPrefs.hasMoreElements()) {
       Preference pref = (Preference) oldPrefs.nextElement();
       if (pref.getAspectType() == AlpineAspectType.DEMANDRATE) {
         pref = getTaskUtils().createDemandRatePreference(getPlanningFactory(), newRate);
+      }
+      if ((lastSupplyEndTime > startTime) &&
+          (pref.getAspectType() == AspectType.START_TIME)) {
+        pref = createTimePreference(lastSupplyEndTime, AspectType.START_TIME);
       }
       newPrefs.add(pref);
     }
@@ -198,6 +354,40 @@ public class Level2Expander extends Level2TranslatorModule {
     //newTask.setCommitmentDate(parentTask.getCommitmentDate());
 
     return newTask;
+  }
+
+  /** Create a Time Preference for the Refill Task
+   *  Use a Piecewise Linear Scoring Function.
+   *  For details see the IM SDD.
+   *  @param bestDay The time you want this preference to represent
+   *  @param aspectType The AspectType of the preference- should be start_time or end_time
+   *  @return Preference The new Time Preference
+   **/
+  private Preference createTimePreference(long bestDay, int aspectType) {
+    long early = translatorPlugin.getLogOPlanStartTime();
+    long late = getTimeUtils().addNDays(bestDay, 1);
+    long end = translatorPlugin.getLogOPlanEndTime();
+    double daysBetween = ((end - bestDay) / 86400000);
+//Use .0033 as a slope for now
+    double late_score = .0033 * daysBetween;
+// define alpha .25
+    double alpha = .25;
+
+    Vector points = new Vector();
+    AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
+    AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
+    AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
+
+    points.addElement(earliest);
+    points.addElement(best);
+    points.addElement(first_late);
+    points.addElement(latest);
+    ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
+    return getPlanningFactory().newPreference(aspectType, timeSF);
+
+// prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
+//return prefs;
   }
 
 

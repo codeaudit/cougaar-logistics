@@ -62,14 +62,17 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
 
   private String supplyType;
+  private boolean doTranslate=true;
 
 
   public final String SUPPLY_TYPE = "SUPPLY_TYPE";
+  public final String TRANSLATOR_ON = "TRANSLATOR_ON";
 
 
   private Organization myOrganization;
   private String myOrgName;
 
+  LogisticsOPlan logOPlan = null;
 
   public void load() {
     super.load();
@@ -110,10 +113,6 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   private IncrementalSubscription projectionTaskSubscription;
   private IncrementalSubscription level2TaskSubscription;
 
-  /*** TODO: MWD Remove
-   private IncrementalSubscription orgActivities;
-   private IncrementalSubscription oplanSubscription;
-   **/
   private IncrementalSubscription logisticsOPlanSubscription;
 
 
@@ -123,20 +122,9 @@ public class Level2TranslatorPlugin extends ComponentPlugin
 
 
     //TODO: MWD Remove
-    //UnaryPredicate orgActivityPred = new OrgActivityPred();
-    //orgActivities = (IncrementalSubscription) blackboard.subscribe(orgActivityPred);
-    //oplanSubscription = (IncrementalSubscription) blackboard.subscribe(oplanPredicate);
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
 
-  /** TODO: MWD Remove
-   private static UnaryPredicate oplanPredicate = new UnaryPredicate() {
-   public boolean execute(Object o) {
-   return (o instanceof Oplan);
-   }
-   };
-
-   **/
 
   /** Selects the LogisticsOPlan objects **/
   private static class LogisticsOPlanPredicate implements UnaryPredicate {
@@ -206,7 +194,7 @@ public class Level2TranslatorPlugin extends ComponentPlugin
         Task task = (Task) o;
         if (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
           if (taskUtils.isDirectObjectOfType(task, supplyType)) {
-            if(taskUtils.isLevel2(task)) {
+            if (taskUtils.isLevel2(task)) {
               return (!(taskUtils.isReadyForTransport(task)));
             }
           }
@@ -302,31 +290,46 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   }
 
   protected void execute() {
+
+    //TODO: Remove All Log Oplan references
+    // get the Logistics OPlan (our homegrown version with specific dates).
+    if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
+      Iterator opIt = logisticsOPlanSubscription.iterator();
+      if (opIt.hasNext()) {
+        //we only expect to have one
+        logOPlan = (LogisticsOPlan) opIt.next();
+      }
+    }
+
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-      if (myOrganization != null) {
+    if (myOrganization != null) {
         level2TaskSubscription = (IncrementalSubscription) blackboard.
             subscribe(new Level2TaskPredicate(supplyType, taskUtils));
-	if(logger.isDebugEnabled()) {
-	    logger.debug("Level2TranslatorPlugin just loaded level 2 subscription");
-	}
-              } else {
+        if (logger.isDebugEnabled()) {
+          logger.debug("Level2TranslatorPlugin just loaded level 2 subscription");
+        }
+      } else {
         if (logger.isInfoEnabled()) {
           logger.info("\n Level2TranslatorPlugin " + supplyType +
                       " not ready to process tasks yet." +
-                      " my org is: " + myOrganization);
+                      " my org is: " + myOrganization +
+		       " supply type is " + supplyType);
         }
         return;
-      }
     }
-    if (!level2TaskSubscription.getAddedCollection().isEmpty()) {
+    }
+
+
+    if ((level2TaskSubscription != null) &&
+	(!level2TaskSubscription.getAddedCollection().isEmpty())) {
       supplyTaskSubscription = (IncrementalSubscription) blackboard.
           subscribe(new SupplyTaskPredicate(supplyType, taskUtils));
 
       projectionTaskSubscription = (IncrementalSubscription) blackboard.
           subscribe(new ProjectionTaskPredicate(supplyType, taskUtils));
 
-      logger.shout("Level2TranslatorPlugin got Level 2 task - now disposing");
+      //logger.shout("Level2TranslatorPlugin got Level 2 task - now disposing");
 
       //for now just dispose of them
       disposer.disposeAndRemoveExpansion(level2TaskSubscription.getAddedCollection());
@@ -336,10 +339,19 @@ public class Level2TranslatorPlugin extends ComponentPlugin
   }
 
 
-
-
   private Level2Disposer getNewLevel2DisposerModule() {
     return new Level2Disposer(this);
+  }
+
+
+  // get the first day in theater
+  public long getLogOPlanStartTime() {
+    return logOPlan.getStartTime();
+  }
+
+  // get the last day in theater
+  public long getLogOPlanEndTime() {
+    return logOPlan.getEndTime();
   }
 
 
@@ -348,7 +360,7 @@ public class Level2TranslatorPlugin extends ComponentPlugin
    Initializes supplyType and inventoryFile
    **/
   private HashMap readParameters() {
-    final String errorString = "Level2TranslatorPlugin requires 1 parameter, SUPPLY_TYPE.   As in Level2TranslatorPlugin(SUPPLY_TYPE=BulkPOL)";
+    final String errorString = "Level2TranslatorPlugin requires 1 parameter, SUPPLY_TYPE and there is an optional parameter TRANSLATOR_ON with a boolean value (default is true).   As in Level2TranslatorPlugin(SUPPLY_TYPE=Ammunition,TRANSLATOR_ON=false)";
     Collection p = getParameters();
 
     if (p.isEmpty()) {
@@ -369,6 +381,12 @@ public class Level2TranslatorPlugin extends ComponentPlugin
       }
     }
     supplyType = (String) map.get(SUPPLY_TYPE);
+    String translateOn = (String) map.get(TRANSLATOR_ON);
+
+    if(translateOn != null) {
+	translateOn = translateOn.trim().toLowerCase();
+	doTranslate = (translateOn.equals("true"));
+    }
 
     //MWD Is this right
     /*
