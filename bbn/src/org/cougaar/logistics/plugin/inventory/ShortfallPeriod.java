@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Date;
 
+import java.math.BigDecimal;
+
 /** 
  * ShortfallSummary is an object that summarizizes which inventories of 
  * a particular inventory have shortfall.
@@ -40,6 +42,7 @@ import java.util.Date;
 
 public class ShortfallPeriod implements java.io.Serializable, Publishable {
 
+  
   private long startTime;
   private long endTime;
   private double totalShortfallDemand;
@@ -75,9 +78,12 @@ public class ShortfallPeriod implements java.io.Serializable, Publishable {
   public double getTotalDemand() { return totalShortfallDemand; }
   public double getTotalFilled() { return totalFilled; }
 
+  public double getRoundedTotalDemand(boolean roundToInt) { return roundAppropriately(totalShortfallDemand,roundToInt); }
+  public double getRoundedTotalFilled(boolean roundToInt) { return roundAppropriately(totalFilled,roundToInt); }
+
   public int getNumBuckets(long msecPerBucket) { return ((int) (((endTime + 1) - startTime)/msecPerBucket)); }
-  public double getShortfallQty() { return (totalShortfallDemand-totalFilled); }
-  public double getPercentShortfall() { return ((getShortfallQty()/getTotalDemand()) * 100); }
+  public double getShortfallQty(boolean roundToInt) { return roundAppropriately(totalShortfallDemand-totalFilled,roundToInt); }
+  public double getPercentShortfall() { return roundToInt((getShortfallQty(false)/getTotalDemand()) * 100); }
 
   public void setTotalDemand(double demand) 
     { totalShortfallDemand = demand; }
@@ -89,7 +95,7 @@ public class ShortfallPeriod implements java.io.Serializable, Publishable {
     StringBuffer sb = new StringBuffer("");
     sb.append("\nStartTime=" + TimeUtils.dateString(getStartTime()));
     sb.append(" - EndTime=" + TimeUtils.dateString(getEndTime()));
-    sb.append("\nShortfallQty=" + getShortfallQty());
+    sb.append("\nShortfallQty=" + getShortfallQty(false));
     sb.append(",PercentShortfall=" + getPercentShortfall());
     return sb.toString();
   }
@@ -101,6 +107,26 @@ public class ShortfallPeriod implements java.io.Serializable, Publishable {
 	      (getTotalFilled() == sp.getTotalFilled()));
   }
 
+  public static double roundAppropriately(double aNum, boolean roundToInt) {
+      if(roundToInt) {
+	  return roundToInt(aNum);
+      }
+      else {
+	  return roundToHundreths(aNum);
+      }
+
+  }
+
+
+  public static double roundToHundreths(double aNum) {
+      BigDecimal roundedQty = ((new BigDecimal((double)aNum)).setScale(2,BigDecimal.ROUND_HALF_EVEN));
+      return roundedQty.doubleValue();
+  }
+
+  public static double roundToInt(double aNum) {
+      BigDecimal roundedQty = ((new BigDecimal((double)aNum)).setScale(0,BigDecimal.ROUND_HALF_EVEN));
+      return roundedQty.doubleValue();
+  }
 
   public boolean isPersistable() {
     return true;
