@@ -76,8 +76,8 @@ public class TranscomVishnuPlugin extends CustomVishnuAllocatorPlugin {
       try {
 	if (asset instanceof Organization) {
 	  name = getOrganizationRole(asset);
-	  if (isWarnEnabled()) {
-	      warn (".handleNewAssets - received subordinate org : " + asset + "'s name is " + name);
+	  if (isInfoEnabled()) {
+	      info (".handleNewAssets - received subordinate org : " + asset + "'s name is " + name);
 	  }
 	}
 	else {
