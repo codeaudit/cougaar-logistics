@@ -118,8 +118,8 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
                                                        TaskUtils.getEndTime(task));
       // if we have no providers that cover the whole projection, split it and try again
       if (!support_orgs.hasMoreElements()) {
-        HashMap provSchedMap = inventoryPlugin.relationshipScheduleMap();
-        List howToSplit = inventoryPlugin.getNewTaskSplitTimes(task, provSchedMap);
+        //HashMap provSchedMap = inventoryPlugin.relationshipScheduleMap();
+        List howToSplit = inventoryPlugin.getNewTaskSplitTimes(task);
         // if we can split it, do it, if not warn that we have no provider
         if (!howToSplit.isEmpty()) {
           Collection newPartialTasks = getTaskUtils().splitProjection(task, howToSplit, inventoryPlugin);

@@ -469,11 +469,8 @@ public class InventoryPlugin extends ComponentPlugin
           logger.debug("ORG RELATIONSHIPS CHANGED SDSD myorg: " + myOrganization + " supply type:" +
                       supplyType + " role: " + getRole(supplyType) + "\n");
         }
-        HashMap providerAvailSchedule = relationshipScheduleMap();
-        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.Supply,
-                                              providerAvailSchedule);
-        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.ProjectSupply,
-                                              providerAvailSchedule);
+        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.Supply);
+        getOverlappingTasks(refillAllocationSubscription, Constants.Verb.ProjectSupply);
 
         // Handle unallocated tasks
         Collection unalloc = null;
@@ -771,8 +768,9 @@ public class InventoryPlugin extends ComponentPlugin
     return uncoveredTasks;
   }
 
-  protected void getOverlappingTasks(Collection refill_allocations, Verb verb, HashMap providersSched) {
-    RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
+  protected void getOverlappingTasks(Collection refill_allocations, Verb verb) {
+    //RelationshipSchedule myOrgRelSched = myOrganization.getRelationshipSchedule();
+    HashMap providersSched = relationshipScheduleMap();
     Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
     ArrayList partial = new ArrayList();
@@ -801,8 +799,10 @@ public class InventoryPlugin extends ComponentPlugin
             long taskStart = TaskUtils.getStartTime(task);
             start = new Date(taskStart);
 
-            EnclosedPredicate enclosedPred = new EnclosedPredicate(myOrgRelSched, myRole, provider, taskStart, taskEnd);
-            int size = myOrgRelSched.getMatchingRelationships(enclosedPred).size();
+            //EnclosedPredicate enclosedPred = new EnclosedPredicate(myOrgRelSched, myRole, provider, taskStart, taskEnd);
+            EnclosedSchedPredicate enclosedPred = new EnclosedSchedPredicate(taskStart, taskEnd);
+
+            int size = availSched.filter(enclosedPred).size();
             //System.out.println("Task times " + new Date(taskStart) + " " + start + " size of enclosed" + size);
             if (size == 0) {
               //if (availSched.getEncapsulatedScheduleElements(taskStart, taskEnd - bucketSize).size() == 0) {
@@ -835,14 +835,14 @@ public class InventoryPlugin extends ComponentPlugin
       externalAllocator.rescindTaskAllocations(unprovidedTasks);
       externalAllocator.allocateRefillTasks(unprovidedTasks);
     }
-    if (!partial.isEmpty()) {
+    if (! partial.isEmpty()) {
       ArrayList originalTasks = new ArrayList();
       ArrayList partialsToAlloc = new ArrayList();
       Iterator partIt = partial.iterator();
       ArrayList failedSplits = new ArrayList();
       while (partIt.hasNext()) {
         Task taskToSplit = (Task) partIt.next();
-        List splitTimes = getSplitTimes(taskToSplit, relationshipScheduleMap());
+        List splitTimes = getSplitTimes(taskToSplit, providersSched);
         if (splitTimes.isEmpty()) {
           failedSplits.add(taskToSplit);
           continue;
@@ -925,7 +925,8 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  protected List getNewTaskSplitTimes(Task task, HashMap provHashMap) {
+  protected List getNewTaskSplitTimes(Task task) {
+    HashMap provHashMap = relationshipScheduleMap();
     ArrayList splits = new ArrayList();
     long start = TaskUtils.getStartTime(task);
     long end = TaskUtils.getEndTime(task);
