@@ -42,29 +42,39 @@ public class InventorySelectionEvent extends ChangeEvent
     
     public static final int ORG_SELECT=1;
     public static final int INVENTORY_SELECT=ORG_SELECT+1;
+    public static final int ORG_POP_SELECT = INVENTORY_SELECT+1;
+
+    //org pop methods
+    public static final String ORGS_ALL = "All";
+    public static final String ORGS_NAV = "Hierarchy";
+    public static final String ORGS_HIST = "History";
 
     public int    id;
     public String org;
     public String supplyType;
     public String assetName;
+    public String orgPopMethod;
 
 
     public InventorySelectionEvent(int anID,
 				  Object source, 
 				  String anOrg,
 				  String aSupplyType,
-				  String anAssetName) {
+				  String anAssetName,
+				  String anOrgPopMethod) {
 	super(source);
 	id = anID;
 	org = anOrg;
 	supplyType = aSupplyType;
 	assetName = anAssetName;
+	orgPopMethod = anOrgPopMethod;
     }
 
     public int getID() { return id; }
     public String getOrg() { return org; }
     public String getSupplyType() { return supplyType; }
     public String getAssetName() { return assetName; }
+    public String getOrgPopMethod() { return orgPopMethod; }
 
 }
 

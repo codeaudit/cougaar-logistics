@@ -161,7 +161,10 @@ public class ConnectionHelper {
    located at the cluster specified in this class's constructor.
    */
 
-  public Hashtable getClusterIdsAndURLs(java.awt.Component parent) throws MalformedURLException, ClassNotFoundException, IOException {
+  protected Hashtable getClusterIdsAndURLs(java.awt.Component parent,
+					   String querySuffix, 
+					   String agentPath, 
+					   boolean addBackURLs) throws MalformedURLException, ClassNotFoundException, IOException {
     Hashtable results = new Hashtable();
 
     /*
@@ -176,7 +179,7 @@ return results
      */
 
     int p = clusterURL.lastIndexOf(":");
-    URL url = new URL(clusterURL + "agents?scope=all&format=text");
+    URL url = new URL(clusterURL + querySuffix);
     //logger.debug(url.toString());
     connection = null;
     InputStream in;
@@ -190,6 +193,19 @@ return results
         BufferedReader input = new BufferedReader(new InputStreamReader(in));
 
         try {
+	  if(addBackURLs) {
+	    String iterPath = agentPath;
+	    int dotIndex = iterPath.indexOf(".");
+	    while((dotIndex >= 0) &&
+		  (dotIndex+1 < iterPath.length())) {
+	      iterPath = iterPath.substring(dotIndex + 1);
+	      String u = ((clusterURL.substring(0, p + 1)) + "8800/$." + iterPath + "/");
+	      results.put("." + iterPath,u);
+	      dotIndex = iterPath.indexOf(".");
+	    }
+	    results.put(".",((clusterURL.substring(0, p + 1)) + "8800/$./"));
+	  }
+
           while (input != null) {
             String n = input.readLine();
             if (n == null)
@@ -218,7 +234,7 @@ return results
                                             JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
 
           if (yesOrNo == JOptionPane.YES_OPTION) {
-            url = new URL(clusterURL + "agents?format=text");
+            url = new URL(clusterURL + querySuffix);
             triedLocal = true;
             continue;
           }
@@ -229,6 +245,35 @@ return results
 
     return results;
   }
+
+
+
+  /**
+   Returns a list of cluster identifiers from the debug PSP
+   located at the cluster specified in this class's constructor.
+   */
+
+  public Hashtable getClusterIdsAndURLs(java.awt.Component parent,String agentPath) throws MalformedURLException, ClassNotFoundException, IOException {
+      return getClusterIdsAndURLs(parent,
+				  "agents?format=text&suffix=" + agentPath,
+				  agentPath,
+				  true);
+
+  }
+
+
+  /**
+   Returns a list of cluster identifiers from the debug PSP
+   located at the cluster specified in this class's constructor.
+   */
+
+  public Hashtable getAllClusterIdsAndURLs(java.awt.Component parent) throws MalformedURLException, ClassNotFoundException, IOException {
+      return getClusterIdsAndURLs(parent,
+				  "agents?format=text",
+				  ".",
+				  false);
+  }
+
 
 
   /**
@@ -283,7 +328,7 @@ return results
         }
       }
       ConnectionHelper connection = new ConnectionHelper(host + "/");
-      return connection.getClusterIdsAndURLs(parent);
+      return connection.getClusterIdsAndURLs(parent,".");
     } catch (Exception e) {
       return null;
     }

@@ -150,7 +150,7 @@ public class InventoryFileManager implements InventoryDataSource {
     return (String) orgNames.elementAt(1);
   }
 
-  public Vector getOrgNames() {
+  public Vector getOrgNames(String agentPath,String orgPopMethod) {
     logger.debug("Getting Org List");
     return getSortedOrgNames();
   }

@@ -64,11 +64,13 @@ public class InventoryXMLParser {
   private InventoryData parseString(String xmlInput, boolean justHeader) {
     ctr = 0;
     inventory = null;
-    lines = xmlInput.split("\\n");
-    if (logger.isDebugEnabled()) {
-      logger.debug("Number of Lines=" + lines.length);
+    if(xmlInput != null) {
+	lines = xmlInput.split("\\n");
+	if (logger.isDebugEnabled()) {
+	    logger.debug("Number of Lines=" + lines.length);
+	}
+	parse(justHeader);
     }
-    parse(justHeader);
     return inventory;
   }
 

@@ -511,7 +511,7 @@ public class InventoryUIFrame extends JFrame
     if ((openFiles.length > 0) &&
         (inventory != null)) {
       editPane.setText(invXML);
-      Vector orgs = dataSource.getOrgNames();
+      Vector orgs = dataSource.getOrgNames(".",selector.getSelectedOrgPopMethod());
       String[] fileType = dataSource.getSupplyTypes();
       selector.initializeComboBoxes(orgs, fileType);
       Vector assetNames = dataSource.getAssetNames(inventory.getOrg(), fileType[0]);
@@ -588,7 +588,7 @@ public class InventoryUIFrame extends JFrame
       displayErrorString("Was unable to connect to servlet.");
       return;
     }
-    Vector orgs = dataSource.getOrgNames();
+    Vector orgs = dataSource.getOrgNames(".",selector.getSelectedOrgPopMethod());
     if (orgs == null) {
       displayErrorString("Error. Was unable to retrieve orgs.");
     }
@@ -604,16 +604,46 @@ public class InventoryUIFrame extends JFrame
   }
 
   public void selectionChanged(InventorySelectionEvent e) {
+    Vector assetNames = null;
     if (e.getID() == InventorySelectionEvent.ORG_SELECT) {
-      Vector assetNames = dataSource.getAssetNames(e.getOrg(),
-                                                   e.getSupplyType());
+      Vector newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
+      if(newOrgs != null) {
+	selector.reinitializeOrgBox(newOrgs);
+      }
+      if(!(e.getOrg().startsWith("."))) {
+	assetNames = dataSource.getAssetNames(e.getOrg(),
+					      e.getSupplyType());
+      }
+      if(assetNames == null) {
+	assetNames = new Vector();
+      }
       selector.setAssetNames(assetNames);
+
+    } else if (e.getID() == InventorySelectionEvent.ORG_POP_SELECT) {
+	Vector newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
+	if(newOrgs != null) {
+	  selector.reinitializeOrgBox(newOrgs);
+	}
+	/*** MWD remove - badly place functionality
+	if(!(selector.getSelectedOrg().equals(e.getOrg()))) {
+	  if(!(e.getOrg().startsWith("."))) {
+	    assetNames = dataSource.getAssetNames(e.getSelectedOrg(),
+						  e.getSupplyType());
+	  }
+	  if(assetNames == null) {
+	    assetNames = new Vector();
+	  }
+	  selector.setAssetNames(assetNames);
+	}
+	***/
     } else if (e.getID() == InventorySelectionEvent.INVENTORY_SELECT) {
       String invXML = dataSource.getInventoryData(e.getOrg(),
                                                   e.getAssetName());
-      editPane.setText(invXML);
-      inventory = parser.parseString(invXML);
-      multiChart.setData(inventory);
+      if(invXML != null) {
+	  editPane.setText(invXML);
+	  inventory = parser.parseString(invXML);
+	  multiChart.setData(inventory);
+      }
     }
   }
 

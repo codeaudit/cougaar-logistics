@@ -67,6 +67,8 @@ public class InventoryConnectionManager implements InventoryDataSource {
   private String servPort;
   Hashtable orgURLs;
 
+  Hashtable visitedOrgURLs;
+
   private String invXMLStr;
 
   private Logger logger;
@@ -84,6 +86,7 @@ public class InventoryConnectionManager implements InventoryDataSource {
     servPort = targetPort;
     servProt = targetProtocol;
     logger = Logging.getLogger(this);
+    visitedOrgURLs = new Hashtable();
 
 // Support HTTPS with client-cert authentication
     doSecureUserAuthInit();
@@ -152,6 +155,8 @@ public class InventoryConnectionManager implements InventoryDataSource {
                   " for: " + SERV_ID);
     }
 
+    //System.out.println("InventoryConnectionManager>>getInventoryData-ExecutingQuery: org-"+ orgName + " asset-" + assetName + " to: " + orgURL + " for: " + SERV_ID);
+
     try {
       connection =
           new ConnectionHelper(orgURL, SERV_ID);
@@ -195,6 +200,10 @@ public class InventoryConnectionManager implements InventoryDataSource {
 
 //logger.debug("Submitting: " + queryStr + " to: " + orgURL +
 //                   " for: " + SERV_ID);
+
+System.out.println("Submitting: " + queryStr + " to: " + orgURL +
+                   " for: " + SERV_ID);
+
     ConnectionHelper connection = null;
     InputStream is = null;
     try {
@@ -219,6 +228,10 @@ public class InventoryConnectionManager implements InventoryDataSource {
       return null;
     }
     Collections.sort(assetNames);
+    if((assetNames != null) &&
+       (!assetNames.isEmpty())) {
+	visitedOrgURLs.put(orgName,orgURL);
+    }
     return assetNames;
   }
 
@@ -232,12 +245,30 @@ public class InventoryConnectionManager implements InventoryDataSource {
     return (String) orgNames.elementAt(1);
   }
 
-  public Vector getOrgNames() {
+
+  public Vector getOrgNames(String agentPath,String orgPopMethod) {
+      if(orgPopMethod.equals(InventorySelectionEvent.ORGS_HIST)) {
+        orgURLs = visitedOrgURLs;
+	return getSortedOrgNames();
+      }
+      else if(orgPopMethod.equals(InventorySelectionEvent.ORGS_ALL)) {
+        return getOrgNames(agentPath,true);
+      }
+      return getOrgNames(agentPath,false);
+  }
+
+
+  protected Vector getOrgNames(String agentPath,boolean getAll) {
     logger.debug("Getting Org List");
     ConnectionHelper connection = null;
     try {
       connection = new ConnectionHelper(getURLString());
-      orgURLs = connection.getClusterIdsAndURLs(parentComponent);
+      if(getAll) {
+	  orgURLs = connection.getAllClusterIdsAndURLs(parentComponent);
+      }
+      else {
+	  orgURLs = connection.getClusterIdsAndURLs(parentComponent, agentPath);
+      }
       connection.closeConnection();
       connection = null;
       if (orgURLs == null) {

@@ -35,6 +35,11 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JComponent;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import java.awt.GridLayout;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import javax.swing.border.LineBorder;
 
 import java.awt.event.ItemEvent;
@@ -69,16 +74,32 @@ import java.awt.Color;
 public class InventorySelectionPanel extends JPanel 
     implements ActionListener,ItemListener {
 
+    protected final static Insets BLANK_INSETS = new Insets(0, 0, 0, 0);
+
     public static final String SUBMIT = "Submit";
     public static final String ORGS = "Org";
     public static final String SUPPLY_TYPES = "Class";
     public static final String ITEMS = "Items";
+
+    public static final String ORGS_ALL = InventorySelectionEvent.ORGS_ALL;
+    public static final String ORGS_NAV = InventorySelectionEvent.ORGS_NAV;
+    public static final String ORGS_HIST = InventorySelectionEvent.ORGS_HIST;
+
+    public static final String SUBMIT_TOOL_TIP = "Retrieves graph data for given organization/item";
+    public static final String ORG_TOOL_TIP = "Select Organization";
+    public static final String POP_TOOL_TIP = "Select Org Combo box population method";
+    public static final String SUPPLY_TOOL_TIP = "Select Class of Supply to filter items";
+    public static final String ASSET_TOOL_TIP = "Select Graph data inventory item";
+
+    public static final String[] ORG_POP_OPTIONS = {ORGS_NAV, ORGS_HIST, ORGS_ALL};
 
     ArrayList invListeners;
 
     JComboBox orgsBox;
     JComboBox supplyTypesBox;
     JComboBox assetNamesBox;
+
+    JComboBox orgsPopulationBox;
 
     JButton   submitButton;
     
@@ -96,6 +117,7 @@ public class InventorySelectionPanel extends JPanel
 	orgsBox = new JComboBox();
 	assetNamesBox = new JComboBox();
 	supplyTypesBox = new JComboBox();
+	orgsPopulationBox = new JComboBox(ORG_POP_OPTIONS);
 	invListeners = new ArrayList();
 	parent = aParent;
 	supplyTypesActive = true;
@@ -110,6 +132,7 @@ public class InventorySelectionPanel extends JPanel
 	orgsBox = new JComboBox();
 	assetNamesBox = new JComboBox();
 	supplyTypesBox = new JComboBox();
+	orgsPopulationBox = new JComboBox(ORG_POP_OPTIONS);
 	invListeners = new ArrayList();
 	parent = aParent;
 	initializeComboBoxes(orgs,supplyTypes);
@@ -121,18 +144,39 @@ public class InventorySelectionPanel extends JPanel
 
 	JButton submitButton = new JButton(SUBMIT);
 
+	submitButton.setToolTipText(SUBMIT_TOOL_TIP);
+	orgsBox.setToolTipText(ORG_TOOL_TIP);
+	orgsPopulationBox.setToolTipText(POP_TOOL_TIP);
+	supplyTypesBox.setToolTipText(SUPPLY_TOOL_TIP);
+	assetNamesBox.setToolTipText(ASSET_TOOL_TIP);
+
+	GridBagConstraints constraints;
+
 	this.setBorder(new LineBorder(Color.blue));
 	assetNamesBox.setPreferredSize(new Dimension(450,25));
-	//orgsBox.setPreferredSize(new Dimension(100,25));
+	orgsBox.setMinimumSize(new Dimension(100,25));
 	//supplyTypesBox.setPreferredSize(new Dimension(100,25));
-        this.setLayout(new FlowLayout());
+        this.setLayout(new GridBagLayout());
 	
 	JPanel orgsPanel = new JPanel();
 	orgsPanel.setLayout(new FlowLayout());
 
-	orgsBox.addItemListener(this);
+	orgsBox.addActionListener(this);
+	constraints = new GridBagConstraints(GridBagConstraints.RELATIVE, 0,
+					     1, 1, 0.2, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.NONE,
+					     BLANK_INSETS, 0, 0);
+	//orgsPanel.add(new JLabel(ORGS),constraints);
+	constraints = new GridBagConstraints(GridBagConstraints.RELATIVE, 0,
+					     6, 1, 0.8, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.HORIZONTAL,
+					     BLANK_INSETS, 0, 0);
+	//orgsPanel.add(orgsBox,constraints);
 	orgsPanel.add(new JLabel(ORGS));
-	orgsPanel.add(orgsBox);
+	orgsPanel.add(orgsBox,constraints);
+
 
 	JPanel supplyPanel = new JPanel();
 	supplyPanel.setLayout(new FlowLayout());
@@ -144,56 +188,134 @@ public class InventorySelectionPanel extends JPanel
 	supplyPanel.add(supplyTypesLabel);
 	supplyPanel.add(supplyTypesBox);
 
-	JPanel orgsAndSupply = new JPanel();
-	orgsAndSupply.setLayout(new BorderLayout());
-	
-	orgsAndSupply.add(orgsPanel,BorderLayout.CENTER);
-	orgsAndSupply.add(supplyPanel,BorderLayout.SOUTH);
-
-	this.add(orgsAndSupply);
+	JPanel orgsAndPop = new JPanel();
+	orgsAndPop.setLayout(new GridBagLayout());
+	orgsPopulationBox.addItemListener(this);
+	orgsPopulationBox.setSelectedItem(ORGS_NAV);
+	constraints = new GridBagConstraints(0,GridBagConstraints.RELATIVE,
+					     1, 1, 1.0, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.NONE,
+					     BLANK_INSETS, 0, 0);
+					     
+	orgsAndPop.add(orgsPanel,constraints);
+	orgsAndPop.add(orgsPopulationBox,constraints);
 
 	assetNamesBox.addItemListener(this);
 	JPanel assetsPanel = new JPanel();
 	assetsPanel.setLayout(new FlowLayout());
 	assetsPanel.add(new JLabel(ITEMS));
 	assetsPanel.add(assetNamesBox);
+	//assetsPanel.setBorder(new LineBorder(Color.black));
 
+	submitButton.setPreferredSize(new Dimension(100,25));
+	//submitButton.setMaximumSize(new Dimension(100,25));
+	submitButton.addActionListener(this);
+
+	
 	JPanel buttonPanel = new JPanel();
 	buttonPanel.setLayout(new FlowLayout());
-	submitButton.setPreferredSize(new Dimension(100,25));
-	submitButton.setMaximumSize(new Dimension(100,25));
-	submitButton.addActionListener(this);
-	buttonPanel.add(Box.createHorizontalStrut(100));
+	//buttonPanel.setBorder(new LineBorder(Color.black));
+	//buttonPanel.add(Box.createHorizontalStrut(60));
 	buttonPanel.add(submitButton);
-	buttonPanel.add(Box.createHorizontalStrut(100));
+	//buttonPanel.add(Box.createHorizontalStrut(100));
+	
+
+	/***
+
+	JPanel buttonAndSupplyPanel = new JPanel();
+	buttonAndSupplyPanel.setLayout(new FlowLayout());
+	buttonAndSupplyPanel.setBorder(new LineBorder(Color.black));
+	buttonAndSupplyPanel.add(supplyPanel);
+	buttonAndSupplyPanel.add(buttonPanel);
+	****/
+
 
 	JPanel assetsAndButton = new JPanel();
-	assetsAndButton.setLayout(new BorderLayout());
+	assetsAndButton.setLayout(new GridBagLayout());
+
+	constraints = new GridBagConstraints(0,0,
+					     8, 1, 1.0, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.NONE,
+					     BLANK_INSETS, 0, 0);
+
+
+       	assetsAndButton.add(assetsPanel,constraints);
+	//assetsAndButton.add(buttonAndSupplyPanel);
+
+	constraints = new GridBagConstraints(0,1,
+					     1, 1, 0.12, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.NONE,
+					     BLANK_INSETS, 0, 0);
+
+	assetsAndButton.add(supplyPanel,constraints);
+
+	constraints = new GridBagConstraints(GridBagConstraints.RELATIVE,1,
+					     7, 1, 0.88, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.HORIZONTAL,
+					     BLANK_INSETS, 0, 0);
+
+
+	assetsAndButton.add(buttonPanel,constraints);
+
+
+
+	constraints = new GridBagConstraints(GridBagConstraints.RELATIVE, 0,
+					     2, 1, 0.4, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.BOTH,
+					     BLANK_INSETS, 0, 0);
+
+	this.add(orgsAndPop,constraints);
+
+
+	constraints = new GridBagConstraints(GridBagConstraints.RELATIVE, 0,
+					     3, 1, 0.6, 1.0,
+					     GridBagConstraints.WEST,
+					     GridBagConstraints.NONE,
+					     BLANK_INSETS, 0, 0);
+
 	
-	assetsAndButton.add(assetsPanel,BorderLayout.NORTH);
-	assetsAndButton.add(buttonPanel,BorderLayout.CENTER);
+	this.add(assetsAndButton,constraints);
 
-	this.add(assetsAndButton);
-
-	this.setPreferredSize(new Dimension(700,80));
+	this.setMaximumSize(new Dimension(780,80));
     }
 
     public void initializeComboBoxes(Vector orgs, String[] supplyTypes) {
 
-	orgsBox.removeItemListener(this);
+	orgsBox.removeActionListener(this);
 	supplyTypesBox.removeItemListener(this);
 
 	setOrganizations(orgs);
 	setSupplyTypes(supplyTypes);
 	setAssetNames(new Vector());
 
-	orgsBox.addItemListener(this);
+	orgsBox.addActionListener(this);
 	supplyTypesBox.addItemListener(this);
 
 	
 	//MWD this should be put back in once servlet plugin is 
 	//is the default.
 	//fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
+    }
+
+    public void reinitializeOrgBox(Vector orgs) {
+
+	orgsBox.removeActionListener(this);
+
+	String origOrg = currOrg;
+	setOrganizations(orgs);
+	orgsBox.setSelectedItem(origOrg);
+	currOrg = (String) orgsBox.getSelectedItem();
+	if(!(currOrg.equals(origOrg))) {
+	    System.out.println("InventorySelectionPanel>>reinitializeOrgBox - So |" + currOrg + "| is different from |" + origOrg);
+	    fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
+	}
+	orgsBox.addActionListener(this);
+
     }
     
     public void setSupplyTypes(String[] supplyTypes) {
@@ -242,13 +364,13 @@ public class InventorySelectionPanel extends JPanel
 
     public void setSelectedOrgAsset(String org, String assetName) {
 	assetNamesBox.removeItemListener(this);
-	orgsBox.removeItemListener(this);
+	orgsBox.removeActionListener(this);
 	orgsBox.setSelectedItem(org);
 	assetNamesBox.setSelectedItem(assetName);
 	currOrg = org;
 	currAssetName = assetName;
 	assetNamesBox.addItemListener(this);
-	orgsBox.addItemListener(this);
+	orgsBox.addActionListener(this);
     }
 
     public void setAssetNames(Vector assets) {
@@ -295,6 +417,20 @@ public class InventorySelectionPanel extends JPanel
 		currAssetName = (String) assetNamesBox.getSelectedItem();
 		// System.out.println("Selected asset " + currAssetName);
 	    }
+	    else if(source == orgsPopulationBox) {
+		String currOrgPop = (String) getSelectedOrgPopMethod();
+
+		/*** MWD take out until the right comboBoxEditor is in to do this
+		if(currOrgPop.equals(ORGS_NAV)) {
+		    orgsBox.setEditable(false);
+		}
+		else {
+		    orgsBox.setEditable(true);
+		}
+		***/
+
+		fireInventorySelectionEvent(InventorySelectionEvent.ORG_POP_SELECT);
+	    }
 	}
 	
     }
@@ -303,6 +439,12 @@ public class InventorySelectionPanel extends JPanel
 	if(e.getActionCommand().equals(SUBMIT)) {
 	  //System.out.println("Pressed Submit");
 	    fireInventorySelectionEvent(InventorySelectionEvent.INVENTORY_SELECT);
+	}
+	else if(e.getSource() == orgsBox) {
+	    //System.out.println("Orgs box action is: " + e);
+	    currOrg = (String) orgsBox.getSelectedItem();
+	    //System.out.println("Selected org " + currOrg);
+	    fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	}
     }
 
@@ -324,7 +466,8 @@ public class InventorySelectionPanel extends JPanel
 								this,
 								currOrg,
 								currSupplyType,
-								currAssetName);
+								currAssetName,
+								getSelectedOrgPopMethod());
 	for(int i=0 ; i < invListeners.size() ; i++) {
 	    InventorySelectionListener l = (InventorySelectionListener) invListeners.get(i);
 	    l.selectionChanged(e);
@@ -334,6 +477,8 @@ public class InventorySelectionPanel extends JPanel
     public String getSelectedOrg() { return currOrg; }
     public String getSelectedSupplyType() { return currSupplyType; }
     public String getSelectedAssetName() { return currAssetName; }
+    public String getSelectedOrgPopMethod() { return (String) orgsPopulationBox.getSelectedItem(); }
+    
 
 }
 

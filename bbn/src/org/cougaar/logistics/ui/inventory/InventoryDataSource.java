@@ -39,7 +39,7 @@ import java.util.Hashtable;
  **/
 public interface InventoryDataSource
 {
-  Vector getOrgNames();
+  Vector getOrgNames(String agentPath,String orgsPopMethod);
   String[] getSupplyTypes();
   Vector getAssetNames(String orgName, String supplyType);
   String getInventoryData(String orgName, String assetName);
