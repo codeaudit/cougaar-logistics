@@ -245,12 +245,19 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   }
 
   private void publishLevel2Mei() {
-    Asset asset = factory.createPrototype(Level2MEIAsset.class,
-                                          "Level2MEI");
-    Asset a = factory.createInstance(asset);
-    setupAvailableSchedule(a);
-    logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
-    publishAdd(a);
+    boolean[] consumed = checkLevel2MeiConsumption();
+    /*
+    * Sorry for the confusion, the requirements have evolved, only create and publish
+    * level 2 MEIs if there is consumption.
+    */
+    if (consumesAnything(consumed)) {
+      Asset asset = factory.createPrototype(Level2MEIAsset.class,
+                                            "Level2MEI");
+      Asset a = factory.createInstance(asset);
+      setupAvailableSchedule(a);
+      logger.debug("MEIPrototypeProvider publishing Level2MEI asset in agent: " + getAgentIdentifier());
+      publishAdd(a);
+    }
     publishedLevel2MeiAsset = true;
   }
 
@@ -366,6 +373,16 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     return res;
   }
 
+  private boolean consumesAnything(boolean[] consumed) {
+    for (int i = 0; i < consumed.length; i++) {
+      boolean b = consumed[i];
+      if (b == true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   protected void addConsumerPGs(Collection meiConsumers) {
     Iterator meis = meiConsumers.iterator();
     Asset a, anAsset;
@@ -378,6 +395,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         anAsset = a;
       }
       if (anAsset instanceof ClassVIIMajorEndItem) {
+        if (anAsset instanceof Level2MEIAsset) {
+          //This cargo category code means, "do not transport me."
+          setNoTransportCargoCode(anAsset);
+        }
         boolean[] consumed = checkMeiConsumption(anAsset);
         if (consumes(consumed, FUEL) && anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
           logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
@@ -390,8 +411,6 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           fuelpg.setTheater(THEATER);
           if (anAsset instanceof Level2MEIAsset) {
             fuelpg.setFuelBG(new Level2FuelConsumerBG(fuelpg));
-            //This cargo category code means, "do not transport me."
-            setNoTransportCargoCode(anAsset);
           } else {
             fuelpg.setFuelBG(new FuelConsumerBG(fuelpg));
           }
@@ -409,8 +428,6 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           ammopg.setTheater(THEATER);
           if (anAsset instanceof Level2MEIAsset) {
             ammopg.setAmmoBG(new Level2AmmoConsumerBG(ammopg));
-            //This cargo category code means, "do not transport me."
-            setNoTransportCargoCode(anAsset);
           } else {
             ammopg.setAmmoBG(new AmmoConsumerBG(ammopg));
           }
@@ -460,8 +477,6 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
       newpg.setMoveable(false);
       newpg.setCargoCategoryCode("000");
       anAsset.setPropertyGroup(newpg);
-      // or should we use this method
-      //anAsset.addOtherPropertyGroup();
     }
   }
 
