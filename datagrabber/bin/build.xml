@@ -1,7 +1,6 @@
 <project name="datagrabber" default="clean" basedir="../">
 
 <property name="src" value="src"/>
-<property name="foo" value="bar"/>
 <property name="build" value="build"/>
 <property name="jar" value="datagrabber.jar"/>
 <property environment="env"/>
