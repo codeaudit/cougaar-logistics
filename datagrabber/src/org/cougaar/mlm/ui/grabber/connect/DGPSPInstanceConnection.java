@@ -209,9 +209,9 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     int num=0;
     int unsuccessful=0;
     Iterator iter=data.getInstancesIterator();
+    setStatus("Updating instances...");
     while(iter.hasNext()){
       num++;
-      setStatus("Updating instance "+num);
       Instance part=(Instance)iter.next();
       if(!updateAssetInstance(s,part))
 	unsuccessful++;
@@ -221,7 +221,7 @@ public class DGPSPInstanceConnection extends DGPSPConnection
       }
       if(halt)return;
     }
-    logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
+    logMessage(Logger.MINOR,Logger.DB_WRITE,
 	       getClusterName()+" added "+num+" instance(s)");
     if(unsuccessful>0)
       logMessage(Logger.WARNING,Logger.DB_WRITE,
