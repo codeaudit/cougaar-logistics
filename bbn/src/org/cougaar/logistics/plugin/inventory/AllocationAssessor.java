@@ -264,6 +264,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     //allocate the high scores first.
     // should be based on scoring functions or TimeLate * Quantity.
     // for now just do first come, first serve
+    ArrayList remove_list = new ArrayList();
     Iterator tpIter = trailingPointersHash.keySet().iterator();
     while (tpIter.hasNext()) {
       Task task = (Task) tpIter.next();
@@ -286,7 +287,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	  createLateAllocation(task, thePG.convertBucketToTime(currentBucket), 
                                thePG.convertBucketToTime(currentBucket+1), 
                                inv, thePG);
-	  trailingPointersHash.remove(task);
+	  remove_list.add(task);
 	} else {
 	  // Tasks remain in the trailingPointersHash (just projections for now)
 	  // in order to create the complete allocation result (will handle split-
@@ -300,6 +301,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	TaskDeficit taskdeficit = (TaskDeficit)trailingPointersHash.get(task);
 	taskdeficit.addBucket(0, qty);	
       }
+    }
+    Iterator listItr = remove_list.iterator();
+    while (listItr.hasNext()) {
+      Task task = (Task) listItr.next();
+      trailingPointersHash.remove(task);
     }
     return filled;
   }
