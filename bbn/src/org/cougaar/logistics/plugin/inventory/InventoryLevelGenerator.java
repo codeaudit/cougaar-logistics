@@ -76,8 +76,15 @@ public class InventoryLevelGenerator extends InventoryModule {
 	  }
 	  // make sure that we got atleast a valid reported OR estimated allocation result
 	  if (ar != null) {
-	    double endTime = ar.getValue(AspectType.END_TIME);
-	    if (bucket == thePG.convertTimeToBucket((long)endTime)) {
+            double resultTime;
+            // make sure END_TIME is specified - otherwise use START_TIME
+            // UniversalAllocator plugin only gives start times
+            if (ar.isDefined(AspectType.END_TIME)) {
+              resultTime = ar.getValue(AspectType.END_TIME);
+            } else {
+              resultTime = ar.getValue(AspectType.START_TIME);
+            }
+	    if (bucket == thePG.convertTimeToBucket((long)resultTime)) {
 	      // we found a refill for this bucket
 	      refillQty = ar.getValue(AspectType.QUANTITY);
 	      return refillQty;

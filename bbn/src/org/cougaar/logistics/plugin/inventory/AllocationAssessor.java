@@ -508,11 +508,19 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     double arEnd, taskEnd, arQty, taskQty;
     boolean correct = false;
     if (ar != null) {
-      arEnd = ar.getValue(AspectType.END_TIME);
+      double resultTime;
+      // make sure END_TIME is specified - otherwise use START_TIME
+      // UniversalAllocator plugin only gives start times
+      if (ar.isDefined(AspectType.END_TIME)) {
+        resultTime = ar.getValue(AspectType.END_TIME);
+      } else {
+        resultTime = ar.getValue(AspectType.START_TIME);
+      }
+      //arEnd = ar.getValue(AspectType.END_TIME);
       arQty = ar.getValue(AspectType.QUANTITY);
       taskEnd = getTaskUtils().getPreference(withdraw, AspectType.END_TIME);
       taskQty = getTaskUtils().getPreference(withdraw, AspectType.QUANTITY);
-      if ( (arEnd == taskEnd) && (arQty == taskQty) ) {
+      if ( (resultTime == taskEnd) && (arQty == taskQty) ) {
         correct = true;
       }
     } 
