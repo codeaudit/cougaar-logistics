@@ -1,23 +1,23 @@
 /*
- * <copyright>
- *  Copyright 1997-2003 BBNT Solutions, LLC
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the Cougaar Open Source License as published by
- *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
- *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
- *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
- *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
- *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
- *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
- *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
- *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- *  PERFORMANCE OF THE COUGAAR SOFTWARE.
- * </copyright>
- */
+* <copyright>
+*  Copyright 1997-2003 BBNT Solutions, LLC
+*  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the Cougaar Open Source License as published by
+*  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+*
+*  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+*  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+*  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+*  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+*  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+*  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+*  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+*  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+*  PERFORMANCE OF THE COUGAAR SOFTWARE.
+* </copyright>
+*/
 package org.cougaar.logistics.plugin.inventory;
 
 import java.util.Enumeration;
@@ -108,10 +108,10 @@ public class LogisticsAllocationResultHelper {
     }
     if (ar != null) {
       if (ar.isPhased()) {
-	phasedResults = ar.getPhasedAspectValueResults();
+        phasedResults = ar.getPhasedAspectValueResults();
       } else {
-	phasedResults = new ArrayList(1);
-	phasedResults.add(ar.getAspectValueResults());
+        phasedResults = new ArrayList(1);
+        phasedResults.add(ar.getAspectValueResults());
       }
 
       // NOTE that getPhasedAspectValueResults can return a list of lists
@@ -137,9 +137,9 @@ public class LogisticsAllocationResultHelper {
     List avs = new ArrayList();
     synchronized (task) {
       for (Enumeration e = task.getPreferences(); e.hasMoreElements(); ) {
-	Preference pref = (Preference) e.nextElement();
-	AspectValue best = pref.getScoringFunction().getBest().getAspectValue();
-	avs.add(best);
+        Preference pref = (Preference) e.nextElement();
+        AspectValue best = pref.getScoringFunction().getBest().getAspectValue();
+        avs.add(best);
       }
     }
     return (AspectValue[]) avs.toArray(new AspectValue[avs.size()]);
@@ -165,28 +165,28 @@ public class LogisticsAllocationResultHelper {
   }
 
   public AllocationResult getAllocationResult(double confrating,
-					      boolean isSuccess)
+                                              boolean isSuccess)
   {
     return getAllocationResult(confrating, isSuccess, computeRollup());
   }
 
   private AllocationResult getAllocationResult(double confrating,
-					       boolean isSuccess,
-					       AspectValue[] ru)
+                                               boolean isSuccess,
+                                               AspectValue[] ru)
   {
     return new AllocationResult(confrating, isSuccess,
-				ru, phasedResults);
+                                ru, phasedResults);
   }
 
-  private boolean isSuccess(AspectValue[] ru) {  
+  private boolean isSuccess(AspectValue[] ru) {
     int ix = 0;
     synchronized (task) {
       for (Enumeration e = task.getPreferences(); e.hasMoreElements(); ix++) {
-	Preference pref = (Preference) e.nextElement();
-	ScoringFunction sf = pref.getScoringFunction();
-	AspectValue av = ru[ix];
-	double thisScore = sf.getScore(av);
-	if (thisScore >= ScoringFunction.HIGH_THRESHOLD) return false;
+        Preference pref = (Preference) e.nextElement();
+        ScoringFunction sf = pref.getScoringFunction();
+        AspectValue av = ru[ix];
+        double thisScore = sf.getScore(av);
+        if (thisScore >= ScoringFunction.HIGH_THRESHOLD) return false;
       }
     }
     return true;
@@ -203,19 +203,19 @@ public class LogisticsAllocationResultHelper {
       long si = getStartTime(pi);
       long ei = getEndTime(pi);
       for (int j = i + 1; j < n; j++) {
-	AspectValue[] pj = (AspectValue[]) phasedResults.get(j);
-	long sj = getStartTime(pj);
-	long ej = getEndTime(pj);
-	if (sj >= ei || si >= ej) continue;
+        AspectValue[] pj = (AspectValue[]) phasedResults.get(j);
+        long sj = getStartTime(pj);
+        long ej = getEndTime(pj);
+        if (sj >= ei || si >= ej) continue;
 // 	System.err.println("Bad phases " + ar);
-	for (Iterator it = phasedResults.iterator(); it.hasNext(); ) {
-	  AspectValue[] phase = (AspectValue[]) it.next();
-	  for (int q = 0; q < phase.length; q++) {
+        for (Iterator it = phasedResults.iterator(); it.hasNext(); ) {
+          AspectValue[] phase = (AspectValue[]) it.next();
+          for (int q = 0; q < phase.length; q++) {
 // 	    System.err.println("   " + phase[q]);
-	  }
-	}
-	Thread.dumpStack();
-	System.exit(1);
+          }
+        }
+        Thread.dumpStack();
+        System.exit(1);
       }
     }
   }
@@ -260,7 +260,7 @@ public class LogisticsAllocationResultHelper {
     set(ix, av, startTime, endTime);
   }
 
-  
+
 
   private int getTypeIndex(int type) {
     if (type < 0 || typeMap == null || type >= typeMap.length) {
@@ -268,6 +268,8 @@ public class LogisticsAllocationResultHelper {
     }
     return typeMap[type];
   }
+
+  List newResults = null;
 
   /**
    * Edit the exiting results to reflect a particular value of the
@@ -280,12 +282,10 @@ public class LogisticsAllocationResultHelper {
    * segment. This does not fix the rollup result since that depends
    * on what aspect is edited.
    * @param valueix the index in the arrays of the aspect to change
-   * @param value the new value for the time period
-   * @param startTime the time when the value starts to apply
-   * @param endTime the time when the value no longer applies.
-   * @return true if a change was made.
+   * @param av the new value for the time period
+   * @param s the time when the value starts to apply
+   * @param e the time when the value no longer applies.
    **/
-  List newResults = null;
   private void set(int valueix, AspectValue av, long s, long e) {
     long startTime = s;
     long endTime = e;
@@ -298,40 +298,40 @@ public class LogisticsAllocationResultHelper {
     long maxTime = getEndTime(perfectResult);
     if (minTime < maxTime) {
       /* Only process if there is overlap between the arguments and
-	 the start/end time aspects of the perfectResult **/
+      the start/end time aspects of the perfectResult **/
       for (Iterator i = phasedResults.iterator(); i.hasNext(); ) {
-	AspectValue[] oneResult = (AspectValue[]) i.next();
-	long thisStart = getStartTime(oneResult);
-	long thisEnd   = getEndTime(oneResult);
-	AspectValue thisValue = oneResult[valueix];
-	if (thisValue.equals(av)) { // Maybe combine these
-	  newResult = AspectValue.clone(oneResult);
-	  if (startTime <= thisEnd && endTime >= thisStart) { // Overlaps
-	    if (thisStart < startTime) startTime = thisStart;
-	    if (thisEnd > endTime) endTime = thisEnd;
-	    thisChanged = true;
-	    continue;
-	  } else {
-	    newResults.add(newResult);
-	  }
-	} else {
-	  if (startTime < thisEnd && endTime > thisStart) { // Overlaps
-	    if (startTime > thisStart) { // Initial portion exists
-	      newResult = AspectValue.clone(oneResult);
-	      newResult[endix] = TimeAspectValue.create(AspectType.END_TIME, startTime);
-	      newResults.add(newResult);
-	    }
-	    if (endTime < thisEnd) { // Final portion exists
-	      newResult = AspectValue.clone(oneResult);
-	      newResult[startix] = TimeAspectValue.create(AspectType.START_TIME, endTime);
-	      newResults.add(newResult);
-	    }
-	    thisChanged = true;
-	  } else {
-	    newResult = AspectValue.clone(oneResult);
-	    newResults.add(newResult);
-	  }
-	}
+        AspectValue[] oneResult = (AspectValue[]) i.next();
+        long thisStart = getStartTime(oneResult);
+        long thisEnd   = getEndTime(oneResult);
+        AspectValue thisValue = oneResult[valueix];
+        if (thisValue.equals(av)) { // Maybe combine these
+          newResult = AspectValue.clone(oneResult);
+          if (startTime <= thisEnd && endTime >= thisStart) { // Overlaps
+            if (thisStart < startTime) startTime = thisStart;
+            if (thisEnd > endTime) endTime = thisEnd;
+            thisChanged = true;
+            continue;
+          } else {
+            newResults.add(newResult);
+          }
+        } else {
+          if (startTime < thisEnd && endTime > thisStart) { // Overlaps
+            if (startTime > thisStart) { // Initial portion exists
+              newResult = AspectValue.clone(oneResult);
+              newResult[endix] = TimeAspectValue.create(AspectType.END_TIME, startTime);
+              newResults.add(newResult);
+            }
+            if (endTime < thisEnd) { // Final portion exists
+              newResult = AspectValue.clone(oneResult);
+              newResult[startix] = TimeAspectValue.create(AspectType.START_TIME, endTime);
+              newResults.add(newResult);
+            }
+            thisChanged = true;
+          } else {
+            newResult = AspectValue.clone(oneResult);
+            newResults.add(newResult);
+          }
+        }
       }
     } else {
       if (perfectResult[valueix].equals(av)) return;
@@ -368,26 +368,26 @@ public class LogisticsAllocationResultHelper {
     for (Iterator iter = phasedResults.iterator(); iter.hasNext(); ) {
       AspectValue[] oneResult = (AspectValue[]) iter.next();
       for (int i = 0; i < oneResult.length; i++) {
-	AspectValue av = oneResult[i];
-	double v = av.getValue();
-	int type = av.getAspectType();
-	boolean doAverage = (av instanceof AspectRate || type > AspectType._LAST_ASPECT);
-	if (first) {
-	  sums[i] = v;
-	} else {
-	  switch (type) {
-	  default:
-	    if (doAverage) divisor[i] += 1.0;
-	    sums[i] += v;
-	    break;
-	  case AspectType.START_TIME:
-	    sums[i] = Math.min(sums[i], v);
-	    break;
-	  case AspectType.END_TIME:
-	    sums[i] = Math.max(sums[i], v);
-	    break;
-	  }
-	}
+        AspectValue av = oneResult[i];
+        double v = av.getValue();
+        int type = av.getAspectType();
+        boolean doAverage = (av instanceof AspectRate || type > AspectType._LAST_ASPECT);
+        if (first) {
+          sums[i] = v;
+        } else {
+          switch (type) {
+            default:
+              if (doAverage) divisor[i] += 1.0;
+              sums[i] += v;
+              break;
+            case AspectType.START_TIME:
+              sums[i] = Math.min(sums[i], v);
+              break;
+            case AspectType.END_TIME:
+              sums[i] = Math.max(sums[i], v);
+              break;
+          }
+        }
       }
       first = false;
     }
