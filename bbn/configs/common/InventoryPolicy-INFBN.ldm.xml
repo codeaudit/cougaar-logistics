@@ -16,7 +16,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="57" min="1" max="100">
+        <Integer value="1" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -47,7 +47,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="27" min="1" max="100">
+        <Integer value="1" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -86,7 +86,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="42" min="1" max="100">
+        <Integer value="1" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -117,7 +117,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="42" min="1" max="100">
+        <Integer value="1" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
@@ -148,7 +148,7 @@
 	</Integer>
     </RuleParam>
     <RuleParam name="SupplierAdvanceNoticeTime">
-        <Integer value="42" min="1" max="100">
+        <Integer value="1" min="1" max="100">
 	</Integer>
     </RuleParam>
     <RuleParam name="ReorderPeriod">
