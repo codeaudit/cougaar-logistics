@@ -112,8 +112,12 @@ public class TimedWorkQueue extends WorkQueue{
 	}
       }
       else {
-	logger.logMessage(Logger.MINOR,Logger.GENERIC,
-			  "Skipping non-TimedWork work " + currentWork.getID());
+	if (logger == null)
+	  System.err.println ("huh? logger is null in TimedWorkQueue?");
+	else {
+	  logger.logMessage(Logger.MINOR,Logger.GENERIC,
+			    "Skipping non-TimedWork work " + currentWork.getID());
+	}
       }
     }
     logger.logMessage(Logger.MINOR,Logger.GENERIC,
