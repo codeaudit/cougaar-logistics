@@ -76,97 +76,27 @@ public class DGPSPLegConnection extends DGPSPConnection
 
   //Actions:
 
-  protected boolean updateAssetItinerary(Statement s, Leg l){
-    boolean ret=false;
-    try{
-      Iterator iter=l.getCarriedAssetsIterator();
-      while(iter.hasNext()){
-	String assetUID=(String)iter.next();
-	StringBuffer sb=new StringBuffer();
-	sb.append("INSERT INTO ");
-	sb.append(getTableName(ASSET_ITINERARY_TABLE));
-	sb.append(" (");
-	sb.append(COL_ASSETID);sb.append(",");
-	sb.append(COL_LEGID);sb.append(") VALUES('");
-	sb.append(assetUID);sb.append("','");
-	sb.append(l.UID);
-	sb.append("')");
-	ret|=(s.executeUpdate(sb.toString())==1);
-      }
-    }catch(SQLException e){
-      haltForError(Logger.DB_WRITE,"Could not update table("+
-		   getTableName(ASSET_ITINERARY_TABLE)+")",e);
-      return false;
-    }
-    return ret;
-  }
-
-  protected boolean updateConveyedLeg(Statement s, Leg l){
-    boolean ret=false;
-    try{
-      StringBuffer sb=new StringBuffer();
-      boolean hasRoute=!(l.routeUID==null||l.routeUID.equals(""));
-      boolean hasMission=!(l.missionUID==null||l.missionUID.equals(""));
-      sb.append("INSERT INTO ");
-      sb.append(getTableName(CONVEYED_LEG_TABLE));
-      sb.append(" (");
-      sb.append(COL_LEGID);sb.append(",");
-      sb.append(COL_STARTTIME);sb.append(",");
-      sb.append(COL_ENDTIME);sb.append(",");
-      sb.append(COL_READYAT);sb.append(",");
-      sb.append(COL_EARLIEST_END);sb.append(",");
-      sb.append(COL_BEST_END);sb.append(",");
-      sb.append(COL_LATEST_END);sb.append(",");
-      sb.append(COL_STARTLOC);sb.append(",");
-      sb.append(COL_ENDLOC);sb.append(",");
-      sb.append(COL_LEGTYPE);sb.append(",");
-      sb.append(COL_CONVEYANCEID);
-      if(hasRoute){
-	sb.append(",");
-	sb.append(COL_ROUTEID);
-      }
-      if(hasMission){
-	sb.append(",");
-	sb.append(COL_MISSIONID);
-      }
-      sb.append(") VALUES('");
-      sb.append(l.UID);sb.append("',");
-      sb.append(dbConfig.dateToSQL(l.startTime));sb.append(",");
-      sb.append(dbConfig.dateToSQL(l.endTime));sb.append(",");
-      sb.append(dbConfig.dateToSQL(l.readyAtTime));sb.append(",");
-      sb.append(dbConfig.dateToSQL(l.earliestEndTime));sb.append(",");
-      sb.append(dbConfig.dateToSQL(l.bestEndTime));sb.append(",");
-      sb.append(dbConfig.dateToSQL(l.latestEndTime));sb.append(",'");
-      sb.append(l.startLoc);sb.append("','");
-      sb.append(l.endLoc);sb.append("',");
-      sb.append(pspToDBLegType(l.legType));sb.append(",'");
-      sb.append(l.conveyanceUID);sb.append("'");
-      if(hasRoute){
-	sb.append(",'");
-	sb.append(l.routeUID);
-	sb.append("'");
-      }
-      if(hasMission){
-	sb.append(",'");
-	sb.append(l.missionUID);
-	sb.append("'");
-      }
-      sb.append(")");
-      ret=(s.executeUpdate(sb.toString())==1);
-    }catch(SQLException e){
-      haltForError(Logger.DB_WRITE,"Could not update table("+
-		   getTableName(CONVEYED_LEG_TABLE)+")",e);
-      return false;
-    }
-    return ret;
-  }
-
+  /** 
+   * <pre>
+   * Uses two prepared statements to write asset itinerary and leg information to 
+   * database. 
+   * The LegsData for the agent (= parameter obj) becomes a batch added to  
+   * both prepared statements.  
+   * The LegsData gets translated into assetitinerary rows and conveyedleg rows.
+   * The commit is done in TopsRun, when the epochs change from "obtain legs" to 
+   * "obtain instances".
+   * </pre>
+   * @param c connection to send sql statements to
+   * @param obj the LegsData for the agent
+   */
   protected void updateDB(Connection c, DeXMLable obj){
     setStatus("Starting");
     LegsData data=(LegsData)obj;
-    Statement s;
+    PreparedStatement legPS, itineraryPS;
+
     try{
-      s = c.createStatement();
+      legPS = getLegPreparedStatement (c);
+      itineraryPS = getItineraryPreparedStatement (c);
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not create Statement",e);
       return;
@@ -174,33 +104,136 @@ public class DGPSPLegConnection extends DGPSPConnection
     int num=0;
     int unsuccessful=0;
     Iterator iter=data.getLegsIterator();
+    setStatus("Creating batch updates for legs.");
     while(iter.hasNext()){
       num++;
-      setStatus("Updating leg "+num);
+      //setStatus("Updating leg "+num);
       Leg part=(Leg)iter.next();
       if(!part.isDetail){
 	boolean ok=true;
-	ok=updateAssetItinerary(s,part);
+	ok=updateAssetItinerary(itineraryPS,part);
 	if(halt)return;
-	ok&=updateConveyedLeg(s,part);
+	ok&=updateConveyedLeg(legPS,part);
 	if(halt)return;
 	if(!ok)
 	  unsuccessful++;
       }
     }
+    try{
+      itineraryPS.executeBatch();
+      legPS.executeBatch();
+    }catch(SQLException e){
+      logMessage(Logger.WARNING,Logger.DB_WRITE,"SQL Error - " + e);
+      e.printStackTrace ();
+    }
+
     logMessage(Logger.TRIVIAL,Logger.DB_WRITE,
 	       getClusterName()+" added "+num+" leg(s)");
     if(unsuccessful>0)
       logMessage(Logger.WARNING,Logger.DB_WRITE,
 		 getClusterName()+" could not add "+unsuccessful+
 		 " leg(s)");
+
+    if(legPS!=null)
+      try{ legPS.close(); }catch(Exception e){}
+    if(itineraryPS!=null)
+      try{ itineraryPS.close(); }catch(Exception e){}
+
     setStatus("Done");
-    if(s!=null){
-      try{
-	s.close();
-      }catch(Exception e){
+  }
+
+  protected PreparedStatement getLegPreparedStatement (Connection con) throws SQLException {
+    StringBuffer sb=new StringBuffer();
+
+    sb.append("INSERT INTO ");
+    sb.append(getTableName(CONVEYED_LEG_TABLE));
+    sb.append(" (");
+    sb.append(COL_LEGID);sb.append(",");
+    sb.append(COL_STARTTIME);sb.append(",");
+    sb.append(COL_ENDTIME);sb.append(",");
+    sb.append(COL_READYAT);sb.append(",");
+    sb.append(COL_EARLIEST_END);sb.append(",");
+    sb.append(COL_BEST_END);sb.append(",");
+    sb.append(COL_LATEST_END);sb.append(",");
+    sb.append(COL_STARTLOC);sb.append(",");
+    sb.append(COL_ENDLOC);sb.append(",");
+    sb.append(COL_LEGTYPE);sb.append(",");
+    sb.append(COL_CONVEYANCEID); sb.append(",");
+    sb.append(COL_ROUTEID); sb.append(",");
+    sb.append(COL_MISSIONID);
+    sb.append(") VALUES(");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(")");
+    return con.prepareStatement(sb.toString());
+  }
+
+  protected PreparedStatement getItineraryPreparedStatement(Connection con) throws SQLException {
+    StringBuffer sb=new StringBuffer();
+
+    sb.append("INSERT INTO ");
+    sb.append(getTableName(ASSET_ITINERARY_TABLE));
+    sb.append(" (");
+    sb.append(COL_ASSETID);sb.append(",");
+    sb.append(COL_LEGID);
+    sb.append(") VALUES(");
+    sb.append("?");sb.append(",");
+    sb.append("?");sb.append(")");
+
+    return con.prepareStatement(sb.toString());
+  }
+
+  protected boolean updateAssetItinerary(PreparedStatement s, Leg l){
+    boolean ret=false;
+    try{
+      Iterator iter=l.getCarriedAssetsIterator();
+      while(iter.hasNext()){
+	String assetUID=(String)iter.next();
+	s.setString(1, assetUID);
+	s.setString(2, l.UID);
+	s.addBatch ();
       }
+    }catch(SQLException e){
+      haltForError(Logger.DB_WRITE,"Could add batch for table("+
+		   getTableName(ASSET_ITINERARY_TABLE)+")",e);
+      return false;
     }
+    return true;
+  }
+
+  protected boolean updateConveyedLeg(PreparedStatement s, Leg l){
+    boolean ret=false;
+    try{
+      s.setString(1, l.UID);
+      s.setString(2, dbConfig.dateToSQL(l.startTime));
+      s.setString(3, dbConfig.dateToSQL(l.endTime));
+      s.setString(4, dbConfig.dateToSQL(l.readyAtTime));
+      s.setString(5, dbConfig.dateToSQL(l.earliestEndTime));
+      s.setString(6, dbConfig.dateToSQL(l.bestEndTime));
+      s.setString(7, dbConfig.dateToSQL(l.latestEndTime));
+      s.setString(8, l.startLoc);
+      s.setString(9, l.endLoc);
+      s.setInt(10, pspToDBLegType(l.legType));
+      s.setString(11, l.conveyanceUID);
+      s.setString(12, l.routeUID);
+      s.setString(13, l.missionUID);
+      s.addBatch();
+    }catch(SQLException e){
+      haltForError(Logger.DB_WRITE,"Could not add batch to table("+
+		   getTableName(CONVEYED_LEG_TABLE)+")",e);
+      return false;
+    }
+    return true;
   }
 
   protected RunResult prepResult(DeXMLable obj){

@@ -368,6 +368,7 @@ public class TopsRun extends Run{
   //OBTAIN_LEGS:
 
   protected void obtainLegs(){
+    setAutoCommitFalse ();
     setEpoch(EPOCH_OBTAIN_LEGS);
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
     while(iter.hasNext()){
@@ -376,6 +377,17 @@ public class TopsRun extends Run{
 	clusterToDGPSPConfig.get(cluster);
       workGroup.add(startDGPSPLegConnection(dgc),
 		    cluster);
+    }
+  }
+
+  protected void setAutoCommitFalse () {
+    try { 
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (false)");
+      getDBConnection().setAutoCommit(false); 
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (false)");
+    } 
+    catch (Exception e) { 
+      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing setAutoCommit (false) - " + e);
     }
   }
 
@@ -389,6 +401,7 @@ public class TopsRun extends Run{
   //OBTAIN_INSTANCES:
 
   protected void obtainInstances(){
+    setAutoCommitTrue ();
     setEpoch(EPOCH_OBTAIN_INSTANCES);
     Iterator iter=clusterToDGPSPConfig.keySet().iterator();
     while(iter.hasNext()){
@@ -397,6 +410,20 @@ public class TopsRun extends Run{
 	clusterToDGPSPConfig.get(cluster);
       workGroup.add(startDGPSPInstanceConnection(dgc),
 		    cluster);
+    }
+  }
+
+  protected void setAutoCommitTrue () {
+    try { 
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing commit.");
+      getDBConnection().commit();
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   commit.");
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - doing setAutoCommit (true).");
+      getDBConnection().setAutoCommit(true); 
+      logMessage(Logger.MINOR,Logger.GENERIC, Thread.currentThread () + " - did   setAutoCommit (true).");
+    } 
+    catch (Exception e) { 
+      logMessage(Logger.ERROR,Logger.GENERIC, "Got SQL error doing commit - " + e);
     }
   }
 
