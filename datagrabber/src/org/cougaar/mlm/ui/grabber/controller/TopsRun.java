@@ -57,7 +57,7 @@ import java.util.Iterator;
 
 /**
  * Represents a single gatherer run
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/12/01
  **/
@@ -252,9 +252,14 @@ public class TopsRun extends Run{
       hierarchyPostPass();
     }
     else {
+      String detailedPendingWork = 
+	(workGroup.size () > 20) ? 
+	"- more than 20 items so not reporting each one..." :
+	" : " + workGroup.reportPendingWork ();
+
       logMessage(Logger.MINOR,Logger.STATE_CHANGE,
-		 "Work queue has " + workGroup.size () + " work items left : " +
-		 workGroup.reportPendingWork ());
+		 "Work queue has " + workGroup.size () + 
+		 " work items left " + detailedPendingWork);
     }
     return ret;
   }
