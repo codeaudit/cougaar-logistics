@@ -62,7 +62,7 @@ import java.text.DecimalFormat;
  *  to be added to the MaintainInventory workflow and published.
  **/
 
-public class RefillGenerator extends InventoryLevelGenerator {
+public class RefillGenerator extends InventoryLevelGenerator implements RefillGeneratorModule {
 
   private transient Organization myOrg = null;
   private transient String myOrgName = null;
@@ -84,7 +84,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param touchedInventories  The collection of changed Inventories.
    *  @param myComparator The RefillComparator to use.
    **/
-  public void calculateRefills(Collection touchedInventories, RefillComparator myComparator) {
+  public void calculateRefills(Collection touchedInventories, ComparatorModule myComparator) {
     ArrayList newRefills = new ArrayList();
     ArrayList oldRefills = new ArrayList();
     int orderShipTime = inventoryPlugin.getOrderShipTime();
@@ -310,7 +310,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param today The time representation of today or now
    *  @return Preference  The new time preference
    **/
-  private Preference createRefillTimePreference(long bestDay, long today, LogisticsInventoryPG thePG) {
+  protected Preference createRefillTimePreference(long bestDay, long today, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
     double bucketsBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
@@ -350,7 +350,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param refill_qty  The quantity we want for this Refill Task
    *  @return Preference  The new quantity preference for the Refill Task
    **/
-  private Preference createRefillQuantityPreference(double refill_qty) {
+  protected Preference createRefillQuantityPreference(double refill_qty) {
     ScoringFunction qtySF = ScoringFunction.
             createStrictlyAtValue(AspectValue.newAspectValue(AspectType.QUANTITY, refill_qty));
     return  inventoryPlugin.getPlanningFactory().
@@ -362,7 +362,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
    *  @param io  The indirect object
    *  @return PrepositionalPhrase  A new prep phrase for the task
    **/
-  private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
+  protected PrepositionalPhrase createPrepPhrase(String prep, Object io) {
     NewPrepositionalPhrase newpp = inventoryPlugin.getPlanningFactory().
             newPrepositionalPhrase();
     newpp.setPreposition(prep);
@@ -371,7 +371,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to get and keep organization info from the InventoryPlugin. **/
-  private Organization getMyOrganization() {
+  protected Organization getMyOrganization() {
     if (myOrg == null) {
       myOrg = inventoryPlugin.getMyOrganization();
       // if we still don't have it after we ask the inventory plugin, throw an error!
@@ -384,7 +384,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to get the Org Name from my organization and keep it around. **/
-  private String getOrgName() {
+  protected String getOrgName() {
     if (myOrgName == null) {
       myOrgName =getMyOrganization().getItemIdentificationPG().getItemIdentification();
     }
@@ -392,7 +392,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
   }
 
   /** Utility method to get the default (home) location of the Org **/
-  private GeolocLocation getHomeLocation() {
+  protected GeolocLocation getHomeLocation() {
     if (homeGeoloc == null ) {
       Organization org = getMyOrganization();
       if (org.getMilitaryOrgPG() != null) {
@@ -429,7 +429,7 @@ public class RefillGenerator extends InventoryLevelGenerator {
 
   }
 
-  private DecimalFormat getDecimalFormatter() {
+  protected DecimalFormat getDecimalFormatter() {
     if (myDecimalFormatter == null) {
       myDecimalFormatter = new DecimalFormat("##########.##");
     }
