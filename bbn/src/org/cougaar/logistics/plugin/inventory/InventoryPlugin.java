@@ -151,6 +151,8 @@ public class InventoryPlugin extends ComponentPlugin {
 	      domainService  = null;
 	  }
       });
+    System.out.println("\n InventoryPlugin of type: " + supplyType +
+		       " this plugin is: " + this);
   }
 
   public TaskUtils      getTaskUtils() {return taskUtils;}
