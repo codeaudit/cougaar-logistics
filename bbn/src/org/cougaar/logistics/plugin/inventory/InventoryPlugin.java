@@ -1236,7 +1236,7 @@ public class InventoryPlugin extends ComponentPlugin
         inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       if(logInvPG.getArrivalTime() != getOPlanArrivalInTheaterTime()) {
         long newSupplierArrivalTime = logInvPG.getSupplierArrivalTime() + 
-          (logInvPG.getArrivalTime() - getOPlanArrivalInTheaterTime());
+          (getOPlanArrivalInTheaterTime() - logInvPG.getArrivalTime());
         logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
         ((NewLogisticsInventoryPG)logInvPG).setSupplierArrivalTime(newSupplierArrivalTime);
         logInvPG.setStartCDay(logOPlan.getOplanCday());
