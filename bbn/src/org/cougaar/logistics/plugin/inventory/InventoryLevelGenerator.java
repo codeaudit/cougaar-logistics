@@ -164,7 +164,7 @@ public class InventoryLevelGenerator extends InventoryModule {
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int lastDemandBucket = thePG.getLastDemandBucket();
     double lastTarget;
-    int inventoryBucket;
+    int inventoryBucket,inventoryBucketStart;
     
     // get the first target before we loop so we have 2 points for the
     // inventory level calculations.
@@ -187,14 +187,22 @@ public class InventoryLevelGenerator extends InventoryModule {
       // set the start point for the inventory calcualtions to the 
       // beginning of the last target window 
       //ie whatever bucket lastTarget was set for.
-      inventoryBucket = targetLevelBucket - reorderPeriod;
+      inventoryBucketStart = targetLevelBucket - reorderPeriod;
 
       for (int i=0; i < reorderPeriod; i++) {
+	inventoryBucket = inventoryBucketStart + i;
         double diff = target - lastTarget; 
         double calcTarget = lastTarget + ((diff * i)/reorderPeriod);
         //inv level in projection land is the average of the critcial and target levels
-        double level = (thePG.getCriticalLevel(inventoryBucket + i) + calcTarget) / 2;
-        thePG.setLevel(inventoryBucket + i, level);
+        double level = (thePG.getCriticalLevel(inventoryBucket) + calcTarget) / 2;
+
+	//Only for Level2Projections do we call this method with a startBucket == 0
+	//For Level2Projections we were resetting the zero th bucket of invnentory
+	//which is really what holds the initial inventory level - 
+	//Don't reset the initial inventory level!
+	if(inventoryBucket > 0) {
+	    thePG.setLevel(inventoryBucket, level);
+	}
       }
       lastTarget = target;
     }
