@@ -725,6 +725,25 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
+  private class EnclosedSchedPredicate implements UnaryPredicate {
+    long start;
+    long end;
+    public EnclosedSchedPredicate(long start, long end) {
+      this.start = start;
+      this.end = end;
+    }
+    public boolean execute(Object obj) {
+      if (! (obj instanceof ScheduleElement)) {
+        throw new IllegalArgumentException(new StringBuffer().append(
+            " EnclosedSchedPredicate was expecting a ScheduleElement ")
+                                           .append(obj)
+                                           .toString());
+      }
+      ScheduleElement se = (ScheduleElement) obj;
+      return se.getStartTime() <= start && se.getEndTime() >= end;
+    }
+  }
+
   protected Collection getUncoveredTasks(Collection tasks) {
     ArrayList uncoveredTasks = new ArrayList();
     HashMap providersSched = relationshipScheduleMap();
@@ -849,7 +868,7 @@ public class InventoryPlugin extends ComponentPlugin
       logger.error("InvPlugin got no overlapping elements for task start " +
                    new Date(start) + " end " + new Date(end) +
                    " provider is: " + provider);
-      return splits;
+      return Collections.EMPTY_LIST;
     }
     ScheduleElement firstlap = (ScheduleElement) overlaps.iterator().next();
     TimeSpan first = new MutableTimeSpan();
@@ -861,21 +880,38 @@ public class InventoryPlugin extends ComponentPlugin
                      new Date(firstlap.getStartTime()) + " ... " +
                      new Date(firstlap.getEndTime()));
       }
+      if (! (isValidSpan(start, firstlap.getEndTime()) && isValidSpan(firstlap.getEndTime(), end))) {
+        return Collections.EMPTY_LIST;
+      }
       ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
       ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
     } else {
       if (logger.isWarnEnabled()) {
         logger.warn("GetSplitTimes... task is: " + new Date (start) + " ... " +
-                     new Date(end) + "  overlapping relationship is: " +
-                     new Date(firstlap.getStartTime()) + " ... " +
-                     new Date(firstlap.getEndTime()));
+                    new Date(end) + "  overlapping relationship is: " +
+                    new Date(firstlap.getStartTime()) + " ... " +
+                    new Date(firstlap.getEndTime()));
       }
-      ((NewTimeSpan)first).setTimeSpan(firstlap.getStartTime(), end);
-      ((NewTimeSpan)second).setTimeSpan(start, firstlap.getStartTime());
+      if (! (isValidSpan(firstlap.getStartTime(), end) && isValidSpan(start, firstlap.getStartTime()))) {
+        return Collections.EMPTY_LIST;
+      }
+      ((NewTimeSpan) first).setTimeSpan(firstlap.getStartTime(), end);
+      ((NewTimeSpan) second).setTimeSpan(start, firstlap.getStartTime());
     }
     splits.add(first);
     splits.add(second);
     return splits;
+  }
+
+  protected boolean isValidSpan(long start, long end) {
+    if (start < end) {
+      return true;
+    } else {
+      if (logger.isErrorEnabled()) {
+        logger.error(" Invalid time span in Inventory plugin, start  " + new Date(start) + " end " + new Date(end));
+      }
+      return false;
+    }
   }
 
   protected List getNewTaskSplitTimes(Task task, HashMap provHashMap) {
@@ -889,19 +925,33 @@ public class InventoryPlugin extends ComponentPlugin
       Schedule sched = (Schedule) valIt.next();
       tmp.addAll(sched);
     }
+    // Filter out the elements that enclose the span; if they exist, the relationship
+    // schedule was updated and we are covered. Return an empty list and let the plugin run
+    // again with the updated info.
+    Collection enclosed = tmp.filter(new EnclosedSchedPredicate(start, end));
+    if (! enclosed.isEmpty()) {
+      return splits;
+    }
+    // if we make it here, then there can only be partial overlaps or none
     Collection overlaps = tmp.getOverlappingScheduleElements(start, end);
     if (overlaps.isEmpty()) {
-      return splits;
+      return Collections.EMPTY_LIST;
     }
     ScheduleElement firstlap = (ScheduleElement) overlaps.iterator().next();
     TimeSpan first = new MutableTimeSpan();
     TimeSpan second = new MutableTimeSpan();
     if (start >= firstlap.getStartTime()) {
+      if (! (isValidSpan(firstlap.getEndTime(), end) && isValidSpan(start, firstlap.getEndTime()))) {
+        return Collections.EMPTY_LIST;
+      }
       ((NewTimeSpan)first).setTimeSpan(start, firstlap.getEndTime());
       ((NewTimeSpan)second).setTimeSpan(firstlap.getEndTime(), end);
     } else {
-      ((NewTimeSpan)first).setTimeSpan(firstlap.getStartTime(), end);
-      ((NewTimeSpan)second).setTimeSpan(start, firstlap.getStartTime());
+      if (! (isValidSpan(firstlap.getStartTime(), end) && isValidSpan(start, firstlap.getStartTime()))) {
+        return Collections.EMPTY_LIST;
+      }
+      ((NewTimeSpan) first).setTimeSpan(firstlap.getStartTime(), end);
+      ((NewTimeSpan) second).setTimeSpan(start, firstlap.getStartTime());
     }
     splits.add(first);
     splits.add(second);
@@ -909,7 +959,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   protected Collection getUnprovidedTasks(Collection refill_allocations, Verb verb,
-					  HashMap providerStartDates, HashMap providerEndDates) {
+                                          HashMap providerStartDates, HashMap providerEndDates) {
     Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
     Task task;
@@ -929,20 +979,20 @@ public class InventoryPlugin extends ComponentPlugin
 	    }
         }
         providerEndDate = (Date) providerEndDates.get(provider);
-	if (verb.equals(Constants.Verb.ProjectSupply)) {
-	    taskStart = TaskUtils.getStartTime(task);
-	    providerStartDate = (Date) providerStartDates.get(provider);
+        if (verb.equals(Constants.Verb.ProjectSupply)) {
+          taskStart = TaskUtils.getStartTime(task);
+          providerStartDate = (Date) providerStartDates.get(provider);
 
-	    // only need provider from start to end - bucketSize
-	    if ((providerEndDate != null && providerEndDate.getTime() < taskEnd - bucketSize) ||
-		(providerStartDate != null && providerStartDate.getTime() > taskStart))  {
+          // only need provider from start to end - bucketSize
+          if ((providerEndDate != null && providerEndDate.getTime() < taskEnd - bucketSize) ||
+              (providerStartDate != null && providerStartDate.getTime() > taskStart))  {
 
-		unprovidedTasks.add(task);
-	    }
-	} else {
-	    if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
-		unprovidedTasks.add(task);
-	    }
+            unprovidedTasks.add(task);
+          }
+        } else {
+          if (providerEndDate != null && providerEndDate.getTime() < taskEnd) {
+            unprovidedTasks.add(task);
+          }
         }
       }
     }
