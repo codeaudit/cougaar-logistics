@@ -6,7 +6,7 @@
   <task id="test_task">
     <verb>Supply</verb>
     <directobject>
-     <asset id="ammo-1">NSN-2350010871095</asset>
+     <asset id="ammo-1">DODIC/C380</asset>	
     </directobject>
     <for>1-35-ARBN</for>
     <oftype>Ammunition</oftype>
@@ -16,14 +16,13 @@
       <longitude>37.1167</longitude>
       <name>RUINS</name>
     </to>
-    <refill/>
-    <enddate>    
+     <enddate>    
       <bestdate>
         <year>2005</year> 
-        <month>06</month> 
+        <month>09</month> 
         <day>15</day> 
         <hour>12</hour> 
-        <minute>00</minute> 
+        <minute>03</minute> 
         <second>00</second>
       </bestdate>
     </enddate>   
