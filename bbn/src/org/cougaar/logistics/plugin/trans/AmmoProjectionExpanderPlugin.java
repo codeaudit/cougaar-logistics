@@ -52,6 +52,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   public static final String AMMO_CATEGORY_CODE = "MBB";
   public static final String MILVAN_NSN = "NSN/8115001682275";
   public static final double PACKING_LIMIT = 13.9; /* short tons */
+  public static final long TASK_TRANSMISSION_DELAY = 1000*60*60;
   private static Asset MILVAN_PROTOTYPE = null;
   //private static final String UNKNOWN = "unknown";
   public static String START = "Start";
@@ -182,9 +183,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     if (isInfoEnabled ()) {
       info (getName () + ".getSubtasks - task " + parentTask.getUID () + 
-	     " from " + readyAt + 
-	     " to " + best + 
-	     " will produce " + numSubtasks + " subtasks.");
+	    " from " + readyAt + 
+	    " to " + best + 
+	    " will produce " + numSubtasks + " subtasks.");
     }
     
     String unit = (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR)) ?
@@ -267,15 +268,20 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 	bestTime = best.getTime();
       }
 
-      if (isDebugEnabled ())
-	debug (getName () + ".getSubtasks - making task " + subTask.getUID() + 
-	       " with best arrival " + new Date(bestTime));
-
+      Date startDate = new Date(getAlarmService().currentTimeMillis () + 
+				TASK_TRANSMISSION_DELAY);
+      if (isInfoEnabled ())
+	info (getName () + ".getSubtasks - making task " + subTask.getUID() + 
+	      " with best arrival " + new Date(bestTime) + " and start " + startDate);
       prefHelper.replacePreference((NewTask)subTask, 
 				   prefHelper.makeEndDatePreference (ldmf,
 								     early, 
 								     new Date (bestTime),
 								     late));
+
+      prefHelper.replacePreference((NewTask)subTask, 
+				   prefHelper.makeStartDatePreference (ldmf, startDate));
+
       prefHelper.removePrefWithAspectType (subTask, AlpineAspectType.DEMANDRATE); // we've included it in the d.o.
 
       prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
@@ -446,10 +452,19 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   /**
-   * Report to superior that the expansion has changed. Usually just a pass
-   * through to the UTILPluginAdapter's updateAllocationResult.
+   * <pre>
+   * Report to superior that the expansion has changed. 
+   * 
+   * An override is needed here for two reasons :
    *
-   * @param cpe Expansion that has changed.
+   * 1) to add the DEMANDRATE preference value into the allocation result, 
+   *    since downstream plugins won't set this aspect.
+   * 2) echo the start time preference in the allocation result (why?)
+   *
+   * No allocation results flow upward unless reported confidence reaches 100%.
+   *
+   * </pre>
+   * @param exp Expansion that has changed.
    * @see org.cougaar.lib.filter.UTILPluginAdapter#updateAllocationResult
    */
   public void reportChangedExpansion(Expansion cpe) { 
@@ -520,6 +535,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   }
 
   /** 
+   * <pre>
    * scale the rate to make it the rate over the time of the performance of the 
    * task, so that when the inventory does days*rate, they come up with the original
    * requested quantity.
@@ -528,6 +544,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * The start->end date window on a project supply task means "I need X widgets per day, each
    * day, over this period."  The transportation start->end window means "The move started on this
    * day and ended on this other day."  So they mean different things.
+   * </pre>
    */
   protected double getScaledRate (PlanElement planElement) {
     Task task = planElement.getTask();
@@ -710,7 +727,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
    * Implemented for UTILBufferingPlugin interface
    *
    * @param tasks that have been buffered up to this point
-   * @see org.cougaar.lib.filter.UTILBufferingPlugin
+   * @see org.cougaar.lib.filter.UTILBufferingPlugin#processTasks
    */
   public void processTasks (List tasks) {
     if (isInfoEnabled()) {
@@ -757,11 +774,15 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     }
 
   /**
+   * <pre>
+   *
    * find matching reservation transport task
    * see if date overlaps
    * if it does, publish remove it and replace it with one with altered date span and quantity
    *
-   * OK - could be MUCH more efficient!
+   * OK - could be MUCH more efficient - blackboard queries are extremely slow!
+   *
+   * </pre>
    */
   public void handleTransportTask(Task task1, Map reservedToActual) {
     // find matching reservation transport task
