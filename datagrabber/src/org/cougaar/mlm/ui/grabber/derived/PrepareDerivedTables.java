@@ -29,6 +29,12 @@ import org.cougaar.mlm.ui.grabber.connect.PrepareDBTables;
 import org.cougaar.mlm.ui.grabber.connect.HierarchyConstants;
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
+import org.cougaar.mlm.ui.grabber.workqueue.Result;
+import org.cougaar.mlm.ui.grabber.workqueue.ResultHandler;
+import org.cougaar.mlm.ui.grabber.workqueue.Work;
+import org.cougaar.mlm.ui.grabber.workqueue.WorkQueue;
+import org.cougaar.mlm.ui.grabber.controller.FailureRunResult;
+
 import java.sql.*;
 
 /**
@@ -41,7 +47,7 @@ import java.sql.*;
  *
  * @since 4/06/01
  **/
-public class PrepareDerivedTables extends PrepareDBTables{
+public class PrepareDerivedTables extends PrepareDBTables implements ResultHandler {
 
   //Constants:
   ////////////
@@ -210,6 +216,7 @@ public class PrepareDerivedTables extends PrepareDBTables{
   ////////////
 
   private DerivedTablesConfig dtConfig;
+  private WorkQueue workQ;
 
   private boolean buildTable[]=new boolean[DERIVED_TABLES.length];
   
@@ -225,7 +232,17 @@ public class PrepareDerivedTables extends PrepareDBTables{
     this.dtConfig=dtConfig;
     for(int i=0;i<buildTable.length;i++)
       buildTable[i]=false;
+
+    workQ = new WorkQueue(logger, this);
   }
+
+  /*
+  public void halt(){
+    super.halt ();
+    
+    workQ.haltAllWork();
+  }
+  */
 
   //Members:
   //////////
@@ -247,84 +264,141 @@ public class PrepareDerivedTables extends PrepareDBTables{
 
   /**Prepare it, since we need preparation**/
   protected void prepareDB(Connection c){
-    Statement s=null;
-    try{
-      s = c.createStatement();
-    }catch(SQLException e){
-      haltForError(Logger.DB_STRUCTURE,"Could not create Statement",e);
-      return;
-    }
-
     long startTime=System.currentTimeMillis();
 
-    long time;
-
     for(int i=0;i<DERIVED_TABLES.length;i++){
+      if (halt) break;
+      Statement s=null;
+      try{
+	s = c.createStatement();
+      }catch(SQLException e){
+	haltForError(Logger.DB_STRUCTURE,"Could not create Statement",e);
+	return;
+      }
+
       if(buildTable[i]){
-	createTable(s,DERIVED_TABLES[i]);
+	if (logger.isMinorEnabled())
+	  logMessage(Logger.MINOR,Logger.GENERIC,"Queueing work for table " + DERIVED_TABLES[i]);
+	  
+	workQ.enque (new DerivedWork (100+i, s,DERIVED_TABLES[i]));
       }else{
 	logMessage(Logger.NORMAL,Logger.GENERIC,"Skipping creation of table: "+
 	       getDerivedTableName(DERIVED_TABLES[i]));
       }
     }
 
-    logMessage(Logger.NORMAL, Logger.DB_WRITE,"Preparation of derived tables took "+
-	       (System.currentTimeMillis()-startTime) + " total millis");
-    try{
-      if(s!=null)
-	s.close();
-    }catch(SQLException e){
-      logMessage(Logger.ERROR,Logger.DB_WRITE,"Could not close Statement",e);
+    while (workQ.isBusy ()) {
+      synchronized (this) {
+	try {wait();} catch (Exception e) {}
+      }
     }
+
+    logMessage(Logger.NORMAL, Logger.DB_WRITE,"Preparation of derived tables took "+
+    	       (System.currentTimeMillis()-startTime) + " total millis");
   }
   
+  public void handleResult(Result r) {
+    synchronized (this) {
+      notify ();
+    }
+
+    if (r instanceof FailureRunResult)
+      haltForError (((FailureRunResult)r).getReason());
+  }
+
   //Actions:
 
-  public boolean createTable(Statement s, String tableName){
-    int idx=getIndexForTableName(tableName);
-    if(idx==-1)
-      return false;
+  public class DerivedWork implements Work {
+    int id;
+    boolean halt = false;
+    Statement statement;
+    String tableName;
 
-    long time=System.currentTimeMillis();
-    
-    //Build appropriate table:
-    if(tableName.equals(FIRST_LEG)){
-      if(!isDerivedTablePresent(FIRST_LEG)){
-	createFirstLegTable(s);
-	selectIntoTable(s, getDerivedTableName(FIRST_LEG), getColumnString(FIRST_LEG_COLS),getFirstLegSql());
-      }
-    }else if(tableName.equals(ROLLUP)){
-      createRollupTable(s);
-      selectIntoTable(s, getDerivedTableName(ROLLUP), getColumnString(ROLLUP_COLS),getRollupSql());
-    }else if(tableName.equals(CARGO_TYPE)){
-      createCargoTypeTable(s, getDerivedTableName(CARGO_TYPE));
-      selectIntoTable(s, getDerivedTableName(CARGO_TYPE), getColumnString(CARGO_TYPE_COLS), 
-		      getCargoTypeSql(false));
-      selectIntoTable(s, getDerivedTableName(CARGO_TYPE), getColumnString(CARGO_TYPE_COLS), 
-		      getCargoTypeSql(true));
-    }else if(tableName.equals(CARGO_INSTANCE)){
-      createTableSelect(s, getDerivedTableName(CARGO_INSTANCE), getCargoInstanceSql1());
-      selectIntoTable(s, getDerivedTableName(CARGO_INSTANCE), getColumnString(CARGO_INSTANCE_COLS), 
-		      getCargoInstanceSql2());
-    }else if(tableName.equals(CARGO_LEG)){
-      createCargoLegTable(s);
-      selectIntoTable(s, getDerivedTableName(CARGO_LEG), getColumnString(CARGO_LEG_COLS), 
-		      getCargoLegSql(false));
-      selectIntoTable(s, getDerivedTableName(CARGO_LEG), getColumnString(CARGO_LEG_COLS), 
-		      getCargoLegSql(true));
-    }else if(tableName.equals(CARRIER_TYPE)){
-      createTableSelect(s, getDerivedTableName(CARRIER_TYPE), getCarrierTypeSql());
-    }else if(tableName.equals(CARRIER_INSTANCE)){
-      createTableSelect(s, getDerivedTableName(CARRIER_INSTANCE), getCarrierInstanceSql());
+    public DerivedWork (int id, Statement statement, String tableName) { 
+      this.id = id; 
+      this.statement = statement;
+      this.tableName = tableName;
     }
-    
-    time=System.currentTimeMillis()-time;
-    logMessage(Logger.NORMAL,Logger.DB_WRITE,"Created table "+getDerivedTableName(tableName)+
-	       " in "+time+" millis.");
-    //Create the tables indices:
-    createIndexForAllColumns(s,getDerivedTableName(tableName),DERIVED_TABLE_INDICES[idx]);
 
-    return true;
+    public int getID() { return id; }
+    public String getStatus() { return "creating table " + tableName; }
+    public void halt() { halt = true;}
+    public Result perform(Logger l) { 
+      if (createTable (statement, tableName))
+	return new Result () { public int getID () { return id; }};
+      else
+	return new FailureRunResult (id, getRunID(), "creating derived table", false);
+    }
+
+    public boolean createTable(Statement s, String tableName){
+      int idx=getIndexForTableName(tableName);
+      if(idx==-1)
+	return false;
+
+      long time=System.currentTimeMillis();
+
+      //Build appropriate table:
+      if(tableName.equals(FIRST_LEG)){
+	if(!isDerivedTablePresent(FIRST_LEG)){
+	  if (halt) return true;
+	  createFirstLegTable(s);
+	  if (halt) return true;
+	  selectIntoTable(s, getDerivedTableName(FIRST_LEG), getColumnString(FIRST_LEG_COLS),getFirstLegSql());
+	}
+      }else if(tableName.equals(ROLLUP)){
+	if (halt) return true;
+	createRollupTable(s);
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(ROLLUP), getColumnString(ROLLUP_COLS),getRollupSql());
+      }else if(tableName.equals(CARGO_TYPE)){
+	if (halt) return true;
+	createCargoTypeTable(s, getDerivedTableName(CARGO_TYPE));
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(CARGO_TYPE), getColumnString(CARGO_TYPE_COLS), 
+			getCargoTypeSql(false));
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(CARGO_TYPE), getColumnString(CARGO_TYPE_COLS), 
+			getCargoTypeSql(true));
+      }else if(tableName.equals(CARGO_INSTANCE)){
+	if (halt) return true;
+	createTableSelect(s, getDerivedTableName(CARGO_INSTANCE), getCargoInstanceSql1());
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(CARGO_INSTANCE), getColumnString(CARGO_INSTANCE_COLS), 
+			getCargoInstanceSql2());
+      }else if(tableName.equals(CARGO_LEG)){
+	if (halt) return true;
+	createCargoLegTable(s);
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(CARGO_LEG), getColumnString(CARGO_LEG_COLS), 
+			getCargoLegSql(false));
+	if (halt) return true;
+	selectIntoTable(s, getDerivedTableName(CARGO_LEG), getColumnString(CARGO_LEG_COLS), 
+			getCargoLegSql(true));
+      }else if(tableName.equals(CARRIER_TYPE)){
+	if (halt) return true;
+	createTableSelect(s, getDerivedTableName(CARRIER_TYPE), getCarrierTypeSql());
+      }else if(tableName.equals(CARRIER_INSTANCE)){
+	if (halt) return true;
+	createTableSelect(s, getDerivedTableName(CARRIER_INSTANCE), getCarrierInstanceSql());
+      }
+
+      if (halt) return true;
+    
+      time=System.currentTimeMillis()-time;
+      logMessage(Logger.NORMAL,Logger.DB_WRITE,"Created table "+getDerivedTableName(tableName)+
+		 " in "+time+" millis.");
+      //Create the tables indices:
+      createIndexForAllColumns(s,getDerivedTableName(tableName),DERIVED_TABLE_INDICES[idx]);
+
+      try{
+	if(s!=null)
+	  s.close();
+      }catch(SQLException e){
+	logMessage(Logger.ERROR,Logger.DB_WRITE,"Could not close Statement",e);
+      }
+
+      return true;
+    }
   }
 
   public void dropTable (Statement s, String tableName) {
