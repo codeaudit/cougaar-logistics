@@ -457,7 +457,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     copy[aspectValues.length] = rate;
 
     AllocationResult replacement =  
-      ldmf.newAVAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
+      ldmf.newAllocationResult(UTILAllocate.MEDIUM_CONFIDENCE, true, copy);
     exp.setEstimatedResult (replacement);
   }
 
