@@ -215,10 +215,13 @@ public class InventoryPlugin extends ComponentPlugin {
 		       inventoryPolicy + " my supply task subscription is: " + 
 		       supplyTaskSubscription);
 	}
+
+	return; // we're not ready, let's hope we are in the next execution cycle.
+	// this is a little dangerous -- what if we never get kicked again?
       }
     }
-    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null && 
-        myOrganization != null ) {
+    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {// && 
+//        myOrganization != null ) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
