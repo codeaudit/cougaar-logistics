@@ -27,9 +27,12 @@ import org.cougaar.core.agent.*;
 import org.cougaar.glm.ldm.asset.*;
 import org.cougaar.planning.ldm.asset.*;
 import org.cougaar.glm.plugins.FileUtils;
+import org.cougaar.glm.plugins.ScheduleUtils;
 
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
+import org.cougaar.glm.ldm.asset.ScheduledContentPG;
+import org.cougaar.glm.ldm.asset.NewScheduledContentPG;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.agent.ClusterIdentifier;
@@ -535,6 +538,8 @@ public class InventoryPlugin extends ComponentPlugin {
       NewScheduledContentPG scp;
       scp = (NewScheduledContentPG)inventory.getScheduledContentPG();
       scp.setAsset(resource);
+      scp.setSchedule(ScheduleUtils.buildSimpleQuantitySchedule(levels[1], startTime, 
+								startTime+(TimeUtils.MSEC_PER_DAY*10)));
     }
     return inventory;
   }
@@ -725,6 +730,7 @@ public class InventoryPlugin extends ComponentPlugin {
       inv = (Inventory)inv_it.next();
       System.out.println("***"+inv.getItemIdentificationPG().getItemIdentification());
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+      logInvPG.takeSnapshot(inv);
       logInvPG.Test();
     }
   }
