@@ -217,14 +217,16 @@ public class InventoryLevelGenerator extends InventoryModule {
     double targetLevel = 0;
     //    double criticalAtEndOfPeriod = Math.max(.9, thePG.getCriticalLevel(reorderPeriodEndBucket));
     double criticalAtEndOfPeriod = thePG.getCriticalLevel(reorderPeriodEndBucket);
-    // OLD METHOD -- generates bad refill for Fresh Fruit, which shows up the Inventory Plotting bug!
-//     double demandForPeriod = calculateDemandForPeriod(thePG, 
-//                                                       refillBucket, 
-//                                                       reorderPeriodEndBucket);
-//     targetLevel = criticalAtEndOfPeriod + demandForPeriod;
     double demandForPeriod = calculateDemandForPeriod(thePG, 
-                                                      refillBucket, 
-                                                      reorderPeriodEndBucket-1);
+						      refillBucket, 
+						      reorderPeriodEndBucket);
+    //     targetLevel = criticalAtEndOfPeriod + demandForPeriod;
+    // used once to fix a problem with fresh fruit - but seems wrong since the rest of the
+    // refill generator algorithm expects us to calculate for the whole reorder period
+    // switched back to original (above) for 10.4
+     //    double demandForPeriod = calculateDemandForPeriod(thePG, 
+     //                                               refillBucket, 
+     //                                               reorderPeriodEndBucket-1);
 
     targetLevel = criticalAtEndOfPeriod + demandForPeriod + .0005;
 
