@@ -1,14 +1,14 @@
 /*
  * <copyright>
- *  
+ *
  *  Copyright 1997-2004 BBNT Solutions, LLC
  *  under sponsorship of the Defense Advanced Research Projects
  *  Agency (DARPA).
- * 
+ *
  *  You can redistribute this software and/or modify it under the
  *  terms of the Cougaar Open Source License as published on the
  *  Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -20,7 +20,7 @@
  *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *  
+ *
  * </copyright>
 */
 
@@ -86,7 +86,7 @@ public class InventoryPlugin extends ComponentPlugin
   protected HashMap inventoryHash;
     //  protected HashMap inventoryInitHash;
   protected HashSet touchedInventories;
-  // inventoriesWithDeletions used to refresh snapshots.  
+  // inventoriesWithDeletions used to refresh snapshots.
   // Ensures correct graphs during deletion periods.
   protected HashSet inventoriesWithDeletions;
   // private HashSet backwardFlowInventories;  // ### Captures Inventories with unchanged demand
@@ -666,7 +666,7 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  protected Collection getUnprovidedTasks(Collection refill_allocations, Verb verb, 
+  protected Collection getUnprovidedTasks(Collection refill_allocations, Verb verb,
 					  HashMap providerStartDates, HashMap providerEndDates) {
     Iterator raIt = refill_allocations.iterator();
     ArrayList unprovidedTasks = new ArrayList();
@@ -692,7 +692,7 @@ public class InventoryPlugin extends ComponentPlugin
 	    providerStartDate = (Date) providerStartDates.get(provider);
 
 	    // only need provider from start to end - bucketSize
-	    if ((providerEndDate != null && providerEndDate.getTime() < taskEnd - bucketSize) || 
+	    if ((providerEndDate != null && providerEndDate.getTime() < taskEnd - bucketSize) ||
 		(providerStartDate != null && providerStartDate.getTime() > taskStart))  {
 
 		unprovidedTasks.add(task);
@@ -842,7 +842,7 @@ public class InventoryPlugin extends ComponentPlugin
 
     shortfallSummary = (IncrementalSubscription) blackboard.
 	subscribe(new ShortfallSumPredicate(getSupplyType()));
-    
+
 
 
     //LogOPlan replacment
@@ -860,8 +860,8 @@ public class InventoryPlugin extends ComponentPlugin
     QuiescenceAccumulator q = new QuiescenceAccumulator (qrs);
     String id = getAgentIdentifier().toString();
     if (turnOnTaskSched) {
-      if (logger.isDebugEnabled())
-        logger.debug("TASK SCHEDULER ON for "+id);
+      if (logger.isInfoEnabled())
+        logger.info("Inv Plugin TASK SCHEDULER ON for "+id + getSupplyType());
       java.io.InputStream is = null;
       try {
         is = getConfigFinder().open ("supplyTaskPolicy.xml");
@@ -882,6 +882,8 @@ public class InventoryPlugin extends ComponentPlugin
            TaskSchedulingPolicy.fromXML (is, this, getAlarmService()),
            blackboard, q, logger, "projTasks for " + getBlackboardClientName());
     } else { // TaskScheduler OFF
+      if (logger.isInfoEnabled())
+        logger.info("Inv Plugin TASK SCHEDULER OFF for "+id+ getSupplyType());
       supplyTaskScheduler = new TaskScheduler
           (new SupplyTaskPredicate(supplyType, id, taskUtils),
            new TaskSchedulingPolicy (new TaskSchedulingPolicy.Predicate[]
@@ -902,7 +904,7 @@ public class InventoryPlugin extends ComponentPlugin
 
   private static class OrgActivitiesPredicate implements UnaryPredicate {
     public OrgActivitiesPredicate() {
-    } 
+    }
     public boolean execute(Object o) {
       if (o instanceof OrgActivity) {
 	  return true;
@@ -935,7 +937,7 @@ public class InventoryPlugin extends ComponentPlugin
       return false;
     }
   };
-    
+
 
   private static class SupplyTaskPredicate
       implements TaskSchedulingPolicy.Predicate {
@@ -1538,7 +1540,7 @@ public class InventoryPlugin extends ComponentPlugin
     scp.setAsset(resource);
     scp.setSchedule(scheduleUtils.buildSimpleQuantitySchedule(initialLevel, startTime,
                                                                 startTime + (TimeUtils.MSEC_PER_DAY * 10)));
-    
+
     return inventory;
   }
 
@@ -1641,24 +1643,24 @@ public class InventoryPlugin extends ComponentPlugin
 		logger.warn("47-FSB - Removing ShortfallSummary");
 	    }
 	    **/
-	    
+
 	}
     }
-    
+
   }
 
 
     public ShortfallInventory checkForShortfall(Inventory inv) {
       LogisticsInventoryPG logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
       String invID = LogisticsInventoryServlet.getNomenclature(inv);
-      
+
       ShortfallInventory shortfallInv=new ShortfallInventory(invID);
 
       shortfallInv.setNumResupplySupply(logInvPG.numResupplySupplyFailures());
       shortfallInv.setNumResupplyProj(logInvPG.numResupplyProjFailures());
       shortfallInv.setNumDemandSupply(logInvPG.numDemandSupplyFailures());
       shortfallInv.setNumDemandProj(logInvPG.numDemandProjFailures());
-	  
+
 
 
       if(shortfallInv.getNumPermShortfall() > 0) {
@@ -1792,7 +1794,7 @@ public class InventoryPlugin extends ComponentPlugin
       boolean didAddExp = publishAdd(expansion);
       if (logger.isDebugEnabled()) {
         logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
-                     "publish adding expansion: " + expansion.getUID()+ 
+                     "publish adding expansion: " + expansion.getUID()+
                      " parent " + parent.getVerb() + " task is: " + parent.getUID() +
                      "publishAdd returned: " + didAddExp);
       }
@@ -1806,7 +1808,7 @@ public class InventoryPlugin extends ComponentPlugin
       boolean didChangeExp = publishChange(expansion);
       if (logger.isDebugEnabled()) {
         logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
-                     "publish changing expansion: " + expansion.getUID()+ 
+                     "publish changing expansion: " + expansion.getUID()+
                      " parent " + parent.getVerb() + " task is: " + parent.getUID() +
                      "publishChange returned: " + didChangeExp);
       }
@@ -1854,7 +1856,7 @@ public class InventoryPlugin extends ComponentPlugin
       PlanElement pe = milTask.getPlanElement();
       // If the PlanElement is already a Disposition then do nothing
       if (!(pe instanceof Disposition)) {
-        // If the PlanElement is not null then it is an expansion.  
+        // If the PlanElement is not null then it is an expansion.
         // Only Remove expansion if there is nothing in the workflow.
         if (pe instanceof Expansion) {
           Enumeration tasks = ((Expansion)pe).getWorkflow().getTasks();
