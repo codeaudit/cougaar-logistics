@@ -168,6 +168,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 
     ArrayList refillProjections = new ArrayList();
     ArrayList oldProjections = new ArrayList();
+
+    //temp mwd
+    inventoryPlugin.updateStartAndEndTimes();
+
     Iterator tiIter = touchedInventories.iterator();
     while (tiIter.hasNext()) {
       // clear out the old and new projections for the last Inventory
@@ -518,6 +522,7 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
                                                 int aspectType, LogisticsInventoryPG thePG) {
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
+    long late = bestDay + thePG.getBucketMillis();
     double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
@@ -529,18 +534,50 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
 //     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1), 
 //                                                        alpha, aspectType);
-    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, 
-                                                                                  bestDay + thePG.getBucketMillis()), 
-                                                       alpha);
+    AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType,late), alpha);
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
                                                    (alpha + late_score));
 
-    points.addElement(earliest);
+    // Don't add the early point if best is same time or earlier
+    if (bestDay > start) {
+      points.addElement(earliest);
+    } else if (bestDay == start) {
+      if (logger.isInfoEnabled()) {
+	logger.info(inventoryPlugin.getClusterId() + ".createTimePref skipping start point: best == start (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
+      }
+    } else {
+      if (logger.isWarnEnabled()) {
+	logger.warn(inventoryPlugin.getClusterId() + ".createTimePref skipping start point: best < start (OplanStart)! bestDay: " + new Date(bestDay) + ", start: " + new Date(start) + ". AspectType: " + aspectType);
+      }
+    }
+
     points.addElement(best);
     points.addElement(first_late);
-    points.addElement(latest);
-    ScoringFunction timeSF = ScoringFunction.
+
+    // Only add the "late" point if it's value is later than first_late
+    if (end > late) {
+      points.addElement(latest);
+    } else if (logger.isInfoEnabled()) {
+      // Note that this case is equivalent to any daysBetween value <= 1.0,
+      // including the case above where daysBetween < 0.0
+
+      // If bestDay == end, this is almost certainly an end Preference, where the preference
+      // is OplanEnd. So best+1 is necessarily > end
+      // check aspectType == AspectType.END_TIME
+      logger.info(inventoryPlugin.getClusterId() + ".createTimePref skipping end point: end <= late! end: " + new Date(end) + ", late: " + new Date(late) + ((bestDay==end && aspectType == AspectType.END_TIME) ? ". A Task EndPref where best==OplanEnd." : ". AspectType: " + aspectType));
+    }
+
+    ScoringFunction timeSF = null;
+    
+    try {
+    timeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
+    }
+    catch(IllegalArgumentException ex) {
+	logger.error("Time is now: " + inventoryPlugin.currentTimeMillis() + " at " + inventoryPlugin.getOrgName() + " - exception. End:" + new Date(end) + ", late: " + new Date(late) + " alpha: " + alpha + ", daysBetween: " + daysBetween + " bestDay: " + bestDay + ", start: " + start + " and BucketMillis: " + thePG.getBucketMillis() + ". Alpha: " + alpha + " late score: " + late_score + " = score ");
+	throw ex;
+    }
+
     return inventoryPlugin.getPlanningFactory().
       newPreference(aspectType, timeSF);
   }
