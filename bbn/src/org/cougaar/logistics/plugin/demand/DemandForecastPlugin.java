@@ -31,7 +31,6 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.oplan.Oplan;
-//import org.cougaar.logistics.ldm.asset.ConsumerPG;
 import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.LogisticsOPlan;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
@@ -53,6 +52,7 @@ import org.cougaar.planning.ldm.plan.ScheduleElementImpl;
 import org.cougaar.planning.ldm.plan.ScheduleImpl;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.util.Filters;
 import org.cougaar.util.TimeSpan;
 import org.cougaar.util.UnaryPredicate;
 
@@ -290,7 +290,7 @@ public class DemandForecastPlugin extends ComponentPlugin
                            subToPGsHash);
         processOrgActChanges(PGs);
       }
-    } 
+    }
 
     // get the Logistics OPlan (our homegrown version with specific dates).
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -309,7 +309,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       if (!genProjPESubscription.getChangedCollection().isEmpty()) {
         generateProjectionsExpander.updateAllocationResults(genProjPESubscription.getChangedCollection());
       }
-    } 
+    }
 
     //Update the Allocation results on new or changed DR PlanElements
     if (detReqPESubscription.hasChanged()) {
@@ -319,7 +319,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       if (!detReqPESubscription.getChangedCollection().isEmpty()) {
         determineRequirementsExpander.updateAllocationResults(detReqPESubscription.getChangedCollection());
       }
-    } 
+    }
 
     //deal with rehydration
     if (rehydrate) {
@@ -365,11 +365,11 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     if (supplyClassPG != null) {
       genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
-      assetsWithPGSubscription = (IncrementalSubscription) 
+      assetsWithPGSubscription = (IncrementalSubscription)
         getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
     }
 
-    genProjPESubscription = (IncrementalSubscription) 
+    genProjPESubscription = (IncrementalSubscription)
       blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
 
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
@@ -395,7 +395,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private static class DetReqPredicate implements UnaryPredicate {
     private String supplyType;
     private TaskUtils taskUtils;
-    
+
     public DetReqPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
@@ -416,7 +416,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private static class DetReqPEPredicate implements UnaryPredicate {
     private String supplyType;
     private TaskUtils taskUtils;
-    
+
     public DetReqPEPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
@@ -460,8 +460,8 @@ public class DemandForecastPlugin extends ComponentPlugin
     public GenProjPEPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
-    } 
-    
+    }
+
     public boolean execute(Object o) {
       if (o instanceof PlanElement) {
         Task t = ((PlanElement)o).getTask();
@@ -470,9 +470,9 @@ public class DemandForecastPlugin extends ComponentPlugin
         }
       }
       return false;
-    } 
+    }
   } // end GenProjPEPredicate
-  
+
   /** Predicate defining ProjectSupply tasks that this plugin created. **/
   private static class ProjectSupplyPredicate implements UnaryPredicate {
     private String supplyType;
@@ -482,19 +482,23 @@ public class DemandForecastPlugin extends ComponentPlugin
       this.supplyType = type;
       this.orgName = myOrgName;
       this.taskUtils = utils;
-    } 
-    
+    }
+
     public boolean execute(Object o) {
       if (o instanceof Task) {
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+          // FIXME:  WAITING to hear from Beth before I commit this exclude refill tasks  WAITING
+//          PrepositionalPhrase pp =t.getPrepositionalPhrase(Constants.Preposition.REFILL);
+//          if (pp == null) {
           if(taskUtils.isTaskOfTypeString(t, supplyType)) {
             return (taskUtils.isMyDemandForecastProjection(t,orgName));
           }
+//          }
         }
       }
       return false;
-    } 
+    }
   } // end SupplyTaskPredicate
 
 
@@ -533,6 +537,8 @@ public class DemandForecastPlugin extends ComponentPlugin
    * @return Collection - tasks that have no PEs
    */
   protected Collection getTasksWithoutPEs(Collection tasks) {
+
+    // I'm curious as to why we are using a hash set here?   -- llg
     Set tasksWithoutPEs = new HashSet();
     for (Iterator iter = tasks.iterator(); iter.hasNext();) {
       Task task = (Task) iter.next();
@@ -661,7 +667,7 @@ public class DemandForecastPlugin extends ComponentPlugin
           System.out.println("******* invoking BG and GPE with changed OrgACT **********");
           invokeGenProjectionsExp(pg, gp);
           break;
-        } 
+        }
       }
     }
   }
@@ -748,7 +754,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       addNewPG(pg);
     }
   }
-      
+
 
   private String getClusterSuffix(String clusterId) {
     String result = null;
@@ -908,7 +914,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   public long getLogOPlanStartTime() {
     return logOPlan.getStartTime();
   }
-  
+
   // get the last day in theater
   public long getLogOPlanEndTime() {
     return logOPlan.getEndTime();
@@ -991,6 +997,29 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
     return mei;
   }
+
+
+  public Collection filter(UnaryPredicate predicate) {
+    return Filters.filter(projectSupplySubscription, predicate);
+  }
+
+  /**
+   * Returns a subset of project supply tasks for the given parent generate
+   * projection task UID.
+   * @param parentTask the generate projects tasks that was expanded
+   * @return all project supply tasks of the parent generate projections task
+   */
+  public Collection projectSupplySet(final Task parentTask) {
+    return filter(new UnaryPredicate() {
+      public boolean execute(Object o) {
+        Task t = (Task) o;
+        return t.getParentTaskUID().equals(parentTask.getUID());
+      }
+    });
+  }
+
+
+
 
   /**
    Self-Test
