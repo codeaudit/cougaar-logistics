@@ -258,6 +258,7 @@ public abstract class PSPConnection extends PSPWork{
 	ObjectInputStream objInStream = new ObjectInputStream(inStream);
 	ret = (DeXMLable)objInStream.readObject();
       }catch(Exception e){
+	e.printStackTrace();
 	throw new UnableToStreamException("Error reading serialized object",e);
       }
     }
