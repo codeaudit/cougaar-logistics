@@ -2,10 +2,11 @@
 
 <property name="src" value="src"/>
 <property name="build" value="build"/>
+<property name="regress" value="regress"/>
 <property name="jar" value="datagrabber.jar"/>
 <property environment="env"/>
 <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
-    
+
 	<path id="cougaar.libs">
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
@@ -24,14 +25,28 @@
   </target>
 
   <target name="compile">
-        <javac  deprecation="false" 
-                debug="true" 
-                optimize="false" 
-                srcdir="${src}" 
+        <javac  deprecation="false"
+                debug="true"
+                optimize="false"
+                srcdir="${src}"
                 destdir="${build}">
                 <classpath refid="cougaar.libs"/>
         </javac>
 	</target>
+
+    <target name="test">
+        <junit printsummary="yes" haltonfailure="yes">
+          <classpath>
+            <pathelement location="${build}" />
+          </classpath>
+          <batchtest fork="no" todir="${build}">
+            <fileset dir="${regress}">
+              <include name="test/**/*Test.java" />
+            </fileset>
+          </batchtest>
+        </junit>
+    </target>
+
 
 	<target name="jar" depends="compile">
 		<jar jarfile="${jar}" baseDir="${build}"/>
@@ -48,7 +63,7 @@
 	</target>
 
 	<target name="clean" depends="delete,compile,jar"/>
-    
+
 </project>
 
 

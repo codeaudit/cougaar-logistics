@@ -11,9 +11,7 @@ import org.cougaar.mlm.ui.grabber.logger.StdLogger;
 
 import java.net.Socket;
 import java.net.URLEncoder;
-import java.io.InputStream;
-import java.io.StringBufferInputStream;
-import java.io.IOException;
+import java.io.*;
 
 public class HttpRequestTest  extends TestCase {
 
@@ -68,7 +66,7 @@ public class HttpRequestTest  extends TestCase {
     }
 
     private MySocket createSocketWith(String data) {
-        return new MySocket(new StringBufferInputStream(data + System.getProperty("line.separator")+ System.getProperty("line.separator")));
+        return new MySocket(new ByteArrayInputStream((data + System.getProperty("line.separator")+ System.getProperty("line.separator")).getBytes()));
     }
 
 }
