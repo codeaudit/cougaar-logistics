@@ -30,17 +30,19 @@ import java.util.Iterator;
 
 public class ALCommBasedRegistrationPlugin extends SDCommunityBasedRegistrationPlugin {
 
-  protected void handleStatusChange(StatusChangeMessage statusChange) {
-    if(statusChange instanceof ALStatusChangeMessage) {
-      statusChange.setStatus(StatusChangeMessage.COMPLETED);
-      statusChange.setRegistryUpdated(true);
-      publishChange(statusChange);
-    }
-    else {
-      super.handleStatusChange(statusChange);
-    }
+  protected void handleStatusChange() {
+    for (Iterator iterator = statusChangeSubscription.iterator(); iterator.hasNext();) {
+      final StatusChangeMessage statusChange = (StatusChangeMessage) iterator.next();
+
+      synchronized (statusChange) {
+	if(statusChange instanceof ALStatusChangeMessage) {
+	  statusChange.setStatus(StatusChangeMessage.COMPLETED);
+	  statusChange.setRegistryUpdated(true);
+	  publishChange(statusChange);
+	} else {
+	  super.handleStatusChange();
+	}
+      } // end of synchronized
+    } // end of for loop
   }
-
-
-
 }
