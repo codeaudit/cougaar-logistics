@@ -262,14 +262,27 @@ public class TaskSchedulingPolicy {
       else if (name.equals ("CRITERION")) {
         String passAll = atts.getValue ("passall");
         String level = atts.getValue ("level");
+        String earliest = atts.getValue ("earliest");
+        String latest = atts.getValue ("latest");
         if (passAll != null)
           criteria.add (PASSALL);
         else if (level != null)
           criteria.add (new Level2Predicate ("2".equals (level.trim()),
                                              taskUtils));
+        else if ((earliest != null) || (latest != null)) {
+          try {
+            int t1 = (earliest == null) ? 0 : Integer.parseInt (earliest);
+            int t2 = (latest == null) ? 0 : Integer.parseInt (latest);
+            criteria.add (new TimeSpanPredicate
+              (timeUtils.addNDays (now, t1), timeUtils.addNDays (now, t2)));
+          } catch (NumberFormatException e) {
+            throw new SAXException ("In scheduling policy criterion, the " +
+             "values of earliest and latest of a criterion must be integers");
+          }
+        }
         else
           throw new SAXException ("In scheduling policy criterion, " +
-                "currently must have level attribute defined");
+                "need to define at least one expected attribute");
       }
       else if (name.equals ("PHASE")) {
         String start = atts.getValue ("start");
