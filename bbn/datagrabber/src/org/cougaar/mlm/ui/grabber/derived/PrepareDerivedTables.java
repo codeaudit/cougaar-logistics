@@ -147,7 +147,8 @@ public class PrepareDerivedTables extends PrepareDBTables{
 					       DGPSPConstants.COL_BUMPERNO,
 					       DGPSPConstants.COL_AGGREGATE,
 					       COL_CONV_PROTOTYPEID,
-					       COL_INST_PROTOTYPEID};
+					       COL_INST_PROTOTYPEID,
+					       DGPSPConstants.COL_IS_LOW_FIDELITY};
   
   public static final String[] CARGO_LEG_INDICES={DGPSPConstants.COL_OWNER,
 						  COL_CONV_PROTOTYPEID,
@@ -752,7 +753,9 @@ public class PrepareDerivedTables extends PrepareDBTables{
     sb.append(DGPSPConstants.COL_BUMPERNO);    
     sb.append(" VARCHAR(255),");
     sb.append(DGPSPConstants.COL_AGGREGATE);    
-    sb.append(" VARCHAR(255)");
+    sb.append(" VARCHAR(255),");
+    sb.append(DGPSPConstants.COL_IS_LOW_FIDELITY);    
+    sb.append(" VARCHAR(5)");
 
     return sb.toString();
   }
@@ -816,6 +819,7 @@ public class PrepareDerivedTables extends PrepareDBTables{
     
     String prototypeProto = assetProtoTable + "." + DGPSPConstants.COL_PROTOTYPEID;
     String prototypeParentProto = assetProtoTable + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
+    String prototypeLowFi = assetProtoTable + "." + DGPSPConstants.COL_IS_LOW_FIDELITY;
     
     String protoColToUse = (protoParentNull) ? instanceProto : prototypeParentProto;
     String protoTest =     (protoParentNull) ? " is null " : " is not null" ;
@@ -828,7 +832,7 @@ public class PrepareDerivedTables extends PrepareDBTables{
 	      cpConvType + ", " + cLegType + ", " + assetInstanceID + ", " + 
 	      ciConvID + ", " + instanceProto + ", " + cpNomen + ", " + 
 	      ciBumper + ", " + ciAggNumber + ", " + 
-	      cpPrototypeID + ", " + protoColToUse);
+	      cpPrototypeID + ", " + protoColToUse + ", " + prototypeLowFi);
     sb.append(" from ");
     sb.append(locTable + " l1, " + locTable + " l2, " + assetInstanceTable + ", " + 
 	      assetItineraryTable + ", " + conveyedLegTable + ", " + 
