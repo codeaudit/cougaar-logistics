@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataGrabber>
+ <Verbosity>Minor</Verbosity>
+ <ControllerMaxThreads>20</ControllerMaxThreads>
+ <WebServerConfig>
+  <Port>7000</Port>
+  <DocumentRoot>datagrabberContent</DocumentRoot>
+  <Timeout>10000</Timeout>
+  <CommandRefresh>1</CommandRefresh>
+  <ViewRefresh>120</ViewRefresh>
+  <CompletionPSP>
+   <Cluster>TRANSCOM-20</Cluster>
+<!--   <Cluster>89-TKCO-CGO</Cluster> -->
+<!--   <Cluster>GlobalSea</Cluster>-->
+   <URLConnection>
+    <Protocol>http</Protocol>
+    <Host>sb023</Host>
+    <Port>8800</Port>
+    <ClusterName>TRANSCOM-20</ClusterName>
+    <Package></Package>
+    <PspID>completion</PspID>
+    <UseXML>N</UseXML>
+   </URLConnection>
+  </CompletionPSP>
+ </WebServerConfig>
+ <DBConfig>
+<!-- getting values from cougaar.rc -->
+<!-- can override by un-commenting  -->
+  <User>root</User>
+  <Password></Password>
+  <DriverClass>org.gjt.mm.mysql.Driver</DriverClass>
+  <ConnectionURL>jdbc:mysql://localhost/grabber</ConnectionURL>
+  <Syntax>MySQL</Syntax>
+ </DBConfig>
+ <HierarchyPSP Society="Tops">
+  <Cluster>TRANSCOM-20</Cluster>
+<!--  <Cluster>89-TKCO-CGO</Cluster>-->
+  <URLConnection>
+   <Protocol>http</Protocol>
+   <Host>sb023</Host>
+   <Port>8800</Port>
+   <ClusterName>TRANSCOM-20</ClusterName>
+   <Package></Package>
+   <PspID>hierarchy</PspID>
+   <UseXML>N</UseXML>
+   <ThisFileInstead></ThisFileInstead>
+  </URLConnection>
+ </HierarchyPSP>
+ <HierarchyPSP Society="Demand" 
+               VirtualRoot="HigherAuthority" 
+               VirtualRootName="Higher Authority">
+  <Cluster>NCA</Cluster>
+  <URLConnection>
+   <Protocol>http</Protocol>
+   <Host>sb023</Host>
+   <Port>8800</Port>
+   <ClusterName>NCA</ClusterName>
+   <Package></Package>
+   <PspID>hierarchy</PspID>
+   <UseXML>N</UseXML>
+   <ThisFileInstead></ThisFileInstead>
+   <Timeout>120000</Timeout>
+  </URLConnection>
+ </HierarchyPSP>
+ <DataGathererPSP>
+  <URLConnection>
+   <Protocol>http</Protocol>
+   <Host>sb023</Host>
+   <Port>8800</Port>
+   <ClusterName>NCA</ClusterName>
+   <Package></Package>
+   <PspID>datagatherer</PspID>
+   <UseXML>N</UseXML>
+   <ThisFileInstead></ThisFileInstead>
+  </URLConnection>
+  <IncludeTransitLegs>N</IncludeTransitLegs>
+ </DataGathererPSP>
+ <DerivedTablesConfig>
+  <FirstLegTable>false</FirstLegTable>
+  <RollupTable>true</RollupTable>
+  <CargoTypeTable>true</CargoTypeTable>
+  <CargoInstanceTable>false</CargoInstanceTable>
+  <CargoLegTable>true</CargoLegTable>
+  <CarrierTypeTable>true</CarrierTypeTable>
+  <CarrierInstanceTable>true</CarrierInstanceTable>
+ </DerivedTablesConfig>
+</DataGrabber>
+
+
