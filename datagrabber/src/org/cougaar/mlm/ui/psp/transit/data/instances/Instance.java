@@ -24,11 +24,16 @@ import org.cougaar.planning.servlet.data.xml.*;
 
 import org.cougaar.core.util.UID;
 
-import java.io.Writer;
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Writer;
+
 import java.io.Serializable;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.xml.sax.Attributes;
 
@@ -38,7 +43,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class Instance implements XMLable, DeXMLable, Serializable{
+public class Instance implements XMLable, DeXMLable, Externalizable {
 
   //Constants:
   ////////////
@@ -153,6 +158,79 @@ public class Instance implements XMLable, DeXMLable, Serializable{
     throws UnexpectedXMLException{
     throw new UnexpectedXMLException("Unknown object:" + name + ":"+obj);
   }
+
+  /**
+   * Mandatory writeExternal method. 
+   * @serialData 
+   *             
+   */
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(UID);
+    out.writeObject((itemNomen != null) ? itemNomen.intern() : "no_nomenclature");
+    out.writeLong(aggregateNumber);
+
+    out.writeObject(prototypeUID.intern());
+    out.writeObject(ownerID.intern());
+
+    //  out.writeObject(manifestUID);
+    out.writeBoolean(hasManifest);
+
+    out.writeInt ((nomenclatures != null) ? nomenclatures.size() : 0);
+    if (nomenclatures != null) {
+      for (Iterator iter = nomenclatures.iterator(); iter.hasNext(); ) {
+	out.writeObject(iter.next());
+      }
+    }
+
+    out.writeInt ((typeIdentifications != null) ? typeIdentifications.size() : 0);
+    if (typeIdentifications != null) {
+      for (Iterator iter = typeIdentifications.iterator(); iter.hasNext(); ) {
+	out.writeObject(iter.next());
+      }
+    }
+
+    out.writeInt ((weights != null) ? weights.size() : 0);
+    if (weights != null) {
+      for (Iterator iter = weights.iterator(); iter.hasNext(); ) {
+	out.writeObject(iter.next());
+      }
+    }
+  }
+
+    /**
+     * Mandatory readExternal method. Will read in the data that we wrote out
+     * in the writeExternal method. MUST BE IN THE SAME ORDER and type as we
+     * wrote it out. By the time, readExternal is called, an object of this 
+     * class has already been created using the public no-arg constructor,
+     * so this method is used to restore the data to all of the fields of the 
+     * newly created object.
+     */
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    UID = (UID)in.readObject();
+    itemNomen = ((String) in.readObject()).intern();
+    aggregateNumber = in.readLong();
+
+    prototypeUID = ((String) in.readObject()).intern();
+    ownerID      = ((String) in.readObject()).intern();
+
+    //    manifestUID = ((String) in.readObject()).intern();
+
+    int numToRead = in.readInt();
+    if (numToRead > 0) nomenclatures = new ArrayList(numToRead);
+    for (int i = 0; i < numToRead; i++)
+      nomenclatures.add (((String) in.readObject()).intern());
+
+    numToRead = in.readInt();
+    if (numToRead > 0) typeIdentifications = new ArrayList(numToRead);
+    for (int i = 0; i < numToRead; i++)
+      typeIdentifications.add (((String) in.readObject()).intern());
+
+    numToRead = in.readInt();
+    if (numToRead > 0) weights = new ArrayList(numToRead);
+    for (int i = 0; i < numToRead; i++)
+      weights.add (in.readObject()); // should be instances of Mass
+  }
+
   //Inner Classes:
 
   private static final long serialVersionUID = 237849283718923764L;
