@@ -114,9 +114,9 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
 
-  public void initialize(long today, int criticalLevel, int reorderPeriod, int bucketSize, boolean logToCSV, InventoryPlugin parentPlugin) {
-    startTime = today;
-    // Set initial level of inventory for yesterday, this assumes that the inventory
+  public void initialize(long startTime, int criticalLevel, int reorderPeriod, int bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin) {
+    this.startTime = startTime;
+    // Set initial level of inventory from time zero to today.  This assumes that the inventory
     // is created because the existence of demand and the RefillGenerator will be run
     // on this inventory before time has advanced, thus the RefillGenerator will set 
     // the inventory level for today and in general we always assume that levels prior
@@ -124,23 +124,24 @@ public class LogisticsInventoryBG implements PGDelegate {
     // Contract: the inventory for yesterday is always valid because initially it is
     // set by the behavior group of the inventory.
     timeZero = (int)((startTime/MSEC_PER_BUCKET) - 1);
-    inventoryLevelsArray[0] = myPG.getInitialLevel();
+    int now_bucket = convertTimeToBucket(now);
+    Arrays.fill(inventoryLevelsArray, 0, now_bucket, myPG.getInitialLevel());
     logger = parentPlugin.getLoggingService(this);
     if(logToCSV) {
 	csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(),myPG.getOrg(),parentPlugin);
 	csvWriter = new LogisticsInventoryFormatter(csvLogger, parentPlugin);
     }
     taskUtils = parentPlugin.getTaskUtils();
-    logger.debug("Start day: "+TimeUtils.dateString(today)+", time zero "+TimeUtils.dateString(timeZero));
+    logger.debug("Start day: "+TimeUtils.dateString(startTime)+", time zero "+TimeUtils.dateString(timeZero));
     this.criticalLevel = criticalLevel;
     this.reorderPeriod = reorderPeriod;
     this.bucketSize = bucketSize;
     MSEC_PER_BUCKET = bucketSize * TimeUtils.MSEC_PER_DAY;
     bufferedCriticalLevels = 
-      ScheduleUtils.buildSimpleQuantitySchedule(0, today, today+(TimeUtils.MSEC_PER_DAY*10));
+      ScheduleUtils.buildSimpleQuantitySchedule(0, startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
     bufferedInventoryLevels =
       ScheduleUtils.buildSimpleQuantitySchedule(myPG.getInitialLevel(), 
-						today, today+(TimeUtils.MSEC_PER_DAY*10));
+						startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
   }
 
   public void addWithdrawProjection(Task task) {
@@ -430,6 +431,29 @@ public class LogisticsInventoryBG implements PGDelegate {
       }
     }
     return start;
+  }
+
+  private Collection getTasks(int bucket, String verb) {
+    ArrayList task_list = new ArrayList();
+    if (bucket < dueOutList.size()) {
+      Iterator list = ((ArrayList)dueOutList.get(bucket)).iterator();
+      Task task;
+      while (list.hasNext()) {
+	task = (Task)list.next();
+	if (task.getVerb().equals(verb)) {
+	  task_list.add(task);
+	}
+      }
+    }
+    return task_list;
+  }
+	
+  public Collection getWithdrawTasks(int bucket) {
+    return getTasks(bucket, Constants.Verb.WITHDRAW);
+  }
+
+  public Collection getProjectWithdrawTasks(int bucket) {
+    return getTasks(bucket, Constants.Verb.PROJECTWITHDRAW);
   }
 
   public void logAllToCSVFile(long aCycleStamp) {
