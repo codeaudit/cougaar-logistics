@@ -92,8 +92,12 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected ArrayList withdrawList;
   protected ArrayList projSupplyList;
   protected ArrayList supplyList;
+  protected ArrayList targetLevelsList;
+  protected ArrayList bufferedTargetLevelsList;
+  protected ArrayList actualDemandTasksList;
   protected Schedule bufferedCriticalLevels;
   protected Schedule bufferedInventoryLevels;
+  // booleans used for recalculations
   private boolean failures = false;
   private boolean compute_critical_levels = true;
   
@@ -115,6 +119,9 @@ public class LogisticsInventoryBG implements PGDelegate {
     withdrawList = new ArrayList();
     projSupplyList = new ArrayList();
     supplyList = new ArrayList();
+    targetLevelsList = new ArrayList();
+    bufferedTargetLevelsList = new ArrayList();
+    actualDemandTasksList = new ArrayList();
     endOfLevelSixBucket = 1;
   }
 
@@ -169,7 +176,11 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addWithdrawProjection(Task task) {
+    // Adding projections mean changed critical levels and
+    // target levels.  Set boolean to recompute criticla
+    // levels and clear targetLevelsList for CSV logging
     compute_critical_levels = true;
+    targetLevelsList.clear();
     long start = getStartTime(task);
     long end = getEndTime(task);
     int bucket_start = convertTimeToBucket(start);
@@ -449,8 +460,16 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void setTarget(int bucket, double value) {
-    // AF fill this in, not sure what kind of collection you want to
-    // use.  Remember that some buckets should have no value.
+    // The intention of the List is to hold values for the buckets
+    // that have target levels and hold nulls for those buckets that
+    // do not have a target level
+    int len = targetLevelsList.size();
+    if (bucket >= len) {
+      for (int i=len; i < bucket+20; i++) {
+	targetLevelsList.add(null);
+      }
+    }
+    targetLevelsList.set(bucket, new Double(value));
   }
 
   public void updateRefillRequisition(Task task) {
@@ -677,6 +696,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     public ArrayList getSupplyList() { return supplyList;}
     public Schedule  getBufferedCritLevels() { return bufferedCriticalLevels;}
     public Schedule  getBufferedInvLevels() { return bufferedInventoryLevels;}
+  public ArrayList getTargetLevelsList() { return bufferedTargetLevelsList;}
+  public ArrayList getActualDemandTasksList() { return actualDemandTasksList;}
 
   /**
    * Convert a time (long) into a bucket of this inventory that can be
@@ -787,6 +808,13 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     projSupplyList = tmpProjResupply;
     supplyList = (ArrayList)refillRequisitions.clone();
+    bufferedTargetLevelsList = (ArrayList)targetLevelsList.clone();
+
+    ArrayList tmpActualDemandTasksList = new ArrayList();
+    for (int i=0; i < dueOutList.size(); i++) {
+      tmpActualDemandTasksList.add(getActualDemandTasks(i));
+    }
+    actualDemandTasksList = tmpActualDemandTasksList;
 
     QuantityScheduleElement qse;
     Vector list = new Vector();
