@@ -360,6 +360,24 @@ public class InventoryPlugin extends ComponentPlugin
       initialized = true;
     }
 
+    // Bug #13532
+    // Specific rehydration bug - if orgAct subscription is empty then we do not yet have
+    // an arrival or end time.  The very next section of code calls resetLogOPlanForInventories()
+    // which sets touchedChangedProjections to true.  This will cause the refillGenerators to 
+    // rerun and result in an IllegalArgumentException from MutableTimeSpan because of bad dates.
+    // Temporary PAD fix.  This fix could also cause lost demand if a customer got its orgActs
+    // before this agent.  The supplyExpander obviously will not run.
+    if (orgActSubscription.isEmpty()) {
+      if (logger.isWarnEnabled()) {
+        logger.warn(myOrgName+" - Bug #13532 - Execute cycle terminated, missing OrgActs. "+
+                    "Sizeof incoming Projections subscription "+
+                    projectionTaskScheduler.getAddedCollection().size()+
+                    ".  Sizeof incoming Actuals subscription "+
+                    supplyTaskScheduler.getAddedCollection().size());
+      }
+      return;
+    }
+
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
       Collection c = logisticsOPlanSubscription.getCollection();
       for (Iterator i = c.iterator(); i.hasNext();) {
