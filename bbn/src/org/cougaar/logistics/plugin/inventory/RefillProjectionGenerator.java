@@ -77,6 +77,7 @@ import java.util.Vector;
  *  inventories.
  **/
 
+
 public class RefillProjectionGenerator extends InventoryLevelGenerator implements RefillProjectionGeneratorModule {
 
   private transient Organization myOrg = null;
@@ -184,16 +185,26 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       int startBucket = thePG.convertTimeToBucket(startDay, false);
       long now = inventoryPlugin.currentTimeMillis();
       if (now > startDay) {
-	  startDay = now;
+	  //startDay = now;
 	  // OLD - Now that were keeping the old projected demand in the past we 
 	  // only plan from now on.
 	  //	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
-	  startBucket = thePG.convertTimeToBucket(startDay, false) + inventoryPlugin.getOrderShipTime();
+	  //startBucket = thePG.convertTimeToBucket(now, false) + inventoryPlugin.getOrderShipTime();
+
+	  //Bug fix for 13464
+	  startDay = now + ((inventoryPlugin.getOrderShipTime() * thePG.getBucketMillis()));
+	  startBucket = thePG.convertTimeToBucket(startDay, true);	  
       }
 
       // clear all of the projections
       //oldProjections.addAll(thePG.clearRefillProjectionTasks(startDay));
-      long cutoffTime = now + ((inventoryPlugin.getOrderShipTime() + 1) * thePG.getBucketMillis());
+      //long cutoffTime = now + ((inventoryPlugin.getOrderShipTime() + 1) * thePG.getBucketMillis());
+      //Bug fix for 13464
+      long cutoffTime = now + ((inventoryPlugin.getOrderShipTime()) * thePG.getBucketMillis());
+
+      //round up if need be (not exactly on the zero mark)
+      cutoffTime = thePG.convertBucketToTime(thePG.convertTimeToBucket(cutoffTime,true));
+      
 
       oldProjections.addAll(thePG.clearRefillProjectionTasks(cutoffTime));
       //grab the overlapping tasks and change their end time
@@ -214,8 +225,11 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       int currentBucket = startBucket;
 //       int customerDemandBucket = thePG.convertTimeToBucket(getTimeUtils().
 //                                                            addNDays(startDay, daysOnHand), true);
-      int customerDemandBucket = thePG.convertTimeToBucket(startDay, false) + daysOnHand;
- 
+      //int customerDemandBucket = thePG.convertTimeToBucket(startDay, false) + daysOnHand;
+
+      //Bug fix for #13464 
+      int customerDemandBucket = startBucket + daysOnHand;
+
       double projDemand = 0;
       double nextProjDemand = 0;
       int endOfLevelSixBucket = thePG.convertTimeToBucket(endOfLevelSix, false);
@@ -228,6 +242,8 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       //move forward a bucket
       currentBucket = currentBucket + 1;
       customerDemandBucket = customerDemandBucket + 1;
+
+      int refillCtr = 0;
       
       //Begin looping through currentBucket forward until you hit the end of
       // the level six boundary
@@ -511,14 +527,6 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     //TODO - really need last day in theatre from an OrgActivity -
     long end = inventoryPlugin.getOPlanEndTime();
     double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
-
-    // Negative daysBetween will cause bogus results
-    if (end <= bestDay) {
-      if (logger.isWarnEnabled()) {
-	logger.warn("createRefillTimePref has invalid OplanEnd <= bestDay! OplanEnd: " + new Date(end) + ", best: " + new Date(bestDay));
-      }
-    }
-
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
@@ -535,31 +543,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), 
                                                    (alpha + late_score));
 
-    if (start < bestDay) {
-      points.addElement(earliest);
-    } else if (start == bestDay) {
-      if (logger.isInfoEnabled()) {
-	logger.info("createRefillTimePref skipping start == best: " + new Date(start) + ((aspectType == AspectType.START_TIME) ? ". Case of Start Pref==startTime." : ". AspectType=" + aspectType));
-      }
-    } else {
-      if (logger.isWarnEnabled()) {
-	logger.warn("createRefillTimePref skipping start: start > bestDay! Best: " + new Date(bestDay) + ", Start: " + new Date(start) + ", AspectType: " + aspectType);
-      }
-    }
+    points.addElement(earliest);
     points.addElement(best);
     points.addElement(first_late);
-
-    // Only add the end point if it is not earlier and therefore invalid
-    // Note that I'm allowing end==late though that's probably usually
-    // not what we intended
-    if (end >= (bestDay + thePG.getBucketMillis())) {
-      points.addElement(latest);
-    } else {
-      if (logger.isWarnEnabled()) {
-	logger.warn("createRefillTimePref skipping end < best+bucketSize. End: " + new Date(end) + ", best+bucket: " + new Date(bestDay + thePG.getBucketMillis()) + ". AspectType: " + aspectType);
-      }
-    }
-
+    points.addElement(latest);
     ScoringFunction timeSF = ScoringFunction.
       createPiecewiseLinearScoringFunction(points.elements());
     return inventoryPlugin.getPlanningFactory().
