@@ -65,6 +65,7 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
   public static final int COM_LISTLOG=5;
   public static final int COM_DELLOG=6;
   public static final int COM_HALTRUN=7;
+  public static final int COM_ANNORUN=8;
 
   private static String[]COMMANDS={"unknown",
 				   "newrun",
@@ -73,11 +74,13 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
 				   "listwork",
 				   "listlog",
 				   "dellog",
-				   "haltrun"};
+				   "haltrun",
+				   "annorun"};
 
   //Variables:
   ////////////
 
+  protected int maxAnnotationLength=64;
   protected int run=-1;
   protected Controller controller;
 
@@ -116,6 +119,8 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     switch(command){
     case COM_NEWRUN:
       sendNewRun(h,s);break;
+    case COM_ANNORUN:
+      sendNewAnnoRun(h,s);break;
     case COM_LISTRUNS:
       sendListRuns(h,s);break;
     case COM_DELRUN:
@@ -153,8 +158,26 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
   //Commands:
 
   protected void sendNewRun(HTMLizer h, Statement s) throws IOException{
-    controller.startNewRun(new TopsRun());
+    controller.startNewRun(new TopsRun() ,"");
     header(h,"New run started");
+    footer(h);
+  }
+ 
+  /** 
+    * User inputs a run annotation to give the context the run was done in -
+    * what stage, what jars, etc.
+    * This annotation gets stored as a column in the run table, so it will be visible
+    * in the run list.
+    */ 
+  protected void sendNewAnnoRun(HTMLizer h, Statement s) throws IOException{
+    String annotation = getStringQueryWithPrefix("annotation");
+    if (annotation.startsWith("="))
+	annotation = annotation.substring(1);
+    annotation = URLDecoder.decode(annotation, "UTF-8");
+    String replaced =annotation.replace('\"', '\''); // don't allow quotes that the sql will use
+
+    controller.startNewRun(new TopsRun(),replaced);
+    header(h,"New run started, annotation <b>\"" + replaced + "\"</b>");
     footer(h);
   }
 
@@ -178,6 +201,15 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
 	       "Show society completion status"));
     h.p(h.aStr(getURL(COM_NEWRUN),
 	       "Start a new run"));
+    
+	// make form for inputing annotation and kicking off run
+    
+    h.p("<form action=\"" + getURL(COM_ANNORUN) + "\" method=\"get\" name=\"myform\">" +
+   	"<input type=\"text\" name=\"annotation\" align=\"top\" maxlength=\""+maxAnnotationLength+"\""+
+	" size=\""+(maxAnnotationLength+10)+"\"><br>"+
+   	"<input type=\"submit\" value=\"Start New Run\" align=\"middle\">"+
+   	"</form>");
+ 
     h.eCenter();
     footer(h);
   }
@@ -185,7 +217,8 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
   protected static String runTableSQLBase = "SELECT "+Controller.COL_RUNID+","+
       Controller.COL_STARTTIME+","+
       Controller.COL_ENDTIME+","+
-      Controller.COL_CONDITION+" FROM ";
+      Controller.COL_CONDITION+","+
+      Controller.COL_ANNOTATION+" FROM ";
 
   protected void printRunTable(HTMLizer h, Statement s, boolean showSpace)
     throws IOException,SQLException{
@@ -197,6 +230,8 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     String sql = runTableSQLBase +
       controller.getRunTableName() +
       " ORDER BY "+Controller.COL_RUNID;
+
+    //System.err.println ("sql was <" + sql + ">");
 
     Map runToOwners = new HashMap ();
     Map runToAssets = new HashMap ();
@@ -216,6 +251,7 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     h.tHead("Assets");
     h.tHead("Status");
     h.tHead("Action");
+    h.tHead("Annotation");
     h.eRow();
 
     h.openBuffer();
@@ -254,6 +290,8 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
 		      h.aStr(getURLRun(COM_DELRUN,runID),
 			     "Delete"));
       }
+      // Annotation string - 
+      h.tDataBuffer(rs.getString(5));
     }
 
     h.closeBuffer();
