@@ -75,6 +75,12 @@ public class InventoryXMLParser
 		tagStack.push(currentString);
 		String name = getTagName(currentString);
 		if(name.equals(LogisticsInventoryFormatter.INVENTORY_DUMP_TAG)) {
+		    ctr++;
+		}
+		else if(name.equals(LogisticsInventoryFormatter.INVENTORY_HEADER_PERSON_READABLE_TAG)) {
+		    parseHumanReadable();
+		}
+		else if(name.equals(LogisticsInventoryFormatter.INVENTORY_HEADER_GUI_TAG)) {
 		    parseHeader();
 		}
 		else {
@@ -139,7 +145,7 @@ public class InventoryXMLParser
 	cDay = (new Long(cDayString)).longValue();
       }      
 
-      inventory = new InventoryData(org,asset,unit,cDay);
+      inventory = new InventoryData(asset,org,unit,cDay);
       if(logger.isDebugEnabled()) {
 	  logger.debug("Parsed header w/org=|" + org +
 		       "| item=|" + asset + 
@@ -181,6 +187,17 @@ public class InventoryXMLParser
 	}
 
     }
+
+    private void parseHumanReadable() {
+	//toss out this stuff
+	String name = getTagName(currentString);
+	logger.debug("Parsing: " + name);
+	String humanReadableEndTag = "</" + LogisticsInventoryFormatter.INVENTORY_HEADER_PERSON_READABLE_TAG + ">";
+	while(!(currentString.equals(humanReadableEndTag))) {
+	    currentString = lines[++ctr];
+	}
+    }
+	    
 	
     private InventoryScheduleElement parseString(String elementString,
 						 int    type){
