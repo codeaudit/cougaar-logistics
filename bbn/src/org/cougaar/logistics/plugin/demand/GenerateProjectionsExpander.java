@@ -99,6 +99,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg) {
     Collection consumedItems = getConsumed(pg);
 
+    ArrayList assetList = new ArrayList(1);
     for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
       Asset asset = (Asset) iterator.next();
       Collection publishedTasks =  dfPlugin.projectSupplySet(gpTask, asset);
@@ -108,8 +109,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         logger.error("No project supply tasks were found for parent task " + gpTask.toString());
         return;
       }
-
-      Collection newTasks = buildTaskList(pg, consumedItems, schedule, gpTask, consumer);
+      assetList.clear();
+      assetList.add(asset);
+      Collection newTasks = buildTaskList(pg, assetList, schedule, gpTask, consumer);
       Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
       Schedule newTasksSched =  newObjectSchedule(newTasks);
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
@@ -555,8 +557,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         published_task = (Task)ose.getObject();
         ((NewSchedule)published_schedule).removeScheduleElement(ose);
 
-        logger.debug("replace "+dfPlugin.getTaskUtils().taskDesc(published_task)+
-                     " with "+dfPlugin.getTaskUtils().taskDesc(new_task));
+//         logger.debug("replace "+dfPlugin.getTaskUtils().taskDesc(published_task)+
+//                      " with "+dfPlugin.getTaskUtils().taskDesc(new_task));
         published_task = changeTask(published_task, new_task);
         if (published_task != null) {
           logger.debug(printProjection("replace with", published_task));
