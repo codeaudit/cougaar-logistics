@@ -38,19 +38,12 @@ import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
+import org.cougaar.logistics.plugin.utils.ConsumerPredicate;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.plan.Expansion;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.NewWorkflow;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Role;
-import org.cougaar.planning.ldm.plan.Schedule;
-import org.cougaar.planning.ldm.plan.ScheduleElementImpl;
-import org.cougaar.planning.ldm.plan.ScheduleImpl;
-import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.util.Filters;
 import org.cougaar.util.TimeSpan;
@@ -59,13 +52,7 @@ import org.cougaar.util.UnaryPredicate;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /** The DemandForecastPlugin is the Glue of demand generation.
  *  It handles all blackboard services for its modules,
@@ -250,9 +237,9 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     if (myOrganization == null) {
       myOrganization = getMyOrganization(selfOrganizations.elements());
-      if(myOrganization != null) {
+      if (myOrganization != null) {
         projectSupplySubscription = (IncrementalSubscription)
-        blackboard.subscribe(new ProjectSupplyPredicate(supplyType, getOrgName(), taskUtils));
+            blackboard.subscribe(new ProjectSupplyPredicate(supplyType, getOrgName(), taskUtils));
       }
     }
 
@@ -275,22 +262,27 @@ public class DemandForecastPlugin extends ComponentPlugin
     //and the generateprojections expander.  Note the added case is only used when
     // the detreqs task has already been expanded. If the detreqs has not been expanded
     //and we get an added orgAct we process the detreq above.
-    if ((!orgActivities.getChangedCollection().isEmpty()) ||
-        (!orgActivities.getRemovedCollection().isEmpty()) ||
-        ((!orgActivities.getAddedCollection().isEmpty()) && processedDetReq)) {
-      //processOrgActChanges((Collection)subToPGsHash.get(orgActivities));
-      Collection PGs = (Collection)subToPGsHash.get(orgActivities);
-      if (PGs == null || PGs.isEmpty()) {
-        if (logger.isDebugEnabled()) {
-          logger.debug("ORG ACT change with no PGs to notfiy! subToPGsHash is: " +
-                             subToPGsHash);
-        }
-      } else {
-        System.out.println("ORG ACT got PGs to notfiy! subToPGsHash is: " +
-                           subToPGsHash);
-        processOrgActChanges(PGs);
-      }
-    }
+    /**
+     * TODO: MWD Remove org activity changed code / subsumed by hash subscription changed code below
+     *
+     if ((!orgActivities.getChangedCollection().isEmpty()) ||
+     (!orgActivities.getRemovedCollection().isEmpty()) ||
+     ((!orgActivities.getAddedCollection().isEmpty()) && processedDetReq)) {
+     //processOrgActChanges((Collection)subToPGsHash.get(orgActivities));
+     Collection PGs = (Collection)subToPGsHash.get(orgActivities);
+     if (PGs == null || PGs.isEmpty()) {
+     if (logger.isDebugEnabled()) {
+     logger.debug("ORG ACT change with no PGs to notfiy! subToPGsHash is: " +
+     subToPGsHash);
+     }
+     } else {
+     System.out.println("ORG ACT got PGs to notfiy! subToPGsHash is: " +
+     subToPGsHash);
+     processSubscriptionChangedPG(PGs);
+     }
+     }
+     **/
+
 
     // get the Logistics OPlan (our homegrown version with specific dates).
     if ((logOPlan == null) || logisticsOPlanSubscription.hasChanged()) {
@@ -299,6 +291,14 @@ public class DemandForecastPlugin extends ComponentPlugin
         //we only expect to have one
         logOPlan = (LogisticsOPlan) opIt.next();
       }
+    }
+
+    //if the determine requirements task has already fired we're this far down
+    //in the execute we should check the hash table subscriptions and see if
+    //we have to regenerate some of the expansions due to subscription changes.
+    if (processedDetReq &&
+        (logOPlan != null)) {
+      checkAndProcessHashSubscriptions();
     }
 
     //Update the Allocation results on new or changed GP PlanElements
@@ -347,7 +347,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
   protected void setupSubscriptions() {
     if (blackboard.didRehydrate()) {
-      rehydrate=true;
+      rehydrate = true;
     }
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
 
@@ -365,12 +365,13 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     if (supplyClassPG != null) {
       genProjSubscription = (IncrementalSubscription) blackboard.subscribe(new GenProjPredicate(supplyType, taskUtils));
+
       assetsWithPGSubscription = (IncrementalSubscription)
-        getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
+          getBlackboardService().subscribe(new AssetOfTypePredicate(supplyClassPG));
     }
 
     genProjPESubscription = (IncrementalSubscription)
-      blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
+        blackboard.subscribe(new GenProjPEPredicate(supplyType, taskUtils));
 
     logisticsOPlanSubscription = (IncrementalSubscription) blackboard.subscribe(new LogisticsOPlanPredicate());
   }
@@ -424,7 +425,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     public boolean execute(Object o) {
       if (o instanceof PlanElement) {
-        Task t = ((PlanElement)o).getTask();
+        Task t = ((PlanElement) o).getTask();
         if (t.getVerb().equals(Constants.Verb.DETERMINEREQUIREMENTS)) {
           return taskUtils.isTaskOfType(t, supplyType);
         } // if
@@ -437,6 +438,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private static class GenProjPredicate implements UnaryPredicate {
     private String supplyType;
     private TaskUtils taskUtils;
+
     public GenProjPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
@@ -457,6 +459,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   private static class GenProjPEPredicate implements UnaryPredicate {
     private String supplyType;
     private TaskUtils taskUtils;
+
     public GenProjPEPredicate(String type, TaskUtils utils) {
       this.supplyType = type;
       this.taskUtils = utils;
@@ -464,7 +467,7 @@ public class DemandForecastPlugin extends ComponentPlugin
 
     public boolean execute(Object o) {
       if (o instanceof PlanElement) {
-        Task t = ((PlanElement)o).getTask();
+        Task t = ((PlanElement) o).getTask();
         if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
           return taskUtils.isTaskOfTypeString(t, supplyType);
         }
@@ -478,7 +481,8 @@ public class DemandForecastPlugin extends ComponentPlugin
     private String supplyType;
     private String orgName;
     private TaskUtils taskUtils;
-    public ProjectSupplyPredicate(String type, String myOrgName,TaskUtils utils) {
+
+    public ProjectSupplyPredicate(String type, String myOrgName, TaskUtils utils) {
       this.supplyType = type;
       this.orgName = myOrgName;
       this.taskUtils = utils;
@@ -488,8 +492,8 @@ public class DemandForecastPlugin extends ComponentPlugin
       if (o instanceof Task) {
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-          if(taskUtils.isTaskOfTypeString(t, supplyType)) {
-            return (taskUtils.isMyDemandForecastProjection(t,orgName));
+          if (taskUtils.isTaskOfTypeString(t, supplyType)) {
+            return (taskUtils.isMyDemandForecastProjection(t, orgName));
           }
         }
       }
@@ -521,7 +525,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   } // DetReqPredicate
 
   /** Selects the LogisticsOPlan objects **/
-  private static class LogisticsOPlanPredicate implements UnaryPredicate{
+  private static class LogisticsOPlanPredicate implements UnaryPredicate {
     public boolean execute(Object o) {
       return o instanceof LogisticsOPlan;
     }
@@ -587,7 +591,7 @@ public class DemandForecastPlugin extends ComponentPlugin
         && logger.isErrorEnabled())) {
       logger.error(errorString);
     } else {
-      if(supplyClassPGStr.indexOf(".") == -1){
+      if (supplyClassPGStr.indexOf(".") == -1) {
         supplyClassPGStr = "org.cougaar.logistics.ldm.asset." + supplyClassPGStr;
       }
       try {
@@ -640,9 +644,61 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
   }
 
+  /**
+   * This method goes through the subscriptions hash table and sees if any
+   * of the subscriptions have changed.   For each subscription thats changed
+   * its PGs are collected in a set (so it doesn't exist more than once).   The
+   * resultant PG collection are set off to be processed (ie get the MEI and
+   * GP task and re expand ).
+   */
+
+  protected void checkAndProcessHashSubscriptions() {
+    HashSet PGs = new HashSet();
+    Iterator subIt = predToSubHash.entrySet().iterator();
+    while (subIt.hasNext()) {
+      Map.Entry entry = (Map.Entry) subIt.next();
+      UnaryPredicate pred = (UnaryPredicate) entry.getKey();
+      IncrementalSubscription sub = (IncrementalSubscription) entry.getValue();
+
+      //TODO: MWD ConsumerPredicate problem debugging below must go away (w/problem)
+      if ((!sub.getChangedCollection().isEmpty()) ||
+          (!sub.getRemovedCollection().isEmpty()) ||
+          (!sub.getAddedCollection().isEmpty())) {
+
+        System.out.println("At " + getOrgName() + "-" + getSupplyType() +
+                           "-Subscription w/predicate: " + pred + " has changed: Added: "
+                           + sub.getAddedCollection().size() + " Removed: " +
+                           +sub.getRemovedCollection().size() + " Changed: " +
+                           +sub.getChangedCollection().size());
+        if (pred instanceof ConsumerPredicate) {
+          if ((getOrgName().equals("1-35-ARBN") &&
+              sub.getAddedCollection().size() > 0)) {
+            Asset asset = (Asset) sub.getCollection().iterator().next();
+            if (asset instanceof AggregateAsset) {
+              asset = ((AggregateAsset) asset).getAsset();
+            }
+            String nomen = asset.getTypeIdentificationPG().getNomenclature();
+            System.out.println("-!!-" + getOrgName() + "-" + getSupplyType() + "=First asset added is : " + asset + ":" + nomen);
+          }
+        } else {
+          Collection subPGs = (Collection) subToPGsHash.get(sub);
+          PGs.addAll(subPGs);
+        }
+      }
+    }
+    if (PGs.isEmpty()) {
+      if (logger.isDebugEnabled()) {
+        logger.debug("No subscription change,no PGs to notfiy! subToPGsHash is: " + subToPGsHash);
+      }
+    } else {
+      System.out.println("!!!Subscriptions changed got PGs to notfiy! Collection of PGs are " + PGs);
+      processSubscriptionChangedPG(PGs);
+    }
+  }
+
   //Invoke the BG and the genProjExpander if there are changes
   //in the OrgActivities or Removals of OrgActivities.
-  private void processOrgActChanges(Collection PGs) {
+  private void processSubscriptionChangedPG(Collection PGs) {
     Iterator pgIt = PGs.iterator();
     while (pgIt.hasNext()) {
       //ConsumerPG pg = (ConsumerPG) pgIt.next();
@@ -655,14 +711,18 @@ public class DemandForecastPlugin extends ComponentPlugin
       Iterator gpIt = genProjSubscription.iterator();
       while (gpIt.hasNext()) {
         Task gp = (Task) gpIt.next();
-        Asset directObj = gp.getDirectObject();
-        if (directObj instanceof AggregateAsset) {
-          directObj = ((AggregateAsset)directObj).getAsset();
-        }
-        if (directObj.equals(asset)) {
-          System.out.println("******* invoking BG and GPE with changed OrgACT **********");
-          invokeGenProjectionsExp(pg, gp);
-          break;
+        PlanElement pe = gp.getPlanElement();
+        if ((pe == null) ||
+            (!(pe instanceof Disposition))) {
+          Asset directObj = gp.getDirectObject();
+          if (directObj instanceof AggregateAsset) {
+            directObj = ((AggregateAsset) directObj).getAsset();
+          }
+          if (directObj.equals(asset)) {
+            System.out.println("******* invoking BG and GPE with changed Subscriptions **********");
+            invokeGenProjectionsExp(pg, gp);
+            break;
+          }
         }
       }
     }
@@ -722,6 +782,16 @@ public class DemandForecastPlugin extends ComponentPlugin
       IncrementalSubscription sub = (IncrementalSubscription) predToSubHash.get(pred);
       if (sub == null) {
         sub = (IncrementalSubscription) blackboard.subscribe(pred);
+
+        //MWD Defuse the subscriptions Additions collection.  A new PG with a new subscription
+        //comes in only when a new GenerateProjections task comes in with a new MEI - this
+        //is handled by the PG and GenerateProjectionExpander in the same section of code in
+        //the execute() method when new GP tasks come in.   We don't want to expand the
+        //new task a second time when the checkAndProcessHashSubscriptions() kicks off later
+        //in the execute run.  So we disarm the added collection here when it is first added
+        //to the black board.
+        sub.getAddedCollection().clear();
+
         predToSubHash.put(pred, sub);
       }
       Collection PGs = (Collection) subToPGsHash.get(sub);
@@ -903,7 +973,7 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   public Class getSupplyClassPG() {
-      return supplyClassPG;
+    return supplyClassPG;
   }
 
   // get the first day in theater
@@ -1013,8 +1083,6 @@ public class DemandForecastPlugin extends ComponentPlugin
       }
     });
   }
-
-
 
 
   /**
