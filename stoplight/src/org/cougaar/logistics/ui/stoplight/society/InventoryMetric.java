@@ -54,6 +54,12 @@ public class InventoryMetric extends Enum {
     return new LinkedList(validValues);
   }
 
+  protected String getStringObject(String enumName)
+  {
+    Enum enum = (Enum) findEnum(validValues, enumName);
+    return enum == null ? null : enum.toString();
+  }
+
   public static InventoryMetric fromString (String enumName) {
     return (InventoryMetric)findEnum(validValues, enumName);
   }
