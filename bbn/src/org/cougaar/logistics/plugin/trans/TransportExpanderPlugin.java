@@ -39,10 +39,13 @@ import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.asset.ContainPG;
 import org.cougaar.glm.ldm.asset.ForUnitPG;
 import org.cougaar.glm.ldm.asset.GLMAsset;
+import org.cougaar.glm.ldm.asset.MovabilityPG;
 import org.cougaar.glm.ldm.asset.NewForUnitPG;
+import org.cougaar.glm.ldm.asset.NewMovabilityPG;
 import org.cougaar.glm.ldm.asset.NewPhysicalPG;
 import org.cougaar.glm.ldm.asset.PhysicalPG;
 import org.cougaar.glm.ldm.asset.PropertyGroupFactory;
+
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
 import org.cougaar.logistics.plugin.trans.GLMTransConst;
@@ -440,13 +443,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
       String itemID = getUniqueID (itemProto);
 
       Asset truckSizedAsset = 
-	assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
-
-      LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
-	itemProto.resolvePG (LowFidelityAssetPG.class);
-      attachPG(truckSizedAsset, currentLowFiAssetPG); // now subobject has pointer back to parent
-
-      adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, maxOnTruck);
+	getTruckSizedAsset (itemProto, originalPhysicalPG, itemID, maxOnTruck);
 
       if (isDebugEnabled()) {
 	debug (".expandLowFiAsset d.o. "+ itemProto.getUID () + " after adjust dimensions :" + 
@@ -471,14 +468,7 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
       if (mustExpand) {
 	String itemID = getUniqueID (itemProto);
 
-	truckSizedAsset = 
-	  assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
-
-	LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
-	  itemProto.resolvePG (LowFidelityAssetPG.class);
-	attachPG(truckSizedAsset, currentLowFiAssetPG); // now subobject has pointer back to parent
-
-	adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, totalContrib);
+	truckSizedAsset = getTruckSizedAsset (itemProto, originalPhysicalPG, itemID, totalContrib);
       }
       else
 	truckSizedAsset = task.getDirectObject();
@@ -493,6 +483,23 @@ public class TransportExpanderPlugin extends UTILExpanderPluginAdapter implement
 	     " m " + itemProto.getPhysicalPG().getMass   ().getTons() + " tons, " +
 	     " v " + itemProto.getPhysicalPG().getVolume ().getCubicFeet() + " ft^3");
     }
+  }
+
+  protected Asset getTruckSizedAsset (Asset itemProto, PhysicalPG originalPhysicalPG, String itemID, double contrib) {
+    Asset truckSizedAsset = 
+      assetHelper.createInstance (ldmProtoCache, GLMTransConst.LOW_FIDELITY_PROTOTYPE, itemID);
+    
+    LowFidelityAssetPG currentLowFiAssetPG = (LowFidelityAssetPG)
+      itemProto.resolvePG (LowFidelityAssetPG.class);
+    truckSizedAsset.addOtherPropertyGroup(currentLowFiAssetPG);// now subobject has pointer back to parent
+
+    NewMovabilityPG movabilityPG = (NewMovabilityPG)ldmf.createPropertyGroup(MovabilityPG.class);
+    ((GLMAsset)truckSizedAsset).setMovabilityPG(movabilityPG);
+    movabilityPG.setCargoCategoryCode(currentLowFiAssetPG.getCCCDimsAsArray()[0].getCargoCatCode());
+
+    adjustDimensions ((GLMAsset)truckSizedAsset, originalPhysicalPG, contrib);
+
+    return truckSizedAsset;
   }
 
   void test () {
