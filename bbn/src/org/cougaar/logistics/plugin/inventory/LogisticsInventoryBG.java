@@ -565,6 +565,11 @@ public class LogisticsInventoryBG implements PGDelegate {
    **/
   public long convertBucketToTime(int bucket) {
     return (bucket + timeZero) * MSEC_PER_BUCKET;
+  } 
+
+  /** @return long The amount of ms the bucket spans **/
+  public long getBucketMillis() {
+    return MSEC_PER_BUCKET;
   }
 
   private long getStartTime(Task task) {

@@ -64,6 +64,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	void rebuildCustomerHash(); \
 	long convertBucketToTime(int bucket); \
 	int  convertTimeToBucket(long time); \
+	long getBucketMillis(); \
 	long getStartTime(); \
   	void logAllToCSVFile(long aCycleStamp);\
 	int getCriticalLevel(); \
