@@ -186,42 +186,68 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
       blackboard.query (new UnaryPredicate() { 
 	  public boolean execute (Object obj) { return (obj instanceof OperatingMode); }
 	});
+    
+    if (modes.size () != 2) {
+      if (isInfoEnabled())
+	info (getName() + " expecting 0 or two operating modes on rehydation - got " + modes.size () + 
+	     " instead : " + modes);
+    }
+    
+    // Find the BBoard value for the OpModes, if we don't already have one
+    for (Iterator iter = modes.iterator(); iter.hasNext(); ) {
+      OperatingMode mode = (OperatingMode) iter.next();
+      if (mode.getName().equals (LEVEL_2_TIME_HORIZON) && (level2Horizon == null || level2Horizon.getValue() == null)) {
+	if (isInfoEnabled())
+	  info(getName() + " using BBoard value for level2Horizon.");
+	level2Horizon = mode;
+      } else if (mode.getName().equals (LEVEL_6_TIME_HORIZON) && (level6Horizon == null || level6Horizon.getValue() == null)) {
+	level6Horizon = mode;
+	if (isInfoEnabled())
+	  info(getName() + " using BBoard value for level6Horizon.");
+      }
+    }
 
-    if (modes.isEmpty()) {
+    // If we now have an OpMode, but it's value is null, it's junk - discard
+    if (level2Horizon != null && level2Horizon.getValue() == null) {
+      error (getName() + " had null value for level2Horizon: " + level2Horizon);
+      level2Horizon = null;
+    }
+
+    if (level6Horizon != null && level6Horizon.getValue() == null) {
+      error (getName() + " had null value for level6Horizon: " + level6Horizon);
+      level6Horizon = null;
+    }
+
+    // If after the BBoard retrieval and error check, we have no OpMode,
+    // then create and publishAdd it
+    if (level2Horizon == null) {
       OMCRange level2Range = new IntRange (LEVEL_2_MIN.intValue(), LEVEL_2_MAX.intValue());
       OMCRangeList rangeList = new OMCRangeList (level2Range);
       publishAdd (level2Horizon = new OperatingModeImpl (LEVEL_2_TIME_HORIZON, rangeList, 
 							 LEVEL_2_TIME_HORIZON_DEFAULT));
-
-      OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
-      rangeList = new OMCRangeList (level6Range);
-      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
-							 LEVEL_6_TIME_HORIZON_DEFAULT));
-
       if (isInfoEnabled())
-	info (getAgentIdentifier() + " created operating modes - " + 
-	      "level 2 time horizon is " + level2Horizon + 
-	      " and level 6 is " + level6Horizon);
-
+	info (getAgentIdentifier() + " created operating mode - " + 
+	      "level 2 time horizon is " + level2Horizon);
     } else {
       if (isInfoEnabled()) {
-	info (getName() + " skipping creating of operating modes since got them from blackboard.");
+	info (getName() + " skipping creating of level2Horizon operating mode since got it from blackboard.");
       }
-
-      if (modes.size () != 2) {
-	error (getName() + " expecting two operating modes on rehydation - got " + modes.size () + 
-	       " instead : " + modes);
-      }
-
-      for (Iterator iter = modes.iterator(); iter.hasNext(); ) {
-	OperatingMode mode = (OperatingMode) iter.next();
-	if (mode.getName().equals (LEVEL_2_TIME_HORIZON))
-	  level2Horizon = mode;
-	else
-	  level6Horizon = mode;
-      }
-
     }
+
+    if (level6Horizon == null) {
+      OMCRange level6Range = new IntRange (LEVEL_6_MIN.intValue(), LEVEL_6_MAX.intValue());
+      OMCRangeList rangeList = new OMCRangeList (level6Range);
+      publishAdd (level6Horizon = new OperatingModeImpl (LEVEL_6_TIME_HORIZON, rangeList,
+							 LEVEL_6_TIME_HORIZON_DEFAULT));
+      if (isInfoEnabled())
+	info (getAgentIdentifier() + " created operating mode - " + 
+	      " level 6 horizon is " + level6Horizon);
+    } else {
+      if (isInfoEnabled()) {
+	info (getName() + " skipping creating of level6Horizon operating mode since got it from blackboard.");
+      }
+    }
+
   }
 
   protected static class IntRange extends OMCRange {
@@ -490,6 +516,12 @@ public class GLMTransOneToManyExpanderPlugin extends UTILExpanderPluginAdapter i
   protected int getMode (Task parentTask) {
     long bestTime = prefHelper.getBestDate(parentTask).getTime();
     long currentTime = getAlarmService().currentTimeMillis();
+
+    // Double check -- if we have no good OpModes here, then get them
+    if (level6Horizon == null || level2Horizon == null || level6Horizon.getValue() == null || level2Horizon.getValue() == null) {
+      // create them
+      setupOperatingModes();
+    }
     long level6Day = ((Integer)level6Horizon.getValue()).longValue();
     long level2Day = ((Integer)level2Horizon.getValue()).longValue();
     if (bestTime < currentTime + level6Day*MILLIS_PER_DAY) {
