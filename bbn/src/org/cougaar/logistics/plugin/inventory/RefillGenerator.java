@@ -428,8 +428,11 @@ public class RefillGenerator extends InventoryLevelGenerator {
       reorderPeriodEndBucket = currentBucket + reorderPeriod;
     }
     //at the end fill in the last inv level based on the last target level
-    double lastlevel = (thePG.getCriticalLevel(startReorderBucket) + startTarget) / 2;
-    thePG.setLevel(startReorderBucket, lastlevel);
+    // but make sure we actually did stuff in the while.
+    if (startReorderBucket != -1 ) {
+      double lastlevel = (thePG.getCriticalLevel(startReorderBucket) + startTarget) / 2;
+      thePG.setLevel(startReorderBucket, lastlevel);
+    }
   }
 
 }
