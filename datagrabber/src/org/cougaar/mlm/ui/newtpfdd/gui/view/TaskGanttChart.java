@@ -25,8 +25,10 @@ import org.cougaar.mlm.ui.newtpfdd.gui.component.RowLabel;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.LegNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.node.Node;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.node.DBUIDNode;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetDetailRequest;
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetAssetDetailRequest;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.details.CarrierDetailRequest;
 
 import org.cougaar.mlm.ui.grabber.connect.DGPSPConstants;
 
@@ -176,7 +178,7 @@ public class TaskGanttChart extends GanttChart
     Vector waystations = new Vector ();
 
     // Create legs
-    Node assetInstanceNode = (Node) o;
+    DBUIDNode assetInstanceNode = (DBUIDNode) o;
     LozengeRow lozrow = new LozengeRow(this, assetInstanceNode);
     Vector taskleaves = new Vector();
     //	Node t = null, oldt = null;
@@ -486,7 +488,7 @@ public class TaskGanttChart extends GanttChart
     loz.setLozengeVirtualXSize(2 * getEndLozengeSize());
     loz.setLozengeDescription(node.getLongName());
     loz.addLozengeLabel(lozLabel);
-    LozengeRow lozRow = new LozengeRow(this, (Node)o);
+    LozengeRow lozRow = new LozengeRow(this, (DBUIDNode)o);
     lozRow.setVirtualXLocation(0);
     lozRow.setVirtualXSize(2 * getEndLozengeSize());
     lozRow.addLozenge(loz);
@@ -513,8 +515,14 @@ public class TaskGanttChart extends GanttChart
   }
 
   public void doPopup(LozengeRow row) {
-    String dbuid=taskModel.getDBUID(row.getCargoInstanceNode());
-    AssetDetailRequest adr = new AssetAssetDetailRequest(dbuid);
-    ((PopupDialogSupport) taskModel.getDBState()).showAssetDetailView (adr);
+    DBUIDNode curNode = row.getCargoInstanceNode();
+    String dbuid=taskModel.getDBUID(curNode);
+    if(curNode.getType()==UIDGenerator.ASSET_INSTANCE){
+      AssetDetailRequest adr = new AssetAssetDetailRequest(dbuid);
+      ((PopupDialogSupport) taskModel.getDBState()).showAssetDetailView (adr);
+    }else if(curNode.getType()==UIDGenerator.CARRIER_INSTANCE){
+      CarrierDetailRequest cdr=new CarrierDetailRequest(dbuid);
+      ((PopupDialogSupport) taskModel.getDBState()).showCarrierDetailView(cdr);
+    }
   }
 }

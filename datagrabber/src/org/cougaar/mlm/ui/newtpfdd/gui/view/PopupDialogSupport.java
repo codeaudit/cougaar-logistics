@@ -21,8 +21,9 @@
 package org.cougaar.mlm.ui.newtpfdd.gui.view;
 
 import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetDetailRequest;
-//import org.cougaar.mlm.ui.newtpfdd.gui.view.details.AssetDetailView;
+import org.cougaar.mlm.ui.newtpfdd.gui.view.details.CarrierDetailRequest;
 
 public interface PopupDialogSupport {
   void showAssetDetailView(AssetDetailRequest adr);
+  void showCarrierDetailView(CarrierDetailRequest cdr);
 }
