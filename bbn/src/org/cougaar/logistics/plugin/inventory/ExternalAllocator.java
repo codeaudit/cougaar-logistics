@@ -33,7 +33,7 @@ import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.plan.Allocation;
 import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.PlanElement;
-
+import org.cougaar.glm.ldm.asset.Inventory;
 
 import org.cougaar.core.plugin.util.AllocationResultHelper;
 
@@ -192,6 +192,17 @@ public class ExternalAllocator extends InventoryModule {
     }
 
   public void updateAllocationResult(IncrementalSubscription sub) {
+    // Set up the affected inventories for the AllocationAssessor
+    Task refill;
+    Asset asset;
+    Inventory inventory;
+    Iterator refill_list = sub.getAddedCollection().iterator();
+    while (refill_list.hasNext()) {
+      refill = (Task)refill_list.next();
+      asset = (Asset)refill.getDirectObject();
+      inventory = inventoryPlugin.findOrMakeInventory(asset);
+      inventoryPlugin.touchInventory(inventory);
+    }
     PluginHelper.updateAllocationResult(sub);
   }
 }
