@@ -141,16 +141,16 @@ while(<>) {
 
 #Start parsing Baseline file
 	
-	print ("#########################################################################################\n");
-	print ("Looking for BASELINE file.......$Baseline_file_name\n");
-	print ("#########################################################################################\n");
+#	print ("#########################################################################################\n");
+#	print ("Looking for BASELINE file.......$Baseline_file_name\n");
+#	print ("#########################################################################################\n");
 
 #Set File being analysed for data gathering subroutine
 $FILE_type = "Baseline";
 
 	#Make sure file exists before attempting to parse it
 	if (-e $Baseline_file_name){
-		print ("File exists........\n");
+#		print ("File exists........\n");
 		open (BASELINE_FILE, "$Baseline_file_name");
 
 		#Read in all of the lines of the file at once into an array of strings
@@ -294,22 +294,23 @@ $FILE_type = "Baseline";
 
 	
 	}else{
-		print("Can not find file named $Baseline_file_name comparison fails by default\n");
+		print("Can not find file named ", $Baseline_file_name,
+	"comparison fails by default\n");
 		$FILE_NOT_FOUND_FLAG = 1;
 		$NUMBER_FILES_NOT_FOUND++;
 	}
 		
 #Start parsing Current file
 
-	print ("#########################################################################################\n");
-	print ("Looking for CURRENT file.......$Current_file_name\n");
-	print ("#########################################################################################\n");
+#	print ("#########################################################################################\n");
+#	print ("Looking for CURRENT file.......$Current_file_name\n");
+#	print ("#########################################################################################\n");
 
 #Set File being analysed for data gathering subroutine
 $FILE_type = "Current";
 	
 	if (-e $Current_file_name){
-		print ("File exists........\n");
+#		print ("File exists........\n");
 		open (CURRENT_FILE, "$Current_file_name");
 
 		@lines_current_file = <CURRENT_FILE>;
@@ -454,7 +455,7 @@ $FILE_type = "Current";
 
 
 	}else{
-		print("Can not find file named $Current_file_name comparison fails by default\n");
+		print("Can not find file named ", $Current_file_name, " comparison fails by default\n");
 		$FILE_NOT_FOUND_FLAG = 1;
 		$NUMBER_FILES_NOT_FOUND++;
 	}
@@ -463,14 +464,14 @@ $FILE_type = "Current";
 
      if ($FILE_NOT_FOUND_FLAG != 1){
 	#Inventory comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Inventory lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Inventory lines of Baseline file and Current File....\n");
 	if (($Baseline_Inventory_Level_has_no_data == 0) && ($Current_Inventory_Level_has_no_data == 0)) {
 
 
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Inventory_Level_ep-$Baseline_Inventory_Level_sp) == ($Current_Inventory_Level_ep-$Current_Inventory_Level_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Inventory_Level_lines = $Baseline_Inventory_Level_ep - $Baseline_Inventory_Level_sp;
 		for ($j = 0; $j <= $Max_Inventory_Level_lines; $j++){
 			if ($Baseline_Inventory_Level_list[$j][1] ne $Current_Inventory_Level_list[$j][1]){
@@ -478,8 +479,8 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Inventory Start Date Fields don't match\n\n");
-				print ("BASELINE: Line# ",  $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][1]\n");
-				print ("CURRENT:  Line# ",  $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][1]\n\n");
+				print ($Baseline_file_name, ": Line# ",  $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][1]\n");
+				print ($Current_file_name, ":  Line# ",  $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][1]\n\n");
 			
 			}
 			if ($Baseline_Inventory_Level_list[$j][2] ne $Current_Inventory_Level_list[$j][2]){
@@ -487,8 +488,8 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Inventory End Date Fields don't match\n\n");
-				print ("BASELINE: Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][2]\n");
-				print ("CURRENT:  Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][2]\n\n");
+				print ($Baseline_file_name, ": Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][2]\n");
+				print ($Current_file_name, ":  Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][2]\n\n");
 			
 			}
 			$Inventory_Reorder_Level_difference = abs($Baseline_Inventory_Level_list[$j][3] - $Current_Inventory_Level_list[$j][3]);
@@ -497,8 +498,8 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Inventory Reorder Level Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][3]\n\n");	
 			}
 			$Inventory_Level_difference = abs($Baseline_Inventory_Level_list[$j][4] - $Current_Inventory_Level_list[$j][4]);
 			if ($Inventory_Level_difference > $tolerance){
@@ -506,8 +507,8 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Inventory Level Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][4]\n\n");
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][4]\n\n");
 			
 			}
 			$Inventory_Target_Level_difference = abs($Baseline_Inventory_Level_list[$j][5] - $Current_Inventory_Level_list[$j][5]);
@@ -516,31 +517,32 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Inventory Target Level Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][5]\n");
-				print ("CURRENT:   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][5]\n\n");
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Inventory_Level_list[$j][0]+1,    "  $Baseline_Inventory_Level_list[$j][5]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Inventory_Level_list[$j][0]+1,     "  $Current_Inventory_Level_list[$j][5]\n\n");
 			
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ($Baseline_file_name, " and ",
+#	   $Current_file_name, " do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
 	} elsif (($Baseline_Inventory_Level_has_no_data == 1) || ($Current_Inventory_Level_has_no_data == 1)) {
 			if ($Baseline_Inventory_Level_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ($Baseline_file_name, " No BASELINE data available for comparison\n");
 			}
 			if ($Current_Inventory_Level_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ($Current_file_name, " No CURRENT data available for comparison\n");
 			}
 	}
 
 	#Demand Projection comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Demand_Projection lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Demand_Projection lines of Baseline file and Current File....\n");
 	if (($Baseline_Demand_Projection_has_no_data == 0) && ($Current_Demand_Projection_has_no_data == 0)) {
 
 	@Baseline_Demand_Projection_list = sort by_unit_then_by_date @Baseline_Demand_Projection_list;
@@ -548,7 +550,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Demand_Projection_ep-$Baseline_Demand_Projection_sp) == ($Current_Demand_Projection_ep-$Current_Demand_Projection_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Demand_Projection_lines = $Baseline_Demand_Projection_ep - $Baseline_Demand_Projection_sp;
 		for ($j = 0; $j <= $Max_Demand_Projection_lines; $j++){
 			#print ("List line $j $Current_Demand_Projection_list[$j][0] $Current_Demand_Projection_list[$j][1] $Current_Demand_Projection_list[$j][2] $Current_Demand_Projection_list[$j][3] $Current_Demand_Projection_list[$j][4]\n");
@@ -558,24 +560,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Demand_Projection_list[$j][2] ne $Current_Demand_Projection_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Demand_Projection_list[$j][3] ne $Current_Demand_Projection_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][3]\n\n");	
 			}
 			$Demand_Projection_difference = abs($Baseline_Demand_Projection_list[$j][4] - $Current_Demand_Projection_list[$j][4]);
 			if ($Demand_Projection_difference > $tolerance){
@@ -583,31 +585,32 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_list[$j][0]+1,    "  $Baseline_Demand_Projection_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_list[$j][0]+1,     "  $Current_Demand_Projection_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ($Baseline_file_name, " and ",
+#	$Current_file_name, " do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
 	} elsif (($Baseline_Demand_Projection_has_no_data == 1) || ($Current_Demand_Projection_has_no_data == 1)) {
 			if ($Baseline_Demand_Projection_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ("No ", $Baseline_file_name, " data available for comparison\n");
 			}
 			if ($Current_Demand_Projection_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ("No ", $Current_file_name, " data available for comparison\n");
 			}
 	}
 
 	#Demand Projection Response comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Demand_Projection_Response lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Demand_Projection_Response lines of Baseline file and Current File....\n");
 	if (($Baseline_Demand_Projection_Response_has_no_data == 0) && ($Current_Demand_Projection_Response_has_no_data == 0)) {
 
 	@Baseline_Demand_Projection_Response_list = sort by_unit_then_by_date @Baseline_Demand_Projection_Response_list;
@@ -615,7 +618,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Demand_Projection_Response_ep-$Baseline_Demand_Projection_Response_sp) == ($Current_Demand_Projection_Response_ep-$Current_Demand_Projection_Response_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Demand_Projection_Response_lines = $Baseline_Demand_Projection_Response_ep - $Baseline_Demand_Projection_Response_sp;
 		for ($j = 0; $j <= $Max_Demand_Projection_Response_lines; $j++){
 			if ($Baseline_Demand_Projection_Response_list[$j][1] ne $Current_Demand_Projection_Response_list[$j][1]){
@@ -623,24 +626,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Response Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Demand_Projection_Response_list[$j][2] ne $Current_Demand_Projection_Response_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Response Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Demand_Projection_Response_list[$j][3] ne $Current_Demand_Projection_Response_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Response End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][3]\n\n");	
 			}
 			$Demand_Projection_Response_difference = abs($Baseline_Demand_Projection_Response_list[$j][4] - $Current_Demand_Projection_Response_list[$j][4]);
 			if ($Demand_Projection_Response_difference > $tolerance){
@@ -648,32 +651,32 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Projection Response Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Projection_Response_list[$j][0]+1,    "  $Baseline_Demand_Projection_Response_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Projection_Response_list[$j][0]+1,     "  $Current_Demand_Projection_Response_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
 
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
 	} elsif (($Baseline_Demand_Projection_Response_has_no_data == 1) || ($Current_Demand_Projection_Response_has_no_data == 1)) {
 			if ($Baseline_Demand_Projection_Response_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ("No ", $Baseline_file_name, " data available for comparison\n");
 			}
 			if ($Current_Demand_Projection_Response_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ("No ", $Current_file_name, " data available for comparison\n");
 			}
 	}
 
 	#Demand Requisition comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Demand_Requisition lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Demand_Requisition lines of Baseline file and Current File....\n");
 	if (($Baseline_Demand_Requisition_has_no_data == 0) && ($Current_Demand_Requisition_has_no_data == 0)) {
 
 	@Baseline_Demand_Requisition_list = sort by_unit_then_by_date @Baseline_Demand_Requisition_list;
@@ -681,7 +684,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Demand_Requisition_ep-$Baseline_Demand_Requisition_sp) == ($Current_Demand_Requisition_ep-$Current_Demand_Requisition_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Demand_Requisition_lines = $Baseline_Demand_Requisition_ep - $Baseline_Demand_Requisition_sp;
 		for ($j = 0; $j <= $Max_Demand_Requisition_lines; $j++){
 			if ($Baseline_Demand_Requisition_list[$j][1] ne $Current_Demand_Requisition_list[$j][1]){
@@ -689,24 +692,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Demand_Requisition_list[$j][2] ne $Current_Demand_Requisition_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Demand_Requisition_list[$j][3] ne $Current_Demand_Requisition_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][3]\n\n");	
 			}
 			$Demand_Requisition_difference = abs($Baseline_Demand_Requisition_list[$j][4] - $Current_Demand_Requisition_list[$j][4]);
 			if ($Demand_Requisition_difference > $tolerance){
@@ -714,30 +717,31 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_list[$j][0]+1,    "  $Baseline_Demand_Requisition_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_list[$j][0]+1,     "  $Current_Demand_Requisition_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		} 
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ($Baseline_file_name, " and ",
+#	$Current_file_name, " do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
 	} elsif (($Baseline_Demand_Requisition_has_no_data == 1) || ($Current_Demand_Requisition_has_no_data == 1)) {
 			if ($Baseline_Demand_Requisition_has_no_data == 1) {
-				print ("No BASELINE data available for comparison\n");
+				print ("No ", $Baseline_file_name, " data available for comparison\n");
 			}
 			if ($Current_Demand_Requisition_has_no_data == 1) {
-				print ("No CURRENT data available for comparison\n");
+				print ("No ", $Current_file_name, " data available for comparison\n");
 			}
 	}
 
 	#Demand Requisition Response comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Demand_Requisition_Response lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Demand_Requisition_Response lines of Baseline file and Current File....\n");
 	if (($Baseline_Demand_Requisition_Response_has_no_data == 0) && ($Current_Demand_Requisition_Response_has_no_data == 0)) {
 
 	@Baseline_Demand_Requisition_Response_list = sort by_unit_then_by_date @Baseline_Demand_Requisition_Response_list;
@@ -745,7 +749,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Demand_Requisition_Response_ep-$Baseline_Demand_Requisition_Response_sp) == ($Current_Demand_Requisition_Response_ep-$Current_Demand_Requisition_Response_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Demand_Requisition_Response_lines = $Baseline_Demand_Requisition_Response_ep - $Baseline_Demand_Requisition_Response_sp;
 		for ($j = 0; $j <= $Max_Demand_Requisition_Response_lines; $j++){
 			if ($Baseline_Demand_Requisition_Response_list[$j][1] ne $Current_Demand_Requisition_Response_list[$j][1]){
@@ -753,24 +757,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Response Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Demand_Requisition_Response_list[$j][2] ne $Current_Demand_Requisition_Response_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Response Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Demand_Requisition_Response_list[$j][3] ne $Current_Demand_Requisition_Response_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Response End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][3]\n\n");	
 			}
 			$Demand_Requisition_Response_difference = abs($Baseline_Demand_Requisition_Response_list[$j][4] - $Current_Demand_Requisition_Response_list[$j][4]);
 			if ($Demand_Requisition_Response_difference > $tolerance){
@@ -778,17 +782,17 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Demand Requisition Response Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Demand_Requisition_Response_list[$j][0]+1,    "  $Baseline_Demand_Requisition_Response_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Demand_Requisition_Response_list[$j][0]+1,     "  $Current_Demand_Requisition_Response_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
 
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
@@ -802,8 +806,8 @@ $FILE_type = "Current";
 	}
 
 	#Refill Projection comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Refill_Projection lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Refill_Projection lines of Baseline file and Current File....\n");
 	if (($Baseline_Refill_Projection_has_no_data == 0) && ($Current_Refill_Projection_has_no_data == 0)) {
 
 	@Baseline_Refill_Projection_list = sort by_unit_then_by_date @Baseline_Refill_Projection_list;
@@ -811,7 +815,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Refill_Projection_ep-$Baseline_Refill_Projection_sp) == ($Current_Refill_Projection_ep-$Current_Refill_Projection_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Refill_Projection_lines = $Baseline_Refill_Projection_ep - $Baseline_Refill_Projection_sp;
 		for ($j = 0; $j <= $Max_Refill_Projection_lines; $j++){
 			if ($Baseline_Refill_Projection_list[$j][1] ne $Current_Refill_Projection_list[$j][1]){
@@ -819,24 +823,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Refill_Projection_list[$j][2] ne $Current_Refill_Projection_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Refill_Projection_list[$j][3] ne $Current_Refill_Projection_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][3]\n\n");	
 			}
 			$Refill_Projection_difference = abs($Baseline_Refill_Projection_list[$j][4] - $Current_Refill_Projection_list[$j][4]);
 			if ($Refill_Projection_difference > $tolerance){
@@ -844,16 +848,16 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_list[$j][0]+1,    "  $Baseline_Refill_Projection_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_list[$j][0]+1,     "  $Current_Refill_Projection_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 	
@@ -867,8 +871,8 @@ $FILE_type = "Current";
 	}
 
 	#Refill Projection Response comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Refill_Projection_Response lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Refill_Projection_Response lines of Baseline file and Current File....\n");
 	if (($Baseline_Refill_Projection_Response_has_no_data == 0) && ($Current_Refill_Projection_Response_has_no_data == 0)) {
 
 	@Baseline_Refill_Projection_Response_list = sort by_unit_then_by_date @Baseline_Refill_Projection_Response_list;
@@ -876,7 +880,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Refill_Projection_Response_ep-$Baseline_Refill_Projection_Response_sp) == ($Current_Refill_Projection_Response_ep-$Current_Refill_Projection_Response_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Refill_Projection_Response_lines = $Baseline_Refill_Projection_Response_ep - $Baseline_Refill_Projection_Response_sp;
 		for ($j = 0; $j <= @Baseline_Refill_Projection_Response_Start_Date; $j++){
 			if ($Baseline_Refill_Projection_Response_list[$j][1] ne $Current_Refill_Projection_Response_list[$j][1]){
@@ -884,24 +888,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Response Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Refill_Projection_Response_list[$j][2] ne $Current_Refill_Projection_Response_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Response Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Refill_Projection_Response_list[$j][3] ne $Current_Refill_Projection_Response_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Response End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][3]\n\n");	
 			}
 			$Refill_Projection_Response_difference = abs($Baseline_Refill_Projection_Response_list[$j][4] - $Current_Refill_Projection_Response_list[$j][4]);
 			if ($Refill_Projection_Response_difference > $tolerance){
@@ -909,17 +913,17 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Projection Response Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Projection_Response_list[$j][0]+1,    "  $Baseline_Refill_Projection_Response_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Projection_Response_list[$j][0]+1,     "  $Current_Refill_Projection_Response_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
 
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 	
@@ -933,8 +937,8 @@ $FILE_type = "Current";
 	}	
 
 	#Refill Requisition comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Refill_Requisition lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Refill_Requisition lines of Baseline file and Current File....\n");
 	if (($Baseline_Refill_Requisition_has_no_data == 0) && ($Current_Refill_Requisition_has_no_data == 0)) {
 
 	@Baseline_Refill_Requisition_list = sort by_unit_then_by_date @Baseline_Refill_Requisition_list;
@@ -942,7 +946,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Refill_Requisition_ep-$Baseline_Refill_Requisition_sp) == ($Current_Refill_Requisition_ep-$Current_Refill_Requisition_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Refill_Requisition_lines = $Baseline_Refill_Requisition_ep - $Baseline_Refill_Requisition_sp;
 		for ($j = 0; $j <= $Max_Refill_Requisition_lines; $j++){
 			if ($Baseline_Refill_Requisition_list[$j][1] ne $Current_Refill_Requisition_list[$j][1]){
@@ -950,24 +954,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Refill_Requisition_list[$j][2] ne $Current_Refill_Requisition_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Refill_Requisition_list[$j][3] ne $Current_Refill_Requisition_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][3]\n\n");	
 			}
 			$Refill_Requisition_difference = abs($Baseline_Refill_Requisition_list[$j][4] - $Current_Refill_Requisition_list[$j][4]);
 			if ($Refill_Requisition_difference > $tolerance){
@@ -975,15 +979,15 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_list[$j][0]+1,    "  $Baseline_Refill_Requisition_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_list[$j][0]+1,     "  $Current_Refill_Requisition_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		} 
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 
@@ -997,8 +1001,8 @@ $FILE_type = "Current";
 	}
 
 	#Refill Requisition Response comparison
-	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-	print ("Comparing Refill_Requisition_Response lines of Baseline file and Current File....\n");
+#	print ("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+#	print ("Comparing Refill_Requisition_Response lines of Baseline file and Current File....\n");
 	if (($Baseline_Refill_Requisition_Response_has_no_data == 0) && ($Current_Refill_Requisition_Response_has_no_data == 0)) {
 
 	@Baseline_Refill_Requisition_Response_list = sort by_unit_then_by_date @Baseline_Refill_Requisition_Response_list;
@@ -1006,7 +1010,7 @@ $FILE_type = "Current";
 	
 	$local_line_not_match_count = 0;
 	   if (($Baseline_Refill_Requisition_Response_ep-$Baseline_Refill_Requisition_Response_sp) == ($Current_Refill_Requisition_Response_ep-$Current_Refill_Requisition_Response_sp)){
-		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
+#		print ("Files contain same number of lines of data, continuing on with line by line comparison....\n");
 		$Max_Refill_Requisition_Response_lines = $Baseline_Refill_Requisition_Response_ep - $Baseline_Refill_Requisition_Response_sp;
 		for ($j = 0; $j <= $Max_Refill_Requisition_Response_lines; $j++){
 			if ($Baseline_Refill_Requisition_Response_list[$j][1] ne $Current_Refill_Requisition_Response_list[$j][1]){
@@ -1014,24 +1018,24 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Response Unit Name Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][1]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][1]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][1]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][1]\n\n");	
 			}
 			if ($Baseline_Refill_Requisition_Response_list[$j][2] ne $Current_Refill_Requisition_Response_list[$j][2]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Response Start Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][2]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][2]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][2]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][2]\n\n");	
 			}
 			if ($Baseline_Refill_Requisition_Response_list[$j][3] ne $Current_Refill_Requisition_Response_list[$j][3]){
 				$line_not_match_count++;
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Response End Date Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][3]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][3]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][3]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][3]\n\n");	
 			}
 			$Refill_Requisition_Response_difference = abs($Baseline_Refill_Requisition_Response_list[$j][4] - $Current_Refill_Requisition_Response_list[$j][4]);
 			if ($Refill_Requisition_Response_difference > $tolerance){
@@ -1039,17 +1043,17 @@ $FILE_type = "Current";
 				$local_line_not_match_count++;
 				print ("Difference # $line_not_match_count\n");
 				print ("Refill Requisition Response Daily Rate Fields don't match\n\n");
-				print ("BASELINE:  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][4]\n");
-				print ("CURRENT:   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][4]\n\n");	
+				print ($Baseline_file_name, ":  Line# ",   $Baseline_Refill_Requisition_Response_list[$j][0]+1,    "  $Baseline_Refill_Requisition_Response_list[$j][4]\n");
+				print ($Current_file_name, ":   Line# ",   $Current_Refill_Requisition_Response_list[$j][0]+1,     "  $Current_Refill_Requisition_Response_list[$j][4]\n\n");	
 			}
 		}
 		if ($local_line_not_match_count == 0){
-			print ("All lines match!\n");
+#			print ("All lines match!\n");
 		}
 
  
 	   }else{
-		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
+#		print ("Files do not contain same number of lines of data, COMPARISON IS NOT POSSIBLE!!!\n");
 		$data_groups_not_compared++;
 	   }
 	
