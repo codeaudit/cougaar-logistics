@@ -2,11 +2,11 @@
  * <copyright>
  *  Copyright 1997-2003 SRA International
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -93,17 +93,17 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
 
 /**
  * constructor
- */ 
+ */
   public LogisticsPolicyManagerPlugin() {
     super();
-    //globalParameters.put( "XMLFile", xmlfilename ); 
+    //globalParameters.put( "XMLFile", xmlfilename );
   }
 
   IncrementalSubscription sub;
   IncrementalSubscription comSub;
-  
+
   private static UnaryPredicate CommunityPolicyPredicate_ = new UnaryPredicate() {
-    
+
     public boolean execute(Object o) {
       if (o instanceof LogisticsPolicy){
         LogisticsPolicy lp = (LogisticsPolicy) o;
@@ -114,9 +114,9 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       return false;
     }
   };
-  
+
   private static UnaryPredicate SubordinatePolicyPredicate_ = new UnaryPredicate() {
-    
+
     public boolean execute(Object o) {
       if (o instanceof LogisticsPolicy){
         LogisticsPolicy lp = (LogisticsPolicy) o;
@@ -127,12 +127,12 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       return false;
     }
   };
-  
-  
+
+
   /**
    * Predicate that looks for host Organization
    */
-  
+
   private static UnaryPredicate myOrgsPredicate_= new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof Organization) {
@@ -143,11 +143,11 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       return false;
     }
   };
-  
+
   /**
    * Predicate to look for other Organizations
    */
-  
+
   private static UnaryPredicate allOrgsPredicate_= new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof Organization) {
@@ -160,8 +160,8 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       }
       return false;
     }
-  };	
-  
+  };
+
   private static UnaryPredicate policiesPredicate_ = new UnaryPredicate() {
     public boolean execute(Object o) {
       boolean isInstance = false;
@@ -170,9 +170,9 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       }
       return isInstance;
     }
-    
+
   };
-  
+
   protected void setupSubscriptions() {
     DomainService dService = null;
     if (theLDMF == null) {
@@ -192,11 +192,11 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
     allOrganizations_ = (IncrementalSubscription)getBlackboardService().subscribe( allOrgsPredicate_);
     allPolicies_ = (IncrementalSubscription)getBlackboardService().subscribe( policiesPredicate_);
     getBlackboardService().getSubscriber().setShouldBePersisted(false);
-    
+
     sub = (IncrementalSubscription)getBlackboardService().subscribe(SubordinatePolicyPredicate_);
-    
+
     comSub = (IncrementalSubscription)getBlackboardService().subscribe(CommunityPolicyPredicate_);
-    
+
     if (comserv == null) {
       comserv = (CommunityService) getBindingSite().getServiceBroker().getService(this, org.cougaar.core.service.community.CommunityService.class, new ServiceRevokedListener() {
         public void serviceRevoked(ServiceRevokedEvent re) {
@@ -204,47 +204,56 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         }
       });
     }
+
+    if (getBlackboardService().didRehydrate()) {
+      if (!selfOrganizations_.isEmpty()) {
+        myOrganization_ = (Organization) selfOrganizations_.iterator().next();
+        myOrgName_ = myOrganization_.getItemIdentificationPG().getItemIdentification();
+      } else {
+        logger.error(" Self organization subscription was empty on rehydration ");
+      }
+    }
   }
-  
+
   /**
    * method to go through parameters of filenames and roles and create policies from xml files using XMLPolicyCreator
    */
-  
+
   private void readInPolicies() {
     if (logger.isDebugEnabled()) {
       logger.debug("in readInPolicies");
     }
     try {
-      
+
       Collection pv = getParameters();
       if ( pv != null ) {
-	if (logger.isDebugEnabled()) {
-          logger.debug("about to enter for loop vector size: " + pv.size());	
+        if (logger.isDebugEnabled()) {
+          logger.debug("about to enter for loop vector size: " + pv.size());
         }
-	// iterate through the list of XML Policy files to parse
-	Vector policyVector = new Vector();
-	Vector communityVector = new Vector();
-	for (Iterator pi = pv.iterator(); pi.hasNext();) {
-	  xmlfilename = (String) pi.next();
+        // iterate through the list of XML Policy files to parse
+        Vector policyVector = new Vector();
+        Vector communityVector = new Vector();
+        for (Iterator pi = pv.iterator(); pi.hasNext();) {
+          xmlfilename = (String) pi.next();
           if (logger.isDebugEnabled()) {
             logger.debug("startsWith: " + xmlfilename.startsWith("POLICY="));
           }
           if (xmlfilename.startsWith("POLICY=")) {
             xmlfilename = xmlfilename.replaceFirst("POLICY=", "");
           }
-	  policyCreator = new XMLPolicyCreator(xmlfilename, 
-					       getConfigFinder(),
+          policyCreator = new XMLPolicyCreator(xmlfilename,
+                                               getConfigFinder(),
                                                theLDMF);
-	  Policy policies[] = policyCreator.getPolicies();
-	  String role = (String) pi.next();
+          Policy policies[] = policyCreator.getPolicies();
+          String role = (String) pi.next();
           if (role.startsWith("DESTINATION=")) {
             role = role.replaceFirst("DESTINATION=", "");
           }
           if (logger.isDebugEnabled()) {
             logger.debug("*******policies.length " + policies.length);
           }
-          
-	  for (int i=0; i<policies.length; i++) {
+
+          for (int i=0; i<policies.length; i++) {
             if (myOrganization_ == null && logger.isDebugEnabled()) {
               logger.debug("Org is null");
             }
@@ -259,14 +268,14 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
               }
             }
             if (continu == true) {
-              LogisticsPolicy lp = new LogisticsPolicy(policies[i], null, Collections.EMPTY_SET, myOrgName_, role); 
+              LogisticsPolicy lp = new LogisticsPolicy(policies[i], null, Collections.EMPTY_SET, myOrgName_, role);
               if (role.equals("Subordinate") || role.equals("none")) {
                 policyVector.add(lp);
               } else {
                 communityVector.add(lp);
               }
             }
-            
+
 	  }
 	}
         //	distributeCheckOrgs(policyVector.elements(), allOrganizations_.elements());
@@ -278,12 +287,12 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
     }
     policyRead = true;
   }
-  
-  /** 
+
+  /**
    * responds to changes in subscriptions
    */
   public void execute() {
-    
+
     if (selfOrganizations_.hasChanged()){
       if (myOrganization_ == null) {
         Enumeration new_orgs = selfOrganizations_.elements();
@@ -297,7 +306,7 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         readInPolicies();
       }
     }
-    
+
     if (sub.hasChanged()) {
       if (myOrganization_ != null) {
         if (logger.isDebugEnabled()) {
@@ -307,31 +316,31 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         distributeCheckPolicies(sub.getChangedList());
       }
     }
-    
+
     if (allOrganizations_.hasChanged()) {
       if (myOrganization_ != null){
         distributeCheckOrgs(sub.elements(), allOrganizations_.getAddedList());
         distributeCheckOrgs(sub.elements(), allOrganizations_.getChangedList());
-        
+
       }
     }
-    
+
     if (comSub.hasChanged()) {
       communityPolicyPublisher(comSub.getAddedList());
     }
   }
-  
+
   private void communityPolicyPublisher(Enumeration comPols) {
     while (comPols.hasMoreElements()) {
       LogisticsPolicy lp = (LogisticsPolicy) comPols.nextElement();
       Policy p = (Policy) lp.getPolicy();
       if (isConflict(lp) == false) {
         getBlackboardService().publishAdd(p);
-      } 
+      }
     }
-    
+
   }
-  
+
   private void distributeCommunityPolicies(Enumeration policies) {
     Collection communities = comserv.listAllCommunities();
     while (policies.hasMoreElements()){
@@ -347,7 +356,7 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       getBlackboardService().publishAdd(lp);
     }
   }
-  
+
   /**
    * method to check changed or added policies for whether they a) need to be published and b) need to be propagated. calls distributeCheckOrgs if more than zero policies qualify to continue
    * @param policies Enumeration of LogisticsPolicies to be checked
@@ -383,23 +392,23 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         if (isConflict(lp) == false) {
           getBlackboardService().publishAdd(p);
           if (debugging) logger.debug("published Policy " + p.getUID() + " at " + myOrgName_ );
-        }  
-      } 
+        }
+      }
     }
     if (debugging) logger.debug("validPolicies.size: " + disPolicies.size());
     if (disPolicies.size() != 0){
       if (debugging) logger.debug("sending to distribute from Check");
       distributeCheckOrgs(disPolicies.elements(), allOrganizations_.elements());
-      
+
     }
   }
-  
+
   /**
    * method to check an Enumeration of Organizations as targets for each policy
    * @param policies Enumeration of LogisticsPolicies to determine new targets for
    * @param targets Enumeration of Organizations to be checked as targets
    */
-  
+
   private void distributeCheckOrgs(Enumeration policies, Enumeration targets){
     if (logger.isDebugEnabled()) {
       logger.debug("in checkOrgs");
@@ -423,22 +432,22 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
           RelationshipImpl ri = (RelationshipImpl) i.next();
           Organization oa = (Organization) ri.getA();
           Organization ob = (Organization) ri.getB();
-          
+
           if (oa.equals(myOrganization_) || ob.equals(myOrganization_)) {
             goodTargets.add(org);
-          }	
+          }
         }
       }
       distribute(lp, goodTargets.elements());
-    }	
+    }
   }
-  
+
   /**
    * method to distribute one LogisticsPolicy to an Enumeration of targets
    * @param lp LogisticsPolicy to be distributed, by PublishAdd or PublishChange
    * @param targets Enumeration of Organizations from which MessageAddresses will be pulled to populated the LogisticsPolicy's targets
    */
-  
+
   private void distribute(LogisticsPolicy lp, Enumeration targets) {
     Set mas = new HashSet();
     if (logger.isDebugEnabled()) {
@@ -473,7 +482,7 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
         lp.setSource(myOrganization_.getMessageAddress());
         getBlackboardService().publishChange(lp);
         if (logger.isDebugEnabled()) {
-          logger.debug("publishChange: " + lp.getUID().toString() + " at " + myOrgName_ + 
+          logger.debug("publishChange: " + lp.getUID().toString() + " at " + myOrgName_ +
                        " targets: " + lp.getTargets().toString());
         }
       }
@@ -484,14 +493,14 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
       if (isConflict(lp) == false) {
         getBlackboardService().publishAdd(newLP);
         if (logger.isDebugEnabled()) {
-          logger.debug("publishAdd: " + newLP.getUID().toString() + " at " + myOrgName_ + 
+          logger.debug("publishAdd: " + newLP.getUID().toString() + " at " + myOrgName_ +
                        " targets: " + newLP.getTargets().toString());
         }
-      }	
+      }
     }
   }
-  
-  
+
+
   private boolean isConflict(LogisticsPolicy lp) {
     Policy p = lp.getPolicy();
     Enumeration pols = allPolicies_.elements();
@@ -547,14 +556,14 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
           while (orgs.hasMoreElements()){
             Organization o = (Organization) orgs.nextElement();
             if (lp.getSource() == null) {
-              newOrg = myOrganization_;	
+              newOrg = myOrganization_;
             }else if (lp.getSource().toString().equals(o.getItemIdentificationPG().getItemIdentification())){
               newOrg = o;
             }
             if (matchLP.getSource().toString().equals(o.getItemIdentificationPG().getItemIdentification())){
               oldOrg = o;
             }
-            
+
           }
           if (oldOrg == null && !(matchLP.getSource().toString().equals(myOrgName_) && newOrg == null)){
             if (matchLP != null && (!matchLP.getRole().equals("Subordinate") || (matchLP.getRole().equals("Subordinate") && lp.getRole().equals("Subordinate")))) {
@@ -576,7 +585,7 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
               Organization ob = (Organization) ri.getB();
               if (oa.equals(newOrg) || ob.equals(newOrg)) {
                 getBlackboardService().publishRemove(matchLP);
-                getBlackboardService().publishRemove(matchPol);	
+                getBlackboardService().publishRemove(matchPol);
                 return false;
               } else if (oa.equals(oldOrg) || ob.equals(oldOrg)) {
                 containsOldOrg = true;
@@ -610,7 +619,7 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
             if (oa.equals(newOrg) || ob.equals(newOrg)) {
               getBlackboardService().publishRemove(matchPol);
               return false;
-            }	
+            }
           }
         }
       }
@@ -619,14 +628,14 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
     }
     //check this
     if (lp != null && lp.getSource() != null && !lp.getSource().toString().equals(myOrgName_)) {
-      
+
       //needs to be a check here
       getBlackboardService().publishRemove(lp);
     }
     return true;
-    
+
   }
-  
+
   /**
    *  Calls ComponentPlugin's load(), creates the Logging Service.
    **/
@@ -634,12 +643,12 @@ public class LogisticsPolicyManagerPlugin extends ComponentPlugin
     super.load();
     logger = getLoggingService(this);
   } // load
-  
+
   public LoggingService getLoggingService(Object requestor) {
-    return (LoggingService) 
+    return (LoggingService)
       getServiceBroker().getService(requestor,
 				    LoggingService.class,
 				    null);
   }
-  
+
 }
