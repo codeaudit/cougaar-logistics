@@ -104,9 +104,11 @@ public class InventoryPlugin extends ComponentPlugin {
 
   // as a default make the max the end of the oplan (225)
   public final Integer LEVEL_2_MIN = new Integer(40); // later, these should be parameters to plugin...
+  public final Integer LEVEL_2_60 = new Integer(60);
   public final Integer LEVEL_2_MID = new Integer(80); 
   public final Integer LEVEL_2_MAX = new Integer(225);
   public final Integer LEVEL_6_MIN = new Integer(20);
+  public final Integer LEVEL_6_21 = new Integer(21);
   public final Integer LEVEL_6_MID = new Integer(40);
   public final Integer LEVEL_6_MAX = new Integer(225);
   // then default to the end of the oplan (max)
@@ -1321,6 +1323,8 @@ public class InventoryPlugin extends ComponentPlugin {
       days = LEVEL_6_MIN.intValue();
     } else if (level6Horizon.getValue().equals (LEVEL_6_MID)){
       days = LEVEL_6_MID.intValue();
+    } else if (level6Horizon.getValue().equals (LEVEL_6_21)){
+      days = LEVEL_6_21.intValue();
     } else {
       //use all level 6 as the default
       days = LEVEL_6_MAX.intValue();
@@ -1339,6 +1343,8 @@ public class InventoryPlugin extends ComponentPlugin {
       days = LEVEL_2_MIN.intValue();
     } else if (level2Horizon.getValue().equals (LEVEL_2_MID)){
       days = LEVEL_2_MID.intValue();
+    } else if (level2Horizon.getValue().equals (LEVEL_2_60)){
+      days = LEVEL_2_60.intValue();
     } else {
       //use all level 6 as the default
       days = LEVEL_2_MAX.intValue();
