@@ -180,7 +180,10 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
       long now = inventoryPlugin.currentTimeMillis();
       if (now > startDay) {
 	  startDay = now;
-	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
+	  // OLD - Now that were keeping the old projected demand in the past we 
+	  // only plan from now on.
+	  //	  startBucket = startBucket + inventoryPlugin.getOrderShipTime();
+	  startBucket = thePG.convertTimeToBucket(startDay, true) + inventoryPlugin.getOrderShipTime();
       }
       // clear all of the projections
       //oldProjections.addAll(thePG.clearRefillProjectionTasks(startDay));
