@@ -96,7 +96,7 @@ import org.cougaar.planning.ldm.plan.MPTask;
 public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin {
   public long CHUNK_DAYS = 30;
   public static long MILLIS_PER_DAY = 1000*60*60*24;
-  public static long SECS_PER_DAY = 60*60*24;
+  public static double SECS_PER_DAY = 60.0d*60.0d*24.0d;
   public static final String AMMO_CATEGORY_CODE = "MBB";
   public static final String MILVAN_NSN = "NSN/8115001682275";
   public static final double PACKING_LIMIT = 13.9; /* short tons */
@@ -213,9 +213,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     // create one subtask for every chunk set of days, with an asset that is the total
     // delivered over the period = days*ratePerDay
-    double daysSoFar = 0;
-    int totalQuantity = 0;
-    int targetQuantity = (int) (((double) (window/1000l))*ratePerSec);
+    long daysSoFar = 0;
+    double totalQuantity = 0;
+    double targetQuantity = ((double) (window/1000l))*ratePerSec;
     Date lastBestDate = readyAt;
 
     if (isInfoEnabled ()) {
@@ -225,14 +225,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     for (int i = 0; i < (int) numSubtasks; i++) {
       boolean onLastTask = (window/MILLIS_PER_DAY) < CHUNK_DAYS;
-      double daysToChunk = (onLastTask) ? window/MILLIS_PER_DAY : CHUNK_DAYS;
+      long daysToChunk = (onLastTask) ? window/MILLIS_PER_DAY : CHUNK_DAYS;
 
       if (isInfoEnabled () && onLastTask)
 	info ("on last task - days " + daysToChunk + " since " + window/MILLIS_PER_DAY + " < " + CHUNK_DAYS);
 
       daysSoFar += daysToChunk;
-      window    -= ((long)daysToChunk)*MILLIS_PER_DAY;
-      double quantity = daysToChunk * ratePerDay;
+      window    -= daysToChunk*MILLIS_PER_DAY;
+      double quantity = ((double)daysToChunk) * ratePerDay;
       if (onLastTask && ((totalQuantity + quantity) != targetQuantity)) {
 	if (isInfoEnabled ())
 	  info (" task " + parentTask.getUID () + 
@@ -331,6 +331,11 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     protected Asset getMilvanDirectObject (String itemNomen, String itemID, 
 					   String unit, double massInSTons) {
       int numMilvans = (int) Math.ceil(massInSTons/MAX_IN_MILVAN);
+      if (numMilvans == 0) {
+	  numMilvans++;
+	  if (isWarnEnabled())
+	      warn ("Got mass that was zero : " + massInSTons);
+      }
       double tonsLeft = massInSTons;
       
       if (numMilvans == 1) {
