@@ -145,6 +145,7 @@ public class ArrivalTimeTest extends Test{
 	
     try {
       sql = getQuery(run);
+      l.logMessage(Logger.MINOR,Logger.DB_WRITE,"SQL Query was " + sql);
       rs=s.executeQuery(sql);
     } catch (SQLException sqle) {
       l.logMessage(Logger.ERROR,Logger.DB_WRITE,
