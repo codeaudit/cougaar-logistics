@@ -450,8 +450,15 @@ public class LogisticsInventoryBG implements PGDelegate {
 	//arrival time.  The supplier is only truly available to you
 	//once you arrive.
 	int arrivalBucket = convertTimeToBucket(arrivalTime,false);
+
 	if(supplierAvailableBucket < arrivalBucket) {
 	    supplierAvailableBucket = arrivalBucket;
+	}
+
+	//Test case where first bucket of demand is beyone the supplierAvailableBucket then we should make sure we cover the 1st days of demand with the ost amount of demand.
+	int firstDemandBucket = getFirstProjectWithdrawBucket();
+	if(firstDemandBucket > supplierAvailableBucket) {
+	    supplierAvailableBucket = firstDemandBucket;
 	}
 
 	//The end of the horizon lookahead to compute the initial level	
