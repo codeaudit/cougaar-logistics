@@ -337,8 +337,8 @@ public class RefillProjectionGenerator extends InventoryModule {
     // create preferences
     Vector prefs = new Vector();
     Preference p_start,p_end,p_qty;
-    p_start = createRefillTimePreference(start, earliest);
-    p_end = createRefillTimePreference(end, earliest);
+    p_start = createRefillTimePreference(start, earliest, AspectType.START_TIME);
+    p_end = createRefillTimePreference(end, earliest, AspectType.END_TIME);
     p_qty = createRefillRatePreference(qty);
     prefs.add(p_start);
     prefs.add(p_end);
@@ -377,22 +377,24 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  the scoring function we developed in our IM SDD.
    *  @param bestDay The time you want this preference to represent
    *  @param start The earliest time this preference can have
+   *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @return Preference The new Time Preference
    **/
-  private Preference createRefillTimePreference(long bestDay, long start) {
-    AspectValue beforeAV = new TimeAspectValue(AspectType.END_TIME, start);
-    AspectValue bestAV = new TimeAspectValue(AspectType.END_TIME, bestDay);
+  private Preference createRefillTimePreference(long bestDay, long start, 
+                                                int aspectType) {
+    AspectValue beforeAV = new TimeAspectValue(aspectType, start);
+    AspectValue bestAV = new TimeAspectValue(aspectType, bestDay);
     //TODO - really need end of deployment from an OrgActivity -
     // As a hack for now just add 180 days from today - note that this
     // will push the possible end date out too far...
-    //AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME, 
+    //AspectValue afterAV = new TimeAspectValue(aspectType, 
     //				    inventoryPlugin.getEndOfDeplyment()); 
-    AspectValue afterAV = new TimeAspectValue(AspectType.END_TIME,
+    AspectValue afterAV = new TimeAspectValue(aspectType,
 					      getTimeUtils().addNDays(start, 180));
-    ScoringFunction endTimeSF = ScoringFunction.
+    ScoringFunction timeSF = ScoringFunction.
 	createVScoringFunction(beforeAV, bestAV, afterAV);
     return inventoryPlugin.getRootFactory().
-	  newPreference(AspectType.END_TIME, endTimeSF);
+	  newPreference(aspectType, timeSF);
   }
 
   /** Utility method to create Refill Projection Rate preference
