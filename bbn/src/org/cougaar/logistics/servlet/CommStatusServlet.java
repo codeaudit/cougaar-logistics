@@ -128,6 +128,8 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
 
     public void execute(HttpServletRequest req, HttpServletResponse res) throws IOException {
       String connectedAgentName = req.getParameter("connectedAgentName");
+      //parse the commUp
+      String commUpStr = req.getParameter("commUp");
       boolean commUp;
       CommStatus cs = null;
 
@@ -135,15 +137,27 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
       PrintWriter out = res.getWriter();
       out.println("<html><head></head><body>");
 
-      //parse the commUp
-      String commUpStr = req.getParameter("commUp");
+      if (commUpStr == null && connectedAgentName == null) {
+        blackboard.openTransaction();
+        Collection col = blackboard.query(commStatusObjectsQuery);
+        for (Iterator i = col.iterator(); i.hasNext();) {
+          CommStatus temp = (CommStatus) i.next();
+          out.println("<BR>" + "CSS Found matching CommStatus object for connectedAgentName: " +
+                      temp.getConnectedAgentName() + " isCommUp "
+                      + temp.isCommUp()+ "</body></html>");
+
+        }
+        blackboard.closeTransaction();
+        return;
+      }
+
       if (commUpStr != null)  {
         commUp = commUpStr.trim().equals("true");
       } else {
         errorMsg("commUpStr incorrectly specified: " + commUpStr, out);
         return;
       }
-
+      
       if (connectedAgentName != null) {
         //iterate over the existing CommStatusObjects to see if one already exists
         blackboard.openTransaction();
@@ -153,7 +167,7 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
           if (temp.connectedAgentName.equals(connectedAgentName)) {
             cs = temp;
             System.out.println("\n CSS Found matching CommStatus object for connectedAgentName: " +
-                               connectedAgentName);
+                               cs.getConnectedAgentName() + " isCommUp " + cs.isCommUp());
             break;
           }
         }
@@ -168,11 +182,11 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
         if (commUp == false) {
           cs.setCommLoss(currentTimeMillis());
           System.out.println("\n CSS Setting Comm LOSS for NEW CommStatus object for connectedAgentName: " +
-                             connectedAgentName);
+                             connectedAgentName + " isCommUp " + cs.isCommUp());
         } else {
           cs.setCommRestore(currentTimeMillis());
           System.out.println("\n CSS Setting Comm RESTORE for NEW CommStatus object for connectedAgentName: " +
-                             connectedAgentName);
+                             connectedAgentName + " isCommUp " + cs.isCommUp());
         }
         blackboard.openTransaction();
         blackboard.publishAdd(cs);
@@ -181,11 +195,11 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
         if (commUp == false) {
           cs.setCommLoss(currentTimeMillis());
           System.out.println("\n CSS Setting Comm LOSS for MATCHING CommStatus object for connectedAgentName: " +
-                             connectedAgentName);
+                             connectedAgentName + " isCommUp " + cs.isCommUp());
         } else {
           cs.setCommRestore(currentTimeMillis());
           System.out.println("\n CSS Setting Comm RESTORE for MATCHING CommStatus object for connectedAgentName: " +
-                             connectedAgentName);
+                             connectedAgentName + " isCommUp " + cs.isCommUp());
         }
         blackboard.openTransaction();
         blackboard.publishChange(cs);
