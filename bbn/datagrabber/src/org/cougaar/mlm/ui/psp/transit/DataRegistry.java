@@ -906,8 +906,8 @@ typical_case:
 	// register the cargo prototype
 	toReg.cargoPrototypes.addPrototype(toProt);
 	if (lowFiAssetPG != null) {
-	  if (lowFiAssetPG.getCCCDims() != null) // not always applied...?
-	    registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
+	  if (lowFiAssetPG.getCCCDim() != null) // not always applied...?
+	    registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDim());
 	}
 	else
 	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, width, height, depth, weight, area, volume, (GLMAsset)protAsset));
@@ -1009,7 +1009,7 @@ typical_case:
 
 	toReg.cargoPrototypes.addPrototype(toProt);
 	if (lowFiAssetPG != null)
-	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
+	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDim());
 	else
 	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, protWidth, protHeight, protDepth, protWeight, protArea, protVolume, (GLMAsset)protAsset));
       }
@@ -1136,7 +1136,7 @@ typical_case:
 
 	toReg.cargoPrototypes.addPrototype(toProt);
 	if (lowFiAssetPG != null)
-	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDims());
+	  registerCargoCatCodes (toReg.cargoPrototypes, toProt.UID, lowFiAssetPG.getCCCDim());
 	else
 	  toReg.cargoPrototypes.addCCCEntry(getCCCDim(toProt.UID, instWidth, instHeight, instDepth, instWeight, instArea, instVolume, (GLMAsset)protAsset));
       }
@@ -1179,25 +1179,19 @@ typical_case:
     return ccc;
   }
 
-  protected static void registerCargoCatCodes (PrototypesData data, String uid, Collection cccDims) {
-    if (DEBUG)
-      System.out.println (Thread.currentThread () + ".registerCargoCatCodes - registering these cccDims : "+ cccDims);
+  protected static void registerCargoCatCodes (PrototypesData data, String uid, CargoCatCodeDimensionPG cccDimPG) {
+    CargoCatCode cargoCatCode = new CargoCatCode();
+    cargoCatCode.cargoCatCode = cccDimPG.getCargoCatCode();
+    cargoCatCode.UID=uid;
+    PhysicalPG dim = cccDimPG.getDimensions();
+    cargoCatCode.height =0.0d;
+    cargoCatCode.width  =0.0d;
+    cargoCatCode.depth  =0.0d;
+    cargoCatCode.weight =dim.getMass().getGrams();
+    cargoCatCode.area   =dim.getFootprintArea().getSquareMeters();
+    cargoCatCode.volume =dim.getVolume().getCubicMeters();
 
-    for (Iterator iter = cccDims.iterator (); iter.hasNext (); ) {
-      CargoCatCodeDimensionPG cccDimPG = (CargoCatCodeDimensionPG) iter.next ();
-      CargoCatCode cargoCatCode = new CargoCatCode();
-      cargoCatCode.cargoCatCode = cccDimPG.getCargoCatCode();
-      cargoCatCode.UID=uid;
-      PhysicalPG dim = cccDimPG.getDimensions();
-      cargoCatCode.height =0.0d;
-      cargoCatCode.width  =0.0d;
-      cargoCatCode.depth  =0.0d;
-      cargoCatCode.weight =dim.getMass().getGrams();
-      cargoCatCode.area   =dim.getFootprintArea().getSquareMeters();
-      cargoCatCode.volume =dim.getVolume().getCubicMeters();
-
-      data.addCCCEntry (cargoCatCode);
-    }
+    data.addCCCEntry (cargoCatCode);
   }
 
   /**
@@ -1270,8 +1264,10 @@ typical_case:
     if (a instanceof AggregateAsset) {
       a = ((AggregateAsset)a).getAsset();
     }
-    return
-      (a instanceof ClassISubsistence) ? 
+
+    LowFidelityAssetPG lowFiAssetPG;
+
+    int value = (a instanceof ClassISubsistence) ? 
       Prototype.ASSET_CLASS_1 :
       (a instanceof ClassIIClothingAndEquipment) ?
       Prototype.ASSET_CLASS_2 :
@@ -1300,6 +1296,17 @@ typical_case:
         (((GLMAsset)a).hasPersonPG()))) ?
       Prototype.ASSET_CLASS_PERSON :
       Prototype.ASSET_CLASS_UNKNOWN;
+
+    /*
+    if (value == Prototype.ASSET_CLASS_UNKNOWN) {
+      LowFidelityAssetPG lowFiUID = (LowFidelityAssetPG)
+	a.resolvePG (LowFidelityAssetPG.class);
+      if (lowFiUID != null)
+	return lowFiUID.getCCCDim().getAssetClass ();
+    }
+    */
+
+    return value;
   }
 
   /**
