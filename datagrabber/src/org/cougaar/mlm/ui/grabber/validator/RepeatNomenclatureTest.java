@@ -61,7 +61,7 @@ public class RepeatNomenclatureTest extends Test{
 
   /**are we a warning or an error if we fail**/
   public int failureLevel(){
-    return RESULT_WARNING;
+    return RESULT_INFO;
   }
 
   /**for gui**/
