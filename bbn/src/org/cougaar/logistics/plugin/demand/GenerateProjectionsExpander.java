@@ -35,6 +35,7 @@ import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.plugin.util.PluginHelper;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -80,36 +81,56 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     Collection items = getConsumed(pg);
     Collection subTasks = new ArrayList();
     Asset consumedItem;
-    for (Iterator iterator = items.iterator(); iterator.hasNext();) {
-      consumedItem = (Asset) iterator.next();
-
-      Enumeration scheduleElements = schedule.getAllScheduleElements();
-      Rate rate;
-      // for every item consumed, walk the schedule elements and get the rates
-      while (scheduleElements.hasMoreElements()) {
-        ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
-        rate = getRate(pg, consumedItem, (List) ose.getObject());
-        // FIXME:  Should we report a warning or is this normal????
-        if (rate == null)  {
-	  String myOrgName = 
-	    dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-	  if (myOrgName.indexOf("35-ARBN") >= 0) {
-	    System.out.println("------------------ THE RATE is NULL ------------------------  " +
-			       consumedItem.getTypeIdentificationPG().getNomenclature()+" - "+
-			       consumedItem.getTypeIdentificationPG().getTypeIdentification());
-	  }
-          continue;
+    if (!items.isEmpty()) {
+      for (Iterator iterator = items.iterator(); iterator.hasNext();) {
+        consumedItem = (Asset) iterator.next();
+        
+        Enumeration scheduleElements = schedule.getAllScheduleElements();
+        Rate rate;
+        // for every item consumed, walk the schedule elements and get the rates
+        while (scheduleElements.hasMoreElements()) {
+          ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
+          rate = getRate(pg, consumedItem, (List) ose.getObject());
+          // FIXME:  Should we report a warning or is this normal????
+          // this is happening at both ends of the schedule where the MEI
+          // is available but there is not matching org act for the time period.
+          // (if the orgact is null then the bg returns a null rate)
+          if (rate == null)  {
+         //    String myOrgName = 
+//               dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+//             if (myOrgName.indexOf("35-ARBN") >= 0) {
+//               System.out.println("------------------ THE RATE is NULL ------------------------  " +
+//                                  consumedItem.getTypeIdentificationPG().getNomenclature()+" - "+
+//                                  consumedItem.getTypeIdentificationPG().getTypeIdentification());
+//             }
+            continue;
+          }
+          logger.info("checking Rate on consumed item " + rate.toString());
+          subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
+                                               ose.getEndTime(), rate));
         }
-        logger.info("checking Rate on consumed item " + rate.toString());
-        subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
-                                             ose.getEndTime(), rate));
       }
     }
-    System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
-                       consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
-		       consumer.getTypeIdentificationPG().getTypeIdentification());
+     String myOrgName = 
+	    dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+    if (myOrgName.indexOf("35-ARBN") >= 0) {
+      System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
+                         consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
+                         consumer.getTypeIdentificationPG().getTypeIdentification());
+    }
     if (!subTasks.isEmpty()) {
       createAndPublishExpansion(gpTask, subTasks);
+    } else {
+      // FIX ME LATER... Dispose of GPs that don't have any subtasks. 
+      // Later we won't create the GPS after we get the new db table that
+      // defines which MEIs really are type x consumers.
+      AspectValue avs[] = new AspectValue[1];
+      avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, 
+                                          TaskUtils.getPreference(gpTask, AspectType.START_TIME));
+      AllocationResult dispAR =
+        getPlanningFactory().newAllocationResult(1.0, true, avs);
+      Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
+      dfPlugin.publishAdd(disp);
     }
 
   }
@@ -124,24 +145,18 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    *  @return Preference The new Time Preference
    **/
   private Preference createTimePreference(long bestDay, int aspectType) {
-    //TODO - really need last day in theatre from an OrgActivity -
-    long end = dfPlugin.getOplan().getEndDay().getTime();
-    //double daysBetween = ((end - bestDay)  / thePG.getBucketMillis()) - 1;
-    // TODO:  fix this what should it be?????
+    long early = dfPlugin.getLogOPlanStartTime();
+    long late = dfPlugin.getTimeUtils().addNDays(bestDay, 1);
+    long end = dfPlugin.getLogOPlanEndTime();
     double daysBetween = ((end - bestDay) / 86400000);
     //Use .0033 as a slope for now
     double late_score = .0033 * daysBetween;
     // define alpha .25
     double alpha = .25;
+    
     Vector points = new Vector();
-    // long early = TimeUtils.subtractNDays(bestDay, 1);
-    TimeUtils t = dfPlugin.getTimeUtils();
-    long early = t.subtractNDays(bestDay, 1);
     AspectScorePoint earliest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, early), alpha);
     AspectScorePoint best = new AspectScorePoint(AspectValue.newAspectValue(aspectType, bestDay), 0.0);
-//     AspectScorePoint first_late = new AspectScorePoint(getTimeUtils().addNDays(bestDay, 1),
-//                                                        alpha, aspectType);
-    long late = dfPlugin.getTimeUtils().addNDays(bestDay, 1);
     AspectScorePoint first_late = new AspectScorePoint(AspectValue.newAspectValue(aspectType, late), alpha);
     AspectScorePoint latest = new AspectScorePoint(AspectValue.newAspectValue(aspectType, end), (alpha + late_score));
 
@@ -151,7 +166,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     points.addElement(latest);
     ScoringFunction timeSF = ScoringFunction.createPiecewiseLinearScoringFunction(points.elements());
     return getPlanningFactory().newPreference(aspectType, timeSF);
-
 
     // prefs.addElement(TaskUtils.createDemandRatePreference(planFactory, rate));
     //return prefs;
@@ -358,6 +372,17 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
     return null;
   }
+
+  public void updateAllocationResults(Collection planElements) {
+    Iterator peIt = planElements.iterator();
+    while (peIt.hasNext()) {
+      PlanElement pe = (PlanElement) peIt.next();
+      if (PluginHelper.updatePlanElement(pe)) {
+        dfPlugin.publishChange(pe);
+      }
+    }
+  }
+
 }
 
 
