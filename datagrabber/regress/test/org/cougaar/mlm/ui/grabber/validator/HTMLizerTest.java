@@ -47,10 +47,57 @@ public class HTMLizerTest extends TestCase {
         super(name);
     }
 
-    public void test1() {
+    public void testBR() {
         HTMLizer h = new HTMLizer(new MyPrintStream());
         h.br();
-        MyPrintStream ps = (MyPrintStream)h.getStream();
-        assertTrue(ps.get().indexOf("<BR>")!= -1);
+        assertEquals("<BR>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testHR() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.hr();
+        assertEquals("<HR>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testH1() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.h1("foo");
+        assertEquals("<H1>foo</H1>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testH2() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.h2("foo");
+        assertEquals("<H2>foo</H2>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testH3() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.h3("foo");
+        assertEquals("<H3>foo</H3>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testTD() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.tData("foo");
+        assertEquals("<TD>foo</TD>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testTH() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.tHead("foo");
+        assertEquals("<TH>foo</TH>\n", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testLI() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.li("foo");
+        assertEquals("<LI>foo", ((MyPrintStream)h.getStream()).get());
+    }
+
+    public void testA() {
+        HTMLizer h = new HTMLizer(new MyPrintStream());
+        h.a("http://google.com/", "Google");
+        assertEquals("<A HREF=\"http://google.com/\">Google</A>\n", ((MyPrintStream)h.getStream()).get());
     }
 }

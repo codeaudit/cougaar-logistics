@@ -101,24 +101,22 @@ public class HTMLizer implements Logger{
   }
 
   public void h1(String text){
-    indent();
-    ps.print("<H1>");
-    ps.print(text);
-    ps.print("</H1>\n");
+      h(text, "1");
   }
 
   public void h2(String text){
-    indent();
-    ps.print("<H2>");
-    ps.print(text);
-    ps.print("</H2>\n");
+      h(text, "2");
   }
 
   public void h3(String text){
-    indent();
-    ps.print("<H3>");
-    ps.print(text);
-    ps.print("</H3>\n");
+      h(text, "3");
+  }
+
+  private void h(String text, String depth) {
+      indent();
+      ps.print("<H" + depth + ">");
+      ps.print(text);
+      ps.print("</H"+ depth + ">\n");
   }
 
   public void a(String ref, String text){
