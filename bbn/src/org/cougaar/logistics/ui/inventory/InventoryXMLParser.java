@@ -46,12 +46,12 @@ import org.cougaar.logistics.ui.inventory.data.*;
  **/
 
 public class InventoryXMLParser {
-  private int ctr;
-  private String[] lines;
-  private InventoryData inventory;
-  private String currentString;
-  private Stack tagStack;
-  private Logger logger;
+  protected int ctr;
+  protected String[] lines;
+  protected InventoryData inventory;
+  protected String currentString;
+  protected Stack tagStack;
+  protected Logger logger;
 
   public InventoryXMLParser() {
     tagStack = new Stack();
@@ -66,7 +66,7 @@ public class InventoryXMLParser {
     return parseString(xmlInput, true);
   }
 
-  private InventoryData parseString(String xmlInput, boolean justHeader) {
+  protected InventoryData parseString(String xmlInput, boolean justHeader) {
     ctr = 0;
     inventory = null;
     if(xmlInput != null) {
@@ -79,7 +79,7 @@ public class InventoryXMLParser {
     return inventory;
   }
 
-  private void parse(boolean justHeader) {
+  protected void parse(boolean justHeader) {
     while (ctr < lines.length) {
       currentString = lines[ctr];
       if (currentString.startsWith("</")) {
@@ -110,7 +110,7 @@ public class InventoryXMLParser {
     }
   }
 
-  private String stripTag(String tag) {
+  protected String stripTag(String tag) {
     int start = 0;
     int end = tag.length();
     if (tag.startsWith("</")) {
@@ -124,13 +124,13 @@ public class InventoryXMLParser {
     return tag.substring(start, end);
   }
 
-  private String getTagName(String tag) {
+  protected String getTagName(String tag) {
     tag = stripTag(tag);
     String words[] = tag.split("\\s");
     return words[0];
   }
 
-  private void parseHeader() {
+  protected void parseHeader() {
     String header = stripTag(currentString);
     String[] words = header.split("\\s");
     String org = null;
@@ -190,13 +190,13 @@ public class InventoryXMLParser {
     ctr++;
   }
 
-  private String getScheduleType(String tag) {
+  protected String getScheduleType(String tag) {
     tag = stripTag(tag);
     String words[] = tag.split("type=");
     return words[1].trim();
   }
 
-  private void parseSchedule() {
+  protected void parseSchedule() {
     String name = getTagName(currentString);
     logger.debug("Parsing Schedule " + name);
     String typeStr = getScheduleType(currentString);
@@ -223,7 +223,7 @@ public class InventoryXMLParser {
 
   }
 
-  private void parseHumanReadable() {
+  protected void parseHumanReadable() {
 //toss out this stuff
     String name = getTagName(currentString);
     logger.debug("Parsing: " + name);
@@ -234,7 +234,7 @@ public class InventoryXMLParser {
   }
 
 
-  private InventoryScheduleElement parseString(String elementString,
+  protected InventoryScheduleElement parseString(String elementString,
                                                int type) {
     switch (type) {
       case InventoryScheduleHeader.TASKS_TYPE:
@@ -254,7 +254,7 @@ public class InventoryXMLParser {
   }
 
 
-  private void popTag() {
+  protected void popTag() {
     String lastTag = (String) tagStack.peek();
     if (getTagName(lastTag).equals(getTagName(currentString))) {
       tagStack.pop();

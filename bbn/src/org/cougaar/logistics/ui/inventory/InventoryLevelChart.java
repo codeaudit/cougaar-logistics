@@ -220,7 +220,7 @@ public class InventoryLevelChart extends InventoryShortfallChart {
   }
 
 
-  private void setLineChartDataViewColors(ChartDataView chartDataView) {
+  protected void setLineChartDataViewColors(ChartDataView chartDataView) {
     // set line width and colors
     for (int j = 0; j < chartDataView.getNumSeries(); j++) {
       ChartDataViewSeries series = chartDataView.getSeries(j);

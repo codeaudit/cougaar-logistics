@@ -256,6 +256,10 @@ public class InventoryUIFrame extends JFrame
     multiChart = mcp;
   }
 
+  public void setParser(InventoryXMLParser myParser) {
+    parser = myParser;
+  }
+
   protected JMenuBar makeMenus() {
     JMenuBar retval = new JMenuBar();
 
@@ -649,10 +653,19 @@ public class InventoryUIFrame extends JFrame
 
   public void selectionChanged(InventorySelectionEvent e) {
     Vector assetNames = null;
+    Vector newOrgs;
     if (e.getID() == InventorySelectionEvent.ORG_SELECT) {
-      Vector newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
+      if (e.getOrg() == null){
+        newOrgs = dataSource.getOrgNames(".",e.getOrgPopMethod());
+      }
+      else {
+        newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
+      }
       if(newOrgs != null) {
 	selector.reinitializeOrgBox(newOrgs);
+      }
+      else {
+        System.out.println("InventoryUIFrame: newOrgs is null.");
       }
       if(!(e.getOrg().startsWith("."))) {
 	assetNames = dataSource.getAssetNames(e.getOrg(),
@@ -664,7 +677,7 @@ public class InventoryUIFrame extends JFrame
       selector.setAssetNames(assetNames);
 
     } else if (e.getID() == InventorySelectionEvent.ORG_POP_SELECT) {
-	Vector newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
+	newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
 	if(newOrgs != null) {
 	  selector.reinitializeOrgBox(newOrgs);
 	}

@@ -278,7 +278,7 @@ System.out.println("Submitting: " + queryStr + " to: " + orgURL +
 	  orgURLs = connection.getAllClusterIdsAndURLs(parentComponent);
       }
       else {
-	  orgURLs = connection.getClusterIdsAndURLs(parentComponent, agentPath);
+        orgURLs = connection.getClusterIdsAndURLs(parentComponent, agentPath);
       }
       connection.closeConnection();
       connection = null;
