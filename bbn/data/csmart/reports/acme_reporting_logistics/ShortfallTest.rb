@@ -29,7 +29,9 @@ module ACME
           supply_types_str = ""
           if(!supply_types.empty?)
             supply_types_str = supply_types.first
-            1.upto(supply_types.size-1) { |supply_type| supply_type_str += ",#{supply_type}"}
+            if(supply_types.size > 1)
+              1.upto(supply_types.size-1) { |ind| supply_types_str << ",#{supply_types[ind]}"}
+            end
           end
           return supply_types_str
         else
@@ -142,6 +144,8 @@ module ACME
             if !curr_agent.nil? then
               if ($1 == "TimeMillis") then
                 curr_agent["Time"] = Time.at($2.to_i/1000).strftime("%b/%d/%Y-%H:%M:%S")
+              elsif ($1 == "SupplyType") then
+                curr_agent[$1] = $2.to_s
               else
                 curr_agent[$1] = $2.to_i
               end
@@ -243,6 +247,15 @@ module ACME
         data.totals.each_key do |key|
           ikko_data["totals"] << "#{key}:  #{data.totals[key]}"        
         end
+        totalSupplyTypes = "";
+        if(!data.effectedSupplyTypes.empty?)
+          totalSupplyTypes = data.effectedSupplyTypes.first;
+          if(data.effectedSupplyTypes.size > 1)
+            1.upto(data.effectedSupplyTypes.size-1) { |ind| totalSupplyTypes << ",#{data.effectedSupplyTypes[ind]}"}
+          end
+        end
+        
+        ikko_data["totals"] << " EffectedSupplyTypes: #{totalSupplyTypes} "
         headers = ["Agent Name"]
         fields = data.agents[0].get_fields
         headers << fields
@@ -310,8 +323,8 @@ module ACME
         ikko_data["description"] << " compares the fields of the runs xlm against the baseline.  The fields that are compared are"
         ikko_data["description"] << " NumShortfall, NumUnexpected, and the SupplyTypes fields.  If there is no baseline it just checks"
         ikko_data["description"] << " whether the NumUnexpected is non-zero."
-        ikko_data["description"] << " An agent is green if it has a ratio of 1.0 and exactly matches the baseline in all the fields"
-        ikko_data["description"] << " An agent is yellow is it has a ratio of at least 0.95 and is within 10% of the baseline in the"
+        ikko_data["description"] << " An agent is green if it exactly matches the baseline in all the fields"
+        ikko_data["description"] << " An agent is yellow is it is within 10% of the baseline in the"
         ikko_data["description"] << " NumShortfall and NumUnexpected.  An agent is red if there is no matching baseline agent or when"
         ikko_data["description"] << " comparing the NumShortfall and NumUnexpected field it is greater than 10% of the baseline.  An"
         ikko_data["description"] << " An agent may also be red if the effected supply types do not match the basline exactly."
