@@ -1088,8 +1088,11 @@ public class LogisticsInventoryBG implements PGDelegate {
 	  // FCS - HOURLY : End added code
 	}
 	if (thisBucket < timeZero) {
-	  logger.error("convertTimeToBucket: thisBucket(" + thisBucket + ") - timeZero(" + 
-                       timeZero +") is < 0! (" + (thisBucket - timeZero) + ") when started with time " + 
+	  logger.error("convertTimeToBucket: For Org: " + getOrgName() + "-" 
+		       + getSupplyType() + " item: " + getItemName() 
+		       + " - thisBucket(" + thisBucket + ") - timeZero(" + 
+                       timeZero +") is < 0! (" + (thisBucket - timeZero) + 
+		       ") when started with time " + 
                        TimeUtils.dateString(time)  + "!", new Throwable());
 	  return 0;
 	}

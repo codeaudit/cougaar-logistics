@@ -172,33 +172,61 @@ public class LogisticsInventoryFormatter {
       taskStr += ",";
     } else {
       startTime = TaskUtils.getStartTime(aTask);
-      if (isCountedTask &&
-          (TaskUtils.isProjection(aTask))) {
+	if (isCountedTask &&
+	    (TaskUtils.isProjection(aTask))) {
         startTime = logInvPG.getEffectiveProjectionStart(aTask, startTime);
       }
       taskStr = taskStr + getDateString(startTime, expandTimestamp) + ",";
     }
     taskStr = taskStr + getDateString(TaskUtils.getEndTime(aTask), expandTimestamp) + ",";
-//This is qty for supply, daily rate for projection
     try {
-      taskStr = taskStr + taskUtils.getDailyQuantity(aTask);
+	//This is qty for supply, daily rate for projection
+	double dQuantity = taskUtils.getDailyQuantity(aTask);
+	if(!expandTimestamp) {
+	    long dbits = Double.doubleToLongBits(dQuantity);
+	    taskStr = taskStr + Long.toHexString(dbits);
+	}
+	else {
+	    String testStr = taskStr + dQuantity;
+	    taskStr = testStr;
+	}
     } catch (ClassCastException e) {
-      logger.error("Formatter:Problem task and the print out is :\n" + taskUtils.taskDesc(aTask));
-      throw e;
+	logger.error("Formatter:Problem task and the print out is :\n" + taskUtils.taskDesc(aTask));
+	throw e;
     } catch (RuntimeException re) {
-      if (re.getMessage().indexOf("Assertion botch:") > -1) {
-        String errorString = "Assertion Botch: start time: " + startTime;
-        errorString += (" end time: " + TaskUtils.getEndTime(aTask));
-        double d = taskUtils.getQuantity(aTask); // don't print me!!!
-        long dbits = Double.doubleToLongBits(d);
-        long rbits = Double.doubleToRawLongBits(d);
-        errorString += ("quantity_d: " + Long.toHexString(dbits));
-        errorString += ("quantity_r: " + Long.toHexString(rbits));
-        logger.error(errorString);
-      }
-      throw re;  // re-throw for now
+	if (re.getMessage().indexOf("Assertion botch:") > -1) {
+	    taskStr = taskStr + "Assertion botch!";
+	    
+	    String itemId = taskUtils.getTaskItemName(aTask);	  
+	    TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
+	    String nomenclature= null;
+	    String orgId = logInvPG.getOrg().getItemIdentificationPG().getItemIdentification();
+	    if (typeIdPG == null) {
+		logger.warn("No typeIdentificationPG for asset");
+	    }
+	    else {
+		nomenclature = typeIdPG.getNomenclature();
+	    }
+	    if (nomenclature == null) {
+		nomenclature = itemId;
+	    }
+	    String errorString = "Assertion Botch: start time: " + getDateString(startTime,true);
+	    errorString += (" end time: " + getDateString(TaskUtils.getEndTime(aTask),true));
+	    errorString += (" UID: " + aTask.getUID());
+	    errorString += (" NSN: " + itemId + ":" + nomenclature);
+	    errorString += (" at Org " + orgId + " ");
+	    double dQuantity = taskUtils.getDailyQuantity(aTask);
+	    long dbits = Double.doubleToLongBits(dQuantity);
+	    long rbits = Double.doubleToRawLongBits(dQuantity);
+	    errorString += ("quantity_d: " + Long.toHexString(dbits));
+	    errorString += ("quantity_r: " + Long.toHexString(rbits));
+	    logger.error(errorString,re);
+	}
+	else {
+	    throw re;  // re-throw for now
+	}
     }
-
+	
     writeln(taskStr);
   }
 
@@ -244,22 +272,51 @@ public class LogisticsInventoryFormatter {
         }
         String outputStr = taskStr + getDateString(startTime, expandTimestamp) + ",";
         outputStr = outputStr + getDateString(endTime, expandTimestamp) + ",";
+
+
+
 	try {
-        outputStr = outputStr + taskUtils.getQuantity(aTask, ar);
-   } catch (RuntimeException re) {
-      if (re.getMessage().indexOf("Assertion botch:") > -1) {
-        String errorString = "Assertion Botch: start time: " + startTime;
-        errorString += (" end time: " + endTime);
-	errorString += (" UID: " + aTask.getUID());
-        double d = taskUtils.getQuantity(aTask,ar); // don't print me!!!
-        long dbits = Double.doubleToLongBits(d);
-        long rbits = Double.doubleToRawLongBits(d);
-        errorString += ("quantity_d: " + Long.toHexString(dbits));
-        errorString += ("quantity_r: " + Long.toHexString(rbits));
-        logger.error(errorString);
-      }
-      throw re;  // re-throw for now
-    }
+	    double dQuantity=taskUtils.getQuantity(aTask,ar);
+	    if(!expandTimestamp) {
+		long dbits = Double.doubleToLongBits(dQuantity);
+		outputStr = outputStr + Long.toHexString(dbits);
+	    }
+	    else {
+		String testStr = outputStr + dQuantity;
+		outputStr = testStr;
+	    }
+	} catch (RuntimeException re) {
+	    if (re.getMessage().indexOf("Assertion botch:") > -1) {
+	      outputStr = outputStr + "Assertion botch!";
+	      String itemId = taskUtils.getTaskItemName(aTask);	  
+	      TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
+	      String nomenclature= null;
+	      String orgId = logInvPG.getOrg().getItemIdentificationPG().getItemIdentification();
+	      if (typeIdPG == null) {
+		  logger.warn("No typeIdentificationPG for asset");
+	      }
+	      else {
+		  nomenclature = typeIdPG.getNomenclature();
+	      }
+	      if (nomenclature == null) {
+		  nomenclature = itemId;
+	      }
+	      String errorString = "Assertion Botch on non-phased AllocationResult: start time: " + getDateString(startTime,true);
+	      errorString += (" end time: " + getDateString(endTime,true));
+	      errorString += (" UID: " + aTask.getUID());
+	      errorString += (" NSN: " + itemId + ":" + nomenclature);
+	      errorString += (" at Org " + orgId + " ");
+	      double dQuantity=taskUtils.getQuantity(aTask,ar);
+	      long dbits = Double.doubleToLongBits(dQuantity);
+	      long rbits = Double.doubleToRawLongBits(dQuantity);
+	      errorString += (" quantity_d: " + Long.toHexString(dbits));
+	      errorString += (" quantity_r: " + Long.toHexString(rbits));
+	      logger.error(errorString,re);
+	    }
+	    else {
+	      throw re;
+	    }	    
+	}
         writeln(outputStr);
       } else {
         int[] ats = ar.getAspectTypes();
@@ -310,7 +367,47 @@ public class LogisticsInventoryFormatter {
               (qtyInd < 0)) {
             logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results: " + outputStr);
           } else {
-            outputStr += taskUtils.convertResultsToDailyRate(aTask, results[qtyInd]);
+	    double dailyRate = taskUtils.convertResultsToDailyRate(aTask, results[qtyInd]);
+	    try {
+		if(!expandTimestamp) {
+		    long dbits = Double.doubleToLongBits(dailyRate);
+		    outputStr = outputStr + Long.toHexString(dbits);
+		}
+		else {
+		    String testStr = outputStr + dailyRate;
+		    outputStr = testStr;
+		}
+	    } catch (RuntimeException re) {
+		if (re.getMessage().indexOf("Assertion botch:") > -1) {
+		  outputStr = outputStr + "Assertion botch!";
+		  String itemId = taskUtils.getTaskItemName(aTask);	  
+		  TypeIdentificationPG typeIdPG = logInvPG.getResource().getTypeIdentificationPG();
+		  String nomenclature= null;
+		  String orgId = logInvPG.getOrg().getItemIdentificationPG().getItemIdentification();
+		  if (typeIdPG == null) {
+		      logger.warn("No typeIdentificationPG for asset");
+		  }
+		  else {
+		      nomenclature = typeIdPG.getNomenclature();
+		  }
+		  if (nomenclature == null) {
+		      nomenclature = itemId;
+		  }
+		  String errorString = "Assertion Botch on phased AllocationResult: start time: " + getDateString(startTime,true);
+		  errorString += (" end time: " + getDateString(endTime,true));
+		  errorString += (" UID: " + aTask.getUID());
+		  errorString += (" NSN: " + itemId + ":" + nomenclature);
+		  errorString += (" at Org " + orgId + " ");
+		  long dbits = Double.doubleToLongBits(dailyRate);
+		  long rbits = Double.doubleToRawLongBits(dailyRate);
+		  errorString += (" quantity_d: " + Long.toHexString(dbits));
+		  errorString += (" quantity_r: " + Long.toHexString(rbits));
+		  logger.error(errorString,re);
+		}
+		else {
+		    throw re;
+		}	    
+	    }
             if (startTime <= endTime) {
               writeln(outputStr);
             } else if (!isCountedAR) {
