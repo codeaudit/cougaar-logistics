@@ -35,19 +35,28 @@ import org.cougaar.logistics.plugin.inventory.AssetUtils;
 import org.cougaar.logistics.plugin.inventory.TaskUtils;
 import org.cougaar.logistics.plugin.inventory.TimeUtils;
 import org.cougaar.logistics.plugin.inventory.UtilsProvider;
-import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.logistics.plugin.utils.OrgActivityPred;
+import org.cougaar.logistics.plugin.utils.ScheduleUtils;
 import org.cougaar.planning.ldm.PlanningFactory;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
 import org.cougaar.planning.ldm.asset.PropertyGroup;
-import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
+import org.cougaar.planning.ldm.plan.PlanElement;
+import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.Schedule;
+import org.cougaar.planning.ldm.plan.ScheduleElementImpl;
+import org.cougaar.planning.ldm.plan.ScheduleImpl;
+import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.plugin.util.PluginHelper;
-import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.TimeSpan;
+import org.cougaar.util.UnaryPredicate;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -204,7 +213,6 @@ public class DemandForecastPlugin extends ComponentPlugin
   }
 
   protected void execute() {
-
     if ((supplyClassPG == null) ||
         (oplanSubscription.getCollection().isEmpty()) ||
         (orgActivities.getCollection().isEmpty()) ||
@@ -355,6 +363,9 @@ public class DemandForecastPlugin extends ComponentPlugin
         Task t = (Task) o;
         if (t.getVerb().equals(Constants.Verb.GENERATEPROJECTIONS)) {
           Asset asset = t.getDirectObject();
+          if (asset instanceof AggregateAsset) {
+            asset = ((AggregateAsset) asset).getAsset();
+          }
           return (asset.searchForPropertyGroup(supplyPGClass) != null);
         }
       }
@@ -376,6 +387,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     public boolean execute(Object o) {
       if (o instanceof Asset) {
         Asset a = (Asset) o;
+        if (a instanceof AggregateAsset) {
+          a = ((AggregateAsset) a).getAsset();
+        }
         return (a.searchForPropertyGroup(supplyPGClass) != null);
       } // if
       return false;
@@ -478,6 +492,9 @@ public class DemandForecastPlugin extends ComponentPlugin
     if (gpIt.hasNext()) {
       Task genProj = (Task) gpIt.next();
       Asset asset = genProj.getDirectObject();
+      if (asset instanceof AggregateAsset) {
+        asset = ((AggregateAsset) asset).getAsset();
+      }
       PropertyGroup pg = asset.searchForPropertyGroup(supplyClassPG);
       Collection pgInputs = getSubscriptions(pg);
       Oplan oplan = getOplan();
@@ -485,7 +502,7 @@ public class DemandForecastPlugin extends ComponentPlugin
       TimeSpan projectSpan = new ScheduleElementImpl(oplan.getCday(),
                                                      oplan.getEndDay());
       Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
-      generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, asset);
+      generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject());
 
     }
   }
@@ -511,6 +528,8 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
     ArrayList pgInputs = new ArrayList();
     Collection preds = (Collection) pgToPredsHash.get(pg);
+
+
     Iterator predsIt = preds.iterator();
     while (predsIt.hasNext()) {
       UnaryPredicate pred = (UnaryPredicate) predsIt.next();
@@ -544,7 +563,7 @@ public class DemandForecastPlugin extends ComponentPlugin
     }
     Collection hashPreds = (Collection) pgToPredsHash.get(pg);
     if (hashPreds == null) {
-      pgToPredsHash.put(pg, getPredicates(pg));
+      pgToPredsHash.put(pg, preds);
     }
   }
 
