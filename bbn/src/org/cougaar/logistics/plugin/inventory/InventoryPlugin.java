@@ -346,40 +346,53 @@ public class InventoryPlugin extends ComponentPlugin
       }
     }
 
+    // if our top level MI task got removed, clean out the references .
+    if (! aggMILSubscription.getRemovedCollection().isEmpty()) {
+      detReqHandler.resetAggMITask();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + " Top Level MI removed["+supplyType+"]");
+      }
+    }
+
+    //Extra debugging to check for same object on add and remove
+    if (logger.isDebugEnabled()) {
+      Collection addedRefills = refillSubscription.getAddedCollection();
+      Collection removedRefills = refillSubscription.getRemovedCollection();
+      Iterator addRefIt = addedRefills.iterator();
+      while (addRefIt.hasNext()) {
+        Task addedRefillTask = (Task) addRefIt.next();
+        if (removedRefills.contains(addedRefillTask)) {
+          logger.debug("Agent " + getAgentIdentifier().toString() + "InvPlugin[" +
+                             getSupplyType() + "] Got a Refill Task added and removed in my subscription " +
+                             addedRefillTask.getVerb() + " "+ addedRefillTask.getUID());
+        }
+      }
+
+      Collection addedWithdraws = withdrawTaskSubscription.getAddedCollection();
+      Collection removedWithdraws = withdrawTaskSubscription.getRemovedCollection();
+      Iterator addWD = addedWithdraws.iterator();
+      while (addWD.hasNext()) {
+        Task addedWDTask = (Task) addWD.next();
+        if (removedWithdraws.contains(addedWDTask)) {
+          logger.debug("Agent " + getAgentIdentifier().toString() + "InvPlugin[" +
+                       getSupplyType() + "] Got a Withdraw Task added and removed in my subscription " +
+                       addedWDTask.getVerb() + " "+ addedWDTask.getUID());
+        }
+      }
+    }
     if ((detReqHandler.getDetermineRequirementsTask(aggMILSubscription) != null) &&
         (logOPlan != null)) {
       if (rehydrateInvs) {
         addRehydratedInventories(blackboard.query(new InventoryPredicate(supplyType)));
+        if (logger.isDebugEnabled()) {
+          logger.debug("Agent: " + getAgentIdentifier().toString() + "Rehydrating Inventories for InvPlugin["+supplyType+"]" );
+        }
         rehydrateInvs = false;
       }
-      boolean touchedRemovedProjections =
-          supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
-      supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
-      // The following is here because the above lies about what it does
-      supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
-      handleRemovedRefills(refillSubscription.getRemovedCollection());
 
-      // If its the first time we've gotten this far we now have our policy, org and others.
-      // However, we may have missed some tasks on the added list in previous executes.
-      // If its the first time through use the underlying subscription collection
-      // instead of the added list.
-//      if (firstTimeThrough) {
-//         Enumeration newReqs = supplyTaskSubscription.elements();
-//         ArrayList newReqsCollection = new ArrayList();
-//         while (newReqs.hasMoreElements()) {
-//           newReqsCollection.add(newReqs.nextElement());
-//         }
-//         expandIncomingRequisitions(getTasksWithoutPEs(newReqsCollection));
-//         Enumeration newProjReqs = projectionTaskSubscription.elements();
-//         ArrayList newProjReqsCollection = new ArrayList();
-//         while (newProjReqs.hasMoreElements()) {
-//           newProjReqsCollection.add(newProjReqs.nextElement());
-//         }
-//         touchedProjections = expandIncomingProjections(getTasksWithoutPEs(newProjReqsCollection));
-//        expandIncomingRequisitions(getTasksWithoutPEs(supplyTaskSubscription));
-//        touchedProjections = expandIncomingProjections(getTasksWithoutPEs(projectionTaskSubscription));
-//        firstTimeThrough = false;
-//      } else {
+      //Process all the removes at once - note that the supplyExpander.handleRemovedProjections sets the
+      //touchedRemovedProjections boolean for use later.
+      boolean touchedRemovedProjections = processRemoves();
       Collection addedSupply = supplyTaskScheduler.getAddedCollection();
       TimeSpan timeSpan = null;
       if (turnOnTaskSched) {
@@ -423,9 +436,10 @@ public class InventoryPlugin extends ComponentPlugin
       // Allocate any refill tasks from previous executions that were not allocated to providers
       // but only if we are not about to rip out previous work we have done
       if (didOrgRelationshipsChange()) {
-//        logger.warn("ORG RELATIONSHIPS CHANGED");
-//	  System.out.println("SDSD myorg: " + myOrganization + " supply type:" +
-//			       supplyType + " role: " + getRole(supplyType) + "\n");
+        if (logger.isDebugEnabled()) {
+          logger.debug("ORG RELATIONSHIPS CHANGED SDSD myorg: " + myOrganization + " supply type:" +
+                      supplyType + " role: " + getRole(supplyType) + "\n");
+        }
         HashMap providers = getProvidersAndEndDates();
         Collection unprovidedTasks = getUnprovidedTasks(refillAllocationSubscription,
                                                         Constants.Verb.Supply,
@@ -449,15 +463,7 @@ public class InventoryPlugin extends ComponentPlugin
         Collection unalloc = null;
         if (addedSupply.isEmpty() && changedSupply.isEmpty()) {
           sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.Supply));
-//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-// 										       Constants.Verb.Supply));
-//             if (!unalloc.isEmpty()){
-// 	      if (logger.isWarnEnabled())
-// 		logger.warn("TRYING TO ALLOCATE SUPPLY NONREFILL TASKS...");
-//               externalAllocator.allocateRefillTasks(unalloc);
-//             }
-
+                                                                     Constants.Verb.Supply), "nonrefill supply unalloc");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.Supply);
           if (!unalloc.isEmpty()){
@@ -468,15 +474,7 @@ public class InventoryPlugin extends ComponentPlugin
         }
         if (addedProjections.isEmpty() && changedProjections.isEmpty()) {
           sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-                                                                     Constants.Verb.ProjectSupply));
-//             unalloc = sortIncomingSupplyTasks(getTaskUtils().getUnallocatedTasks(nonrefillSubscription,
-// 										       Constants.Verb.ProjectSupply));
-//             if (!unalloc.isEmpty()) {
-// 	      if (logger.isWarnEnabled())
-// 		logger.warn("TRYING TO ALLOCATE PROJECTION NONREFILL TASKS...");
-//               externalAllocator.allocateRefillTasks(unalloc);
-//             }
-
+                                                                     Constants.Verb.ProjectSupply), "nonrefill proj unalloc");
           unalloc = getTaskUtils().getUnallocatedTasks(refillSubscription,
                                                        Constants.Verb.ProjectSupply);
           if (!unalloc.isEmpty()) {
@@ -486,7 +484,6 @@ public class InventoryPlugin extends ComponentPlugin
           }
         }
       }
-//      }
 
       // call the Refill Generators if we have new demand
       if (!getTouchedInventories().isEmpty()) {
@@ -494,6 +491,11 @@ public class InventoryPlugin extends ComponentPlugin
         rebuildPGCustomerHash();
         //check to see if we have new projections
         if (touchedProjections || touchedRemovedProjections || touchedChangedProjections) {
+          if (logger.isDebugEnabled()) {
+            logger.debug("Agent: " + getAgentIdentifier().toString() + "InvPlugin" + supplyType+"]" +
+                         "something touched: tprojections: " + touchedProjections +
+                         " tRemovedProj" + touchedRemovedProjections + " tChangedProj: " + touchedChangedProjections);
+          }
           //check to see if the OM changed.  If it did process all inventories
           //since we probably ignored some demand tasks before the change
           if (OMChange) {
@@ -519,8 +521,6 @@ public class InventoryPlugin extends ComponentPlugin
         allocationAssessor.reconcileInventoryLevels(getActionableInventories());
 
       }
-      //        externalAllocator.updateAllocationResult(getActionableRefillAllocations());
-      //        allocationAssessor.reconcileInventoryLevels(backwardFlowInventories);
 
       // if we are in downward flow ONLY check the withdraw expansion results
       // note we may go through the whole list multiple times - but this seems like the
@@ -567,7 +567,7 @@ public class InventoryPlugin extends ComponentPlugin
       takeInventorySnapshot(getTouchedInventories());
       takeInventorySnapshot(getInventoriesWithDeletions());
 
-      // touchedInventories and inventoriesWithDeletions should not be cleared until 
+      // touchedInventories and inventoriesWithDeletions should not be cleared until
       // the end of transaction
       touchedInventories.clear();
       inventoriesWithDeletions.clear();
@@ -576,7 +576,30 @@ public class InventoryPlugin extends ComponentPlugin
       touchedChangedProjections = false;
       OMChange = false;
       //testBG();
+    } else {
+      //process any removes if the DetReq task returns null - this should catch the case where it gets rescinded.
+      // to reduce the amount of times this gets run at start up - only do it if we don't have
+      // a log oplan also.  Note that if the oplan gets rescinded this might need to change.
+      if (logOPlan != null) {
+        processRemoves();
+        takeInventorySnapshot(getTouchedInventories());
+        touchedInventories.clear();
+      }
     }
+  }
+
+  private boolean processRemoves() {
+    if (logger.isDebugEnabled()) {
+      logger.debug("Agent: " + getAgentIdentifier().toString() + " Processing Subscription Removes["+supplyType+"]");
+    }
+    detReqHandler.handleMILTasks(milSubscription);
+    boolean touchedRemovedProjections =
+      supplyExpander.handleRemovedProjections(projectWithdrawTaskSubscription.getRemovedCollection());
+    supplyExpander.handleRemovedRequisitions(withdrawTaskSubscription.getRemovedCollection());
+    // The following is here because the above lies about what it does
+    supplyExpander.handleRemovedRealRequisitions(supplyTaskScheduler.getRemovedCollection());
+    handleRemovedRefills(refillSubscription.getRemovedCollection());
+    return touchedRemovedProjections;
   }
 
   protected HashMap getProvidersAndEndDates() {
@@ -649,7 +672,7 @@ public class InventoryPlugin extends ComponentPlugin
   private IncrementalSubscription detReqSubscription;
 
   /** Subscription for the aggregated support request **/
-  protected CollectionSubscription aggMILSubscription;
+  protected IncrementalSubscription aggMILSubscription;
 
   /** Subscription for the MIL tasks **/
   private IncrementalSubscription milSubscription;
@@ -739,7 +762,7 @@ public class InventoryPlugin extends ComponentPlugin
 
     Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
-    aggMILSubscription = (CollectionSubscription) blackboard.subscribe(new AggMILPredicate(), false);
+    aggMILSubscription = (IncrementalSubscription) blackboard.subscribe(new AggMILPredicate());
     milSubscription = (IncrementalSubscription) blackboard.subscribe(new MILPredicate());
     detReqHandler.addMILTasks(milSubscription.elements());
     selfOrganizations = (IncrementalSubscription) blackboard.subscribe(orgsPredicate);
@@ -1259,7 +1282,7 @@ public class InventoryPlugin extends ComponentPlugin
 
   // Determines which tasks should be expanded and which should be
   // re-allocated to a supplier
-  protected Collection sortIncomingSupplyTasks(Collection tasks) {
+  protected Collection sortIncomingSupplyTasks(Collection tasks, String caller) {
     ArrayList expandList = new ArrayList();
     ArrayList passThruList = new ArrayList();
     Task t;
@@ -1267,6 +1290,10 @@ public class InventoryPlugin extends ComponentPlugin
     Asset asset;
     for (Iterator i = tasks.iterator(); i.hasNext();) {
       t = (Task) i.next();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + "InvPlugin[" + supplyType+"]" +
+                     "sorting " + caller + " task:" + t.getUID());
+      }
       asset = (Asset) t.getDirectObject();
       inventory = findOrMakeInventory(asset);
       if (inventory != null) {
@@ -1280,12 +1307,12 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   private void expandIncomingRequisitions(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
+    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "new reqs");
     supplyExpander.expandAndDistributeRequisitions(tasksToExpand);
   }
 
   private boolean expandIncomingProjections(Collection tasks) {
-    Collection tasksToExpand = sortIncomingSupplyTasks(tasks);
+    Collection tasksToExpand = sortIncomingSupplyTasks(tasks, "new projs");
     return supplyExpander.expandAndDistributeProjections(tasksToExpand);
   }
 
@@ -1358,7 +1385,13 @@ public class InventoryPlugin extends ComponentPlugin
     Inventory inventory = null;
     String item = resource.getTypeIdentificationPG().getTypeIdentification();
     inventory = (Inventory) inventoryHash.get(item);
-    if (inventory == null) {
+    if (inventory != null) {
+      if (logger.isDebugEnabled()) {
+          logger.debug("findOrMakeInventory(), FOUND inventory bing for: " +
+                AssetUtils.assetDesc(inventory.getScheduledContentPG().getAsset()));
+      }
+      return inventory;
+    } else {
       inventory = createInventory(resource, item);
       if (inventory != null) {
         addInventory(inventory);
@@ -1583,7 +1616,13 @@ public class InventoryPlugin extends ComponentPlugin
       // Build Expansion
       expansion = factory.createExpansion(parent.getPlan(), parent, wf, null);
       // Publish Expansion
-      publishAdd(expansion);
+      boolean didAddExp = publishAdd(expansion);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
+                     "publish adding expansion: " + expansion.getUID()+ 
+                     " parent " + parent.getVerb() + " task is: " + parent.getUID() +
+                     "publishAdd returned: " + didAddExp);
+      }
     }
     // Task already has expansion, add task to the workflow and publish the change
     else if (pe instanceof Expansion) {
@@ -1591,7 +1630,13 @@ public class InventoryPlugin extends ComponentPlugin
       wf = (NewWorkflow) expansion.getWorkflow();
       wf.addTask(subtask);
       ((NewTask) subtask).setWorkflow(wf);
-      publishChange(expansion);
+      boolean didChangeExp = publishChange(expansion);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
+                     "publish changing expansion: " + expansion.getUID()+ 
+                     " parent " + parent.getVerb() + " task is: " + parent.getUID() +
+                     "publishChange returned: " + didChangeExp);
+      }
     } else {
       if (logger.isErrorEnabled()) {
         logger.error("publishAddToExpansion: problem pe not Expansion? " + pe);
@@ -1599,7 +1644,12 @@ public class InventoryPlugin extends ComponentPlugin
     }
 
     // Publish new task
-    publishAdd(subtask);
+    boolean didAddSub = publishAdd(subtask);
+    if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
+                     "publish adding a " + subtask.getVerb() + " subtask: " + subtask.getUID()+
+                     "publishAdd returned: " + didAddSub);
+    }
 
     if ((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
         (subtask.getVerb().equals(Constants.Verb.PROJECTSUPPLY))) {
@@ -1609,16 +1659,24 @@ public class InventoryPlugin extends ComponentPlugin
 
   // called by the RefillGenerator to hook up the refill task to the maintain
   // inventory parent task and workflow.
-  public void publishRefillTask(Task task, Inventory inventory) {
+  public boolean publishRefillTask(Task task, Inventory inventory) {
     Task milTask = detReqHandler.findOrMakeMILTask(inventory,
                                                    aggMILSubscription);
-    publishAddToExpansion(milTask, task);
+    if (milTask != null) {
+      publishAddToExpansion(milTask, task);
+      return true;
+    }
+    return false;
   }
 
   public void disposeOfUnusedMILTask(Inventory inventory, boolean noRefills) {
     if (noRefills) {
       Task milTask = detReqHandler.findOrMakeMILTask(inventory,
                                                      aggMILSubscription);
+      // If the milTask couldn't be made - just return
+      if (milTask == null) {
+          return;
+      }
       PlanElement pe = milTask.getPlanElement();
       // If the PlanElement is already a Disposition then do nothing
       if (!(pe instanceof Disposition)) {
@@ -1823,6 +1881,10 @@ public class InventoryPlugin extends ComponentPlugin
     Iterator removedIter = removedTasks.iterator();
     while (removedIter.hasNext()) {
       Task removed = (Task) removedIter.next();
+      if (logger.isDebugEnabled()) {
+        logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
+                     "processing removal of refill: " + removed.getUID());
+      }
       String item = removed.getDirectObject().getTypeIdentificationPG().getTypeIdentification();
       Inventory inventory = (Inventory) inventoryHash.get(item);
       LogisticsInventoryPG invPG = (LogisticsInventoryPG)
