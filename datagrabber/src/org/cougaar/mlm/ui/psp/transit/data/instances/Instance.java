@@ -191,7 +191,8 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
     out.writeInt ((nomenclatures != null) ? nomenclatures.size() : 0);
     if (nomenclatures != null) {
       for (Iterator iter = nomenclatures.iterator(); iter.hasNext(); ) {
-	out.writeObject(iter.next());
+	Object obj = iter.next();
+	out.writeObject(obj);
       }
     }
 
@@ -240,8 +241,14 @@ public class Instance implements XMLable, DeXMLable, Externalizable {
 
     int numToRead = in.readInt();
     if (numToRead > 0) nomenclatures = new ArrayList(numToRead);
-    for (int i = 0; i < numToRead; i++)
-      nomenclatures.add (((String) in.readObject()).intern());
+    for (int i = 0; i < numToRead; i++) {
+      String nomen = (String) in.readObject();
+      if (nomen == null) {
+	System.err.println ("Got a null nomenclature for Instance " + UID);
+      }
+      else
+	nomenclatures.add (nomen.intern());
+    }
 
     if (numToRead > 0) typeIdentifications = new ArrayList(numToRead);
     for (int i = 0; i < numToRead; i++)
