@@ -70,6 +70,7 @@ public class InventoryLevelGenerator extends InventoryModule {
    *  @return double The quantity of the committed Refill Task for the time period.
    **/
   protected double findCommittedRefill(int bucket, LogisticsInventoryPG thePG, boolean countProjections) {
+
     double refillQty = 0;
     ArrayList reqs = thePG.getRefillRequisitions();
     ArrayList refills=null;
@@ -79,12 +80,12 @@ public class InventoryLevelGenerator extends InventoryModule {
     }
     
     // long today = inventoryPlugin.getCurrentTimeMillis();
-//     // max lead day is today + maxLeadTime
-//     int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-// 						  addNDays(today, inventoryPlugin.getMaxLeadTime()), false);
-//     if ((refill == null) && (bucket > maxLeadBucket)) {
-//       refill = thePG.getRefillProjection(bucket);
-//     }
+    //     // max lead day is today + maxLeadTime
+    //     int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+    // 						  addNDays(today, inventoryPlugin.getMaxLeadTime()), false);
+    //     if ((refill == null) && (bucket > maxLeadBucket)) {
+    //       refill = thePG.getRefillProjection(bucket);
+    //     }
     // check that the bucket we're looking at is in the projection period and its
     // not just an off day during the Requisition period
     int lastReqBucket = thePG.getLastRefillRequisition();
@@ -97,56 +98,90 @@ public class InventoryLevelGenerator extends InventoryModule {
     //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
     // filled with null instead of a task - so make sure you really have a task!
     if (refills != null) {
-	for(int i=0; i < refills.size(); i++) {
-	    refill = (Task) refills.get(i);
-	    PlanElement pe = refill.getPlanElement();
-	    AllocationResult ar = null;
-	    if (pe !=null ) {
-		//try to use the reported result - but if its null - use the 
-		// estimated result
-		if (pe.getReportedResult() != null) {
-		    ar = pe.getReportedResult();
-		} else {
-		    ar = pe.getEstimatedResult();
-		}
-		// make sure that we got atleast a valid reported OR estimated allocation result
-		if (ar != null) {
-		    if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
-			//demandrate
-			//             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-			//               //default rate for volume is days
-			//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
-			//             } else {
-			//               //default rate for counts is millis
-			//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
-			// 	  }
-			refillQty += getTaskUtils().getQuantity(refill, ar, thePG.getBucketMillis());
-		    } else {
-			try {
-			    refillQty += ar.getValue(AspectType.QUANTITY);
-			} catch (IllegalArgumentException iae) {
-			    if (logger.isErrorEnabled()) { 
-				logger.error("findCommittedRefill - The refill task " + 
-					     refill.getUID() + 
-					     "'s plan element has an allocation result without a quantity : " + ar);
-			    }
-			} catch (Exception e) {
-			    if (ar == null && logger.isErrorEnabled()) {
-				logger.error("This would blow our minds.");
-			    } else {
-				if (logger.isErrorEnabled()) {
-				    logger.error(" Task is " + getTaskUtils().taskDesc(refill) );
-				    e.printStackTrace();
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}		
+      for(int i=0; i < refills.size(); i++) {
+        refill = (Task) refills.get(i);
+        PlanElement pe = refill.getPlanElement();
+        AllocationResult ar = null;
+        if (pe !=null ) {
+          //try to use the reported result - but if its null - use the 
+          // estimated result
+          if (pe.getReportedResult() != null) {
+            ar = pe.getReportedResult();
+          } else {
+            ar = pe.getEstimatedResult();
+          }
+          // make sure that we got atleast a valid reported OR estimated allocation result
+          if (ar != null) {
+            if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
+              //demandrate
+              //             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+              //               //default rate for volume is days
+              //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
+              //             } else {
+              //               //default rate for counts is millis
+              //               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+              // 	  }
+              refillQty += getTaskUtils().getQuantity(refill, ar, thePG.getBucketMillis());
+            } else {
+              /* We may have the same task in multiple buckets.  We need to go through all the
+                 phasedAllocationResults for a given task and find the one that matches the time of this bucket.
+                 A task will have multiple phases, only one of which will apply to the bucket
+                 that we are currently processing.
+              */
+              if (ar.isPhased()) {
+                int[] ats = ar.getAspectTypes();
+                int endInd =  getIndexForType(ats, AspectType.END_TIME);
+                Enumeration phasedResults = ar.getPhasedResults();
+                while (phasedResults.hasMoreElements()) {
+                  double[] results = (double[]) phasedResults.nextElement();
+                  long phasedEndTime;
+                  phasedEndTime = (long) results[endInd];
+                  long bucketStartTime = thePG.convertBucketToTime(bucket);
+                  long bucketEndTime = bucketStartTime + (thePG.getBucketMillis()-1);
+                  if ((phasedEndTime >= bucketStartTime) && (phasedEndTime <=bucketEndTime)) {
+                    //increment the quantity
+                    int quantInd =  getIndexForType(ats, AspectType.QUANTITY);
+                    refillQty += results[quantInd];
+                  }
+                }
+
+              } else {
+                try {
+                  refillQty += ar.getValue(AspectType.QUANTITY);
+                } catch (IllegalArgumentException iae) {
+                  if (logger.isErrorEnabled()) { 
+                    logger.error("findCommittedRefill - The refill task " + 
+                                 refill.getUID() + 
+                                 "'s plan element has an allocation result without a quantity : " + ar);
+                  }
+                } catch (Exception e) {
+                  if (ar == null && logger.isErrorEnabled()) {
+                    logger.error("This would blow our minds.");
+                  } else {
+                    if (logger.isErrorEnabled()) {
+                      logger.error(" Task is " + getTaskUtils().taskDesc(refill) );
+                      e.printStackTrace();
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }		
     }
     // if we did not find a match return 0.0
     return refillQty;
+  }
+
+
+  public static int getIndexForType(int[] types, int type) {
+    for (int ii = 0; ii < types.length; ii++) {
+      if (types[ii] == type) {
+        return ii;
+      }
+    }
+    return -1;
   }
 
   /** Determines and sets the Target and Inventory Levels for projection period.

@@ -42,6 +42,7 @@ import org.cougaar.planning.ldm.measure.Duration;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.measure.Scalar;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.SupplyClassPG;
 
@@ -395,37 +396,69 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
   }
 
-    public void addRefillRequisition(Task task) {
-        long endTime = getEndTime(task);
-        int bucket = convertTimeToBucket(endTime, false);
-        if (bucket < getStartBucket()) {
-          if (logger.isErrorEnabled()) {
-            logger.error("addRefillRequisition not adding old requisition. startBucket is "+
-                         TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
-                         ", task "+taskUtils.taskDesc(task));
+  public void addRefillRequisition(Task task) {
+    PlanElement pe = task.getPlanElement();
+    if (pe != null) {
+      AllocationResult ar = pe.getReportedResult();
+      if (ar == null) {
+        ar = pe.getEstimatedResult();
+      }
+      if (ar != null) {
+        if (!ar.isPhased()) {
+          long endTime = getEndTime(task);
+          addTaskToBucket(endTime, task);
+        }
+        else {
+          int[] ats = ar.getAspectTypes();
+          int endInd =  csvWriter.getIndexForType(ats, AspectType.END_TIME);
+          Enumeration phasedResults = ar.getPhasedResults();
+          while (phasedResults.hasMoreElements()) {
+            double[] results = (double[]) phasedResults.nextElement();
+            long phasedEndTime;
+            phasedEndTime = (long) results[endInd];
+            addTaskToBucket(phasedEndTime, task);
           }
-          return;
         }
-        while (bucket >= refillRequisitions.size()) {
-            refillRequisitions.add(null);
-        }
-
-	//MWD Debugging
-	ArrayList refills = (ArrayList) refillRequisitions.get(bucket);
-	if(refills == null) {
-	    refills = new ArrayList();
-	    refillRequisitions.set(bucket, refills);
-	}
-	/**
-	 * Debug
-	else {
-	    logger.warn("Uh-Oh. At " + getOrgName() + "-item:" + getItemName() +
-			" on " + TimeUtils.dateString(endTime)+" we would be overwritting task "
-			+ ((Task) refills.get(0)).getUID() + " with new task " + task.getUID()); 
-        }
-	*/
-	refills.add(task);
+      }
+      return;
     }
+    else {
+      long endTime = getEndTime(task);
+      addTaskToBucket(endTime, task);
+    }
+  }
+
+  private void addTaskToBucket(long endTime, Task task) {
+    // probably can factor this out into a separate method.
+    int bucket = convertTimeToBucket(endTime, false);
+    if (bucket < getStartBucket()) {
+      if (logger.isErrorEnabled()) {
+        logger.error("addRefillRequisition not adding old requisition. startBucket is "+
+                     TimeUtils.dateString(convertBucketToTime(getStartBucket()))+
+                     ", task "+taskUtils.taskDesc(task));
+      }
+      return;
+    }
+    while (bucket >= refillRequisitions.size()) {
+      refillRequisitions.add(null);
+    }
+
+    //MWD Debugging
+    ArrayList refills = (ArrayList) refillRequisitions.get(bucket);
+    if(refills == null) {
+      refills = new ArrayList();
+      refillRequisitions.set(bucket, refills);
+    }
+    /**
+     * Debug
+     else {
+     logger.warn("Uh-Oh. At " + getOrgName() + "-item:" + getItemName() +
+     " on " + TimeUtils.dateString(endTime)+" we would be overwritting task "
+     + ((Task) refills.get(0)).getUID() + " with new task " + task.getUID()); 
+     }
+    */
+    refills.add(task);
+  }
 
     public int getLastWithdrawBucket() {
         Iterator list = customerHash.values().iterator();
