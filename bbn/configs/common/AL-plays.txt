@@ -1,15 +1,15 @@
-FallingBehind >= 2.0  : Level2TimeHorizon_Ammunition = 60 : Level6TimeHorizon_Ammunition = 21;
-FallingBehind >= 2.0  : Level2TimeHorizon_BulkPOL = 60 : Level6TimeHorizon_BulkPOL = 21;
-FallingBehind >= 2.0  : Level2TimeHorizon_Consumable = 60 : Level6TimeHorizon_Consumable = 21;
-FallingBehind >= 2.0  : Level2TimeHorizon_PackagedPOL = 60 : Level6TimeHorizon_PackagedPOL = 21;
-FallingBehind >= 2.0  : Level2TimeHorizon_Subsistence= 60 : Level6TimeHorizon_Subsistence= 21;
-FallingBehind >= 2.0  : AmmunitionLevel2TimeHorizonDG = 60 : AmmunitionLevel6TimeHorizonDG = 21;
-FallingBehind >= 2.0  : BulkPOLLevel2TimeHorizonDG = 60 : BulkPOLLevel6TimeHorizonDG = 21;
-FallingBehind >= 2.0  : PackagedPOLLevel2TimeHorizonDG = 60 : PackagedPOLLevel6TimeHorizonDG = 21;
-FallingBehind >= 2.0  : ConsumableLevel2TimeHorizonDG = 60 : ConsumableLevel6TimeHorizonDG = 21;
-FallingBehind >= 2.0  : SubsistenceLevel2TimeHorizonDG = 60 :SubsistenceLevel6TimeHorizonDG = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon_Ammunition = 225 : Level6TimeHorizon_Ammunition = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon_BulkPOL = 225 : Level6TimeHorizon_BulkPOL = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon_Consumable = 225 : Level6TimeHorizon_Consumable = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon_PackagedPOL = 225 : Level6TimeHorizon_PackagedPOL = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon_Subsistence= 225 : Level6TimeHorizon_Subsistence= 21;
+FallingBehind >= 2.0  : AmmunitionLevel2TimeHorizonDG = 225 : AmmunitionLevel6TimeHorizonDG = 21;
+FallingBehind >= 2.0  : BulkPOLLevel2TimeHorizonDG = 225 : BulkPOLLevel6TimeHorizonDG = 21;
+FallingBehind >= 2.0  : PackagedPOLLevel2TimeHorizonDG = 225 : PackagedPOLLevel6TimeHorizonDG = 21;
+FallingBehind >= 2.0  : ConsumableLevel2TimeHorizonDG = 225 : ConsumableLevel6TimeHorizonDG = 21;
+FallingBehind >= 2.0  : SubsistenceLevel2TimeHorizonDG = 225 :SubsistenceLevel6TimeHorizonDG = 21;
 FallingBehind >= 2.0  : Class9MaxParts = 5;
-FallingBehind >= 2.0  : Level2TimeHorizon = 60  : Level6TimeHorizon = 21;
+FallingBehind >= 2.0  : Level2TimeHorizon = 225  : Level6TimeHorizon = 21;
 
 FallingBehind == 1.0  : Level2TimeHorizon_Ammunition = 225 : Level6TimeHorizon_Ammunition = 40; 
 FallingBehind == 1.0  : Level2TimeHorizon_BulkPOL = 225 : Level6TimeHorizon_BulkPOL = 40;
