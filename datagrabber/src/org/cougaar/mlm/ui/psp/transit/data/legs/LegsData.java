@@ -207,7 +207,7 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
     }
 
     if (useCompression) {
-      System.err.println ("Writing " + numLegs + " legs, leg String.");
+      //System.err.println ("Writing " + numLegs + " legs, leg String.");
       compressCharArray(legStringBuffer, out);
     }
     else {
@@ -219,7 +219,7 @@ public class LegsData implements XMLable, DeXMLable, Externalizable{
     out.writeObject(legBooleanBuffer);
 
     if (useCompression) {
-      System.err.println ("Writing " + numLegs + " legs, asset String.");
+      //System.err.println ("Writing " + numLegs + " legs, asset String.");
       compressCharArray(assetStringBuffer, out);
     }
     else {
