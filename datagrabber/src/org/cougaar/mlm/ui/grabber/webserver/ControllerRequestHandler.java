@@ -214,42 +214,46 @@ public class ControllerRequestHandler extends DynamicRequestHandler{
     h.tHead("Action");
     h.eRow();
 
+    h.openBuffer();
+
     while(rs.next()){
       int runID=rs.getInt(1);
-      h.sRow();
-      h.tData(runID);
-      h.tData(rs.getDate(2)+" "+rs.getTime(2));
-      h.tData(rs.getDate(3)+" "+rs.getTime(3));
+      h.sRowBuffer();
+      h.tDataBuffer("" +runID);
+      h.tDataBuffer(rs.getDate(2)+" "+rs.getTime(2));
+      h.tDataBuffer(rs.getDate(3)+" "+rs.getTime(3));
       
       if(showSpace){
 	long size = ((Long) runToSize.get(new Integer(runID))).longValue();
 	total += size;
-	h.tData("" + size);
+	h.tDataBuffer("" + size);
       }
       
       Object numOwners = runToOwners.get(new Integer(runID));
       Object numAssets = runToAssets.get(new Integer(runID));
-      h.tData((numOwners == null) ? "N/A" : numOwners.toString());
-      h.tData((numAssets == null) ? "N/A" : numAssets.toString());
+      h.tDataBuffer((numOwners == null) ? "N/A" : numOwners.toString());
+      h.tDataBuffer((numAssets == null) ? "N/A" : numAssets.toString());
 
-      h.tData(h.aStr(getURLRun(COM_LISTLOG,runID)+
-		     "?displayLevel="+Logger.SEVERITIES[Logger.IMPORTANT],
-		     Run.CONDITIONS[rs.getInt(4)])+
-	      ": "+controller.getRunStatus(runID));
+      h.tDataBuffer(h.aStr(getURLRun(COM_LISTLOG,runID)+
+			   "?displayLevel="+Logger.SEVERITIES[Logger.IMPORTANT],
+			   Run.CONDITIONS[rs.getInt(4)])+
+		    ": "+controller.getRunStatus(runID));
       if(controller.isRunActive(runID)){
-	h.tData(h.aStr(getURLRun(COM_HALTRUN,runID),
-		       "Halt"));
+	h.tDataBuffer(h.aStr(getURLRun(COM_HALTRUN,runID),
+			     "Halt"));
       }else{
-	h.tData(h.aStr(getURL(WebServerConfig.VALIDATOR,
-			      ValidatorRequestHandler.COM_MAIN_MENU,
-			      "?run="+runID),
-		       "Validation")+
-		", "+
-		h.aStr(getURLRun(COM_DELRUN,runID),
-		       "Delete"));
+	h.tDataBuffer(h.aStr(getURL(WebServerConfig.VALIDATOR,
+				    ValidatorRequestHandler.COM_MAIN_MENU,
+				    "?run="+runID),
+			     "Validation")+
+		      ", "+
+		      h.aStr(getURLRun(COM_DELRUN,runID),
+			     "Delete"));
       }
-      
     }
+
+    h.closeBuffer();
+
     if(showSpace){
       h.sRow();
       h.tData("Total");
