@@ -167,17 +167,7 @@ public class ValidatorRequestHandler extends DynamicRequestHandler{
   }
 
   protected String getRunListSql(){
-    StringBuffer sb=new StringBuffer();
-    sb.append("SELECT ");
-    sb.append(Controller.COL_RUNID);
-    sb.append(", ");
-    sb.append(Controller.COL_STARTTIME);
-    sb.append(", ");
-    sb.append(Controller.COL_ENDTIME);
-    sb.append(", ");
-    sb.append(Controller.COL_CONDITION);
-    sb.append(" FROM ");
-    sb.append(dbConfig.getDBTableName(Controller.RUN_TABLE_NAME));
+    StringBuffer sb= Controller.getStdSelectQuery(dbConfig);
     if(run>0){
       sb.append(" WHERE ");
       sb.append(Controller.COL_RUNID);

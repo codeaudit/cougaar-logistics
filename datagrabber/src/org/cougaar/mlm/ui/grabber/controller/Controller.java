@@ -91,6 +91,21 @@ public class Controller extends Thread implements ResultHandler{
     runMap=new HashMap(31);
   }
 
+
+    public static StringBuffer getStdSelectQuery(DBConfig dbConfig) {
+        StringBuffer sb=new StringBuffer();
+        sb.append("SELECT ");
+        sb.append(COL_RUNID);
+        sb.append(", ");
+        sb.append(COL_STARTTIME);
+        sb.append(", ");
+        sb.append(COL_ENDTIME);
+        sb.append(", ");
+        sb.append(COL_CONDITION);
+        sb.append(" FROM ");
+        sb.append(dbConfig.getDBTableName(RUN_TABLE_NAME));
+        return sb;
+    }
   //Members:
   //////////
 

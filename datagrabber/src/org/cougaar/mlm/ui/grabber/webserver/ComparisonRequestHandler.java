@@ -222,19 +222,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
   }
 
   protected String getRunListSql(){
-    StringBuffer sb=new StringBuffer();
-    //    System.out.println ("ComparisonRequestHandler.getRunListSql called.");
-
-    sb.append("SELECT ");
-    sb.append(Controller.COL_RUNID);
-    sb.append(", ");
-    sb.append(Controller.COL_STARTTIME);
-    sb.append(", ");
-    sb.append(Controller.COL_ENDTIME);
-    sb.append(", ");
-    sb.append(Controller.COL_CONDITION);
-    sb.append(" FROM ");
-    sb.append(dbConfig.getDBTableName(Controller.RUN_TABLE_NAME));
+    StringBuffer sb= Controller.getStdSelectQuery(dbConfig);
     if(compone>0 && comptwo>0 && compone!=comptwo){
       sb.append(" WHERE ");
       sb.append(Controller.COL_RUNID);
@@ -303,12 +291,7 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
     
     h.sTable();
     h.sRow();
-    h.tHead("Run");
-    h.tHead("Run started");
-    h.tHead("Run Completed");
-    h.tHead("Units");
-    h.tHead("Assets");
-    h.tHead("Status");
+    addStdHeaders(h);
     h.tHead("Action");
     h.eRow();
     
@@ -362,13 +345,8 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
 
     h.sTable();
     h.sRow();
-    h.tHead("Run");
-    h.tHead("Run started");
-    h.tHead("Run Completed");
-    h.tHead("Units");
-    h.tHead("Assets");
-    h.tHead("Status");
-    StringBuffer str = new StringBuffer();
+      addStdHeaders(h);
+      StringBuffer str = new StringBuffer();
     str.append("Baseline:<form><select name=\"baseline\">");
     for(Iterator iter = runs.iterator(); iter.hasNext();) {
       Integer i = (Integer)iter.next();
@@ -458,7 +436,16 @@ public class ComparisonRequestHandler extends DynamicRequestHandler{
       h.eTable();
   }
 
-  protected void sendRunMenu(HTMLizer h, Statement s)
+    private void addStdHeaders(HTMLizer h) {
+        h.tHead("Run");
+        h.tHead("Run started");
+        h.tHead("Run Completed");
+        h.tHead("Units");
+        h.tHead("Assets");
+        h.tHead("Status");
+    }
+
+    protected void sendRunMenu(HTMLizer h, Statement s)
     throws IOException, SQLException{
 
     //    System.out.println ("ComparisonRequestHandler.sendRunMenu called.--->");
