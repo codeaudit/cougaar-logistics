@@ -85,7 +85,13 @@ public class InventoryLevelGenerator extends InventoryModule {
         if (ar != null) {
           if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
             //demandrate
-            refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+            if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+              //default rate for volume is days
+              refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
+            } else {
+              //default rate for counts is millis
+              refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+            }
           } else {
             try {
               refillQty = ar.getValue(AspectType.QUANTITY);
