@@ -306,6 +306,12 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
       haltForError (((FailureRunResult)r).getReason());
   }
 
+  int workID = 10000;
+
+  public void createTable (Statement statement, String tableName) {
+    workQ.enque (new DerivedWork (workID++, statement, tableName));
+  }
+
   //Actions:
 
   public class DerivedWork implements Work {
@@ -324,13 +330,13 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     public String getStatus() { return "creating table " + tableName; }
     public void halt() { halt = true;}
     public Result perform(Logger l) { 
-      if (createTable (statement, tableName))
+      if (createTableForPerform (statement, tableName))
 	return new Result () { public int getID () { return id; }};
       else
 	return new FailureRunResult (id, getRunID(), "creating derived table", false);
     }
 
-    public boolean createTable(Statement s, String tableName){
+    public boolean createTableForPerform (Statement s, String tableName){
       int idx=getIndexForTableName(tableName);
       if(idx==-1)
 	return false;
