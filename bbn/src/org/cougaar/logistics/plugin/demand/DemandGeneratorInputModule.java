@@ -21,38 +21,26 @@
 
 package org.cougaar.logistics.plugin.demand;
 
-import org.cougaar.util.log.Logger;
-
-import org.cougaar.planning.ldm.asset.Asset;
-import org.cougaar.planning.ldm.asset.AggregateAsset;
-import org.cougaar.planning.ldm.plan.Verb;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.NewTask;
-import org.cougaar.planning.ldm.plan.Workflow;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
-import org.cougaar.planning.ldm.plan.PrepositionalPhraseImpl;
-import org.cougaar.planning.ldm.measure.Latitude;
-import org.cougaar.planning.ldm.measure.Longitude;
+import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.GeolocLocationImpl;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
-import org.cougaar.glm.ldm.asset.SupplyClassPG;
-import org.cougaar.glm.ldm.Constants;
+import org.cougaar.planning.ldm.asset.AggregateAsset;
+import org.cougaar.planning.ldm.asset.Asset;
+import org.cougaar.planning.ldm.measure.Latitude;
+import org.cougaar.planning.ldm.measure.Longitude;
+import org.cougaar.planning.ldm.plan.NewTask;
+import org.cougaar.planning.ldm.plan.PrepositionalPhrase;
+import org.cougaar.planning.ldm.plan.PrepositionalPhraseImpl;
+import org.cougaar.planning.ldm.plan.Task;
+import org.cougaar.planning.ldm.plan.Verb;
 import org.cougaar.util.UnaryPredicate;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.StringTokenizer;
-import java.util.HashMap;
-import java.util.Date;
-import java.util.Vector;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.*;
 
 /**
  * The DemandGeneratorInputModule generates demand from a data file input
@@ -357,7 +345,7 @@ public class DemandGeneratorInputModule extends DemandTaskGenerator {
 
     newTask.setPrepositionalPhrases(pps.elements());
     newTask.setDirectObject(consumed);
-    newTask.setVerb(Verb.getVerb(Constants.Verb.SUPPLY));
+    newTask.setVerb(Verb.get(Constants.Verb.SUPPLY));
     newTask.setPreferences(prefs.elements());
     newTask.setContext(parentTask.getContext());
     newTask.setCommitmentDate(new Date(end));
