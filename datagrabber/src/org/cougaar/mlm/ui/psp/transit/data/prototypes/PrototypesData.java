@@ -70,6 +70,14 @@ public class PrototypesData implements XMLable, DeXMLable, Serializable{
 
   public void addPrototype(Prototype p){
     prototypes.put(p.UID, p);
+    /*
+    System.out.println (this + " - Known prototypes :");
+    for (Iterator iter = prototypes.keySet().iterator(); iter.hasNext (); ) {
+      Object key = iter.next();
+      Prototype value = (Prototype) prototypes.get (key);
+      System.out.println ("\t" + key + "->" + value.alpTypeID + "-" + value.nomenclature);
+    }
+    */
   }
 
   public Iterator getPrototypesIterator(){
