@@ -83,6 +83,7 @@
 	   <pathelement location="${lib}/planserver.jar" />
 	   <pathelement location="${lib}/util.jar" />
 	   <pathelement location="${lib}/toolkit.jar" />
+	   <pathelement location="${lib}/planning.jar" />
            <pathelement location="${lib}/glm.jar" />
            <pathelement location="${lib}/glmtrans.jar" />
            <pathelement location="${lib}/vishnu.jar" />
@@ -491,8 +492,8 @@
 
 
   <!-- Create the Cougaar overlay -->
-	<property environment="env"/>
-	<property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+	<!-- <property environment="env"/> -->
+	<!-- <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/> -->
 
 	<target name="create_cougaar_overlay" depends="set-zip-dirs">
 		<delete dir="${zipbase}"/>
