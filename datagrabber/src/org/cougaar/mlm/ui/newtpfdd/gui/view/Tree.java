@@ -228,7 +228,8 @@ public class Tree {
 	  toSet.add(to);
 	
 	if (debug)
-	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - before " + node + " s " + nodeStart + " e " + nodeEnd);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - before " + node + " s " + 
+						       nodeStart + " e " + nodeEnd + " mode " + mode);
 	
 	for (int i = 0; i < node.getChildCount (); i++) {
 	  Node childNode = getNode (node.getChildUID (i));
@@ -258,7 +259,8 @@ public class Tree {
 	  mode = getMode (mode, childMode);
 	}
 	if (debug)
-	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - after " + node + " s " + nodeStart + " e " + nodeEnd);
+	  TPFDDLoggerFactory.createLogger().logMessage(Logger.NORMAL, Logger.GENERIC, "Tree.doRollup - after " + 
+						       node + " s " + nodeStart + " e " + nodeEnd + " mode " + mode);
 
 	node.setActualStart (nodeStart);
 	node.setActualEnd   (nodeEnd);
@@ -275,7 +277,7 @@ public class Tree {
 	  return myMode;
 	if ((myMode == Node.MODE_SEA && childMode == Node.MODE_AIR) ||
 		(myMode == Node.MODE_AIR && childMode == Node.MODE_SEA)) {
-	  return Node.MODE_AGGREGATE;
+	  return Node.MODE_SEA;
 	}
 	if (myMode == Node.MODE_SEA || myMode == Node.MODE_AIR)
 	  return myMode;
