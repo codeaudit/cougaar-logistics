@@ -24,8 +24,12 @@ package org.cougaar.logistics.plugin.demand;
 import org.cougaar.glm.ldm.Constants;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
+import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.glm.plugins.AssetUtils;
+import org.cougaar.glm.plugins.ScheduleUtils;
 import org.cougaar.glm.plugins.TaskUtils;
+import org.cougaar.glm.plugins.TimeUtils;
+import org.cougaar.glm.debug.GLMDebug;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.planning.ldm.asset.AggregateAsset;
 import org.cougaar.planning.ldm.asset.Asset;
@@ -34,7 +38,9 @@ import org.cougaar.planning.ldm.asset.PropertyGroup;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.planning.ldm.measure.Rate;
 import org.cougaar.planning.ldm.plan.*;
+import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.plugin.util.PluginHelper;
+import org.cougaar.util.TimeSpan;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -69,17 +75,62 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    **/
   public void expandGenerateProjections(Task gpTask, Schedule schedule, Asset consumer) {
 
-    // TODO: Add diff based planning code
     // TODO: document, add logger, handle null checks
-    // TODO: create method to compare rates and extract tasks based on time, e.g., overlapping schedules
 
-    if (consumer instanceof AggregateAsset) {
-      consumer = ((AggregateAsset) consumer).getAsset();
-    }
+    consumer = convertAggregateToAsset(consumer);
     PropertyGroup pg = consumer.searchForPropertyGroup(dfPlugin.getSupplyClassPG());
+
+    if (gpTask.getPlanElement() != null) {
+      handleExpandedGpTask(gpTask, schedule, consumer, pg);
+    }
+    else {
+      Collection subTasks = buildTaskList(pg, schedule, gpTask, consumer);
+      String myOrgName =
+          dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
+      if (myOrgName.indexOf("35-ARBN") >= 0) {
+        System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
+                           consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
+                           consumer.getTypeIdentificationPG().getTypeIdentification());
+      }
+
+      if (!subTasks.isEmpty()) {
+        createAndPublishExpansion(gpTask, subTasks);
+      }
+      else {
+        createDisposition(gpTask);
+      }
+    }
+  }
+
+  private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg) {
+    Collection publishedTasks = dfPlugin.projectSupplySet(gpTask);
+    Collection newTasks = buildTaskList(pg, schedule, gpTask, consumer);
+
+    Schedule publishedTasksSched = newObjectSchedule(publishedTasks);
+    Schedule newTasksSched =  newObjectSchedule(newTasks);
+
+    Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched);
+    addToAndPublishExpansion(gpTask, diffedTasks);
+  }
+
+  private void createDisposition(Task gpTask) {
+    // FIX ME LATER... Dispose of GPs that don't have any subtasks.
+    // Later we won't create the GPS after we get the new db table that
+    // defines which MEIs really are type x consumers.
+    AspectValue avs[] = new AspectValue[1];
+    avs[0] = AspectValue.newAspectValue(AspectType.START_TIME,
+                                        TaskUtils.getPreference(gpTask, AspectType.START_TIME));
+    AllocationResult dispAR =
+        getPlanningFactory().newAllocationResult(1.0, true, avs);
+    Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
+    dfPlugin.publishAdd(disp);
+  }
+
+  private Collection buildTaskList(PropertyGroup pg, Schedule schedule, Task gpTask, Asset consumer) {
     Collection items = getConsumed(pg);
     Collection subTasks = new ArrayList();
     Asset consumedItem;
+
     if (!items.isEmpty()) {
       for (Iterator iterator = items.iterator(); iterator.hasNext();) {
         consumedItem = (Asset) iterator.next();
@@ -110,27 +161,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         }
       }
     }
-    String myOrgName =
-        dfPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
-    if (myOrgName.indexOf("35-ARBN") >= 0) {
-      System.out.println(" ----------- Size of Subtask Collection " + subTasks.size() +  " consumer "  +
-                         consumer.getTypeIdentificationPG().getNomenclature()+ ", "+
-                         consumer.getTypeIdentificationPG().getTypeIdentification());
+    return subTasks;
+  }
+
+  private Asset convertAggregateToAsset(Asset consumer) {
+    if (consumer instanceof AggregateAsset) {
+      consumer = ((AggregateAsset) consumer).getAsset();
     }
-    if (!subTasks.isEmpty()) {
-      createAndPublishExpansion(gpTask, subTasks);
-    } else {
-      // FIX ME LATER... Dispose of GPs that don't have any subtasks. 
-      // Later we won't create the GPS after we get the new db table that
-      // defines which MEIs really are type x consumers.
-      AspectValue avs[] = new AspectValue[1];
-      avs[0] = AspectValue.newAspectValue(AspectType.START_TIME, 
-                                          TaskUtils.getPreference(gpTask, AspectType.START_TIME));
-      AllocationResult dispAR =
-          getPlanningFactory().newAllocationResult(1.0, true, avs);
-      Disposition disp = getPlanningFactory().createDisposition(gpTask.getPlan(), gpTask, dispAR);
-      dfPlugin.publishAdd(disp);
-    }
+    return consumer;
   }
 
 
@@ -138,7 +176,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
    *  Use a Piecewise Linear Scoring Function.
    *  For details see the IM SDD.
    *  @param bestDay The time you want this preference to represent
-   *  FIXME !!!! start The earliest time this preference can have
    *  @param aspectType The AspectType of the preference- should be start_time or end_time
    *  @return Preference The new Time Preference
    **/
@@ -173,16 +210,45 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   /** Create FOR, TO, MAINTAIN, and OFTYPE prepositional phrases
    *  for use by the subclasses.
    * @param consumer the consumer the task supports
-   * FIXME time - used to find the OPlan and the geoloc for the TO preposition
    * @return Vector of PrepostionalPhrases
    **/
   protected Vector createPrepPhrases(Object consumer, Task parentTask, long end) {
-
     Vector prepPhrases = new Vector();
 
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType()));
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, dfPlugin.getMyOrganization()));
 
+    createGeolocPrepPhrases(parentTask, end, prepPhrases);
+
+    if (consumer != null) {
+      createMaintainingPrepPhrases(consumer, prepPhrases);
+    }
+
+    return prepPhrases;
+  }
+
+  private void createMaintainingPrepPhrases(Object consumer, Vector prepPhrases) {
+    MaintainedItem itemID;
+    if (consumer instanceof Asset) {
+      TypeIdentificationPG tip = ((Asset) consumer).getTypeIdentificationPG();
+      ItemIdentificationPG iip = ((Asset) consumer).getItemIdentificationPG();
+      if (iip != null) {
+        itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
+                                                         iip.getItemIdentification(), tip.getNomenclature(),
+                                                         dfPlugin);
+      }
+      else {
+        itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
+                                                         null, tip.getNomenclature(), dfPlugin);
+      }
+    }
+    else {
+      itemID = MaintainedItem.findOrMakeMaintainedItem("Other", consumer.toString(), null, null, dfPlugin);
+    }
+    prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.MAINTAINING, itemID));
+  }
+
+  private void createGeolocPrepPhrases(Task parentTask, long end, Vector prepPhrases) {
     GeolocLocation geoloc = getGeolocLocation(parentTask, (end-1000));
     if (geoloc != null) {
       prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
@@ -194,27 +260,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
         logger.error("demandTaskPrepPhrases(), Unable to find Location for Transport");
       }
     }
-
-    if (consumer != null) {
-      MaintainedItem itemID;
-      if (consumer instanceof Asset) {
-        TypeIdentificationPG tip = ((Asset) consumer).getTypeIdentificationPG();
-        ItemIdentificationPG iip = ((Asset) consumer).getItemIdentificationPG();
-        if (iip != null) {
-          itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
-                                                           iip.getItemIdentification(), tip.getNomenclature(),
-                                                           dfPlugin);
-        } else {
-          itemID = MaintainedItem.findOrMakeMaintainedItem("Asset", tip.getTypeIdentification(),
-                                                           null, tip.getNomenclature(), dfPlugin);
-        }
-      } else {
-        itemID = MaintainedItem.findOrMakeMaintainedItem("Other", consumer.toString(), null, null, dfPlugin);
-      }
-      prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.MAINTAINING, itemID));
-    }
-
-    return prepPhrases;
   }
 
   protected GeolocLocation getGeolocLocation(Task parent_task, long time) {
@@ -249,14 +294,12 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       dfPlugin.publishAdd(task);
       wf.addTask(task);
     }
-    dfPlugin.publishChange(expansion);
+     dfPlugin.publishChange(expansion);
   }
-
 
   private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
                                           long end, Rate rate) {
     logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
-    System.out.println("GenerateProjectionsExpander create ProjectSupply Task ");
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
@@ -268,17 +311,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     // start and end from schedule element
     prefs.addElement(createTimePreference(start, AspectType.START_TIME));
     prefs.addElement(createTimePreference(end, AspectType.END_TIME));
-    newTask.setPreferences(prefs.elements());
 
-    //Just use our own Prep phrases for now.  The parent task is only
-    // providing the ofType pp which we already create - otherwise we have dups.
-    //Enumeration parentPhrases = parentTask.getPrepositionalPhrases();
+    newTask.setPreferences(prefs.elements());
     Vector childPhrases = createPrepPhrases(consumer, parentTask, end);
-    //if (parentPhrases.hasMoreElements()) {
-    //  newTask.setPrepositionalPhrases(addPrepositionalPhrase(parentPhrases, childPhrases).elements());
-    //} else {
     newTask.setPrepositionalPhrases(childPhrases.elements());
-    //}
 
     return newTask;
   }
@@ -309,15 +345,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     pp.setPreposition(preposition);
     pp.setIndirectObject(io);
     return pp;
-  }
-
-  private Vector addPrepositionalPhrase(Enumeration enum, Collection childPhrases) {
-    Vector phrases = new Vector();
-    while (enum.hasMoreElements()) {
-      phrases.addElement(enum.nextElement());
-    }
-    phrases.addAll(childPhrases);
-    return phrases;
   }
 
   public Collection getConsumed(PropertyGroup pg) {
@@ -383,6 +410,223 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
+  public static Schedule newObjectSchedule(Collection tasks) {
+    Vector os_elements = new Vector();
+    ScheduleImpl s = new ScheduleImpl();
+    s.setScheduleElementType(PlanScheduleElementType.OBJECT);
+    s.setScheduleType(ScheduleType.OTHER);
+
+    for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
+      Task task = (Task)iterator.next();
+      os_elements.add(new ObjectScheduleElement(TaskUtils.getStartTime(task),
+                                                TaskUtils.getEndTime(task), task));
+    }
+    s.setScheduleElements(os_elements.elements());
+    return s;
+  }
+
+
+  /**
+   * Reconcile an intended schedule of projections with the
+   * currently published schedule of projections so as to reuse as
+   * many of the existing projection tasks as possible.
+   *
+   * Generally as elements from the published schedule are used they
+   * are removed from the schedule. Tasks remaining in the schedule
+   * are rescinded.
+   *
+   * There are three regions of interest: before now, around now and
+   * after now. These are each handled separately. In the region
+   * before now, already published tasks are unconditionally
+   * retained and new tasks are unconditionally ignored.
+   *
+   * In the region around now, tasks may start before now and end
+   * after. If both a published task and a new task spanning now
+   * exist, then there are two cases: If the demand rates are the
+   * same, then the published task is changed to look like the new
+   * task (by changing its end time preference). The start time of
+   * the published task is unchanged. Think of the existing task
+   * ending now and the new task starting now and then splicing the
+   * two together into one task. If the rates are different, then
+   * the existing task must end when the new task starts. The
+   * current code accomplishes this by setting the end time
+   * preference of the existing task to the start time of the new.
+   * This is not exactly correct since we shouldn't change the past.
+   * The times of the tasks should be no less than now.
+   *
+   * In the region after now, we try to match up the tasks. When a
+   * match is possible, the existing task is changed if necessary
+   * (and republished) otherwise it is rescinded and the new task
+   * added.
+   **/
+  protected Collection diffProjections(Schedule published_schedule, Schedule newtask_schedule) {
+    // Check for an empty schedule
+    if (newtask_schedule.isEmpty()) {
+      logger.error("publishChangeProjection(), New Task Schedule empty: "+newtask_schedule);
+      return null;
+    }
+
+    Collection add_tasks = new ArrayList();
+    // Remove from the published schedule of tasks  all tasks that occur BEFORE now but not overlapping now
+    // These historical tasks should not be changed
+    long now = dfPlugin.currentTimeMillis();
+    ObjectScheduleElement ose;
+    Iterator historical_tasks =
+        published_schedule.getEncapsulatedScheduleElements(TimeSpan.MIN_VALUE, now).iterator();
+    while (historical_tasks.hasNext()) {
+      ose = (ObjectScheduleElement)historical_tasks.next();
+      ((NewSchedule)published_schedule).removeScheduleElement(ose);
+    }
+
+    // Examine the new task and published task that straddle NOW
+    Task published_task = null;
+    Task new_task = null;
+    Collection c = newtask_schedule.getScheduleElementsWithTime(now);
+    if (!c.isEmpty()) {
+      ose = (ObjectScheduleElement)c.iterator().next();
+      new_task = (Task)ose.getObject();
+      ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
+    }
+    c =  published_schedule.getScheduleElementsWithTime(now);
+    if (!c.isEmpty()) {
+      ose = (ObjectScheduleElement)c.iterator().next();
+      published_task = (Task)ose.getObject();
+      ((NewSchedule)published_schedule).removeScheduleElement(ose);
+    }
+    if (published_task != null && new_task != null) {
+      // Depending upon whether the rate is equal set the end time of the published task to the start or
+      // end time of the new task
+      Rate new_rate = TaskUtils.getRate(new_task);
+      if (new_rate.equals(TaskUtils.getRate(published_task))) {
+        // check end times not the same
+        synchronized ( new_task ) {
+          ((NewTask)published_task).setPreference(new_task.getPreference(AspectType.END_TIME));
+        } // synch
+
+        logger.debug( printProjection("extend old end", published_task));
+        dfPlugin.publishChange(published_task);
+      } else {
+        // check to make sure start_time is not before now
+        // long that is the maximum of now and the start_time
+        long when = Math.max(now, TaskUtils.getStartTime(new_task));
+        setEndTimePreference((NewTask) published_task, when);
+        logger.debug(printProjection("truncate old end 1", published_task));
+        dfPlugin.publishChange(published_task);
+        setStartTimePreference((NewTask) new_task, when);
+        logger.debug(printProjection("truncate new start 1", new_task));
+        add_tasks.add(new_task);
+      }
+    } else if (new_task != null) {
+      setStartTimePreference((NewTask) new_task, now);
+      logger.debug(printProjection("truncate new start 2", new_task));
+      add_tasks.add(new_task);
+    } else if (published_task != null) {
+      setEndTimePreference((NewTask) published_task, now);
+      dfPlugin.publishChange(published_task);
+      logger.debug(printProjection("truncate old end 2", published_task));
+    }
+
+    // Compare new tasks to previously scheduled tasks, if a published task is found that
+    // spans the new task's start time then adjust the published task (if needed) and publish
+    // the change.  If no task is found than add new_task to list of tasks to be published.
+    // When start time of schedule is equal to TimeSpan.MIN_VALUE, schedule is empty
+    long start;
+    while (!newtask_schedule.isEmpty()) {
+      start = newtask_schedule.getStartTime();
+      ose = (ObjectScheduleElement)ScheduleUtils.getElementWithTime(newtask_schedule, start);
+      if (ose != null) {
+        new_task = (Task)ose.getObject();
+        ((NewSchedule)newtask_schedule).removeScheduleElement(ose);
+      }
+      else {
+        logger.error("publishChangeProjection(), Bad Schedule: "+newtask_schedule);
+        return null;
+      }
+      // Get overlapping schedule elements from start to end of new task
+      c = published_schedule.getScheduleElementsWithTime(start);
+      if (!c.isEmpty()) {
+        // change the task to look like new task
+        ose = (ObjectScheduleElement)c.iterator().next();
+        published_task = (Task)ose.getObject();
+        ((NewSchedule)published_schedule).removeScheduleElement(ose);
+
+        published_task = changeTask(published_task, new_task);
+        if (published_task != null) {
+          logger.debug(printProjection("replace with", published_task));
+          dfPlugin.publishChange(published_task);
+//  		    printDebug("publishChangeProjection(), Publishing changed Projections: "+
+//  			       TaskUtils.projectionDesc(new_task));
+        }
+      }
+      else {
+        // no task exists that covers this timespan, publish it
+        add_tasks.add(new_task);
+      }
+    }
+    // Rescind any tasks that were not accounted for
+    Enumeration e = published_schedule.getAllScheduleElements();
+    while (e.hasMoreElements()) {
+      Task task = (Task) ((ObjectScheduleElement) e.nextElement()).getObject();
+      logger.debug(printProjection("remove", task));
+      publishRemoveFromExpansion(task);
+    }
+    for (Iterator iterator = add_tasks.iterator(); iterator.hasNext();) {
+      Task task = (Task) iterator.next();
+      logger.debug(printProjection("add", task));
+    }
+
+    return add_tasks;
+  }
+
+
+
+  /** Create String defining task identity. Defaults to comparing preferences.
+   * @param prev_task previously published task.
+   * @param new_task already defined to have the same taskKey as task a.
+   * @return null if the two tasks are the same,
+   *         or returns task a modified for a publishChange.
+   */
+  protected Task changeTask(Task prev_task, Task new_task) {
+    // Checks for changed preferences.
+    if(prev_task==new_task) {
+      return new_task;
+    }
+    if (!TaskUtils.comparePreferences(new_task, prev_task)) {
+      synchronized ( new_task ) {
+        Enumeration ntPrefs = new_task.getPreferences();
+        ((NewTask)prev_task).setPreferences(ntPrefs);
+      } // synch
+      return prev_task;
+    }
+    return null;
+  }
+
+  protected void setStartTimePreference(NewTask task, long start) {
+    task.setPreference(createTimePreference(start, AspectType.START_TIME));
+  }
+
+  protected void setEndTimePreference(NewTask task, long end) {
+    task.setPreference(createTimePreference(end, AspectType.END_TIME));
+  }
+
+  private String printProjection(String msg, Task task) {
+    return "diffProjections() "
+        + task.getUID()
+        + " " + msg + " "
+        + TaskUtils.getDailyQuantity(task)
+        + " "
+        + TimeUtils.dateString(TaskUtils.getStartTime(task))
+        + " to "
+        + TimeUtils.dateString(TaskUtils.getEndTime(task));
+  }
+
+  public void publishRemoveFromExpansion(Task subtask) {
+    NewWorkflow wf = (NewWorkflow) subtask.getWorkflow();
+    if (wf != null) {
+      wf.removeTask(subtask);
+    }
+    dfPlugin.publishRemove(subtask);
+  }
 }
 
 
