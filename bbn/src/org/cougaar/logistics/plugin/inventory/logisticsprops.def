@@ -23,6 +23,7 @@
 package=org.cougaar.logistics.plugin.inventory
 
 import=org.cougaar.logistics.plugin.inventory.InventoryPlugin
+import=org.cougaar.glm.ldm.asset.Inventory
 
 
 [LogisticsInventoryPG]
@@ -52,8 +53,10 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	long getStartTime(); \
   	void logAllToCSVFile(long aCycleStamp);\
 	int getCriticalLevel(); \
+	boolean getFailuresFlag(); \
+	void setFailuresFlag(boolean value); \
 	void Test(); \
-	void takeSnapshot();
+	void takeSnapshot(Inventory inventory);
 
 ;;
 ;; examples
