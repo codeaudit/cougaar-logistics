@@ -25,21 +25,7 @@ package org.cougaar.logistics.ui.inventory;
 import java.util.*;
 
 
-import javax.swing.JFrame;
-import javax.swing.JMenuBar;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
-import javax.swing.JPanel;
-import javax.swing.JDialog;
-import javax.swing.JTabbedPane;
-import javax.swing.JOptionPane;
-import javax.swing.BorderFactory;
-import javax.swing.JScrollPane;
-import javax.swing.Box;
-import javax.swing.JFileChooser;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
 
 import java.awt.Container;
@@ -47,14 +33,9 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.FlowLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowAdapter;
 import java.awt.Cursor;
 import java.awt.Component;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -66,6 +47,8 @@ import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
+import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
+import org.cougaar.logistics.ui.inventory.dialog.InventoryPreferenceDialog;
 
 /**
  * <pre>
@@ -84,7 +67,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryData;
 
 
 public class InventoryUIFrame extends JFrame
-    implements ActionListener, InventorySelectionListener {
+    implements ActionListener, ItemListener, InventorySelectionListener {
 
 
   static final Cursor waitCursor =
@@ -95,11 +78,17 @@ public class InventoryUIFrame extends JFrame
   public static final String SHOW_INIT_SHORTFALL = "SHOW_INIT_SHORTFALL";
   public static final String SHOW_INIT_CDAY = "SHOW_INIT_CDAY";
 
+  public static final String INVENTORY_PREF_FILE_NAME = "InventoryPreferences.txt";
+
   protected InventoryDataSource dataSource;
   private Container contentPane;
 
   protected JTextArea editPane;
   protected JFileChooser fileChooser;
+
+  protected JCheckBoxMenuItem showInventoryChart;
+  protected JCheckBoxMenuItem showDemandChart;
+  protected JCheckBoxMenuItem showRefillChart;
 
   protected MultiChartPanel multiChart;
   protected InventoryData inventory;
@@ -109,14 +98,19 @@ public class InventoryUIFrame extends JFrame
   String cip;
   String defaultSaveCSVPath;
   String defaultOpenCSVPath;
+  String defaultPrefsPath;
   String helpFileStr;
 
 
   protected InventorySelectionPanel selector;
   protected InventoryXMLParser parser;
 
-  protected boolean showInitialShortfall=true;
-  protected boolean initialDisplayCDay=true;
+  InventoryPreferenceData prefData;
+  InventoryPreferenceDialog prefDialog = null;
+
+
+  protected boolean showInitialShortfall = true;
+  protected boolean initialDisplayCDay = true;
 
   public InventoryUIFrame(HashMap params) {
     super("Inventory GUI");
@@ -128,7 +122,7 @@ public class InventoryUIFrame extends JFrame
     initializeUIFrame(new HashMap());
   }
 
-    public InventoryUIFrame(String[] args) {
+  public InventoryUIFrame(String[] args) {
     super("Inventory GUI");
     initializeUIFrame(readParameters(args));
   }
@@ -163,10 +157,25 @@ public class InventoryUIFrame extends JFrame
       baseDir = cip + File.separator + "workspace";
     }
     defaultOpenCSVPath = baseDir + File.separator + "INVGUICSV";
+    defaultPrefsPath = baseDir + File.separator + "INVGUIPREFS";
     defaultSaveCSVPath = defaultOpenCSVPath + File.separator + formatTimeStamp(new Date(), false) + File.separator;
     File pathDirs = new File(defaultOpenCSVPath);
 
     fileChooser = new JFileChooser(pathDirs);
+
+    String invDataPath = cip + File.separator + "data"
+        + File.separator + "ui"
+        + File.separator + "inventory" + File.separator;
+
+
+    InventoryUnitConversionTable conversionTable = new InventoryUnitConversionTable();
+    conversionTable.parseAndAddFile(invDataPath + "ammo-conversion.csv");
+    InventoryChart.setConversionTable(conversionTable);
+
+    //Setup prefs and pref dialog
+    prefData = openPrefData();
+
+
 // fills frame
     doMyLayout();
     dataSource = null;
@@ -218,8 +227,10 @@ public class InventoryUIFrame extends JFrame
     editPanel.add(buttonPanel, BorderLayout.NORTH);
     editPanel.add(areaScrollPane, BorderLayout.CENTER);
 
-    multiChart = new MultiChartPanel(showInitialShortfall,initialDisplayCDay);
+    multiChart = new MultiChartPanel(showInitialShortfall, initialDisplayCDay, prefData);
     multiChart.setPreferredSize(new Dimension(700, 250));
+
+    prefDataChanged(new InventoryPreferenceData(), prefData);
 
     tabs.add("InventoryChart", multiChart);
     tabs.add("XML", editPanel);
@@ -240,16 +251,34 @@ public class InventoryUIFrame extends JFrame
     quit.addActionListener(this);
     save.addActionListener(this);
     open.addActionListener(this);
-    file.add(quit);
     file.add(open);
     file.add(save);
+    file.add(quit);
     retval.add(file);
+
+    JMenu edit = new JMenu("Edit");
+    JMenuItem pref = new JMenuItem(InventoryMenuEvent.MENU_Pref);
+    pref.addActionListener(this);
+    edit.add(pref);
+    retval.add(edit);
 
     JMenu connection = new JMenu("Connection");
     JMenuItem connect = new JMenuItem(InventoryMenuEvent.MENU_Connect);
     connect.addActionListener(this);
     connection.add(connect);
     retval.add(connection);
+
+    JMenu view = new JMenu("View");
+    showRefillChart = new JCheckBoxMenuItem(InventoryMenuEvent.MENU_RefillChart, true);
+    showDemandChart = new JCheckBoxMenuItem(InventoryMenuEvent.MENU_DemandChart, true);
+    showInventoryChart = new JCheckBoxMenuItem(InventoryMenuEvent.MENU_InventoryChart, true);
+    showDemandChart.addItemListener(this);
+    showRefillChart.addItemListener(this);
+    showInventoryChart.addItemListener(this);
+    view.add(showInventoryChart);
+    view.add(showRefillChart);
+    view.add(showDemandChart);
+    retval.add(view);
 
     JMenu helpMenu = new JMenu("Help");
     JMenuItem helpItem = new JMenuItem(InventoryMenuEvent.MENU_Help);
@@ -261,6 +290,16 @@ public class InventoryUIFrame extends JFrame
     return retval;
   }
 
+  public void itemStateChanged(ItemEvent e) {
+    if (((JCheckBoxMenuItem) e.getItem()) == showRefillChart) {
+      multiChart.showRefillChart(e.getStateChange() == e.SELECTED);
+    } else if (((JCheckBoxMenuItem) e.getItem()).getText().equals(InventoryMenuEvent.MENU_DemandChart)) {
+      multiChart.showDemandChart(e.getStateChange() == e.SELECTED);
+    } else if (((JCheckBoxMenuItem) e.getItem()) == showInventoryChart) {
+      multiChart.showInventoryChart(e.getStateChange() == e.SELECTED);
+    }
+
+  }
 
   public void actionPerformed(ActionEvent e) {
     if (e.getActionCommand().equals(InventoryMenuEvent.MENU_Exit)) {
@@ -273,6 +312,8 @@ public class InventoryUIFrame extends JFrame
       openXML();
     } else if (e.getActionCommand().equals(InventoryMenuEvent.MENU_Help)) {
       popupHelpPage();
+    } else if (e.getActionCommand().equals(InventoryMenuEvent.MENU_Pref)) {
+      popupPrefsDialog();
     } else if (e.getActionCommand().equals("Parse")) {
       logger.info("Parsing");
       inventory = parser.parseString(dataSource.getCurrentInventoryData());
@@ -286,6 +327,35 @@ public class InventoryUIFrame extends JFrame
 
   }
 
+  protected void popupPrefsDialog() {
+    if (prefDialog == null) {
+      prefDialog = new InventoryPreferenceDialog(this, prefData);
+    }
+    prefDialog.setVisible(true);
+//    System.out.println("About to exit popupPrefsDialog");
+  }
+
+  public void prefDataChanged(InventoryPreferenceData origData,
+                              InventoryPreferenceData newData) {
+    if (origData.startupWCDay != newData.startupWCDay) {
+      initialDisplayCDay = newData.startupWCDay;
+    }
+    if (origData.displayShortfall != newData.displayShortfall) {
+      showInitialShortfall = newData.displayShortfall;
+    }
+    if ((origData.showInventoryChart != newData.showInventoryChart) ||
+        (origData.showDemandChart != newData.showDemandChart) ||
+        (origData.showRefillChart != newData.showRefillChart)) {
+      showDemandChart.setState(newData.showDemandChart);
+      showInventoryChart.setState(newData.showInventoryChart);
+      showRefillChart.setState(newData.showRefillChart);
+    }
+
+    multiChart.prefDataChanged(origData, newData);
+
+    prefData = newData;
+  }
+
   protected void saveXML() {
     File pathDirs = new File(defaultSaveCSVPath);
     try {
@@ -296,7 +366,7 @@ public class InventoryUIFrame extends JFrame
       logger.error("Error creating default directory " + defaultSaveCSVPath, ex);
     }
     if (inventory != null) {
-      String fileID = defaultSaveCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/", "-")).replaceAll(":","-") + "-" + formatTimeStamp(new Date(), false) + ".csv";
+      String fileID = defaultSaveCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/", "-")).replaceAll(":", "-") + "-" + formatTimeStamp(new Date(), false) + ".csv";
       System.out.println("Save to file: " + fileID);
       fileChooser.setSelectedFile(new File(fileID));
     }
@@ -314,6 +384,57 @@ public class InventoryUIFrame extends JFrame
     }
   }
 
+  public void savePrefData(InventoryPreferenceData savePrefData) {
+    File pathDirs = new File(defaultPrefsPath);
+    try {
+      if (!pathDirs.exists()) {
+        pathDirs.mkdirs();
+      }
+    } catch (Exception ex) {
+      logger.error("Error creating default directory " + defaultOpenCSVPath, ex);
+      displayErrorString("Could not write prefs file! Could not create default directory.");
+    }
+
+
+    File saveFile = new File(defaultPrefsPath + File.separator + INVENTORY_PREF_FILE_NAME);
+    try {
+      FileWriter fw = new FileWriter(saveFile);
+      fw.write(savePrefData.toXMLString());
+      fw.flush();
+      fw.close();
+    } catch (IOException ioe) {
+      throw new RuntimeException(ioe);
+    }
+  }
+
+
+  protected InventoryPreferenceData openPrefData() {
+    File prefFile = new File(defaultPrefsPath + File.separator + INVENTORY_PREF_FILE_NAME);
+    if (!prefFile.exists()) {
+      return new InventoryPreferenceData();
+    }
+    String prefXML = "";
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(prefFile));
+
+      String nextLine = br.readLine();
+      while (nextLine != null) {
+        prefXML = prefXML + nextLine + "\n";
+        nextLine = br.readLine();
+      }
+      br.close();
+    } catch (IOException ioe) {
+      throw new RuntimeException(ioe);
+    }
+    InventoryPreferenceData savedPrefs = new InventoryPreferenceData();
+    try {
+      savedPrefs.parseValuesFromXMLString(prefXML);
+    } catch (Exception e) {
+      logger.error("Error parsing " + prefFile + "!", e);
+      return new InventoryPreferenceData();
+    }
+    return savedPrefs;
+  }
 
   protected void openXML() {
     /**
@@ -401,26 +522,26 @@ public class InventoryUIFrame extends JFrame
     timeConsumingTaskEnd(this);
   }
 
-  protected void readParameters(HashMap map){
-        String showShortfall = (String) map.get(SHOW_INIT_SHORTFALL);
-        if((showShortfall != null) &&
-            (!showShortfall.trim().equals(""))) {
-            showInitialShortfall = (!(showShortfall.trim().toLowerCase().equals("false")));
-        }
-        String displayCDay = (String) map.get(SHOW_INIT_CDAY);
-        if((displayCDay != null) &&
-            (!displayCDay.trim().equals(""))) {
-            initialDisplayCDay = (displayCDay.trim().toLowerCase().equals("true")) ;
-        }
+  protected void readParameters(HashMap map) {
+    String showShortfall = (String) map.get(SHOW_INIT_SHORTFALL);
+    if ((showShortfall != null) &&
+        (!showShortfall.trim().equals(""))) {
+      showInitialShortfall = (!(showShortfall.trim().toLowerCase().equals("false")));
+    }
+    String displayCDay = (String) map.get(SHOW_INIT_CDAY);
+    if ((displayCDay != null) &&
+        (!displayCDay.trim().equals(""))) {
+      initialDisplayCDay = (displayCDay.trim().toLowerCase().equals("true"));
+    }
   }
 
-  public static HashMap readParameters(String[] args){
+  public static HashMap readParameters(String[] args) {
     HashMap params = new HashMap();
-    for(int i=0; i < args.length; i++){
+    for (int i = 0; i < args.length; i++) {
       String[] keyAndValue = args[i].split("[=]");
       String key = keyAndValue[0];
       String value = keyAndValue[1];
-      params.put(key,value);
+      params.put(key, value);
     }
     return params;
   }
@@ -471,8 +592,10 @@ public class InventoryUIFrame extends JFrame
     if (orgs == null) {
       displayErrorString("Error. Was unable to retrieve orgs.");
     }
-    String[] supplyTypes = dataSource.getSupplyTypes();
-    selector.initializeComboBoxes(orgs, supplyTypes);
+    else {
+      String[] supplyTypes = dataSource.getSupplyTypes();
+      selector.initializeComboBoxes(orgs, supplyTypes);
+    }
   }
 
   private static void displayErrorString(String reply) {

@@ -47,6 +47,11 @@ public class InventoryMenuEvent extends ActionEvent
     public final static String MENU_SaveXML = "Save XML..";
     public final static String MENU_OpenXML = "Open XML File..";
     public final static String MENU_Help = "Help..";
+    public final static String MENU_Pref = "Preferences";
+
+    public final static String MENU_DemandChart = "Demand Chart";
+    public final static String MENU_RefillChart = "Refill Chart";
+    public final static String MENU_InventoryChart = "Inventory Chart";
 
     public InventoryMenuEvent(Object source, String command) {
 	super(source,Event.ACTION_EVENT,command);

@@ -237,7 +237,7 @@ public class InventoryConnectionManager implements InventoryDataSource {
     ConnectionHelper connection = null;
     try {
       connection = new ConnectionHelper(getURLString());
-      orgURLs = connection.getClusterIdsAndURLs();
+      orgURLs = connection.getClusterIdsAndURLs(parentComponent);
       connection.closeConnection();
       connection = null;
       if (orgURLs == null) {
