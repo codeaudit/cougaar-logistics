@@ -37,7 +37,7 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Shows dimension of cargo types
- * @author Benjamin Lubin; last modified by: $Author: tom $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/26/01
  **/
@@ -211,16 +211,12 @@ public class CargoDimensionTest extends AbstractCargoTest implements Graphable {
    * then it's not a warning.
    **/
   protected int determineResult(Statement s, int run) throws SQLException {
-    String sql = "SELECT COUNT(*) FROM "+getTableName(run);
-    ResultSet rs=null;
-    
-    sql = getQuery(run);
-    rs=s.executeQuery(sql);
+    String sql = "SELECT * FROM "+getTableName(run);
+    ResultSet rs=s.executeQuery(sql);
 
     boolean hitRealRow = false;
     while(rs.next() && !hitRealRow){
       String nomenclature = rs.getString(1);
-      //      System.out.println ("nomen " + nomenclature);
       hitRealRow = !nomenclature.startsWith ("<b>");
     }
     if (hitRealRow)
