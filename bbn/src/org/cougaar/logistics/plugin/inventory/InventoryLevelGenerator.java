@@ -169,6 +169,13 @@ public class InventoryLevelGenerator extends InventoryModule {
                    startBucket);
     }
 
+    // Bug #13358  clearTargetLevels needs to be called for both refill period and projection
+    //             period.  TargetLevels in the refill period are cleared from firstLegalRefillBucket
+    //             forward but when no refills are generated it may be the case that firstLegalRefillBucket
+    //             is greater than startBucket for projection period, thereby not properly 
+    //             clearing target levels which can result in a 'jagged' target level.
+    thePG.clearTargetLevels(startBucket);
+
     int reorderPeriod = (int)thePG.getReorderPeriod();
     int lastDemandBucket = thePG.getLastDemandBucket();
     double lastTarget;
@@ -180,7 +187,6 @@ public class InventoryLevelGenerator extends InventoryModule {
     double target = getTargetLevel(startBucket,reorderPeriodEndBucket, thePG);
     thePG.setTarget(startBucket, target);
     lastTarget = target;
-    
 //     System.out.println("Last demand bucket for "+inventoryPlugin.getResourceName(thePG.getResource())+
 // 		       "-"+getAssetUtils().getPartNomenclature(thePG.getResource())+" is "+
 // 		       lastDemandBucket+" at "+getOrgName());
