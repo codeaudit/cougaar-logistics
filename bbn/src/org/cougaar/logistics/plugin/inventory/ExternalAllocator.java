@@ -89,12 +89,20 @@ public class ExternalAllocator extends InventoryModule {
     private boolean allocateTask(Task task) {
 	Organization provider = findBestSource(task);
 	if (provider != null) {
+	  if(verifyAllocation(task,provider)){
 	    AllocationResult estAR =  createPredictedAllocationResult(task,provider);
 	    Allocation alloc = buildAllocation(task, provider, providerRole);
 	    if (estAR != null){
-		alloc.setEstimatedResult(estAR);
+	      alloc.setEstimatedResult(estAR);
+	      if(inventoryPlugin.publishAdd(alloc)) {
+		return true;
+	      }
+	      else {
+		logger.error("Unable to publish the allocation " + alloc);
+	      }
+		   
 	    }
-	    return publishVerifyAllocation(task,provider, alloc);
+	  }
 	}
 	return false;
     }
@@ -150,29 +158,25 @@ public class ExternalAllocator extends InventoryModule {
 
 
 
-    private boolean publishVerifyAllocation(Task task, Organization org,Allocation alloc) {
-	// Do not allocate tasks after they have taken place-AF does this make sense?
-	if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
-	    logger.warn("publishAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
-	    // too late to change
-	    return false;
-	}
- 	PlanElement pe = task.getPlanElement();
-	if (pe == null) {
-	    if (inventoryPlugin.publishAdd(alloc)) {
-		return true;
-	    }
-	    else {
-		logger.error("publishAlloc fail to publish alloc "+alloc);
-	    }
-	}
-	else {
-	  logger.error("Could not publishAdd.  Task" + task + 
-			 " unexpectedly already has a plan element [" +
-			 pe + "]");
-	}
-        return false;
+    private boolean verifyAllocation(Task task, Organization org) {
+      // Do not allocate tasks after they have taken place-AF does this make sense?
+      if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
+      logger.warn("publishAllocation: return ... after commitment"+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
+      // too late to change
+      return false;
+      }
+      PlanElement pe = task.getPlanElement();
+      if (pe == null) {
+	return true;
+      }
+      else {
+	logger.error("Should not publishAdd.  Task" + task + 
+		     " unexpectedly already has a plan element [" +
+		     pe + "]");
+      }
+      return false;
     }
+
 
   public void updateAllocationResult(IncrementalSubscription sub) {
     // Set up the affected inventories for the AllocationAssessor
