@@ -31,7 +31,7 @@ import java.util.HashMap;
 /**
  * Defines a queue of work to do, and manages threads to get it
  * done
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/01/01
  **/
@@ -358,12 +358,22 @@ public class WorkQueue{
       this.notify();
     }
 
-    protected synchronized void getWork(){
+    /** 
+     * Takes care not to nest locks on work queue and work thread! 
+     * fix for bug #13193
+     * https://bugs.ultralog.net/show_bug.cgi?id=13193
+     */
+    protected void getWork(){
+      boolean workExists = false;
       synchronized(getWorkQ()){
 	if(work==null)
 	  work=dequeWork();
-	if(work!=null)
+	workExists = (work!=null);
+      }
+      synchronized (this) {
+	if(workExists) {
 	  moveThreadToActive(this);
+	}
       }
     }
 
