@@ -35,7 +35,7 @@ import java.util.HashMap;
 
 /**
  * Cargo, broken down by asset class
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -153,7 +153,6 @@ public class UnitCargoByClassTest extends UnitCargoAmountTest{
     String assetClass = DGPSPConstants.COL_ASSET_CLASS;
     String type = DGPSPConstants.COL_ALP_TYPEID;
     String nomen = DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String personConstant = (new Integer(DGPSPConstants.ASSET_CLASS_PERSON)).toString();
 
     String sqlQuery =
       "select "+owner+", " + assetClass + ", " + nomen + ", " + "sum("+aggnum+")\n"+

@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.1 2002-05-14 20:41:06 gvidaver Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/LabelPanel.java,v 1.2 2002-08-07 20:58:53 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -111,7 +111,6 @@ public class LabelPanel extends Container
 	    -3 * (numRows - 1); // interrow spaces
 	final int indLozengeHeight = cumLozengeHeight / numRows;
 	final int lozengeRowInterval = getSize().height / numRows;
-	int row;
 	for (int r = 0, y = 2; r < numRows; r++, y += lozengeRowInterval) {
 	    LozengeRow lr = (LozengeRow) visibleRows.get(r);
 	    if (lr != null) {
@@ -129,7 +128,7 @@ public class LabelPanel extends Container
 
     private void setFontMetrics()
     {
-	int rowHeight, textHeight;
+	int rowHeight;
 	Font myFont;
 	if ( visibleRows.size() == 0 )
 	    myFont = FontCache.get(12);

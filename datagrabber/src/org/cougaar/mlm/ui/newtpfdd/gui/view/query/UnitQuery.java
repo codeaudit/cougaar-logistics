@@ -668,7 +668,6 @@ public class UnitQuery extends SqlQuery {
 	String self2TypeID  = "self2" + "." + DGPSPConstants.COL_ALP_TYPEID;
 	String self2Nomen   = "self2" + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
 	String self2Proto   = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
-	String self2ParentProto  = "self2" + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
 
 	String instanceOwner  = assetInstanceTable + "." + DGPSPConstants.COL_OWNER;
 	String instanceProto  = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
@@ -914,7 +913,6 @@ public class UnitQuery extends SqlQuery {
 	String conveyancePrototypeTable = DGPSPConstants.CONV_PROTOTYPE_TABLE + "_" + recentRun;
 
 	String assetProtoTable = DGPSPConstants.ASSET_PROTOTYPE_TABLE + "_" + recentRun;
-	String prototypeParentProto = assetProtoTable + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
 
 	String instanceProto     = assetInstanceTable + "." + DGPSPConstants.COL_PROTOTYPEID;
 

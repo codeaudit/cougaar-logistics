@@ -66,7 +66,7 @@ import org.cougaar.mlm.ui.grabber.validator.Graphable;
 
 /**
  * Displays statistics information based on grabber Validation tests
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 5/3/01
  **/
@@ -138,8 +138,6 @@ public class GraphPane extends StatisticsPane {
 	  Color.blue
 	};
 	ucChart.setColors( cuc );
-	
-	int style = 0;
 	
 	//    ucChart.setFont(new Font("SansSerif", Font.ITALIC, 20));//iFonts[style]);
 	//	ucChart.setForeground(Color.black);//iForegroundColors[style]);

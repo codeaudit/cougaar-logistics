@@ -79,7 +79,6 @@ public class TotalByClassTest extends Test{
   private String getQuery (int run) {
     String assetTable = Controller.getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,run);
     String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
-    String owner = DGPSPConstants.COL_OWNER;
     String aggnum = DGPSPConstants.COL_AGGREGATE;
     String instProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
@@ -112,8 +111,7 @@ public class TotalByClassTest extends Test{
   }
 
   protected void insertResults (Logger l, Statement s, int run) {
-	String currentOrg, lastOrg = null;
-	boolean hasByClass = false;
+	String currentOrg = null;
     ResultSet rs=null;
 	String sql = null;
 

@@ -118,11 +118,9 @@ public class ArrivalTimePrecisionTest extends Test{
     String assetTable = Controller.getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,run);
     String itinTable = Controller.getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE,run);
     String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
-    String arrivalTimeTable = Controller.getTableName(DGPSPConstants.ARRIVAL_TIME_TABLE,run);
     String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
 
     String assetOwner = assetTable+"."+DGPSPConstants.COL_OWNER;
-    String prefOwner = arrivalTimeTable+"."+DGPSPConstants.COL_OWNER;
     String assetAssetid = assetTable+"."+DGPSPConstants.COL_ASSETID;
     String assetProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
@@ -131,7 +129,6 @@ public class ArrivalTimePrecisionTest extends Test{
     String legLegid = legTable+"."+DGPSPConstants.COL_LEGID;
     String legEndtime = legTable+"."+DGPSPConstants.COL_ENDTIME;
     String legEndLoc = legTable+"."+DGPSPConstants.COL_ENDLOC;
-    String preferredArrivaltime = arrivalTimeTable+"."+DGPSPConstants.COL_PREFERREDARRIVALTIME;
     String protoIsLowFi = protoTable+"."+DGPSPConstants.COL_IS_LOW_FIDELITY;
 
     String sqlQuery =

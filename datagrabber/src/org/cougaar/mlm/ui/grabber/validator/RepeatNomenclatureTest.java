@@ -31,7 +31,7 @@ import java.sql.ResultSet;
 
 /**
  * Looks for prototypes with repeated ALP nomenclature
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -74,10 +74,8 @@ public class RepeatNomenclatureTest extends Test{
     String abbrev2 = "p2";
     String pPrototype1 = abbrev1+"."+DGPSPConstants.COL_PROTOTYPEID;
     String pNomenclature1 = abbrev1+"."+DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String pALPType1 = abbrev1+"."+DGPSPConstants.COL_ALP_TYPEID;
     String pPrototype2 = abbrev2+"."+DGPSPConstants.COL_PROTOTYPEID;
     String pNomenclature2 = abbrev2+"."+DGPSPConstants.COL_ALP_NOMENCLATURE;
-    String pALPType2 = abbrev2+"."+DGPSPConstants.COL_ALP_TYPEID;
 
     String sqlQuery =
       "select "+pPrototype1+", "+pNomenclature2+"\n"+
@@ -91,7 +89,6 @@ public class RepeatNomenclatureTest extends Test{
   /**Actually do the query and build the table**/
   protected void constructTable(Logger l, Statement s, int run)
     throws SQLException{
-    StringBuffer sb=new StringBuffer();
     createTable(s, run);
     insertResults(l,s,run);
   }

@@ -36,7 +36,7 @@ import java.util.Map;
 
 /**
  * Cargo, broken down by asset class
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/26/01
  **/
@@ -172,8 +172,6 @@ public class UnitCargoBySeaOrAirTest extends UnitCargoByClassTest{
     String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
     String convInstTable = Controller.getTableName(DGPSPConstants.CONV_INSTANCE_TABLE,run);
     String convProtoTable = Controller.getTableName(DGPSPConstants.CONV_PROTOTYPE_TABLE,run);
-    String owner = assetTable + "."+ DGPSPConstants.COL_OWNER;
-    String aggnum = DGPSPConstants.COL_AGGREGATE;
     String instProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String instID = assetTable+"."+DGPSPConstants.COL_ASSETID;
     String itinID = itinTable+"."+DGPSPConstants.COL_ASSETID;
@@ -185,7 +183,6 @@ public class UnitCargoBySeaOrAirTest extends UnitCargoByClassTest{
     String convProtoProtoID = convProtoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String conveyanceType = convProtoTable+"."+DGPSPConstants.COL_CONVEYANCE_TYPE;
-    String assetClass = DGPSPConstants.COL_ASSET_CLASS;
 
     String sqlQuery =
       "select distinct "+instID+"," + conveyanceType + "\n"+
@@ -203,7 +200,6 @@ public class UnitCargoBySeaOrAirTest extends UnitCargoByClassTest{
   private String getQuery (int run) {
     String assetTable = Controller.getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE,run);
     String protoTable = Controller.getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE,run);
-    String itinTable = Controller.getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE,run);
     String legTable = Controller.getTableName(DGPSPConstants.CONVEYED_LEG_TABLE,run);
     String convInstTable = Controller.getTableName(DGPSPConstants.CONV_INSTANCE_TABLE,run);
     String convProtoTable = Controller.getTableName(DGPSPConstants.CONV_PROTOTYPE_TABLE,run);
@@ -211,13 +207,6 @@ public class UnitCargoBySeaOrAirTest extends UnitCargoByClassTest{
     String aggnum = DGPSPConstants.COL_AGGREGATE;
     String instProtoid = assetTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String instID = assetTable+"."+DGPSPConstants.COL_ASSETID;
-    String itinID = itinTable+"."+DGPSPConstants.COL_ASSETID;
-    String itinLegID = itinTable+"."+DGPSPConstants.COL_LEGID;
-    String legLegID = legTable+"."+DGPSPConstants.COL_LEGID;
-    String legConvID = legTable+"."+DGPSPConstants.COL_CONVEYANCEID;
-    String convConvID = convInstTable+"."+DGPSPConstants.COL_CONVEYANCEID;
-    String convInstProtoID = convInstTable+"."+DGPSPConstants.COL_PROTOTYPEID;
-    String convProtoProtoID = convProtoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
     String protoProtoid = protoTable+"."+DGPSPConstants.COL_PROTOTYPEID;
 	//    String conveyanceType = convProtoTable+"."+DGPSPConstants.COL_CONVEYANCE_TYPE;
     String conveyanceType = DGPSPConstants.COL_CONVEYANCE_TYPE;

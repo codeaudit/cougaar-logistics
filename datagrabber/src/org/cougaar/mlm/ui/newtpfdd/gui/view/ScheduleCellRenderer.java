@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.2 2002-08-07 20:41:14 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/view/ScheduleCellRenderer.java,v 1.3 2002-08-07 20:58:53 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -159,7 +159,7 @@ public class ScheduleCellRenderer extends JLabel implements TableCellRenderer
 	}
 	int startLoc = 0, endLoc = 0;
 	String startDateString = null, endDateString = null;
-	String minStartString = null, maxEndString = null;
+	String minStartString = null;
 	int width;
 	boolean dataFound = false;
 

@@ -618,7 +618,6 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     String assetInstanceTable = getTableName(DGPSPConstants.ASSET_INSTANCE_TABLE);
     String assetProtoTable = getTableName(DGPSPConstants.ASSET_PROTOTYPE_TABLE);
     String conveyanceInstanceTable = getTableName(DGPSPConstants.CONV_INSTANCE_TABLE);
-    String conveyancePrototypeTable = getTableName(DGPSPConstants.CONV_PROTOTYPE_TABLE);
     String itinTable = getTableName(DGPSPConstants.ASSET_ITINERARY_TABLE);
     String cLegTable = getTableName(DGPSPConstants.CONVEYED_LEG_TABLE);
     String cccDimTable = getTableName(DGPSPConstants.CARGO_CAT_CODE_DIM_TABLE);
@@ -636,7 +635,6 @@ public class PrepareDerivedTables extends PrepareDBTables implements ResultHandl
     String self2TypeID       = "self2" + "." + DGPSPConstants.COL_ALP_TYPEID;
     String self2Nomen        = "self2" + "." + DGPSPConstants.COL_ALP_NOMENCLATURE;
     String self2Proto        = "self2" + "." + DGPSPConstants.COL_PROTOTYPEID;
-    String self2ParentProto  = "self2" + "." + DGPSPConstants.COL_PARENT_PROTOTYPEID;
 
     String cccDimWeight   = DGPSPConstants.COL_WEIGHT;
     String cccDimWidth    = DGPSPConstants.COL_WIDTH;
