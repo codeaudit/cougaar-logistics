@@ -223,4 +223,24 @@ public class TaskUtils extends PluginHelper {
     }
   }
 
+  /** 
+   * Given a Scalar, return a double value representing
+   * Gallons for Volume,
+   * Eaches for Count and
+   * Short Tons for Mass.
+   **/
+  public double getDouble(Scalar measure) {
+    double result = Double.NaN;
+    if (measure instanceof Volume) {
+      result = ((Volume)measure).getGallons();
+    } else if (measure instanceof Count) {
+      result = ((Count)measure).getEaches();
+    } else if (measure instanceof Mass) {
+      result = ((Mass)measure).getShortTons();
+    } else {
+      logger.error("InventoryBG.getDouble(), Inventory cannot determine type of measure");
+    }
+    return result;
+  }	
+
 }
