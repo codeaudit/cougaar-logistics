@@ -29,6 +29,7 @@ import org.cougaar.mlm.ui.grabber.logger.Logger;
 import org.cougaar.mlm.ui.grabber.config.WebServerConfig;
 import org.cougaar.mlm.ui.grabber.config.DBConfig;
 import org.cougaar.mlm.ui.grabber.controller.Controller;
+import org.cougaar.mlm.ui.grabber.controller.DBConnectionProvider;
 
 import java.io.PrintStream;
 import java.io.IOException;
@@ -62,9 +63,10 @@ public class RequestHandlerFactory implements HttpConstants{
   //////////
 
   public RequestHandler getRequestHandler(DBConfig dbConfig,
-					  Connection connection,
+					  DBConnectionProvider connectionProvider,
 					  WebServerConfig config, 
 					  HttpRequest request){
+    Connection connection = connectionProvider.getDBConnection ();
     //were not handling anything but HEAD & GET right now...
     int command = request.getCommand();
     if(command==HEAD) {
@@ -79,7 +81,7 @@ public class RequestHandlerFactory implements HttpConstants{
 					    config,request,controller);
       }else if(file.startsWith(config.getBaseDirectory
 			       (WebServerConfig.VALIDATOR))){
-	return new ValidatorRequestHandler(dbConfig,connection,
+	return new ValidatorRequestHandler(dbConfig,connectionProvider,
 					   config,request);
       }else if(file.startsWith(config.getBaseDirectory
 			       (WebServerConfig.COMPLETIONASSESSOR))){
