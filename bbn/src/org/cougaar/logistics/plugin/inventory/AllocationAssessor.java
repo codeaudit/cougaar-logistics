@@ -130,6 +130,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       int end_bucket = thePG.getLastDemandBucket();
       int lastWithdrawBucket = thePG.getLastWithdrawBucket();
       int firstProjectBucket = thePG.getFirstProjectWithdrawBucket();
+      if (firstProjectBucket == -1) {
+	  firstProjectBucket = today_bucket;
+      }
       // bump this one more day - otherwise we get withdraws at the boundary
       if (today_bucket < lastWithdrawBucket) {
         createWithdrawAllocations(today_bucket, lastWithdrawBucket, inventory, thePG);
@@ -320,7 +323,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   private void determineProjectionAllocations(int startBucket, int endBucket, 
 					      Inventory inv, 
 					      LogisticsInventoryPG thePG) {
-    //calculate levels by adding in all refill projection results
+      //calculate levels by adding in all refill projection results
     // go through each projectwithdraw - allocate to the inventory
     int currentBucket = startBucket;
     double qty = 0;
@@ -329,19 +332,27 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     long start, end;
     Task failedProjection = null;
     int endOfLevelSixBucket = thePG.getEndOfLevelSixBucket();
+
     endBucket = Math.min(endOfLevelSixBucket-1, endBucket);
     // loop through the bucket in the inventory
     while (currentBucket <= endBucket) {
       yesterdayLevel = thePG.getLevel(currentBucket - 1);
-      Task refill = thePG.getRefillProjection(currentBucket);
-      //!!!NOTE getRefillProjection can return a null for a bucket check to make sure
-      // you have a real task and not a null.
-      if (refill != null) {
-	start = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.START_TIME);
-	end = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.END_TIME);
-	todayRefill = thePG.getProjectionTaskDemand(refill, currentBucket, start, end);
+      // if we don't have any actual demand from the customers, we process projection 
+      // allocations from the start - but the inventory level and the project withdraws
+      // should be determined by actual refills if we have them.
+      if (currentBucket <= thePG.getLastRefillRequisition()) {
+	  todayRefill = findCommittedRefill(currentBucket, thePG);
       } else {
-	todayRefill = 0;
+	  Task refill = thePG.getRefillProjection(currentBucket);
+	  //!!!NOTE getRefillProjection can return a null for a bucket check to make sure
+	  // you have a real task and not a null.
+	  if (refill != null) {
+	      start = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.START_TIME);
+	      end = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.END_TIME);
+	      todayRefill = thePG.getProjectionTaskDemand(refill, currentBucket, start, end);
+	  } else {
+	      todayRefill = 0;
+	  }
       }
       runningQty = 0;
       if (! trailingPointersHash.isEmpty()) {
@@ -376,7 +387,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
 	      }
 	    }
 	  } else {
-//  	    System.out.println("&&&&&&&&&&Failed projectWithdraw, todayRefill ="+
+	//      System.out.println("&&&&&&&&&&Failed projectWithdraw, todayRefill ="+
 //  			       todayRefill+" "+			       
 //    			       getTaskUtils().taskDesc(projWdraw));
 //  	    int cb=1;
