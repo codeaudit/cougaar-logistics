@@ -554,7 +554,7 @@ public class DemandGeneratorPlugin extends ComponentPlugin
     //Multiply it back to which gives the start of the period.
     long timeOut = periods * period;
     if (timeIn == timeOut) {
-      logger.error("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
+      logger.debug("GetStartOfToday - unexpected timeIn==timeOut==" + new Date(timeOut));
 
     }
     return timeOut;
