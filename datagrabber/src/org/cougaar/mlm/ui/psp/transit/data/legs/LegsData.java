@@ -26,7 +26,12 @@ import org.cougaar.core.util.UID;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.io.Externalizable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serializable;
+
+import java.nio.*;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -40,7 +45,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class LegsData implements XMLable, DeXMLable, Serializable{
+public class LegsData implements XMLable, DeXMLable, Externalizable{
 
   //Constants:
 
@@ -87,6 +92,7 @@ public class LegsData implements XMLable, DeXMLable, Serializable{
    * @param w output Writer
    **/
   public void toXML(XMLWriter w) throws IOException{
+    //    System.out.println ("Writing Legs Data to xml.");
     w.optagln(NAME_TAG);
 
     Iterator iter = getLegsIterator();
@@ -96,6 +102,7 @@ public class LegsData implements XMLable, DeXMLable, Serializable{
     }
 
     w.cltagln(NAME_TAG);
+    //    System.out.println ("Finished Writing Legs Data to xml.");
   }
 
   //DeXMLable members:
@@ -145,6 +152,112 @@ public class LegsData implements XMLable, DeXMLable, Serializable{
       throw new UnexpectedXMLException("Unknown object:" + name + ":"+obj);
     }
   }
+
+  /**
+   * Mandatory writeExternal method. <p>
+   *
+   * Does all the writing manually -- creates type specific buffers to store
+   * Leg fields in, and writes them once at the end of the method.  Massive
+   * speed up compared to hitting the socket repeatedly. <p>
+   *
+   * Note also that it's speeded up by having all strings be 40 
+   * characters long.  This may come back to bite us later, if any are proved to be longer. <p>
+   *
+   * That is, I don't have to parse every character, I can just jump forward in the string
+   * buffer 40 characters at a time, slurp them up into a string, and continue.
+   */
+  public void writeExternal(ObjectOutput out) throws IOException {
+    int numLegs = legs.values().size();
+    out.writeInt (numLegs);
+    char [] legStringBuffer = new char [numLegs * Leg.numStringFields * Leg.maxStringLength];
+    long [] legLongBuffer   = new long [numLegs * Leg.numLongFields];
+    int  [] legIntBuffer    = new int  [numLegs * Leg.numIntFields];
+    boolean [] legBooleanBuffer = new boolean [numLegs * Leg.numBooleanFields];
+
+    Iterator iter = getLegsIterator();
+    int index = 0;
+    int totalAssets = 0;
+
+    while(iter.hasNext()){
+      Leg li = (Leg)iter.next();
+      totalAssets += li.writeToBuffer (index++, 
+				       legStringBuffer, 
+				       legLongBuffer, 
+				       legIntBuffer, 
+				       legBooleanBuffer);
+    }
+
+    char [] assetStringBuffer = new char [totalAssets * Leg.maxStringLength];
+    index = 0;
+    iter = getLegsIterator();
+    while(iter.hasNext()){
+      Leg li = (Leg)iter.next();
+      index = li.writeToAssetBuffer (index, assetStringBuffer);
+    }
+
+    out.writeObject(legStringBuffer);
+    out.writeObject(legLongBuffer);
+    out.writeObject(legIntBuffer);
+    out.writeObject(legBooleanBuffer);
+    out.writeObject(assetStringBuffer);
+
+    //    System.out.println ("legString " + new String(legStringBuffer));
+    //    System.out.println ("legLong   " + legLongBuffer);
+    //    System.out.println ("legInt    " + legIntBuffer);
+    //    System.out.println ("legBoolean  " + legBooleanBuffer);
+    //    System.out.println ("assetString " + new String(assetStringBuffer));
+  }
+
+    /**
+     * Mandatory readExternal method. Will read in the data that we wrote out
+     * in the writeExternal method. MUST BE IN THE SAME ORDER and type as we
+     * wrote it out. By the time, readExternal is called, an object of this 
+     * class has already been created using the public no-arg constructor,
+     * so this method is used to restore the data to all of the fields of the 
+     * newly created object.
+     *
+     * Reads from type-specific buffers to get field info.  Calls leg's readFromBuffer
+     * to take the fields it needs from the buffers.
+     */
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    int numLegs = in.readInt ();
+
+    char [] legStringBuffer   = (char [])    in.readObject();
+    long [] legLongBuffer     = (long [])    in.readObject();
+    int  [] legIntBuffer      = (int  [])    in.readObject();
+    boolean [] legBooleanBuffer  = (boolean []) in.readObject();
+    char [] assetStringBuffer = (char [])    in.readObject();
+
+    CharBuffer charBuffer = CharBuffer.allocate (legStringBuffer.length);
+    String temp = new String(legStringBuffer);
+    charBuffer.put (temp);
+    charBuffer.rewind();
+    //    System.out.println ("orig size " + legStringBuffer.length + " temp " + temp + " char Buffer is " + charBuffer);
+
+    CharBuffer assetCharBuffer = CharBuffer.allocate (assetStringBuffer.length);
+    temp = new String (assetStringBuffer);
+    assetCharBuffer.put (temp);
+    assetCharBuffer.rewind();
+    //    System.out.println ("orig size " + assetStringBuffer.length + " temp " + temp + 
+    //			" asset char Buffer is " + assetCharBuffer);
+
+    // might want to switch to using LongBuffers for readability
+    //    LongBuffer longBuffer = LongBuffer.allocate (legLongBuffer.length);
+    //    longBuffer.put (legLongBuffer);
+
+    for (int i = 0; i < numLegs; i++) {
+      Leg li = new Leg ();
+      li.readFromBuffer (i, 
+			 charBuffer,
+			 legLongBuffer,
+			 legIntBuffer,
+			 legBooleanBuffer,
+			 assetCharBuffer);
+      addLeg (li);
+      //      System.out.println ("Leg #" + i + " is\n" + li);
+    }
+  }
+
   //Inner Classes:
 
   private static final long serialVersionUID = 175028348348559839L;

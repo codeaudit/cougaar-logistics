@@ -29,6 +29,8 @@ import java.io.Externalizable;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 //import java.io.Serializable;
+import java.nio.*;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,7 +44,7 @@ import org.xml.sax.Attributes;
  *
  * @since 1/28/01
  **/
-public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
+public class Leg implements XMLable, DeXMLable /*, Externalizable - Serializable*/{
 
   //Constants:
   ////////////
@@ -89,10 +91,10 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
   public UID UID;
   public long startTime;
   public long endTime;
-  public long readyAtTime;
-  public long earliestEndTime;
-  public long bestEndTime;
-  public long latestEndTime;
+  public long readyAtTime;     // not sent
+  public long earliestEndTime; // not sent
+  public long bestEndTime;     // not sent
+  public long latestEndTime;   // not sent
   public String startLoc;
   public String endLoc;
   /**Use LEG_TYPE_* constants**/
@@ -107,10 +109,19 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
 
   protected List assetsOnLeg;
 
+  public static int numStringFields = 5; 
+  public static int numLongFields  = 2; 
+  public static int numIntFields  = 2; 
+  public static int numBooleanFields = 1;
+  public static int maxStringLength = 40;
+
   //Constructors:
   ///////////////
 
+  public static int count = 0;
+
   public Leg(){
+    //    System.out.println ("Creating leg # " + count++);
     assetsOnLeg=new ArrayList();
   }
 
@@ -218,6 +229,105 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
     }
   }
 
+  /**
+   * Mandatory writeExternal method. 
+   * @serialData 
+   *             
+   */
+  public int writeToBuffer(int index, 
+			   char [] legStringBuffer,
+			   long [] legLongBuffer,
+			   int [] legIntBuffer,
+			   boolean [] legBooleanBuffer
+			   ) throws IOException {
+    String uidString = UID.toString();
+    System.arraycopy (uidString.toCharArray(), 0, 
+		      legStringBuffer, index*numStringFields*maxStringLength, 
+		      uidString.length()); // should do min of maxStringLength
+
+    legLongBuffer[index*numLongFields] = startTime;
+    legLongBuffer[index*numLongFields+1] = endTime;
+
+    System.arraycopy (startLoc.toCharArray(), 0, 
+		      legStringBuffer, (index*numStringFields + 1)*maxStringLength, 
+		      startLoc.length());
+
+    System.arraycopy (endLoc.toCharArray(), 0, 
+		      legStringBuffer, (index*numStringFields + 2)*maxStringLength, 
+		      endLoc.length());
+
+    legIntBuffer[index*numIntFields] = legType;
+
+    //    System.out.println ("leg type is " + legType);
+
+    String conveyanceUIDString = conveyanceUID.toString();
+    System.arraycopy (conveyanceUIDString.toCharArray(), 0, 
+		      legStringBuffer, (index*numStringFields + 3)*maxStringLength, 
+		      conveyanceUIDString.length());
+
+    String routeUIDString = (routeUID != null) ? routeUID.toString() : "null";
+    System.arraycopy (routeUIDString.toCharArray(), 0, 
+		      legStringBuffer, (index*numStringFields + 4)*maxStringLength, 
+		      routeUIDString.length());
+
+    legBooleanBuffer[index*numBooleanFields] = isDetail;
+    legIntBuffer[(index*numIntFields)+1] = assetsOnLeg.size();
+
+    return assetsOnLeg.size();
+  }
+
+  public int writeToAssetBuffer(int index, 
+				char [] assetStringBuffer) {
+    for (Iterator iter = assetsOnLeg.iterator(); iter.hasNext(); ) {
+      UID assetUID = (UID) iter.next();
+      String assetUIDString = assetUID.toString();
+      //      System.out.println ("asset uid "+ assetUIDString + " at " + (index + i)*maxStringLength);
+
+      System.arraycopy (assetUIDString.toCharArray(), 0, 
+			assetStringBuffer, (index++)*maxStringLength, 
+			assetUIDString.length());
+
+      //      System.out.println ("asset buf after "+ new String (assetStringBuffer));
+    }
+    return index;
+  }
+
+  public void readFromBuffer(
+			     int index, 
+			     CharBuffer charBuffer, 
+			     long [] legLongBuffer,
+			     int [] legIntBuffer,
+			     boolean [] legBooleanBuffer,
+			     CharBuffer assetCharBuffer) {
+    char temp [] = new char [maxStringLength];
+    charBuffer.get(temp);
+    UID = UID.toUID(new String(temp).trim());
+
+    startTime = legLongBuffer[(index*numLongFields)];
+    endTime   = legLongBuffer[(index*numLongFields)+1];
+
+    charBuffer.get(temp);
+    startLoc = new String (temp).trim();
+    charBuffer.get(temp);
+    endLoc   = new String (temp).trim();
+
+    legType = legIntBuffer[(index*numIntFields)];
+    charBuffer.get(temp);
+    conveyanceUID = UID.toUID(new String(temp).trim());
+    charBuffer.get(temp);
+    String routeUIDString = new String(temp).trim();
+    if (!routeUIDString.equals("null"))
+      routeUID = UID.toUID(routeUIDString);
+    isDetail = legBooleanBuffer[(index*numBooleanFields)];
+
+    int numToRead = legIntBuffer[(index*numIntFields)+1];
+    //    System.out.println ("Reading " + numToRead + " assets.");
+    for (int i = 0; i < numToRead; i++) {
+      assetCharBuffer.get(temp);
+      addCarriedAsset (UID.toUID(new String(temp).trim()));
+    }
+  }
+
     /**
      * Mandatory readExternal method. Will read in the data that we wrote out
      * in the writeExternal method. MUST BE IN THE SAME ORDER and type as we
@@ -250,6 +360,24 @@ public class Leg implements XMLable, DeXMLable, Externalizable /*Serializable*/{
     for (int i = 0; i < numToRead; i++) {
       addCarriedAsset ((UID) in.readObject());
     }
+  }
+
+  public String toString () {
+    StringBuffer buffer = new StringBuffer();
+    
+    buffer.append ("UID   " + UID);buffer.append("\n");
+    buffer.append ("start " + new java.util.Date(startTime));buffer.append("\n");
+    buffer.append ("end   " + new java.util.Date(endTime));buffer.append("\n");
+
+    buffer.append ("startLoc      " + startLoc);buffer.append("\n");
+    buffer.append ("endLoc        " + endLoc);buffer.append("\n");
+    buffer.append ("legType       " + legType);buffer.append("\n");
+    buffer.append ("conveyanceUID " + conveyanceUID);buffer.append("\n");
+    buffer.append ("routeUID      " + routeUID);buffer.append("\n");
+    buffer.append ("isDetail      " + isDetail);buffer.append("\n");
+    buffer.append ("assets        " + assetsOnLeg);buffer.append("\n");
+    
+    return buffer.toString();
   }
 
   //DeXMLable members:
