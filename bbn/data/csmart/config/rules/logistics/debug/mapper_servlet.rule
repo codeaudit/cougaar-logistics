@@ -1,0 +1,20 @@
+####################################################
+# Rule to insert LocalLevel2MapperPlugin to an agent
+
+
+mapper_servlet = "org.cougaar.logistics.servlet.MapperServlet"
+
+#society.agents["1-35-ARBN.2-BDE.1-AD.ARMY.MIL"].add_component do |c|
+#society.agents["191-ORDBN.29-SPTGP.21-TSC.ARMY.MIL"].add_component do |c|
+#society.agents["47-FSB.DISCOM.1-AD.ARMY.MIL"].add_component do |c|
+society.agents["OSC.MIL"].add_component do |c|
+      c.classname = mapper_servlet
+      c.priority = 'COMPONENT'	
+      c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+  end
+# society.agents["592-ORDCO.16-CSG.5-CORPS.ARMY.MIL"].add_component do |c|
+#society.agents["125-ORDBN.7-CSG.5-CORPS.ARMY.MIL"].add_component do |c|
+#     c.classname = level2Mapper
+#      c.add_argument("SUPPLY_TYPE=Ammunition")
+#  end
+
