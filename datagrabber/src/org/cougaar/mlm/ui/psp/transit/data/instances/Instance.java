@@ -318,9 +318,18 @@ public class Instance implements XMLable, DeXMLable /*, Externalizable*/ {
 
     String name2 = (name != null) ? name : "no_name";
 
+    int nameLength = name2.length();
+    if (nameLength > maxStringLength) {
+      nameLength = maxStringLength;
+      System.err.println ("Trunacting name <" + name + 
+			  ">, which is " + name2.length() + 
+			  " chars long, which is longer than max " + maxStringLength + 
+			  ".\nConsider increasing Instance.maxStringLength constant.");
+    }
+
     System.arraycopy (name2.toCharArray(), 0, 
 		      instanceStringBuffer, (index*numString + 2)*maxStringLength, 
-		      name2.length());
+		      nameLength);
 
     // longs
 
