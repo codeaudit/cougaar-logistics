@@ -49,7 +49,7 @@ class Filler {
 
   // no two tasks can have arrival dates farther than this time apart and
   // be on the same milvan
-  protected long MAX_GROUP_DAYS = 5;
+  protected long MAX_GROUP_DAYS = 2;
 
   private static final String UNKNOWN = "UNKNOWN";
   private Sizer _sz;
@@ -147,11 +147,11 @@ class Filler {
 	// restrict the window of time within which we'll aggregate tasks together
 	// to be 
 	//
-	//   ready at->best date + one day 
+	//   earliest arrival->best date + one day 
 	//
 	// instead of 
 	//
-	//   ready at->latest arrival
+	//   earliest arrival->latest arrival
 	//
 	// because that can have problems when we replan
 	// tasks without plan elements (happens when all aggregations of an mptask get
