@@ -7,9 +7,8 @@ arg = "RANDOM_DEVIATION_ON=false"
 
 society.each_agent do |agent|
   agent.each_component do |comp|
-    if comp.name == plugin
-      comp.add_argument(arg)
-      break
+    if comp.classname == plugin
+      comp.add_argument(arg) unless comp.has_argument?(arg)
     end
   end
 end
