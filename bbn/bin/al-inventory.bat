@@ -25,8 +25,8 @@ set MYCLASSES=org.cougaar.logistics.ui.inventory.InventoryUIFrame
 REM set MYCLASSES=org.cougaar.logistics.ui.inventory.data.InventoryProjAR
 set BS=org.cougaar.bootstrap.Bootstrapper
 set MYMEMORY=-Xms100m -Xmx300m
-set MYPROPERTIES= -Dorg.cougaar.config.path=%COUGAAR_INSTALL_PATH%\configs\common -Dorg.cougaar.core.logging.config.filename=Log4jInit.txt -D
+REM set MYPROPERTIES= -Dorg.cougaar.config.path=%COUGAAR_INSTALL_PATH%\configs\common -Dorg.cougaar.core.logging.config.filename=Log4jInit.txt
 
 @ECHO ON
 
-java.exe %MYMEMORY% %MYPROPERTIES% -classpath %MYCLASSPATH% %BS% %MYCLASSES% %1
+java.exe %MYMEMORY% -classpath %MYCLASSPATH% %BS% %MYCLASSES% %1
