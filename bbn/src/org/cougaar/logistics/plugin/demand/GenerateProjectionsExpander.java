@@ -92,7 +92,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
-  private void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg, TimeSpan timespan) {
+  protected void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg, TimeSpan timespan) {
     Collection consumedItems = getConsumed(pg);
 
     ArrayList assetList = new ArrayList(1);
@@ -115,7 +115,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
-  private void createDisposition(Task gpTask) {
+  protected void createDisposition(Task gpTask) {
     // FIX ME LATER... Dispose of GPs that don't have any subtasks.
     // Later we won't create the GPS after we get the new db table that
     // defines which MEIs really are type x consumers.
@@ -128,7 +128,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     dfPlugin.publishAdd(disp);
   }
 
-  private Collection buildTaskList(PropertyGroup pg, Collection items,
+  protected Collection buildTaskList(PropertyGroup pg, Collection items,
                                    Schedule schedule, Task gpTask,
                                    Asset consumer) {
     List subTasks = new ArrayList();
@@ -175,7 +175,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return subTasks;
   }
 
-  private Asset convertAggregateToAsset(Asset consumer) {
+  protected Asset convertAggregateToAsset(Asset consumer) {
     if (consumer instanceof AggregateAsset) {
       consumer = ((AggregateAsset) consumer).getAsset();
     }
@@ -202,7 +202,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return prepPhrases;
   }
 
-  private void createMaintainingPrepPhrases(Object consumer, Vector prepPhrases) {
+  protected void createMaintainingPrepPhrases(Object consumer, Vector prepPhrases) {
     MaintainedItem itemID;
     if (consumer instanceof Asset) {
       TypeIdentificationPG tip = ((Asset) consumer).getTypeIdentificationPG();
@@ -223,7 +223,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.MAINTAINING, itemID));
   }
 
-  private void createGeolocPrepPhrases(Task parentTask, long end, Vector prepPhrases) {
+  protected void createGeolocPrepPhrases(Task parentTask, long end, Vector prepPhrases) {
     GeolocLocation geoloc = getGeolocLocation(parentTask, (end-1000));
     if (geoloc != null) {
       prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.TO, geoloc));
@@ -257,7 +257,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return myOrgName;
   }
 
-  private void createAndPublishExpansion(Task parent, Collection subtasks) {
+  protected void createAndPublishExpansion(Task parent, Collection subtasks) {
     Workflow wf = buildWorkflow(parent, subtasks);
     Expansion expansion = getPlanningFactory().createExpansion(parent.getPlan(), parent, wf, null);
     if (logger.isInfoEnabled()) {
@@ -270,7 +270,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     }
   }
 
-  private void addToAndPublishExpansion(Task parent, Collection subtasks) {
+  protected void addToAndPublishExpansion(Task parent, Collection subtasks) {
     Expansion expansion = (Expansion) parent.getPlanElement();
     NewWorkflow wf = (NewWorkflow) expansion.getWorkflow();
     Iterator subtasksIT = subtasks.iterator();
@@ -283,7 +283,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     dfPlugin.publishChange(expansion);
   }
 
-  private NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
+  protected NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
                                           long end, Rate rate) {
     //logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
     NewTask newTask = getPlanningFactory().newTask();
@@ -325,7 +325,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return wf;
   }
 
-  private PrepositionalPhrase newPrepositionalPhrase(String preposition,
+  protected PrepositionalPhrase newPrepositionalPhrase(String preposition,
                                                      Object io) {
     NewPrepositionalPhrase pp = getPlanningFactory().newPrepositionalPhrase();
     pp.setPreposition(preposition);
@@ -649,7 +649,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     task.setPreference(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
   }
 
-  private String printProjection(String msg, Task task) {
+  protected String printProjection(String msg, Task task) {
     return "diffProjections() "
         + task.getUID()
         + " " + msg + " "
