@@ -200,6 +200,7 @@
 	<target name="compile-examples" depends="prepare, compile" description="Compiles the example Code" if="has.examples">
 		<mkdir dir="${examples.build}" />
 		<javac srcdir="${examples}" destdir="${examples.build}" 
+		       debug="true"
 		       includeAntRuntime="no" deprecation="${doDeprecation}">
  	             	<classpath>
 			  <path location="${build}" />
