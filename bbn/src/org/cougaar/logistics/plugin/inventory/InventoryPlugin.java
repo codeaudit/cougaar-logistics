@@ -1920,7 +1920,7 @@ public class InventoryPlugin extends ComponentPlugin
     //Create and publish add the shortfall summary.
     if (shortSum == null) {
 	if(!shortfallInvs.isEmpty()){
-	    shortSum = new ShortfallSummary(getSupplyType(),uidService.nextUID());
+	    shortSum = new ShortfallSummary(getSupplyType(),uidService.nextUID(), bucketSize);
 	    Iterator it = shortfallInvs.iterator();
 	    shortSum.setShortfallInventories(shortfallInvs);
 	    publishAdd(shortSum);
