@@ -302,7 +302,16 @@ public class InventoryPlugin extends ComponentPlugin {
         } 
         externalAllocator.updateAllocationResult(getActionableRefillAllocations()); 
         allocationAssessor.reconcileInventoryLevels(backwardFlowInventories); 
-        supplyExpander.updateAllocationResult(getActionableExpansions());
+
+        // if we are in downward flow ONLY check the withdraw expansion results
+        // note we may go through the whole list multiple times - but this seems like the
+        // simplest fix to get rid of places where we miss change reports because the AA
+        // compares previous results to new ones and leaves the old ones if they are equal.
+        // note that the updates only occur if the reported result is not equal to the estimated
+        // so we will not be waking up the whole chain by checking these more than once.
+        if (getTouchedInventories().isEmpty()) {
+          supplyExpander.updateAllocationResult(expansionSubscription);
+        }
         // update the Maintain Inventory Expansion results
         PluginHelper.updateAllocationResult(MIExpansionSubscription);
         PluginHelper.updateAllocationResult(MITopExpansionSubscription);
@@ -1271,26 +1280,6 @@ public class InventoryPlugin extends ComponentPlugin {
       }
     }
     return actionableARs;
-  }
-
-  // get the actionable expansions to process.
-  private Collection getActionableExpansions() {
-    ArrayList actionableExp = new ArrayList();
-    Task task;
-    Asset asset;
-    Expansion exp;
-    Inventory inventory;
-    Iterator exp_list = expansionSubscription.getChangedCollection().iterator();
-    while (exp_list.hasNext()) {
-      exp = (Expansion)exp_list.next();
-      task = exp.getTask();
-      asset = (Asset)task.getDirectObject();
-      inventory = findOrMakeInventory(asset);
-      if (!touchedInventories.contains(inventory)) {
-	actionableExp.add(exp);
-      }
-    }
-    return actionableExp;
   }
 
   /**

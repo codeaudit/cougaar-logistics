@@ -408,13 +408,12 @@ public class SupplyExpander extends InventoryModule {
     return null;
   }
 
-
-  public void updateAllocationResult(Collection changedPEs) {
-    Iterator cIt = changedPEs.iterator();
-    while (cIt.hasNext()) {
-      PlanElement cpe = (PlanElement) cIt.next();
-      if (PluginHelper.updatePlanElement(cpe)) {
-        inventoryPlugin.publishChange(cpe);
+  public void updateAllocationResult(IncrementalSubscription sub) {
+    Enumeration subE = sub.elements();
+    while (subE.hasMoreElements()) {
+      PlanElement pe = (PlanElement) subE.nextElement();
+      if (PluginHelper.updatePlanElement(pe)) {
+        inventoryPlugin.publishChange(pe);
       }
     }
   }
