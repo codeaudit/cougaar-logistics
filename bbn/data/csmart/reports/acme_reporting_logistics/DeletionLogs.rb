@@ -54,7 +54,8 @@ module ACME
         IO.foreach(log_file) do |line|
           if line =~ /.*tasks deleted this cycle/ 
             fields = line.split(',')
-            pd = ParseDate.parsedate(fields[3])
+            line =~ /([A-Z][a-z]{2} [A-Z][a-z]{2} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3} [0-9]{4})/
+            pd = ParseDate.parsedate($1)
             time = Time.mktime(*pd)
             name = fields[2]
             num = fields[4].to_i
