@@ -73,7 +73,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
    * ProjectSupply task. Mostly, we just clone the result of the
    * ProjectWithdraw task.
    **/
-  private static class ProjectionARA implements AllocationResultAggregator {
+  protected static class ProjectionARA implements AllocationResultAggregator {
     public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
       if (tst.size() != 1)
         throw new IllegalArgumentException("projectionARA: multiple subtasks");
@@ -84,7 +84,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     }
   }
 
-  private static class SupplyARA implements AllocationResultAggregator {
+  protected static class SupplyARA implements AllocationResultAggregator {
     public AllocationResult calculate(Workflow wf, TaskScoreTable tst, AllocationResult currentar) {
       AspectValue[] merged = new AspectValue[AlpineAspectType.LAST_ALPINE_ASPECT + 1];
       boolean success = true;
@@ -154,7 +154,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
      * unindexed array of AspectValues into an unindexed array of
      * AspectValues.
      **/
-    private AspectValue[] merge(AspectValue[] rollup, AspectValue[] phased) {
+    protected AspectValue[] merge(AspectValue[] rollup, AspectValue[] phased) {
       if (phased != null) {
         rollup = (AspectValue[]) rollup.clone(); // Don't clobber the original
         for (int i = 0; i < phased.length; i++) {
@@ -179,17 +179,17 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
   protected static final long MSEC_PER_HOUR = MSEC_PER_MIN *60;
   public static final long  DEFAULT_ORDER_AND_SHIPTIME = 24 * MSEC_PER_HOUR; // second day
 
-  public static final Verb                 WITHDRAWVERB = Verb.get(Constants.Verb.WITHDRAW);
-  public static final Verb                 PROJECTWITHDRAWVERB = Constants.Verb.ProjectWithdraw;
-  public static final Verb                 TRANSPORTVERB = Verb.get(Constants.Verb.TRANSPORT);
+  public static final Verb WITHDRAWVERB =Constants.Verb.Withdraw;
+  public static final Verb PROJECTWITHDRAWVERB = Constants.Verb.ProjectWithdraw;
+  public static final Verb TRANSPORTVERB = Constants.Verb.Transport;
 
   //private Organization myOrg;
   protected boolean addTransport; // Add load tasks when expanding supply tasks
-  private long ost;
-  private static AllocationResultAggregator projectionARA = new ProjectionARA();
-  private static AllocationResultAggregator supplyARA = new SupplyARA();
+  protected long ost;
+  protected static AllocationResultAggregator projectionARA = new ProjectionARA();
+  protected static AllocationResultAggregator supplyARA = new SupplyARA();
 
-  private MessageAddress clusterId;
+  protected MessageAddress clusterId;
 
   public SupplyExpander(InventoryPlugin imPlugin) {
     super(imPlugin);
@@ -245,6 +245,10 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
         thePG.removeWithdrawRequisition(aTask);
       }
     }
+  }
+
+  public void handleRemovedDispositions(Collection dispositions) {
+    // This SupplyExpander does nothing for removed dispositions
   }
 
   public boolean handleRemovedProjections(Collection tasks) {
@@ -392,7 +396,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     }
   }
 
-  private Task expandDemandTask(Task parentTask, Task withdrawTask) {
+  protected Task expandDemandTask(Task parentTask, Task withdrawTask) {
     Vector expand_tasks = new Vector();
     expand_tasks.addElement(withdrawTask);
     NewTask transportTask = null;
@@ -477,12 +481,21 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
       if (PluginHelper.updatePlanElement(pe)) {
         boolean didPubChg = inventoryPlugin.publishChange(pe);
         if (logger.isDebugEnabled()) {
-          logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
+          logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" +
+                       inventoryPlugin.getSupplyType()+"]" +
                        "publish Changing expansion due to AR change: " + pe.getUID()+
                        " parent task is: " + pe.getTask().getUID() + " publishChange returned: " + didPubChg);
         }
       }
     }
+  }
+
+  public void checkCommStatusAlarms() {
+    // This SupplyExpander doesn't check for communications loss
+  }
+
+  public void determineCommStatus(IncrementalSubscription commStatusSub, Collection tasks) {
+    //This SupplyExpander doesn't check for communications loss
   }
 }
 
