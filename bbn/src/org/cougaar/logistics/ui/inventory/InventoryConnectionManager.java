@@ -83,7 +83,43 @@ public class InventoryConnectionManager implements InventoryDataSource
 	servPort = targetPort;
 	servProt = targetProtocol;
 	logger = Logging.getLogger(this);
+
+	// Support HTTPS with client-cert authentication
+	doSecureUserAuthInit();
     }   
+  
+  
+  // Invoke the NAI security code, if available
+  private void doSecureUserAuthInit() {
+    String securityUIClass = System.getProperty("org.cougaar.ui.userAuthClass");
+    
+    if (securityUIClass == null) {
+      securityUIClass = "org.cougaar.core.security.userauth.UserAuthenticatorImpl";
+    }
+    
+    Class cls = null;
+    try {
+      cls = Class.forName(securityUIClass);
+    } catch (ClassNotFoundException e) {
+      if (logger.isInfoEnabled())
+	logger.info("Not using secure User Authentication: " + securityUIClass);
+    } catch (ExceptionInInitializerError e) {
+      if (logger.isWarnEnabled())
+	logger.warn("Unable to use secure User Authentication: " + securityUIClass + ". ", e);
+    } catch (LinkageError e) {
+      if (logger.isInfoEnabled())
+	logger.info("Not using secure User Authentication: " + securityUIClass);
+    }
+    
+    if (cls != null) {
+      try {
+	cls.newInstance();
+      } catch (Exception e) {
+	if (logger.isWarnEnabled())
+	  logger.warn("Error using secure User Authentication (" + securityUIClass + "): ", e);
+      }
+    }
+  }
 
     public static InventoryConnectionManager queryUserForConnection(Component parent) {
 	InventoryConnectionManager returnManager = new InventoryConnectionManager(parent);
@@ -94,7 +130,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 	return null;
     }
 
-    public String getCurrentInventoryData() { return invXMLStr; };
+    public String getCurrentInventoryData() { return invXMLStr; }
 
     public String getInventoryData(String orgName, String assetName) {
 	InputStream is = null;

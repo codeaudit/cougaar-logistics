@@ -24,6 +24,10 @@ REM calls setlibpath.bat which sets the path to the required jar files.
 CALL %COUGAAR_INSTALL_PATH%\bin\setlibpath.bat
 CALL %COUGAAR_INSTALL_PATH%\bin\setarguments.bat
 
+REM Modify the argument org.cougaar.ui.userAuthClass to use a
+REM UserAuthenticator other than the NAI class org.cougaar.core.security.userauth.UserAuthenticatorImpl
+
+
 set MYCLASSES=org.cougaar.logistics.ui.inventory.InventoryUIFrame
 set BS=org.cougaar.bootstrap.Bootstrapper
 set MYMEMORY=-Xms100m -Xmx300m
