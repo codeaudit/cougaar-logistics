@@ -2,13 +2,13 @@
 # Note that the word select must be lowercase cause of bad plugin
 # Note that lowercase database is necessary because of different plugins access
 
-Database=${org.cougaar.configuration.database}
-Username=${org.cougaar.configuration.user}
-Password=${org.cougaar.configuration.password}
+Database=${org.cougaar.oplan.database}
+Username=${org.cougaar.oplan.user}
+Password=${org.cougaar.oplan.password}
 # do both capitalizations
-database=${org.cougaar.configuration.database}
-username=${org.cougaar.configuration.user}
-password=${org.cougaar.configuration.password}
+database=${org.cougaar.oplan.database}
+username=${org.cougaar.oplan.user}
+password=${org.cougaar.oplan.password}
 
 activity = ACTIVITY_TYPE
 opTempo = OPTEMPO
