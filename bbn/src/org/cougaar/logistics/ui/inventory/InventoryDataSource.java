@@ -46,6 +46,7 @@ public interface InventoryDataSource
   public String[] getSupplyTypes();
   public Vector getAssetNames(String orgName, String supplyType);
   public String getInventoryData(String orgName, String assetName);
+  public String getCurrentInventoryData();
     // public String getDefaultAssetName();
     //public String getDefaultOrganizationName();
 }
