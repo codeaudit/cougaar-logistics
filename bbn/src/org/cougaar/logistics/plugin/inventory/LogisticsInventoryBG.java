@@ -93,7 +93,7 @@ public class LogisticsInventoryBG implements PGDelegate {
   protected ArrayList projSupplyList;
   protected ArrayList supplyList;
   protected ArrayList targetLevelsList;
-  protected ArrayList bufferedTargetLevelsList;
+  protected Schedule bufferedTargetLevels;
   protected ArrayList actualDemandTasksList;
   protected Schedule bufferedCriticalLevels;
   protected Schedule bufferedInventoryLevels;
@@ -120,7 +120,6 @@ public class LogisticsInventoryBG implements PGDelegate {
     projSupplyList = new ArrayList();
     supplyList = new ArrayList();
     targetLevelsList = new ArrayList();
-    bufferedTargetLevelsList = new ArrayList();
     actualDemandTasksList = new ArrayList();
     endOfLevelSixBucket = 1;
   }
@@ -150,6 +149,8 @@ public class LogisticsInventoryBG implements PGDelegate {
     this.bucketSize = bucketSize;
     MSEC_PER_BUCKET = bucketSize * TimeUtils.MSEC_PER_DAY;
     bufferedCriticalLevels = 
+      ScheduleUtils.buildSimpleQuantitySchedule(0, startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
+    bufferedTargetLevels = 
       ScheduleUtils.buildSimpleQuantitySchedule(0, startTime, startTime+(TimeUtils.MSEC_PER_DAY*10));
     bufferedInventoryLevels =
       ScheduleUtils.buildSimpleQuantitySchedule(myPG.getInitialLevel(), 
@@ -677,12 +678,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 
   public void logAllToCSVFile(long aCycleStamp) {
       if(csvLogger != null) {
-	  csvWriter.logToExcelOutput(withdrawList,
-				     projWithdrawList,
-				     supplyList,
-				     projSupplyList,
-				     bufferedCriticalLevels,
-				     bufferedInventoryLevels,
+	  csvWriter.logToExcelOutput(myPG,
 				     aCycleStamp);
       }
   }
@@ -697,7 +693,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     public ArrayList getSupplyList() { return supplyList;}
     public Schedule  getBufferedCritLevels() { return bufferedCriticalLevels;}
     public Schedule  getBufferedInvLevels() { return bufferedInventoryLevels;}
-  public ArrayList getTargetLevelsList() { return bufferedTargetLevelsList;}
+    public Schedule getBufferedTargetLevels() { return bufferedTargetLevels;}
   public ArrayList getActualDemandTasksList() { return actualDemandTasksList;}
 
   /**
@@ -809,7 +805,8 @@ public class LogisticsInventoryBG implements PGDelegate {
 
     projSupplyList = tmpProjResupply;
     supplyList = (ArrayList)refillRequisitions.clone();
-    bufferedTargetLevelsList = (ArrayList)targetLevelsList.clone();
+    // MWD took this out when converted list to a schedule.
+    //    bufferedTargetLevels = (ArrayList)targetLevelsList.clone();
 
     ArrayList tmpActualDemandTasksList = new ArrayList();
     for (int i=0; i < dueOutList.size(); i++) {
@@ -829,6 +826,19 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     bufferedCriticalLevels = GLMFactory.newQuantitySchedule(list.elements(), 
 							    PlanScheduleType.OTHER);
+    start = convertBucketToTime(0);
+    list.clear();
+    for (int i=0; i < targetLevelsList.size(); i++) {
+	Double targetLevel = (Double)targetLevelsList.get(i);
+	if(targetLevel != null) {
+	    list.add(ScheduleUtils.buildQuantityScheduleElement(targetLevel.doubleValue(),start,start+MSEC_PER_BUCKET));
+	}
+	start += MSEC_PER_BUCKET;
+    }
+    bufferedTargetLevels = GLMFactory.newQuantitySchedule(list.elements(),
+							    PlanScheduleType.OTHER);
+    
+
     start = convertBucketToTime(0);
     list.clear();
     for (int i=0; i < inventoryLevelsArray.length; i++) {
