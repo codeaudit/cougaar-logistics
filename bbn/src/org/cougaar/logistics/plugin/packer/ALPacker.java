@@ -26,6 +26,8 @@ import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AllocationResultDistributor;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.AspectValue;
+import org.cougaar.planning.ldm.plan.Expansion;
+import org.cougaar.planning.ldm.plan.NewWorkflow;
 import org.cougaar.planning.ldm.plan.PlanElement;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.planning.plugin.util.PluginHelper;
@@ -164,21 +166,36 @@ public abstract class ALPacker extends GenericPlugin {
   /**
    * processChangedTasks - handle changed supply tasks
    * Called within GenericPlugin.execute.
-   * **** Tasks are currently ignored ****
+   * Rescind current PlanElement and reprocess tasks.
    *
    * @param changedTasks Enumeration of changed ammo supply tasks. Ignored.
    */
   public void processChangedTasks(Enumeration changedTasks) {
     while (changedTasks.hasMoreElements()) {
       Task task = (Task) changedTasks.nextElement();
+      double taskWeight =
+        Sizer.getTaskMass(task, getTaskQuantityUnit()).getShortTons();
+      ADD_TONS -= taskWeight;
+      ADD_TASKS--;
 
       if (getLoggingService().isDebugEnabled()) {
-        getLoggingService().debug("Packer - ignoring changed task - " +
+        getLoggingService().debug("Packer - handling changed task - " +
                                   task.getUID() +
                                   " from " + task.getSource());
       }
 
+      PlanElement pe = task.getPlanElement();
+      if (pe instanceof Expansion) {
+        Enumeration tasks = ((Expansion)pe).getWorkflow().getTasks();
+        while (tasks.hasMoreElements()) {
+          Task t = (Task)tasks.nextElement();
+          ((NewWorkflow)t.getWorkflow()).removeTask(t);
+          publishRemove(t);
+        }
+      }
+      publishRemove(pe);
     }
+    processNewTasks(changedTasks);
   }
 
   /**

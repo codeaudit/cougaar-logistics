@@ -93,7 +93,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
               boolean isReserved   = (task.getPrepositionalPhrase (START) != null);
               if (hasTransport && isReserved) return true;
 
-              if((task.getPlanElement() == null ) &&
+              if(// (task.getPlanElement() == null ) &&  ** Now dealing with changed tasks **
                   (task.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) &&
                   (myTaskUtils.isLevel2(task))) {
                 boolean isReadyForTransport=(myTaskUtils.isReadyForTransport(task));
@@ -105,8 +105,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
                 return isReadyForTransport;
               }
 
-              return ((task.getWorkflow() == null )  &&
-                  (task.getPlanElement() == null ) &&
+              return (// (task.getWorkflow() == null )  &&   ** Now dealing with changed tasks **
+                      // (task.getPlanElement() == null ) &&
                   ((UTILGenericListener) myListener).interestingTask (task));
             }
             return false;
@@ -419,8 +419,9 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   public void handleProjectSupplyTask(Task t) {
     wantConfidence = true;
-    if (t.getPlanElement() != null)
+    if (t.getPlanElement() != null) {
       publishRemove (t.getPlanElement());
+    }
     handleTask(t);
     Preference pref = prefHelper.getPrefWithAspectType (t, AlpineAspectType.DEMANDRATE);
     AspectValue ratePerSec = pref.getScoringFunction().getBest().getAspectValue();
