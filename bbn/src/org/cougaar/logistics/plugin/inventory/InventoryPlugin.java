@@ -200,10 +200,10 @@ public class InventoryPlugin extends ComponentPlugin {
     cycleStamp = (new Date()).getTime();
 
     if (inventoryPolicy ==null) {
-      if (logger.isDebugEnabled ())
-	logger.debug("\n InventoryPlugin " + supplyType + 
-		     " not ready to process tasks yet." +
-		     " my inv policy is: " + inventoryPolicy);
+      if (logger.isInfoEnabled ())
+	logger.info("\n InventoryPlugin " + supplyType + 
+		    " not ready to process tasks yet." +
+		    " my inv policy is: " + inventoryPolicy + " in " + myOrganization);
       return;
     }
 	
@@ -212,10 +212,10 @@ public class InventoryPlugin extends ComponentPlugin {
     }
 
     if (myOrganization == null) {
-      if (logger.isDebugEnabled())
-	logger.debug("\n InventoryPlugin " + supplyType + 
-		     " not ready to process tasks yet." +
-		     " my org is: " + myOrganization);
+      if (logger.isInfoEnabled())
+	logger.info("\n InventoryPlugin " + supplyType + 
+		    " not ready to process tasks yet." +
+		    " my org is: " + myOrganization);
       return;
     }
 
@@ -227,8 +227,7 @@ public class InventoryPlugin extends ComponentPlugin {
       setupSubscriptions2();
     } 
 
-    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {// && 
-//        myOrganization != null ) {
+    if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       touchedProjections = expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
       // call the Refill Generators if we have new demand
@@ -562,9 +561,9 @@ public class InventoryPlugin extends ComponentPlugin {
       if (o instanceof org.cougaar.logistics.plugin.inventory.InventoryPolicy) {
 	String type = ((InventoryPolicy)o).getResourceType();
 	if (type.equals(this.type)) {
-	  if (logger.isDebugEnabled()) 
-	    logger.debug("Found an inventory policy for "+this.type + "agent is: " +
-			 getBindingSite().getAgentIdentifier());
+	  if (logger.isInfoEnabled()) 
+	    logger.info("Found an inventory policy for "+this.type + "agent is: " +
+			getBindingSite().getAgentIdentifier());
 	  return true;
 	} else {
 	  if (logger.isDebugEnabled()) 
