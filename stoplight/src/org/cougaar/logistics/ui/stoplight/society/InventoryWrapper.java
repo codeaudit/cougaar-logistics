@@ -47,14 +47,14 @@ import org.cougaar.planning.ldm.plan.AllocationResult;
 import org.cougaar.planning.ldm.plan.AspectType;
 import org.cougaar.planning.ldm.plan.ScheduleImpl;
 import org.cougaar.planning.ldm.plan.NewSchedule;
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryPG;
 
 
 public class InventoryWrapper {
 
-  boolean debug = false;
-  
   Inventory inventory;
   // Used a lot, so just grab a reference to it once
   LogisticsInventoryPG logInvPG;
@@ -63,13 +63,6 @@ public class InventoryWrapper {
   public InventoryWrapper(Inventory inputInventory) {
     inventory = inputInventory;
     logInvPG = (LogisticsInventoryPG)inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-      // print debug messages if inventory_debug set to true
-    String val = System.getProperty("org.cougaar.logistics.ui.stoplight.debug");
-    if (val != null) {
-      if (val.equals("true")) {
-        debug = true;
-      }
-    }
   }
 
   public Inventory getInventory() {
@@ -698,16 +691,19 @@ public class InventoryWrapper {
     if (schedule == null) {
       return null;
     }
-    if (debug)  {
-      System.out.println("Original schedule");
-      printSchedule(schedule);
+    Logger logger = Logging.getLogger(this);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Original schedule");
+      printSchedule(schedule, logger);
     }
+
     if (isOverlappingSchedule(schedule)) {
       Schedule nonoverlapping = ScheduleUtilities.computeNonOverlappingSchedule(schedule);
-      if (debug)  {
-        System.out.println("Is Overlapping::Computing non-overlapping schedule");
-        printSchedule(nonoverlapping);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Is Overlapping::Computing non-overlapping schedule");
+        printSchedule(nonoverlapping, logger);
       }
+
       return nonoverlapping;
     }
 	
@@ -730,33 +726,37 @@ public class InventoryWrapper {
     return false;
   }
 
-  private void printSchedule(Schedule s) {
+  private void printSchedule(Schedule s, Logger logger) {
     if (s == null)
       return;
     Enumeration e = s.getAllScheduleElements();
     while (e.hasMoreElements()) {
       QuantityScheduleElement se = (QuantityScheduleElement)e.nextElement();
-      System.out.println("Start date: " + shortDate(se.getStartTime()) +
-                         " end date: " + shortDate(se.getEndTime()) +
-                         " quantity: " + se.getQuantity());
+      if (logger.isDebugEnabled()) {
+        logger.debug("Start date: " + shortDate(se.getStartTime()) +
+                     " end date: " + shortDate(se.getEndTime()) +
+                     " quantity: " + se.getQuantity());
+      }
     }
   }
 
-  private void printSchedule(Vector s) {
+  private void printSchedule(Vector s, Logger logger) {
     if (s == null || s.isEmpty()) {
-      System.out.println("printSchedule() Empty Schedule");
+      if (logger.isDebugEnabled())
+        logger.debug("printSchedule() Empty Schedule");
       return;
     }
     Enumeration e = s.elements();
     while (e.hasMoreElements()) {
-      printQuantityScheduleElement((QuantityScheduleElement)e.nextElement());
+      printQuantityScheduleElement((QuantityScheduleElement)e.nextElement(), logger);
     }
   }
 
-  private void printQuantityScheduleElement(QuantityScheduleElement qse) {
-    System.out.println("Start date: " + shortDate(qse.getStartTime()) +
-                       " end date: " + shortDate(qse.getEndTime()) +
-                       " quantity: " + qse.getQuantity());
+  private void printQuantityScheduleElement(QuantityScheduleElement qse, Logger logger) {
+    if (logger.isDebugEnabled())
+      logger.debug("Start date: " + shortDate(qse.getStartTime()) +
+                   " end date: " + shortDate(qse.getEndTime()) +
+                   " quantity: " + qse.getQuantity());
   }
 
   private String shortDate(long time) {

@@ -49,6 +49,8 @@ import org.cougaar.planning.ldm.plan.ScheduleUtilities;
 import org.cougaar.planning.ldm.plan.Task;
 import org.cougaar.util.Thunk;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryPG;
 import org.cougaar.logistics.plugin.inventory.LogisticsInventoryBG;
@@ -61,7 +63,6 @@ import org.cougaar.lib.aggagent.query.ResultSetDataAtom;
  */
 public class ExtractionHelper
 {
-  public static boolean debug = true;
   private final static long cTime = extractCDateFromSociety();
   private final static long MILLIS_IN_DAY = 1000 * 60 * 60 * 24;
   public static final String TRIM_TO_SCHEDULE = "TRIM TO SCHEDULE";
@@ -167,8 +168,9 @@ public class ExtractionHelper
     }
     else
     {
-      if (debug)
-        System.out.println ("WARNING: No rate for org "+org+", item " + item);
+      Logger logger = Logging.currentLogger();
+      if (logger.isWarnEnabled())
+        logger.warn("No rate for org "+org+", item " + item);
       return null;
     }
 
@@ -524,7 +526,9 @@ public class ExtractionHelper
     }
     else
     {
-      System.out.println(operation + " is not yet supported");
+      Logger logger = Logging.currentLogger();
+      if (logger.isErrorEnabled())
+        logger.error(operation + " is not yet supported");
     }
     return schedule;
   }
@@ -596,7 +600,9 @@ public class ExtractionHelper
     }
     else
     {
-      System.out.println(operation + " is not yet supported for scalars");
+      Logger logger = Logging.currentLogger();
+      if (logger.isErrorEnabled())
+        logger.error(operation + " is not yet supported for scalars");
     }
 
     return resultSchedule;
@@ -841,8 +847,9 @@ public class ExtractionHelper
   {
     if (schedule == null)
     {
-      if (debug)
-        System.out.println ("WARNING: requested schedule not found");
+      Logger logger = Logging.currentLogger();
+      if (logger.isWarnEnabled())
+        logger.warn("requested schedule not found");
       return null;
     }
 
@@ -861,8 +868,9 @@ public class ExtractionHelper
     }
     else
     {
-      if (debug)
-        System.out.println("WARNING: could not combine like quantity elements, type is: " + schedule.getScheduleElementType().getName());
+      Logger logger = Logging.currentLogger();
+      if (logger.isWarnEnabled())
+        logger.warn("could not combine like quantity elements, type is: " + schedule.getScheduleElementType().getName());
     }
 
     return schedule;
@@ -892,8 +900,9 @@ public class ExtractionHelper
         rate = new Double(q_element.getValue());
       }
       else {
-        if (debug)
-          System.out.println("Not sure what kind of ScheduleElementImpl this is: " + element.getClass().getName());
+        Logger logger = Logging.currentLogger();
+        if (logger.isWarnEnabled())
+          logger.warn("Not sure what kind of ScheduleElementImpl this is: " + element.getClass().getName());
         continue;
       }
 
@@ -957,15 +966,17 @@ public class ExtractionHelper
   {
     if (a == null)
     {
-      if (debug)
-        System.out.println ("WARNING: asset is null");
+      Logger logger = Logging.currentLogger();
+      if (logger.isWarnEnabled())
+        logger.warn("asset is null");
       return null;
     }
 
     TypeIdentificationPG type_id_pg = a.getTypeIdentificationPG();
     if (type_id_pg == null) {
-      if (debug)
-        System.out.println ("WARNING: no typeIdentificationPG for asset");
+      Logger logger = Logging.currentLogger();
+      if (logger.isWarnEnabled())
+        logger.warn ("no typeIdentificationPG for asset");
       return null;
     }
 
