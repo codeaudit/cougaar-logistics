@@ -278,14 +278,21 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     double qty = 0;
     double runningQty = 0;
     double todayLevel, yesterdayLevel, todayRefill, testLevel, testQty;
+    long start, end;
 
     // loop through the bucket in the inventory
     while (currentBucket <= endBucket) {
       yesterdayLevel = thePG.getLevel(currentBucket - 1);
       Task refill = thePG.getRefillProjection(currentBucket);
-      long start = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.START_TIME);
-      long end = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.END_TIME);
-      todayRefill = thePG.getProjectionTaskDemand(refill, currentBucket, start, end);
+      //!!!NOTE getRefillProjection can return a null for a bucket check to make sure
+      // you have a real task and not a null.
+      if (refill != null) {
+	start = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.START_TIME);
+	end = (long)PluginHelper.getPreferenceBestValue(refill, AspectType.END_TIME);
+	todayRefill = thePG.getProjectionTaskDemand(refill, currentBucket, start, end);
+      } else {
+	todayRefill = 0;
+      }
       runningQty = 0;
       if (! trailingPointersHash.isEmpty()) {
   	runningQty = processLateWithdraws(currentBucket, yesterdayLevel+todayRefill,

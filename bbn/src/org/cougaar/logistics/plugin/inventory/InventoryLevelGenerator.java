@@ -61,25 +61,29 @@ public class InventoryLevelGenerator extends InventoryModule {
     Iterator reqsIter = reqs.iterator();
     while (reqsIter.hasNext()) {
       Task refill = (Task) reqsIter.next();
-      PlanElement pe = refill.getPlanElement();
-      AllocationResult ar = null;
-      if (pe !=null ) {
-        //try to use the reported result - but if its null - use the 
-        // estimated result
-        if (pe.getReportedResult() != null) {
-          ar = pe.getReportedResult();
-        } else {
-          ar = pe.getEstimatedResult();
-        }
-        // make sure that we got atleast a valid reported OR estimated allocation result
-        if (ar != null) {
-          double endTime = ar.getValue(AspectType.END_TIME);
-          if (bucket == thePG.convertTimeToBucket((long)endTime)) {
-            // we found a refill for this bucket
-            refillQty = ar.getValue(AspectType.QUANTITY);
-            return refillQty;
-          }
-        }
+      //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
+      // filled with null instead of a task - so make sure you really have a task!
+      if (refill != null) {
+	PlanElement pe = refill.getPlanElement();
+	AllocationResult ar = null;
+	if (pe !=null ) {
+	  //try to use the reported result - but if its null - use the 
+	  // estimated result
+	  if (pe.getReportedResult() != null) {
+	    ar = pe.getReportedResult();
+	  } else {
+	    ar = pe.getEstimatedResult();
+	  }
+	  // make sure that we got atleast a valid reported OR estimated allocation result
+	  if (ar != null) {
+	    double endTime = ar.getValue(AspectType.END_TIME);
+	    if (bucket == thePG.convertTimeToBucket((long)endTime)) {
+	      // we found a refill for this bucket
+	      refillQty = ar.getValue(AspectType.QUANTITY);
+	      return refillQty;
+	    }
+	  }
+	}
       }
     }
     // if we did not find a match return 0.0
