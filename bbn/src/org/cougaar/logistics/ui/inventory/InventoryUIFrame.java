@@ -57,6 +57,8 @@ import java.awt.event.WindowAdapter;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.io.StringWriter;
 import java.io.IOException;
 
@@ -97,7 +99,8 @@ public class InventoryUIFrame extends JFrame
     private Logger logger;
 
     String cip;
-    String defaultCSVPath;
+    String defaultSaveCSVPath;
+    String defaultOpenCSVPath;
     String helpFileStr;
 
 
@@ -129,8 +132,9 @@ public class InventoryUIFrame extends JFrame
 	   (baseDir.trim().equals(""))) {
 	    baseDir = cip + File.separator + "workspace";
 	}
-	defaultCSVPath = baseDir + File.separator + "INVGUICSV" + File.separator + formatTimeStamp(new Date(),false) + File.separator; 
-	File pathDirs = new File(defaultCSVPath);
+	defaultOpenCSVPath = baseDir + File.separator + "INVGUICSV";
+	defaultSaveCSVPath = defaultOpenCSVPath+ File.separator + formatTimeStamp(new Date(),false) + File.separator; 
+	File pathDirs = new File(defaultOpenCSVPath);
 
 	fileChooser = new JFileChooser(pathDirs);
 	// fills frame
@@ -202,9 +206,12 @@ public class InventoryUIFrame extends JFrame
 	JMenu file = new JMenu("File");
 	JMenuItem quit = new JMenuItem(InventoryMenuEvent.MENU_Exit);
 	JMenuItem save = new JMenuItem(InventoryMenuEvent.MENU_SaveXML);
+	JMenuItem open = new JMenuItem(InventoryMenuEvent.MENU_OpenXML);
 	quit.addActionListener(this);
 	save.addActionListener(this);
+	open.addActionListener(this);
 	file.add(quit);
+	file.add(open);
 	file.add(save);
 	retval.add(file);
     
@@ -235,6 +242,9 @@ public class InventoryUIFrame extends JFrame
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_SaveXML)) {
 	    saveXML();
 	}
+	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_OpenXML)) {
+	    openXML();
+	}
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_Help)) {
 	    popupHelpPage();
 	}
@@ -253,17 +263,17 @@ public class InventoryUIFrame extends JFrame
     }
 
     protected void saveXML() {
-	File pathDirs = new File(defaultCSVPath);
+	File pathDirs = new File(defaultSaveCSVPath);
 	try {
 	    if(!pathDirs.exists()){
 		pathDirs.mkdirs();
 	    }
 	}
 	catch(Exception ex) {
-	    logger.error("Error creating default directory " + defaultCSVPath, ex);
+	    logger.error("Error creating default directory " + defaultSaveCSVPath, ex);
 	}
 	if(inventory != null) {
-	    String fileID = defaultCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
+	    String fileID = defaultSaveCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
 	    System.out.println("Save to file: " + fileID);
 	    fileChooser.setSelectedFile(new File(fileID));
 	}
@@ -279,6 +289,54 @@ public class InventoryUIFrame extends JFrame
 	    catch(IOException ioe) {
 		throw new RuntimeException(ioe);
 	    }
+	}		
+    }
+
+
+    protected void openXML() {
+	/**
+	if(inventory != null) {
+	    String fileID = defaultOpenCSVPath;
+	    System.out.println("Open file at path: " + fileID);
+	    fileChooser.setSelectedFile(new File(fileID));
+	}
+	*/
+	int retval = fileChooser.showOpenDialog(this);
+	if(retval == fileChooser.APPROVE_OPTION) {
+	    File openFile = fileChooser.getSelectedFile();
+	    String invXML="";
+	    try{
+		BufferedReader br = new BufferedReader(new FileReader(openFile));
+
+		String nextLine = br.readLine();
+		while(nextLine != null) {
+		    invXML = invXML + nextLine + "\n";
+		    nextLine = br.readLine();
+		}
+		br.close();
+	    }
+	    catch(IOException ioe) {
+		throw new RuntimeException(ioe);
+	    }
+
+	    InventoryFileManager fm;
+	    if(dataSource instanceof InventoryFileManager)  {
+		fm = (InventoryFileManager) dataSource;
+	    }
+	    else {
+		fm = new InventoryFileManager(this);
+		dataSource = fm;
+	    }
+	    inventory = parser.parseString(invXML);
+	    editPane.setText(invXML);
+	    fm.addItem(inventory,invXML);
+	    Vector orgs = dataSource.getOrgNames();
+	    String[] fileType = dataSource.getSupplyTypes();
+	    selector.initializeComboBoxes(orgs,fileType);
+	    Vector assetNames = dataSource.getAssetNames(inventory.getOrg(),fileType[0]);
+	    selector.setAssetNames(assetNames);
+	    selector.setSelectedOrgAsset(inventory.getOrg(),fm.getFullItemName(inventory));
+	    multiChart.setData(inventory);	    
 	}		
     }
 

@@ -113,8 +113,10 @@ public class InventoryFileManager implements InventoryDataSource
     }
 
     public String getInventoryData(String orgName, String assetName) {
-	System.out.println("getInventoryData: OrgName: " + orgName +
-			   " AssetName: " + assetName);
+	if(logger.isDebugEnabled()) {
+	    logger.debug("getInventoryData: OrgName: " + orgName +
+			 " AssetName: " + assetName);
+	}
 	currItemToXML = (Hashtable) orgToItems.get(orgName);
         invXMLStr = (String) currItemToXML.get(assetName);
 	return invXMLStr;

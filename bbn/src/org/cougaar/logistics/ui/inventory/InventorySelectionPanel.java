@@ -90,6 +90,7 @@ public class InventorySelectionPanel extends JPanel
 
     Component parent;
     boolean supplyTypesActive;
+    boolean supplyTypesVisible;
 
     public InventorySelectionPanel(Component aParent) {
 	orgsBox = new JComboBox();
@@ -98,6 +99,7 @@ public class InventorySelectionPanel extends JPanel
 	invListeners = new ArrayList();
 	parent = aParent;
 	supplyTypesActive = true;
+	supplyTypesVisible = true;
 	initPanel();
 	this.setVisible(true);
     }
@@ -137,8 +139,8 @@ public class InventorySelectionPanel extends JPanel
 
 	supplyTypesBox.addItemListener(this);
 	supplyTypesLabel = new JLabel(SUPPLY_TYPES);
-	supplyTypesLabel.setVisible(supplyTypesActive);
-	supplyTypesBox.setVisible(supplyTypesActive);
+	supplyTypesLabel.setVisible(supplyTypesVisible);
+	supplyTypesBox.setVisible(supplyTypesVisible);
 	supplyPanel.add(supplyTypesLabel);
 	supplyPanel.add(supplyTypesBox);
 
@@ -183,6 +185,7 @@ public class InventorySelectionPanel extends JPanel
 
 	setOrganizations(orgs);
 	setSupplyTypes(supplyTypes);
+	setAssetNames(new Vector());
 
 	orgsBox.addItemListener(this);
 	supplyTypesBox.addItemListener(this);
@@ -198,11 +201,13 @@ public class InventorySelectionPanel extends JPanel
 	   (supplyTypes.length == 0)){
 	    currSupplyType = null;
 	    supplyTypesActive = false;
+	    supplyTypesVisible = false;
 	}
-	if(supplyTypes.length == 1) {
-	    currSupplyType = supplyTypes[0];
-	    supplyTypesActive = false;
-	}
+	//	if(supplyTypes.length == 1) {
+	//    currSupplyType = supplyTypes[0];
+	//    supplyTypesActive = false;
+	//    supplyTypesVisible = true;
+	//}
 	else {
 	    supplyTypesBox.removeAllItems();
 	    for(int i=0; i < supplyTypes.length ; i++) {
@@ -210,10 +215,17 @@ public class InventorySelectionPanel extends JPanel
 		supplyTypesBox.addItem(supplyType);
 	    }
 	    currSupplyType = (String) supplyTypesBox.getItemAt(0);
-	    supplyTypesActive = true;
+	    if(supplyTypes.length == 1) {
+		supplyTypesActive = false;
+	    }
+	    else {
+		supplyTypesActive = true;
+	    }
+	    supplyTypesVisible = true;
 	}		
-	supplyTypesLabel.setVisible(supplyTypesActive);
-	supplyTypesBox.setVisible(supplyTypesActive);
+	supplyTypesLabel.setVisible(supplyTypesVisible);
+	supplyTypesBox.setVisible(supplyTypesVisible);
+	supplyTypesBox.setEnabled(supplyTypesActive);
     }
 
     public void setOrganizations(Vector orgs) {
@@ -226,6 +238,17 @@ public class InventorySelectionPanel extends JPanel
 	if(orgs.size() > 1) {
 	    currOrg = (String) orgsBox.getItemAt(0);
 	}
+    }
+
+    public void setSelectedOrgAsset(String org, String assetName) {
+	assetNamesBox.removeItemListener(this);
+	orgsBox.removeItemListener(this);
+	orgsBox.setSelectedItem(org);
+	assetNamesBox.setSelectedItem(assetName);
+	currOrg = org;
+	currAssetName = assetName;
+	assetNamesBox.addItemListener(this);
+	orgsBox.addItemListener(this);
     }
 
     public void setAssetNames(Vector assets) {
@@ -242,7 +265,7 @@ public class InventorySelectionPanel extends JPanel
 	if(currAssetIndex >= 0) {
 	    assetNamesBox.setSelectedIndex(currAssetIndex);
 	}
-	else if(assets.size() > 1) {
+	else if(assets.size() >= 1) {
 	    currAssetName = (String) assetNamesBox.getItemAt(0);
 	}
 	else {

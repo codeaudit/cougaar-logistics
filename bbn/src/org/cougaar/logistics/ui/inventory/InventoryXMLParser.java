@@ -55,17 +55,24 @@ public class InventoryXMLParser
     }
 
     public InventoryData parseString(String xmlInput){
+	return parseString(xmlInput,false);
+    }
+    public InventoryData parseHeader(String xmlInput){
+	return parseString(xmlInput,true);
+    }
+
+    private InventoryData parseString(String xmlInput,boolean justHeader){
 	ctr=0;
 	inventory=null;
 	lines = xmlInput.split("\\n");
 	if(logger.isDebugEnabled()) {
 	    logger.debug("Number of Lines=" + lines.length);
 	}
-	parse();
+	parse(justHeader);
 	return inventory;
     }
 
-    private void parse() {
+    private void parse(boolean justHeader) {
 	while(ctr < lines.length) {
 	    currentString = lines[ctr];
 	    if(currentString.startsWith("</")) {
@@ -82,9 +89,17 @@ public class InventoryXMLParser
 		}
 		else if(name.equals(LogisticsInventoryFormatter.INVENTORY_HEADER_GUI_TAG)) {
 		    parseHeader();
+		    if(justHeader) {
+			return;
+		    }
 		}
 		else {
-		    parseSchedule();
+		    if(!justHeader) {
+			parseSchedule();
+		    }
+		    else {
+			ctr++;
+		    }
 		}
 	    }
 	    else {
