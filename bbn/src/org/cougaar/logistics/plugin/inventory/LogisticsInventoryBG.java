@@ -397,6 +397,8 @@ public class LogisticsInventoryBG implements PGDelegate {
   }
 
   public void addRefillRequisition(Task task) {
+    boolean taskAdded = false;
+
     PlanElement pe = task.getPlanElement();
     if (pe != null) {
       AllocationResult ar = pe.getReportedResult();
@@ -407,6 +409,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         if (!ar.isPhased()) {
           long endTime = getEndTime(task);
           addTaskToBucket(endTime, task);
+          taskAdded = true;
         }
         else {
           int[] ats = ar.getAspectTypes();
@@ -417,12 +420,12 @@ public class LogisticsInventoryBG implements PGDelegate {
             long phasedEndTime;
             phasedEndTime = (long) results[endInd];
             addTaskToBucket(phasedEndTime, task);
+            taskAdded = true;
           }
         }
       }
-      return;
     }
-    else {
+    if (!taskAdded) {
       long endTime = getEndTime(task);
       addTaskToBucket(endTime, task);
     }

@@ -110,7 +110,7 @@ public class InventoryLevelGenerator extends InventoryModule {
           } else {
             ar = pe.getEstimatedResult();
           }
-          // make sure that we got atleast a valid reported OR estimated allocation result
+          // make sure that we got at least a valid reported OR estimated allocation result
           if (ar != null) {
             if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
               //demandrate
