@@ -69,7 +69,11 @@ public class InventoryLevelGenerator extends InventoryModule {
     if (bucket < reqs.size()) {
       refill = (Task) reqs.get(bucket);
     }
-    if (refill == null) {
+    long today = inventoryPlugin.getCurrentTimeMillis();
+    // max lead day is today + maxLeadTime
+    int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+						  addNDays(today, inventoryPlugin.getMaxLeadTime()));
+    if ((refill == null) && (bucket > maxLeadBucket)) {
       refill = thePG.getRefillProjection(bucket);
     }
     
@@ -90,13 +94,14 @@ public class InventoryLevelGenerator extends InventoryModule {
         if (ar != null) {
           if (refill.getVerb().equals(Constants.Verb.PROJECTSUPPLY)) {
             //demandrate
-            if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
-              //default rate for volume is days
-              refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
-            } else {
-              //default rate for counts is millis
-              refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
-            }
+//             if (inventoryPlugin.getSupplyType().equals("BulkPOL")) {
+//               //default rate for volume is days
+//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE);
+//             } else {
+//               //default rate for counts is millis
+//               refillQty = ar.getValue(AlpineAspectType.DEMANDRATE) * thePG.getBucketMillis();
+// 	  }
+	    refillQty = getTaskUtils().getQuantity(refill, ar);
           } else {
             try {
               refillQty = ar.getValue(AspectType.QUANTITY);
