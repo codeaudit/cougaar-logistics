@@ -65,7 +65,7 @@
 	
 	<!-- Name of the module being compiled -->
 	<!-- determines jar file name, etc -->
-	<property name="module" value="Logistics_bbn_bbn" />
+	<property name="module" value="albbn" />
 
 	<!-- Label for Javadocs, etc -->
 	<property name="UpModule" value="LOGISTICS" />
@@ -77,13 +77,14 @@
 	<!-- Note that no effort is made to build any of these jars
 	or even see if they exist -->
 	<!-- Change name of this path to match the module name as approp -->
-	<path id="Logistics_bbn_bbn.classpath">
+	<path id="albbn.classpath">
            <pathelement location="${lib}/core.jar" />
 	   <pathelement location="${lib}/planserver.jar" />
 	   <pathelement location="${lib}/util.jar" />
 	   <pathelement location="${lib}/toolkit.jar" />
 	   <pathelement location="${lib}/planning.jar" />
-           <pathelement location="${sys}/vishnu.jar" />
+           <pathelement location="${lib}/vishnu.jar" />
+           <pathelement location="${sys}/vishnuServer.jar" />
            <pathelement location="${lib}/glm.jar" />
            <pathelement location="${lib}/glmtrans.jar" />
 	   <pathelement location="${sys}/xerces.jar" />
@@ -169,28 +170,28 @@
 	<!-- Run the code generators                            	-->
 	<!-- ============================================================= -->
 	<target name="defrunner" depends="prepare-defrunner, prepare" unless="defrunner.notRequired" if="have.buildjar">
-	   <execon executable="java"
+	   <apply executable="java"
 	           parallel="false"
 		   failonerror="false" >
 	     <arg line="-classpath ${genpath} org.cougaar.tools.build.DefRunner" />
 	     <fileset dir="${src}" >
 		<include name="**/*.def" />
 	     </fileset>
-	   </execon>
+	   </apply>
 	</target>
 	
 	<!-- ============================================================= -->
 	<!-- Clean up generated code                             	-->
 	<!-- ============================================================= -->
 	<target name="clean-gencode" depends="prepare, prepare-defrunner" description="Delete generated code" if="have.buildjar">
-	   <execon executable="java"
+	   <apply executable="java"
 	           parallel="false"
 		   failonerror="false" >
 	     <arg line="-classpath ${genpath} org.cougaar.tools.build.DefCleaner" />
 	     <fileset dir="${src}" >
 		<include name="**/*.gen" />
 	     </fileset>
-	   </execon>
+	   </apply>
 	</target>
 	
 	<!-- ========================================================== -->
