@@ -163,7 +163,7 @@ Cougaar.new_experiment("SocA-MOAS-AL-SD").run(1) {
   do_action "AdvanceTime", 5 * 24.hours * 1000
                                                                   
   do_action "InfoMessage", "### Starting Dynamic SD perturbation ###"
-  do_action "DynamicSD", "47-FSB", "FuelSupplyProvider", "10/25/2005"
+  do_action "DynamicSD", "47-FSB.DISCOM.1-AD.ARMY.MIL", "FuelSupplyProvider", "unavailable", "09/25/2005", "10/25/2005"
 #  do_action "DynamicSD", "47-FSB", "AmmunitionProvider", "10/25/2005"
 #  do_action "DynamicSD", "47-FSB", "SubsistenceSupplyProvider", "10/25/2005"
 #  do_action "DynamicSD", "47-FSB", "PackagedPOLSupplyProvider", "10/25/2005"
