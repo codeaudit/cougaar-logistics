@@ -1,4 +1,4 @@
-/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/Slider.java,v 1.2 2002-08-13 14:22:30 tom Exp $ */
+/* $Header: /opt/rep/cougaar/logistics/datagrabber/src/org/cougaar/mlm/ui/newtpfdd/gui/component/Slider.java,v 1.3 2002-08-14 14:03:19 tom Exp $ */
 
 /*
   Copyright (C) 1999-2000 Ascent Technology Inc. (Program).  All rights
@@ -261,7 +261,7 @@ implements Adjustable
   public int getUnitIncrement() { return myUnitIncrement; }  
   public int getValue() { return myValue; }  
   public int getVisibleAmount() { return myVisibleAmount; }  
-  public boolean isFocusTraversable() { return true; }  
+  public boolean isFocusable() { return true; }
   /**
 	  * Subtracts range b from range a.  The resulting range contains
 	  * all values which exist in a but not in b.  <b>NOTE:</b> correct
