@@ -128,7 +128,8 @@ public class LoadIndicatorTestPlugin extends SimplePlugin {
         return;
       }
 
-      Collection alCommunities = communityService.listParentCommunities(getAgentIdentifier().toString(), "(CommunityType=AdaptiveLogistics)");
+      Collection alCommunities = communityService.listParentCommunities(getAgentIdentifier().toString(),
+                                                                        "(CommunityType=AdaptiveLogistics)", null);
 
       if (alCommunities.size() == 0) {
         myLoggingService.warn(getAgentIdentifier().toString() + 

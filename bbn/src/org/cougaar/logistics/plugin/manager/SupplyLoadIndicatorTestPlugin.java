@@ -120,7 +120,7 @@ public class SupplyLoadIndicatorTestPlugin extends SimplePlugin {
 
   public void execute() {
     if (myOplanSubscription.getAddedCollection().size() > 0) {
-      CommunityService communityService = 
+      CommunityService communityService =
         (CommunityService) getBindingSite().getServiceBroker().getService(this, CommunityService.class, null);
 
       if (communityService == null) {
@@ -128,27 +128,29 @@ public class SupplyLoadIndicatorTestPlugin extends SimplePlugin {
         return;
       }
 
-      Collection alCommunities = communityService.listParentCommunities(getAgentIdentifier().toString(), "(CommunityType=AdaptiveLogistics)");
+      Collection alCommunities = communityService.listParentCommunities(getAgentIdentifier().toString(),
+                                                                        "(CommunityType=AdaptiveLogistics)",
+                                                                        null);
 
       if (alCommunities.size() == 0) {
-        myLoggingService.warn(getAgentIdentifier().toString() + 
+        myLoggingService.warn(getAgentIdentifier().toString() +
                                      " does not belong to an AdaptiveLogistics community.");
       }
 
       for (Iterator iterator = alCommunities.iterator();
            iterator.hasNext();) {
         String community = (String) iterator.next();
-        LoadIndicator loadIndicator = 
-          new LoadIndicator(this.getClass(), 
+        LoadIndicator loadIndicator =
+          new LoadIndicator(this.getClass(),
                             getAgentIdentifier().toString(),
                             myUIDService.nextUID(),
                             LoadIndicator.MODERATE_LOAD);
         loadIndicator.addTarget(AttributeBasedAddress.getAttributeBasedAddress(community,
-                                                          "Role", 
+                                                          "Role",
                                                           "AdaptiveLogisticsManager"));
         if (myLoggingService.isDebugEnabled()) {
-          myLoggingService.debug(getAgentIdentifier().toString() + 
-                                 ": adding LoadIndicator to be sent to " + 
+          myLoggingService.debug(getAgentIdentifier().toString() +
+                                 ": adding LoadIndicator to be sent to " +
                                  loadIndicator.getTargets());
         }
         publishAdd(loadIndicator);
