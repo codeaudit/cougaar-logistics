@@ -69,14 +69,22 @@ public class InventoryLevelGenerator extends InventoryModule {
     if (bucket < reqs.size()) {
       refill = (Task) reqs.get(bucket);
     }
-    long today = inventoryPlugin.getCurrentTimeMillis();
-    // max lead day is today + maxLeadTime
-    int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
-						  addNDays(today, inventoryPlugin.getMaxLeadTime()));
-    if ((refill == null) && (bucket > maxLeadBucket)) {
+    
+    // long today = inventoryPlugin.getCurrentTimeMillis();
+//     // max lead day is today + maxLeadTime
+//     int maxLeadBucket = thePG.convertTimeToBucket(getTimeUtils().
+// 						  addNDays(today, inventoryPlugin.getMaxLeadTime()));
+//     if ((refill == null) && (bucket > maxLeadBucket)) {
+//       refill = thePG.getRefillProjection(bucket);
+//     }
+    // check that the bucket we're looking at is in the projection period and its
+    // not just an off day during the Requisition period
+    int lastReqBucket = thePG.getLastRefillRequisition();
+    if ((refill == null) && (bucket > lastReqBucket)) {
       refill = thePG.getRefillProjection(bucket);
     }
-    
+
+
     //!!!NOTE that the inside slots of thePG.getRefillRequisitions are sometimes
     // filled with null instead of a task - so make sure you really have a task!
     if (refill != null) {
