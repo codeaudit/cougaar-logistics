@@ -585,12 +585,12 @@ public class UnitQuery extends SqlQuery {
 	
     CargoInstance cargo = new CargoInstance (generator, id);
     String trimName = trim(name);
-    if (trimName.length () == 0) {// for aggregates
+    if (trimName.length () == 0 || trimName.equals("no_name")) {// for aggregates
       if (quantity > 1) {
 	trimName = "Group of " + aggnumber + " " + protoNomen;
       } else {
 	trimName = protoNomen;
-    }
+      }
     }
 	
     cargo.setDisplayName (trimName);
