@@ -125,6 +125,7 @@ public class SupplyExpander extends InventoryModule {
 	LogisticsInventoryPG logInvPG = null;
 	Asset asset = (Asset)wdrawTask.getDirectObject();
 	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
+	inventoryPlugin.touchInventory(inventory);
 	logInvPG = (LogisticsInventoryPG)
 	  inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
 	return logInvPG;
