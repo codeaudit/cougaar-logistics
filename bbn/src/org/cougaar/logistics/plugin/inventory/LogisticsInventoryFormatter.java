@@ -243,7 +243,22 @@ public class LogisticsInventoryFormatter {
         }
         String outputStr = taskStr + getDateString(startTime, expandTimestamp) + ",";
         outputStr = outputStr + getDateString(endTime, expandTimestamp) + ",";
+	try {
         outputStr = outputStr + taskUtils.getQuantity(aTask, ar);
+   } catch (RuntimeException re) {
+      if (re.getMessage().indexOf("Assertion botch:") > -1) {
+        String errorString = "Assertion Botch: start time: " + startTime;
+        errorString += (" end time: " + endTime);
+	errorString += (" UID: " + aTask.getUID());
+        double d = taskUtils.getQuantity(aTask,ar); // don't print me!!!
+        long dbits = Double.doubleToLongBits(d);
+        long rbits = Double.doubleToRawLongBits(d);
+        errorString += ("quantity_d: " + Long.toHexString(dbits));
+        errorString += ("quantity_r: " + Long.toHexString(rbits));
+        logger.error(errorString);
+      }
+      throw re;  // re-throw for now
+    }
         writeln(outputStr);
       } else {
         int[] ats = ar.getAspectTypes();
