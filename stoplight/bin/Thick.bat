@@ -36,7 +36,9 @@ set SYS_PATH=%COUGAAR_INSTALL_PATH%\sys
 
 set CP=%DEVELOPMENT_PATH%
 set CP=%CP%;%SYS_PATH%\xerces.jar
+set CP=%CP%;%SYS_PATH%\log4j.jar
 set CP=%CP%;%LIB_PATH%\core.jar
+set CP=%CP%;%LIB_PATH%\util.jar
 set CP=%CP%;%LIB_PATH%\bootstrap.jar
 set CP=%CP%;%LIB_PATH%\aggagent.jar
 set CP=%CP%;%LIB_PATH%\uiframework.jar
