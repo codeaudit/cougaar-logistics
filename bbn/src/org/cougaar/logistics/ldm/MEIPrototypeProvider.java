@@ -65,6 +65,12 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
   private String service = null;
   // Subscription to policies
   private IncrementalSubscription meiSubscription;
+
+    // MEI Consumption
+    public static final int AMMO  = 0;
+    public static final int FUEL  = 1;
+    public static final int PKG_POL  = 2;
+    public static final int SPARES  = 3;
 	
 //   private IncrementalSubscription myOrganizations;
   protected Organization myOrg;
@@ -210,6 +216,63 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
     }
   }
 
+
+    protected  boolean[] checkMeiConsumption(Asset asset) {
+	String type_id = asset.getTypeIdentificationPG().getTypeIdentification();
+	String query = (String) fileParameters_.get ("MeiConsumption");
+	String consumer_id = type_id.substring(type_id.indexOf("/")+1);
+	query = substituteNSN (query, consumer_id); 
+
+	Vector qresult;
+	// The default is that the MEI consumes all 4 classes.
+	// This prevents problems if the table hasn't been updated for
+	// a new MEI.
+	boolean result[] = {true, true, true, true };
+	try {
+	    qresult = executeQuery (query);
+ 	    logger.debug ("in checkMeiConsumption() query complete for asset "+
+			  asset.getTypeIdentificationPG().getNomenclature()+
+			  "\nquery= "+query);
+	    if (qresult.isEmpty()) {
+ 		logger.debug ("no result for asset " +
+			      asset.getTypeIdentificationPG().getNomenclature());
+	    } else {
+		Object row[] = (Object[])qresult.firstElement();
+		result[AMMO]=convertConsumptionElement(row[AMMO]);
+		result[PKG_POL]=convertConsumptionElement(row[PKG_POL]);
+		result[SPARES]=convertConsumptionElement(row[SPARES]);
+		result[FUEL]=convertConsumptionElement(row[FUEL]);
+	    } // if else
+	} catch (Exception ee) {
+	    logger.error ( "in checkMeiConsumption(), DB query failed.Query= "+query);
+
+	} // try
+
+	return result;
+    }
+
+    private boolean convertConsumptionElement(Object ele) {
+	boolean res = true;
+	try {
+	    if (ele.toString().equals("0")) {
+		res = false;
+	    }
+	} catch (Exception e) {
+	    logger.error ( "in convertConsumptionElement(), convert failed; ele= "+ele);
+	}
+	return res;
+    }
+
+    private boolean consumes(boolean[] consumed, int type) {
+	boolean res = true;
+	try {
+	    res = consumed[type];
+	} catch (Exception e) {
+	    logger.error ( "in consumes(), array access failed");
+	}
+	return res;
+    }
+
   protected void addConsumerPGs(Collection meiConsumers) {
     Iterator meis = meiConsumers.iterator();
     Asset a, anAsset;
@@ -222,9 +285,11 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
         anAsset = a;
       }
       if (anAsset instanceof ClassVIIMajorEndItem) {
-        logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
+	boolean[] consumed = checkMeiConsumption(anAsset);
+        if (consumes(consumed, FUEL) && anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
+          logger.debug("addConsumerPGs() CREATING FuelConsumerPG for "+anAsset+" in "+
                      getAgentIdentifier());
-        if (anAsset.searchForPropertyGroup(FuelConsumerPG.class) == null) {
+
           NewFuelConsumerPG fuelpg = 
             (NewFuelConsumerPG)getLDM().getFactory().createPropertyGroup(FuelConsumerPG.class);
           fuelpg.setMei(a);
@@ -235,7 +300,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           anAsset.setPropertyGroup(fuelpg);
           addedPG = true;
         }
-        if (anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {        
+        if (consumes(consumed, AMMO) && anAsset.searchForPropertyGroup(AmmoConsumerPG.class) == null) {        
+          logger.debug("addConsumerPGs() CREATING AmmoConsumerPG for "+anAsset+" in "+
+                     getAgentIdentifier());
+
           NewAmmoConsumerPG ammopg = 
             (NewAmmoConsumerPG)getLDM().getFactory().createPropertyGroup(AmmoConsumerPG.class);
           ammopg.setMei(a);
@@ -246,7 +314,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           anAsset.setPropertyGroup(ammopg);
           addedPG = true;
         }
-        if (anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class) == null) {
+        if (consumes(consumed, PKG_POL) && anAsset.searchForPropertyGroup(PackagedPOLConsumerPG.class) == null) {
+          logger.debug("addConsumerPGs() CREATING PackagedPOLConsumerPG for "+anAsset+" in "+
+                     getAgentIdentifier());
+
           NewPackagedPOLConsumerPG packagedpg = 
             (NewPackagedPOLConsumerPG)getLDM().getFactory().createPropertyGroup(PackagedPOLConsumerPG.class);
           packagedpg.setMei(a);
@@ -257,7 +328,10 @@ public class MEIPrototypeProvider extends QueryLDMPlugin implements UtilsProvide
           anAsset.setPropertyGroup(packagedpg);
           addedPG = true;
         }
-        if (anAsset.searchForPropertyGroup(RepairPartConsumerPG.class) == null) {
+        if (consumes(consumed, SPARES) && anAsset.searchForPropertyGroup(RepairPartConsumerPG.class) == null) {
+          logger.debug("addConsumerPGs() CREATING RepairPartConsumerPG for "+anAsset+" in "+
+                     getAgentIdentifier());
+
           NewRepairPartConsumerPG partpg = 
             (NewRepairPartConsumerPG)getLDM().getFactory().createPropertyGroup(RepairPartConsumerPG.class);
           partpg.setMei(a);
