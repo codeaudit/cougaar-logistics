@@ -72,7 +72,8 @@ public class Controller extends Thread implements ResultHandler{
   public static final String COL_STARTTIME="starttime";
   public static final String COL_ENDTIME="endtime";
   public static final String COL_CONDITION="condition";
-
+  public static final String COL_ANNOTATION="annotation";
+  
   //Variables:
   ////////////
 
@@ -251,9 +252,9 @@ public class Controller extends Thread implements ResultHandler{
 
   //Actions:
 
-  public synchronized boolean startNewRun(Run run){
+  public synchronized boolean startNewRun(Run run, String annotation){
     try{
-      int id=registerNewRun();
+      int id=registerNewRun(annotation);
       run.setID(id);
     }catch(SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
@@ -399,16 +400,25 @@ public class Controller extends Thread implements ResultHandler{
   /**Put a new run into the table, and return the number
    **/
   protected int registerNewRun()throws SQLException{
+    return registerNewRun("");
+  }
+
+  protected int registerNewRun(String annotation)throws SQLException{
     int ret=getLargestRunNumber()+1;
     Statement s=dbConnection.createStatement();
-    if(s.executeUpdate("INSERT INTO "+getRunTableName()+" ("+
-		       COL_RUNID+","+COL_STARTTIME+","+COL_CONDITION+
+    String sql ="INSERT INTO "+getRunTableName()+" ("+
+		       COL_RUNID+","+COL_STARTTIME+","+COL_CONDITION+","+
+		       COL_ANNOTATION +
 		       ") VALUES("+
 		       Integer.toString(ret)+","+
 		       dateToSQL(new Date().getTime())+","+
-		       Run.COND_STARTED+")")==1){
+		       Run.COND_STARTED+","+
+			"\""+annotation+"\""+
+			")";
+    //System.err.println ("sql was :\n" + sql);
+    if(s.executeUpdate(sql)==1){
       logger.logMessage(Logger.MINOR,Logger.DB_WRITE,
-			"Inserted new run("+ret+")");
+			"Inserted new run("+ret+") with annotation : "+annotation);
     }else{
       logger.logMessage(Logger.ERROR,Logger.DB_WRITE,
 			"Error inserting run("+ret+")");
@@ -468,9 +478,34 @@ public class Controller extends Thread implements ResultHandler{
 		     COL_ENDTIME+" "+
 		     dgConfig.getDBConfig().getDateTimeType()+
 		     " NULL, "+
-		     COL_CONDITION+" INTEGER NOT NULL)");
+		     COL_CONDITION+" INTEGER NOT NULL, " +
+			COL_ANNOTATION+" VARCHAR(255)"+
+			")");
 	s.close();
       }
+	else {
+      		ResultSet rs2 = meta.getColumns(null,null,getRunTableName(),COL_ANNOTATION);
+	 	if (!rs2.next()) {
+			logger.logMessage(Logger.NORMAL,Logger.DB_QUERY,"need to add annotation column");
+      			Statement s=dbConnection.createStatement();
+      			if(s==null){
+				logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+			  	"Could not create statement from connection");
+				return false;
+			}
+			try {
+				ResultSet rs3=s.executeQuery("ALTER TABLE " + getRunTableName() +
+							    " ADD COLUMN " + COL_ANNOTATION + 
+							    " VARCHAR(255) AFTER " + COL_CONDITION);
+				rs3.close();
+			} catch (SQLException sql) { 
+				logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
+				"Could not add column to run table?");
+			}		
+		
+	 	}	
+		rs2.close();
+	}
       rs.close();
     }catch(SQLException e){
       logger.logMessage(Logger.ERROR,Logger.DB_CONNECT,
