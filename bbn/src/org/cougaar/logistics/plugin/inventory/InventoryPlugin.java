@@ -85,10 +85,10 @@ public class InventoryPlugin extends ComponentPlugin {
   public final String INVENTORY_FILE = "INVENTORY_FILE";
   // Policy variables
   private int criticalLevel = 3;
-  private int slackTime = 1;
-  private int orderFrequency = 3;
+  private int reorderPeriod = 3;
   private int handlingTime = 0;
   private int transportTime = 1;
+  private int bucketSize = 1;
 
   public void load() {
     super.load();
@@ -170,7 +170,7 @@ public class InventoryPlugin extends ComponentPlugin {
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) != null) {
       expandIncomingRequisitions(supplyTaskSubscription.getAddedCollection());
       expandIncomingProjections(projectionTaskSubscription.getAddedCollection());
-//        testBG();
+//    testBG();
     }
   }
 
@@ -516,7 +516,7 @@ public class InventoryPlugin extends ComponentPlugin {
       logInvPG.setInitialLevel(levels[1]);
       logInvPG.setResource(resource);
       logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-      logInvPG.initialize(startTime, criticalLevel, this);
+      logInvPG.initialize(startTime, criticalLevel, reorderPeriod, bucketSize, this);
       inventory=(Inventory)getRootFactory().createAsset("Inventory");
       inventory.addOtherPropertyGroup(logInvPG);
 
@@ -682,7 +682,12 @@ public class InventoryPlugin extends ComponentPlugin {
       if ((cl >= 0) && (cl != criticalLevel)) {
 	criticalLevel = cl;
 	changed = true;
-      }    
+      }
+      int rp = pol.getReorderPeriod();
+      if ((rp >= 0) && (rp != reorderPeriod)) {
+	reorderPeriod = rp;
+	changed = true;
+      }
     }
     return changed;
   }
@@ -697,6 +702,9 @@ public class InventoryPlugin extends ComponentPlugin {
 	logger.error("No initial inventory information.  Inventory File is empty or non-existant.");
     if (detReqHandler.getDetermineRequirementsTask(detReqSubscription, aggMILSubscription) == null)
       logger.error("Missing DetermineRequirements for MaintainInventory task.");
+    System.out.println("Critical Level is "+criticalLevel);
+    System.out.println("Reorder Period is "+reorderPeriod);
+    System.out.println("Days per bucket is "+bucketSize);
   }
 
   private void testBG() {
@@ -707,7 +715,7 @@ public class InventoryPlugin extends ComponentPlugin {
       inv = (Inventory)inv_it.next();
       System.out.println("***"+inv.getItemIdentificationPG().getItemIdentification());
       logInvPG = (LogisticsInventoryPG)inv.searchForPropertyGroup(LogisticsInventoryPG.class);
-      logInvPG.getProjectedDemand();
+      logInvPG.Test();
     }
   }
 }
