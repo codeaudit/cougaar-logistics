@@ -1,0 +1,12 @@
+# These are jvm args for attaching the IDEA debugger.
+# You can load this file in CSMART using the command line args console.
+# However, the ':' between jdwp and transport is parsed incorrectly.
+# You will need to manually changed this after you load the file.
+# Example below is how it should look.
+
+
+#  First column         Second column
+java.Xdebug 
+java.Xnoagent 
+compiler=NONE 
+java.Xrunjdwp:transport dt_socket,server=y,suspend=n,address=5005
