@@ -66,7 +66,8 @@ import org.cougaar.core.adaptivity.OperatingModeImpl;
  *  All modules are called from the InventoryPlugin.
  **/
 
-public class InventoryPlugin extends ComponentPlugin {
+public class InventoryPlugin extends ComponentPlugin
+    implements UtilsProvider {
 
   private boolean initialized = false;
   private boolean firstTimeThrough = true;
