@@ -11,7 +11,6 @@
 <LITERAL value="task" type="variable" datatype="task" />
 </OPERATOR>
 </OPERATOR>
-<LITERAL value="1.0E8" type="constant" datatype="number" />
 <OPERATOR operation="abs" >
 <OPERATOR operation="-" >
 <OPERATOR operation="get" >
@@ -24,6 +23,7 @@
 </OPERATOR>
 </OPERATOR>
 </OPERATOR>
+<LITERAL value="9.9999998E10" type="constant" datatype="number" />
 </OPERATOR>
 </OPERATOR>
 <OPERATOR operation="*" >
@@ -132,6 +132,31 @@
 </OPERATOR>
 </OPERATOR>
 </WRAPUPDURATION>
+<PREREQUISITES>
+<OPERATOR operation="mapover" >
+<LITERAL value="tasks" type="variable" datatype="list:task" />
+<LITERAL value="t" type="constant" datatype="string" />
+<OPERATOR operation="if" >
+<OPERATOR operation="&lt;" >
+<OPERATOR operation="get" >
+<LITERAL value="t" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+<OPERATOR operation="get" >
+<LITERAL value="task" type="variable" datatype="task" />
+<LITERAL value="arrival" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="datetime" />
+</OPERATOR>
+</OPERATOR>
+<OPERATOR operation="get" >
+<LITERAL value="t" type="variable" datatype="task" />
+<LITERAL value="id" type="constant" datatype="string" />
+<LITERAL value="" type="variable" datatype="string" />
+</OPERATOR>
+</OPERATOR>
+</OPERATOR>
+</PREREQUISITES>
 <CAPABILITY>
 <OPERATOR operation="or" >
 <OPERATOR operation="and" >
