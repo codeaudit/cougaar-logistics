@@ -37,6 +37,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JPanel;
+import javax.swing.JDialog;
 import javax.swing.JTabbedPane;
 import javax.swing.JOptionPane;
 import javax.swing.BorderFactory;
@@ -95,7 +96,9 @@ public class InventoryUIFrame extends JFrame
     
     private Logger logger;
 
+    String cip;
     String defaultCSVPath;
+    String helpFileStr;
 
 
     InventorySelectionPanel selector;
@@ -111,13 +114,20 @@ public class InventoryUIFrame extends JFrame
 	logger = Logging.getLogger(this);
 	contentPane = getRootPane().getContentPane();
 
-	
+	cip = System.getProperty("org.cougaar.install.path");
+
+	if((cip == null) ||
+	   (cip.trim().equals(""))) {
+	    logger.error("org.cougaar.install.path is not defined in Command line");
+	}
+	else {
+	    helpFileStr = cip + File.separator + "albbn" + File.separator + "doc" + File.separator + "alinvgui" + File.separator + "index.htm";
+	}
 
 	String baseDir = System.getProperty("org.cougaar.workspace");
 	if((baseDir == null) ||
 	   (baseDir.trim().equals(""))) {
-	    baseDir = System.getProperty("org.cougaar.install.path");
-	    baseDir = baseDir + File.separator + "workspace";
+	    baseDir = cip + File.separator + "workspace";
 	}
 	defaultCSVPath = baseDir + File.separator + "INVGUICSV" + File.separator + formatTimeStamp(new Date(),false) + File.separator; 
 	File pathDirs = new File(defaultCSVPath);
@@ -204,6 +214,13 @@ public class InventoryUIFrame extends JFrame
 	connection.add(connect);
 	retval.add(connection);
 
+	JMenu helpMenu = new JMenu("Help");
+	JMenuItem helpItem = new JMenuItem(InventoryMenuEvent.MENU_Help);
+	helpItem.addActionListener(this);
+	helpMenu.add(helpItem);
+	//Help popup is not done yet.
+	//retval.add(helpMenu);
+
 	return retval;
     }
 
@@ -216,34 +233,10 @@ public class InventoryUIFrame extends JFrame
 	    connectToServlet();
 	}
 	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_SaveXML)) {
-	    File pathDirs = new File(defaultCSVPath);
-	    try {
-		if(!pathDirs.exists()){
-		    pathDirs.mkdirs();
-		}
-	    }
-	    catch(Exception ex) {
-		logger.error("Error creating default directory " + defaultCSVPath, ex);
-	    }
-	    if(inventory != null) {
-		String fileID = defaultCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
-		System.out.println("Save to file: " + fileID);
-		fileChooser.setSelectedFile(new File(fileID));
-	    }
-	    int retval = fileChooser.showSaveDialog(this);
-	    if(retval == fileChooser.APPROVE_OPTION) {
-		File saveFile = fileChooser.getSelectedFile();
-		try{
-		    FileWriter fw = new FileWriter(saveFile);
-		    fw.write(editPane.getText());
-		    fw.flush();
-		    fw.close();
-		}
-		catch(IOException ioe) {
-		    throw new RuntimeException(ioe);
-		}
-	    }
-		
+	    saveXML();
+	}
+	else if(e.getActionCommand().equals(InventoryMenuEvent.MENU_Help)) {
+	    popupHelpPage();
 	}
 	else if(e.getActionCommand().equals("Parse")) {
 	    logger.info("Parsing");
@@ -255,6 +248,40 @@ public class InventoryUIFrame extends JFrame
 	}
     }
 
+    protected void popupHelpPage() {
+
+    }
+
+    protected void saveXML() {
+	File pathDirs = new File(defaultCSVPath);
+	try {
+	    if(!pathDirs.exists()){
+		pathDirs.mkdirs();
+	    }
+	}
+	catch(Exception ex) {
+	    logger.error("Error creating default directory " + defaultCSVPath, ex);
+	}
+	if(inventory != null) {
+	    String fileID = defaultCSVPath + inventory.getOrg() + "-" + (inventory.getItem().replaceAll("/","-")) + "-" + formatTimeStamp(new Date(), false) + ".csv";
+	    System.out.println("Save to file: " + fileID);
+	    fileChooser.setSelectedFile(new File(fileID));
+	}
+	int retval = fileChooser.showSaveDialog(this);
+	if(retval == fileChooser.APPROVE_OPTION) {
+	    File saveFile = fileChooser.getSelectedFile();
+	    try{
+		FileWriter fw = new FileWriter(saveFile);
+		fw.write(editPane.getText());
+		fw.flush();
+		fw.close();
+	    }
+	    catch(IOException ioe) {
+		throw new RuntimeException(ioe);
+	    }
+	}		
+    }
+
     protected void connectToServlet() {
 	dataSource = InventoryConnectionManager.queryUserForConnection(this);
 	if(dataSource == null) {
@@ -262,6 +289,9 @@ public class InventoryUIFrame extends JFrame
 	    return;
 	}
 	Vector orgs = dataSource.getOrgNames();
+	if(orgs == null) {
+	    displayErrorString("Error. Was unable to retrieve orgs.");
+	}
 	String[] supplyTypes = dataSource.getSupplyTypes();
 	selector.initializeComboBoxes(orgs,supplyTypes);		
     }
@@ -311,6 +341,23 @@ public class InventoryUIFrame extends JFrame
 	else {
 	    return "" + digit;
 	}
+    }
+
+    protected class HelpDialog extends JDialog {
+
+	protected String helpFileURLStr;
+
+	public HelpDialog(JFrame owner,
+			  String aHelpFileURLStr) {
+	    super(owner,"Inventory GUI Help",false);
+	    helpFileURLStr = aHelpFileURLStr;
+	    setupAndLayout();
+	}
+
+	protected void setupAndLayout() {
+	    
+	}
+	
     }
 
   public static void main(String[] args)

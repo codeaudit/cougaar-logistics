@@ -134,6 +134,7 @@ public class InventoryConnectionManager implements InventoryDataSource
 
     public String getInventoryData(String orgName, String assetName) {
 	InputStream is = null;
+	ConnectionHelper connection=null;
 	String orgURL = (String)orgURLs.get(orgName);
 	
     
@@ -141,7 +142,7 @@ public class InventoryConnectionManager implements InventoryDataSource
                        " for: " + SERV_ID);
 
 	try {
-	    ConnectionHelper connection = 
+	    connection = 
 		new ConnectionHelper( orgURL, SERV_ID);
 	    
 	    connection.sendData(assetName);
@@ -154,6 +155,8 @@ public class InventoryConnectionManager implements InventoryDataSource
 	try {
 	    ObjectInputStream p = new ObjectInputStream(is);
 	    invXMLStr = (String)p.readObject();
+	    p.close();
+	    connection.closeConnection();
 	} catch (Exception e) {
 	    displayErrorString("getInventoryData:Object read exception: " + e);
 	}
@@ -175,9 +178,10 @@ public class InventoryConnectionManager implements InventoryDataSource
 
 	//logger.debug("Submitting: " + queryStr + " to: " + orgURL +
 	//                   " for: " + SERV_ID);
+	ConnectionHelper connection = null;
 	InputStream is = null;
 	try {
-	    ConnectionHelper connection = 
+	    connection = 
 		new ConnectionHelper(orgURL, SERV_ID);
 
 	    connection.sendData(queryStr);
@@ -191,6 +195,8 @@ public class InventoryConnectionManager implements InventoryDataSource
 	try {
 	    ObjectInputStream p = new ObjectInputStream(is);
 	    assetNames = (Vector)p.readObject();
+	    p.close();
+	    connection.closeConnection();
 	} catch (Exception e) {
 	    displayErrorString("Object read exception: " + "_2_" + e.toString());
 	    return null;
@@ -211,9 +217,12 @@ public class InventoryConnectionManager implements InventoryDataSource
 
     public Vector getOrgNames() {
 	logger.debug("Getting Org List");
+	ConnectionHelper connection=null;
 	try {
-	    ConnectionHelper connection = new ConnectionHelper(getURLString());
+	    connection = new ConnectionHelper(getURLString());
 	    orgURLs = connection.getClusterIdsAndURLs();
+	    connection.closeConnection();
+	    connection = null;
 	    if (orgURLs == null) {
 		logger.warn("No ORG/Agents");
 		return null;

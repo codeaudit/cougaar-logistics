@@ -33,6 +33,7 @@ import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
 
 /**
+
  * Creates connection between client and XML Plan Server.
  */
 
@@ -107,6 +108,13 @@ public class ConnectionHelper {
     return url;
   }
 
+    public void closeConnection() throws IOException {
+	getInputStream().close();
+	if(connection instanceof HttpURLConnection) {
+	    ((HttpURLConnection) connection).disconnect();
+	}	
+    }
+
   /**
     Sends data on the connection.
    */
@@ -166,11 +174,11 @@ return results
       int p = clusterURL.lastIndexOf(":");
       URL url = new URL(clusterURL + "agents?scope=all&format=text");
       //logger.debug(url.toString());
-      URLConnection urlconn = null; 
+      connection = null; 
       InputStream in;
       try {
-	urlconn = url.openConnection();
-	in = urlconn.getInputStream();
+	connection = url.openConnection();
+	in = connection.getInputStream();
 	BufferedReader input = new BufferedReader(new InputStreamReader(in));
 	
 	try { 
@@ -182,6 +190,7 @@ return results
 	    //logger.debug(u);
 	    results.put(n, u);
 	  }
+	  input.close();
 	} catch(IOException e) {
 	    if(logger.isErrorEnabled()) {
 		logger.error("Error reading agent list: " + e.getMessage());
