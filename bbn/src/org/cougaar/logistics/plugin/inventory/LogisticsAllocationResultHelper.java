@@ -197,13 +197,13 @@ public class LogisticsAllocationResultHelper {
 	long sj = getStartTime(pj);
 	long ej = getEndTime(pj);
 	if (sj >= ei || si >= ej) continue;
-	System.err.println("Bad phases " + ar);
+// 	System.err.println("Bad phases " + ar);
 	int p = 0;
 	for (Iterator it = phasedResults.iterator(); it.hasNext(); ) {
-	  System.err.println("Phase " + p);
+// 	  System.err.println("Phase " + p);
 	  AspectValue[] phase = (AspectValue[]) it.next();
 	  for (int q = 0; q < phase.length; q++) {
-	    System.err.println("   " + phase[q]);
+// 	    System.err.println("   " + phase[q]);
 	  }
 	}
 	Thread.dumpStack();

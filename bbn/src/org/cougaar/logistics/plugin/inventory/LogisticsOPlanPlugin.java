@@ -62,7 +62,6 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
   private IncrementalSubscription selfOrganizations;
   private LoggingService logger;
   private Organization myOrganization;
-  private String myOrgName;
   protected ClusterIdentifier clusterId;
 
 

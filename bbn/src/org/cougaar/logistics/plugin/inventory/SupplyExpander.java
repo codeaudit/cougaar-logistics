@@ -90,9 +90,7 @@ public class SupplyExpander extends InventoryModule {
             float rating = 0.0f;
             int tstSize = tst.size();
             AllocationResult withdrawAR = null; // Remember this when we see it
-            long time;
             Task parentTask = wf.getParentTask();
-            PlanElement pe = parentTask.getPlanElement();
             AllocationResultHelper helper = new AllocationResultHelper(parentTask, null);
             AllocationResult bestAR = helper.getAllocationResult();
             AspectValue[] curr = bestAR.getAspectValueResults();

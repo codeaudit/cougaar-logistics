@@ -163,7 +163,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     for (int i=0, n=helper.getPhaseCount(); i < n; i++) {
       LogisticsAllocationResultHelper.Phase phase =
 	(LogisticsAllocationResultHelper.Phase) helper.getPhase(i);
-      double qty = phase.getAspectValue(AlpineAspectType.DEMANDRATE).getValue();
+//       double qty = phase.getAspectValue(AlpineAspectType.DEMANDRATE).getValue();
       int start = convertTimeToBucket(phase.getStartTime());
       int end = convertTimeToBucket(phase.getEndTime());
       while (end >= dueOutList.size()) {
@@ -225,10 +225,11 @@ public class LogisticsInventoryBG implements PGDelegate {
   private void updateProjectedDemandList(Task task, int bucket, long start, long end, boolean add) {
 
     double demand = getProjectionTaskDemand(task, bucket, start, end);
-    if (add)
+    if (add){
       projectedDemandArray[bucket] += demand;
-    else
+    } else {
       projectedDemandArray[bucket] -= demand;
+    }
 //      logger.error("Bucket "+bucket+": new demand "+demand+", total is "+
 //  		 projectedDemandArray[bucket]);
   }
@@ -251,7 +252,6 @@ public class LogisticsInventoryBG implements PGDelegate {
   // Do you want to treat Withdraws the way we treat ProjectWithdraws?
   // (remove, readd)
   public void removeWithdrawRequisition(Task task) {
-    int index;
     for (int i=0; i < dueOutList.size(); i++) {
       ArrayList list = (ArrayList)dueOutList.get(i);
       list.remove(task);
@@ -415,7 +415,6 @@ public class LogisticsInventoryBG implements PGDelegate {
 //      System.out.println("criticalLevel: "+criticalLevel+", days_per_bucket: "+
 //  		       days_per_bucket+", cl_per_bucket: "+cl_per_bucket);
     int mode = (int)Math.floor(cl_per_bucket);
-    long start = convertBucketToTime(0);
     double Ci;
     criticalLevelsArray = new double[projectedDemandArray.length];
     // Number of days in criticalLevel falls within a single bucket
@@ -814,7 +813,6 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
     actualDemandTasksList = tmpActualDemandTasksList;
 
-    QuantityScheduleElement qse;
     Vector list = new Vector();
     long start = convertBucketToTime(0);
     for (int i=0; i < criticalLevelsArray.length; i++) {
@@ -873,15 +871,15 @@ public class LogisticsInventoryBG implements PGDelegate {
     QuantityScheduleElement qse;
     while (elements.hasMoreElements()) {
       qse = (QuantityScheduleElement)elements.nextElement();
-      System.out.println("qty: "+qse.getQuantity()+
-			 " "+qse.getStartDate()+" to "+ qse.getEndDate());
+      logger.info("qty: "+qse.getQuantity()+
+		  " "+qse.getStartDate()+" to "+ qse.getEndDate());
     }
     return 0;
   }
 
   public void Test() {
-//      System.out.println("Bucket size is "+MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY);
-//      System.out.println("ReorderPeriod is "+reorderPeriod+", getReorderPeriod() "+getReorderPeriod()+
+//      logger.error("Bucket size is "+MSEC_PER_BUCKET/TimeUtils.MSEC_PER_DAY);
+//      logger.error("ReorderPeriod is "+reorderPeriod+", getReorderPeriod() "+getReorderPeriod()+
 //  		       ", critical level "+criticalLevel);
 //      computeCriticalLevels();
 //      setLevel(0, myPG.getInitialLevel());
@@ -889,30 +887,30 @@ public class LogisticsInventoryBG implements PGDelegate {
 //        double new_level = getLevel(i-1) - projectedDemandArray[i];
 //        setLevel(i, new_level);
 //      }
-//      System.out.println("Date for Bucket Zero is "+TimeUtils.dateString(convertBucketToTime(0)));
+//      logger.error("Date for Bucket Zero is "+TimeUtils.dateString(convertBucketToTime(0)));
 //      for (int i=0; i < projectedDemandArray.length; i++) {
-//        System.out.println("Bucket "+i+", Demand "+getActualDemand(i)+", criticalLevel "+
+//        logger.error("Bucket "+i+", Demand "+getActualDemand(i)+", criticalLevel "+
 //  			 criticalLevelsArray[i]+" Level "+inventoryLevelsArray[i]);
 //      }
-    System.out.println("********* ProjectWithdrawList ********");
+    logger.error("********* ProjectWithdrawList ********");
     for (int i=0; i < projWithdrawList.size(); i++) {
-      System.out.println(taskUtils.taskDesc((Task)projWithdrawList.get(i)));
+      logger.error(taskUtils.taskDesc((Task)projWithdrawList.get(i)));
     }
-    System.out.println("********* WithdrawList ********");
+    logger.error("********* WithdrawList ********");
     for (int i=0; i < withdrawList.size(); i++) {
-      System.out.println(taskUtils.taskDesc((Task)withdrawList.get(i)));
+      logger.error(taskUtils.taskDesc((Task)withdrawList.get(i)));
     }
-    System.out.println("********* ProjectSupplyList ********");
+    logger.error("********* ProjectSupplyList ********");
     for (int i=0; i < projSupplyList.size(); i++) {
-      System.out.println(taskUtils.taskDesc((Task)projSupplyList.get(i)));
+      logger.error(taskUtils.taskDesc((Task)projSupplyList.get(i)));
     }
-    System.out.println("********* SupplyList ********");
+    logger.error("********* SupplyList ********");
     for (int i=0; i < supplyList.size(); i++) {
-      System.out.println(taskUtils.taskDesc((Task)supplyList.get(i)));
+      logger.error(taskUtils.taskDesc((Task)supplyList.get(i)));
     }
-    System.out.println("********* Buffered Critical Levels ********");
+    logger.error("********* Buffered Critical Levels ********");
     printQuantityScheduleTimes(bufferedCriticalLevels);
-    System.out.println("********* Buffered Inventory Levels ********");
+    logger.error("********* Buffered Inventory Levels ********");
     printQuantityScheduleTimes(bufferedInventoryLevels);
   }
 
