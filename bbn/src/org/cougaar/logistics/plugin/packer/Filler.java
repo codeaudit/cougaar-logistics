@@ -45,6 +45,7 @@ import java.util.Vector;
 class Filler {
   double MIN_DELTA = 0.0001; // 1/10000 of a pound
 
+  protected boolean FIND_FOR_UNIT_PREP_ON_TASK = false;
   protected long ONE_DAY_MILLIS = 24*60*60*1000;
 
   // no two tasks can have arrival dates farther than this time apart and
@@ -289,35 +290,15 @@ class Filler {
       Mass mass = Mass.newMass(quantity, Mass.SHORT_TONS);
       weights.add(mass);
 
-      Object receiver =
-          task.getPrepositionalPhrase(Constants.Preposition.FOR);
-
-      if (receiver != null)
-        receiver = ((PrepositionalPhrase) receiver).getIndirectObject();
-
       String receiverID;
-
-      // Add field with recipient
-      if (receiver == null) {
-        receiverID = UNKNOWN;
-        _gp.getLoggingService().error("Filler.addContentsInfo - Task " + task.getUID() + " had no FOR prep.");
-      } else if (receiver instanceof String) {
-        receiverID = (String) receiver;
-      } else if (!(receiver instanceof Asset)) {
-        receiverID = UNKNOWN;
-      } else {
-        ItemIdentificationPG itemIdentificationPG =
-            ((Asset) receiver).getItemIdentificationPG();
-        if ((itemIdentificationPG == null) ||
-            (itemIdentificationPG.getItemIdentification() == null) ||
-            (itemIdentificationPG.getItemIdentification().equals(""))) {
-          receiverID = UNKNOWN;
-        } else {
-          receiverID = itemIdentificationPG.getItemIdentification();
-        }
+      if (FIND_FOR_UNIT_PREP_ON_TASK) {
+	receiverID = getReceiverID (task);
+      }
+      else {
+	receiverID = _gp.getGPMessageAddress().getAddress();
       }
 
-      _gp.getLoggingService().info("Adding - " + task.getUID () + " for "+ receiver + " - " + typeID + " - " + quantity);
+      _gp.getLoggingService().info("Adding - " + task.getUID () + " for "+ receiverID + " - " + typeID + " - " + quantity);
       packer.addToReceiver (receiverID, typeID, quantity);
 
       receivers.add(receiverID);
@@ -331,6 +312,38 @@ class Filler {
     contentsPG.setWeights(weights);
     contentsPG.setReceivers(receivers);
     container.setContentsPG(contentsPG);
+  }
+
+  protected String getReceiverID (Task task) {
+    String receiverID;
+
+    Object receiver =
+      task.getPrepositionalPhrase(Constants.Preposition.FOR);
+
+    if (receiver != null)
+      receiver = ((PrepositionalPhrase) receiver).getIndirectObject();
+
+
+      // Add field with recipient
+    if (receiver == null) {
+      receiverID = UNKNOWN;
+      _gp.getLoggingService().error("Filler.addContentsInfo - Task " + task.getUID() + " had no FOR prep.");
+    } else if (receiver instanceof String) {
+      receiverID = (String) receiver;
+    } else if (!(receiver instanceof Asset)) {
+      receiverID = UNKNOWN;
+    } else {
+      ItemIdentificationPG itemIdentificationPG =
+	((Asset) receiver).getItemIdentificationPG();
+      if ((itemIdentificationPG == null) ||
+	  (itemIdentificationPG.getItemIdentification() == null) ||
+	  (itemIdentificationPG.getItemIdentification().equals(""))) {
+	receiverID = UNKNOWN;
+      } else {
+	receiverID = itemIdentificationPG.getItemIdentification();
+      }
+    }
+    return receiverID;
   }
 }
 

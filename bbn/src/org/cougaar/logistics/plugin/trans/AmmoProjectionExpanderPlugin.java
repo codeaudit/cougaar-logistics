@@ -53,6 +53,7 @@ import java.util.*;
  */
 public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin {
   public long CHUNK_DAYS = 30;
+  protected boolean FIND_FOR_UNIT_PREP_ON_TASK = false;
   public static long MILLIS_PER_DAY = 1000*60*60*24;
   public static double SECS_PER_DAY = 60.0d*60.0d*24.0d;
   public static final String AMMO_CATEGORY_CODE = "MBB";
@@ -65,7 +66,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
   protected Map uidToTask   = new HashMap ();
   protected Map typeToTasks   = new HashMap ();
   protected UTILFilterCallback myTaskCallback;
-
+  protected List defaultUnit;
   public TaskUtils taskUtils;
 
   /**
@@ -84,6 +85,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     try {
       if (getMyParams ().hasParam ("CHUNK_DAYS"))
         CHUNK_DAYS=getMyParams().getLongParam ("CHUNK_DAYS");
+      if (getMyParams ().hasParam ("FIND_FOR_UNIT_PREP_ON_TASK"))
+        FIND_FOR_UNIT_PREP_ON_TASK=getMyParams().getBooleanParam ("FIND_FOR_UNIT_PREP_ON_TASK");
     } catch (Exception e) { if (isWarnEnabled()) { warn ("got unexpected exception " + e); } }
   }
 
@@ -301,8 +304,14 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
             " will produce " + numSubtasks + " subtasks.");
     }
 
-    String unit = (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR)) ?
+    String unit;
+    if (FIND_FOR_UNIT_PREP_ON_TASK) {
+      unit = (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR)) ?
         (String) prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR) : "null";
+    } 
+    else {
+      unit = getClusterName ();
+    }
 
     // create one subtask for every chunk set of days, with an asset that is the total
     // delivered over the period = days*ratePerDay
@@ -456,6 +465,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     prepHelper.removePrepNamed (subTask, Constants.Preposition.MAINTAINING);
     prepHelper.removePrepNamed (subTask, Constants.Preposition.REFILL);
     prepHelper.addPrepToTask (subTask, prepHelper.makePrepositionalPhrase (ldmf, "Start", lastBestDate));
+
+    if (!FIND_FOR_UNIT_PREP_ON_TASK) {
+      prepHelper.replacePrepOnTask (subTask, 
+				    prepHelper.makePrepositionalPhrase (ldmf, Constants.Preposition.FOR, 
+									getClusterName()));
+    }
 
     if (isInfoEnabled()) {
       info (getName () + " publishing reservation " + subTask.getUID() +
@@ -1463,6 +1478,12 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
       prepHelper.replacePrepOnTask (replacement,
                                     prepHelper.makePrepositionalPhrase(ldmf,START,best));
 
+      if (!FIND_FOR_UNIT_PREP_ON_TASK) {
+	prepHelper.replacePrepOnTask (replacement, 
+				      prepHelper.makePrepositionalPhrase (ldmf, Constants.Preposition.FOR, 
+									  getClusterName()));
+      }
+
       prefHelper.replacePreference (replacement,
                                     prefHelper.makeEndDatePreference(ldmf,
                                                                      best,
@@ -1596,30 +1617,44 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
     return successfulAR;
   }
 
+  /**
+   * Look on task for what unit the ammo is for.  Generally this will be 191-ORDN.
+   *
+   * If FIND_FOR_UNIT_PREP_ON_TASK is false, just use agent identifier (OSC).
+   */
   protected Collection findForPreps (final Task task) {
-    List units = new ArrayList();
-    if (task instanceof MPTask) {
-      Collection parents = ((MPTask)task).getComposition().getParentTasks ();
-      for (Iterator iter = parents.iterator(); iter.hasNext(); ) {
-        Task parentTask = (Task) iter.next();
-        if (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR))
-          units.add (prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR));
-      }
-    }
-    else {
-      if (prepHelper.hasPrepNamed (task, Constants.Preposition.FOR)) {
-        units.add (prepHelper.getIndirectObject (task, Constants.Preposition.FOR));
+    List units;
+    if (FIND_FOR_UNIT_PREP_ON_TASK) {
+      units = new ArrayList();
+      if (task instanceof MPTask) {
+	Collection parents = ((MPTask)task).getComposition().getParentTasks ();
+	for (Iterator iter = parents.iterator(); iter.hasNext(); ) {
+	  Task parentTask = (Task) iter.next();
+	  if (prepHelper.hasPrepNamed (parentTask, Constants.Preposition.FOR))
+	    units.add (prepHelper.getIndirectObject (parentTask, Constants.Preposition.FOR));
+	}
       }
       else {
-        if (isWarnEnabled())
-          warn ("no FOR prep on task " + task.getUID() + " using UID owner ");
-        units.add (task.getUID().getOwner());
+	if (prepHelper.hasPrepNamed (task, Constants.Preposition.FOR)) {
+	  units.add (prepHelper.getIndirectObject (task, Constants.Preposition.FOR));
+	}
+	else {
+	  if (isWarnEnabled())
+	    warn ("no FOR prep on task " + task.getUID() + " using UID owner ");
+	  units.add (task.getUID().getOwner());
+	}
       }
+
+      if (isDebugEnabled())
+	debug ("Units for " + task.getUID() + " were " + units);
     }
-
-    if (isDebugEnabled())
-      debug ("Units for " + task.getUID() + " were " + units);
-
+    else {
+      if (defaultUnit == null) {
+	defaultUnit = new ArrayList();
+	defaultUnit.add (getClusterName()); // i.e. OSC
+      }
+      units = defaultUnit;
+    }
     return units;
   }
 
