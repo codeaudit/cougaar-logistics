@@ -92,11 +92,9 @@ public abstract class DGPSPConnection extends PSPConnection {
       pspConfig.getQuery()+".xml";
   }
 
-  //Actions:
-  
-  //Static functions:
-  ///////////////////
-
-  //InnerClasses:
-  ///////////////
+    protected void appendQueryParams(StringBuffer sb, int count) {
+        for (int i=0; i<count; i++) {
+            sb.append("?,");
+        }
+    }
 }

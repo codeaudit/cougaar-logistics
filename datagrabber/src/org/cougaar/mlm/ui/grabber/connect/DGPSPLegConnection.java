@@ -207,24 +207,17 @@ public class DGPSPLegConnection extends DGPSPConnection
     sb.append(COL_CONVEYANCEID); sb.append(",");
     sb.append(COL_ROUTEID);
     sb.append(") VALUES(");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
+    appendQueryParams(sb, 3);
 
     if (writePreferences) {
-      sb.append("?");sb.append(",");
-      sb.append("?");sb.append(",");
-      sb.append("?");sb.append(",");
-      sb.append("?");sb.append(",");
+        appendQueryParams(sb, 4);
     }
 
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
-    sb.append("?");sb.append(",");
+    appendQueryParams(sb, 4);
     sb.append("?");sb.append(")");
     return con.prepareStatement(sb.toString());
   }
+
 
   protected PreparedStatement getItineraryPreparedStatement(Connection con) throws SQLException {
     StringBuffer sb=new StringBuffer();

@@ -49,21 +49,12 @@ import org.cougaar.planning.ldm.measure.Mass;
 
 /**
  * Handles getting instance data from DataGatherer PSP
- * @author Benjamin Lubin; last modified by: $Author: gvidaver $
+ * @author Benjamin Lubin; last modified by: $Author: tom $
  *
  * @since 2/19/01
  **/
 public class DGPSPInstanceConnection extends DGPSPConnection 
   implements DGPSPConstants{
-
-  //Constants:
-  ////////////
-
-  //Variables:
-  ////////////
-
-  //Constructors:
-  ///////////////
 
   public DGPSPInstanceConnection(int id, int runID,
 				 DataGathererPSPConfig pspConfig, 
@@ -176,7 +167,7 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     sb.append(COL_NAME);sb.append(",");
     sb.append(COL_ALP_ITEM_NOMEN);
     sb.append(") VALUES(");
-      getFiveQuestionMarks(sb);
+    appendQueryParams(sb, 5);
     sb.append("?");sb.append(")");
 
     return con.prepareStatement(sb.toString());
@@ -196,20 +187,11 @@ public class DGPSPInstanceConnection extends DGPSPConnection
     sb.append (COL_WEIGHT);
 
     sb.append(") VALUES(");
-      getFiveQuestionMarks(sb);
+      appendQueryParams(sb, 5);
       sb.append("?");sb.append(")");
 
     return con.prepareStatement(sb.toString());
   }
-
-    private void getFiveQuestionMarks(StringBuffer sb) {
-        sb.append("?");sb.append(",");
-        sb.append("?");sb.append(",");
-        sb.append("?");sb.append(",");
-        sb.append("?");sb.append(",");
-        sb.append("?");sb.append(",");
-    }
-
     Map uidToString = new HashMap ();
 
   protected boolean updateAssetInstance(PreparedStatement s, Instance part){
