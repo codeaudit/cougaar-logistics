@@ -52,7 +52,7 @@ import org.cougaar.mlm.ui.grabber.workqueue.TimedResult;
  *
  * Times out after a fixed duration, defaults to two minutes, but
  * can be set by xml tag.
- * @author Benjamin Lubin; last modified by: $Author: mthome $
+ * @author Benjamin Lubin; last modified by: $Author: gvidaver $
  *
  * @since 2/01/01
  **/
@@ -195,11 +195,13 @@ public class HierarchyConnection extends PSPConnection
     }
     String table="Unknown";
     try{
-      table=getOrgTableName();
-      updateOrgTable(s,hd);
-      table=getNamesTableName();
-      updateNamesTable(s,hd);
-      setStatus("Done");
+      synchronized (this.getClass()) {
+	table=getOrgTableName();
+	updateOrgTable(s,hd);
+	table=getNamesTableName();
+	updateNamesTable(s,hd);
+	setStatus("Done");
+      }
     }catch(SQLException e){
       haltForError(Logger.DB_WRITE,"Could not update table("+table+")",e);
       return;
