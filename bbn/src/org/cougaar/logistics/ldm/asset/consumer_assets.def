@@ -1,0 +1,21 @@
+;!generate: org.cougaar.tools.build.AssetWriter consumer_assets.def
+
+package=org.cougaar.logistics.ldm.asset
+
+propertydefs = org/cougaar/glm/ldm/asset/alpprops.def, consumerprops.def
+
+[Level2MEIAsset ClassVIIMajorEndItem]
+import=org.cougaar.glm.ldm.asset.*
+doc=Dummy major end item asset representing all MEIs for a given organization
+
+[Level2BulkPOL BulkPOL]
+import=org.cougaar.glm.ldm.asset.*
+
+[Level2PackagedPOL PackagedPOL]
+import=org.cougaar.glm.ldm.asset.*
+
+[Level2Ammunition Ammunition]
+import=org.cougaar.glm.ldm.asset.*
+
+[Level2Consumable Consumable]
+import=org.cougaar.glm.ldm.asset.*
