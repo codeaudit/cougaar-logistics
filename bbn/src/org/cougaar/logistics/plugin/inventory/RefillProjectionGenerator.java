@@ -26,6 +26,7 @@ import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.asset.Organization;
 import org.cougaar.glm.ldm.Constants;
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 
 import org.cougaar.planning.ldm.plan.AspectType;
@@ -56,9 +57,9 @@ import java.util.Vector;
 
 public class RefillProjectionGenerator extends InventoryModule {
 
-  private Organization myOrg = null;
-  private String myOrgName = null;
-  private GeolocLocation homeGeoloc = null;
+  private transient Organization myOrg = null;
+  private transient String myOrgName = null;
+  private transient GeolocLocation homeGeoloc = null;
 
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
@@ -116,7 +117,7 @@ public class RefillProjectionGenerator extends InventoryModule {
 //           //if there's a change in the demand, create a refill projection
 //           createProjectionRefill(startDay, 
 //                                  getTimeUtils().subtractNDays(currentDay, 1),
-//                                  today, projDemand);
+//                                  today, projDemand, anInventory, thePG);
 //           //then reset the startday and the new demand 
 //           startDay = currentDay;
 //           projDemand = nextProjDemand;
@@ -129,7 +130,7 @@ public class RefillProjectionGenerator extends InventoryModule {
 //       if (startDay != currentDay) {
 //         createProjectionRefill(startDay,
 //                                getTimeUtils().subtractNDays(currentDay, 1),
-//                                today, projDemand);
+//                                today, projDemand, anInventory, thePG);
 //       }
     }
   }
@@ -181,8 +182,9 @@ public class RefillProjectionGenerator extends InventoryModule {
    *  The InventoryPlugin will hook the task in to the proper workflow
    *  and publish it to the blackboard.
    **/
-    private void createProjectionRefill(long start, long end, long today,  
-				      double demand, Inventory inv) {
+  private void createProjectionRefill(long start, long end, long today,  
+				      double demand, Inventory inv, 
+                                      LogisticsInventoryPG thePG) {
     //create a projection refill task
     NewTask newRefill = inventoryPlugin.getRootFactory().newTask();
     newRefill.setVerb(Constants.Verb.ProjectSupply);
@@ -193,14 +195,14 @@ public class RefillProjectionGenerator extends InventoryModule {
     p_start = createRefillTimePreference(start, today);
     p_end = createRefillTimePreference(end, today);
     p_qty = createRefillRatePreference(demand);
-    prefs.addElement(p_start);
-    prefs.addElement(p_end);
-    prefs.addElement(p_qty);
+    prefs.add(p_start);
+    prefs.add(p_end);
+    prefs.add(p_qty);
     newRefill.setPreferences(prefs.elements());
 
     //create Prepositional Phrases
     Vector pp_vector = new Vector();
-    pp_vector.addElement(createPrepPhrase(Constants.Preposition.FOR, getOrgName()));
+    pp_vector.add(createPrepPhrase(Constants.Preposition.FOR, getOrgName()));
     pp_vector.add(createPrepPhrase(Constants.Preposition.OFTYPE, 
 					 inventoryPlugin.getSupplyType()));
 
@@ -211,23 +213,21 @@ public class RefillProjectionGenerator extends InventoryModule {
     if (geolocs.hasMoreElements()) {
       io = (GeolocLocation)geolocs.nextElement();
     } else {
-	io = getHomeLocation();
+      io = getHomeLocation();
     }
     pp_vector.addElement(createPrepPhrase(Constants.Preposition.TO, io));
-    //TODO - get the LogInvPG accessor settled
-    // Asset resource = inv.getLogisticsInventoryPG().getResource();
-//     TypeIdentificationPG tip = ((Asset)resource).getTypeIdentificationPG();
-//     MaintainedItem itemID = MaintainedItem.findOrMakeMaintainedItem(
-// 								    "Inventory", 
-// 								    tip.getTypeIdentification(),
-// 								    null,
-// 								    tip.getNomenclature());
-//     pp_vector.addElement(createPrepPhrase(Constants.Preposition.MAINTAINING, itemID));
-    pp_vector.addElement(createPrepPhrase(Constants.Preposition.REFILL, null));
-
+    Asset resource = thePG.getResource();
+    TypeIdentificationPG tip = ((Asset)resource).getTypeIdentificationPG();
+    MaintainedItem itemID = MaintainedItem.
+      findOrMakeMaintainedItem("Inventory", tip.getTypeIdentification(), 
+                               null, tip.getNomenclature(), inventoryPlugin);
+    pp_vector.add(createPrepPhrase(Constants.Preposition.MAINTAINING, itemID));
+    pp_vector.add(createPrepPhrase(Constants.Preposition.REFILL, null));
+    
     newRefill.setPrepositionalPhrases(pp_vector.elements());
 
-    //inventoryPlugin.publishRefillProjectionTask(newRefill, (Inventory)inv);
+    // can this be the same for projection refills?
+    inventoryPlugin.publishRefillTask(newRefill, (Inventory)inv);
   }
 
 
@@ -258,13 +258,13 @@ public class RefillProjectionGenerator extends InventoryModule {
 
   // utility method to create Refill Projection Rate preference
   private Preference createRefillRatePreference(double refill_qty) {
-    AspectValue lowAV = new AspectValue(AspectType.QUANTITY, 0.01);
-    AspectValue bestAV = new AspectValue(AspectType.QUANTITY, refill_qty);
-    AspectValue highAV = new AspectValue(AspectType.QUANTITY, refill_qty+1.0);
+    AspectValue lowAV = new AspectValue(AlpineAspectType.DEMANDRATE, 0.01);
+    AspectValue bestAV = new AspectValue(AlpineAspectType.DEMANDRATE, refill_qty);
+    AspectValue highAV = new AspectValue(AlpineAspectType.DEMANDRATE, refill_qty+1.0);
     ScoringFunction qtySF = ScoringFunction.
 	createVScoringFunction(lowAV, bestAV, highAV);
     return  inventoryPlugin.getRootFactory().
-	newPreference(AspectType.QUANTITY, qtySF);
+	newPreference(AlpineAspectType.DEMANDRATE, qtySF);
   }
 
   private PrepositionalPhrase createPrepPhrase(String prep, Object io) {
