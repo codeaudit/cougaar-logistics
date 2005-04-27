@@ -409,7 +409,13 @@ public class PartsPrototypeProvider extends QueryLDMPlugin {
   }
 
   private Vector parseAmmunitionRow(Object row[]) {
-    double weight = ((BigDecimal) row[1]).doubleValue();
+    double weight;
+    if ((row[1]) instanceof BigDecimal) {
+      weight = ((BigDecimal) row[1]).doubleValue();
+    }
+    else {
+      weight = ((Double) row[1]).doubleValue();
+    }
     String cargo_cat_code = (String) row[2];
     Vector pgs = new Vector();
 
