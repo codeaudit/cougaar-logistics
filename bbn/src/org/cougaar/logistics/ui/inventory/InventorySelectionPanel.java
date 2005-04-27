@@ -207,11 +207,8 @@ public class InventorySelectionPanel extends JPanel
 	orgsAndPop.add(orgsPopulationBox,constraints);
 
 	assetNamesBox.addItemListener(this);
-	JPanel assetsPanel = new JPanel();
-	assetsPanel.setLayout(new FlowLayout());
-	assetsPanel.add(new JLabel(ITEMS));
-	assetsPanel.add(assetNamesBox);
-	//assetsPanel.setBorder(new LineBorder(Color.black));
+        JPanel assetsPanel = makeAssetsPanel(assetNamesBox, ITEMS);
+        //assetsPanel.setBorder(new LineBorder(Color.black));
 
 	submitButton.setPreferredSize(new Dimension(100,25));
 	//submitButton.setMaximumSize(new Dimension(100,25));
@@ -287,6 +284,16 @@ public class InventorySelectionPanel extends JPanel
 	this.add(assetsAndButton,constraints);
 
 	this.setMaximumSize(new Dimension(780,80));
+    }
+
+    protected JComboBox getAssetNamesBox () { return assetNamesBox; }
+
+    protected JPanel makeAssetsPanel(JComboBox assetNamesComboBox, String itemsLabel) {
+        JPanel assetsPanel = new JPanel();
+        assetsPanel.setLayout(new FlowLayout());
+        assetsPanel.add(new JLabel(itemsLabel));
+        assetsPanel.add(assetNamesComboBox);
+        return assetsPanel;
     }
 
     public void initializeComboBoxes(Vector orgs, String[] supplyTypes) {
