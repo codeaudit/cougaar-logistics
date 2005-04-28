@@ -578,11 +578,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     //if we are passing in a false - see if we already made a failed AR/PE. If we did just get out.
     Task task = td.getTask();
     PlanElement prevPE = task.getPlanElement();
-    if (prevPE != null && !success) {
+    /**if (prevPE != null && !success) {
       if (!prevPE.getEstimatedResult().isSuccess()) {
         return;
       }
-    }
+    }*/
 
     ArrayList phasedResults = new ArrayList();
     double rollupQty = 0;
@@ -668,7 +668,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     AllocationResult estimatedResult = inventoryPlugin.getPlanningFactory().
             newPhasedAllocationResult(Constants.Confidence.SCHEDULED, success, avs, (new Vector(phasedResults)).elements());
 
-    //TODO - check me - doesn't seem to be working properly
     compareResults(estimatedResult, task, inv, thePG);
   }
 
@@ -852,11 +851,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       inventoryPlugin.publishAdd(alloc);
     } else {
       AllocationResult previous = prevPE.getEstimatedResult();
-      if (!previous.equals(failed)) {
-        if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
-              (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
-          System.out.println("Previous pe ER does not match new one... publish changing - Extra??");
-        }
+      if (!previous.isEqual(failed)) {
         prevPE.setEstimatedResult(failed);
         inventoryPlugin.publishChange(prevPE);
       }
@@ -879,7 +874,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     AllocationResult estimatedResult = PluginHelper.
             createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
                                             Constants.Confidence.SCHEDULED, true);
-    if (ar == null || !ar.equals(estimatedResult)) {
+    if (ar == null || !ar.isEqual(estimatedResult)) {
       pe.setEstimatedResult(estimatedResult);
       inventoryPlugin.publishChange(pe);
 //       updatePG(withdraw, thePG);
@@ -896,7 +891,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       inventoryPlugin.publishAdd(alloc);
     } else {
       AllocationResult previous = prevPE.getEstimatedResult();
-      if (!previous.equals(estimatedResult)) {
+      if (!previous.isEqual(estimatedResult)) {
+        System.out.println("Inside compareResults... results are !.equals..." +
+                           "\n previous result: " + previous + " estimated result: " +
+                           estimatedResult);
         prevPE.setEstimatedResult(estimatedResult);
         inventoryPlugin.publishChange(prevPE);
       } else {
