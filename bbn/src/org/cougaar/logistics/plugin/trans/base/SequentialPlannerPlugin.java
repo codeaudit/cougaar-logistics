@@ -250,9 +250,9 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
     }
 
     Schedule sched = (Schedule) prep.getIndirectObject();
-    Enumeration enum = sched.getAllScheduleElements();
-    while (enum.hasMoreElements()) {
-      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+    Enumeration en = sched.getAllScheduleElements();
+    while (en.hasMoreElements()) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)en.nextElement();
       if (isDebugEnabled()) 
 	debug(getName () + "------spe " + 
 	     spe + " is planned: "+
@@ -441,9 +441,9 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
       return;
     }
 	
-    Enumeration enum = sched.getAllScheduleElements();
-    while (enum.hasMoreElements()) {
-      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+    Enumeration en = sched.getAllScheduleElements();
+    while (en.hasMoreElements()) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)en.nextElement();
       AllocationResult reportedResult = exp.getReportedResult();
       boolean isFailure = (reportedResult != null) ? !reportedResult.isSuccess () : false;
  
@@ -736,8 +736,8 @@ public abstract class SequentialPlannerPlugin extends UTILBufferingPluginAdapter
 
     Schedule sched = (Schedule) prep.getIndirectObject();
 
-    for (Enumeration enum = sched.getAllScheduleElements(); enum.hasMoreElements();) {
-      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+    for (Enumeration en = sched.getAllScheduleElements(); en.hasMoreElements();) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)en.nextElement();
       if (spe.getTask () == child) {
 	if (isInfoEnabled()) {
 	  info (getName () + ".getElement - found schedule for " + spe.getTask().getUID());

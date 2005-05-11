@@ -148,9 +148,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
       if (logger.isInfoEnabled())
 	logger.info(getAgentIdentifier() + ".setupSub: have oplans. Restoring hashes.");
       // Restore org activities subscriptions / hash
-      Enumeration enum = oplans.elements();
-      while (enum.hasMoreElements()) {
-	Oplan oplan = (Oplan)enum.nextElement();
+      Enumeration en = oplans.elements();
+      while (en.hasMoreElements()) {
+	Oplan oplan = (Oplan)en.nextElement();
 	UID oplanUID = oplan.getUID();
 	IncrementalSubscription oplanActivities = (IncrementalSubscription)
 	  orgActivitySubscriptionOfOPlanUID.get(oplanUID);
@@ -198,12 +198,12 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     if (logger.isDebugEnabled()) {
       logger.debug("Updating the Oplans!");
     }
-    Enumeration enum;
+    Enumeration en;
     // Create new LogisticsOPlan objects for each added Oplan
     if (oplans.getAddedList().hasMoreElements()) {
-      enum = oplans.getAddedList();
-      while (enum.hasMoreElements()) {
-	Oplan oplan = (Oplan)enum.nextElement();
+      en = oplans.getAddedList();
+      while (en.hasMoreElements()) {
+	Oplan oplan = (Oplan)en.nextElement();
 	UID oplanUID = oplan.getUID();
 	IncrementalSubscription oplanActivities = (IncrementalSubscription)
 	  orgActivitySubscriptionOfOPlanUID.get(oplanUID);
@@ -217,9 +217,9 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
     }
     // Remove LogisticsOPlan objects that are no longer relevant
     if (oplans.getRemovedList().hasMoreElements()) {
-      enum = oplans.getRemovedList();
-      while (enum.hasMoreElements()) {
-	Oplan oplan = (Oplan)enum.nextElement();
+      en = oplans.getRemovedList();
+      while (en.hasMoreElements()) {
+	Oplan oplan = (Oplan)en.nextElement();
 	UID oplanUID = oplan.getUID();
 	LogisticsOPlan loplan = (LogisticsOPlan) oplanHash.get(oplanUID);
 	// Remove LogisticsOPlan from array
@@ -236,10 +236,10 @@ public class LogisticsOPlanPlugin extends ComponentPlugin {
 
   // Each LogisticsOPlan updates its own OrgActivities if needed
   private boolean updateOrgActivities() {
-    Iterator enum = oplanHash.values().iterator();
+    Iterator en = oplanHash.values().iterator();
     boolean update = false;
-    while (enum.hasNext()) {
-      LogisticsOPlan loplan = (LogisticsOPlan) enum.next();
+    while (en.hasNext()) {
+      LogisticsOPlan loplan = (LogisticsOPlan) en.next();
       IncrementalSubscription s = (IncrementalSubscription)
 	orgActivitySubscriptionOfOPlanUID.get(loplan.getOplanUID());
       if ((!s.getChangedCollection().isEmpty()) || 

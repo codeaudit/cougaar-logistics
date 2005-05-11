@@ -1066,12 +1066,12 @@ public class SequentialGlobalAirPlugin extends SequentialPlannerPlugin
       
     PrepositionalPhrase prep = prepHelper.getPrepNamed(parentTask, GLMTransConst.SequentialSchedule);
     Schedule sched = (Schedule) prep.getIndirectObject();
-    Enumeration enum = sched.getAllScheduleElements();
+    Enumeration en = sched.getAllScheduleElements();
     boolean overlap = false;
     Set toReplan = new HashSet();
 
-    while (enum.hasMoreElements()) {
-      SequentialScheduleElement spe = (SequentialScheduleElement)enum.nextElement();
+    while (en.hasMoreElements()) {
+      SequentialScheduleElement spe = (SequentialScheduleElement)en.nextElement();
       String uid = "<NO TASK>";
       if (spe.getTask () != null)
 	uid = spe.getTask ().getUID ().toString();

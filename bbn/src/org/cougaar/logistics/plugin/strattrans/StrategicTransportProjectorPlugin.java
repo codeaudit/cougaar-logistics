@@ -106,20 +106,20 @@ public class StrategicTransportProjectorPlugin extends UTILExpanderPluginAdapter
   public void redoTasks() {
     SubscriptionResults subscriptionResults = checkSubscriptions();
     if (subscriptionResults != null) {
-      Enumeration enum = myInputTaskCallback.getSubscription().elements();
+      Enumeration en = myInputTaskCallback.getSubscription().elements();
       boolean alreadyFound = false;
 
       if (isInfoEnabled()) {
-	if (!enum.hasMoreElements()) {
+	if (!en.hasMoreElements()) {
 	  info ("no tasks to replan on redo?");
 	}
       }
 
-      while (enum.hasMoreElements()) {
+      while (en.hasMoreElements()) {
 	if (alreadyFound) {
 	  warn(getAgentIdentifier() + " - more than one determine requirements task!");
 	}
-	Task t = (Task) enum.nextElement();
+	Task t = (Task) en.nextElement();
 	alreadyFound = true;
 	if (t.getPlanElement() == null) {
 	  if (isInfoEnabled()) {

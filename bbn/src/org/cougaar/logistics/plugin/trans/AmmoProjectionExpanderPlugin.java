@@ -1340,8 +1340,8 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
     if (transport instanceof MPTask) {
       MPTask multiParent = (MPTask) transport;
-      for (Enumeration enum = multiParent.getParentTasks(); enum.hasMoreElements(); ) {
-	Task supplyParent = (Task) enum.nextElement();
+      for (Enumeration en = multiParent.getParentTasks(); en.hasMoreElements(); ) {
+	Task supplyParent = (Task) en.nextElement();
 	
 	// check to see parent is of same ammo type
 	TypeIdentificationPG typePG = supplyParent.getDirectObject ().getTypeIdentificationPG();
@@ -1594,7 +1594,7 @@ public class AmmoProjectionExpanderPlugin extends AmmoLowFidelityExpanderPlugin 
 
   protected int numTasksInWorkflow (Workflow workflow) {
     int num = 0;
-    for (Enumeration enum = workflow.getTasks (); enum.hasMoreElements(); enum.nextElement()) { num++; }
+    for (Enumeration en = workflow.getTasks (); en.hasMoreElements(); en.nextElement()) { num++; }
     return num;
   }
 
