@@ -106,9 +106,9 @@ public class ReadinessChartApplet extends JApplet
     queryPanel.setLayout(new FlowLayout());
     queryPanel.add(new JLabel("Assets"));
   	
-  	for(Enumeration enum = stores.keys(); enum.hasMoreElements();)
+  	for(Enumeration en = stores.keys(); en.hasMoreElements();)
     {
-  	  assetNameBox.addItem((String)enum.nextElement());
+  	  assetNameBox.addItem((String)en.nextElement());
   	}
   	assetNameBox.addActionListener(queryListener);
   	queryPanel.add(assetNameBox);

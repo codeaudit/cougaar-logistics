@@ -1571,9 +1571,9 @@ System.out.println("java.version: " + System.getProperty("java.version"));
       		Hashtable assetList = (Hashtable) clusterData.get(clusterName);
           
           
-          for(Enumeration enum = assetList.keys(); enum.hasMoreElements();)
+          for(Enumeration en = assetList.keys(); en.hasMoreElements();)
           {
-          	myAssetNames.add((String)enum.nextElement());
+          	myAssetNames.add((String)en.nextElement());
           }
         }
       	else

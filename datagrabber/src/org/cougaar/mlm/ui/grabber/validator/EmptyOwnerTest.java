@@ -97,13 +97,13 @@ public class EmptyOwnerTest extends Test{
   }
 
   /**Render enums**/
-  protected String renderEnum(int whichEnum, int enum){
+  protected String renderEnum(int whichEnum, int en){
     switch(whichEnum){
     case TYPE_ENUM_1:
-      return enum==DGPSPConstants.LEG_TYPE_UNKNOWN?"Unknown":
-	Integer.toString(enum);
+      return en==DGPSPConstants.LEG_TYPE_UNKNOWN?"Unknown":
+	Integer.toString(en);
     }
-    return Integer.toString(enum);
+    return Integer.toString(en);
   }
 
   //InnerClasses:

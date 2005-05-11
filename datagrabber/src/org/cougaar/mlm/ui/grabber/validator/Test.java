@@ -130,8 +130,8 @@ public abstract class Test implements Comparable {
   //=========================
 
   /**Render enums**/
-  protected String renderEnum(int whichEnum, int enum){
-    return Integer.toString(enum);
+  protected String renderEnum(int whichEnum, int en){
+    return Integer.toString(en);
   }
 
   /**

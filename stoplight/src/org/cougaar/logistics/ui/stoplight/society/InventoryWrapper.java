@@ -790,12 +790,12 @@ public class InventoryWrapper {
 
   private boolean isOverlappingSchedule(Schedule aSchedule) {
     if(aSchedule != null) {
-      Enumeration enum = aSchedule.getAllScheduleElements();
-      if(!enum.hasMoreElements())
+      Enumeration en = aSchedule.getAllScheduleElements();
+      if(!en.hasMoreElements())
         return false; 
       long last_time = aSchedule.getStartTime()-1;
-      while (enum.hasMoreElements()) {
-        ScheduleElement element = (ScheduleElement)enum.nextElement();
+      while (en.hasMoreElements()) {
+        ScheduleElement element = (ScheduleElement)en.nextElement();
         if (element.getStartTime() <= last_time)
           return true;
         last_time = element.getEndTime();

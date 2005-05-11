@@ -102,13 +102,13 @@ public class BadConveyanceTypeTest extends Test{
   //=========================
 
   /**Render enums**/
-  protected String renderEnum(int whichEnum, int enum){
+  protected String renderEnum(int whichEnum, int en){
     switch(whichEnum){
     case TYPE_ENUM_1:
-      return enum==DGPSPConstants.CONV_TYPE_UNKNOWN?"Unknown":
-	Integer.toString(enum);
+      return en==DGPSPConstants.CONV_TYPE_UNKNOWN?"Unknown":
+	Integer.toString(en);
     }
-    return Integer.toString(enum);
+    return Integer.toString(en);
   }
   
   //InnerClasses:

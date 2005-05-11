@@ -703,9 +703,9 @@ public class PspIconLayerModel extends PspIconLayerModelBase
 
       ScheduleImpl mySched = (ScheduleImpl)schedImplByUnit.get(unitLabel);
 
-      for (Enumeration enum=mySched.getAllScheduleElements(); enum.hasMoreElements();)
+      for (Enumeration en=mySched.getAllScheduleElements(); en.hasMoreElements();)
       {
-        nltm = (NamedLocationTime)enum.nextElement();
+        nltm = (NamedLocationTime)en.nextElement();
 
 //        if (nltm!=null && nltm.getUnit()!=null && nltm.getUnit().getGraphic()!=null && nltm.getUnit().getLabel().equals(unitLabel))
         if (nltm!=null && nltm.getUnit()!=null && nltm.getUnit().getGraphic()!=null)
@@ -747,9 +747,9 @@ public class PspIconLayerModel extends PspIconLayerModelBase
   private void moveIconOnStack(ScheduleImpl mySched, String unitLabel, long location)
   {
     NamedLocationTime nltm = null;
-    for (Enumeration enum=mySched.getAllScheduleElements(); enum.hasMoreElements();)
+    for (Enumeration en=mySched.getAllScheduleElements(); en.hasMoreElements();)
     {
-      nltm = (NamedLocationTime)enum.nextElement();
+      nltm = (NamedLocationTime)en.nextElement();
 
       if (nltm!=null && nltm.getUnit()!=null && nltm.getUnit().getGraphic()!=null)
       {
@@ -775,9 +775,9 @@ public class PspIconLayerModel extends PspIconLayerModelBase
     {
       ScheduleImpl mySched = (ScheduleImpl)schedImplByUnit.get(unitLabel);
       NamedLocationTime nltm = null;
-      for (Enumeration enum=mySched.getAllScheduleElements(); enum.hasMoreElements();)
+      for (Enumeration en=mySched.getAllScheduleElements(); en.hasMoreElements();)
       {
-        nltm = (NamedLocationTime)enum.nextElement();
+        nltm = (NamedLocationTime)en.nextElement();
   
         if (nltm!=null && nltm.getUnit()!=null && nltm.getUnit().getGraphic()!=null)
         {

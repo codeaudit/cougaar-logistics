@@ -374,16 +374,16 @@ public class MissingLegTest extends Test implements DGPSPConstants{
   }
 
   /**Render enums**/
-  protected String renderEnum(int whichEnum, int enum){
+  protected String renderEnum(int whichEnum, int en){
     switch(whichEnum){
     case TYPE_ENUM_1:
       try{
-	return DGPSPConstants.LEG_TYPES[enum];
+	return DGPSPConstants.LEG_TYPES[en];
       }catch(Exception e){
-	return Integer.toString(enum);
+	return Integer.toString(en);
       }
     }
-    return Integer.toString(enum);
+    return Integer.toString(en);
   }
 
   //InnerClasses:

@@ -103,13 +103,13 @@ public class BadAssetClassTest extends Test{
   //=========================
 
   /**Render enums**/
-  protected String renderEnum(int whichEnum, int enum){
+  protected String renderEnum(int whichEnum, int en){
     switch(whichEnum){
     case TYPE_ENUM_1:
-      return enum==DGPSPConstants.ASSET_CLASS_UNKNOWN?"Unknown":
-	Integer.toString(enum);
+      return en==DGPSPConstants.ASSET_CLASS_UNKNOWN?"Unknown":
+	Integer.toString(en);
     }
-    return Integer.toString(enum);
+    return Integer.toString(en);
   }
 
   //InnerClasses:

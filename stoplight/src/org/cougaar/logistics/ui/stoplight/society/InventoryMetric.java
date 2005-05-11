@@ -61,8 +61,8 @@ public class InventoryMetric extends Enum {
 
   protected String getStringObject(String enumName)
   {
-    Enum enum = (Enum) findEnum(validValues, enumName);
-    return enum == null ? null : enum.toString();
+    Enum en = (Enum) findEnum(validValues, enumName);
+    return en == null ? null : en.toString();
   }
 
   public static InventoryMetric fromString (String enumName) {

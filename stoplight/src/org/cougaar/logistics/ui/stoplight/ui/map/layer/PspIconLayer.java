@@ -943,9 +943,9 @@ public class PspIconLayer extends PspIconLayerBase implements MapMouseListener, 
 
    synchronized (myState.schedImplByUnit)  // don't want anybody updating this while we sift through them
    {
-     for (Enumeration enum=myState.schedImplByUnit.keys(); enum.hasMoreElements();)
+     for (Enumeration en=myState.schedImplByUnit.keys(); en.hasMoreElements();)
      {
-       ScheduleImpl simpl = (ScheduleImpl) myState.schedImplByUnit.get((String) enum.nextElement());
+       ScheduleImpl simpl = (ScheduleImpl) myState.schedImplByUnit.get((String) en.nextElement());
        NamedLocationTime anyNltm = (NamedLocationTime) simpl.get(0);
 //       namedLocationTimeList.add(anyNltm);
         temp.put(anyNltm.getUnit().getLabel(), anyNltm);
@@ -960,9 +960,9 @@ public class PspIconLayer extends PspIconLayerBase implements MapMouseListener, 
       }
     }
 
-    for (Enumeration enum=temp.elements(); enum.hasMoreElements();)
+    for (Enumeration en=temp.elements(); en.hasMoreElements();)
     {
-      nltm = (NamedLocationTime)enum.nextElement();
+      nltm = (NamedLocationTime)en.nextElement();
       namedLocationTimeList.add(nltm);
      }
    }
