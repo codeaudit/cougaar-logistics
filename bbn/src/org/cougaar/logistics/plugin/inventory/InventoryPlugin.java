@@ -1153,6 +1153,10 @@ public class InventoryPlugin extends ComponentPlugin
 
 
     // Setup TaskSchedulers
+    setupTaskSchedulers();
+  }
+
+  protected void setupTaskSchedulers() {
     String taskScheduler = (String)pluginParams.get(TASK_SCHEDULER_ON);
     turnOnTaskSched = new Boolean(taskScheduler).booleanValue();
     QuiescenceReportService qrs = (QuiescenceReportService)
