@@ -433,21 +433,21 @@ extends BaseServletComponent
     public static final int FORMAT_XML = 1;
     public static final int FORMAT_HTML = 2;
 
-    private int format;
-    private boolean showTables;
+    protected int format;
+    protected boolean showTables;
 
     private HttpServletRequest request;
     private HttpServletResponse response;
 
     // writer from the request for HTML output
-    private PrintWriter out;
+    protected PrintWriter out;
 
     // various form params
     double redThreshold;
     double yellowThreshold;
     int refreshInterval;
 
-    Date startCDay=null;
+    protected Date startCDay=null;
 
     public ShortfallChecker(
         HttpServletRequest request, 
@@ -805,7 +805,7 @@ extends BaseServletComponent
 	}
     }
 
-    private ArrayList getSortedShortfallAgents(List agents){
+    protected ArrayList getSortedShortfallAgents(List agents){
       boolean VERBOSE = true;
       ArrayList filteredAS = new ArrayList();
       Iterator agentIt = agents.iterator();
@@ -893,16 +893,16 @@ extends BaseServletComponent
     }
 
     // Output a page showing summary info for all agents
-    private void viewAllAgents() throws IOException {
+    protected void viewAllAgents() throws IOException {
       ArrayList filteredAgents = getSortedShortfallAgents(getAllAgentNames());
       viewSelectedAgents(filteredAgents, "All");
     }
 
-    private void viewSelectedAgents() throws IOException {
+    protected void viewSelectedAgents() throws IOException {
       viewSelectedAgents(getSelectedAgents(), "Selected");
     }
 
-    private void viewSelectedAgents(List agents, String titleModifier) throws IOException {
+    protected void viewSelectedAgents(List agents, String titleModifier) throws IOException {
       response.setContentType("text/html");
       if (refreshInterval > 0) {
         response.setHeader("Refresh", String.valueOf(refreshInterval));
