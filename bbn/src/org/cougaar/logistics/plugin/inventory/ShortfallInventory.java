@@ -61,7 +61,8 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
 
   /**
    * Constructor 
-   * @param aSupplyType - the supply type this shortfall summary applys to
+   * @param anInvID String identifier of the inventory (item/NSN)
+   * @param uoi  The Unit of Issue for this Shortfall Inventory
    */
 
 
