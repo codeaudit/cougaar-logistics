@@ -57,15 +57,15 @@ public class ShortfallShortData implements XMLable, Serializable{
   protected static ArrayList rulesList=new ArrayList();
 
 
-  protected final static String AGENT_NAME_TAG = "AGENT";
-  protected final static String GEO_LOC_TAG = "GEO_LOC";
-  protected final static String USER_MODE_TAG = "USER_MODE";
-  protected final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
-  protected final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
-  protected final static String NUM_SHORTFALL_PERIOD_INVENTORIES_TAG = "NUM_SHORTFALL_PERIOD_INVENTORIES";
-  protected final static String NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG = "NUM_UNEXPECTED_SHORTFALL_INVENTORIES";
-  protected final static String EFFECTED_THREADS_TAG = "EFFECTED_SUPPLY_TYPES";
-  protected final static String EFFECTED_THREAD_TAG = "SUPPLY_TYPE";
+  public final static String AGENT_NAME_TAG = "AGENT";
+  public final static String GEO_LOC_TAG = "GEO_LOC";
+  public final static String USER_MODE_TAG = "USER_MODE";
+  public final static String NUM_SHORTFALL_INVENTORIES_TAG = "NUM_SHORTFALL_INVENTORIES";
+  public final static String NUM_TEMP_SHORTFALL_INVENTORIES_TAG = "NUM_TEMP_SHORTFALL_INVENTORIES";
+  public final static String NUM_SHORTFALL_PERIOD_INVENTORIES_TAG = "NUM_SHORTFALL_PERIOD_INVENTORIES";
+  public final static String NUM_UNEXPECTED_SHORTFALL_INVENTORIES_TAG = "NUM_UNEXPECTED_SHORTFALL_INVENTORIES";
+  public final static String EFFECTED_THREADS_TAG = "EFFECTED_SUPPLY_TYPES";
+  public final static String EFFECTED_THREAD_TAG = "SUPPLY_TYPE";
 
 
   public static final String TIME_MILLIS_TAG = 
