@@ -1115,6 +1115,7 @@ public class InventoryPlugin extends ComponentPlugin
       }
     }
 
+//    Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new InventoryPredicateHelper.OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     Level6OMSubscription = (IncrementalSubscription) blackboard.subscribe(new OperatingModePredicate(supplyType, LEVEL_6_TIME_HORIZON));
     detReqSubscription = (IncrementalSubscription) blackboard.subscribe(new DetInvReqPredicate(taskUtils));
     aggMILSubscription = (IncrementalSubscription) blackboard.subscribe(new AggMILPredicate());
@@ -1456,7 +1457,7 @@ public class InventoryPlugin extends ComponentPlugin
 
 
   //Allocation of refill tasks
-  static class RefillAllocPredicate implements UnaryPredicate {
+  protected static class RefillAllocPredicate implements UnaryPredicate {
     String type_;
     String orgName_;
     TaskUtils taskUtils;
@@ -1513,7 +1514,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   //Refill tasks
-  static class RefillPredicate implements UnaryPredicate {
+  protected static class RefillPredicate implements UnaryPredicate {
     String type_;
     String orgName_;
     TaskUtils taskUtils;
@@ -2297,6 +2298,10 @@ public class InventoryPlugin extends ComponentPlugin
 
   public int getMaxLeadTime() {
     return inventoryPolicy.getSupplierAdvanceNoticeTime() + getOrderShipTime();
+  }
+
+  public boolean getFillToCapacity() {
+    return inventoryPolicy.getFillToCapacity();
   }
 
   /** VTH operating modes */
