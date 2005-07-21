@@ -385,6 +385,11 @@ public class InventorySelectionPanel extends JPanel
 	orgsBox.addActionListener(this);
     }
 
+
+    public void setSelectedOrg(String org) {
+	   orgsBox.setSelectedItem(org);
+    }
+
     public void setAssetNames(Vector assets) {
 	assetNamesBox.removeItemListener(this);
 	assetNamesBox.removeAllItems();
