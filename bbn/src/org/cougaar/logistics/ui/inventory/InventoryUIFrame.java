@@ -682,6 +682,11 @@ public class InventoryUIFrame extends JFrame
       selector.setAssetNames(assetNames);
 
     } else if (e.getID() == InventorySelectionEvent.ORG_POP_SELECT) {
+
+      if (dataSource == null) {
+        connectToServlet ();
+      }
+
 	newOrgs = dataSource.getOrgNames(e.getOrg(),e.getOrgPopMethod());
 	if(newOrgs != null) {
 	  selector.reinitializeOrgBox(newOrgs);
