@@ -436,16 +436,16 @@ extends BaseServletComponent
     protected int format;
     protected boolean showTables;
 
-    private HttpServletRequest request;
+    protected HttpServletRequest request;
     private HttpServletResponse response;
 
     // writer from the request for HTML output
     protected PrintWriter out;
 
     // various form params
-    double redThreshold;
-    double yellowThreshold;
-    int refreshInterval;
+    protected double redThreshold;
+    protected double yellowThreshold;
+    protected int refreshInterval;
 
     protected Date startCDay=null;
 
@@ -457,7 +457,7 @@ extends BaseServletComponent
       this.response = response;
     }         
 
-    public void execute() throws IOException, ServletException 
+    public void execute() throws IOException, ServletException
     {
       try {
         redThreshold = Double.parseDouble(request.getParameter("redThreshold"));
@@ -524,7 +524,7 @@ extends BaseServletComponent
       // done
     }
 
-    private void viewDefault() throws IOException {
+    protected void viewDefault() throws IOException {
       if (format == FORMAT_HTML) {
         // generate outer frame page:
         //   top:    select "/agent"
@@ -623,7 +623,7 @@ extends BaseServletComponent
       out.flush();
     }
 
-    private void viewAgentBig() {
+    protected void viewAgentBig() {
       // get result
       ShortfallShortData result = getShortfallData();
 
