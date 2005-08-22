@@ -2304,6 +2304,10 @@ public class InventoryPlugin extends ComponentPlugin
     return inventoryPolicy.getFillToCapacity();
   }
 
+  public int getCriticalLevel() {
+    return inventoryPolicy.getCriticalLevel();
+  }
+
   /** VTH operating modes */
   protected OperatingMode level2Horizon, level6Horizon;
 
