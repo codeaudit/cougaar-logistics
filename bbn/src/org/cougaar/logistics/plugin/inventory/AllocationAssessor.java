@@ -892,9 +892,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     } else {
       AllocationResult previous = prevPE.getEstimatedResult();
       if (!previous.isEqual(estimatedResult)) {
-        System.out.println("Inside compareResults... results are !.equals..." +
-                           "\n previous result: " + previous + " estimated result: " +
-                           estimatedResult);
+        if (logger.isDebugEnabled()){
+          logger.debug("Inside compareResults... results are !.equals..." +
+                       "\n previous result: " + previous + " estimated result: " +
+                       estimatedResult);
+        }
         prevPE.setEstimatedResult(estimatedResult);
         inventoryPlugin.publishChange(prevPE);
       } else {
