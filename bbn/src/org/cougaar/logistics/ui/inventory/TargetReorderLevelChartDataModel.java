@@ -63,6 +63,10 @@ public class TargetReorderLevelChartDataModel
     extends InventoryBaseChartDataModel {
 
 
+  public static final int REORDER_LEVEL_SERIES_INDEX = 0;
+  public static final int TARGET_LEVEL_SERIES_INDEX = 1;
+
+
   public static final String TARGET_LEVEL_SERIES_LABEL = "Target Level";
   public static final String REORDER_LEVEL_SERIES_LABEL = "Reorder Level";
 
