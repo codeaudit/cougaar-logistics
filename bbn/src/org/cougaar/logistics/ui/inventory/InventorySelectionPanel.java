@@ -100,11 +100,11 @@ public class InventorySelectionPanel extends JPanel
 
   protected ArrayList invListeners;
 
-  JComboBox orgsBox;
-  JComboBox supplyTypesBox;
-  JComboBox assetNamesBox;
+  protected JComboBox orgsBox;
+  protected JComboBox supplyTypesBox;
+  protected JComboBox assetNamesBox;
   
-  JComboBox orgsPopulationBox;
+  protected JComboBox orgsPopulationBox;
   
   JButton   submitButton;
     
@@ -494,7 +494,13 @@ public class InventorySelectionPanel extends JPanel
 	    l.selectionChanged(e);
 	}
     }
-	
+
+    public void setSelectedOrgPopMethod(String orgPopMethod) {
+        orgsPopulationBox.removeItemListener(this);
+        orgsPopulationBox.setSelectedItem(orgPopMethod);
+        orgsPopulationBox.addItemListener(this);
+    }
+
     public String getSelectedOrg() { return currOrg; }
     public String getSelectedSupplyType() { return currSupplyType; }
     public String getSelectedAssetName() { return currAssetName; }
