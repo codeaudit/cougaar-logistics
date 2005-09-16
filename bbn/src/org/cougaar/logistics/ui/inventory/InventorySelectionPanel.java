@@ -322,7 +322,8 @@ public class InventorySelectionPanel extends JPanel
 	setOrganizations(orgs);
 	orgsBox.setSelectedItem(origOrg);
 	currOrg = (String) orgsBox.getSelectedItem();
-	if(!(currOrg.equals(origOrg))) {
+	if(((currOrg == null) && (origOrg != null)) ||
+         ((currOrg != null) && !(currOrg.equals(origOrg)))) {
           //System.out.println("InventorySelectionPanel>>reinitializeOrgBox - So |" + currOrg + "| is different from |" + origOrg);
 	    fireInventorySelectionEvent(InventorySelectionEvent.ORG_SELECT);
 	}
