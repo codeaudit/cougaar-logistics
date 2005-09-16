@@ -672,7 +672,8 @@ public class InventoryUIFrame extends JFrame
       else {
         System.out.println("InventoryUIFrame: newOrgs is null.");
       }
-      if(!(e.getOrg().startsWith("."))) {
+      if((e.getOrg() != null) &&
+         !(e.getOrg().startsWith("."))) {
 	assetNames = dataSource.getAssetNames(e.getOrg(),
 					      e.getSupplyType());
       }

@@ -265,7 +265,11 @@ System.out.println("Submitting: " + queryStr + " to: " + orgURL +
       else if(orgPopMethod.equals(InventorySelectionEvent.ORGS_ALL)) {
         return getOrgNames(agentPath,true);
       }
-      return getOrgNames(agentPath,false);
+      String newAgentPath = agentPath;
+        if(newAgentPath == null) {
+            newAgentPath = ".";
+      }
+      return getOrgNames(newAgentPath,false);
   }
 
 
