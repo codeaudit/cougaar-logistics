@@ -69,7 +69,7 @@ public class InventoryXMLParser {
   protected InventoryData parseString(String xmlInput, boolean justHeader) {
     ctr = 0;
     inventory = null;
-    if(xmlInput != null) {
+    if((xmlInput != null) && !(xmlInput.equals("null\n"))) {
 	lines = xmlInput.split("\\n");
 	if (logger.isDebugEnabled()) {
 	    logger.debug("Number of Lines=" + lines.length);
