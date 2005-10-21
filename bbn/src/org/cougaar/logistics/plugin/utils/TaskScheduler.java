@@ -175,19 +175,30 @@ public class TaskScheduler {
     }
   }
 
+  // Default case - assumes that plugin processed tasks off of the task scheduler lists.
+  public void finishedExecuteCycle() {
+    finishedExecuteCycle(true);
+  }
+
 
   /**
    * Plugins call this at end of execute cycle
+   *
+   * @param didProcessing true if the plugin processed the tasks and it's now safe to remove them
+   *  from the task scheduler's task queue.
    */
-  public void finishedExecuteCycle() {
+  public void finishedExecuteCycle(boolean didProcessing) {
     if(logger.isDebugEnabled()) {
       logger.debug("in finishedExecuteCycle");
     }
     if (isEmpty()){
       return;
     }
-    shiftCollections(); //lists might be cleared here
-    currentPhase++;
+    //only do these steps if we actually processed stuff (note the default is that we did)
+    if (didProcessing) {
+      shiftCollections(); //lists might be cleared here
+      currentPhase++;
+    }
     // only requeue for execution if more to do
     if (currentPhase < policy.getOrdering().length) {
       blackboard.signalClientActivity();
