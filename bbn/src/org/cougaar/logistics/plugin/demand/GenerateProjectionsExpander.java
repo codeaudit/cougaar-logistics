@@ -82,7 +82,10 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       if (pe != null) {
         dfPlugin.publishRemove(pe);
       }
-      Collection subTasks = buildTaskList(pg, getConsumed(pg), schedule, gpTask, consumer);
+      //We are trimming the time span when task scheduler is off down to currentTimeMillis start time
+      //to only project from here on out.
+      Schedule trimmedSchedule = ScheduleUtils.trimObjectSchedule(schedule,timespan);
+      Collection subTasks = buildTaskList(pg, getConsumed(pg), trimmedSchedule, gpTask, consumer);
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
       }
@@ -94,6 +97,7 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
 
   protected void handleExpandedGpTask(Task gpTask, Schedule schedule, Asset consumer, PropertyGroup pg, TimeSpan timespan) {
     Collection consumedItems = getConsumed(pg);
+
 
     ArrayList assetList = new ArrayList(1);
     for (Iterator iterator = consumedItems.iterator(); iterator.hasNext();) {
@@ -110,6 +114,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       }
       Schedule publishedTasksSched = getTaskUtils().newObjectSchedule(publishedTasks);
       Schedule newTasksSched = getTaskUtils().newObjectSchedule(newTasks);
+
+
       Collection diffedTasks = diffProjections(publishedTasksSched, newTasksSched, timespan);
       addToAndPublishExpansion(gpTask, diffedTasks);
     }
@@ -137,6 +143,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (schedule == null) {
       return subTasks;
     }
+
+
 
     if (!items.isEmpty()) {
       for (Iterator iterator = items.iterator(); iterator.hasNext();) {
@@ -432,6 +440,8 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   protected Collection diffProjections(Schedule published_schedule, Schedule newtask_schedule, TimeSpan timespan) {
     // Only diff new projections against published tasks during this TimeSpan
     published_schedule = ScheduleUtils.trimObjectSchedule(published_schedule, timespan);
+
+
     // Check for an empty schedule
     if (newtask_schedule.isEmpty()) {
       // Rescind any tasks that were not accounted for
@@ -452,7 +462,9 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     List add_tasks = new ArrayList();
     // Remove from the published schedule of tasks  all tasks that occur BEFORE now but not overlapping now
     // These historical tasks should not be changed
-    long now = dfPlugin.currentTimeMillis();
+    //TODO: MWD warning pug getStartOfPeriod here in diffProjections - not sure if should be done.
+    long now = dfPlugin.getStartOfPeriod(dfPlugin.currentTimeMillis());
+
     ObjectScheduleElement ose;
     Iterator historical_tasks =
         published_schedule.getEncapsulatedScheduleElements(TimeSpan.MIN_VALUE, now).iterator();
