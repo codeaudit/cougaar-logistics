@@ -82,14 +82,20 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       if (pe != null) {
         dfPlugin.publishRemove(pe);
       }
+      Collection subTasks = new ArrayList(0);
+      if (schedule != null) {
       //We are trimming the time span when task scheduler is off down to currentTimeMillis start time
       //to only project from here on out.
       Schedule trimmedSchedule = ScheduleUtils.trimObjectSchedule(schedule,timespan);
-      Collection subTasks = buildTaskList(pg, getConsumed(pg), trimmedSchedule, gpTask, consumer);
+      subTasks = buildTaskList(pg, getConsumed(pg), trimmedSchedule, gpTask, consumer);
+      }
       if (!subTasks.isEmpty()) {
         createAndPublishExpansion(gpTask, subTasks);
       }
       else {
+        if(logger.isInfoEnabled()) {
+          logger.info("Creating a disposition for gpTask "+gpTask);
+        }
         createDisposition(gpTask);
       }
     }

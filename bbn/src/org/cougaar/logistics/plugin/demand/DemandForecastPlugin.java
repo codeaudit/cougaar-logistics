@@ -956,9 +956,11 @@ public class DemandForecastPlugin extends ComponentPlugin
   private void invokeGenProjectionsExp(PropertyGroup pg, Task genProj, TimeSpan projectSpan) {
     Collection pgInputs = getSubscriptions(pg);
     Schedule paramSchedule = getParameterSchedule(pg, pgInputs, projectSpan);
-    if (paramSchedule != null) {
+    //the expandGenerateProjections code will handle if the paramSchedule is null by putting
+    // a disposition on the GP task since it will have a null plan element.
+//    if (paramSchedule != null) {
       generateProjectionsExpander.expandGenerateProjections(genProj, paramSchedule, genProj.getDirectObject(), projectSpan);
-    }
+//    }
   }
 
   private void removeFromDetReq(Collection addedDRs, Collection removedAssets) {
