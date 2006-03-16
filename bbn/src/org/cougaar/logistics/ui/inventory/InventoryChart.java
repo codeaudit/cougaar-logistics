@@ -28,12 +28,7 @@ package org.cougaar.logistics.ui.inventory;
 
 import java.util.Date;
 
-import java.awt.Event;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Color;
-import java.awt.Insets;
-import java.awt.Dimension;
+import java.awt.*;
 
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
@@ -67,14 +62,11 @@ import org.cougaar.logistics.plugin.inventory.TimeUtils;
 
 /**
  * <pre>
- *
+ * <p/>
  * The InventoryChart class is the base class for all Inventory
  * charts displayed in the GUI.   It contains all the shared
  * behavior of all charts in the GUI.
- *
- *
- *
- **/
+ */
 
 public abstract class InventoryChart extends JPanel {
 
@@ -138,7 +130,7 @@ public abstract class InventoryChart extends JPanel {
     // allow interactive customization using left shift click
     chart.setAllowUserChanges(true);
     chart.setTrigger(1, new EventTrigger(Event.SHIFT_MASK,
-                                         EventTrigger.CUSTOMIZE));
+            EventTrigger.CUSTOMIZE));
 
     // allow user to display labels using right mouse click
     chart.setTrigger(1, new EventTrigger(Event.META_MASK, EventTrigger.PICK));
@@ -153,9 +145,9 @@ public abstract class InventoryChart extends JPanel {
     setLayout(new GridBagLayout());
     chart.getHeader().setVisible(false);
     add(chart, new GridBagConstraints(gridx, gridy++, 1, 1, 1.0, 1.0,
-                                      GridBagConstraints.CENTER,
-                                      GridBagConstraints.BOTH,
-                                      blankInsets, 0, 0));
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            blankInsets, 0, 0));
 
 
     JCMultiColLegend legend = new JCMultiColLegend();
@@ -314,6 +306,84 @@ public abstract class InventoryChart extends JPanel {
       }
       //       yaxis.setEditable(false); // don't allow zoomin on this axis
       //(Math.round(getYMin())); // set zero as the minimum value on the axis
+    }
+  }
+
+  /**
+   * paintNowBar creates a horizontal line on any chart given a now time.    This was needed by multiple charts
+   * in LAT.   Rather than copy it to several places the base chart was the best place where it belonged - here.
+   *  It is a NO-OP here as it is not called in albbn and getNowTime() always is less than 0.
+   * @param g - A Graphics Context.
+   */
+
+  public void paintNowBar(Graphics g) {
+
+    if (inventory == null || (inventory.getNowTime() < 0)) {
+      return;
+    }
+    long nowTime  = inventory.getNowTime() - (30 * 60 * 1000);
+    Date now = new Date(nowTime);
+    java.util.List viewList = chart.getDataView();
+    for (int i = 0; i < viewList.size(); i++) {
+      ChartDataView chartDataView = (ChartDataView) viewList.get(i);
+
+      InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel) chartDataView.getDataSource();
+
+      int bucketTime = dataModel.computeBucketFromTime(nowTime);
+
+
+      // use time axis for x axis
+      JCAxis xaxis = chartDataView.getXAxis();
+
+      Rectangle boundingRect = xaxis.getDrawingArea();
+      int boundsX = new Double(boundingRect.getX()).intValue();
+      int boundsY = new Double(boundingRect.getY()).intValue();
+      int width = new Double(boundingRect.getWidth()).intValue();
+      int height = new Double(boundingRect.getHeight()).intValue();
+
+
+      double origin = xaxis.getOrigin();
+
+
+      double factor = 0.8d;
+      int spanFactor = (new Double((xaxis.getMax() - xaxis.getMin()) * factor)).intValue();
+
+      double value = 0.0d;
+      int nowPixel = 0;
+
+      if (displayCDay) {
+        value = bucketTime;
+        nowPixel = xaxis.toPixel(value) + spanFactor;
+      } else {
+        value = xaxis.dateToValue(now);
+        nowPixel = xaxis.toPixel(value) + xaxis.toPixel(origin);
+      }
+
+      /**
+      *logger.warn("\nOrigin is " + origin + "\n and value is " + value + " \nand bucketTime is " + bucketTime +
+      *        " \nand finally now Pixel is " + nowPixel);
+      */
+
+      Color origColor = g.getColor();
+      g.setColor(Color.BLUE);
+
+      //g.drawRect(boundsX, boundsY, width, height);
+
+      boundingRect = this.getBounds();
+      boundsX = new Double(boundingRect.getX()).intValue();
+      boundsY = new Double(boundingRect.getY()).intValue();
+      width = new Double(boundingRect.getWidth()).intValue();
+      height = new Double(boundingRect.getHeight()).intValue();
+
+
+      nowPixel = nowPixel - 1;
+      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+      nowPixel++;
+      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+      nowPixel++;
+      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+
+      g.setColor(origColor);
     }
   }
 
