@@ -100,6 +100,11 @@ public class InventoryData {
 	return supplyType;
     }
 
+    //Need this accessor for overload in LAT
+    public long getNowTime() {
+      return -1;
+    }
+
     public void writeHRString(Writer writer) throws java.io.IOException {
         writer.write("<" + LogisticsInventoryFormatter.INVENTORY_DUMP_TAG +
                      " org=" + org + " item=" + item + " unit=" + unit +
