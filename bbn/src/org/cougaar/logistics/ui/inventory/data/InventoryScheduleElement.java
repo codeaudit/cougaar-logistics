@@ -62,8 +62,8 @@ public abstract class InventoryScheduleElement implements TimeSpan {
     public static final int CSV_START_INDEX = 0;
     public static final int CYCLE_INDEX = CSV_START_INDEX;
     
-    long startTime;
-    long endTime;
+    protected long startTime;
+    protected long endTime;
 
     protected Logger logger;
 
