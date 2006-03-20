@@ -32,7 +32,8 @@ import=org.cougaar.logistics.plugin.inventory.InventoryPlugin,\
 	org.cougaar.glm.ldm.asset.Organization
 
 [LogisticsInventoryPG]
-slots=Asset resource, \
+slots=Asset mei, \
+      Asset resource, \
       double capacity, \
       boolean fillToCapacity, \
       long supplierArrivalTime, \
