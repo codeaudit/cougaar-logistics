@@ -316,64 +316,63 @@ public abstract class InventoryChart extends JPanel {
    * @param g - A Graphics Context.
    */
 
-  public void paintNowBar(Graphics g) {
+    public void paintNowBar(Graphics g) {
 
     if (inventory == null || (inventory.getNowTime() < 0)) {
       return;
     }
-    long nowTime  = inventory.getNowTime() - (30 * 60 * 1000);
-    Date now = new Date(nowTime);
+    //Subtract an hour to be in the start time of the scenario start time bucket.
+    long nowTime = inventory.getNowTime() - (60 * 60 * 1000) ;
+
     java.util.List viewList = chart.getDataView();
     for (int i = 0; i < viewList.size(); i++) {
       ChartDataView chartDataView = (ChartDataView) viewList.get(i);
 
       InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel) chartDataView.getDataSource();
 
-      int bucketTime = dataModel.computeBucketFromTime(nowTime);
+      //Add 1 so that you will be inside the same bucket as the start time of the scenario start time
+      int bucketTime = dataModel.computeBucketFromTime(nowTime + 1);
 
 
       // use time axis for x axis
       JCAxis xaxis = chartDataView.getXAxis();
-
-      Rectangle boundingRect = xaxis.getDrawingArea();
-      int boundsX = new Double(boundingRect.getX()).intValue();
-      int boundsY = new Double(boundingRect.getY()).intValue();
-      int width = new Double(boundingRect.getWidth()).intValue();
-      int height = new Double(boundingRect.getHeight()).intValue();
-
-
-      double origin = xaxis.getOrigin();
-
-
-      double factor = 0.8d;
-      int spanFactor = (new Double((xaxis.getMax() - xaxis.getMin()) * factor)).intValue();
 
       double value = 0.0d;
       int nowPixel = 0;
 
       if (displayCDay) {
         value = bucketTime;
-        nowPixel = xaxis.toPixel(value) + spanFactor;
+
+        JCAxis yaxis = chartDataView.getYAxis();
+        Rectangle yRect = yaxis.getDrawingArea();
+
+        int yWidth = new Double(yRect.getWidth()).intValue();
+
+
+        //The xaxis.toPixel(xaxis.getMin()) pixel translation of the origin value of the xaxis is wrong.
+        //It equals the x of the xAxis which is rougly 44 or the width of the y axis away.  Hence the translation
+        //here.   The toPixel value translated to the right by the width of the yAxis - which is just about where the
+        // origin.
+        nowPixel = new Double(xaxis.toPixel(value) + yWidth).intValue();
       } else {
+        Date now = new Date(nowTime);
         value = xaxis.dateToValue(now);
+        double origin = xaxis.getOrigin();
         nowPixel = xaxis.toPixel(value) + xaxis.toPixel(origin);
       }
 
-      /**
-      *logger.warn("\nOrigin is " + origin + "\n and value is " + value + " \nand bucketTime is " + bucketTime +
-      *        " \nand finally now Pixel is " + nowPixel);
-      */
+
+      //logger.warn("\nOrigin is " + origin + "\n getMin is " + xaxis.getMin() + " and getMax is " + xaxis.getMax() +
+      //" \n and value is " + value + " \nand bucketTime is " + bucketTime +
+      //" \nand finally now Pixel is " + nowPixel);
+
 
       Color origColor = g.getColor();
       g.setColor(Color.BLUE);
 
-      //g.drawRect(boundsX, boundsY, width, height);
-
-      boundingRect = this.getBounds();
-      boundsX = new Double(boundingRect.getX()).intValue();
-      boundsY = new Double(boundingRect.getY()).intValue();
-      width = new Double(boundingRect.getWidth()).intValue();
-      height = new Double(boundingRect.getHeight()).intValue();
+      Rectangle boundingRect = this.getBounds();
+      int boundsY = new Double(boundingRect.getY()).intValue();
+      int height = new Double(boundingRect.getHeight()).intValue();
 
 
       nowPixel = nowPixel - 1;
@@ -386,6 +385,8 @@ public abstract class InventoryChart extends JPanel {
       g.setColor(origColor);
     }
   }
+
+
 
   protected void customizeAxes(String yAxisTitleText) {
     myYAxisTitle = yAxisTitleText;
