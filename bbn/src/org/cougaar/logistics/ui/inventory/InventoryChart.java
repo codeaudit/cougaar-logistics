@@ -312,80 +312,82 @@ public abstract class InventoryChart extends JPanel {
   /**
    * paintNowBar creates a horizontal line on any chart given a now time.    This was needed by multiple charts
    * in LAT.   Rather than copy it to several places the base chart was the best place where it belonged - here.
-   *  It is a NO-OP here as it is not called in albbn and getNowTime() always is less than 0.
+   * It is a NO-OP here as it is not called in albbn and getNowTime() always is less than 0.
+   *
    * @param g - A Graphics Context.
    */
 
-    public void paintNowBar(Graphics g) {
+  
+  public void paintNowBar(Graphics g) {
 
     if (inventory == null || (inventory.getNowTime() < 0)) {
       return;
     }
     //Subtract an hour to be in the start time of the scenario start time bucket.
-    long nowTime = inventory.getNowTime() - (60 * 60 * 1000) ;
+    long nowTime = inventory.getNowTime() - (60 * 60 * 1000);
 
     java.util.List viewList = chart.getDataView();
-    for (int i = 0; i < viewList.size(); i++) {
-      ChartDataView chartDataView = (ChartDataView) viewList.get(i);
+    ChartDataView firstView = (ChartDataView) viewList.get(0);
 
-      InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel) chartDataView.getDataSource();
-
-      //Add 1 so that you will be inside the same bucket as the start time of the scenario start time
-      int bucketTime = dataModel.computeBucketFromTime(nowTime + 1);
-
-
-      // use time axis for x axis
-      JCAxis xaxis = chartDataView.getXAxis();
-
-      double value = 0.0d;
-      int nowPixel = 0;
-
-      if (displayCDay) {
-        value = bucketTime;
-
-        JCAxis yaxis = chartDataView.getYAxis();
-        Rectangle yRect = yaxis.getDrawingArea();
-
-        int yWidth = new Double(yRect.getWidth()).intValue();
-
-
-        //The xaxis.toPixel(xaxis.getMin()) pixel translation of the origin value of the xaxis is wrong.
-        //It equals the x of the xAxis which is rougly 44 or the width of the y axis away.  Hence the translation
-        //here.   The toPixel value translated to the right by the width of the yAxis - which is just about where the
-        // origin.
-        nowPixel = new Double(xaxis.toPixel(value) + yWidth).intValue();
-      } else {
-        Date now = new Date(nowTime);
-        value = xaxis.dateToValue(now);
-        double origin = xaxis.getOrigin();
-        nowPixel = xaxis.toPixel(value) + xaxis.toPixel(origin);
-      }
-
-
-      //logger.warn("\nOrigin is " + origin + "\n getMin is " + xaxis.getMin() + " and getMax is " + xaxis.getMax() +
-      //" \n and value is " + value + " \nand bucketTime is " + bucketTime +
-      //" \nand finally now Pixel is " + nowPixel);
-
-
-      Color origColor = g.getColor();
-      g.setColor(Color.BLUE);
-
-      Rectangle boundingRect = this.getBounds();
-      int boundsY = new Double(boundingRect.getY()).intValue();
-      int height = new Double(boundingRect.getHeight()).intValue();
-
-
-      nowPixel = nowPixel - 1;
-      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
-      nowPixel++;
-      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
-      nowPixel++;
-      g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
-
-      g.setColor(origColor);
+    if (firstView == null) {
+      return;
     }
-  }
 
+    InventoryBaseChartDataModel dataModel = (InventoryBaseChartDataModel) firstView.getDataSource();
+    //Add 1 so that you will be inside the same bucket as the start time of the scenario start time
+    int bucketTime = dataModel.computeBucketFromTime(nowTime + 1);
+
+
+    // use time axis for x axis
+    JCAxis xaxis = firstView.getXAxis();
+
+    double value = 0.0d;
+    int nowPixel = 0;
+
+    if (displayCDay) {
+      value = bucketTime;
+
+      JCAxis yaxis = firstView.getYAxis();
+      Rectangle yRect = yaxis.getDrawingArea();
+
+      int yWidth = new Double(yRect.getWidth()).intValue();
+
+
+      //The xaxis.toPixel(xaxis.getMin()) pixel translation of the origin value of the xaxis is wrong.
+      //It equals the x of the xAxis which is rougly 44 or the width of the y axis away.  Hence the translation
+      //here.   The toPixel value translated to the right by the width of the yAxis - which is just about where the
+      // origin.
+      nowPixel = new Double(xaxis.toPixel(value) + yWidth).intValue();
+    } else {
+      Date now = new Date(nowTime);
+      value = xaxis.dateToValue(now);
+      double origin = xaxis.getOrigin();
+      nowPixel = xaxis.toPixel(value) + xaxis.toPixel(origin);
+    }
+
+
+    //logger.warn("\nOrigin is " + origin + "\n getMin is " + xaxis.getMin() + " and getMax is " + xaxis.getMax() +
+    //" \n and value is " + value + " \nand bucketTime is " + bucketTime +
+    //" \nand finally now Pixel is " + nowPixel);
+
+
+    Color origColor = g.getColor();
+    g.setColor(Color.BLUE);
+
+    Rectangle boundingRect = this.getBounds();
+    int boundsY = new Double(boundingRect.getY()).intValue();
+    int height = new Double(boundingRect.getHeight()).intValue();
+
+
+    nowPixel = nowPixel - 1;
+    g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+    nowPixel++;
+    g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+    nowPixel++;
+    g.drawLine(nowPixel, boundsY, nowPixel, boundsY + height);
+
+    g.setColor(origColor);
+  }
 
 
   protected void customizeAxes(String yAxisTitleText) {
