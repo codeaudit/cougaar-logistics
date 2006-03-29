@@ -61,7 +61,7 @@ import org.cougaar.util.log.Logger;
 
 public class InventoryConnectionManager implements InventoryDataSource {
 
-  static final String SERV_ID = "log_inventory";
+  public static final String SERV_ID = "log_inventory";
   public static final int INITIAL_XML_SIZE = 800000; 
 
   final public static String ASSET = "ASSET";
@@ -69,17 +69,17 @@ public class InventoryConnectionManager implements InventoryDataSource {
   final public static String GET_ALL_CLASS_TYPES = "All";
   final public static String[] ASSET_CLASS_TYPES = {GET_ALL_CLASS_TYPES, "Ammunition", "BulkPOL", "Subsistence", "ClassVIIIMedical", "PackagedPOL", "Consumable"};
 
-  private Component parentComponent;
-  private String servProt;
-  private String servHost;
-  private String servPort;
-  Hashtable orgURLs;
+  protected Component parentComponent;
+  protected String servProt;
+  protected String servHost;
+  protected String servPort;
+  protected Hashtable orgURLs;
 
-  Hashtable visitedOrgURLs;
+  protected Hashtable visitedOrgURLs;
 
-  private String invXMLStr;
+  protected String invXMLStr;
 
-  private Logger logger;
+  protected Logger logger;
 
   public InventoryConnectionManager(Component parent) {
     this(parent, "http", "localhost", "8800");
@@ -297,7 +297,7 @@ System.out.println("Submitting: " + queryStr + " to: " + orgURL +
     return getSortedOrgNames();
   }
 
-  private Vector getSortedOrgNames() {
+  protected Vector getSortedOrgNames() {
     if (orgURLs != null) {
       Enumeration names = orgURLs.keys();
       Vector vNames = new Vector();
@@ -309,7 +309,7 @@ System.out.println("Submitting: " + queryStr + " to: " + orgURL +
     return null;
   }
 
-  private void displayErrorString(String reply) {
+  protected void displayErrorString(String reply) {
     JOptionPane.showMessageDialog(parentComponent, reply, reply,
                                   JOptionPane.ERROR_MESSAGE);
   }

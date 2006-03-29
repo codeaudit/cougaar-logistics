@@ -62,13 +62,13 @@ public class InventoryFileManager implements InventoryDataSource {
   final public static String[] SUPPLY_CLASS_TYPES = {"Ammunition", "BulkPOL", "Subsistence", "ClassVIIIMedical", "PackagedPOL", "Consumable"};
   final public static String[] FILE_CLASS_TYPES = {"File"};
 
-  private Component parentComponent;
-  Hashtable orgToItems;
-  Hashtable currItemToXML;
+  protected Component parentComponent;
+  protected Hashtable orgToItems;
+  protected Hashtable currItemToXML;
 
-  private String invXMLStr;
+  protected String invXMLStr;
 
-  private Logger logger;
+  protected Logger logger;
 
 
   public InventoryFileManager(Component parent) {
@@ -76,7 +76,6 @@ public class InventoryFileManager implements InventoryDataSource {
     logger = Logging.getLogger(this);
     orgToItems = new Hashtable();
     currItemToXML = null;
-
   }
 
   public String getCurrentInventoryData() {
@@ -160,7 +159,7 @@ public class InventoryFileManager implements InventoryDataSource {
     return getSortedOrgNames();
   }
 
-  private Vector getSortedOrgNames() {
+  protected Vector getSortedOrgNames() {
     Enumeration names = orgToItems.keys();
     Vector vNames = new Vector();
     while (names.hasMoreElements())
@@ -169,7 +168,7 @@ public class InventoryFileManager implements InventoryDataSource {
     return vNames;
   }
 
-  private void displayErrorString(String reply) {
+  protected void displayErrorString(String reply) {
     JOptionPane.showMessageDialog(parentComponent, reply, reply,
                                   JOptionPane.ERROR_MESSAGE);
   }
