@@ -291,6 +291,7 @@ public class MultiChartPanel extends JPanel
     } else {
       mainPanel.remove(demandChart);
     }
+    repaint();
   }
 
   public void showRefillChart(boolean doShow) {
@@ -300,6 +301,7 @@ public class MultiChartPanel extends JPanel
     } else {
       mainPanel.remove(refillChart);
     }
+    repaint();
   }
 
   public void showInventoryChart(boolean doShow) {
@@ -309,6 +311,7 @@ public class MultiChartPanel extends JPanel
     } else {
       mainPanel.remove(levelChart);
     }
+    repaint();
   }
 
   public void setData(InventoryData data) {
