@@ -54,6 +54,7 @@ import org.cougaar.util.log.Logger;
 
 import org.cougaar.logistics.ui.inventory.data.InventoryData;
 import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
+import org.cougaar.logistics.ui.inventory.data.BlankInventoryData;
 import org.cougaar.logistics.ui.inventory.dialog.InventoryPreferenceDialog;
 
 /**
@@ -705,24 +706,32 @@ public class InventoryUIFrame extends JFrame
 	}
 	***/
     } else if (e.getID() == InventorySelectionEvent.INVENTORY_SELECT) {
+      String invXML = null;
       if((e.getOrg().trim().equals("")) ||
 	 (e.getOrg().trim().startsWith("."))) {
 	  displayErrorString("Submit","Not a legal org to submit for inventory asset");
-	  return;
+
       }
 
-      if((e.getAssetName() == null) ||
+      else if((e.getAssetName() == null) ||
 	 (e.getAssetName().trim().equals(""))) {
 	  displayErrorString("Submit","No Asset Picked!");
-	  return;
+	  
+      }
+      else {
+
+        invXML = dataSource.getInventoryData(e.getOrg(),
+                                             e.getAssetName());
       }
 
-
-      String invXML = dataSource.getInventoryData(e.getOrg(),
-                                                  e.getAssetName());
       if((invXML != null) && (!(invXML.trim().equals("")))) {
 	  editPane.setText(invXML);
 	  inventory = parser.parseString(invXML);
+	  multiChart.setData(inventory);
+      }
+      else {
+	  inventory = new BlankInventoryData(e.getOrg(),e.getAssetName());
+	  editPane.setText("Null XML");
 	  multiChart.setData(inventory);
       }
     }
