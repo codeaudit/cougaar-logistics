@@ -53,6 +53,7 @@ public class InventoryMenuEvent extends ActionEvent
     public final static String MENU_OpenXML = "Open XML File..";
     public final static String MENU_Help = "Help..";
     public final static String MENU_Pref = "Preferences";
+    public final static String MENU_ShowXML = "Show XML Debug..";
 
     public final static String MENU_DemandChart = "Demand Chart";
     public final static String MENU_RefillChart = "Refill Chart";
