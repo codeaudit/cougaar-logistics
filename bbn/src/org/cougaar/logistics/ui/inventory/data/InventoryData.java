@@ -57,15 +57,18 @@ public class InventoryData {
 
     protected long bucketSize;
 
-    public InventoryData(String itemName, String anOrg, String aUnit, String nomen, String classOfSupply, long aStartCDay) {
+    protected String invXMLString=null;
+
+    public InventoryData(String itemName, String anOrg, String aUnit, String nomen, String classOfSupply, long aStartCDay, String invXML) {
         item = itemName;
         org = anOrg;
         unit = aUnit;
         nomenclature = nomen;
-	supplyType = classOfSupply;
+        supplyType = classOfSupply;
         startCDay = aStartCDay;
         schedules = new Hashtable(20);
         bucketSize = -1;
+        invXMLString = invXML;
     }
 
     public void addSchedule(InventoryScheduleHeader schedule) {
@@ -103,6 +106,10 @@ public class InventoryData {
     //Need this accessor for overload in LAT
     public long getNowTime() {
       return -1;
+    }
+
+    public String getXML() {
+      return invXMLString;
     }
 
     public void writeHRString(Writer writer) throws java.io.IOException {

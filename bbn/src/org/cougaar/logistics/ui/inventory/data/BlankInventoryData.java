@@ -58,7 +58,7 @@ public class BlankInventoryData extends InventoryData {
   public static final long HOURLY = TimeUtils.MSEC_PER_HOUR;
 
   public BlankInventoryData(String assetName, String orgName) {
-    super(assetName, orgName, "", "", "", getFakeCTime());
+    super(assetName, orgName, "", "", "", getFakeCTime(),"");
     initialize();
   }
 
