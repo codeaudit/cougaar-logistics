@@ -47,6 +47,7 @@ import org.cougaar.logistics.ui.inventory.data.*;
 
 public class InventoryXMLParser {
   protected int ctr;
+  protected String xmlInput;
   protected String[] lines;
   protected InventoryData inventory;
   protected String currentString;
@@ -69,6 +70,7 @@ public class InventoryXMLParser {
   protected InventoryData parseString(String xmlInput, boolean justHeader) {
     ctr = 0;
     inventory = null;
+    this.xmlInput = xmlInput;
     if((xmlInput != null) && !(xmlInput.equals("null\n"))) {
 	lines = xmlInput.split("\\n");
 	if (logger.isDebugEnabled()) {
@@ -178,7 +180,7 @@ public class InventoryXMLParser {
       cDay = (new Long(cDayString)).longValue();
     }
 
-    inventory = new InventoryData(asset, org, unit, nomenclature, supplyType, cDay);
+    inventory = new InventoryData(asset, org, unit, nomenclature, supplyType, cDay, xmlInput);
     if (logger.isDebugEnabled()) {
       logger.debug("Parsed header w/org=|" + org +
                    "| item=|" + asset +

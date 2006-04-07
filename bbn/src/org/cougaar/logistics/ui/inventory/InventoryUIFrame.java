@@ -400,7 +400,7 @@ public class InventoryUIFrame extends JFrame
       File saveFile = fileChooser.getSelectedFile();
       try {
         FileWriter fw = new FileWriter(saveFile);
-        fw.write(editPane.getText());
+        fw.write(inventory.getXML());
         fw.flush();
         fw.close();
       } catch (IOException ioe) {
