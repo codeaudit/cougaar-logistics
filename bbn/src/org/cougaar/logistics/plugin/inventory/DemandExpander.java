@@ -29,7 +29,7 @@ package org.cougaar.logistics.plugin.inventory;
 
 public class DemandExpander extends InventoryModule {
   
-  public DemandExpander(InventoryPlugin imPlugin) {
+  public DemandExpander(InventoryManager imPlugin) {
     super(imPlugin);
   }
 }

@@ -65,7 +65,7 @@ public class LogisticsInventoryLogger extends FileWriter{
 
     public LogisticsInventoryLogger(File aFile, 
 				    boolean append, 
-				    InventoryPlugin invPlugin) throws IOException {
+				    UtilsProvider invPlugin) throws IOException {
 	super(aFile,append);
 	logger = invPlugin.getLoggingService(this);
     }
@@ -74,7 +74,7 @@ public class LogisticsInventoryLogger extends FileWriter{
 	createInventoryLogger(Asset invAsset, 
 			      Organization anOrg,
 			      boolean doAppend,
-			      InventoryPlugin invPlugin){
+			      UtilsProvider invPlugin){
 	LogisticsInventoryLogger newLogger=null;
 	LoggingService classLogger = invPlugin.getLoggingService(LogisticsInventoryLogger.class);
 	initializeClass(classLogger);

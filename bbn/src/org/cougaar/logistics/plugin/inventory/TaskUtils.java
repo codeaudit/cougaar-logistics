@@ -451,11 +451,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     if (isProjection(task)) {
       double time_spanned = endTime - startTime;
       if(time_spanned > 0) {
-	  double dailyRate = convertResultsToDailyRate(task,demandRate);
-	  return (dailyRate * (time_spanned/TimeUtils.MSEC_PER_DAY));
+        double dailyRate = convertResultsToDailyRate(task,demandRate);
+        return (dailyRate * (time_spanned/TimeUtils.MSEC_PER_DAY));
       }
       else {
-	  return 0.0d;
+        return 0.0d;
       }
     } else {
       return getQuantity(task);
@@ -615,7 +615,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     /** copies a Supply task from another to split it**/
     public NewTask copySupplyTask(Task origTask, long start, long end,
                                   LogisticsInventoryPG invPG,
-                                  InventoryPlugin inventoryPlugin) {
+                                  InventoryManager inventoryPlugin) {
 
       NewTask task = inventoryPlugin.getPlanningFactory().newTask();
       task.setVerb( origTask.getVerb());
@@ -653,7 +653,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 }
 
   public void changeDatePrefs(NewTask task, long start, long end,
-                              InventoryPlugin inventoryPlugin, LogisticsInventoryPG invPG) {
+                              InventoryManager inventoryPlugin, LogisticsInventoryPG invPG) {
     Preference startPref = createTimePreference(start, inventoryPlugin.getOPlanArrivalInTheaterTime(),
                                                 inventoryPlugin.getOPlanEndTime(),
                                                 AspectType.START_TIME, inventoryPlugin.getClusterId(),
@@ -683,8 +683,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
-   protected Collection splitProjection(Task task, List howToSplit,
-                                       InventoryPlugin invPlugin) {
+   public Collection splitProjection(Task task, List howToSplit,
+                                       InventoryManager invPlugin) {
      ArrayList newSplitTasks = new ArrayList();
      Asset asset = task.getDirectObject();
      Inventory inventory = invPlugin.findOrMakeInventory(asset);
@@ -715,7 +715,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
    }
 
   private Task makeNewSplit(Task task, long startOfSplit, long endOfSplit, LogisticsInventoryPG invPG,
-                            InventoryPlugin invPlugin, Inventory inventory) {
+                            InventoryManager invPlugin, Inventory inventory) {
     Task newSplitTask = copySupplyTask(task, startOfSplit, endOfSplit, invPG, invPlugin);
     if (logger.isDebugEnabled()) {
       logger.debug("Made a new split task with dates of: "+ new Date(startOfSplit) + "..." + new Date(endOfSplit));

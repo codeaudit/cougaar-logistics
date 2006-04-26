@@ -232,7 +232,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param imPlugin The Plugin calling this module.
    *  @param role  The role the Plugin is playing.
    **/
-  public AllocationAssessor(InventoryPlugin imPlugin, Role role) {
+  public AllocationAssessor(InventoryManager imPlugin, Role role) {
     super(imPlugin);
     myRole = role;
   }
@@ -248,13 +248,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     int today_bucket;
     Inventory inventory;
     LogisticsInventoryPG thePG;
-    long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
+    long endOfLevel2 = ((LevelOfDetailInventoryManager)inventoryPlugin).getEndOfLevelTwo();
     while (inv_list.hasNext()) {
-      // clear out the trailing pointers every time we get another inventory
-      trailingPointersHash = new HashMap();;
-      trailingPointers = new ArrayList();
-      trailingPointersRemove = new ArrayList();
       inventory = (Inventory)inv_list.next();
+      resetTrailingPointers();
       thePG = (LogisticsInventoryPG)
               inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
       long inventoryStart = thePG.getStartTime();
@@ -272,6 +269,16 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
   }
 
+  /**
+   * Reset Pointers Map, list of pointers, and pointer remove list
+   */
+  protected void resetTrailingPointers() {
+    // clear out the trailing pointers every time we get another inventory
+    trailingPointersHash = new HashMap();
+    trailingPointers = new ArrayList();
+    trailingPointersRemove = new ArrayList();
+  }
+
   /** Update the inventory levels from time zero to today.
    *  @param today_bucket  Representation of today.
    *  @param thePG The PG for the Inventory Asset we are working with.
@@ -287,7 +294,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param inv The Inventory we are processing
    *  @param thePG This is the PG for the Inventory we are processing
    **/
-  private void createAllocations(int todayBucket, int endBucket,
+  protected void createAllocations(int todayBucket, int endBucket,
                                  Inventory inv, LogisticsInventoryPG thePG) {
 
     int currentBucket = todayBucket;
@@ -588,10 +595,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     double rollupQty = 0;
     AspectValue avs[];
 
-    long endOfLevel2 = inventoryPlugin.getEndOfLevelTwo();
-    long endOfTask = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
-    // Do not process tasks whose end times are beyond level 2
-    if (endOfTask > endOfLevel2) {
+    if (shouldSkipMakingResult(task)) {
       return;
     }
 
@@ -671,6 +675,18 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     compareResults(estimatedResult, task, inv, thePG);
   }
 
+  /**
+   * Do not process tasks whose end times are beyond level 2
+   * @param task
+   * @return true if after level 2 horizon
+   */
+  protected boolean shouldSkipMakingResult(Task task) {
+    long endOfLevel2 = ((LevelOfDetailInventoryManager)inventoryPlugin).getEndOfLevelTwo();
+    long endOfTask = (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME);
+    // Do not process tasks whose end times are beyond level 2
+    return (endOfTask > endOfLevel2);
+  }
+
   public double taskQtyInBucket(Task task, int currentBucket, LogisticsInventoryPG thePG){
     if (task.getVerb().equals(Constants.Verb.WITHDRAW)) {
       return getTaskUtils().getPreference(task, AspectType.QUANTITY);
@@ -691,7 +707,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param inventory The Inventory we are processing
    *  @param thePG This is the PG for the Inventory we are processing
    **/
-  private void allocateNotCountedProjections(Inventory inventory, LogisticsInventoryPG thePG) {
+  protected void allocateNotCountedProjections(Inventory inventory, LogisticsInventoryPG thePG) {
 //      String myOrgName = inventoryPlugin.getMyOrganization().getItemIdentificationPG().getItemIdentification();
     //String myItemId = thePG.getResource().getTypeIdentificationPG().getTypeIdentification();
 
@@ -739,7 +755,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    *  @param inventory The Inventory we are processing
    *  @param thePG This is the PG for the Inventory we are processing
    **/
-  private void allocateCountedEarlyProjections(int today_bucket, Inventory inventory,
+  protected void allocateCountedEarlyProjections(int today_bucket, Inventory inventory,
                                                LogisticsInventoryPG thePG) {
     int currentBucket = 0;
     // loop through the buckets in the inventory

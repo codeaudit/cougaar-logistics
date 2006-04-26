@@ -48,7 +48,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
   /** list of nsn's with no resupply point */
   private Vector noResupply;
 
-  public ExternalAllocator(InventoryPlugin imPlugin, Role provider) {
+  public ExternalAllocator(InventoryManager imPlugin, Role provider) {
     super(imPlugin);
     providerRole = provider;
     noResupply = new Vector();
@@ -81,23 +81,13 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
           alloc = buildAllocation(task, provider, providerRole);
           if (estAR != null){
             alloc.setEstimatedResult(estAR);
-            if(inventoryPlugin.publishAdd(alloc)) {
-              return true;
-	    }
-            else {
-              logger.error("Unable to publish the allocation " + alloc);
-            }
+            inventoryPlugin.publishAdd(alloc);
           }
         } else {
           alloc = (Allocation)task.getPlanElement();
           if (estAR != null){
             alloc.setEstimatedResult(estAR);
-            if(inventoryPlugin.publishChange(alloc)) {
-              return true;
-            }
-            else {
-              logger.error("Unable to publish Change the allocation " + alloc);
-            }
+            inventoryPlugin.publishChange(alloc);
           }
         }
       }
@@ -225,7 +215,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 
   private boolean verifyBeforeAllocation(Task task, Organization org) {
     // Do not allocate tasks after they have taken place-AF does this make sense?
-    if (!(task.beforeCommitment(new Date(inventoryPlugin.currentTimeMillis())))) {
+    if (!(task.beforeCommitment(new Date(inventoryPlugin.getCurrentTimeMillis())))) {
       logger.warn("verifyBeforeAllocation: return ... after commitment "+task.getCommitmentDate()+" task:"+task+" to Asset "+org);
       // too late to change
       return false;
@@ -250,11 +240,11 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
       inventory = inventoryPlugin.findOrMakeInventory(asset);
 
       if (PluginHelper.updatePlanElement(alloc)) {
-        boolean didPubChg = inventoryPlugin.publishChange(alloc);
+        inventoryPlugin.publishChange(alloc);
         if (logger.isDebugEnabled()) {
           logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "ExtAlloc[" + inventoryPlugin.getSupplyType()+"]" +
                        "publist Changing allocation due to AR change: " + alloc.getUID()+ 
-                       " parent task is: " + alloc.getTask().getUID() + " publishChange returned: " + didPubChg);
+                       " parent task is: " + alloc.getTask().getUID());
         }
 	//System.out.println("ex all publish changing and added to AA's inventory list " + logInvPG.getResource());
 	backwardFlowInventories.add(inventory);

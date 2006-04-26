@@ -28,6 +28,7 @@
 package=org.cougaar.logistics.plugin.inventory
 
 import=org.cougaar.logistics.plugin.inventory.InventoryPlugin,\
+    org.cougaar.logistics.plugin.inventory.InventoryManager,\
 	org.cougaar.glm.ldm.asset.Inventory,\	
 	org.cougaar.glm.ldm.asset.Organization
 
@@ -42,7 +43,7 @@ slots=Asset mei, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin); \
+logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	double getProjectionTaskDemand(Task task, int bucket, long start, long end); \
 	void addWithdrawRequisition(Task task); \
@@ -103,7 +104,7 @@ logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod,
 	Schedule getBufferedTargetLevels(); \
 	ArrayList getActualDemandTasksList(); \
 	long getEffectiveProjectionStart(Task task, long start); \
-	void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin); \
+	void reinitialize(boolean logToCSV, InventoryManager parentPlugin); \
         void clearTargetLevels(int startBucket); \
 	void recalculateInitialLevel(); \
 	ShortfallInventory checkForShortfall(String invID,String unitOfIssue); \

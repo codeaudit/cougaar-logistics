@@ -58,7 +58,7 @@ public class DiffBasedComparator extends InventoryModule implements ComparatorMo
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
    **/
-  public DiffBasedComparator(InventoryPlugin imPlugin) {
+  public DiffBasedComparator(InventoryManager imPlugin) {
     super(imPlugin);
     if (logger.isDebugEnabled()) {
       logger.debug("DiffBasedComparator LOADED!!!!!");

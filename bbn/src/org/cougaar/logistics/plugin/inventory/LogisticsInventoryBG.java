@@ -130,7 +130,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryPlugin parentPlugin) {
+    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin) {
         this.startTime = startTime;
         // Set initial level of inventory from time zero to today.  This assumes that the inventory
         // is created because the existence of demand and the RefillGenerator will be run
@@ -174,7 +174,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     //on set up after rehydration.   It does the minimum initialization
     //that has to be done, even upon rehydration.
     //which does the initial set up when the inventory is created.
-    public void reinitialize(boolean logToCSV, InventoryPlugin parentPlugin) {
+    public void reinitialize(boolean logToCSV, UtilsProvider parentPlugin) {
         logger = parentPlugin.getLoggingService(this);
         if (logToCSV) {
             csvLogger = LogisticsInventoryLogger.createInventoryLogger(myPG.getResource(), myPG.getOrg(), true, parentPlugin);
@@ -626,7 +626,7 @@ public class LogisticsInventoryBG implements PGDelegate {
           bucket_start = getStartBucket();
         }
       }
-      
+
       while (bucket_end >= refillProjections.size()) {
         refillProjections.add(null);
       }
@@ -1301,321 +1301,321 @@ public class LogisticsInventoryBG implements PGDelegate {
       }
     }
 
-    
-    protected void addShortfallPeriods(ShortfallInventory shortfallInv) {
-      int startBucket = getStartBucket();
-      int endBucket = getLastDemandBucket();
-	
-      long startOfPeriod = -1;
-      long endOfPeriod = -1;
-      boolean inShortfallPeriod =false;
-      
-      for(int i=startBucket; i <= endBucket; i++) {
-	double level = getLevel(i);
-	if(level ==  0.0) {
-	  if(!inShortfallPeriod) {
-	    startOfPeriod = convertBucketToTime(i);
-	    inShortfallPeriod = true;
-	  }
-	}
-	else {
-	  if(inShortfallPeriod) {
-            //The bucket before the current one was the last shortfall period bucket.  Therefore i-1
-	    endOfPeriod = convertBucketToTime(i) - 1;
-	    ShortfallPeriod newPeriod = new ShortfallPeriod(startOfPeriod,
-							    endOfPeriod);
-	    calculateShortfallPeriod(newPeriod,getProjWithdrawList());
-	    calculateShortfallPeriod(newPeriod,getWithdrawList());
-	    shortfallInv.addShortfallPeriod(newPeriod);  
-	    inShortfallPeriod=false;
-	  }
-	}
-      }
 
-      if(inShortfallPeriod) {
-	  //The bucket before the current one was the last shortfall period bucket.  Therefore i-1
-	  endOfPeriod = convertBucketToTime(endBucket) - 1;
-	  ShortfallPeriod newPeriod = new ShortfallPeriod(startOfPeriod,
-							    endOfPeriod);
-	  calculateShortfallPeriod(newPeriod,getProjWithdrawList());
-	  calculateShortfallPeriod(newPeriod,getWithdrawList());
-	  shortfallInv.addShortfallPeriod(newPeriod);  
+  protected void addShortfallPeriods(ShortfallInventory shortfallInv) {
+    int startBucket = getStartBucket();
+    int endBucket = getLastDemandBucket();
+
+    long startOfPeriod = -1;
+    long endOfPeriod = -1;
+    boolean inShortfallPeriod =false;
+
+    for(int i=startBucket; i <= endBucket; i++) {
+      double level = getLevel(i);
+      if(level ==  0.0) {
+        if(!inShortfallPeriod) {
+          startOfPeriod = convertBucketToTime(i);
+          inShortfallPeriod = true;
+        }
+      }
+      else {
+        if(inShortfallPeriod) {
+          //The bucket before the current one was the last shortfall period bucket.  Therefore i-1
+          endOfPeriod = convertBucketToTime(i) - 1;
+          ShortfallPeriod newPeriod = new ShortfallPeriod(startOfPeriod,
+            endOfPeriod);
+          calculateShortfallPeriod(newPeriod,getProjWithdrawList());
+          calculateShortfallPeriod(newPeriod,getWithdrawList());
+          shortfallInv.addShortfallPeriod(newPeriod);
+          inShortfallPeriod=false;
+        }
       }
     }
 
-    protected void calculateShortfallPeriod(ShortfallPeriod shortPeriod,ArrayList tasks) {
-      double totalDemand = 0.0d;
-      double totalFilled = 0.0d;
-      Iterator taskIt = tasks.iterator();
-      while(taskIt.hasNext()) {
-	Task t = (Task) taskIt.next();
-	PlanElement pe = t.getPlanElement();
-	AllocationResult ar=null;
-	if (pe != null) {
-	  ar = pe.getReportedResult();
-	  if (ar == null) {
-	    ar = pe.getEstimatedResult();
-	  }
-	}
-	double taskQty = 0.0d;
-	if(taskUtils.isProjection(t)) {
-	  long start = Math.max(shortPeriod.getStartTime(),getEffectiveProjectionStart(t,getStartTime(t)));
-	  long end = Math.min(shortPeriod.getEndTime(),getEndTime(t));
-	  taskQty = taskUtils.getTotalQuantity(t,start,end);
-	  totalDemand += taskQty;
-	  if(ar == null) {
-	    totalFilled += taskQty;
-	  } else if (ar.isSuccess()) {
-	    if(!ar.isPhased()) {
-	      totalFilled += taskQty;
-	    }
-	    else {
-	      int[] ats = ar.getAspectTypes();
-	      int rateInd = -1;
-	      int startInd = -1;
-	      int endInd = -1;
-	      double totalQty=0;
-	      rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
-	      startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
-	      endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
-	      
-	      Enumeration phasedResults = ar.getPhasedResults();
-	      while (phasedResults.hasMoreElements()) {
-		double[] results = (double[]) phasedResults.nextElement();
-		double phaseRate = results[rateInd];
-		double phaseStart = results[startInd];
-		double phaseEnd = results[endInd];
-		start = Math.max(shortPeriod.getStartTime(),getEffectiveProjectionStart(t,(long) phaseStart));
-		end = Math.min(shortPeriod.getEndTime(),(long) phaseEnd);
-		totalQty += taskUtils.getTotalQuantity(t,phaseRate,start,end);
-	      }	
-	      totalFilled += totalQty;
-	    }
-	  }
-	}
-	else {
-	  long taskEnd = taskUtils.getEndTime(t);
-	  if(!((taskEnd >= shortPeriod.getStartTime()) &&
-	       (taskEnd <= shortPeriod.getEndTime()))) {
-	    continue;
-	  }
+    if(inShortfallPeriod) {
+      //The bucket before the current one was the last shortfall period bucket.  Therefore i-1
+      endOfPeriod = convertBucketToTime(endBucket) - 1;
+      ShortfallPeriod newPeriod = new ShortfallPeriod(startOfPeriod,
+        endOfPeriod);
+      calculateShortfallPeriod(newPeriod,getProjWithdrawList());
+      calculateShortfallPeriod(newPeriod,getWithdrawList());
+      shortfallInv.addShortfallPeriod(newPeriod);
+    }
+  }
 
-	  taskQty = taskUtils.getQuantity(t);
-	  totalDemand += taskQty;
-	  if(ar == null) {
-	    totalFilled += taskQty;
-	  }
-	  else if(!ar.isPhased()) {
-	    if(ar.isSuccess()) {
-	      double arEnd = taskUtils.getEndTime(ar);
-	      if((arEnd >= shortPeriod.getStartTime()) &&
-		 (arEnd <= shortPeriod.getEndTime())) {
-		totalFilled += taskQty;	      
-	      }
-	    }
-	  }
-	  else {
-	    int[] ats = ar.getAspectTypes();
-	    int qtyInd = -1;
-	    int endInd = -1;
-	    double totalQty=0;
-	    qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
-	    endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
-	    Enumeration phasedResults = ar.getPhasedResults();
-	    while (phasedResults.hasMoreElements()) {
-	      double[] results = (double[]) phasedResults.nextElement();
-	      double phaseQty = results[qtyInd];
-	      double phaseEnd = results[endInd];
-	      
-	      if(phaseEnd <= shortPeriod.getEndTime()) {
-		  totalFilled += phaseQty;
-	      }
-	    }
-	  }
-	}
+  protected void calculateShortfallPeriod(ShortfallPeriod shortPeriod,ArrayList tasks) {
+    double totalDemand = 0.0d;
+    double totalFilled = 0.0d;
+    Iterator taskIt = tasks.iterator();
+    while(taskIt.hasNext()) {
+      Task t = (Task) taskIt.next();
+      PlanElement pe = t.getPlanElement();
+      AllocationResult ar=null;
+      if (pe != null) {
+        ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
       }
-	
-      shortPeriod.setTotalDemand(shortPeriod.getTotalDemand() + totalDemand);
-      shortPeriod.setTotalFilled(shortPeriod.getTotalFilled() + totalFilled);
+      double taskQty = 0.0d;
+      if(taskUtils.isProjection(t)) {
+        long start = Math.max(shortPeriod.getStartTime(),getEffectiveProjectionStart(t,getStartTime(t)));
+        long end = Math.min(shortPeriod.getEndTime(),getEndTime(t));
+        taskQty = taskUtils.getTotalQuantity(t,start,end);
+        totalDemand += taskQty;
+        if(ar == null) {
+          totalFilled += taskQty;
+        } else if (ar.isSuccess()) {
+          if(!ar.isPhased()) {
+            totalFilled += taskQty;
+          }
+          else {
+            int[] ats = ar.getAspectTypes();
+            int rateInd = -1;
+            int startInd = -1;
+            int endInd = -1;
+            double totalQty=0;
+            rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+            startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+            endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+
+            Enumeration phasedResults = ar.getPhasedResults();
+            while (phasedResults.hasMoreElements()) {
+              double[] results = (double[]) phasedResults.nextElement();
+              double phaseRate = results[rateInd];
+              double phaseStart = results[startInd];
+              double phaseEnd = results[endInd];
+              start = Math.max(shortPeriod.getStartTime(),getEffectiveProjectionStart(t,(long) phaseStart));
+              end = Math.min(shortPeriod.getEndTime(),(long) phaseEnd);
+              totalQty += taskUtils.getTotalQuantity(t,phaseRate,start,end);
+            }
+            totalFilled += totalQty;
+          }
+        }
+      }
+      else {
+        long taskEnd = taskUtils.getEndTime(t);
+        if(!((taskEnd >= shortPeriod.getStartTime()) &&
+          (taskEnd <= shortPeriod.getEndTime()))) {
+          continue;
+        }
+
+        taskQty = taskUtils.getQuantity(t);
+        totalDemand += taskQty;
+        if(ar == null) {
+          totalFilled += taskQty;
+        }
+        else if(!ar.isPhased()) {
+          if(ar.isSuccess()) {
+            double arEnd = taskUtils.getEndTime(ar);
+            if((arEnd >= shortPeriod.getStartTime()) &&
+              (arEnd <= shortPeriod.getEndTime())) {
+              totalFilled += taskQty;
+            }
+          }
+        }
+        else {
+          int[] ats = ar.getAspectTypes();
+          int qtyInd = -1;
+          int endInd = -1;
+          double totalQty=0;
+          qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+          endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+          Enumeration phasedResults = ar.getPhasedResults();
+          while (phasedResults.hasMoreElements()) {
+            double[] results = (double[]) phasedResults.nextElement();
+            double phaseQty = results[qtyInd];
+            double phaseEnd = results[endInd];
+
+            if(phaseEnd <= shortPeriod.getEndTime()) {
+              totalFilled += phaseQty;
+            }
+          }
+        }
+      }
     }
 
+    shortPeriod.setTotalDemand(shortPeriod.getTotalDemand() + totalDemand);
+    shortPeriod.setTotalFilled(shortPeriod.getTotalFilled() + totalFilled);
+  }
 
-    protected int countProjFailures(ArrayList taskList, boolean isDemand, boolean includeTemps) {
-	Iterator it = taskList.iterator();
-	int ctr=0;
-	while(it.hasNext()) {
-	  Task t = (Task) it.next();
-	  PlanElement pe = t.getPlanElement();
-	  if (pe != null) {
-	    AllocationResult ar = pe.getReportedResult();
-	    if (ar == null) {
-	      ar = pe.getEstimatedResult();
-	    }
-	    long start = 0;
-	    int lastReqBucket = getLastRefillRequisition();
-	    long projRefillStart = convertBucketToTime(lastReqBucket + 1);
-	    if(isDemand) {
-		start = getEffectiveProjectionStart(t,getStartTime(t));
-	    }
-	    else {
-		start = Math.max(getStartTime(t), projRefillStart);
-	    }
-	    long end = getEndTime(t);
-	    double taskTotal = taskUtils.getTotalQuantity(t,start,end);
-	    if(ar != null) {
-	      if ((!ar.isSuccess())  && (taskTotal > 0)) {
-		ctr++;  		    
-	      }
-	      else if(includeTemps && ar.isPhased()) {
-		int[] ats = ar.getAspectTypes();
-		int rateInd = -1;
-		int startInd = -1;
-		int endInd = -1;
-		double totalQty=0;
-		rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
-		startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
-		endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
-		
-		Enumeration phasedResults = ar.getPhasedResults();
-		long maxPhaseEnd = 0;
-		while (phasedResults.hasMoreElements()) {
-		  double[] results = (double[]) phasedResults.nextElement();
-		  double phaseRate = results[rateInd];
-		  double phaseStart = results[startInd];
-		  double phaseEnd = results[endInd];
-		  long arStart = 0;
-		  if(isDemand) {
-		      arStart = getEffectiveProjectionStart(t,(long) phaseStart);
-		  }
-		  else {
-		      arStart = Math.max(start,(long)phaseStart);
-		  }
-		  //long arEnd =(long) Math.min(end,(long) phaseEnd;
-		  totalQty += taskUtils.getTotalQuantity(t,phaseRate,arStart,(long)phaseEnd);
-		  maxPhaseEnd = Math.max((long)phaseEnd,maxPhaseEnd);
-		} 
-		//When doing all this addition of double rates some precision is lost so we need a small offset to avoid "false shortfalls".
-		double offset = 0.001d;
-		if(taskTotal > (totalQty + offset)) {
-		    /****
-		    if(getOrgName().startsWith("1-35-ARBN")) {
-			logger.error("MWD: at 1-35-ARBN - item: " + getItemName() + " taskTotal is: " + taskTotal + " and totalQuantity is : " + totalQty);
-		    } 
-		    **/
-		    ctr++;
-		}
-		else if (maxPhaseEnd > taskUtils.getEndTime(t)) {
-		    ctr++;
-		}
-	      }
-	    }
-	  }
-	}
-    	return ctr;
+
+  protected int countProjFailures(ArrayList taskList, boolean isDemand, boolean includeTemps) {
+    Iterator it = taskList.iterator();
+    int ctr=0;
+    while(it.hasNext()) {
+      Task t = (Task) it.next();
+      PlanElement pe = t.getPlanElement();
+      if (pe != null) {
+        AllocationResult ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
+        long start = 0;
+        int lastReqBucket = getLastRefillRequisition();
+        long projRefillStart = convertBucketToTime(lastReqBucket + 1);
+        if(isDemand) {
+          start = getEffectiveProjectionStart(t,getStartTime(t));
+        }
+        else {
+          start = Math.max(getStartTime(t), projRefillStart);
+        }
+        long end = getEndTime(t);
+        double taskTotal = taskUtils.getTotalQuantity(t,start,end);
+        if(ar != null) {
+          if ((!ar.isSuccess())  && (taskTotal > 0)) {
+            ctr++;
+          }
+          else if(includeTemps && ar.isPhased()) {
+            int[] ats = ar.getAspectTypes();
+            int rateInd = -1;
+            int startInd = -1;
+            int endInd = -1;
+            double totalQty=0;
+            rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+            startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+            endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+
+            Enumeration phasedResults = ar.getPhasedResults();
+            long maxPhaseEnd = 0;
+            while (phasedResults.hasMoreElements()) {
+              double[] results = (double[]) phasedResults.nextElement();
+              double phaseRate = results[rateInd];
+              double phaseStart = results[startInd];
+              double phaseEnd = results[endInd];
+              long arStart = 0;
+              if(isDemand) {
+                arStart = getEffectiveProjectionStart(t,(long) phaseStart);
+              }
+              else {
+                arStart = Math.max(start,(long)phaseStart);
+              }
+              //long arEnd =(long) Math.min(end,(long) phaseEnd;
+              totalQty += taskUtils.getTotalQuantity(t,phaseRate,arStart,(long)phaseEnd);
+              maxPhaseEnd = Math.max((long)phaseEnd,maxPhaseEnd);
+            }
+            //When doing all this addition of double rates some precision is lost so we need a small offset to avoid "false shortfalls".
+            double offset = 0.001d;
+            if(taskTotal > (totalQty + offset)) {
+              /****
+               if(getOrgName().startsWith("1-35-ARBN")) {
+               logger.error("MWD: at 1-35-ARBN - item: " + getItemName() + " taskTotal is: " + taskTotal + " and totalQuantity is : " + totalQty);
+               }
+               **/
+              ctr++;
+            }
+            else if (maxPhaseEnd > taskUtils.getEndTime(t)) {
+              ctr++;
+            }
+          }
+        }
+      }
     }
+    return ctr;
+  }
 
-    protected int countActualShortfall(ArrayList taskList, 
-				       boolean includeTemps) {
-	Iterator it = taskList.iterator();
-	int ctr=0;
-	while(it.hasNext()) {
-	    Task t = (Task) it.next();
-	    PlanElement pe = t.getPlanElement();
-	    if (pe != null) {
-		AllocationResult ar = pe.getReportedResult();
-		if (ar == null) {
-		    ar = pe.getEstimatedResult();
-		}
-		if ((ar != null) && (!ar.isSuccess())) {
-		    ctr++;  		    
-		}
-		else if((ar != null) && (!taskUtils.isProjection(t))) {
-		    double unfilled=0;
-		    double arEndTime=0;
-		    double taskEndTime = taskUtils.getEndTime(t);
+  protected int countActualShortfall(ArrayList taskList,
+                                     boolean includeTemps) {
+    Iterator it = taskList.iterator();
+    int ctr=0;
+    while(it.hasNext()) {
+      Task t = (Task) it.next();
+      PlanElement pe = t.getPlanElement();
+      if (pe != null) {
+        AllocationResult ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
+        if ((ar != null) && (!ar.isSuccess())) {
+          ctr++;
+        }
+        else if((ar != null) && (!taskUtils.isProjection(t))) {
+          double unfilled=0;
+          double arEndTime=0;
+          double taskEndTime = taskUtils.getEndTime(t);
 
-		    if(!ar.isPhased()) {
-			unfilled = taskUtils.getQuantity(t) - taskUtils.getQuantity(ar);
-			arEndTime = taskUtils.getEndTime(ar);
-		    }
-		    else {
-			int[] ats = ar.getAspectTypes();
-			int qtyInd = -1;
-			int endInd = -1;
-			double totalQty=0;
-			qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
-			endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
-			Enumeration phasedResults = ar.getPhasedResults();
-			while (phasedResults.hasMoreElements()) {
-			    double[] results = (double[]) phasedResults.nextElement();
-			    if(qtyInd != -1) {
-				totalQty += results[qtyInd];
-			    }
-			    else {
-				totalQty = taskUtils.getQuantity(t);
-			    }
-			    double endTime=0;
-			    if(endInd == -1) {
-				endTime = taskEndTime;
-			    }
-			    else {
-				endTime = results[endInd];
-			    }
-			    arEndTime = Math.max(arEndTime,endTime);
-			}
-			unfilled = taskUtils.getQuantity(t) - totalQty;
-		    }
-		    double offset = 0.001d;
-		    if((unfilled - offset) > 0) {
-		      ctr++;
-		    }
-		    else if(includeTemps && (arEndTime > taskEndTime)) {
-		      ctr++;
-		    }
-		}
-	    }
-	}
-	return ctr;
+          if(!ar.isPhased()) {
+            unfilled = taskUtils.getQuantity(t) - taskUtils.getQuantity(ar);
+            arEndTime = taskUtils.getEndTime(ar);
+          }
+          else {
+            int[] ats = ar.getAspectTypes();
+            int qtyInd = -1;
+            int endInd = -1;
+            double totalQty=0;
+            qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+            endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+            Enumeration phasedResults = ar.getPhasedResults();
+            while (phasedResults.hasMoreElements()) {
+              double[] results = (double[]) phasedResults.nextElement();
+              if(qtyInd != -1) {
+                totalQty += results[qtyInd];
+              }
+              else {
+                totalQty = taskUtils.getQuantity(t);
+              }
+              double endTime=0;
+              if(endInd == -1) {
+                endTime = taskEndTime;
+              }
+              else {
+                endTime = results[endInd];
+              }
+              arEndTime = Math.max(arEndTime,endTime);
+            }
+            unfilled = taskUtils.getQuantity(t) - totalQty;
+          }
+          double offset = 0.001d;
+          if((unfilled - offset) > 0) {
+            ctr++;
+          }
+          else if(includeTemps && (arEndTime > taskEndTime)) {
+            ctr++;
+          }
+        }
+      }
     }
+    return ctr;
+  }
 
 
 
-    protected double totalShortfall(ArrayList taskList) {
-	Iterator it = taskList.iterator();
-	double requested=0;
-	double granted=0;
-	while(it.hasNext()) {
-	    Task t = (Task) it.next();
-	    double taskQty = taskUtils.getTotalQuantity(t);
-	    requested += taskQty;
-	    PlanElement pe = t.getPlanElement();
-	    if (pe != null) {
-		AllocationResult ar = pe.getReportedResult();
-		if (ar == null) {
-		    ar = pe.getEstimatedResult();
-		}
-		if (ar == null) {
-		    granted += taskQty;	    		    
-		}
-		else if(taskUtils.isProjection(t)) {
-		    if(ar.isSuccess()) {
-			granted += taskQty;
-		    }
-		}
-		else {
-		    granted += taskUtils.getQuantity(ar);
-		}
-	    }
-	}
-	double returnQty = granted - requested;
-
-	if((returnQty <= 0) && (returnQty > -0.00005)) {
-	    return 0.0;
-	}
-	else {
-	    return returnQty;
-	}
+  protected double totalShortfall(ArrayList taskList) {
+    Iterator it = taskList.iterator();
+    double requested=0;
+    double granted=0;
+    while(it.hasNext()) {
+      Task t = (Task) it.next();
+      double taskQty = taskUtils.getTotalQuantity(t);
+      requested += taskQty;
+      PlanElement pe = t.getPlanElement();
+      if (pe != null) {
+        AllocationResult ar = pe.getReportedResult();
+        if (ar == null) {
+          ar = pe.getEstimatedResult();
+        }
+        if (ar == null) {
+          granted += taskQty;
+        }
+        else if(taskUtils.isProjection(t)) {
+          if(ar.isSuccess()) {
+            granted += taskQty;
+          }
+        }
+        else {
+          granted += taskUtils.getQuantity(ar);
+        }
+      }
     }
+    double returnQty = granted - requested;
+
+    if((returnQty <= 0) && (returnQty > -0.00005)) {
+      return 0.0;
+    }
+    else {
+      return returnQty;
+    }
+  }
 
 
 
@@ -1747,7 +1747,7 @@ public class LogisticsInventoryBG implements PGDelegate {
 	ArrayList tmpProjResupply = new ArrayList();
 
 	Iterator due_outs;
-	for (int i=0; i < dueOutList.size(); i++) {
+    for (int i=0; i < dueOutList.size(); i++) {
 	    due_outs = ((ArrayList)dueOutList.get(i)).iterator();
 	    while (due_outs.hasNext()) {
 	        Task task = (Task)due_outs.next();

@@ -131,7 +131,7 @@ public class LogisticsInventoryFormatter {
 
   protected LogisticsInventoryPG logInvPG;
 
-  public LogisticsInventoryFormatter(Writer writeOutput, Date startingCDay, InventoryPlugin invPlugin) {
+  public LogisticsInventoryFormatter(Writer writeOutput, Date startingCDay, UtilsProvider invPlugin) {
     logger = invPlugin.getLoggingService(this);
     output = writeOutput;
     taskUtils = invPlugin.getTaskUtils();

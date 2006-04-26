@@ -74,14 +74,18 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
   private transient String myOrgName = null;
   private transient GeolocLocation homeGeoloc = null;
   private transient DecimalFormat myDecimalFormatter = null;
+  ClassicRefillGeneratorInventoryManager classicInventoryManager;
 
   //private transient String debugItem;
 
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
    **/
-  public RefillGenerator(InventoryPlugin imPlugin) {
+  public RefillGenerator(InventoryManager imPlugin) {
     super(imPlugin);
+    if (imPlugin instanceof ClassicRefillGeneratorInventoryManager) {
+      this.classicInventoryManager = (ClassicRefillGeneratorInventoryManager) imPlugin;
+    }
   }
 
   /** Called by the Inventory Plugin to re-calculate refills when an demand has changed
@@ -93,8 +97,8 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
   public void calculateRefills(Collection touchedInventories, ComparatorModule myComparator) {
     ArrayList newRefills = new ArrayList();
     ArrayList oldRefills = new ArrayList();
-    int orderShipTime = inventoryPlugin.getOrderShipTime();
-    int maxLeadTime = inventoryPlugin.getMaxLeadTime();
+    int orderShipTime = classicInventoryManager.getOrderShipTime();
+    int maxLeadTime = classicInventoryManager.getMaxLeadTime();
 
     //Should we push now to the end of today? For now we WILL NOT.
     //long today = getTimeUtils().
@@ -126,7 +130,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
       //Only magically recalculate the initial inventory level
       //(the prepo) up to when the prepo arrives.
-      if(today <= inventoryPlugin.getPrepoArrivalTime()) {
+      if(today <= classicInventoryManager.getPrepoArrivalTime()) {
 	  thePG.recalculateInitialLevel();
       }
 
@@ -146,7 +150,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
         // replaced leaving holes in supply.
         int maxLeadBucket = thePG.convertTimeToBucket(today, false) + maxLeadTime;
 	int firstLegalRefillBucket =
-	    thePG.convertTimeToBucket(inventoryPlugin.getRefillStartTime(),false) + orderShipTime;
+	    thePG.convertTimeToBucket(classicInventoryManager.getRefillStartTime(),false) + orderShipTime;
         boolean clearTargetLevels = true;
         int clearTargetBucket = refillBucket;
         double prevTarget = 0;
@@ -272,7 +276,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 				    "-" + inventoryPlugin.getSupplyType() +
 				    "-Item:" + myItemId + ":" +
 				    " not ordering a refill on day " + refillBucketTime +
-				    " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+				    " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(classicInventoryManager.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
 		    }
 		}
 		else if (logger.isDebugEnabled()) {
@@ -280,7 +284,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 				 "-" + inventoryPlugin.getSupplyType() +
 				 "-Item:" + myItemId + ":" +
 				 " not ordering a refill on day " + refillBucketTime +
-				 " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(inventoryPlugin.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
+				 " when we've fallen below critical level by " + (((criticalLevel - invLevel)/criticalLevel)) + "percent, because it is before supplier arrival time + ost.   Supplier arrival time is " + TimeUtils.dateString(classicInventoryManager.getSupplierArrivalTime()) + " and add ost which is " + orderShipTime);
 		}
 	    }
             else if(refillQty > 0.00) {
@@ -331,7 +335,7 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
     int refillBucket = startBucket + 1;
 
     long refillTime = thePG.convertBucketToTime(refillBucket);
-    long nextLegalRefill = inventoryPlugin.getNextLegalRefillTime(refillTime);
+    long nextLegalRefill = classicInventoryManager.getNextLegalRefillTime(refillTime);
     if(refillTime < nextLegalRefill) {
       int nextLegalRefillBucket = thePG.convertTimeToBucket(nextLegalRefill,false);
       if(logger.isDebugEnabled()) {
@@ -403,11 +407,11 @@ public class RefillGenerator extends InventoryLevelGenerator implements RefillGe
 
     newRefill.setPrepositionalPhrases(pp_vector.elements());
 
-    if((endDay < inventoryPlugin.getRefillStartTime()) &&
+    if((endDay < classicInventoryManager.getRefillStartTime()) &&
         (logger.isWarnEnabled())){
       logger.warn("Creating new refill task for day " + getTimeUtils().dateString(endDay) +
                   " before arrival in theatre time or arrival of supplier of "
-                  + getTimeUtils().dateString(inventoryPlugin.getRefillStartTime()) +
+                  + getTimeUtils().dateString(classicInventoryManager.getRefillStartTime()) +
                   ".  The task that is about to be published is " + newRefill);
     }
 

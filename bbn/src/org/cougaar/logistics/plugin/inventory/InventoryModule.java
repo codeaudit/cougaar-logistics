@@ -48,11 +48,11 @@ import org.cougaar.util.log.Logger;
 public class InventoryModule {
 
     protected transient Logger logger;
-    protected transient InventoryPlugin inventoryPlugin;
+  protected transient InventoryManager inventoryPlugin;
 
-    public InventoryModule(InventoryPlugin imPlugin) {
-	inventoryPlugin = imPlugin;
-	logger = (Logger)imPlugin.getLoggingService(this);
+    public InventoryModule(InventoryManager imPlugin) {
+      this.inventoryPlugin = imPlugin;
+	logger = (Logger)inventoryPlugin.getLoggingService(this);
     }
 
     public TaskUtils    getTaskUtils() {return inventoryPlugin.getTaskUtils();}

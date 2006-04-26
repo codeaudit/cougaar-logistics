@@ -69,7 +69,8 @@ import java.util.*;
  **/
 
 public class InventoryPlugin extends ComponentPlugin
-    implements UtilsProvider {
+    implements InventoryManager, ClassicRefillGeneratorInventoryManager,
+    ReconcileSupplyExpanderInventoryManager, LevelOfDetailInventoryManager {
 
   protected boolean initialized = false;
 //  protected boolean firstTimeThrough = true;
@@ -249,9 +250,8 @@ public class InventoryPlugin extends ComponentPlugin
     return currentTimeMillis();
   }
 
-  public boolean publishAdd(Object o) {
+  public void publishAdd(Object o) {
     getBlackboardService().publishAdd(o);
-    return true;
   }
 
   public BlackboardService getBBService() {
@@ -270,14 +270,12 @@ public class InventoryPlugin extends ComponentPlugin
     PluginHelper.publishAddExpansion(getBlackboardService(), expansion);
   }
 
-  public boolean publishChange(Object o) {
+  public void publishChange(Object o) {
     getBlackboardService().publishChange(o);
-    return true;
   }
 
-  public boolean publishRemove(Object o) {
+  public void publishRemove(Object o) {
     getBlackboardService().publishRemove(o);
-    return true;
   }
 
   public void removeSubTask(Task taskToRemove) {
@@ -924,7 +922,11 @@ public class InventoryPlugin extends ComponentPlugin
     }
   }
 
-  protected List getNewTaskSplitTimes(Task task) {
+  /**
+   * @param task
+   * @return split times
+   */
+  public List getNewTaskSplitTimes(Task task) {
     HashMap provHashMap = relationshipScheduleMap();
     ArrayList splits = new ArrayList();
     long start = TaskUtils.getStartTime(task);
@@ -1782,6 +1784,15 @@ public class InventoryPlugin extends ComponentPlugin
     return proto.getTypeIdentificationPG().getTypeIdentification();
   }
 
+  public void touchInventoryForTask (Task taskWithInventory, Inventory inventory) {
+    touchInventory(inventory);
+  }
+
+  public Inventory findOrMakeInventory(Task task) {
+    throw new IllegalArgumentException("this method should not be called in AL.");
+     //return null;
+  }
+
   public Inventory findOrMakeInventory(Asset resource) {
     Inventory inventory = null;
     String item = resource.getTypeIdentificationPG().getTypeIdentification();
@@ -2085,12 +2096,11 @@ public class InventoryPlugin extends ComponentPlugin
       // Build Expansion
       expansion = factory.createExpansion(parent.getPlan(), parent, wf, null);
       // Publish Expansion
-      boolean didAddExp = publishAdd(expansion);
+      publishAdd(expansion);
       if (logger.isDebugEnabled()) {
         logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
                      "publish adding expansion: " + expansion.getUID()+
-                     " parent " + parent.getVerb() + " task is: " + parent.getUID() +
-                     "publishAdd returned: " + didAddExp);
+                     " parent " + parent.getVerb() + " task is: " + parent.getUID());
       }
     }
     // Task already has expansion, add task to the workflow and publish the change
@@ -2099,12 +2109,11 @@ public class InventoryPlugin extends ComponentPlugin
       wf = (NewWorkflow) expansion.getWorkflow();
       wf.addTask(subtask);
       ((NewTask) subtask).setWorkflow(wf);
-      boolean didChangeExp = publishChange(expansion);
+      publishChange(expansion);
       if (logger.isDebugEnabled()) {
         logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
                      "publish changing expansion: " + expansion.getUID()+
-                     " parent " + parent.getVerb() + " task is: " + parent.getUID() +
-                     "publishChange returned: " + didChangeExp);
+                     " parent " + parent.getVerb() + " task is: " + parent.getUID());
       }
     } else {
       if (logger.isErrorEnabled()) {
@@ -2113,11 +2122,10 @@ public class InventoryPlugin extends ComponentPlugin
     }
 
     // Publish new task
-    boolean didAddSub = publishAdd(subtask);
+    publishAdd(subtask);
     if (logger.isDebugEnabled()) {
         logger.debug("Agent: " + getAgentIdentifier().toString() + "Inv Plugin[" + supplyType+"]" +
-                     "publish adding a " + subtask.getVerb() + " subtask: " + subtask.getUID()+
-                     "publishAdd returned: " + didAddSub);
+                     "publish adding a " + subtask.getVerb() + " subtask: " + subtask.getUID());
     }
 
     if (((subtask.getVerb().equals(Constants.Verb.SUPPLY)) ||
@@ -2355,7 +2363,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   /** relative to now -- this is correct, isn't it? */
-  protected long getEndOfLevelTwo() {
+  public long getEndOfLevelTwo() {
     long now = currentTimeMillis();
     int days = ((Integer) level2Horizon.getValue()).intValue();
 
@@ -2498,7 +2506,7 @@ public class InventoryPlugin extends ComponentPlugin
   }
 
   protected RefillProjectionGeneratorModule getRefillProjectionGeneratorModule() {
-    return new RefillProjectionGenerator(this);
+    return new RefillProjectionGenerator(this, this);
   }
 
   protected ComparatorModule getComparatorModule() {

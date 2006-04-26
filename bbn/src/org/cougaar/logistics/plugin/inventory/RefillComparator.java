@@ -49,7 +49,7 @@ public class RefillComparator extends InventoryModule implements ComparatorModul
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
    **/
-  public RefillComparator(InventoryPlugin imPlugin) {
+  public RefillComparator(InventoryManager imPlugin) {
     super(imPlugin);
   }
 

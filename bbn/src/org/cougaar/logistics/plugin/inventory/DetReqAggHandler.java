@@ -33,6 +33,7 @@ import org.cougaar.core.blackboard.CollectionSubscription;
 import org.cougaar.planning.ldm.PlanningFactory;
 import org.cougaar.planning.plugin.util.PluginHelper;
 import org.cougaar.glm.ldm.asset.Inventory;
+import org.cougaar.glm.ldm.asset.ScheduledContentPG;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.util.Enumerator;
@@ -43,7 +44,7 @@ public class DetReqAggHandler extends InventoryModule{
   private Task aggMILTask = null;
   private HashMap MILTaskHash = new HashMap();
 
-  public DetReqAggHandler(InventoryPlugin imPlugin) {
+  public DetReqAggHandler(InventoryManager imPlugin) {
     super(imPlugin);
   }
 
@@ -202,6 +203,7 @@ public class DetReqAggHandler extends InventoryModule{
      DetermineRequirements tasks of type MaintainInventory. The
      Composition of this MPTask is non-propagating so it is
      rescinded only if all the parent tasks are rescinded.
+   @see InventoryPlugin#processDetReq
   **/
   public NewMPTask createAggTask(Collection parents) {
     Task parentTask = null;
@@ -245,11 +247,7 @@ public class DetReqAggHandler extends InventoryModule{
          disappearing. The caller, getting a null return will
          simply abandon the attempt to do the refill.
          **/
-        if (logger.isWarnEnabled()) {
-          logger.warn("CANNOT CREATE MILTASK, no parent, parent pe or inventory: "
-                      + getAssetUtils().assetDesc(inventory.getScheduledContentPG().getAsset()) +
-                      " PARENT TASK IS: " + parent + " PARENT PE IS: " + parent.getPlanElement());
-        }
+        reportWhenCantMakeMaintainInventoryTask(inventory, parent);
         return null; // Can't make one
       }
       milTask = createMILTask(parent, inventory);
@@ -260,10 +258,7 @@ public class DetReqAggHandler extends InventoryModule{
         wf.addTask(milTask);
         ((NewTask) milTask).setWorkflow(wf);
         // Publish new task
-        boolean addedNewMI = inventoryPlugin.publishAdd(milTask);
-        if (!addedNewMI) {
-          logger.error("publishAdd(milTask) fail to publish task "+ getTaskUtils().taskDesc(milTask));
-        }
+        inventoryPlugin.publishAdd(milTask);
         MILTaskHash.put(inventory, milTask);
         inventoryPlugin.publishChange(expansion);
         if (logger.isDebugEnabled()) {
@@ -278,6 +273,31 @@ public class DetReqAggHandler extends InventoryModule{
     return milTask;
   }
 
+  protected void reportWhenCantMakeMaintainInventoryTask(Inventory inventory, Task parent) {
+    if (logger.isWarnEnabled()) {
+      AssetUtils assetUtils = getAssetUtils();
+      if (assetUtils == null) {
+        logger.warn ("asset utils is null");
+      }
+      if (inventory == null) {
+        logger.warn ("inventory is null");
+      }
+      ScheduledContentPG scheduledContentPG = inventory.getScheduledContentPG();
+      if (scheduledContentPG == null) {
+        logger.warn ("scheduled content for " + inventory + " is null");
+      }
+      PlanElement planElement = null;
+      if (parent == null) {
+        logger.warn ("parent is null");
+      }
+      else {
+        planElement = parent.getPlanElement();
+      }
+      logger.warn("CANNOT CREATE MILTASK, no parent, parent pe or inventory: "
+        + assetUtils.assetDesc(scheduledContentPG.getAsset()) +
+        " PARENT TASK IS: " + parent + " PARENT PE IS: " + planElement);
+    }
+  }
 
   private void setStartTimePreference(NewTask mpTask, long newStartTime) {
     ScoringFunction sf;

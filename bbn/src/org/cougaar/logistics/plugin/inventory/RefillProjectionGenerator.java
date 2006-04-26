@@ -59,12 +59,15 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
   private transient Organization myOrg = null;
   private transient String myOrgName = null;
   private transient GeolocLocation homeGeoloc = null;
+  LevelOfDetailInventoryManager detailInventoryManager;
 
   /** Need to pass in the IM Plugin for now to get services
    * and util classes.
    **/
-  public RefillProjectionGenerator(InventoryPlugin imPlugin) {
+  public RefillProjectionGenerator(InventoryManager imPlugin,
+                                   LevelOfDetailInventoryManager detailInventoryManager) {
     super(imPlugin);
+    this.detailInventoryManager = detailInventoryManager;
   }
 
   /** Called by the InventoryPlugin to calculate new Refills.
@@ -159,14 +162,14 @@ public class RefillProjectionGenerator extends InventoryLevelGenerator implement
 
       //start time is the start time of the inventorybg
       long startDay = thePG.getStartTime();
-      if(startDay < inventoryPlugin.getRefillStartTime()) {
-        startDay = inventoryPlugin.getRefillStartTime();
+      if(startDay < detailInventoryManager.getRefillStartTime()) {
+        startDay = detailInventoryManager.getRefillStartTime();
       }
 
-      long now = inventoryPlugin.currentTimeMillis();
+      long now = inventoryPlugin.getCurrentTimeMillis();
 
       //Bug fix for 13464
-      long cutoffTime = now + ((inventoryPlugin.getOrderShipTime()) * thePG.getBucketMillis());
+      long cutoffTime = now + ((detailInventoryManager.getOrderShipTime()) * thePG.getBucketMillis());
       //round up if need be (not exactly on the zero mark)
       cutoffTime = thePG.convertBucketToTime(thePG.convertTimeToBucket(cutoffTime,true));
 

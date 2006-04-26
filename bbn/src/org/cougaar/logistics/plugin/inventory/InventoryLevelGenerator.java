@@ -39,7 +39,7 @@ import java.util.*;
 
 public class InventoryLevelGenerator extends InventoryModule {
 
-  public InventoryLevelGenerator(InventoryPlugin imPlugin) {
+  public InventoryLevelGenerator(InventoryManager imPlugin) {
     super(imPlugin);
   }
 
@@ -143,8 +143,8 @@ public class InventoryLevelGenerator extends InventoryModule {
                     //increment the quantity
                     int quantInd =  getIndexForType(ats, AspectType.QUANTITY);
                     refillQty += results[quantInd];
+                    }
                   }
-                }
 
               } else {
                 try {

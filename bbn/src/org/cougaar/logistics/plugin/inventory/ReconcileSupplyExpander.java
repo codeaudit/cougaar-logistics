@@ -42,9 +42,12 @@ import java.util.*;
 public class ReconcileSupplyExpander extends SupplyExpander {
   private static final long COMMS_UP_DELAY = 120000L; // 2 minutes
   private TaskUtils taskUtils = getTaskUtils();
+  ReconcileSupplyExpanderInventoryManager reconcileInventoryManager;
 
-  public ReconcileSupplyExpander(InventoryPlugin imPlugin) {
+  public ReconcileSupplyExpander(InventoryManager imPlugin,
+                                 ReconcileSupplyExpanderInventoryManager reconcileInventoryManager) {
     super(imPlugin);
+    this.reconcileInventoryManager = reconcileInventoryManager;
   }
 
   public void expandAndDistributeRequisitions(Collection tasks) {
@@ -194,7 +197,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
         CustomerState state = (CustomerState) customerStates.get(customerName);
         if ( (state != null) && (state.getCommsUpAlarm() == null) && (! state.hasStateExpired()) ) {
           if ( (state.isCommsUp()) && (cs.isCommUp()) ) {
-            Alarm alarm = inventoryPlugin.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
+            Alarm alarm = reconcileInventoryManager.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
                                                                                 COMMS_UP_DELAY);
             state.setCommsUpAlarm(alarm);
             if (logger.isInfoEnabled()) {
@@ -335,7 +338,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
         }
         // only set the Alarm if comms are up and we have atleast some new supply tasks
         if (newSupplyTasks) {
-          Alarm alarm = inventoryPlugin.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
+          Alarm alarm = reconcileInventoryManager.addAlarm(inventoryPlugin.getCurrentTimeMillis() +
                                                                               COMMS_UP_DELAY);
           state.setCommsUpAlarm(alarm);
           if (logger.isInfoEnabled()) {
@@ -349,7 +352,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
 
   private long findLastSupplyTaskTime(String customerName) {
     MaxEndThunk thunk = new MaxEndThunk(customerName);
-    Collectors.apply(thunk, inventoryPlugin.getSupplyTasks());
+    Collectors.apply(thunk, reconcileInventoryManager.getSupplyTasks());
     return thunk.getMaxEndTime();
   }
 
@@ -532,7 +535,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
         logger.info("AuxQuery from estimated result returned this uid " + uid);
       }
       if (uid != null) {
-        BlackboardService bs = inventoryPlugin.getBBService();
+        BlackboardService bs = reconcileInventoryManager.getBBService();
         Collection predTasks = bs.query(new TaskUid(uid));
         if (! predTasks.isEmpty()) {
           inventoryPlugin.publishRemove(predTasks.iterator().next());
@@ -611,7 +614,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
   }
 
   private boolean commStatusExists(String name) {
-    if (inventoryPlugin.getCommStatusSubscription().isEmpty())
+    if (reconcileInventoryManager.getCommStatusSubscription().isEmpty())
       return false;
     CustomerState state;
     state = (CustomerState) customerStates.get(name);
@@ -783,7 +786,7 @@ public class ReconcileSupplyExpander extends SupplyExpander {
   }
 
   public Collection filter(UnaryPredicate predicate) {
-    return Filters.filter(inventoryPlugin.getSupplyTasks(), predicate);
+    return Filters.filter(reconcileInventoryManager.getSupplyTasks(), predicate);
   }
 
   public Collection customerSupplyTasks(UnaryPredicate customerTaskPredicate) {

@@ -163,7 +163,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 
   protected MessageAddress clusterId;
 
-  public SupplyExpander(InventoryPlugin imPlugin) {
+  public SupplyExpander(InventoryManager imPlugin) {
     super(imPlugin);
     ost = DEFAULT_ORDER_AND_SHIPTIME;  //In the future plugin should supply from suppliers predictor the OST - MWD
     addTransport = false;
@@ -209,7 +209,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (taskIter.hasNext()) {
       Task aTask = (Task)taskIter.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
+        logger.debug("SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
                      "processing removal of requisition: " + aTask.getUID());
       }
       LogisticsInventoryPG thePG = getLogisticsInventoryPG(aTask);
@@ -231,7 +231,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (taskIter.hasNext()) {
       aTask = (Task)taskIter.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExpander[" + inventoryPlugin.getSupplyType()+"]" +
+        logger.debug("SupplyExpander[" + inventoryPlugin.getSupplyType()+"]" +
                      "processing removal of projection: " + aTask.getUID());
       }
       thePG = getLogisticsInventoryPG(aTask);
@@ -257,7 +257,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (taskIter.hasNext()) {
       supply = (Task)taskIter.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
+        logger.debug("SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
                      "processing changed reqs task: " + supply.getUID());
       }
       if (supply.getPlanElement() instanceof Expansion) {
@@ -300,7 +300,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (taskIter.hasNext()) {
       projSupply = (Task)taskIter.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
+        logger.debug("SupplyExp[" + inventoryPlugin.getSupplyType()+"]" +
                      "processing changed projections task: " + projSupply.getUID());
       }
       if (projSupply.getPlanElement() instanceof Expansion) {
@@ -347,11 +347,7 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
 	LogisticsInventoryPG logInvPG = null;
 	Asset asset = (Asset)wdrawTask.getDirectObject();
 	Inventory inventory = inventoryPlugin.findOrMakeInventory(asset);
-	if (!wdrawTask.isDeleted()) {
-            inventoryPlugin.touchInventory(inventory);
-	} else {
-            inventoryPlugin.touchInventoryWithDeletions(inventory);
-	}
+    inventoryPlugin.touchInventoryForTask(wdrawTask, inventory);
 	logInvPG = (LogisticsInventoryPG)
 	    inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
 	return logInvPG;
@@ -448,18 +444,18 @@ public class SupplyExpander extends InventoryModule implements ExpanderModule {
     while (subIt.hasNext()) {
       PlanElement pe = (PlanElement) subIt.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" +
+        logger.debug("SupplyExp[" +
                      inventoryPlugin.getSupplyType()+"]" +
                      "checking AR change: " + pe.getUID()+
                      " parent task is: " + pe.getTask().getUID());
       }
       if (PluginHelper.updatePlanElement(pe)) {
-        boolean didPubChg = inventoryPlugin.publishChange(pe);
+        inventoryPlugin.publishChange(pe);
         if (logger.isDebugEnabled()) {
-          logger.debug("Agent: " + inventoryPlugin.getClusterId().toString() + "SupplyExp[" +
+          logger.debug("SupplyExp[" +
                        inventoryPlugin.getSupplyType()+"]" +
                        "publish Changing expansion due to AR change: " + pe.getUID()+
-                       " parent task is: " + pe.getTask().getUID() + " publishChange returned: " + didPubChg);
+                       " parent task is: " + pe.getTask().getUID());
         }
       }
     }
