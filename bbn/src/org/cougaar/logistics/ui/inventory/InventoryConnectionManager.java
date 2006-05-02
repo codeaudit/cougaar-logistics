@@ -66,7 +66,7 @@ public class InventoryConnectionManager implements InventoryDataSource {
 
   final public static String ASSET = "ASSET";
   final public static String ASSET_AND_CLASSTYPE = ASSET + ":" + "CLASS_TYPE:";
-  final public static String GET_ALL_CLASS_TYPES = "All";
+  final public static String GET_ALL_CLASS_TYPES = "ALL";
   final public static String[] ASSET_CLASS_TYPES = {GET_ALL_CLASS_TYPES, "Ammunition", "BulkPOL", "Subsistence", "ClassVIIIMedical", "PackagedPOL", "Consumable"};
 
   protected Component parentComponent;
