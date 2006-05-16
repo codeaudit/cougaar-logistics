@@ -125,7 +125,7 @@ public class ShortfallPeriod implements java.io.Serializable, Publishable {
      * Get total demand rounded to an integer or to the hundreths place depending on the passed boolean
      *
      * @param roundToInt true if you want the filled demand rounded to an integer false if only to the hundreths place
-     * @return
+     * @return the double represent total filled demand.
      */
     public double getRoundedTotalFilled(boolean roundToInt) {
         return roundAppropriately(totalFilled, roundToInt);
@@ -158,10 +158,13 @@ public class ShortfallPeriod implements java.io.Serializable, Publishable {
      * The percent shortfall which is totalDemand - totalFilled/totalDemand * 100  (Ie the less that is filled the greater
      * the qty percent shortfall.
      *
-     * @return
+     * @return  the double representing total percent shortfall for this period
      */
     public double getPercentShortfall() {
-        return roundToInt((getShortfallQty(false) / getTotalDemand()) * 100);
+        if(getTotalDemand() > 0.0d) {
+          return roundToInt((getShortfallQty(false) / getTotalDemand()) * 100);
+        }
+        return 0.0d;
     }
 
     /**
