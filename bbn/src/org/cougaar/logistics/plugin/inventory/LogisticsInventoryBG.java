@@ -1408,6 +1408,7 @@ public class LogisticsInventoryBG implements PGDelegate {
         else if(!ar.isPhased()) {
           if(ar.isSuccess()) {
             double arEnd = taskUtils.getEndTime(ar);
+            taskQty = taskUtils.getQuantity(t,ar);
             if((arEnd >= shortPeriod.getStartTime()) &&
               (arEnd <= shortPeriod.getEndTime())) {
               totalFilled += taskQty;
