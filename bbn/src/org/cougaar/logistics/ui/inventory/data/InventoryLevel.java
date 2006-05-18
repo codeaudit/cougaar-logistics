@@ -55,13 +55,13 @@ public class InventoryLevel extends InventoryScheduleElement {
     protected String activityType;
     protected String optempo;
 
-    public static final int START_TIME_INDEX=CSV_START_INDEX + 1;
-    public static final int END_TIME_INDEX=CSV_START_INDEX + 2;
-    public static final int REORDER_LEVEL_INDEX=CSV_START_INDEX + 3;
-    public static final int INVENTORY_LEVEL_INDEX=CSV_START_INDEX + 4;
-    public static final int TARGET_LEVEL_INDEX=CSV_START_INDEX + 5;
-    public static final int ACTIVITY_TYPE_INDEX=CSV_START_INDEX + 6;
-    public static final int OPTEMPO_INDEX=CSV_START_INDEX + 7;
+    private static final int START_TIME_INDEX=CSV_START_INDEX + 1;
+    private static final int END_TIME_INDEX=CSV_START_INDEX + 2;
+    private static final int REORDER_LEVEL_INDEX=CSV_START_INDEX + 3;
+    private static final int INVENTORY_LEVEL_INDEX=CSV_START_INDEX + 4;
+    private static final int TARGET_LEVEL_INDEX=CSV_START_INDEX + 5;
+    private static final int ACTIVITY_TYPE_INDEX=CSV_START_INDEX + 6;
+    private static final int OPTEMPO_INDEX=CSV_START_INDEX + 7;
 
     public InventoryLevel(double aReorderLevel,
 			  Double anInventoryLevel,
