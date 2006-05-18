@@ -65,6 +65,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     protected transient long startCDay;
     protected long arrivalTime;
     protected long startTime;
+    protected long oplanEndTime;
     protected int timeZero;
     private transient LoggingService logger;
     private transient LogisticsInventoryLogger csvLogger = null;
@@ -130,7 +131,7 @@ public class LogisticsInventoryBG implements PGDelegate {
     }
 
 
-    public void initialize(long startTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin) {
+    public void initialize(long startTime, long oplanEndTime, int criticalLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin) {
         this.startTime = startTime;
         // Set initial level of inventory from time zero to today.  This assumes that the inventory
         // is created because the existence of demand and the RefillGenerator will be run
@@ -158,6 +159,7 @@ public class LogisticsInventoryBG implements PGDelegate {
             logger.debug("Start day: " + TimeUtils.dateString(startTime) + ", time zero " +
                          TimeUtils.dateString(timeZero));
         }
+        this.oplanEndTime = oplanEndTime;
         this.criticalLevel = criticalLevel;
         this.reorderPeriod = reorderPeriod;
         this.ost = ost;
@@ -1798,7 +1800,9 @@ public class LogisticsInventoryBG implements PGDelegate {
         int length = Math.max(getMeaningfulLength(criticalLevelsArray),
 			      getMeaningfulLength(inventoryLevelsArray));
 
-	int maxArrayLength = Math.min(criticalLevelsArray.length,
+    length = Math.max(length,(convertTimeToBucket(oplanEndTime,false) + 1));    
+
+    int maxArrayLength = Math.min(criticalLevelsArray.length,
 				   inventoryLevelsArray.length);
 
 	if((length > maxArrayLength)  && (logger.isWarnEnabled())) {

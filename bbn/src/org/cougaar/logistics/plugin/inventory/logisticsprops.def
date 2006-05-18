@@ -43,7 +43,7 @@ slots=Asset mei, \
       Organization org
 delegates=LogisticsInventoryBG logInvBG
 
-logInvBG.delegate= void initialize(long today, int critLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin); \
+logInvBG.delegate= void initialize(long today, long oplanEndTime, int critLevel, int reorderPeriod, int ost, long bucketSize, long now, boolean logToCSV, InventoryManager parentPlugin); \
 	void addWithdrawProjection(Task task); \
 	double getProjectionTaskDemand(Task task, int bucket, long start, long end); \
 	void addWithdrawRequisition(Task task); \

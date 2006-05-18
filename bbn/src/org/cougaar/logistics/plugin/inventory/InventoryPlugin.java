@@ -1845,7 +1845,7 @@ public class InventoryPlugin extends ComponentPlugin
     logInvPG.setOrg(getMyOrganization());
     logInvPG.setSupplierArrivalTime(getSupplierArrivalTime());
     logInvPG.setLogInvBG(new LogisticsInventoryBG(logInvPG));
-    logInvPG.initialize(startTime, criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
+    logInvPG.initialize(startTime, this.getOPlanEndTime(), criticalLevel, reorderPeriod, getOrderShipTime(), bucketSize, getCurrentTimeMillis(), logToCSV, this);
     logInvPG.setArrivalTime(getOPlanArrivalInTheaterTime());
     logInvPG.setStartCDay(logOPlan.getOplanCday());
 
