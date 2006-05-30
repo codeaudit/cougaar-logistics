@@ -68,7 +68,7 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
     }
   }
 
-  private boolean allocateTask(Task task) {
+  protected boolean allocateTask(Task task) {
     Organization provider = findBestSource(task);
     if (provider != null) {
       if(verifyBeforeAllocation(task,provider)){
@@ -156,8 +156,8 @@ public class ExternalAllocator extends InventoryModule implements AllocatorModul
 
   protected Collection findSingleSource(Task task, long endTime) {
     Vector tasksAndProviders = new Vector();
-    Enumeration supportOrgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(), 
-                                                                providerRole, 
+    Enumeration supportOrgs = getAssetUtils().getSupportingOrgs(inventoryPlugin.getMyOrganization(),
+                                                                providerRole,
                                                                 endTime);
     if (supportOrgs.hasMoreElements()) {
       // For now, returning the first supporting org during the time span
