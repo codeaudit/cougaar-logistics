@@ -77,7 +77,7 @@ import org.cougaar.logistics.ui.inventory.data.InventoryPreferenceData;
 public class MultiChartPanel extends JPanel
     implements JCChartListener, JCPickListener, ItemListener {
 
-  private final static long MILLIS_IN_DAY = TimeUtils.MSEC_PER_DAY;
+  protected final static long MILLIS_IN_DAY = TimeUtils.MSEC_PER_DAY;
 
   public final static String INITIAL_POINT_LABEL = "Right click to get quantity at a point; left hold and drag to zoom in.";
 
@@ -477,6 +477,8 @@ public class MultiChartPanel extends JPanel
       }
     }
   }
+
+  
 
   /** TODO MWD Special Mouse picker to filter out Org Activity clicks
    * Need to do better so instead of always passing to inventoryChartDataView
