@@ -38,6 +38,7 @@ public class Constants extends org.cougaar.glm.ldm.Constants {
 
   public interface Preposition extends org.cougaar.glm.ldm.Constants.Preposition {
     String READYFORTRANSPORT       = "ReadyForTransport";       // For RequestForCapability
+    String DEMANDRATE              = "DemandRate";  // For task rate schedules
   }
 
 

@@ -67,10 +67,9 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       this.amount=amount;
     }
 
-      public String toString(LogisticsInventoryPG thePG) {
-        return ("AllocPhase of amount: " + amount + " from " + getTimeUtils().dateString(thePG.convertBucketToTime(startBucket)) + " to " + getTimeUtils().dateString(thePG.convertBucketToTime(endBucket)));
-      }
-    
+    public String toString(LogisticsInventoryPG thePG) {
+      return ("AllocPhase of amount: " + amount + " from " + getTimeUtils().dateString(thePG.convertBucketToTime(startBucket)) + " to " + getTimeUtils().dateString(thePG.convertBucketToTime(endBucket)));
+    }
   }
 
   public class TaskDeficit {
@@ -100,17 +99,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     public Collection generateAllAllocationPhases() {
       Iterator defPhasesIt = allocated.iterator();
       long taskStartTime = getTaskUtils().getStartTime(task);
-      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime,false);
+      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime, false);
       long taskEndTime = getTaskUtils().getEndTime(task);
-      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime,true);
+      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime, true);
 
       int lastBucket = taskStartBucket;
 
       ArrayList allPhases = new ArrayList();
 
-      while(defPhasesIt.hasNext()){
-        AllocPhase currentPhase = (AllocPhase)defPhasesIt.next();
-        if(currentPhase.startBucket > lastBucket) {
+      while (defPhasesIt.hasNext()) {
+        AllocPhase currentPhase = (AllocPhase) defPhasesIt.next();
+        if (currentPhase.startBucket > lastBucket) {
           /*if ((inventoryPlugin.getClusterId().toString().indexOf("2-NLOS-BTY") >= 0) &&
              (task.getDirectObject().getTypeIdentificationPG().getTypeIdentification().indexOf("155mm-DPICM") >= 0)) {
             System.out.println("Got a Phase after the end time of the task..." +
@@ -119,7 +118,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
                                new Date(thePG.convertBucketToTime(currentPhase.startBucket)));
           }*/
           //TODO - EPD This best quantity fill in code causes lots of problems!!!!
-          AllocPhase betweenPhase = new AllocPhase(lastBucket,getBestBucketQty());
+          long lastTime = thePG.convertBucketToTime(lastBucket);
+          AllocPhase betweenPhase = new AllocPhase(lastBucket, getBestBucketQty(lastTime));
           betweenPhase.endBucket = currentPhase.startBucket;
           allPhases.add(betweenPhase);
         }
@@ -127,22 +127,23 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         lastBucket = currentPhase.endBucket;
       }
 
-      if(lastBucket < taskEndBucket){
-        AllocPhase lastPhase = new AllocPhase(lastBucket,getBestBucketQty());
+      if (lastBucket < taskEndBucket) {
+        long lastTime = thePG.convertBucketToTime(lastBucket);
+        AllocPhase lastPhase = new AllocPhase(lastBucket, getBestBucketQty(lastTime));
         lastPhase.endBucket = taskEndBucket;
         allPhases.add(lastPhase);
       }
       return allPhases;
     }
 
-    public double getBestBucketQty() {
-      Rate r = getTaskUtils().getRate(task);
-      return getQuantityForDuration(r,thePG.getBucketMillis());
+    public double getBestBucketQty(long time) {
+      Rate r = getTaskUtils().getRate(task, time);
+      return getQuantityForDuration(r, thePG.getBucketMillis());
     }
 
     public double getQuantityForDuration(Rate r, long duration){
         Duration d = Duration.newMilliseconds(duration);
-        Scalar scalar = (Scalar)r.computeNumerator(d);
+        Scalar scalar = (Scalar) r.computeNumerator(d);
         return getTaskUtils().getDouble(scalar);
     }
 
@@ -843,7 +844,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       long failed_start = PluginHelper.getStartTime(task);
       AspectValue failedAV;
       Duration dur = new Duration(failed_time - failed_start, Duration.MILLISECONDS);
-      if (getTaskUtils().getRate(task) instanceof FlowRate) {
+      if (getTaskUtils().isFlowRate(task)) {
         Volume vol = new Volume(0.0, Volume.GALLONS);
         failedAV = AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
                                               new FlowRate(vol,dur));

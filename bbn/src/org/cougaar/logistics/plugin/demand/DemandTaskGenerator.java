@@ -215,7 +215,7 @@ public class DemandTaskGenerator extends DemandGeneratorModule
             long end = Math.min(taskEnd, bucketEnd);
             //duration in seconds
             double duration = ((end - start) / 1000);
-            Rate rate = getTaskUtils().getRate(projTask);
+            Rate rate = getTaskUtils().getRate(projTask, start, end);
             double qty = (getBaseUnitPerSecond(rate) * duration);
             totalQty += qty;
         }

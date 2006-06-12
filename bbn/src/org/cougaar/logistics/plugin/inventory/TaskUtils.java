@@ -32,6 +32,8 @@ import org.cougaar.glm.ldm.asset.SupplyClassPG;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElement;
+import org.cougaar.glm.ldm.plan.QuantityScheduleElementImpl;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.packer.GenericPlugin;
 import org.cougaar.planning.ldm.PlanningFactory;
@@ -126,7 +128,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
         if((result == true) && (type.equals("PackagedPOL")) &&
             asset.getTypeIdentificationPG().getTypeIdentification().endsWith("Aggregate")) {
           logger.debug("\n direct object type... type for plugin is: " +
-                       type + "]" + " type for DO is: [" + pg.getSupplyType() + "]");
+              type + "]" + " type for DO is: [" + pg.getSupplyType() + "]");
         }
 
       }
@@ -143,21 +145,21 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
   public String taskDesc(Task task) {
     if (isProjection(task)) {
       return task.getUID() + ": "
-          + task.getVerb()+"("+
-          getDailyQuantity(task)+" "+
-          getTaskItemName(task)+") "+
-          getTimeUtils().
-          dateString(new Date(getStartTime(task)))+
-          "  -  " +
-          getTimeUtils().
-          dateString(new Date(getEndTime(task)));
+        + task.getVerb()+"("+
+        getDailyQuantity(task, getStartTime(task))+" "+
+        getTaskItemName(task)+") "+
+        getTimeUtils().
+        dateString(new Date(getStartTime(task)))+
+        "  -  " +
+        getTimeUtils().
+        dateString(new Date(getEndTime(task)));
     } else {
       return task.getUID() + ": "
-          + task.getVerb()+"("+
-          getQuantity(task)+" "+
-          getTaskItemName(task)+") "+
-          getTimeUtils().
-          dateString(new Date(getEndTime(task)));
+        + task.getVerb()+"("+
+        getQuantity(task)+" "+
+        getTaskItemName(task)+") "+
+        getTimeUtils().
+        dateString(new Date(getEndTime(task)));
     }
   }
 
@@ -266,7 +268,9 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
 
   public static boolean isProjection(Task t) {
-    return t.getPreference(AlpineAspectType.DEMANDRATE) != null;
+    return 
+      (t.getPrepositionalPhrase(Constants.Preposition.DEMANDRATE) != null ||
+       t.getPreference(AlpineAspectType.DEMANDRATE) != null);
   }
 
   public static boolean isSupply(Task t) {
@@ -286,8 +290,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
 
   public static Preference createDemandRatePreference(PlanningFactory rf, Rate rate) {
     ScoringFunction sf = ScoringFunction
-        .createStrictlyAtValue(AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
-                                                          rate));
+      .createStrictlyAtValue(AspectValue.newAspectValue(AlpineAspectType.DEMANDRATE,
+            rate));
     return rf.newPreference(AlpineAspectType.DEMANDRATE, sf);
   }
 
@@ -335,21 +339,105 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return null;
   }
 
+  public boolean isFlowRate(Task task) {
+    // select any rate in the rate_schedule, e.g. the first:
+    Rate r = getRate(task);
+    return (r instanceof FlowRate);
+  }
+
   public Rate getRate(Task task) {
+    return getRate(task, getStartTime(task));
+  }
+
+  public Rate getRate(Task task, long time) {
+    return getRate(task, time, time);
+  }
+
+  public Rate getRate(Task task, long start, long end) {
+    // look for time-phased rate schedule
+    PrepositionalPhrase pp_rate = task.getPrepositionalPhrase(Constants.Preposition.DEMANDRATE);
+    if (pp_rate != null) {
+      Object indObj = pp_rate.getIndirectObject();
+      if (indObj instanceof Schedule) {
+        Schedule sched = (Schedule) indObj;
+        Collection rate_elems = 
+          (start == end ?
+           sched.getScheduleElementsWithTime(start) :
+           sched.getOverlappingScheduleElements(start, end));
+        int n = (rate_elems == null ? 0 : rate_elems.size());
+        if (n > 0) {
+          if (n == 1 || (start >= end)) {
+            // return the single matching rate
+            ObjectScheduleElement ose = (ObjectScheduleElement) 
+              rate_elems.iterator().next();
+            return (Rate) ose.getObject();
+          }
+          // compute the average rate for this timespan
+          Rate avgRate = null;
+          long prevStart = start;
+          Rate firstRate = null;
+          double totalQty = 0.0;
+          for (Iterator iter = rate_elems.iterator(); iter.hasNext(); ) {
+            ObjectScheduleElement ose = (ObjectScheduleElement) iter.next();
+            long st = Math.max(prevStart, ose.getStartTime());
+            long et = Math.min(ose.getEndTime(), end);
+            long time_spanned = (et - st);
+            if (time_spanned <= 0) {
+              continue;
+            }
+            prevStart = et;
+            Rate r = (Rate) ose.getObject();
+            if (firstRate == null) {
+              firstRate = r;
+            }
+            double dailyRate = getDailyQuantity(r);
+            if (Double.isNaN(dailyRate)) {
+              continue;
+            }
+            double qty = (dailyRate * ((double) time_spanned/TimeUtils.MSEC_PER_DAY));
+            totalQty += qty;
+          }
+          Duration dur = new Duration((end - start), Duration.MILLISECONDS);
+          if (firstRate instanceof FlowRate) {
+            Volume vol = new Volume(totalQty, Volume.GALLONS);
+            avgRate = new FlowRate(vol, dur);
+          } else if (firstRate instanceof CountRate) {
+            Count cnt = new Count(totalQty, Count.EACHES);
+            avgRate = new CountRate(cnt, dur);
+          } else if (firstRate instanceof MassTransferRate) {
+            Mass mass = new Mass(totalQty, Mass.SHORT_TONS);
+            avgRate = new MassTransferRate(mass, dur);
+          } else {
+            avgRate = null;
+          }
+          return avgRate;
+        }
+      }
+    }
+    // look for preference
     AspectValue best = getPreferenceBest(task, AlpineAspectType.DEMANDRATE);
-    if (best == null)
-      logger.error("TaskUtils.getRate(), Task is not Projection :"+taskDesc(task));
-    return ((AspectRate) best).getRateValue();
+    if (best != null) {
+      return ((AspectRate) best).getRateValue();
+    }
+    // not a projection?
+    return null;
   }
 
   public double getDailyQuantity(Task task) {
+    return getDailyQuantity(task, getEndTime(task));
+  }
+
+  public double getDailyQuantity(Task task, long time) {
+    return getDailyQuantity(task, time, time);
+  }
+
+  public double getDailyQuantity(Task task, long start, long end) {
     if (isProjection(task)) {
-      return getDailyQuantity(getRate(task));
+      return getDailyQuantity(getRate(task, start, end));
     } else {
       return getQuantity(task);
     }
   }
-
 
   public static double getDailyQuantity(Rate r) {
     if (r instanceof FlowRate) {
@@ -394,20 +482,17 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
   // per day, otherwise its eaches per millisecond and should be
   // multiplied correspondingly.
   public double convertResultsToDailyRate(Task task, double demandRate) {
-    if(isProjection(task)) {
-      Rate r = getRate(task);
-      if(!(r instanceof FlowRate)) {
-        return demandRate * TimeUtils.SEC_PER_DAY;
-      }
+    if (isProjection(task) && !isFlowRate(task)) {
+      return demandRate * TimeUtils.SEC_PER_DAY;
     }
     return demandRate;
   }
 
   public double getQuantity(Task task, AllocationResult ar) {
     if(isProjection(task)) {
-// 	  logger.warn("TaskUtils::getting qty from projection!");
+      // 	  logger.warn("TaskUtils::getting qty from projection!");
       return convertResultsToDailyRate(task,
-                                       getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
+          getARAspectValue(ar, AlpineAspectType.DEMANDRATE));
     }
     else {
       return getQuantity(ar);
@@ -426,35 +511,33 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
   }
 
   public double getTotalQuantity(Task task) {
-    return getTotalQuantity(task,getStartTime(task),getEndTime(task));   
+    return getTotalQuantity(task, getStartTime(task), getEndTime(task));   
   }
 
-
-  public double getTotalQuantity(Task task,long startTime, long endTime ) {
+  public double getTotalQuantity(Task task, long startTime, long endTime) {
     if (isProjection(task)) {
       double time_spanned = endTime - startTime;
-      if(time_spanned > 0) {
-	  Rate rate = getRate(task);
-	  Duration d = Duration.newMilliseconds((double)time_spanned);
-	  Scalar scalar = (Scalar)rate.computeNumerator(d);
-	  return getDouble(scalar);
+      if (time_spanned > 0) {
+        Rate rate = getRate(task, startTime, endTime);
+        Duration d = Duration.newMilliseconds((double) time_spanned);
+        Scalar scalar = (Scalar) rate.computeNumerator(d);
+        return getDouble(scalar);
       }
       else {
-	  return 0.0d;
+        return 0.0d;
       }
     } else {
       return getQuantity(task);
     }
   }
 
-  public double getTotalQuantity(Task task,double demandRate, long startTime, long endTime ) {
+  public double getTotalQuantity(Task task, double demandRate, long startTime, long endTime) {
     if (isProjection(task)) {
       double time_spanned = endTime - startTime;
-      if(time_spanned > 0) {
-        double dailyRate = convertResultsToDailyRate(task,demandRate);
+      if (time_spanned > 0) {
+        double dailyRate = convertResultsToDailyRate(task, demandRate);
         return (dailyRate * (time_spanned/TimeUtils.MSEC_PER_DAY));
-      }
-      else {
+      } else {
         return 0.0d;
       }
     } else {
@@ -498,11 +581,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       Task task = (Task)iterator.next();
       try {
         os_elements.add(new ObjectScheduleElement(getStartTime(task),
-                                                  getEndTime(task), task));
+              getEndTime(task), task));
       } catch (IllegalArgumentException iae) {
         if (logger.isErrorEnabled()) {
           logger.error("newObjectSchedule failed, start and end time is " + new Date(getStartTime(task)) +
-                       " for task " + task + "\n" + iae.getMessage());
+              " for task " + task + "\n" + iae.getMessage());
         }
       }
     }
@@ -534,7 +617,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return null;
   }
 
-    // Time Preference Utils
+  // Time Preference Utils
 
   /** Create a Time Preference for a Refill Task or a Demand Task
    *  Use a Piecewise Linear Scoring Function.
@@ -549,8 +632,8 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
    *  @return Preference The new Time Preference
    **/
   public Preference createTimePreference(long bestDay, long early, long end, int aspectType,
-                                         MessageAddress clusterId, PlanningFactory planningFactory,
-                                         LogisticsInventoryPG thePG) {
+      MessageAddress clusterId, PlanningFactory planningFactory,
+      LogisticsInventoryPG thePG) {
     double daysBetween;
     long late;
     if (thePG !=null) {
@@ -565,7 +648,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     // is handled below, where we skip adding the end AspectScorePoint
     if (daysBetween < 0.0) {
       if (logger.isWarnEnabled())
-	logger.warn(clusterId + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
+        logger.warn(clusterId + ".createTimePref had OplanEnd < bestDay! OplanEnd: " + new Date(end) + ". Best: " + new Date(bestDay));
     }
 
     //Use .0033 as a slope for now
@@ -584,11 +667,11 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
       points.addElement(earliest);
     } else if (bestDay == early) {
       if (logger.isInfoEnabled()) {
-	logger.info(clusterId + ".createTimePref skipping early point: best == early (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
+        logger.info(clusterId + ".createTimePref skipping early point: best == early (OplanStart)! bestDay: " + new Date(bestDay) + ". AspectType: " + aspectType);
       }
     } else {
       if (logger.isWarnEnabled()) {
-	logger.warn(clusterId + ".createTimePref skipping early point: best < early (OplanStart)! bestDay: " + new Date(bestDay) + ", early: " + new Date(early) + ". AspectType: " + aspectType);
+        logger.warn(clusterId + ".createTimePref skipping early point: best < early (OplanStart)! bestDay: " + new Date(bestDay) + ", early: " + new Date(early) + ". AspectType: " + aspectType);
       }
     }
 
@@ -612,56 +695,62 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return planningFactory.newPreference(aspectType, timeSF);
   }
 
-    /** copies a Supply task from another to split it**/
-    public NewTask copySupplyTask(Task origTask, long start, long end,
-                                  LogisticsInventoryPG invPG,
-                                  InventoryManager inventoryPlugin) {
+  /** copies a Supply task from another to split it**/
+  public NewTask copySupplyTask(Task origTask, long start, long end,
+      LogisticsInventoryPG invPG,
+      InventoryManager inventoryPlugin) {
 
-      NewTask task = inventoryPlugin.getPlanningFactory().newTask();
-      task.setVerb( origTask.getVerb());
-      task.setDirectObject( origTask.getDirectObject());
-      task.setParentTaskUID( origTask.getParentTaskUID() );
-      task.setContext( origTask.getContext() );
-      task.setPlan( origTask.getPlan() );
-      Enumeration pp = origTask.getPrepositionalPhrases();
-      Vector ppv = new Vector();
-      while(pp.hasMoreElements()) {
-        ppv.addElement(pp.nextElement());
-  }
-      NewPrepositionalPhrase newPP = inventoryPlugin.getPlanningFactory().newPrepositionalPhrase();
-      newPP.setPreposition("SplitTask");
-      ppv.add(newPP);
-      task.setPrepositionalPhrases(ppv.elements());
-      task.setPriority(origTask.getPriority());
-      task.setSource(inventoryPlugin.getClusterId() );
-      changeDatePrefs(task, start, end, inventoryPlugin, invPG);
-      // TODO: is this ok to to just add these prefs to the a vector?
-      // TODO: the changeDatePrefs clones the scoring function
-      Enumeration origPrefs = task.getPreferences();
-      Rate rate = getRate(origTask);
-      Vector newPrefs = new Vector();
-      Preference currentPref;
-      while (origPrefs.hasMoreElements()) {
-        currentPref = (Preference) origPrefs.nextElement();
-        newPrefs.add(currentPref);
+    NewTask task = inventoryPlugin.getPlanningFactory().newTask();
+    task.setVerb( origTask.getVerb());
+    task.setDirectObject( origTask.getDirectObject());
+    task.setParentTaskUID( origTask.getParentTaskUID() );
+    task.setContext( origTask.getContext() );
+    task.setPlan( origTask.getPlan() );
+    Enumeration pp = origTask.getPrepositionalPhrases();
+    Vector ppv = new Vector();
+    while(pp.hasMoreElements()) {
+      ppv.addElement(pp.nextElement());
+    }
+    NewPrepositionalPhrase newPP = inventoryPlugin.getPlanningFactory().newPrepositionalPhrase();
+    newPP.setPreposition("SplitTask");
+    ppv.add(newPP);
+    task.setPrepositionalPhrases(ppv.elements());
+    task.setPriority(origTask.getPriority());
+    task.setSource(inventoryPlugin.getClusterId() );
+    changeDatePrefs(task, start, end, inventoryPlugin, invPG);
+    // TODO: is this ok to to just add these prefs to the a vector?
+    // TODO: the changeDatePrefs clones the scoring function
+    Enumeration origPrefs = task.getPreferences();
+    Vector newPrefs = new Vector();
+    Preference currentPref;
+    while (origPrefs.hasMoreElements()) {
+      currentPref = (Preference) origPrefs.nextElement();
+      newPrefs.add(currentPref);
+    }
+    // old pref-style rate w/o rate_schedule
+    AspectValue rate_best = getPreferenceBest(task, AlpineAspectType.DEMANDRATE);
+    if (rate_best != null) {
+      Rate rate = ((AspectRate) rate_best).getRateValue();
+      if (rate != null) {
+        newPrefs.addElement(createDemandRatePreference(inventoryPlugin.getPlanningFactory(), rate));
       }
-      newPrefs.addElement(createDemandRatePreference(inventoryPlugin.getPlanningFactory(), rate));
-      // start and end from schedule element
+    }
+    // start and end from schedule element
 
-      task.setPreferences(newPrefs.elements());
-      return task;
-}
+    task.setPreferences(newPrefs.elements());
+    return task;
+  }
 
   public void changeDatePrefs(NewTask task, long start, long end,
-                              InventoryManager inventoryPlugin, LogisticsInventoryPG invPG) {
+      InventoryManager inventoryPlugin, LogisticsInventoryPG invPG) {
     Preference startPref = createTimePreference(start, inventoryPlugin.getOPlanArrivalInTheaterTime(),
-                                                inventoryPlugin.getOPlanEndTime(),
-                                                AspectType.START_TIME, inventoryPlugin.getClusterId(),
-                                                inventoryPlugin.getPlanningFactory(), invPG);
+        inventoryPlugin.getOPlanEndTime(),
+        AspectType.START_TIME, inventoryPlugin.getClusterId(),
+        inventoryPlugin.getPlanningFactory(), invPG);
     Preference endPref = createTimePreference(end, inventoryPlugin.getOPlanArrivalInTheaterTime(),
-                                              inventoryPlugin.getOPlanEndTime(),
-                                              AspectType.END_TIME, inventoryPlugin.getClusterId(),
-                                              inventoryPlugin.getPlanningFactory(), invPG);
+        inventoryPlugin.getOPlanEndTime(),
+        AspectType.END_TIME, inventoryPlugin.getClusterId(),
+        inventoryPlugin.getPlanningFactory(), invPG);
 
     Enumeration origPrefs = task.getPreferences();
     Preference currentPref, copiedPref;
@@ -669,10 +758,10 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     while (origPrefs.hasMoreElements()) {
       currentPref = (Preference) origPrefs.nextElement();
       if (! (currentPref.getAspectType() == AspectType.START_TIME ||
-          currentPref.getAspectType() == AspectType.END_TIME)) {
+            currentPref.getAspectType() == AspectType.END_TIME)) {
         copiedPref = inventoryPlugin.getPlanningFactory().
-            newPreference(currentPref.getAspectType(),
-                          (ScoringFunction)currentPref.getScoringFunction().clone());
+          newPreference(currentPref.getAspectType(),
+              (ScoringFunction)currentPref.getScoringFunction().clone());
         newPrefs.add(copiedPref);
       }
     }
@@ -683,39 +772,39 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     }
   }
 
-   public Collection splitProjection(Task task, List howToSplit,
-                                       InventoryManager invPlugin) {
-     ArrayList newSplitTasks = new ArrayList();
-     Asset asset = task.getDirectObject();
-     Inventory inventory = invPlugin.findOrMakeInventory(asset);
-     LogisticsInventoryPG invPG = (LogisticsInventoryPG)
-         inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
-     //remove the orig task from the BG - we'll re-add after the split
-     invPG.removeRefillProjection(task);
-     Iterator tsIt = howToSplit.iterator();
-     TimeSpan first = (TimeSpan) tsIt.next();
-     //first element from howToSplit is the one to reuse the allocation
-     long startOfSplit = first.getStartTime();
-     long endOfSplit = first.getEndTime();
-     TimeSpan second = (TimeSpan) tsIt.next();
-     long startOfSecondSplit = second.getStartTime();
-     long endOfSecondSplit = second.getEndTime();
-     if (task.getPlanElement() != null) {
-       changeDatePrefs((NewTask)task, startOfSplit, endOfSplit, invPlugin, invPG);
-       invPG.addRefillProjection(task);
-       invPlugin.publishChange(task);
-       //add the changed list to newSplitTasks to be sent to the ExtAlloc so it can update its estimated result
-       newSplitTasks.add(task);
-       newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
-     } else {
-       newSplitTasks.add(makeNewSplit(task, startOfSplit, endOfSplit, invPG, invPlugin, inventory));
-       newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
-     }
-     return newSplitTasks;
-   }
+  public Collection splitProjection(Task task, List howToSplit,
+      InventoryManager invPlugin) {
+    ArrayList newSplitTasks = new ArrayList();
+    Asset asset = task.getDirectObject();
+    Inventory inventory = invPlugin.findOrMakeInventory(asset);
+    LogisticsInventoryPG invPG = (LogisticsInventoryPG)
+      inventory.searchForPropertyGroup(LogisticsInventoryPG.class);
+    //remove the orig task from the BG - we'll re-add after the split
+    invPG.removeRefillProjection(task);
+    Iterator tsIt = howToSplit.iterator();
+    TimeSpan first = (TimeSpan) tsIt.next();
+    //first element from howToSplit is the one to reuse the allocation
+    long startOfSplit = first.getStartTime();
+    long endOfSplit = first.getEndTime();
+    TimeSpan second = (TimeSpan) tsIt.next();
+    long startOfSecondSplit = second.getStartTime();
+    long endOfSecondSplit = second.getEndTime();
+    if (task.getPlanElement() != null) {
+      changeDatePrefs((NewTask)task, startOfSplit, endOfSplit, invPlugin, invPG);
+      invPG.addRefillProjection(task);
+      invPlugin.publishChange(task);
+      //add the changed list to newSplitTasks to be sent to the ExtAlloc so it can update its estimated result
+      newSplitTasks.add(task);
+      newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
+    } else {
+      newSplitTasks.add(makeNewSplit(task, startOfSplit, endOfSplit, invPG, invPlugin, inventory));
+      newSplitTasks.add(makeNewSplit(task, startOfSecondSplit, endOfSecondSplit, invPG, invPlugin, inventory));
+    }
+    return newSplitTasks;
+  }
 
   private Task makeNewSplit(Task task, long startOfSplit, long endOfSplit, LogisticsInventoryPG invPG,
-                            InventoryManager invPlugin, Inventory inventory) {
+      InventoryManager invPlugin, Inventory inventory) {
     Task newSplitTask = copySupplyTask(task, startOfSplit, endOfSplit, invPG, invPlugin);
     if (logger.isDebugEnabled()) {
       logger.debug("Made a new split task with dates of: "+ new Date(startOfSplit) + "..." + new Date(endOfSplit));
@@ -726,5 +815,483 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
     return newSplitTask;
   }
 
-}
+  public long getReportedStartTime(Task task) {
+    PlanElement pe = task.getPlanElement();
+    // If the task has no plan element then return the StartTime Pref
+    if (pe == null) {
+      return getStartTime(task);
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    } else if (!ar.isSuccess()) {
+      return getStartTime(task);
+    }
+    return (long) getStartTime(ar);
+  }
 
+  public long getReportedEndTime(Task task) {
+    PlanElement pe = task.getPlanElement();
+    // If the task has no plan element then return the EndTime Pref
+    if (pe == null) {
+      return getEndTime(task);
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    }
+    // make sure that we got atleast a valid reported OR estimated allocation result
+    if (ar != null) {
+      if (!ar.isSuccess()) {
+        getEndTime(task); // bug?
+      }
+      double resultTime;
+      // make sure END_TIME is specified - otherwise use START_TIME
+      // UniversalAllocator plugin only gives start times
+      if (ar.isDefined(AspectType.END_TIME)) {
+        resultTime = ar.getValue(AspectType.END_TIME);
+      } else {
+        resultTime = ar.getValue(AspectType.START_TIME);
+      }
+      return (long) resultTime;
+    } else {
+      // if for some reason we have a pe but no ar return the pref
+      return getEndTime(task);
+    }
+  }
+
+  public double calculateDemand(Task t, long minStart, long maxEnd) {
+    if (isProjection(t)) {
+      long start = Math.max(getReportedStartTime(t), minStart);
+      long end = Math.min(getReportedEndTime(t), maxEnd);
+      return getTotalQuantity(t, start, end);
+    }
+    long taskEnd = getEndTime(t);
+    if ((taskEnd < minStart) || (taskEnd > maxEnd)) {
+      return 0.0d;
+    }
+    return getQuantity(t);
+  }
+
+  public double calculateFilled(Task t, long minStart, long maxEnd) {
+    PlanElement pe = t.getPlanElement();
+    AllocationResult ar = null;
+    if (pe != null) {
+      ar = pe.getReportedResult();
+      if (ar == null) {
+        ar = pe.getEstimatedResult();
+      }
+    }
+    if (isProjection(t)) {
+      long start = Math.max(getReportedStartTime(t), minStart);
+      long end = Math.min(getReportedEndTime(t), maxEnd);
+      if (ar != null && !ar.isSuccess()) {
+        return 0.0d;
+      }
+      double taskQty = getTotalQuantity(t, start, end);
+      if (ar == null || !ar.isPhased()) {
+        return taskQty;
+      }
+
+      int[] ats = ar.getAspectTypes();
+      int rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+      int startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+      int endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+
+      double totalQty=0;
+      for (Enumeration phasedResults = ar.getPhasedResults();
+          phasedResults.hasMoreElements();
+          ) {
+        double[] results = (double[]) phasedResults.nextElement();
+        double phaseRate = results[rateInd];
+        double phaseStart = results[startInd];
+        double phaseEnd = results[endInd];
+        start = Math.max((long) phaseStart, minStart);
+        end = Math.min((long) phaseEnd, maxEnd);
+        totalQty += getTotalQuantity(t, phaseRate, start, end);
+      }
+      return totalQty;
+    }
+    long taskEnd = getEndTime(t);
+    if ((taskEnd < minStart) || (taskEnd > maxEnd)) {
+      return 0.0d;
+    }
+
+    if (ar == null) {
+      return getQuantity(t);
+    }
+    if (!ar.isPhased()) {
+      if (ar.isSuccess()) {
+        double arEnd = getEndTime(ar);
+        double taskQty = getQuantity(t, ar);
+        if ((arEnd >= minStart) && (arEnd <= maxEnd)) {
+          return taskQty;
+        }
+      }
+      return 0.0d;
+    }
+
+    int[] ats = ar.getAspectTypes();
+    int qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+    int endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+
+    double totalQty=0;
+    for (Enumeration phasedResults = ar.getPhasedResults(); phasedResults.hasMoreElements();) {
+      double[] results = (double[]) phasedResults.nextElement();
+      double phaseQty = results[qtyInd];
+      double phaseEnd = results[endInd];
+      if (phaseEnd <= maxEnd) {
+        totalQty += phaseQty;
+      }
+    }
+    return totalQty;
+  }
+
+  public boolean isProjFailure(Task t, long minStart, boolean includeTemps) {
+    PlanElement pe = t.getPlanElement();
+    if (pe == null) {
+      return false;
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    }
+    if (ar == null) {
+      return false;
+    }
+    if (ar.isSuccess() && (!includeTemps || !ar.isPhased())) {
+      return false;
+    }
+    int[] ats = ar.getAspectTypes();
+    int rateInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+    if (rateInd < 0) {
+      // no rate response, assume success?
+      return false;
+    }
+
+    long start = 
+      Math.max(
+          getReportedStartTime(t),
+          minStart);
+    long end = getReportedEndTime(t);
+    double taskTotal = getTotalQuantity(t, start, end);
+    if ((!ar.isSuccess()) && (taskTotal > 0)) {
+      return true;
+    }
+    if (!includeTemps || !ar.isPhased()) {
+      return false;
+    }
+
+    int startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+    int endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+
+    double totalQty = 0;
+    long maxPhaseEnd = 0;
+
+    for (Enumeration phasedResults = ar.getPhasedResults();
+        phasedResults.hasMoreElements();
+        ) {
+      double[] results = (double[]) phasedResults.nextElement();
+      double phaseRate = results[rateInd];
+      double phaseStart = results[startInd];
+      double phaseEnd = results[endInd];
+      long arStart = Math.max((long) phaseStart, start);
+      //long arEnd = (long) Math.min(end, (long) phaseEnd);
+      totalQty += getTotalQuantity(t, phaseRate, arStart, (long) phaseEnd);
+      maxPhaseEnd = Math.max((long) phaseEnd, maxPhaseEnd);
+    }
+    // When doing all this addition of double rates some precision is lost so we
+    // need a small offset to avoid "false shortfalls".
+    double offset = 0.001d;
+    if (taskTotal > (totalQty + offset)) {
+      return true;
+    } else if (maxPhaseEnd > getEndTime(t)) {
+      return true;
+    }
+    return false;
+  }
+
+  public boolean isActualShortfall(Task t, boolean includeTemps) {
+    PlanElement pe = t.getPlanElement();
+    if (pe == null) {
+      return false;
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    }
+    if ((ar == null) || isProjection(t)) {
+      return false;
+    }
+    if (!ar.isSuccess()) {
+      return true;
+    }
+    double unfilled=0;
+    double arEndTime=0;
+    double taskEndTime = getEndTime(t);
+
+    if (!ar.isPhased()) {
+      unfilled = getQuantity(t) - getQuantity(ar);
+      arEndTime = getEndTime(ar);
+    } else {
+      int[] ats = ar.getAspectTypes();
+      int qtyInd = -1;
+      int endInd = -1;
+      double totalQty=0;
+      qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+      endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+      Enumeration phasedResults = ar.getPhasedResults();
+      while (phasedResults.hasMoreElements()) {
+        double[] results = (double[]) phasedResults.nextElement();
+        if (qtyInd != -1) {
+          totalQty += results[qtyInd];
+        } else {
+          totalQty = getQuantity(t);
+        }
+        double endTime = 
+          (endInd == -1 ? taskEndTime : results[endInd]);
+        arEndTime = Math.max(arEndTime,endTime);
+      }
+      unfilled = getQuantity(t) - totalQty;
+    }
+    double offset = 0.001d;
+    if ((unfilled - offset) > 0) {
+      return true;
+    } else if (includeTemps && (arEndTime > taskEndTime)) {
+      return true;
+    }
+    return false;
+  }
+
+  public double getGrantedQuantity(Task t) {
+    PlanElement pe = t.getPlanElement();
+    if (pe == null) {
+      return 0;
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    }
+    double taskQty;
+    if (ar == null) {
+      taskQty = getTotalQuantity(t);
+    } else if (isProjection(t)) {
+      if (ar.isSuccess()) {
+        taskQty = 0;
+      } else {
+        taskQty = getTotalQuantity(t);
+      }
+    } else {
+      taskQty = getQuantity(ar);
+    }
+    return taskQty;
+  }
+
+  public double getActualDemand(Task task, long startTime, long endTime, long minStart) {
+    if (!isProjection(task)) {
+      return getQuantity(task);
+    }
+    long start = (long) getPreferenceBestValue(task, AspectType.START_TIME);
+    long end = (long) getPreferenceBestValue(task, AspectType.END_TIME);
+    start = Math.max(start, minStart);
+    if ((start >= end) || (start >= endTime - 1)) {
+      // task is not in this interval
+      return 0.0;
+    }
+    // get the time spanned (if any) for this task within the specified bucket
+    long interval_start = Math.max(start, startTime);
+    long interval_end = Math.min(end, endTime);
+    long time_spanned = interval_end - interval_start;
+    // add quantity for overlapping timespan
+    Rate rate = getRate(task, interval_start, interval_end);
+    try {
+      Scalar scalar = (Scalar)
+        rate.computeNumerator(Duration.newMilliseconds((double) time_spanned));
+      return getDouble(scalar);
+    } catch (Exception e) {
+      if (logger.isErrorEnabled()) {
+        logger.error(taskDesc(task)+
+            " Start: "+(new Date(start))+
+            " time_spanned: "+time_spanned);
+      }
+      return 0.0;
+    }
+  }
+
+  public Collection getDailyQuantities(Task task) {
+    if (task == null) {
+      return null;
+    }
+
+    long startTime = -1;
+    if (getPreferenceBest(task, AspectType.START_TIME) != null) {
+      startTime = getStartTime(task);
+    }
+
+    long endTime = getEndTime(task);
+    if (startTime == -1) {
+      startTime = endTime - 1;
+    }
+
+    double dailyRate = 0.0d;
+
+    if (!isProjection(task)) {
+      dailyRate = getQuantity(task);
+    } else {
+      Rate rate = null;
+
+      PrepositionalPhrase pp_rate = task.getPrepositionalPhrase(Constants.Preposition.DEMANDRATE);
+      if (pp_rate != null) {
+        Object indObj = pp_rate.getIndirectObject();
+        if (indObj instanceof Schedule) {
+          Schedule sched = (Schedule) indObj;
+          Collection rate_elems = 
+            sched.getOverlappingScheduleElements(startTime, endTime);
+          int n = (rate_elems == null ? 0 : rate_elems.size());
+          if (n == 1) {
+            rate = (Rate) rate_elems.iterator().next();
+          } else if (n > 1) {
+            // return a schedule of daily rates
+            List ret = new ArrayList(n);
+            for (Iterator iter = rate_elems.iterator(); iter.hasNext(); ) {
+              ObjectScheduleElement ose = (ObjectScheduleElement) iter.next();
+              Rate r = (Rate) ose.getObject();
+              double d = getDailyQuantity(r);
+              ScheduleElement se = 
+                new QuantityScheduleElementImpl(
+                    ose.getStartTime(),
+                    ose.getEndTime(),
+                    d);
+              ret.add(se);
+            }
+            return ret;
+          }
+        }
+      }
+
+      if (rate != null) {
+        AspectValue best = getPreferenceBest(task, AlpineAspectType.DEMANDRATE);
+        if (best != null) {
+          rate = ((AspectRate) best).getRateValue();
+        }
+      }
+
+      if (rate != null) {
+        dailyRate = getDailyQuantity(rate);
+      }
+    }
+
+    ScheduleElement se = new QuantityScheduleElementImpl(startTime, endTime, dailyRate);
+    return Collections.singleton(se);
+  }
+
+
+  public Collection getReportedDailyQuantities(Task task) {
+    if (task == null) {
+      return null;
+    }
+    PlanElement pe = task.getPlanElement();
+    if (pe == null) {
+      return null;
+    }
+    AllocationResult ar = pe.getReportedResult();
+    if (ar == null) {
+      ar = pe.getEstimatedResult();
+    }
+    if (ar == null) {
+      return null;
+    }
+    return getReportedDailyQuantities(task, ar);
+  }
+
+  // This function is based heavily off of logAllocationResult in the
+  // LogisticsInventoryFormatter
+  public Collection getReportedDailyQuantities(Task task, AllocationResult ar) {
+    if (! ar.isSuccess()) {
+      // logger.warn("Allocation Result was failure. Not returning.");
+      return null;
+    }
+
+    if (!ar.isPhased()) {
+      long endTime = (long) getEndTime(ar);
+      long startTime = 0;
+
+      if (isProjection(task)) {
+        startTime = (long) getStartTime(ar);
+        if (startTime == endTime) {
+          startTime = endTime - 1;
+        }
+      } else {
+        // if supply or withdraw task then we don't have a start time
+        startTime = endTime - 1;
+      }
+      if (startTime == endTime) {
+        startTime = endTime - 1;
+      }
+
+      double quantity = 0;
+      try {
+        quantity = getQuantity(task, ar);
+      } catch (RuntimeException re) {
+        throw re;
+      }
+
+      return Collections.singleton(new QuantityScheduleElementImpl(startTime, endTime, quantity));
+    }
+
+    Collection returnQSEs = new HashSet();
+
+    int[] ats = ar.getAspectTypes();
+    int qtyInd = -1;
+    if (isProjection(task)) {
+      qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AlpineAspectType.DEMANDRATE);
+    } else {
+      qtyInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.QUANTITY);
+    }
+    int startInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.START_TIME);
+    int endInd = LogisticsInventoryFormatter.getIndexForType(ats, AspectType.END_TIME);
+    Enumeration phasedResults = ar.getPhasedResults();
+    while (phasedResults.hasMoreElements()) {
+      double[] results = (double[]) phasedResults.nextElement();
+      long startTime = 0;
+      if (startInd != -1) {
+        startTime = (long) results[startInd];
+      }
+      long endTime = 0;
+      if (endInd == -1) {
+        /** MWD The following line of code which replaces the
+         *  allocation result end time with the task end time
+         *  is only due to a current error in the
+         *  UniversalAllocator.   The UA is only setting
+         *  the start time in the allocation result. There
+         *  is a bug in and when the UA is fixed this line
+         *  of code should be removed. If there is no end time
+         *  in the allocation result, none should be appended.
+         *  GUI needs the end
+         *  times for the rates.
+         */
+        endTime = getEndTime(task);
+      } else {
+        endTime = (long) results[endInd];
+      }
+      if ((qtyInd < 0) || (qtyInd >= results.length)) {
+        // logger.error("qtyInd is " + qtyInd + " - No Qty in this phase of allocation results:");
+        continue;
+      }
+      double dailyRate = convertResultsToDailyRate(task, results[qtyInd]);
+      double quantity = dailyRate;
+
+      if (startTime == 0) {
+        startTime = endTime - 1;
+      }
+      if (startTime > endTime) {
+        // logger.error("Error - start time can't be later than end time");
+        continue;
+      }
+      // logger.warn("2nd Method adding (" + startTime + ", " + endTime + ", " + quantity + ")");
+      returnQSEs.add(new QuantityScheduleElementImpl(startTime, endTime, quantity));
+    }
+    // logger.warn("AR Was Null. Result of " + returnQSEs.size() + " is alternate method");
+    return returnQSEs;
+  }
+}

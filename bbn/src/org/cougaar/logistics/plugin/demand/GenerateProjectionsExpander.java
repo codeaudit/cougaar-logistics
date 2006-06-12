@@ -26,8 +26,10 @@
 
 package org.cougaar.logistics.plugin.demand;
 
+import org.cougaar.glm.ldm.plan.AlpineAspectType;
 import org.cougaar.glm.ldm.plan.GeolocLocation;
 import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
+import org.cougaar.glm.ldm.plan.PlanScheduleElementType;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.logistics.plugin.inventory.MaintainedItem;
 import org.cougaar.logistics.plugin.utils.ScheduleUtils;
@@ -52,6 +54,10 @@ import java.util.*;
  **/
 
 public class GenerateProjectionsExpander extends DemandForecastModule implements GenProjExpanderIfc {
+
+  private static final boolean USE_RATE_SCHEDULE = 
+    Boolean.getBoolean("org.cougaar.logistics.plugin.demand.gpExp.useRateSchedule");
+
   private String myOrgName = null;
 
   public GenerateProjectionsExpander(DemandForecastPlugin dfPlugin) {
@@ -143,50 +149,77 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
   protected Collection buildTaskList(PropertyGroup pg, Collection items,
                                    Schedule schedule, Task gpTask,
                                    Asset consumer) {
-    List subTasks = new ArrayList();
-    Asset consumedItem;
-
-    if (schedule == null) {
-      return subTasks;
+    if (schedule == null || items.isEmpty()) {
+      return Collections.EMPTY_LIST;
     }
 
+    List subTasks = new ArrayList(items.size());
+    for (Iterator iterator = items.iterator(); iterator.hasNext();) {
+      Asset consumedItem = (Asset) iterator.next();
 
+      if (USE_RATE_SCHEDULE) {
+        Schedule rate_schedule =
+          buildRateSchedule(pg, consumedItem, schedule, consumer);
 
-    if (!items.isEmpty()) {
-      for (Iterator iterator = items.iterator(); iterator.hasNext();) {
-        consumedItem = (Asset) iterator.next();
-
-        Enumeration scheduleElements = schedule.getAllScheduleElements();
-        Rate rate;
-        // for every item consumed, walk the schedule elements and get the rates
-        while (scheduleElements.hasMoreElements()) {
-          ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
-          rate = getRate(pg, consumedItem, (List) ose.getObject());
-          // A null rate can happen at both ends of the schedule where the MEI
-          // is available but there is no matching org act for the time period.
-          // (if the orgact is null then the bg returns a null rate)
-          if (rate == null)  {
-            continue;
-          }
-          if (getTaskUtils().getDailyQuantity(rate) <= 0.0) {
-            if (logger.isWarnEnabled()) {
-              logger.warn(getAssetUtils().getAssetIdentifier(consumedItem)+" on "+
-                          getAssetUtils().getAssetIdentifier(consumer)+" has a zero rate for period "+
-                          getTimeUtils().dateString(ose.getStartTime())+" - "+
-                          getTimeUtils().dateString(ose.getEndTime()));
-            }
-            continue;
-          }
-	  if(logger.isInfoEnabled()) {
-	    logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
-		      " rate "+getDailyQuantity(rate));
-	  }
-          subTasks.add(createProjectSupplyTask(gpTask, consumer, consumedItem, ose.getStartTime(),
-                                               ose.getEndTime(), rate));
-        }
+        subTasks.add(
+            createProjectSupplyTask(
+              gpTask, consumer, consumedItem,
+              rate_schedule));
+      } else {
+        // old style
+        subTasks.addAll(
+            createProjectSupplyTasks(
+              gpTask, consumer, consumedItem,
+              pg, schedule));
       }
     }
     return subTasks;
+  }
+
+  protected Schedule buildRateSchedule(
+      PropertyGroup pg, Asset consumedItem,
+      Schedule schedule, Asset consumer) {
+
+    List rate_schedule_elements = new ArrayList();
+
+    Enumeration scheduleElements = schedule.getAllScheduleElements();
+    while (scheduleElements.hasMoreElements()) {
+      ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
+      Rate rate = getRate(pg, consumedItem, getRateParams(ose));
+      // A null rate can happen at both ends of the schedule where the MEI
+      // is available but there is no matching org act for the time period.
+      // (if the orgact is null then the bg returns a null rate)
+      if (rate == null)  {
+        continue;
+      }
+      if (getTaskUtils().getDailyQuantity(rate) <= 0.0) {
+        if (logger.isWarnEnabled()) {
+          logger.warn(getAssetUtils().getAssetIdentifier(consumedItem)+" on "+
+              getAssetUtils().getAssetIdentifier(consumer)+" has a zero rate for period "+
+              getTimeUtils().dateString(ose.getStartTime())+" - "+
+              getTimeUtils().dateString(ose.getEndTime()));
+        }
+        continue;
+      }
+      if (logger.isInfoEnabled()) {
+        logger.info("checking Rate on "+dfPlugin.getAssetUtils().getAssetIdentifier(consumedItem)+
+            " rate "+getDailyQuantity(rate));
+      }
+      ObjectScheduleElement rse = 
+        new ObjectScheduleElement(ose.getStartTime(), ose.getEndTime(), rate);
+      rate_schedule_elements.add(rse);
+    }
+
+    ScheduleImpl rate_schedule = new ScheduleImpl();
+    rate_schedule.setScheduleElementType(PlanScheduleElementType.OBJECT);
+    rate_schedule.setScheduleType(ScheduleType.OTHER);
+    rate_schedule.setScheduleElements(rate_schedule_elements);
+
+    return rate_schedule;
+  }
+  
+  protected List getRateParams(ObjectScheduleElement ose) {
+    return (List) ose.getObject();
   }
 
   protected Asset convertAggregateToAsset(Asset consumer) {
@@ -196,16 +229,20 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     return consumer;
   }
 
-  /** Create FOR, TO, MAINTAIN, and OFTYPE prepositional phrases
+  /** Create FOR, TO, MAINTAIN, OFTYPE, and DEMANDRATE prepositional phrases
    *  for use by the subclasses.
    * @param consumer the consumer the task supports
    * @return Vector of PrepostionalPhrases
    **/
-  protected Vector createPrepPhrases(Object consumer, Task parentTask, long end) {
+  protected Vector createPrepPhrases(Object consumer, Task parentTask, long end, Schedule rate_schedule) {
     Vector prepPhrases = new Vector();
 
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.OFTYPE, dfPlugin.getSupplyType()));
     prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.FOR, getOrgName()));
+
+    if (rate_schedule != null) {
+      prepPhrases.addElement(newPrepositionalPhrase(Constants.Preposition.DEMANDRATE, rate_schedule));
+    }
 
     createGeolocPrepPhrases(parentTask, end, prepPhrases);
 
@@ -297,23 +334,82 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     dfPlugin.publishChange(expansion);
   }
 
-  protected NewTask createProjectSupplyTask(Task parentTask, Asset consumer, Asset consumedItem, long start,
-                                          long end, Rate rate) {
+  // old style, remove when we remove !USE_RATE_SCHEDULE
+  private Collection createProjectSupplyTasks(
+      Task parentTask, Asset consumer, Asset consumedItem,
+      PropertyGroup pg, Schedule schedule) {
+    List subTasks = new ArrayList();
+    Enumeration scheduleElements = schedule.getAllScheduleElements();
+    while (scheduleElements.hasMoreElements()) {
+      ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
+      Rate rate = getRate(pg, consumedItem, getRateParams(ose));
+      if (rate == null) {
+        continue;
+      }
+
+      long start = ose.getStartTime();
+      long end = ose.getEndTime();
+
+      NewTask newTask = getPlanningFactory().newTask();
+      newTask.setParentTask(parentTask);
+      newTask.setPlan(parentTask.getPlan());
+      newTask.setDirectObject(consumedItem);
+      newTask.setVerb(Verb.get(Constants.Verb.PROJECTSUPPLY));
+      //newTask.setCommitmentDate(new Date(start));
+      Vector prefs = new Vector();
+      prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
+      // start and end from schedule element
+      prefs.addElement(getTaskUtils().createTimePreference(start,
+            dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
+            AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
+      prefs.addElement(getTaskUtils().createTimePreference(end,
+            dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
+            AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
+
+      newTask.setPreferences(prefs.elements());
+      Vector childPhrases = createPrepPhrases(consumer, parentTask, end, null);
+      newTask.setPrepositionalPhrases(childPhrases.elements());
+
+      subTasks.add(newTask);
+    }
+    return subTasks;
+  }
+
+  /** @deprecated */
+  protected NewTask createProjectSupplyTask(
+      Task parentTask, Asset consumer, Asset consumedItem,
+      long start, long end, Rate rate) {
+    ObjectScheduleElement rse = new ObjectScheduleElement(start, end, rate);
+    ScheduleImpl rate_schedule = new ScheduleImpl();
+    rate_schedule.setScheduleElementType(PlanScheduleElementType.OBJECT);
+    rate_schedule.setScheduleType(ScheduleType.OTHER);
+    rate_schedule.setScheduleElements(Collections.singleton(rse));
+    return createProjectSupplyTask(parentTask, consumer, consumedItem, rate_schedule);
+  }
+
+  protected NewTask createProjectSupplyTask(
+      Task parentTask, Asset consumer, Asset consumedItem,
+      Schedule rate_schedule) {
     //logger.info("GenerateProjectionsExpander create ProjectSupply Task " + dfPlugin.getClusterId());
     NewTask newTask = getPlanningFactory().newTask();
     newTask.setParentTask(parentTask);
     newTask.setPlan(parentTask.getPlan());
     newTask.setDirectObject(consumedItem);
     newTask.setVerb(Verb.get(Constants.Verb.PROJECTSUPPLY));
-    //newTask.setCommitmentDate(new Date(start));
-    Vector prefs = new Vector();
-    prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
     // start and end from schedule element
-    prefs.addElement(getTaskUtils().createTimePreference(start, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
-    prefs.addElement(getTaskUtils().createTimePreference(end, dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(), AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
+    long start = rate_schedule.getStartTime();
+    long end = rate_schedule.getEndTime();
+    //newTask.setCommitmentDate(new Date(start));
+    Vector prefs = new Vector(2);
+    prefs.addElement(getTaskUtils().createTimePreference(start,
+          dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
+          AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
+    prefs.addElement(getTaskUtils().createTimePreference(end,
+          dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
+          AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
 
     newTask.setPreferences(prefs.elements());
-    Vector childPhrases = createPrepPhrases(consumer, parentTask, end);
+    Vector childPhrases = createPrepPhrases(consumer, parentTask, end, rate_schedule);
     newTask.setPrepositionalPhrases(childPhrases.elements());
 
     return newTask;
@@ -509,6 +605,15 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (published_task != null && new_task != null) {
       // Depending upon whether the rate is equal set the end time of the published task to the start or
       // end time of the new task
+      if (USE_RATE_SCHEDULE) {
+        // FIXME compare rate schedules, publish change w/ change report instead of
+        // replacing the entire task.  we may need the report to say the old rate_sched, or
+        // maybe the UAInvPi can examine its buckets and figure this out.  the important point
+        // is that we don't want to redo out our entire plan on the slightest orgAct change.
+        logger.warn(
+            "TODO: compare rate schedules on old task "+published_task.getUID()+
+            " and new task "+new_task.getUID());
+      }
       Rate new_rate = getTaskUtils().getRate(new_task);
       if (new_rate.equals(getTaskUtils().getRate(published_task))) {
         // check end times not the same
