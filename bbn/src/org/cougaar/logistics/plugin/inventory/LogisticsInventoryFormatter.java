@@ -175,22 +175,25 @@ public class LogisticsInventoryFormatter {
     if (aTask == null) {
       return;
     }
+    Collection rateSchedule = taskUtils.getDailyQuantities(aTask);
+    Iterator rateScheduleIt = rateSchedule.iterator();
+    while(rateScheduleIt.hasNext()) {
+    QuantityScheduleElement rateElement = (QuantityScheduleElement) rateScheduleIt.next();
     String taskStr = buildTaskPrefixString(aTask);
-    long startTime = -1;
-    if (TaskUtils.getPreferenceBest(aTask, AspectType.START_TIME) == null) {
+    long startTime = rateElement.getStartTime();
+    if (startTime < 0) {
       taskStr += ",";
     } else {
-      startTime = TaskUtils.getStartTime(aTask);
       if (isCountedTask &&
-          (TaskUtils.isProjection(aTask))) {
+          (taskUtils.isProjection(aTask))) {
         startTime = logInvPG.getEffectiveProjectionStart(aTask, startTime);
       }
       taskStr = taskStr + getDateString(startTime, expandTimestamp) + ",";
     }
-    taskStr = taskStr + getDateString(TaskUtils.getEndTime(aTask), expandTimestamp) + ",";
+    taskStr = taskStr + getDateString(rateElement.getEndTime(), expandTimestamp) + ",";
     try {
       //This is qty for supply, daily rate for projection
-      double dQuantity = taskUtils.getDailyQuantity(aTask);
+      double dQuantity = rateElement.getQuantity();
       if (!expandTimestamp) {
         long dbits = Double.doubleToLongBits(dQuantity);
         taskStr = taskStr + Long.toHexString(dbits);
@@ -218,7 +221,7 @@ public class LogisticsInventoryFormatter {
           nomenclature = itemId;
         }
         String errorString = "Assertion Botch: start time: " + getDateString(startTime, true);
-        errorString += (" end time: " + getDateString(TaskUtils.getEndTime(aTask), true));
+        errorString += (" end time: " + getDateString(org.cougaar.logistics.plugin.inventory.TaskUtils.getEndTime(aTask), true));
         errorString += (" UID: " + aTask.getUID());
         errorString += (" NSN: " + itemId + ":" + nomenclature);
         errorString += (" at Org " + orgId + " ");
@@ -232,9 +235,11 @@ public class LogisticsInventoryFormatter {
         throw re;  // re-throw for now
       }
     }
-
     writeln(taskStr);
+    }
   }
+
+
 
   protected void logAllocationResults(ArrayList tasks, long aCycleStamp, boolean expandTimestamp, boolean isCountedAR) {
     cycleStamp = aCycleStamp;
