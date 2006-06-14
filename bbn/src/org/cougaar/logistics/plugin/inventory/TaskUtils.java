@@ -1149,7 +1149,9 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
             sched.getOverlappingScheduleElements(startTime, endTime);
           int n = (rate_elems == null ? 0 : rate_elems.size());
           if (n == 1) {
-            rate = (Rate) rate_elems.iterator().next();
+            ObjectScheduleElement ose = (ObjectScheduleElement) 
+              rate_elems.iterator().next();
+            rate = (Rate) ose.getObject();
           } else if (n > 1) {
             // return a schedule of daily rates
             List ret = new ArrayList(n);
@@ -1169,7 +1171,7 @@ public class TaskUtils extends PluginHelper implements Serializable { // revisit
         }
       }
 
-      if (rate != null) {
+      if (rate == null) {
         AspectValue best = getPreferenceBest(task, AlpineAspectType.DEMANDRATE);
         if (best != null) {
           rate = ((AspectRate) best).getRateValue();
