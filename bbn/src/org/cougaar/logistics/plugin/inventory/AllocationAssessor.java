@@ -68,10 +68,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   }
 
   public class TaskDeficit {
-//    TODO: MWD
-//    public ArrayList allocated = new ArrayList();
-//    public AllocPhase lastPhase;
-//    public double remainingQty;
+
 
     public Task task;
     public Task getTask (){
@@ -158,24 +155,10 @@ public class AllocationAssessor extends InventoryLevelGenerator {
       return allPhases;
     }
 
-// TODO Remove OK? MWD?
-//    public double getBestBucketQty(long time) {
-//      Rate r = getTaskUtils().getRate(task, time);
-//      return getQuantityForDuration(r, thePG.getBucketMillis());
-//    }
-//
-//    public double getQuantityForDuration(Rate r, long duration){
-//        Duration d = Duration.newMilliseconds(duration);
-//        Scalar scalar = (Scalar) r.computeNumerator(d);
-//        return getTaskUtils().getDouble(scalar);
-//    }
 
 
       public TaskDeficit(Task withdraw, int currentBucket, double qty, LogisticsInventoryPG thePG) {
         task = withdraw;
-        //TODO MWD Remove
-//        lastPhase = null;
-//        remainingQty=qty;
         this.thePG=thePG;
         initializeRateBlocks();
         setRemainingQty(currentBucket,qty);
@@ -213,12 +196,6 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     public ArrayList allocated = new ArrayList();
     public AllocPhase lastPhase;
 
-//TODO: MWD Remove?
-//    public Task task;
-//    public Task getTask (){
-//      return task;
-//    }
-//    LogisticsInventoryPG thePG;
     public double remainingQty;
     public double getRemainingQty(){
       return remainingQty;
