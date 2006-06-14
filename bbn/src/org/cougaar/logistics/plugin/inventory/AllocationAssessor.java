@@ -31,16 +31,11 @@ import java.util.*;
 import org.cougaar.logistics.ldm.Constants;
 import org.cougaar.glm.ldm.asset.Inventory;
 import org.cougaar.glm.ldm.plan.AlpineAspectType;
+import org.cougaar.glm.ldm.plan.ObjectScheduleElement;
 
 import org.cougaar.planning.plugin.util.PluginHelper;
 
-import org.cougaar.planning.ldm.plan.Allocation;
-import org.cougaar.planning.ldm.plan.AllocationResult;
-import org.cougaar.planning.ldm.plan.AspectType;
-import org.cougaar.planning.ldm.plan.AspectValue;
-import org.cougaar.planning.ldm.plan.Task;
-import org.cougaar.planning.ldm.plan.PlanElement;
-import org.cougaar.planning.ldm.plan.Role;
+import org.cougaar.planning.ldm.plan.*;
 import org.cougaar.planning.ldm.asset.TypeIdentificationPG;
 
 import org.cougaar.planning.ldm.measure.*;
@@ -73,13 +68,157 @@ public class AllocationAssessor extends InventoryLevelGenerator {
   }
 
   public class TaskDeficit {
-    public ArrayList allocated = new ArrayList();
-    public AllocPhase lastPhase;
+//    TODO: MWD
+//    public ArrayList allocated = new ArrayList();
+//    public AllocPhase lastPhase;
+//    public double remainingQty;
+
     public Task task;
     public Task getTask (){
       return task;
     }
     LogisticsInventoryPG thePG;
+
+    public ArrayList rateBlocks = new ArrayList();
+
+    public double getRemainingQty(int currentBucket){
+      ConstantRateBlock block = getRateBlock(currentBucket);
+      if(block != null) {
+        return block.getRemainingQty();
+      }
+      return 0.0d;
+    }
+    public void setRemainingQty(int currentBucket, double rq){
+      ConstantRateBlock block = getRateBlock(currentBucket);
+      if(block != null) {
+        block.setRemainingQty(rq);
+      }
+    }
+
+    public void incrementBacklog(int currentBucket, double bl){
+      ConstantRateBlock block = getRateBlock(currentBucket);
+      if(block != null) {
+        block.incrementBacklog(bl);
+      }
+    }
+    public Collection getDeficitAllocationPhases() {
+      ArrayList defPhases = new ArrayList();
+      Iterator rateBlocksIt = rateBlocks.iterator();
+
+      while (rateBlocksIt.hasNext()) {
+        ConstantRateBlock currentBlock = (ConstantRateBlock) rateBlocksIt.next();
+        defPhases.addAll(currentBlock.getDeficitAllocationPhases());
+      }
+      return defPhases;
+    }
+
+
+
+
+    public void initializeRateBlocks() {
+      long taskStartTime = getTaskUtils().getStartTime(task);
+      long taskEndTime = getTaskUtils().getEndTime(task);
+      PrepositionalPhrase pp_rate = task.getPrepositionalPhrase(Constants.Preposition.DEMANDRATE);
+      if (pp_rate != null) {
+        Object indObj = pp_rate.getIndirectObject();
+        if (indObj instanceof Schedule) {
+          Schedule sched = (Schedule) indObj;
+          Collection rate_elems =
+            sched.getOverlappingScheduleElements(taskStartTime, taskEndTime);
+          int n = (rate_elems == null ? 0 : rate_elems.size());
+          if (n == 1) {
+            rateBlocks.add(new ConstantRateBlock(taskStartTime,taskEndTime,0.0d));
+          } else if (n > 1) {
+            // return a schedule of daily rates
+            rateBlocks = new ArrayList(n);
+            for (Iterator iter = rate_elems.iterator(); iter.hasNext(); ) {
+              ObjectScheduleElement ose = (ObjectScheduleElement) iter.next();
+              rateBlocks.add(new ConstantRateBlock(ose.getStartTime(),ose.getEndTime(),0.0d));
+            }
+          }
+        }
+      }
+      else {
+        rateBlocks.add(new ConstantRateBlock(taskStartTime,taskEndTime,0.0d));
+      }
+    }
+
+
+    //Fill in the gaps in the deficit buckets with successful buckets
+    public Collection generateAllAllocationPhases() {
+      Iterator rateBlocksIt = rateBlocks.iterator();
+
+
+      ArrayList allPhases = new ArrayList();
+
+      while (rateBlocksIt.hasNext()) {
+        ConstantRateBlock currentBlock = (ConstantRateBlock) rateBlocksIt.next();
+        allPhases.addAll(currentBlock.generateAllAllocationPhases(task,thePG));
+      }
+      return allPhases;
+    }
+
+// TODO Remove OK? MWD?
+//    public double getBestBucketQty(long time) {
+//      Rate r = getTaskUtils().getRate(task, time);
+//      return getQuantityForDuration(r, thePG.getBucketMillis());
+//    }
+//
+//    public double getQuantityForDuration(Rate r, long duration){
+//        Duration d = Duration.newMilliseconds(duration);
+//        Scalar scalar = (Scalar) r.computeNumerator(d);
+//        return getTaskUtils().getDouble(scalar);
+//    }
+
+
+      public TaskDeficit(Task withdraw, int currentBucket, double qty, LogisticsInventoryPG thePG) {
+        task = withdraw;
+        //TODO MWD Remove
+//        lastPhase = null;
+//        remainingQty=qty;
+        this.thePG=thePG;
+        initializeRateBlocks();
+        setRemainingQty(currentBucket,qty);
+      }
+
+      public ConstantRateBlock getRateBlock(int bucket) {
+        long time = thePG.convertBucketToTime(bucket);
+        return getRateBlock(time);
+      }
+
+      public ConstantRateBlock getRateBlock(long time) {
+        Iterator rateBlocksIt = rateBlocks.iterator();
+
+        while (rateBlocksIt.hasNext()) {
+          ConstantRateBlock currentBlock = (ConstantRateBlock) rateBlocksIt.next();
+          if((currentBlock.startTime <= time) && (currentBlock.endTime > time)) {
+            return currentBlock;
+          }
+        }
+        return null;
+      }
+
+      public void addPhase(double amount, int currentBucket){
+        ConstantRateBlock block = getRateBlock(currentBucket);
+        if(block != null) {
+          block.addPhase(task,thePG,amount,currentBucket);
+        }
+      }
+  }
+
+
+  public class ConstantRateBlock {
+    public long startTime;
+    public long endTime;
+    public ArrayList allocated = new ArrayList();
+    public AllocPhase lastPhase;
+
+//TODO: MWD Remove?
+//    public Task task;
+//    public Task getTask (){
+//      return task;
+//    }
+//    LogisticsInventoryPG thePG;
     public double remainingQty;
     public double getRemainingQty(){
       return remainingQty;
@@ -96,14 +235,14 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     }
 
     //Fill in the gaps in the deficit buckets with successful buckets
-    public Collection generateAllAllocationPhases() {
+    public Collection generateAllAllocationPhases(Task task,LogisticsInventoryPG thePG) {
       Iterator defPhasesIt = allocated.iterator();
-      long taskStartTime = getTaskUtils().getStartTime(task);
-      int taskStartBucket = thePG.convertTimeToBucket(taskStartTime, false);
-      long taskEndTime = getTaskUtils().getEndTime(task);
-      int taskEndBucket = thePG.convertTimeToBucket(taskEndTime, true);
 
-      int lastBucket = taskStartBucket;
+      int rateBlockStartBucket = thePG.convertTimeToBucket(startTime, false);
+
+      int rateBlockEndBucket = thePG.convertTimeToBucket(endTime, true);
+
+      int lastBucket = rateBlockStartBucket;
 
       ArrayList allPhases = new ArrayList();
 
@@ -119,7 +258,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           }*/
           //TODO - EPD This best quantity fill in code causes lots of problems!!!!
           long lastTime = thePG.convertBucketToTime(lastBucket);
-          AllocPhase betweenPhase = new AllocPhase(lastBucket, getBestBucketQty(lastTime));
+          AllocPhase betweenPhase = new AllocPhase(lastBucket, getBestBucketQty(task, thePG, lastTime));
           betweenPhase.endBucket = currentPhase.startBucket;
           allPhases.add(betweenPhase);
         }
@@ -127,35 +266,28 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         lastBucket = currentPhase.endBucket;
       }
 
-      if (lastBucket < taskEndBucket) {
+      if (lastBucket < rateBlockEndBucket) {
         long lastTime = thePG.convertBucketToTime(lastBucket);
-        AllocPhase lastPhase = new AllocPhase(lastBucket, getBestBucketQty(lastTime));
-        lastPhase.endBucket = taskEndBucket;
+        AllocPhase lastPhase = new AllocPhase(lastBucket, getBestBucketQty(task,thePG,lastTime));
+        lastPhase.endBucket = rateBlockEndBucket;
         allPhases.add(lastPhase);
       }
       return allPhases;
     }
 
-    public double getBestBucketQty(long time) {
-      Rate r = getTaskUtils().getRate(task, time);
-      return getQuantityForDuration(r, thePG.getBucketMillis());
-    }
-
-    public double getQuantityForDuration(Rate r, long duration){
-        Duration d = Duration.newMilliseconds(duration);
-        Scalar scalar = (Scalar) r.computeNumerator(d);
-        return getTaskUtils().getDouble(scalar);
-    }
 
 
-      public TaskDeficit(Task withdraw, double qty, LogisticsInventoryPG thePG) {
-        task = withdraw;
+
+      public ConstantRateBlock(long startTime, long endTime, double qty) {
+        //task = withdraw;
         lastPhase = null;
         remainingQty=qty;
-        this.thePG=thePG;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        //this.thePG=thePG;
       }
 
-      public void addPhase(double amount, int currentBucket){
+      public void addPhase(Task task, LogisticsInventoryPG thePG, double amount, int currentBucket){
        if(amount < 0.0) {
          if(logger.isInfoEnabled()) {
            String itemId = getTaskUtils().getTaskItemName(task);
@@ -178,7 +310,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         if(task.getVerb().equals(Constants.Verb.WITHDRAW)) {
           return;
         }
-      }				       
+      }
       if (task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW) &&
               lastPhase !=null &&
               currentBucket==lastPhase.endBucket &&
@@ -288,6 +420,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     calculateInventoryLevels(thePG.getStartBucket(), today_bucket, thePG);
   }
 
+  public double getBestBucketQty(Task task, LogisticsInventoryPG thePG, long time) {
+      Rate r = getTaskUtils().getRate(task, time);
+      return getQuantityForDuration(r, thePG.getBucketMillis());
+    }
+
+    public double getQuantityForDuration(Rate r, long duration){
+        Duration d = Duration.newMilliseconds(duration);
+        Scalar scalar = (Scalar) r.computeNumerator(d);
+        return getTaskUtils().getDouble(scalar);
+    }
+
 
   /** Create and update Withdraw and ProjectWithdraw Task Allocations for a particular Inventory
    *  @param todayBucket This is the starting bucket to process
@@ -306,6 +449,8 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     // DEBUG
     String myOrgName = inventoryPlugin.getClusterId().toString();
     String myItemId = inv.getItemIdentificationPG().getItemIdentification();
+    LogisticsInventoryPG logInvPG =  (LogisticsInventoryPG) inv.searchForPropertyGroup(LogisticsInventoryPG.class);
+    String nomenclature = logInvPG.getResource().getTypeIdentificationPG().getNomenclature();
 
     /*if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
     	      System.out.println("### createAlloc : Assessing allocations RIGHT ORG NAME COMBO - " + myOrgName + " - " + myItemId);
@@ -343,7 +488,7 @@ public class AllocationAssessor extends InventoryLevelGenerator {
             continue;
           }
         }
-        qty = td.getRemainingQty();
+        qty = td.getRemainingQty(currentBucket);
 	// DEBUG Task deficits
 	//if ((myOrgName.indexOf("592-ORDCO") >= 0) && (myItemId.indexOf("Level2Am") >= 0)) {
         //if ((myOrgName.indexOf("2-NLOS-BTY") >= 0) && (myItemId.indexOf("155mm-DPICM") >= 0)) {
@@ -416,18 +561,17 @@ public class AllocationAssessor extends InventoryLevelGenerator {
           fulfillTask(withdraw,currentBucket,inv,thePG);
           todayLevel = Math.max(0.0, todayLevel - qty);
 
-          /***
-           **
 
-          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
-             (thePG.getItemName().indexOf("9140002865294") != -1)) {
-            logger.error("calculateAllocations - fulfill task on day "+
-                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
-                         " demand is "+qty+" and new inventory level is "+todayLevel+" for task "+
-                         withdraw.getUID() + " task qty " + getTaskUtils().getDailyQuantity(withdraw));
-          }
-          **
-          */
+
+
+//          if((inventoryPlugin.getOrgName().indexOf("47-FSB") != -1) &&
+//             (thePG.getItemName().indexOf("9140002865294") != -1)) {
+//            logger.error("calculateAllocations - fulfill task on day "+
+//                         getTimeUtils().dateString(thePG.convertBucketToTime(currentBucket))+
+//                         " demand is "+qty+" and new inventory level is "+todayLevel+" for task "+
+//                         withdraw.getUID() + " task qty " + getTaskUtils().getDailyQuantity(withdraw));
+//          }
+          
 
         } else {
           // can't fill this task totally -- create deficit on this task
@@ -499,18 +643,18 @@ public class AllocationAssessor extends InventoryLevelGenerator {
     double qty = taskQtyInBucket(task, currentBucket, thePG);
     TaskDeficit td = ((TaskDeficit)trailingPointersHash.get(task));
     if (td==null) {
-      td = new TaskDeficit(task, qty, thePG);
+      td = new TaskDeficit(task, currentBucket, qty, thePG);
       if(task.getVerb().equals(Constants.Verb.PROJECTWITHDRAW)) {
         trailingPointersHash.put(task, td);
       }
-    } else if(td.getRemainingQty()>0.0){
+    } else if(td.getRemainingQty(currentBucket)>0.0){
       // can only happen when we have a projectWithdraw task which has a previous bucket still
       //  unfilled
-      td.incrementBacklog(qty);
+      td.incrementBacklog(currentBucket,qty);
     } else {
       // can only happen when we have a projectWithdraw task which has no previous bucket still
       //  unfilled
-      td.setRemainingQty(qty);
+      td.setRemainingQty(currentBucket,qty);
     }
     return td;
   }
@@ -526,11 +670,11 @@ public class AllocationAssessor extends InventoryLevelGenerator {
         createLateAllocation(task, thePG.convertBucketToTime(currentBucket), inv, thePG);
       } else {
         //BD added the td.addPhase line to make a phase to fill the deficit
-        td.addPhase(td.getRemainingQty(), currentBucket);
+        td.addPhase(td.getRemainingQty(currentBucket), currentBucket);
         createPhasedAllocationResult(td, inv, thePG, true);
       }
     } else {
-      td.addPhase(td.getRemainingQty(), currentBucket);
+      td.addPhase(td.getRemainingQty(currentBucket), currentBucket);
       if ((thePG.convertBucketToTime(currentBucket + 1) >=
               (long)PluginHelper.getPreferenceBestValue(task, AspectType.END_TIME))) {
 	  //DEBUG
@@ -788,9 +932,71 @@ public class AllocationAssessor extends InventoryLevelGenerator {
    **/
   private void createBestAllocation(Task withdraw, Inventory inv,
                                     LogisticsInventoryPG thePG) {
-    AllocationResult estimatedResult = PluginHelper.
+    AllocationResult estimatedResult = null;
+    if (withdraw.getVerb().equals(Constants.Verb.WITHDRAW)) {
+      estimatedResult = PluginHelper.
             createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
                                             Constants.Confidence.SCHEDULED, true);
+    }
+    else {
+      long taskStartTime = getTaskUtils().getStartTime(withdraw);
+      long taskEndTime = getTaskUtils().getEndTime(withdraw);
+      PrepositionalPhrase pp_rate = withdraw.getPrepositionalPhrase(Constants.Preposition.DEMANDRATE);
+      if (pp_rate != null) {
+        Object indObj = pp_rate.getIndirectObject();
+        if (indObj instanceof Schedule) {
+          Schedule sched = (Schedule) indObj;
+          Collection rate_elems =
+            sched.getOverlappingScheduleElements(taskStartTime, taskEndTime);
+          int n = (rate_elems == null ? 0 : rate_elems.size());
+          ArrayList phasedResults = new ArrayList(n);
+          double rollupQty = 0;
+          AspectValue avs[];
+
+          avs = new AspectValue[3];
+
+          // return a schedule of daily rates
+          int rollupEnd = thePG.convertTimeToBucket(taskEndTime,true);
+          int rollupStart = thePG.convertTimeToBucket(taskStartTime,false);
+
+          avs[0] = AspectValue.newAspectValue(AspectType.END_TIME,
+                  taskEndTime);
+          avs[1] = AspectValue.newAspectValue(AspectType.START_TIME,
+                  taskStartTime);
+
+          for (Iterator iter = rate_elems.iterator(); iter.hasNext(); ) {
+            ObjectScheduleElement ose = (ObjectScheduleElement) iter.next();
+            int rateStartBucket = thePG.convertTimeToBucket(ose.getStartTime(),false);
+            int rateEndBucket = thePG.convertTimeToBucket(ose.getEndTime(),true);
+            Rate currentRate = (Rate) ose.getObject();
+
+
+              rollupQty = rollupQty + this.getQuantityForDuration(currentRate,(rateEndBucket - rateStartBucket));
+              // take the max endBucket for the rollup end time
+              if (rateEndBucket > rollupEnd) { rollupEnd = rateEndBucket;}
+              // take the min startBucket for the rollup start time
+              if (rateStartBucket < rollupStart) { rollupStart = rateStartBucket;}
+              AspectValue thisPhase[] = new AspectValue[3];
+              thisPhase[0] = AspectValue.newAspectValue(AspectType.END_TIME, thePG.convertBucketToTime(rateEndBucket));
+              thisPhase[1] = AspectValue.newAspectValue(AspectType.START_TIME, thePG.convertBucketToTime(rateStartBucket));
+              thisPhase[2] = getDemandRateAV(getQuantityForDuration(currentRate,thePG.getBucketMillis()), thePG.getBucketMillis());
+              // add this phase to our phased results list
+              phasedResults.add(thisPhase);
+            }
+            avs[2] = getDemandRateAV(rollupQty, thePG.convertBucketToTime(rollupEnd) -
+                                                thePG.convertBucketToTime( rollupStart));
+
+            estimatedResult = inventoryPlugin.getPlanningFactory().
+                  newPhasedAllocationResult(Constants.Confidence.SCHEDULED, true, avs, (new Vector(phasedResults)).elements());
+
+          }
+      }
+      else {
+        estimatedResult = PluginHelper.
+            createEstimatedAllocationResult(withdraw, inventoryPlugin.getPlanningFactory(),
+                                            Constants.Confidence.SCHEDULED, true);
+      }
+    }
     compareResults(estimatedResult, withdraw, inv, thePG);
   }
 
