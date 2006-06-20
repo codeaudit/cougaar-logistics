@@ -28,8 +28,6 @@ package org.cougaar.logistics.plugin.inventory;
 
 import org.cougaar.util.log.Logger;
 import org.cougaar.core.logging.NullLoggingServiceImpl;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.component.ServiceBroker;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -100,8 +98,8 @@ public class MaintainedItem implements Serializable {
   }
 
   public String toString() {
-    return this.getClass().getName()+": <"+maintainedItemType+">, <"+
-	typeIdentification+">, <"+itemIdentification+">, <"+nomenclature+">";
+    return "MaintainedType: "+
+	  typeIdentification+", Item "+itemIdentification+", "+nomenclature;
   }
 
   private transient int _hc = 0;

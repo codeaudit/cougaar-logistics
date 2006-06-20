@@ -55,9 +55,6 @@ import java.util.*;
 
 public class GenerateProjectionsExpander extends DemandForecastModule implements GenProjExpanderIfc {
 
-  private static final boolean USE_RATE_SCHEDULE = 
-    Boolean.getBoolean("org.cougaar.logistics.plugin.demand.gpExp.useRateSchedule");
-
   private String myOrgName = null;
 
   public GenerateProjectionsExpander(DemandForecastPlugin dfPlugin) {
@@ -157,21 +154,13 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     for (Iterator iterator = items.iterator(); iterator.hasNext();) {
       Asset consumedItem = (Asset) iterator.next();
 
-      if (USE_RATE_SCHEDULE) {
-        Schedule rate_schedule =
-          buildRateSchedule(pg, consumedItem, schedule, consumer);
+      Schedule rate_schedule =
+        buildRateSchedule(pg, consumedItem, schedule, consumer);
 
-        subTasks.add(
-            createProjectSupplyTask(
-              gpTask, consumer, consumedItem,
-              rate_schedule));
-      } else {
-        // old style
-        subTasks.addAll(
-            createProjectSupplyTasks(
-              gpTask, consumer, consumedItem,
-              pg, schedule));
-      }
+      subTasks.add(
+          createProjectSupplyTask(
+            gpTask, consumer, consumedItem,
+            rate_schedule));
     }
     return subTasks;
   }
@@ -332,47 +321,6 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
       dfPlugin.publishAdd(task);
     }
     dfPlugin.publishChange(expansion);
-  }
-
-  // old style, remove when we remove !USE_RATE_SCHEDULE
-  private Collection createProjectSupplyTasks(
-      Task parentTask, Asset consumer, Asset consumedItem,
-      PropertyGroup pg, Schedule schedule) {
-    List subTasks = new ArrayList();
-    Enumeration scheduleElements = schedule.getAllScheduleElements();
-    while (scheduleElements.hasMoreElements()) {
-      ObjectScheduleElement ose = (ObjectScheduleElement) scheduleElements.nextElement();
-      Rate rate = getRate(pg, consumedItem, getRateParams(ose));
-      if (rate == null) {
-        continue;
-      }
-
-      long start = ose.getStartTime();
-      long end = ose.getEndTime();
-
-      NewTask newTask = getPlanningFactory().newTask();
-      newTask.setParentTask(parentTask);
-      newTask.setPlan(parentTask.getPlan());
-      newTask.setDirectObject(consumedItem);
-      newTask.setVerb(Verb.get(Constants.Verb.PROJECTSUPPLY));
-      //newTask.setCommitmentDate(new Date(start));
-      Vector prefs = new Vector();
-      prefs.addElement(getTaskUtils().createDemandRatePreference(getPlanningFactory(), rate));
-      // start and end from schedule element
-      prefs.addElement(getTaskUtils().createTimePreference(start,
-            dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
-            AspectType.START_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
-      prefs.addElement(getTaskUtils().createTimePreference(end,
-            dfPlugin.getLogOPlanStartTime(), dfPlugin.getLogOPlanEndTime(),
-            AspectType.END_TIME, dfPlugin.getClusterId(), getPlanningFactory(), null));
-
-      newTask.setPreferences(prefs.elements());
-      Vector childPhrases = createPrepPhrases(consumer, parentTask, end, null);
-      newTask.setPrepositionalPhrases(childPhrases.elements());
-
-      subTasks.add(newTask);
-    }
-    return subTasks;
   }
 
   /** @deprecated */
@@ -605,15 +553,14 @@ public class GenerateProjectionsExpander extends DemandForecastModule implements
     if (published_task != null && new_task != null) {
       // Depending upon whether the rate is equal set the end time of the published task to the start or
       // end time of the new task
-      if (USE_RATE_SCHEDULE) {
-        // FIXME compare rate schedules, publish change w/ change report instead of
-        // replacing the entire task.  we may need the report to say the old rate_sched, or
-        // maybe the UAInvPi can examine its buckets and figure this out.  the important point
-        // is that we don't want to redo out our entire plan on the slightest orgAct change.
-        logger.warn(
-            "TODO: compare rate schedules on old task "+published_task.getUID()+
-            " and new task "+new_task.getUID());
-      }
+      //
+      // FIXME compare rate schedules, publish change w/ change report instead of
+      // replacing the entire task.  we may need the report to say the old rate_sched, or
+      // maybe the UAInvPi can examine its buckets and figure this out.  the important point
+      // is that we don't want to redo out our entire plan on the slightest orgAct change.
+      logger.warn(
+          "TODO: compare rate schedules on old task "+published_task.getUID()+
+          " and new task "+new_task.getUID());
       Rate new_rate = getTaskUtils().getRate(new_task);
       if (new_rate.equals(getTaskUtils().getRate(published_task))) {
         // check end times not the same

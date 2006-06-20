@@ -221,7 +221,7 @@ public class LogisticsInventoryFormatter {
           nomenclature = itemId;
         }
         String errorString = "Assertion Botch: start time: " + getDateString(startTime, true);
-        errorString += (" end time: " + getDateString(org.cougaar.logistics.plugin.inventory.TaskUtils.getEndTime(aTask), true));
+        errorString += (" end time: " + getDateString(TaskUtils.getEndTime(aTask), true));
         errorString += (" UID: " + aTask.getUID());
         errorString += (" NSN: " + itemId + ":" + nomenclature);
         errorString += (" at Org " + orgId + " ");
