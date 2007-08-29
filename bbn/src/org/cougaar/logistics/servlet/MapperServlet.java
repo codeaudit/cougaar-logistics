@@ -192,7 +192,7 @@ public class MapperServlet extends BaseServletComponent implements BlackboardCli
 		//Release blackboard service
 		if(blackboard != null) {
 			serviceBroker.releaseService(
-				this, BlackboardService.class, servletService);
+				this, BlackboardService.class, blackboard);
 			blackboard = null;
 		}
 	}

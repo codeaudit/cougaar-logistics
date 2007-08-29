@@ -92,7 +92,7 @@ public class AvailabilityServlet extends ComponentServlet implements BlackboardC
     super.unload();
     // release the blackboard service
     if (blackboard != null) {
-      serviceBroker.releaseService(this, BlackboardService.class, servletService);
+      serviceBroker.releaseService(this, BlackboardService.class, blackboard);
       blackboard = null;
     }
   }

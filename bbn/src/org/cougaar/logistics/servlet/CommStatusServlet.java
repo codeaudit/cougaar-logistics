@@ -95,13 +95,13 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
     // release the blackboard service
     if (blackboard != null) {
       serviceBroker.releaseService(
-          this, BlackboardService.class, servletService);
+          this, BlackboardService.class, blackboard);
       blackboard = null;
     }
 
     // release the alarm service
     if (alarmService != null) {
-      serviceBroker.releaseService(this, AlarmService.class, servletService);
+      serviceBroker.releaseService(this, AlarmService.class, alarmService);
       alarmService = null;
     }
   }
