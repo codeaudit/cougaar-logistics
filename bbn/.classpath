@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/glm"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/planning"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/servicediscovery"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/toolkit"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/vishnuClient"/>
+	<classpathentry kind="lib" path="/jars/lib/fesi-111.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/jcchart.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/openmap.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/servlet.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/vishnuServer.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="/jars/lib/xml-apis.jar"/>
+	<classpathentry kind="output" path="tmp/classes"/>
+</classpath>
