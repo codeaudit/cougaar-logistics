@@ -34,7 +34,7 @@
  * or portions thereof marked with this legend must also reproduce the
  * markings.
  * 
- * Copyright © BBNT Solutions LLC.  All Rights Reserved
+ * Copyright (C) BBNT Solutions LLC.  All Rights Reserved
  * </copyright>
  */
 package org.cougaar.logistics.ui.inventory.data;
