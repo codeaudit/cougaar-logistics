@@ -24,9 +24,8 @@ runtime, and classfiles. Other requirements include very high
 reliability and repeatability, in addition to high performance. It
 should be simple and easy to understand, and reuse as many basic
 components as possible. These will include classes from and
-extending those in the<a href="http://cougaar.org/projects/vishnu/">
-Vishnu</a>
-(written by DaveMontana, <a href="mailto:dmontana@bbn.com">
+extending those in the Vishnu
+(written by Dave Montana, <a href="mailto:dmontana@bbn.com">
 dmontana@bbn.com</a> ) and Toolkit modules, in addition to the
 Sequential Backwards Planning Plugin, which is part of GLMTrans.
 &nbsp;Note that there is also an open source web site hosted at BBN
@@ -128,9 +127,7 @@ it into one comprehensive, consistent picture. This information is
 stored
 in a database, which is then available for the TPFDD Viewer to present
 this information visually. (See the documentation in the datagrabber
-doc directory.) Click <a href="http://vishnu.bbn.com/docs/fulldoc.html">
-here </a> for
-documentation for the vishnu module.<br>
+doc directory.)<br>
 <br>
 Note that the vishnu module is for client plugins and related
 classes. &nbsp;The vishnu module interacts with the classes in the
@@ -687,9 +684,7 @@ s
 Transcom has two plugins : <b>GLMTransOneToManyExpanderPlugin </b>
 and <b> TranscomVishnuPlugin</b>. The first expander breaks
 up unit-sized incoming tasks into individual chunks. These may be
-<a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/planning/doc/api/org/cougaar/planning/ldm/asset/AggregateAsset.html">aggregate</a>
-s. The <b>TranscomVishnuPlugin </b>is an extension of
+aggregates. The <b>TranscomVishnuPlugin </b>is an extension of
 the <b>VishnuAllocatorPlugin </b>(from the Vishnu module) that uses
 the Vishnu scheduler to determine whether tasks go by air or sea. If
 air, the task is allocated to <i> GlobalAir, </i>if sea, to<i>GlobalSea.
@@ -889,17 +884,9 @@ These clusters all use variations on the same plugins : <b><a
 VishnuAggregatorPlugin, </b>and the <b>TransportAllocatorPlugin. </b>
 The VishnuAggregatorPlugin derivatives use different specialized data
 xmlizers that add on fields needed for their specific scheduling
-problems. The expander breaks up incoming tasks, including <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/planning/doc/api/org/cougaar/planning/ldm/asset/AggregateAsset.html">
-aggregate</a>
-s, into chunks the size of the cluster's carrier <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/planning/doc/api/org/cougaar/planning/ldm/asset/Asset.html">
-asset</a> . The aggregator aggregates tasks together and assigns them
-to a carrier. The allocator actually makes the allocation of <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/planning/doc/api/org/cougaar/planning/ldm/plan/MPTask.html">
-MPTask</a> (multi-parent task) to carrier <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/planning/doc/api/org/cougaar/planning/ldm/asset/Asset.html">
-asset</a> . <br>
+problems. The expander breaks up incoming tasks, including aggregatess, into chunks the size of the cluster's carrier 
+asset> . The aggregator aggregates tasks together and assigns them
+to a carrier. The allocator actually makes the allocation of MPTask (multi-parent task) to carrier asset. <br>
 <h3><a name="CONUSGround"></a> CONUSGround</h3>
 CONUSGround has two specialized plugins, the <b>GroundVishnuPlugin, </b>
 a descendant of <b>VishnuAggregatorPlugin </b>and the <b>GroundTransportAllocatorPlugin.
@@ -1106,10 +1093,7 @@ particular problem
 (truck, ship, or plane packing) but would increase run time. </p>
 <h2><a name="Testing"></a> Testing</h2>
 The main way to do testing of the<b> GLMTrans </b>society independent
-of other agents is to use the <b><a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/glm/doc/api/org/cougaar/glm/servlet/GLMStimulatorServlet.html">
-GLMStimulatorServlet.</a>
-</b> It can be told to read in any of a number of test input files in
+of other agents is to use the <b>GLMStimulatorServlet</b>.  It can be told to read in any of a number of test input files in
 the testinput directory. &nbsp;These files specify different kinds of
 input tasks, which test different categories of behavior, covering
 topics like handling of air, sea, and non-moving transport requests.
@@ -1174,9 +1158,7 @@ much larger, and so there will be far fewer subtasks to schedule.
 <h3><a name="How_is_adaptivity_triggered"></a> How is adaptivity
 triggered?</h3>
 There are plays for the TRANSCOM agent that are triggered when the
-FallingBehind <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/core/doc/api/org/cougaar/core/adaptivity/Condition.html">
-Condition</a> changes. &nbsp;The playbook for TRANSCOM is simple:<br>
+FallingBehind Condition changes. &nbsp;The playbook for TRANSCOM is simple:<br>
 <br>
 FallingBehind &gt;= 2.0&nbsp; : Level2TimeHorizon = 60&nbsp; :
 Level6TimeHorizon = 21;<br>
@@ -1187,9 +1169,8 @@ FallingBehind &lt;= 0.5 : Level2TimeHorizon = 225 : Level6TimeHorizon =
 <br>
 The condition can come from the either the
 FallingBehindConditionServlet or any of several PSU condition servlets.
-&nbsp;The TimeHorizon <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/core/doc/api/org/cougaar/core/adaptivity/OperatingMode.html">
-OperatingModes</a> are published by the TRANSCOM agent and watched
+&nbsp;The TimeHorizon
+OperatingModes are published by the TRANSCOM agent and watched
 there for changes. &nbsp;They are used in the level-of-detail decision
 making process applied to incoming tasks, see <a
  href="#Level-6_and_Level-2_Time_Horizons">above</a> .<br>
@@ -1237,9 +1218,7 @@ name. &nbsp;If it doesn't find one, it will note that it couldn't,
 but this is only a problem if the plugin needs parameters.<br>
 <br>
 Similarly there are ldm.xml files that define the resources for the
-different agents. &nbsp;These are read by the <a
- href="http://cougaar.cougaar.org/software/11.2/javadoc/api/toolkit/doc/api/org/cougaar/lib/plugin/UTILLdmXMLPlugin.html">
-UTILLdmXMLPlugin</a> , which also looks for &lt;agent name&gt;.ldm.xml
+different agents. &nbsp;These are read by the UTILLdmXMLPlugin , which also looks for &lt;agent name&gt;.ldm.xml
 files. &nbsp;The use of this plugin is optional -- you can also use the
 more traditional XMLPrototypeProviderPlugin and LDMSQLPlugin plugins to
 populate agents with assets.<br>

@@ -27,8 +27,6 @@ package org.cougaar.logistics.plugin.seanet;
 
 /**
  * A stateful great circle calculator.
- <p>The theory is presented in
- <a href="http://stout.bbn.com/~kanderso/java/course/doc/episode-10/index.html">Partial Evaluation - Freeing the essence of a computation</a>.
  <p>Two lat,lon points are kept in a 3D unit vector representation.
  <p> Once the two points are set, various distance*() and azimuth() function
  may be called.
