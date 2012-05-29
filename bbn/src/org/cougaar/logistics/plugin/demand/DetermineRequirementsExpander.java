@@ -263,10 +263,10 @@ public class DetermineRequirementsExpander extends DemandForecastModule implemen
    * MWD remove
    *
    public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp) {
-   Enumeration enum = task.getPrepositionalPhrases();
+   Enumeration enm = task.getPrepositionalPhrases();
    Vector phrases = new Vector();
-   while (enum.hasMoreElements()) {
-   phrases.addElement(enum.nextElement());
+   while (enm.hasMoreElements()) {
+   phrases.addElement(enm.nextElement());
    }
    phrases.addElement(pp);
    task.setPrepositionalPhrases(phrases.elements());

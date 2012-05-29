@@ -177,10 +177,10 @@ public class Level2Disposer extends Level2TranslatorModule {
 
 
    public static NewTask addPrepositionalPhrase(NewTask task, PrepositionalPhrase pp) {
-   Enumeration enum = task.getPrepositionalPhrases();
+   Enumeration enm = task.getPrepositionalPhrases();
    Vector phrases = new Vector();
-   while (enum.hasMoreElements()) {
-   phrases.addElement(enum.nextElement());
+   while (enm.hasMoreElements()) {
+   phrases.addElement(enm.nextElement());
    }
    phrases.addElement(pp);
    task.setPrepositionalPhrases(phrases.elements());
