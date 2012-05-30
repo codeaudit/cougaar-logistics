@@ -109,7 +109,7 @@ public class AllocResultsServlet extends BaseServletComponent implements Blackbo
   public void unload() {
     super.unload();
     if (blackboard != null) {
-      serviceBroker.releaseService(
+      releaseService(
           this, BlackboardService.class, blackboard);
       blackboard = null;
     }

@@ -140,8 +140,7 @@ public class OplanEditServlet extends BaseServletComponent implements Blackboard
   public void unload() {
     super.unload();
     if (blackboard != null) {
-      serviceBroker.releaseService(
-          this, BlackboardService.class, blackboard);
+      releaseService(this, BlackboardService.class, blackboard);
       blackboard = null;
     }
   }

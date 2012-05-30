@@ -62,8 +62,7 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
 
     public void init() {
     	// get the blackboard service
-    	blackboard = (BlackboardService) serviceBroker.getService(this,
-    								  BlackboardService.class, null);
+    	blackboard = (BlackboardService) getService(this, BlackboardService.class, null);
     	if(blackboard == null) {
     	    throw new RuntimeException("Unable to obtain blackboard service");
     	}
@@ -73,7 +72,7 @@ public class SDUseCaseServlet extends ComponentServlet implements BlackboardClie
 	super.unload();
 	// release the blackboard service
 	if (blackboard != null) {
-	    serviceBroker.releaseService(this, BlackboardService.class, blackboard);
+	    releaseService(this, BlackboardService.class, blackboard);
 	    blackboard = null;
 	}
     }

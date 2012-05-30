@@ -61,11 +61,11 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
   }
 
   protected Servlet createServlet() {
-    blackboard = (BlackboardService) serviceBroker.getService(this, BlackboardService.class, null);
+    blackboard = (BlackboardService) getService(this, BlackboardService.class, null);
     if (blackboard == null) {
       throw new RuntimeException("Unable to obtain blackboard service");
     }
-    alarmService = (AlarmService) serviceBroker.getService(this, AlarmService.class, null);
+    alarmService = (AlarmService) getService(this, AlarmService.class, null);
     if (alarmService == null) {
       throw new RuntimeException("Unable to set alarm service");
     }
@@ -94,14 +94,13 @@ public class CommStatusServlet extends BaseServletComponent implements Blackboar
     super.unload();
     // release the blackboard service
     if (blackboard != null) {
-      serviceBroker.releaseService(
-          this, BlackboardService.class, blackboard);
+      releaseService(this, BlackboardService.class, blackboard);
       blackboard = null;
     }
 
     // release the alarm service
     if (alarmService != null) {
-      serviceBroker.releaseService(this, AlarmService.class, alarmService);
+      releaseService(this, AlarmService.class, alarmService);
       alarmService = null;
     }
   }

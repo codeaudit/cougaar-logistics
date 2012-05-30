@@ -117,21 +117,21 @@ public class MapperServlet extends BaseServletComponent implements BlackboardCli
 	}
 
 	protected Servlet createServlet() {
-		blackboard = (BlackboardService) serviceBroker.getService(this,
+		blackboard = (BlackboardService) getService(this,
 			BlackboardService.class, null);
 		if(blackboard == null) {
 			throw new RuntimeException(
 				"Unable to obtain blackboard service");
 		}
 
-		agentService = (AgentIdentificationService) serviceBroker.getService(this,
+		agentService = (AgentIdentificationService) getService(this,
 			AgentIdentificationService.class, null);
 		if(agentService == null) {
 			throw new RuntimeException(
 				"Unable to obtain agent service");
 		}
 
-		alarmService = (AlarmService) serviceBroker.getService(this,
+		alarmService = (AlarmService) getService(this,
 			AlarmService.class, null);
 		if(alarmService == null) {
 			throw new RuntimeException(
@@ -142,7 +142,7 @@ public class MapperServlet extends BaseServletComponent implements BlackboardCli
 		
 
 		// get the logging service
-		logger = (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
+		logger = (LoggingService) getService(this, LoggingService.class, null);
 		if( logger == null ) {
 		    throw new RuntimeException("Cannot find logging service!");
 		}
@@ -160,7 +160,7 @@ public class MapperServlet extends BaseServletComponent implements BlackboardCli
 
         public LoggingService getLoggingService(Object requestor) {
 	    LoggingService ls = (LoggingService)
-		serviceBroker.getService(requestor,
+		getService(requestor,
 					 LoggingService.class,
 					 null);
 	    return LoggingServiceWithPrefix.add(ls, getAgentIdentifier() + ": ");
@@ -191,8 +191,7 @@ public class MapperServlet extends BaseServletComponent implements BlackboardCli
 		super.unload();
 		//Release blackboard service
 		if(blackboard != null) {
-			serviceBroker.releaseService(
-				this, BlackboardService.class, blackboard);
+			releaseService(this, BlackboardService.class, blackboard);
 			blackboard = null;
 		}
 	}

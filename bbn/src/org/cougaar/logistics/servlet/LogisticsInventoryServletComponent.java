@@ -91,14 +91,10 @@ public class LogisticsInventoryServletComponent extends SimpleServletComponent {
 	LogisticsInventoryServlet invServe = new LogisticsInventoryServlet();
 	
 	AlarmService alarmService = (AlarmService)
-	    serviceBroker.getService(invServe,
-				     AlarmService.class,
-				     null);
+	    getService(invServe, AlarmService.class, null);
 	
 	LoggingService logService = (LoggingService)
-	    serviceBroker.getService(invServe,
-				     LoggingService.class,
-				     null);
+	    getService(invServe, LoggingService.class, null);
 	
 
 	
