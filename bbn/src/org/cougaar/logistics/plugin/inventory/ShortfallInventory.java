@@ -76,7 +76,7 @@ public class ShortfallInventory implements java.io.Serializable, Publishable {
      * The inventory id for this inventory.
      *
      * @return The identifier for this inventory
-     * @see org.cougaar.logistics.servlet.LogisticsInventoryServlet>>getNomenclature(inv);
+     * @see org.cougaar.logistics.servlet.LogisticsInventoryServlet#getNomenclature(inv);
      */
     public String getInvID() {
         return invID;

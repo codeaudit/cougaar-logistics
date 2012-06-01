@@ -41,7 +41,7 @@ public interface UTILParameterizedAssetListener extends UTILFilterCallbackListen
   /** 
    * Defines assets you find interesting, based upon given key.
    * @param a An Asset to check for interest
-   * @param a String to identify key of asset of interest
+   * @param key String to identify key of asset of interest
    * @return boolean true if asset is interesting
    */
   boolean interestingParameterizedAsset (Asset a, String key);

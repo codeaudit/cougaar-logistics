@@ -643,7 +643,6 @@ public class DemandGeneratorPlugin extends ComponentPlugin
      * Filter the passed in collection of projection tasks to those overlapping the period
      * between the start and end time.
      *
-     * @param projections - whole collection of projection tasks
      * @param startGen    - start time for generating supply tasks
      * @param endGen      -  end time for generating supply tasks
      * @return Collection of projection tasks filtered by start and end time.

@@ -43,11 +43,6 @@ public class FallingBehindPolicy extends InterAgentOperatingModePolicy {
     setFallingBehindValue(fallingBehindValue);
   }
 
-  /**
-   * Gets the name of the Agent whose load status is reported.
-   *
-   * @return String Name of the agent
-   */
   public void  setFallingBehindValue(double fallingBehindValue) {
     ConstraintPhrase[] omConstraints = new ConstraintPhrase[1];
     omConstraints[0] = new ConstraintPhrase(FALLING_BEHIND,
